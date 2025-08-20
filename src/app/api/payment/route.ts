@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCustomer, saveOrder } from '@/lib/supabase';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Cashfree } = require('cashfree-pg-sdk-nodejs');
 
-// Initialize Cashfree
-Cashfree.XClientId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = process.env.NODE_ENV === 'production' 
-  ? Cashfree.Environment.PRODUCTION 
-  : Cashfree.Environment.SANDBOX;
+// Initialize Cashfree conditionally
+if (Cashfree && typeof Cashfree === 'object') {
+  Cashfree.XClientId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
+  Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+  Cashfree.XEnvironment = process.env.NODE_ENV === 'production' 
+    ? Cashfree.Environment.PRODUCTION 
+    : Cashfree.Environment.SANDBOX;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
         cashfree_order_id: orderId
       });
       dbOrderId = order.id!;
-    } catch (error) {
+    } catch {
       console.log('Supabase not configured, using mock IDs');
     }
 

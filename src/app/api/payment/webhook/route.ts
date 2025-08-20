@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Cashfree } = require('cashfree-pg-sdk-nodejs');
 
-// Initialize Cashfree
-Cashfree.XClientId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = process.env.NODE_ENV === 'production' 
-  ? Cashfree.Environment.PRODUCTION 
-  : Cashfree.Environment.SANDBOX;
+// Initialize Cashfree conditionally
+if (Cashfree && typeof Cashfree === 'object') {
+  Cashfree.XClientId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
+  Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+  Cashfree.XEnvironment = process.env.NODE_ENV === 'production' 
+    ? Cashfree.Environment.PRODUCTION 
+    : Cashfree.Environment.SANDBOX;
+}
 
 export async function POST(request: NextRequest) {
   try {
     // Handle Cashfree webhook test
-    const contentType = request.headers.get('content-type');
     const userAgent = request.headers.get('user-agent');
     
     // Check if this is a Cashfree test webhook
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     let body;
     try {
       body = await request.json();
-    } catch (e) {
+    } catch {
       // Handle text/plain or other content types for test webhooks
       const textBody = await request.text();
       console.log('Webhook test received:', textBody);
@@ -37,22 +39,13 @@ export async function POST(request: NextRequest) {
       }, { status: 200 });
     }
     
-    // Verify the webhook signature (recommended for production)
-    const signature = request.headers.get('x-webhook-signature');
-    const timestamp = request.headers.get('x-webhook-timestamp');
-    
     // Log the webhook for debugging
     console.log('Cashfree Webhook received:', body);
     
     // Extract payment details
     const { 
       type, 
-      order_id, 
-      payment_status, 
-      payment_amount, 
-      payment_currency,
-      payment_method,
-      payment_group
+      order_id
     } = body.data || body;
 
     // Handle different webhook types

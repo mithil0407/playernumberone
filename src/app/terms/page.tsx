@@ -1,6 +1,8 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Shield, Users, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FileText, AlertCircle } from 'lucide-react';
 
 export default function TermsOfServicePage() {
   return (

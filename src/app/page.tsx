@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { 
   CheckCircle, 
-  Star, 
   ArrowRight, 
   Clock, 
   Users,
@@ -19,39 +18,6 @@ import { useState } from 'react';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const beforeAfterImages = [
-    { 
-      image: '/grooming.webp', 
-      caption: 'Grooming & Style Transformation',
-      description: 'From basic grooming to premium styling'
-    },
-    { 
-      image: '/gym.webp', 
-      caption: 'Fitness & Confidence Boost',
-      description: 'Transform your body and mindset'
-    },
-    { 
-      image: '/skin.webp', 
-      caption: 'Skin Care & Grooming',
-      description: 'Clear, healthy skin transformation'
-    },
-    { 
-      image: '/stylish.webp', 
-      caption: 'Outfit & Accessories Makeover',
-      description: 'Complete style transformation'
-    },
-    { 
-      image: '/slim.webp', 
-      caption: 'Body Type Styling',
-      description: 'Dress for your body type'
-    },
-    { 
-      image: '/style.webp', 
-      caption: 'Professional Look Transformation',
-      description: 'From casual to professional'
-    }
-  ];
 
   const features = [
     { icon: CheckCircle, title: 'Grooming & Skincare Routine', description: 'Personalized grooming plan for your skin type' },
