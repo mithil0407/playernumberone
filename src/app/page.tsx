@@ -573,18 +573,68 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 px-4 bg-gray-900 text-white">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center">
-            <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-              Alpha1
-            </div>
-            <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-              Transform your look, boost your confidence, and become the man women notice.
-            </p>
-            <div className="border-t border-gray-800 pt-8">
-              <p className="text-gray-500 text-sm">
-                © 2024 Alpha1. All rights reserved. | Transform with confidence.
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="md:col-span-2">
+              <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
+                Alpha1
+              </div>
+              <p className="text-gray-400 mb-4 max-w-md">
+                Transform your look, boost your confidence, and become the man women notice.
               </p>
+              <div className="flex gap-4">
+                <a href="mailto:support@playernumberone.com" className="text-gray-400 hover:text-white transition-colors">
+                  support@playernumberone.com
+                </a>
+              </div>
             </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a>
+                </li>
+                <li>
+                  <a href="#testimonials" className="text-gray-400 hover:text-white transition-colors">Stories</a>
+                </li>
+                <li>
+                  <a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a>
+                </li>
+                <li>
+                  <a href="#faq" className="text-gray-400 hover:text-white transition-colors">FAQ</a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal & Support */}
+            <div>
+              <h3 className="text-white font-semibold mb-4">Legal & Support</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link>
+                </li>
+                <li>
+                  <Link href="/refund-policy" className="text-gray-400 hover:text-white transition-colors">Refund Policy</Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link>
+                </li>
+                <li>
+                  <Link href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 pt-8 text-center">
+            <p className="text-gray-500 text-sm">
+              © 2024 PlayerNumberOne Alpha1. All rights reserved. | Transform with confidence.
+            </p>
+            <p className="text-gray-600 text-xs mt-2">
+              Results may vary. Individual success depends on effort and commitment to the program.
+            </p>
           </div>
         </div>
       </footer>

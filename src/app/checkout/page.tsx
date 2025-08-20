@@ -217,7 +217,10 @@ export default function CheckoutPage() {
               </form>
 
               <p className="text-xs text-gray-600 mt-4 text-center">
-                By proceeding, you agree to our terms of service and privacy policy.
+                By proceeding, you agree to our{' '}
+                <Link href="/terms" className="text-blue-600 hover:underline">terms of service</Link>
+                {' '}and{' '}
+                <Link href="/privacy-policy" className="text-blue-600 hover:underline">privacy policy</Link>.
               </p>
             </div>
           </div>
