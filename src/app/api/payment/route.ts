@@ -69,6 +69,15 @@ export async function POST(request: NextRequest) {
       order_note: `Alpha1 Transformation Program${addOn ? ' + AI Visualisation' : ''}`
     };
 
+    // Validate Cashfree credentials
+    if (!process.env.NEXT_PUBLIC_CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) {
+      console.error('Cashfree credentials not configured');
+      return NextResponse.json({
+        success: false,
+        error: 'Payment gateway not configured. Please contact support.'
+      }, { status: 500 });
+    }
+
     try {
       // Create order with Cashfree
       const response = await Cashfree.PGCreateOrder("2023-08-01", cashfreeOrderRequest);
@@ -83,22 +92,17 @@ export async function POST(request: NextRequest) {
           db_order_id: dbOrderId
         });
       } else {
-        throw new Error('Failed to create Cashfree order');
+        console.error('Cashfree order creation failed:', response);
+        throw new Error('Failed to create payment order');
       }
       
     } catch (cashfreeError) {
       console.error('Cashfree integration error:', cashfreeError);
       
-      // Fallback to mock response if Cashfree is not configured properly
       return NextResponse.json({
-        success: true,
-        order_id: orderId,
-        payment_url: `/checkout/success?order_id=${orderId}`,
-        customer_id: customerId,
-        db_order_id: dbOrderId,
-        mock: true,
-        message: 'Using mock payment for development'
-      });
+        success: false,
+        error: 'Payment processing failed. Please try again or contact support.'
+      }, { status: 500 });
     }
 
   } catch (error) {

@@ -48,17 +48,9 @@ export default function CheckoutPage() {
 
       const paymentData = await response.json();
       
-      if (paymentData.success) {
-        if (paymentData.payment_url && !paymentData.mock) {
-          // Redirect to actual Cashfree payment page
-          window.location.href = paymentData.payment_url;
-        } else {
-          // Mock payment for development
-          setTimeout(() => {
-            setIsProcessing(false);
-            window.location.href = `/checkout/success?order_id=${paymentData.order_id}`;
-          }, 2000);
-        }
+      if (paymentData.success && paymentData.payment_url) {
+        // Redirect to Cashfree payment page
+        window.location.href = paymentData.payment_url;
       } else {
         throw new Error(paymentData.error || 'Payment initialization failed');
       }

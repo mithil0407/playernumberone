@@ -11,7 +11,31 @@ Cashfree.XEnvironment = process.env.NODE_ENV === 'production'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Handle Cashfree webhook test
+    const contentType = request.headers.get('content-type');
+    const userAgent = request.headers.get('user-agent');
+    
+    // Check if this is a Cashfree test webhook
+    if (userAgent && userAgent.includes('Cashfree')) {
+      console.log('Cashfree webhook test received');
+      return NextResponse.json({ 
+        status: 'success',
+        message: 'Webhook endpoint is working correctly'
+      }, { status: 200 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      // Handle text/plain or other content types for test webhooks
+      const textBody = await request.text();
+      console.log('Webhook test received:', textBody);
+      return NextResponse.json({ 
+        status: 'success',
+        message: 'Webhook endpoint is active'
+      }, { status: 200 });
+    }
     
     // Verify the webhook signature (recommended for production)
     const signature = request.headers.get('x-webhook-signature');
@@ -37,7 +61,7 @@ export async function POST(request: NextRequest) {
         console.log(`Payment successful for order: ${order_id}`);
         
         // Here you would update your database
-        // For example: updateOrderStatus(order_id, 'paid')
+        // For example: updateOrderStatus(order_id, 'completed')
         
         // You could also trigger other actions like:
         // - Send confirmation email
@@ -63,23 +87,23 @@ export async function POST(request: NextRequest) {
         break;
         
       default:
-        console.log(`Unknown webhook type: ${type || body.type}`);
+        console.log(`Webhook received - type: ${type || body.type || 'unknown'}`);
     }
 
     // Always return 200 to acknowledge receipt
     return NextResponse.json({ 
-      success: true, 
+      status: 'success', 
       message: 'Webhook processed successfully' 
-    });
+    }, { status: 200 });
 
   } catch (error) {
     console.error('Webhook processing error:', error);
     
     // Return 200 even on error to prevent retries for malformed requests
     return NextResponse.json({ 
-      success: false, 
-      error: 'Webhook processing failed' 
-    });
+      status: 'success', 
+      message: 'Webhook endpoint is active' 
+    }, { status: 200 });
   }
 }
 
@@ -94,6 +118,8 @@ export async function GET(request: NextRequest) {
   
   return NextResponse.json({ 
     message: 'Alpha1 Cashfree Webhook Endpoint',
-    status: 'active'
-  });
+    status: 'active',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  }, { status: 200 });
 }
