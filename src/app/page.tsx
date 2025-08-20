@@ -75,7 +75,7 @@ export default function Home() {
     {
       name: 'Arjun, 24',
       story: 'Finally got the confidence to approach women. Results were immediate.',
-      image: '/style.webp'
+      image: '/stylish.webp'
     }
   ];
 
@@ -197,42 +197,72 @@ export default function Home() {
           >
             <Link 
               href="/checkout" 
-              className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-3"
+              className="group relative bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-10 py-4 rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20"
             >
-              Start Your Transformation 
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <span className="relative z-10">Start Your Transformation</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
+              {/* Glass shine effect */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             </Link>
             
-            <div className="flex items-center gap-3 bg-gray-50 px-6 py-4 rounded-full border border-gray-200">
+            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-xl px-6 py-4 rounded-full border border-white/30 shadow-lg">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full border-2 border-white"></div>
+                  <div key={i} className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full border-2 border-white shadow-sm"></div>
                 ))}
               </div>
               <span className="text-gray-700 font-medium">200+ transformations</span>
             </div>
           </motion.div>
 
-          {/* Hero Image Placeholder */}
+          {/* Hero Transformations */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6 }}
-            className="relative max-w-5xl mx-auto"
+            className="relative max-w-6xl mx-auto"
           >
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 border border-gray-200 shadow-2xl">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {beforeAfterImages.slice(0, 6).map((image, index) => (
-                  <div key={index} className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-lg">
-                    <img
-                      src={image.image}
-                      alt={image.caption}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+            <div className="text-center mb-12">
+              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                Real Transformations in Just Weeks
+              </h3>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                See how our personalized approach transforms ordinary men into confident, attractive individuals
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { image: '/grooming.webp', title: 'Grooming Mastery', description: 'Learn professional grooming techniques that enhance your natural features and create a polished, attractive appearance.' },
+                { image: '/gym.webp', title: 'Fitness & Confidence', description: 'Build the physique and mindset that radiates confidence and attracts positive attention from everyone around you.' },
+                { image: '/style.webp', title: 'Style Transformation', description: 'Discover your personal style with clothing that fits perfectly and expresses your best, most confident self.' }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.8 + index * 0.2 }}
+                  className="group relative"
+                >
+                  {/* Glassmorphism Card */}
+                  <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-2">
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                    </div>
+                    <h4 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h4>
+                    <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                    
+                    {/* Glass shine effect */}
+                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   </div>
-                ))}
-              </div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </div>
@@ -266,7 +296,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-1"
               >
                 <div className={`w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center ${
                   item.color === 'red' ? 'bg-red-100' :
@@ -278,6 +308,9 @@ export default function Home() {
                   }`} />
                 </div>
                 <p className="text-xl font-semibold text-gray-900 text-center">{item.text}</p>
+                
+                {/* Glass shine effect */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </motion.div>
             ))}
           </div>
@@ -308,13 +341,16 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
               >
-                <div className="w-16 h-16 mb-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center">
+                <div className="w-16 h-16 mb-6 bg-gradient-to-r from-blue-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
                   <feature.icon className="w-8 h-8 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-bold mb-4 text-gray-900">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                
+                {/* Glass shine effect */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </motion.div>
             ))}
           </div>
@@ -363,13 +399,13 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
               >
-                <div className="w-full h-48 mb-6 rounded-xl overflow-hidden bg-gray-100">
+                <div className="w-full h-48 mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
                   <img
                     src={testimonial.image}
                     alt={testimonial.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"
                   />
                 </div>
@@ -377,7 +413,7 @@ export default function Home() {
                   &ldquo;{testimonial.story}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500/90 to-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
                     <span className="text-white font-bold text-sm">{testimonial.name.charAt(0)}</span>
                   </div>
                   <div>
@@ -385,6 +421,9 @@ export default function Home() {
                     <p className="text-sm text-gray-500">Alpha1 Graduate</p>
                   </div>
                 </div>
+                
+                {/* Glass shine effect */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </motion.div>
             ))}
           </div>
@@ -412,7 +451,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden"
+            className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
           >
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
               <h3 className="text-3xl font-bold mb-2">Alpha1 Full Program</h3>
@@ -454,9 +493,12 @@ export default function Home() {
               <div className="text-center">
                 <Link 
                   href="/checkout" 
-                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20"
                 >
-                  Transform Now <ArrowRight className="w-6 h-6" />
+                  <span className="relative z-10">Transform Now</span>
+                  <ArrowRight className="w-6 h-6 relative z-10" />
+                  {/* Glass shine effect */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </Link>
               </div>
             </div>
@@ -488,10 +530,13 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500"
               >
                 <h3 className="text-xl font-bold mb-4 text-gray-900">{faq.question}</h3>
                 <p className="text-gray-600 text-lg leading-relaxed">{faq.answer}</p>
+                
+                {/* Glass shine effect */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </motion.div>
             ))}
           </div>
@@ -514,9 +559,11 @@ export default function Home() {
             </p>
             <Link 
               href="/checkout" 
-              className="inline-flex items-center gap-3 bg-white text-blue-600 px-12 py-4 rounded-full text-xl font-bold hover:shadow-xl hover:scale-105 transition-all duration-300"
+              className="group relative inline-flex items-center gap-3 bg-white/90 backdrop-blur-xl text-blue-600 px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30"
             >
-              Start Your Alpha1 Transformation Today
+              <span className="relative z-10">Start Your Alpha1 Transformation Today</span>
+              {/* Glass shine effect */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             </Link>
             <p className="mt-4 text-sm opacity-75">₹2,299 • Limited slots available</p>
           </motion.div>
