@@ -579,6 +579,9 @@ export default function Home() {
               <h3 className="text-white font-semibold mb-4">Legal & Support</h3>
               <ul className="space-y-2">
                 <li>
+                  <Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link>
+                </li>
+                <li>
                   <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link>
                 </li>
                 <li>
@@ -599,6 +602,9 @@ export default function Home() {
               © 2024 PlayerNumberOne Alpha1. All rights reserved. | Transform with confidence.
             </p>
             <p className="text-gray-600 text-xs mt-2">
+              Business Legal Name: MITHIL NILESH NAVALAKHA
+            </p>
+            <p className="text-gray-600 text-xs mt-1">
               Results may vary. Individual success depends on effort and commitment to the program.
             </p>
           </div>

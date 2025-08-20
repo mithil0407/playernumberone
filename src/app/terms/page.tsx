@@ -41,9 +41,9 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
               <p className="leading-relaxed">
-                Welcome to PlayerNumberOne Alpha1 (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) 
-                govern your use of our website and services, including our men&apos;s transformation coaching program. 
-                By accessing or using our services, you agree to be bound by these Terms.
+                Welcome to PlayerNumberOne Alpha1, operated by <strong>MITHIL NILESH NAVALAKHA</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). 
+                These Terms of Service (&quot;Terms&quot;) govern your use of our website and services, including our men&apos;s 
+                transformation coaching program. By accessing or using our services, you agree to be bound by these Terms.
               </p>
             </section>
 
