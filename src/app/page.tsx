@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import Link from 'next/link';
 import { 
   CheckCircle, 
@@ -11,19 +12,48 @@ import {
   Heart,
   Zap,
   Target,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from 'lucide-react';
 
 export default function Home() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springConfig = { damping: 25, stiffness: 700 };
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [45, -45]), springConfig);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-45, 45]), springConfig);
 
-  
   const beforeAfterImages = [
-    { before: '/before1.jpg', after: '/after1.jpg', caption: 'Grooming & Style Transformation' },
-    { before: '/before2.jpg', after: '/after2.jpg', caption: 'Fitness & Confidence Boost' },
-    { before: '/before3.jpg', after: '/after3.jpg', caption: 'Outfit & Accessories Makeover' },
-    { before: '/before4.jpg', after: '/after4.jpg', caption: 'Skin Care & Grooming' },
-    { before: '/before5.jpg', after: '/after5.jpg', caption: 'Body Type Styling' },
-    { before: '/before6.jpg', after: '/after6.jpg', caption: 'Professional Look Transformation' }
+    { 
+      image: '/grooming.webp', 
+      caption: 'Grooming & Style Transformation',
+      description: 'From basic grooming to premium styling'
+    },
+    { 
+      image: '/gym.webp', 
+      caption: 'Fitness & Confidence Boost',
+      description: 'Transform your body and mindset'
+    },
+    { 
+      image: '/skin.webp', 
+      caption: 'Skin Care & Grooming',
+      description: 'Clear, healthy skin transformation'
+    },
+    { 
+      image: '/stylish.webp', 
+      caption: 'Outfit & Accessories Makeover',
+      description: 'Complete style transformation'
+    },
+    { 
+      image: '/slim.webp', 
+      caption: 'Body Type Styling',
+      description: 'Dress for your body type'
+    },
+    { 
+      image: '/style.webp', 
+      caption: 'Professional Look Transformation',
+      description: 'From casual to professional'
+    }
   ];
 
   const features = [
@@ -38,20 +68,17 @@ export default function Home() {
     {
       name: 'Rahul, 26',
       story: 'Went from being invisible to getting noticed. Alpha1 changed everything.',
-      before: '/testimonial1-before.jpg',
-      after: '/testimonial1-after.jpg'
+      image: '/grooming.webp'
     },
     {
       name: 'Vikram, 28',
       story: 'My dating life completely transformed after just 2 weeks.',
-      before: '/testimonial2-before.jpg',
-      after: '/testimonial2-after.jpg'
+      image: '/gym.webp'
     },
     {
       name: 'Arjun, 24',
       story: 'Finally got the confidence to approach women. Results were immediate.',
-      before: '/testimonial3-before.jpg',
-      after: '/testimonial3-after.jpg'
+      image: '/stylish.webp'
     }
   ];
 
@@ -70,56 +97,113 @@ export default function Home() {
     }
   ];
 
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const { clientX, clientY } = event;
+    const { innerWidth, innerHeight } = window;
+    const x = (clientX - innerWidth / 2) / innerWidth;
+    const y = (clientY - innerHeight / 2) / innerHeight;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden relative">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-blue-900/20 animate-pulse"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+        
+        {/* Floating Particles */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-blue-400/30 rounded-full"
+            animate={{
+              x: [0, 100, 0],
+              y: [0, -100, 0],
+              opacity: [0.3, 0.8, 0.3],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-        <div className="absolute inset-0 bg-black/50"></div>
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <motion.h1 
+      <section className="relative min-h-screen flex items-center justify-center px-4">
+        <div 
+          className="relative z-10 text-center max-w-5xl mx-auto"
+          onMouseMove={handleMouseMove}
+        >
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-4xl md:text-6xl font-bold mb-6 leading-tight"
+            transition={{ duration: 1 }}
+            className="relative"
           >
-            Stop Losing Out Because of Your Looks.
-            <span className="block text-blue-400">Become the Man Women Notice.</span>
-          </motion.h1>
+            {/* Shimmer Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent animate-shimmer"></div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-600 bg-clip-text text-transparent">
+              Stop Losing Out Because of Your Looks.
+              <span className="block mt-2 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                Become the Man Women Notice.
+              </span>
+            </h1>
+          </motion.div>
           
           <motion.p 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-xl md:text-2xl mb-8 text-gray-300"
+            transition={{ duration: 1, delay: 0.3 }}
+            className="text-xl md:text-2xl mb-8 text-gray-300 relative"
           >
-            Alpha1 is a 1-on-1 transformation program by India&apos;s top stylists — grooming, dressing, fitness, confidence.
+            <span className="relative">
+              Alpha1 is a 1-on-1 transformation program by India&apos;s top stylists — grooming, dressing, fitness, confidence.
+              <div className="absolute inset-0 bg-blue-500/20 blur-xl animate-pulse"></div>
+            </span>
           </motion.p>
           
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            transition={{ duration: 1, delay: 0.6 }}
+            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
           >
-            <Link href="/checkout" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold flex items-center gap-2 transition-all duration-300 transform hover:scale-105">
-              Start Your Transformation <ArrowRight className="w-5 h-5" />
+            <Link 
+              href="/checkout" 
+              className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-10 py-5 rounded-full text-xl font-semibold transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50"
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                Start Your Transformation <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              </span>
+              {/* Shine Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
             </Link>
-            <div className="flex items-center gap-2 text-yellow-400">
-              <Star className="w-5 h-5 fill-current" />
-              <span className="text-sm">Trusted by 200+ men</span>
+            
+            <div className="flex items-center gap-3 text-yellow-400 bg-yellow-400/10 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-400/20">
+              <Star className="w-6 h-6 fill-current" />
+              <span className="text-lg font-medium">Trusted by 200+ men</span>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Before/After Slider */}
-      <section className="py-20 px-4 bg-gray-800">
-        <div className="max-w-6xl mx-auto text-center">
+      {/* Before/After Image Showcase */}
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-7xl mx-auto">
           <motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl md:text-4xl font-bold mb-12"
+            className="text-4xl md:text-5xl font-bold mb-16 text-center bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent"
           >
             Real Transformations Possible with Alpha1
           </motion.h2>
@@ -131,12 +215,27 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-gray-700 rounded-lg p-6 hover:transform hover:scale-105 transition-all duration-300"
+                className="group relative"
               >
-                <div className="relative h-64 bg-gray-600 rounded-lg mb-4 flex items-center justify-center">
-                  <span className="text-gray-400">Before/After Image {index + 1}</span>
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm border border-white/10 hover:border-blue-400/50 transition-all duration-500">
+                  <div className="relative h-80 overflow-hidden">
+                    <img
+                      src={image.image}
+                      alt={image.caption}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2 text-blue-300">{image.caption}</h3>
+                    <p className="text-gray-300 text-sm">{image.description}</p>
+                  </div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/20 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
                 </div>
-                <p className="text-gray-300">{image.caption}</p>
               </motion.div>
             ))}
           </div>
@@ -144,13 +243,13 @@ export default function Home() {
       </section>
 
       {/* Emotional Pain Callout */}
-      <section className="py-20 px-4 bg-red-900/20">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-5xl mx-auto">
           <motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl md:text-4xl font-bold mb-12 text-red-400"
+            className="text-4xl md:text-5xl font-bold mb-16 text-center bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent"
           >
             Sound Familiar?
           </motion.h2>
@@ -166,10 +265,19 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="bg-red-900/30 rounded-lg p-6 border border-red-500/30"
+                className="group relative"
               >
-                <item.icon className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <p className="text-xl font-semibold text-red-300">{item.text}</p>
+                <div className="relative p-8 rounded-2xl bg-gradient-to-br from-red-900/20 to-pink-900/20 backdrop-blur-sm border border-red-500/20 hover:border-red-400/50 transition-all duration-500 hover:transform hover:scale-105">
+                  <div className="relative z-10 text-center">
+                    <div className="w-16 h-16 mx-auto mb-6 p-4 bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-full border border-red-400/30 group-hover:border-red-400/60 transition-all duration-500">
+                      <item.icon className="w-8 h-8 text-red-400" />
+                    </div>
+                    <p className="text-xl font-semibold text-red-300 group-hover:text-red-200 transition-colors">{item.text}</p>
+                  </div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/10 to-red-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -177,13 +285,13 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-gray-800">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-7xl mx-auto">
           <motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl md:text-4xl font-bold mb-12 text-center"
+            className="text-4xl md:text-5xl font-bold mb-16 text-center bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
           >
             What You&apos;ll Get in Alpha1
           </motion.h2>
@@ -195,11 +303,20 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-gray-700 rounded-lg p-6 hover:transform hover:scale-105 transition-all duration-300"
+                className="group relative"
               >
-                <feature.icon className="w-12 h-12 text-blue-400 mb-4" />
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-gray-300">{feature.description}</p>
+                <div className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm border border-blue-500/20 hover:border-blue-400/50 transition-all duration-500 hover:transform hover:scale-105">
+                  <div className="relative z-10">
+                    <div className="w-16 h-16 mb-6 p-4 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full border border-blue-400/30 group-hover:border-blue-400/60 transition-all duration-500">
+                      <feature.icon className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-4 text-blue-300 group-hover:text-blue-200 transition-colors">{feature.title}</h3>
+                    <p className="text-gray-300 group-hover:text-gray-200 transition-colors">{feature.description}</p>
+                  </div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -208,23 +325,25 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-center mt-12 p-6 bg-blue-900/30 rounded-lg border border-blue-500/30"
+            className="text-center mt-16"
           >
-            <p className="text-lg text-blue-300">
-              <strong>Conducted 1-on-1 with a female stylist</strong> (5+ years experience in men&apos;s transformation).
-            </p>
+            <div className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur-sm border border-blue-500/30">
+              <p className="text-xl text-blue-200 font-medium">
+                <strong>Conducted 1-on-1 with a female stylist</strong> (5+ years experience in men&apos;s transformation).
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4 bg-gray-900">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-7xl mx-auto">
           <motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl md:text-4xl font-bold mb-12 text-center"
+            className="text-4xl md:text-5xl font-bold mb-16 text-center bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent"
           >
             Real Stories, Real Results
           </motion.h2>
@@ -236,18 +355,25 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="bg-gray-800 rounded-lg p-6 border border-gray-600"
+                className="group relative"
               >
-                <div className="flex gap-4 mb-4">
-                  <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center">
-                    <span className="text-gray-400 text-xs">Before</span>
+                <div className="relative p-6 rounded-2xl bg-gradient-to-br from-green-900/20 to-blue-900/20 backdrop-blur-sm border border-green-500/20 hover:border-green-400/50 transition-all duration-500">
+                  <div className="relative z-10">
+                    <div className="w-full h-48 mb-6 rounded-xl overflow-hidden">
+                      <img
+                        src={testimonial.image}
+                        alt={testimonial.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="text-gray-300 mb-4 italic text-lg">&ldquo;{testimonial.story}&rdquo;</p>
+                    <p className="text-blue-400 font-semibold text-lg">— {testimonial.name}</p>
                   </div>
-                  <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center">
-                    <span className="text-gray-400 text-xs">After</span>
-                  </div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
                 </div>
-                <p className="text-gray-300 mb-4 italic">&ldquo;{testimonial.story}&rdquo;</p>
-                <p className="text-blue-400 font-semibold">— {testimonial.name}</p>
               </motion.div>
             ))}
           </div>
@@ -255,48 +381,63 @@ export default function Home() {
       </section>
 
       {/* Offer Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-900 to-purple-900">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20"
+            className="relative p-12 rounded-3xl bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur-md border border-white/20 shadow-2xl"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Limited Time Offer</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-center bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Limited Time Offer
+            </h2>
             
-            <div className="bg-gray-800 rounded-lg p-6 mb-6">
-              <h3 className="text-2xl font-bold text-blue-400 mb-2">Alpha1 Full Program</h3>
-              <div className="text-4xl font-bold mb-2">₹2,299</div>
-              <p className="text-gray-300 mb-4">Complete 1-on-1 transformation program</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <div className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-800/30 to-purple-800/30 backdrop-blur-sm border border-blue-500/30">
+                <h3 className="text-2xl font-bold text-blue-300 mb-3">Alpha1 Full Program</h3>
+                <div className="text-5xl font-bold mb-3 text-white">₹2,299</div>
+                <p className="text-gray-300 text-lg">Complete 1-on-1 transformation program</p>
+              </div>
+              
+              <div className="relative p-8 rounded-2xl bg-gradient-to-br from-yellow-800/30 to-orange-800/30 backdrop-blur-sm border border-yellow-500/30">
+                <h4 className="text-xl font-semibold text-yellow-400 mb-3">🎁 Special Add-on</h4>
+                <p className="text-white text-lg mb-2">See your Before & After Visualisation</p>
+                <div className="text-3xl font-bold text-yellow-400 mb-2">Only ₹199</div>
+                <p className="text-sm text-yellow-300">(Valid today only)</p>
+              </div>
             </div>
             
-            <div className="bg-yellow-900/30 rounded-lg p-4 mb-6 border border-yellow-500/30">
-              <h4 className="text-lg font-semibold text-yellow-400 mb-2">🎁 Special Add-on</h4>
-              <p className="text-white">See your Before & After Visualisation</p>
-              <div className="text-2xl font-bold text-yellow-400">Only ₹199</div>
-              <p className="text-sm text-yellow-300">(Valid today only)</p>
+            <div className="text-center mb-8">
+              <div className="inline-block p-4 rounded-2xl bg-gradient-to-r from-red-900/30 to-pink-900/30 backdrop-blur-sm border border-red-500/30">
+                <p className="text-red-300 font-semibold text-lg">⚠️ Only 20 slots per week available</p>
+              </div>
             </div>
             
-            <div className="bg-red-900/30 rounded-lg p-4 mb-8 border border-red-500/30">
-              <p className="text-red-300 font-semibold">⚠️ Only 20 slots per week available</p>
+            <div className="text-center">
+              <Link 
+                href="/checkout" 
+                className="group relative inline-block overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-16 py-5 rounded-full text-2xl font-bold transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50"
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  Transform Now <ArrowRight className="w-7 h-7 group-hover:translate-x-2 transition-transform" />
+                </span>
+                {/* Shine Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              </Link>
             </div>
-            
-            <Link href="/checkout" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 rounded-lg text-xl font-bold flex items-center gap-3 mx-auto transition-all duration-300 transform hover:scale-105">
-              Transform Now <ArrowRight className="w-6 h-6" />
-            </Link>
           </motion.div>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 px-4 bg-gray-800">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-24 px-4 relative z-10">
+        <div className="max-w-5xl mx-auto">
           <motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl md:text-4xl font-bold mb-12 text-center"
+            className="text-4xl md:text-5xl font-bold mb-16 text-center bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent"
           >
             Frequently Asked Questions
           </motion.h2>
@@ -308,10 +449,17 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-gray-700 rounded-lg p-6"
+                className="group relative"
               >
-                <h3 className="text-xl font-semibold mb-3 text-blue-400">{faq.question}</h3>
-                <p className="text-gray-300">{faq.answer}</p>
+                <div className="relative p-8 rounded-2xl bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-sm border border-blue-500/20 hover:border-blue-400/50 transition-all duration-500">
+                  <div className="relative z-10">
+                    <h3 className="text-xl font-semibold mb-4 text-blue-300 group-hover:text-blue-200 transition-colors">{faq.question}</h3>
+                    <p className="text-gray-300 group-hover:text-gray-200 transition-colors text-lg">{faq.answer}</p>
+                  </div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -319,10 +467,17 @@ export default function Home() {
       </section>
 
       {/* Final CTA - Sticky Footer on Mobile */}
-      <section className="py-8 px-4 bg-gradient-to-r from-blue-600 to-purple-600 sticky bottom-0 z-50">
-        <div className="max-w-4xl mx-auto text-center">
-          <Link href="/checkout" className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-bold flex items-center gap-3 mx-auto transition-all duration-300 transform hover:scale-105 shadow-lg">
-            👉 Start Your Alpha1 Transformation Today (₹2,299)
+      <section className="py-8 px-4 bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-md sticky bottom-0 z-50 border-t border-white/20">
+        <div className="max-w-5xl mx-auto text-center">
+          <Link 
+            href="/checkout" 
+            className="group relative inline-block overflow-hidden bg-white text-blue-600 px-10 py-4 rounded-full text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-2xl hover:shadow-white/50"
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              👉 Start Your Alpha1 Transformation Today (₹2,299)
+            </span>
+            {/* Shine Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-100/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           </Link>
         </div>
       </section>
