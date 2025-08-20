@@ -401,7 +401,7 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
               >
-                <div className="w-full h-48 mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
+                <div className="w-full aspect-square mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
                   <img
                     src={testimonial.image}
                     alt={testimonial.name}

@@ -21,6 +21,7 @@ export interface Order {
   add_on: boolean;
   status: 'pending' | 'completed' | 'failed';
   payment_id?: string;
+  cashfree_order_id?: string;
   created_at?: string;
 }
 
