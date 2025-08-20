@@ -5,13 +5,15 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PlayerNumberOne Alpha1 - Transform Your Look & Confidence",
-  description: "Alpha1 is a 1-on-1 transformation program by India's top stylists. Get grooming, style, fitness, and confidence coaching to become the man women notice.",
-  keywords: "men's transformation, grooming, style, confidence, dating, Indian men, personal styling",
+  title: "PlayerNumberOne Alpha1 - Transform Your Confidence & Attractiveness",
+  description: "Join 200+ men who transformed their lives with Alpha1. Get personalized grooming, style, fitness & confidence coaching. Start your transformation today!",
+  keywords: "men transformation, grooming, style, fitness, confidence, attractiveness, coaching, Alpha1",
   openGraph: {
-    title: "PlayerNumberOne Alpha1 - Transform Your Look & Confidence",
-    description: "Become the man women notice with our 1-on-1 transformation program",
+    title: "PlayerNumberOne Alpha1 - Transform Your Confidence & Attractiveness",
+    description: "Join 200+ men who transformed their lives with Alpha1. Get personalized grooming, style, fitness & confidence coaching.",
     type: "website",
+    url: "https://playernumberone.vercel.app",
+    siteName: "PlayerNumberOne Alpha1",
   },
 };
 
@@ -22,6 +24,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-94CVS6PDTF"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-94CVS6PDTF');
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   );
