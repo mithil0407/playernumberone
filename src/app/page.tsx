@@ -585,6 +585,9 @@ export default function Home() {
                   <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link>
                 </li>
                 <li>
+                  <Link href="/shipping" className="text-gray-400 hover:text-white transition-colors">Shipping & Delivery</Link>
+                </li>
+                <li>
                   <Link href="/refund-policy" className="text-gray-400 hover:text-white transition-colors">Refund Policy</Link>
                 </li>
                 <li>

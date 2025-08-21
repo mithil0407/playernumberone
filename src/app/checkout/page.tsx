@@ -218,9 +218,9 @@ export default function CheckoutPage() {
 
               <p className="text-xs text-gray-600 mt-4 text-center">
                 By proceeding, you agree to our{' '}
-                <Link href="/terms" className="text-blue-600 hover:underline">terms of service</Link>
-                {' '}and{' '}
-                <Link href="/privacy-policy" className="text-blue-600 hover:underline">privacy policy</Link>.
+                <Link href="/terms" className="text-blue-600 hover:underline">terms of service</Link>,{' '}
+                <Link href="/privacy-policy" className="text-blue-600 hover:underline">privacy policy</Link>, and{' '}
+                <Link href="/shipping" className="text-blue-600 hover:underline">shipping policy</Link>.
               </p>
             </div>
           </div>
