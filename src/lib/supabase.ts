@@ -16,12 +16,17 @@ export interface Customer {
 
 export interface Order {
   id?: string;
-  customer_id: string;
+  customer_id?: string;
+  customer_email?: string;
   amount: number;
   add_on: boolean;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | 'paid';
   payment_id?: string;
-  cashfree_order_id?: string;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  payment_method?: string;
+  error_code?: string;
+  error_description?: string;
   created_at?: string;
 }
 
@@ -48,6 +53,29 @@ export const saveCustomer = async (customer: Customer) => {
 };
 
 export const saveOrder = async (order: Order) => {
+  // If razorpay_order_id exists, try to update existing record first
+  if (order.razorpay_order_id) {
+    const { data: existingOrder } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('razorpay_order_id', order.razorpay_order_id)
+      .single();
+
+    if (existingOrder) {
+      // Update existing order
+      const { data, error } = await supabase
+        .from('orders')
+        .update(order)
+        .eq('razorpay_order_id', order.razorpay_order_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  }
+
+  // Insert new order
   const { data, error } = await supabase
     .from('orders')
     .insert([order])

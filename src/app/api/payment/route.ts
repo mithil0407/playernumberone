@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCustomer, saveOrder } from '@/lib/supabase';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { Cashfree } = require('cashfree-pg-sdk-nodejs');
-
-// Initialize Cashfree conditionally
-if (Cashfree && typeof Cashfree === 'object') {
-  Cashfree.XClientId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
-  Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-  Cashfree.XEnvironment = process.env.NODE_ENV === 'production' 
-    ? Cashfree.Environment.PRODUCTION 
-    : Cashfree.Environment.SANDBOX;
-}
+import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +15,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if Razorpay credentials are configured
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('Razorpay credentials not configured');
+      return NextResponse.json({
+        success: false,
+        error: 'Payment gateway not configured. Please contact support.'
+      }, { status: 500 });
+    }
+
     // Generate unique order ID
     const orderId = `alpha1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     
+    // Convert amount to paise (Razorpay expects amount in smallest currency unit)
+    const amountInPaise = Math.round(amount * 100);
+
     // Save customer to database
     let customerId = 'mock-customer-id';
     let dbOrderId = 'mock-order-id';
@@ -47,60 +48,78 @@ export async function POST(request: NextRequest) {
         amount,
         add_on: addOn,
         status: 'pending',
-        cashfree_order_id: orderId
+        razorpay_order_id: orderId
       });
       dbOrderId = order.id!;
-    } catch {
-      console.log('Supabase not configured, using mock IDs');
-    }
-
-    // Create Cashfree order
-    const cashfreeOrderRequest = {
-      order_id: orderId,
-      order_amount: amount,
-      order_currency: 'INR',
-      customer_details: {
-        customer_id: customerId,
-        customer_name: name,
-        customer_email: email,
-        customer_phone: phone
-      },
-      order_meta: {
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout/success?order_id=${orderId}`,
-        notify_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payment/webhook`
-      },
-      order_note: `Alpha1 Transformation Program${addOn ? ' + AI Visualisation' : ''}`
-    };
-
-    // Validate Cashfree credentials
-    if (!process.env.NEXT_PUBLIC_CASHFREE_APP_ID || !process.env.CASHFREE_SECRET_KEY) {
-      console.error('Cashfree credentials not configured');
-      return NextResponse.json({
-        success: false,
-        error: 'Payment gateway not configured. Please contact support.'
-      }, { status: 500 });
+    } catch (error) {
+      console.log('Supabase not configured, using mock IDs:', error);
     }
 
     try {
-      // Create order with Cashfree
-      const response = await Cashfree.PGCreateOrder("2023-08-01", cashfreeOrderRequest);
+      // Initialize Razorpay
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID!,
+        key_secret: process.env.RAZORPAY_KEY_SECRET!,
+      });
+
+      // Create Razorpay order
+      const orderRequest = {
+        amount: amountInPaise,
+        currency: 'INR',
+        receipt: orderId,
+        notes: {
+          customer_name: name,
+          customer_email: email,
+          customer_phone: phone,
+          add_on: addOn ? 'true' : 'false',
+          service: 'Alpha1 Transformation Program',
+          db_order_id: dbOrderId,
+          customer_id: customerId
+        },
+      };
+
+      const razorpayOrder = await razorpay.orders.create(orderRequest);
       
-      if (response.data && response.data.payment_session_id) {
-        return NextResponse.json({
-          success: true,
-          order_id: orderId,
-          payment_session_id: response.data.payment_session_id,
-          payment_url: response.data.payment_link,
-          customer_id: customerId,
-          db_order_id: dbOrderId
-        });
-      } else {
-        console.error('Cashfree order creation failed:', response);
-        throw new Error('Failed to create payment order');
+      if (!razorpayOrder?.id) {
+        throw new Error('Failed to create Razorpay order');
       }
-      
-    } catch (cashfreeError) {
-      console.error('Cashfree integration error:', cashfreeError);
+
+      // Update database with Razorpay order ID
+      try {
+        await saveOrder({
+          customer_id: customerId,
+          amount,
+          add_on: addOn,
+          status: 'pending',
+          razorpay_order_id: razorpayOrder.id
+        });
+      } catch (error) {
+        console.log('Failed to update order with Razorpay ID:', error);
+      }
+
+      // Return order details for frontend Razorpay integration
+      return NextResponse.json({
+        success: true,
+        order_id: orderId,
+        razorpay_order_id: razorpayOrder.id,
+        amount: amountInPaise,
+        currency: 'INR',
+        key: process.env.RAZORPAY_KEY_ID,
+        customer: {
+          name,
+          email,
+          contact: phone,
+        },
+        notes: {
+          service: 'Alpha1 Transformation Program',
+          add_on: addOn,
+        },
+        customer_id: customerId,
+        db_order_id: dbOrderId
+      });
+
+    } catch (razorpayError) {
+      console.error('Razorpay integration error:', razorpayError);
       
       return NextResponse.json({
         success: false,
@@ -109,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Payment error:', error);
+    console.error('Payment API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

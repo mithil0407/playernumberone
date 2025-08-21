@@ -5,7 +5,7 @@ A high-conversion landing page funnel with payment integration and scheduling fl
 ## Features
 
 - 🎯 **High-Conversion Landing Page**: Emotion-driven copy and design optimized for conversions
-- 💳 **Payment Integration**: Cashfree payment gateway integration
+- 💳 **Payment Integration**: Razorpay payment gateway integration
 - 📅 **Scheduling System**: Post-payment calendar booking with available slots
 - 📱 **Mobile-First Design**: Responsive design optimized for mobile users
 - 🎨 **Modern UI/UX**: Beautiful animations and smooth interactions
@@ -17,7 +17,7 @@ A high-conversion landing page funnel with payment integration and scheduling fl
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
 - **Backend**: Supabase (PostgreSQL)
-- **Payment**: Cashfree
+- **Payment**: Razorpay
 - **Hosting**: Vercel (recommended)
 
 ## Quick Start
@@ -37,9 +37,10 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Cashfree Configuration (for production)
-NEXT_PUBLIC_CASHFREE_APP_ID=your_cashfree_app_id
-CASHFREE_SECRET_KEY=your_cashfree_secret_key
+# Razorpay Configuration (for production)
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
 
 # Google Analytics
 NEXT_PUBLIC_GA_ID=your_google_analytics_id
@@ -67,10 +68,16 @@ CREATE TABLE customers (
 CREATE TABLE orders (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   customer_id UUID REFERENCES customers(id),
+  customer_email TEXT,
   amount INTEGER NOT NULL,
   add_on BOOLEAN DEFAULT false,
   status TEXT DEFAULT 'pending',
   payment_id TEXT,
+  razorpay_order_id TEXT,
+  razorpay_payment_id TEXT,
+  payment_method TEXT,
+  error_code TEXT,
+  error_description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -87,6 +94,22 @@ CREATE TABLE sessions (
 ```
 
 3. Get your project URL and anon key from Supabase settings
+
+### 3. Razorpay Setup
+
+1. **Create Razorpay Account**: Sign up at [razorpay.com](https://razorpay.com)
+2. **Get API Keys**: 
+   - Go to Settings → API Keys
+   - Generate Key ID and Key Secret
+   - Add them to your `.env.local` file
+3. **Configure Webhooks**:
+   - Go to Settings → Webhooks
+   - Create webhook with URL: `https://yourdomain.com/api/payment/webhook`
+   - Select events: `payment.captured`, `payment.failed`, `order.paid`
+   - Generate webhook secret and add to `.env.local`
+4. **Test Integration**:
+   - Use test mode for development
+   - Switch to live mode for production
 
 ### 4. Run Development Server
 
@@ -116,7 +139,7 @@ src/
 ## User Flow
 
 1. **Landing Page** → High-conversion funnel with emotional copy
-2. **Checkout** → Customer information + payment (Cashfree)
+2. **Checkout** → Customer information + payment (Razorpay)
 3. **Scheduling** → Post-payment calendar booking
 4. **Confirmation** → Success page with session details
 
@@ -133,9 +156,9 @@ src/
 - Update animations in Framer Motion components
 
 ### Payment Integration
-- Replace Cashfree with your preferred gateway
-- Update payment logic in checkout page
-- Modify order processing flow
+- Razorpay integration with secure checkout
+- Webhook handling for payment status updates
+- Automatic order status management
 
 ## Deployment
 

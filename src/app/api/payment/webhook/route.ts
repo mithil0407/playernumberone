@@ -1,118 +1,158 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { Cashfree } = require('cashfree-pg-sdk-nodejs');
-
-// Initialize Cashfree conditionally
-if (Cashfree && typeof Cashfree === 'object') {
-  Cashfree.XClientId = process.env.NEXT_PUBLIC_CASHFREE_APP_ID;
-  Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-  Cashfree.XEnvironment = process.env.NODE_ENV === 'production' 
-    ? Cashfree.Environment.PRODUCTION 
-    : Cashfree.Environment.SANDBOX;
-}
+import crypto from 'crypto';
+import { saveOrder } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    // Handle Cashfree webhook test
-    const userAgent = request.headers.get('user-agent');
+    // Get the raw body
+    const body = await request.text();
     
-    // Check if this is a Cashfree test webhook
-    if (userAgent && userAgent.includes('Cashfree')) {
-      console.log('Cashfree webhook test received');
-      return NextResponse.json({ 
-        status: 'success',
-        message: 'Webhook endpoint is working correctly'
-      }, { status: 200 });
+    // Get Razorpay signature from headers
+    const signature = request.headers.get('x-razorpay-signature');
+    
+    if (!signature) {
+      console.log('No Razorpay signature found in headers');
+      return NextResponse.json({ status: 'error', message: 'No signature' }, { status: 400 });
     }
 
-    let body;
+    // Verify webhook signature
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.log('Razorpay webhook secret not configured');
+      return NextResponse.json({ status: 'error', message: 'Webhook not configured' }, { status: 500 });
+    }
+
+    // Verify the signature
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(body)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.log('Invalid Razorpay webhook signature');
+      return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 400 });
+    }
+
+    // Parse the webhook payload
+    let webhookData;
     try {
-      body = await request.json();
-    } catch {
-      // Handle text/plain or other content types for test webhooks
-      const textBody = await request.text();
-      console.log('Webhook test received:', textBody);
-      return NextResponse.json({ 
-        status: 'success',
-        message: 'Webhook endpoint is active'
-      }, { status: 200 });
+      webhookData = JSON.parse(body);
+    } catch (error) {
+      console.log('Failed to parse webhook body:', error);
+      return NextResponse.json({ status: 'error', message: 'Invalid JSON' }, { status: 400 });
     }
-    
-    // Log the webhook for debugging
-    console.log('Cashfree Webhook received:', body);
-    
-    // Extract payment details
-    const { 
-      type, 
-      order_id
-    } = body.data || body;
 
-    // Handle different webhook types
-    switch (type || body.type) {
-      case 'PAYMENT_SUCCESS_WEBHOOK':
-        console.log(`Payment successful for order: ${order_id}`);
-        
-        // Here you would update your database
-        // For example: updateOrderStatus(order_id, 'completed')
-        
-        // You could also trigger other actions like:
-        // - Send confirmation email
-        // - Create calendar appointment
-        // - Send WhatsApp message
-        
+    console.log('Received Razorpay webhook:', webhookData.event);
+
+    // Handle different webhook events
+    const { event, payload } = webhookData;
+    
+    switch (event) {
+      case 'payment.captured':
+        await handlePaymentCaptured(payload.payment.entity);
         break;
         
-      case 'PAYMENT_FAILED_WEBHOOK':
-        console.log(`Payment failed for order: ${order_id}`);
-        
-        // Update order status to failed
-        // Send failure notification
-        
+      case 'payment.failed':
+        await handlePaymentFailed(payload.payment.entity);
         break;
         
-      case 'PAYMENT_USER_DROPPED_WEBHOOK':
-        console.log(`Payment dropped by user for order: ${order_id}`);
-        
-        // Handle user abandonment
-        // Maybe trigger retargeting campaign
-        
+      case 'order.paid':
+        await handleOrderPaid(payload.order.entity, payload.payment.entity);
         break;
         
       default:
-        console.log(`Webhook received - type: ${type || body.type || 'unknown'}`);
+        console.log(`Unhandled Razorpay webhook event: ${event}`);
     }
 
     // Always return 200 to acknowledge receipt
-    return NextResponse.json({ 
-      status: 'success', 
-      message: 'Webhook processed successfully' 
-    }, { status: 200 });
+    return NextResponse.json({ status: 'success' }, { status: 200 });
 
   } catch (error) {
-    console.error('Webhook processing error:', error);
-    
-    // Return 200 even on error to prevent retries for malformed requests
-    return NextResponse.json({ 
-      status: 'success', 
-      message: 'Webhook endpoint is active' 
-    }, { status: 200 });
+    console.error('Razorpay webhook error:', error);
+    // Always return 200 to prevent Razorpay from retrying
+    return NextResponse.json({ status: 'error', message: 'Internal error' }, { status: 200 });
   }
 }
 
-// Handle GET requests (for webhook verification)
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const challenge = searchParams.get('challenge');
-  
-  if (challenge) {
-    return NextResponse.json({ challenge });
+async function handlePaymentCaptured(payment: any) {
+  try {
+    console.log('Payment captured:', payment.id);
+    
+    const { order_id, amount, status, method } = payment;
+    
+    // Update order status in database
+    await saveOrder({
+      razorpay_order_id: order_id,
+      razorpay_payment_id: payment.id,
+      status: 'completed',
+      payment_method: method,
+      amount: amount / 100, // Convert from paise to rupees
+    });
+
+    console.log(`Order ${order_id} marked as completed`);
+    
+    // Here you can add additional logic like:
+    // - Send confirmation email
+    // - Trigger fulfillment process
+    // - Update customer records
+    
+  } catch (error) {
+    console.error('Error handling payment captured:', error);
   }
-  
+}
+
+async function handlePaymentFailed(payment: any) {
+  try {
+    console.log('Payment failed:', payment.id);
+    
+    const { order_id, error_code, error_description } = payment;
+    
+    // Update order status in database
+    await saveOrder({
+      razorpay_order_id: order_id,
+      razorpay_payment_id: payment.id,
+      status: 'failed',
+      error_code,
+      error_description,
+    });
+
+    console.log(`Order ${order_id} marked as failed`);
+    
+    // Here you can add additional logic like:
+    // - Send failure notification email
+    // - Log for analytics
+    // - Trigger retry mechanisms
+    
+  } catch (error) {
+    console.error('Error handling payment failed:', error);
+  }
+}
+
+async function handleOrderPaid(order: any, payment: any) {
+  try {
+    console.log('Order paid:', order.id);
+    
+    // Update order status in database
+    await saveOrder({
+      razorpay_order_id: order.id,
+      razorpay_payment_id: payment.id,
+      status: 'paid',
+      payment_method: payment.method,
+      amount: order.amount / 100, // Convert from paise to rupees
+    });
+
+    console.log(`Order ${order.id} marked as paid`);
+    
+  } catch (error) {
+    console.error('Error handling order paid:', error);
+  }
+}
+
+// GET endpoint for webhook verification/testing
+export async function GET() {
   return NextResponse.json({ 
-    message: 'Alpha1 Cashfree Webhook Endpoint',
-    status: 'active',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  }, { status: 200 });
+    status: 'active', 
+    message: 'Razorpay webhook endpoint is active',
+    timestamp: new Date().toISOString()
+  });
 }

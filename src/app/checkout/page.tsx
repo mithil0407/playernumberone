@@ -5,6 +5,13 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
 
+// Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -23,11 +30,28 @@ export default function CheckoutPage() {
     }));
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
     
     try {
+      // Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Failed to load payment gateway');
+      }
+
+      // Create order on backend
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: {
@@ -43,22 +67,62 @@ export default function CheckoutPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Payment failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Payment failed');
       }
 
       const paymentData = await response.json();
       
-      if (paymentData.success && paymentData.payment_url) {
-        // Redirect to Cashfree payment page
-        window.location.href = paymentData.payment_url;
-      } else {
+      if (!paymentData.success) {
         throw new Error(paymentData.error || 'Payment initialization failed');
       }
+
+      // Configure Razorpay options
+      const options = {
+        key: paymentData.key,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        name: 'PlayerNumberOne Alpha1',
+        description: 'Alpha1 Transformation Program',
+        image: '/logo.png', // Add your logo here
+        order_id: paymentData.razorpay_order_id,
+        customer: paymentData.customer,
+        notes: paymentData.notes,
+        theme: {
+          color: '#3B82F6' // Blue theme matching your site
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+            console.log('Payment modal dismissed');
+          }
+        },
+        handler: function (response: any) {
+          console.log('Payment successful:', response);
+          // Redirect to success page with payment details
+          window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`;
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone
+        }
+      };
+
+      // Open Razorpay checkout
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+
+      razorpay.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        setIsProcessing(false);
+        alert(`Payment failed: ${response.error.description}`);
+      });
       
     } catch (error) {
       console.error('Payment error:', error);
       setIsProcessing(false);
-      alert('Payment failed. Please try again.');
+      alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
   };
 
@@ -93,45 +157,36 @@ export default function CheckoutPage() {
               
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <div>
-                    <h3 className="font-semibold text-blue-600">Alpha1 Full Program</h3>
-                    <p className="text-sm text-gray-600">Complete 1-on-1 transformation</p>
+                  <span className="font-medium">Alpha1 Transformation Program</span>
+                  <span className="font-bold">₹1,999</span>
+                </div>
+                
+                {formData.addOn && (
+                  <div className="flex justify-between items-center py-3 border-b border-gray-200">
+                    <span className="font-medium text-blue-600">+ AI Before/After Visualization</span>
+                    <span className="font-bold text-blue-600">₹499</span>
                   </div>
-                  <span className="text-xl font-bold text-gray-900">₹2,299</span>
-                </div>
-
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <div>
-                    <h3 className="font-semibold text-orange-600">Before & After AI Visualisation</h3>
-                    <p className="text-sm text-gray-600">See your transformation preview</p>
-                  </div>
-                  <span className="text-xl font-bold text-gray-900">₹199</span>
-                </div>
-
-                <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                  <span className="font-semibold text-gray-900">Subtotal</span>
-                  <span className="font-bold text-gray-900">₹2,498</span>
-                </div>
-
-                <div className="flex justify-between items-center py-3">
-                  <span className="text-2xl font-bold text-gray-900">Total</span>
-                  <span className="text-3xl font-bold text-blue-600">₹{totalAmount}</span>
+                )}
+                
+                <div className="flex justify-between items-center py-3 text-lg font-bold border-t border-gray-300">
+                  <span>Total</span>
+                  <span className="text-2xl text-blue-600">₹{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Trust Indicators */}
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center gap-3 text-green-600">
-                  <Shield className="w-5 h-5" />
-                  <span className="text-sm">Secure Payment via Cashfree</span>
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Shield className="w-5 h-5 text-green-500" />
+                  <span>Secure payment with Razorpay</span>
                 </div>
-                <div className="flex items-center gap-3 text-blue-600">
-                  <Clock className="w-5 h-5" />
-                  <span className="text-sm">Instant Access After Payment</span>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <span>7-day money-back guarantee</span>
                 </div>
-                <div className="flex items-center gap-3 text-purple-600">
-                  <Users className="w-5 h-5" />
-                  <span className="text-sm">1-on-1 with Expert Stylist</span>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Users className="w-5 h-5 text-purple-500" />
+                  <span>200+ successful transformations</span>
                 </div>
               </div>
             </div>
@@ -142,7 +197,7 @@ export default function CheckoutPage() {
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2 text-gray-900">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name *
                   </label>
                   <input
@@ -158,7 +213,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-900">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address *
                   </label>
                   <input
@@ -169,12 +224,12 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    placeholder="Enter your email"
+                    placeholder="Enter your email address"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium mb-2 text-gray-900">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number *
                   </label>
                   <input
@@ -198,19 +253,20 @@ export default function CheckoutPage() {
                     onChange={handleInputChange}
                     className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                   />
-                  <label htmlFor="addOn" className="text-sm text-gray-900">
-                    Include Before & After AI Visualisation (+₹199)
+                  <label htmlFor="addOn" className="text-sm text-gray-700">
+                    Add AI Before/After Visualization (+₹499) - <span className="text-blue-600 font-medium">Recommended</span>
                   </label>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="group relative w-full bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl hover:from-blue-700/90 hover:to-purple-700/90 disabled:opacity-50 text-white py-4 rounded-full text-lg font-bold transition-all duration-500 transform hover:scale-105 border border-white/20 shadow-xl"
+                  className="w-full relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 px-8 rounded-full hover:shadow-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
                 >
                   <span className="relative z-10">
-                    {isProcessing ? 'Processing Payment...' : `Pay ₹${totalAmount} & Transform`}
+                    {isProcessing ? 'Processing...' : `Pay ₹${totalAmount.toLocaleString()} Securely`}
                   </span>
+                  
                   {/* Glass shine effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </button>
@@ -227,15 +283,27 @@ export default function CheckoutPage() {
 
           {/* Scarcity Message */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-8 bg-red-50/70 backdrop-blur-xl border border-red-200 rounded-2xl p-4 text-center shadow-lg"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="mt-8 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6 text-center"
           >
-            <p className="text-red-700 font-semibold">
-              ⚠️ Only 20 slots available this week. Secure your transformation now!
+            <p className="text-red-800 font-medium">
+              🔥 Limited Time: Only 5 spots available this month. Secure your transformation now!
             </p>
           </motion.div>
+
+          {/* Payment Security Notice */}
+          <div className="mt-8 bg-green-50/80 backdrop-blur-sm border border-green-200 rounded-2xl p-6">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Shield className="w-6 h-6 text-green-600" />
+              <h3 className="text-lg font-semibold text-green-800">Secure Payment</h3>
+            </div>
+            <p className="text-green-700 text-center">
+              Your payment is processed securely through Razorpay with 256-bit SSL encryption. 
+              We never store your payment information.
+            </p>
+          </div>
         </motion.div>
       </div>
     </div>
