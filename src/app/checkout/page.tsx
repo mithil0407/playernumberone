@@ -6,9 +6,58 @@ import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
 
 // Razorpay types
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  image?: string;
+  order_id: string;
+  customer: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  notes: Record<string, unknown>;
+  theme: {
+    color: string;
+  };
+  modal: {
+    ondismiss: () => void;
+  };
+  handler: (response: RazorpayResponse) => void;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+}
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayError {
+  error: {
+    code: string;
+    description: string;
+    source: string;
+    step: string;
+    reason: string;
+  };
+}
+
+interface RazorpayInstance {
+  open(): void;
+  on(event: string, handler: (response: RazorpayError) => void): void;
+}
+
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
   }
 }
 
@@ -97,7 +146,7 @@ export default function CheckoutPage() {
             console.log('Payment modal dismissed');
           }
         },
-        handler: function (response: any) {
+        handler: function (response: RazorpayResponse) {
           console.log('Payment successful:', response);
           // Redirect to success page with payment details
           window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`;
@@ -113,7 +162,7 @@ export default function CheckoutPage() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
 
-      razorpay.on('payment.failed', function (response: any) {
+      razorpay.on('payment.failed', function (response: RazorpayError) {
         console.error('Payment failed:', response.error);
         setIsProcessing(false);
         alert(`Payment failed: ${response.error.description}`);

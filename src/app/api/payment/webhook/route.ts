@@ -74,11 +74,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handlePaymentCaptured(payment: any) {
+interface RazorpayPayment {
+  id: string;
+  order_id: string;
+  amount: number;
+  status: string;
+  method: string;
+  error_code?: string;
+  error_description?: string;
+}
+
+interface RazorpayOrder {
+  id: string;
+  amount: number;
+}
+
+async function handlePaymentCaptured(payment: RazorpayPayment) {
   try {
     console.log('Payment captured:', payment.id);
     
-    const { order_id, amount, status, method } = payment;
+    const { order_id, amount, method } = payment;
     
     // Update order status in database
     await saveOrder({
@@ -101,7 +116,7 @@ async function handlePaymentCaptured(payment: any) {
   }
 }
 
-async function handlePaymentFailed(payment: any) {
+async function handlePaymentFailed(payment: RazorpayPayment) {
   try {
     console.log('Payment failed:', payment.id);
     
@@ -128,7 +143,7 @@ async function handlePaymentFailed(payment: any) {
   }
 }
 
-async function handleOrderPaid(order: any, payment: any) {
+async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
   try {
     console.log('Order paid:', order.id);
     

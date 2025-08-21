@@ -18,9 +18,9 @@ export interface Order {
   id?: string;
   customer_id?: string;
   customer_email?: string;
-  amount: number;
-  add_on: boolean;
-  status: 'pending' | 'completed' | 'failed' | 'paid';
+  amount?: number;
+  add_on?: boolean;
+  status?: 'pending' | 'completed' | 'failed' | 'paid';
   payment_id?: string;
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
