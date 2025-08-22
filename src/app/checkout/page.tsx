@@ -5,6 +5,19 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
 
+// Facebook Pixel types
+interface FacebookPixel {
+  (command: 'init', pixelId: string): void;
+  (command: 'track', eventName: string, parameters?: Record<string, unknown>): void;
+  (command: 'trackCustom', eventName: string, parameters?: Record<string, unknown>): void;
+}
+
+declare global {
+  interface Window {
+    fbq: FacebookPixel;
+  }
+}
+
 // Razorpay types
 interface RazorpayOptions {
   key: string;
@@ -94,8 +107,8 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     
     // Track checkout initiation with Meta Pixel
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'InitiateCheckout', {
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', {
         value: totalAmount,
         currency: 'INR',
         content_ids: ['alpha1_transformation_program'],
@@ -161,8 +174,8 @@ export default function CheckoutPage() {
           console.log('Payment successful:', response);
           
           // Track successful payment with Meta Pixel
-          if (typeof window !== 'undefined' && (window as any).fbq) {
-            (window as any).fbq('track', 'Purchase', {
+          if (typeof window !== 'undefined' && window.fbq) {
+            window.fbq('track', 'Purchase', {
               value: totalAmount,
               currency: 'INR',
               content_ids: ['alpha1_transformation_program'],

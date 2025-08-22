@@ -1,5 +1,18 @@
 'use client';
 
+// Facebook Pixel types
+interface FacebookPixel {
+  (command: 'init', pixelId: string): void;
+  (command: 'track', eventName: string, parameters?: Record<string, unknown>): void;
+  (command: 'trackCustom', eventName: string, parameters?: Record<string, unknown>): void;
+}
+
+declare global {
+  interface Window {
+    fbq: FacebookPixel;
+  }
+}
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { 
@@ -165,8 +178,8 @@ export default function Home() {
               href="/checkout" 
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                if (typeof window !== 'undefined' && (window as any).fbq) {
-                  (window as any).fbq('track', 'Lead', {
+                if (typeof window !== 'undefined' && window.fbq) {
+                  window.fbq('track', 'Lead', {
                     content_name: 'Hero CTA Click',
                     content_category: 'Transformation Program'
                   });
@@ -470,8 +483,8 @@ export default function Home() {
                   href="/checkout" 
                   onClick={() => {
                     // Track pricing CTA click with Meta Pixel
-                    if (typeof window !== 'undefined' && (window as any).fbq) {
-                      (window as any).fbq('track', 'Lead', {
+                    if (typeof window !== 'undefined' && window.fbq) {
+                      window.fbq('track', 'Lead', {
                         content_name: 'Pricing CTA Click',
                         content_category: 'Transformation Program',
                         value: 2299,
@@ -547,8 +560,8 @@ export default function Home() {
               href="/checkout" 
               onClick={() => {
                 // Track final CTA click with Meta Pixel
-                if (typeof window !== 'undefined' && (window as any).fbq) {
-                  (window as any).fbq('track', 'Lead', {
+                if (typeof window !== 'undefined' && window.fbq) {
+                  window.fbq('track', 'Lead', {
                     content_name: 'Final CTA Click',
                     content_category: 'Transformation Program',
                     value: 2299,
