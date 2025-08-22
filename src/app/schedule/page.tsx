@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, CheckCircle, ArrowRight, Users } from 'lucide-react';
 
@@ -21,6 +21,41 @@ export default function SchedulePage() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [isBooking, setIsBooking] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState<{[key: string]: boolean}>({});
+  const [loadingSlots, setLoadingSlots] = useState(true);
+
+  // Fetch booked slots when component mounts
+  useEffect(() => {
+    fetchBookedSlots();
+  }, []);
+
+  // Fetch booked slots from database
+  const fetchBookedSlots = async () => {
+    try {
+      setLoadingSlots(true);
+      const response = await fetch('/api/sessions');
+      if (response.ok) {
+        const data = await response.json();
+        const booked: {[key: string]: boolean} = {};
+        
+        if (data.data) {
+          data.data.forEach((session: any) => {
+            if (session.status === 'scheduled') {
+              const slotKey = `${session.scheduled_date}-${session.scheduled_time}`;
+              booked[slotKey] = true;
+            }
+          });
+        }
+        
+        setBookedSlots(booked);
+        console.log('Booked slots loaded:', booked);
+      }
+    } catch (error) {
+      console.error('Error fetching booked slots:', error);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
 
   // Generate next 7 days with available time slots (excluding today and Sundays)
   const generateAvailableSlots = (): DaySlot[] => {
@@ -56,14 +91,17 @@ export default function SchedulePage() {
         year: 'numeric'
       });
 
-      // Check if this date is already booked by checking database
-      // For now, we'll show all slots as available, but in production
-      // this should check against actual bookings
-      const slots: TimeSlot[] = timeSlots.map((time, index) => ({
-        id: `${dayOffset}-${index}`,
-        time,
-        available: true // All slots available for now
-      }));
+      // Check real-time availability against booked slots
+      const slots: TimeSlot[] = timeSlots.map((time, index) => {
+        const slotKey = `${dateString}-${time}`;
+        const isBooked = bookedSlots[slotKey] || false;
+        
+        return {
+          id: `${dayOffset}-${index}`,
+          time,
+          available: !isBooked
+        };
+      });
 
       days.push({
         date: dateString,
@@ -85,6 +123,14 @@ export default function SchedulePage() {
   };
 
   const handleTimeSelect = (time: string) => {
+    const slotKey = `${selectedDate}-${time}`;
+    const isBooked = bookedSlots[slotKey] || false;
+    
+    if (isBooked) {
+      alert('This time slot is already booked. Please choose a different time.');
+      return;
+    }
+    
     setSelectedTime(time);
   };
 
@@ -135,6 +181,8 @@ export default function SchedulePage() {
       if (response.ok) {
         setIsBooked(true);
         console.log('Session booked successfully');
+        // Refresh booked slots after successful booking
+        fetchBookedSlots();
       } else {
         const errorData = await response.json();
         console.error('Session booking failed:', errorData);
@@ -203,6 +251,13 @@ export default function SchedulePage() {
             <p className="text-gray-400 text-lg">
               Choose your preferred time for your 1-on-1 transformation consultation
             </p>
+            <button
+              onClick={fetchBookedSlots}
+              disabled={loadingSlots}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingSlots ? 'Loading...' : 'Refresh Availability'}
+            </button>
           </motion.div>
         </div>
       </header>

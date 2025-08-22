@@ -74,6 +74,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if the time slot is already booked
+    const { data: existingSession, error: slotError } = await supabase
+      .from('sessions')
+      .select('id, customer_id, scheduled_date, scheduled_time')
+      .eq('scheduled_date', scheduled_date)
+      .eq('scheduled_time', scheduled_time)
+      .eq('status', 'scheduled')
+      .single();
+
+    if (existingSession) {
+      console.log('Time slot already booked:', { scheduled_date, scheduled_time, existingSession });
+      return NextResponse.json(
+        { error: `This time slot (${scheduled_date} at ${scheduled_time}) is already booked. Please choose a different time.` },
+        { status: 409 }
+      );
+    }
+
+    if (slotError && slotError.code !== 'PGRST116') { // PGRST116 = no rows returned (slot available)
+      console.log('Error checking slot availability:', slotError);
+      return NextResponse.json(
+        { error: `Error checking slot availability: ${slotError.message}` },
+        { status: 500 }
+      );
+    }
+
     // Create session in database
     console.log('Attempting to create session with data:', {
       customer_id,
