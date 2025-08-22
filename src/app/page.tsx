@@ -163,6 +163,15 @@ export default function Home() {
           >
             <Link 
               href="/checkout" 
+              onClick={() => {
+                // Track CTA click with Meta Pixel
+                if (typeof window !== 'undefined' && (window as any).fbq) {
+                  (window as any).fbq('track', 'Lead', {
+                    content_name: 'Hero CTA Click',
+                    content_category: 'Transformation Program'
+                  });
+                }
+              }}
               className="group relative bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-10 py-4 rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20"
             >
               <span className="relative z-10">Start Your Transformation</span>
@@ -459,6 +468,17 @@ export default function Home() {
               <div className="text-center">
                 <Link 
                   href="/checkout" 
+                  onClick={() => {
+                    // Track pricing CTA click with Meta Pixel
+                    if (typeof window !== 'undefined' && (window as any).fbq) {
+                      (window as any).fbq('track', 'Lead', {
+                        content_name: 'Pricing CTA Click',
+                        content_category: 'Transformation Program',
+                        value: 2299,
+                        currency: 'INR'
+                      });
+                    }
+                  }}
                   className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20"
                 >
                   <span className="relative z-10">Transform Now</span>
@@ -525,6 +545,17 @@ export default function Home() {
             </p>
             <Link 
               href="/checkout" 
+              onClick={() => {
+                // Track final CTA click with Meta Pixel
+                if (typeof window !== 'undefined' && (window as any).fbq) {
+                  (window as any).fbq('track', 'Lead', {
+                    content_name: 'Final CTA Click',
+                    content_category: 'Transformation Program',
+                    value: 2299,
+                    currency: 'INR'
+                  });
+                }
+              }}
               className="group relative inline-flex items-center gap-3 bg-white/90 backdrop-blur-xl text-blue-600 px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30"
             >
               <span className="relative z-10">Start Your Alpha1 Transformation Today</span>

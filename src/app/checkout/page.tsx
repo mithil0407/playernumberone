@@ -93,6 +93,17 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsProcessing(true);
     
+    // Track checkout initiation with Meta Pixel
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        value: totalAmount,
+        currency: 'INR',
+        content_ids: ['alpha1_transformation_program'],
+        content_type: 'product',
+        content_name: 'Alpha1 Transformation Program'
+      });
+    }
+    
     try {
       // Load Razorpay script
       const scriptLoaded = await loadRazorpayScript();
@@ -148,6 +159,18 @@ export default function CheckoutPage() {
         },
         handler: function (response: RazorpayResponse) {
           console.log('Payment successful:', response);
+          
+          // Track successful payment with Meta Pixel
+          if (typeof window !== 'undefined' && (window as any).fbq) {
+            (window as any).fbq('track', 'Purchase', {
+              value: totalAmount,
+              currency: 'INR',
+              content_ids: ['alpha1_transformation_program'],
+              content_type: 'product',
+              content_name: 'Alpha1 Transformation Program'
+            });
+          }
+          
           // Redirect to success page with payment details
           window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`;
         },
