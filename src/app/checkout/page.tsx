@@ -173,6 +173,12 @@ export default function CheckoutPage() {
         handler: function (response: RazorpayResponse) {
           console.log('Payment successful:', response);
           
+          // Store customer and order IDs for session booking
+          if (paymentData.customer && paymentData.order) {
+            localStorage.setItem('customerId', paymentData.customer.id);
+            localStorage.setItem('orderId', paymentData.order.id);
+          }
+          
           // Track successful payment with Meta Pixel
           if (typeof window !== 'undefined' && window.fbq) {
             window.fbq('track', 'Purchase', {

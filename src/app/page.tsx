@@ -640,9 +640,6 @@ export default function Home() {
                 <li>
                   <Link href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
                 </li>
-                <li>
-                  <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">Admin Dashboard</Link>
-                </li>
               </ul>
             </div>
           </div>

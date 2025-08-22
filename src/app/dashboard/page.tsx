@@ -28,7 +28,6 @@ interface Customer {
 interface Order {
   id: string;
   customer_id: string;
-  customer_email: string;
   amount: number;
   add_on: boolean;
   status: 'pending' | 'completed' | 'failed' | 'paid';
@@ -125,8 +124,9 @@ export default function DashboardPage() {
   };
 
   const filteredOrders = data.orders.filter(order => {
+    const customer = data.customers.find(c => c.id === order.customer_id);
     const matchesSearch = 
-      order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.razorpay_order_id?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
@@ -312,7 +312,7 @@ export default function DashboardPage() {
                             {customer?.name || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {order.customer_email || customer?.email}
+                            {customer?.email || 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500">
                             {customer?.phone || 'N/A'}

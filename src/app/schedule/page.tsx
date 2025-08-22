@@ -93,11 +93,45 @@ export default function SchedulePage() {
     
     setIsBooking(true);
     
-    // Simulate booking process
-    setTimeout(() => {
+    try {
+      // Get customer ID from localStorage (set during checkout)
+      const customerId = localStorage.getItem('customerId');
+      const orderId = localStorage.getItem('orderId');
+      
+      if (!customerId || !orderId) {
+        alert('Please complete payment first before booking a session.');
+        setIsBooking(false);
+        return;
+      }
+      
+      // Create session in database
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer_id: customerId,
+          order_id: orderId,
+          scheduled_date: selectedDate,
+          scheduled_time: selectedTime,
+          status: 'scheduled'
+        }),
+      });
+      
+      if (response.ok) {
+        setIsBooked(true);
+        console.log('Session booked successfully');
+      } else {
+        const error = await response.json();
+        alert(`Failed to book session: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error booking session:', error);
+      alert('Failed to book session. Please try again.');
+    } finally {
       setIsBooking(false);
-      setIsBooked(true);
-    }, 2000);
+    }
   };
 
   if (isBooked) {

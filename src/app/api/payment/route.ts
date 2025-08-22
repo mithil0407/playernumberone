@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCustomer, saveOrder } from '@/lib/supabase';
+import { saveCustomer, saveOrder, supabase } from '@/lib/supabase';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       });
       customerId = customer.id!;
 
-      // Save order to database
+      // Save order to database with temporary ID first
       const order = await saveOrder({
         customer_id: customer.id!,
         amount,
@@ -86,13 +86,14 @@ export async function POST(request: NextRequest) {
 
       // Update database with Razorpay order ID
       try {
-        await saveOrder({
-          customer_id: customerId,
-          amount,
-          add_on: addOn,
-          status: 'pending',
-          razorpay_order_id: razorpayOrder.id
-        });
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ razorpay_order_id: razorpayOrder.id })
+          .eq('id', dbOrderId);
+        
+        if (updateError) {
+          console.log('Failed to update order with Razorpay ID:', updateError);
+        }
       } catch (error) {
         console.log('Failed to update order with Razorpay ID:', error);
       }
@@ -106,9 +107,16 @@ export async function POST(request: NextRequest) {
         currency: 'INR',
         key: process.env.RAZORPAY_KEY_ID,
         customer: {
+          id: customerId,
           name,
           email,
           contact: phone,
+        },
+        order: {
+          id: dbOrderId,
+          amount,
+          add_on: addOn,
+          status: 'pending'
         },
         notes: {
           service: 'Alpha1 Transformation Program',

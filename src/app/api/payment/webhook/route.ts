@@ -126,14 +126,14 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
       .single();
 
     if (existingOrder) {
-      // Update existing order
+      // Update existing order - match your actual schema
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           status: 'completed',
           razorpay_payment_id: payment.id,
           payment_method: method,
-          amount: amount / 100
+          amount: Math.round(amount / 100) // Convert to integer as per your schema
         })
         .eq('razorpay_order_id', order_id);
 
@@ -192,7 +192,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
         status: 'completed',
         razorpay_payment_id: payment.id,
         payment_method: method,
-        amount: amount / 100
+        amount: Math.round(amount / 100) // Convert to integer as per your schema
       })
       .eq('razorpay_order_id', order_id);
 
@@ -218,7 +218,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
         status: 'paid',
         razorpay_payment_id: payment.id,
         payment_method: payment.method,
-        amount: order.amount / 100
+        amount: Math.round(order.amount / 100) // Convert to integer as per your schema
       })
       .eq('razorpay_order_id', order.id);
 
