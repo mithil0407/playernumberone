@@ -177,6 +177,12 @@ export default function CheckoutPage() {
           if (paymentData.customer && paymentData.order) {
             localStorage.setItem('customerId', paymentData.customer.id);
             localStorage.setItem('orderId', paymentData.order.id);
+            console.log('Stored in localStorage:', {
+              customerId: paymentData.customer.id,
+              orderId: paymentData.order.id
+            });
+          } else {
+            console.error('Missing customer or order data:', paymentData);
           }
           
           // Track successful payment with Meta Pixel

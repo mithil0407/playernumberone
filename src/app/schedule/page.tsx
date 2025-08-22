@@ -98,11 +98,24 @@ export default function SchedulePage() {
       const customerId = localStorage.getItem('customerId');
       const orderId = localStorage.getItem('orderId');
       
+      console.log('localStorage data:', {
+        customerId,
+        orderId,
+        allKeys: Object.keys(localStorage)
+      });
+      
       if (!customerId || !orderId) {
-        alert('Please complete payment first before booking a session.');
+        alert('Please complete payment first before booking a session. Customer ID: ' + customerId + ', Order ID: ' + orderId);
         setIsBooking(false);
         return;
       }
+      
+      console.log('Attempting to book session with:', {
+        customer_id: customerId,
+        order_id: orderId,
+        scheduled_date: selectedDate,
+        scheduled_time: selectedTime
+      });
       
       // Create session in database
       const response = await fetch('/api/sessions', {
@@ -123,8 +136,9 @@ export default function SchedulePage() {
         setIsBooked(true);
         console.log('Session booked successfully');
       } else {
-        const error = await response.json();
-        alert(`Failed to book session: ${error.message}`);
+        const errorData = await response.json();
+        console.error('Session booking failed:', errorData);
+        alert(`Failed to book session: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error booking session:', error);

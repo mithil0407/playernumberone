@@ -3,12 +3,16 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { customer_id, order_id, scheduled_date, scheduled_time, status } = await request.json();
+    const body = await request.json();
+    console.log('Sessions API received:', body);
+    
+    const { customer_id, order_id, scheduled_date, scheduled_time, status } = body;
 
     // Validate required fields
     if (!customer_id || !order_id || !scheduled_date || !scheduled_time) {
+      console.log('Missing fields:', { customer_id, order_id, scheduled_date, scheduled_time });
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: `Missing required fields: customer_id=${!!customer_id}, order_id=${!!order_id}, scheduled_date=${!!scheduled_date}, scheduled_time=${!!scheduled_time}` },
         { status: 400 }
       );
     }
