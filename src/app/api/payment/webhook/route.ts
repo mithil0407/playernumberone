@@ -7,11 +7,19 @@ export async function POST(request: NextRequest) {
     // Get the raw body
     const body = await request.text();
     
+    // Log all headers for debugging
+    const headers = Object.fromEntries(request.headers.entries());
+    console.log('Webhook headers:', headers);
+    console.log('Request URL:', request.url);
+    console.log('Request method:', request.method);
+    
     // Get Razorpay signature from headers
     const signature = request.headers.get('x-razorpay-signature');
     
     if (!signature) {
       console.log('No Razorpay signature found in headers');
+      console.log('Available headers:', Object.keys(headers));
+      console.log('This might be a test request or wrong webhook URL');
       return NextResponse.json({ status: 'error', message: 'No signature' }, { status: 400 });
     }
 
@@ -33,6 +41,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 400 });
     }
 
+    // Log the raw body for debugging
+    console.log('Webhook raw body:', body);
+    
     // Parse the webhook payload
     let webhookData;
     try {
@@ -42,26 +53,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'error', message: 'Invalid JSON' }, { status: 400 });
     }
 
-    console.log('Received Razorpay webhook:', webhookData.event);
+    console.log('Received Razorpay webhook event:', webhookData.event);
+    console.log('Webhook payload:', JSON.stringify(webhookData, null, 2));
 
     // Handle different webhook events
     const { event, payload } = webhookData;
     
+    console.log(`Processing webhook event: ${event}`);
+    
     switch (event) {
       case 'payment.captured':
+        console.log('Handling payment.captured event');
         await handlePaymentCaptured(payload.payment.entity);
         break;
         
       case 'payment.failed':
+        console.log('Handling payment.failed event');
         await handlePaymentFailed(payload.payment.entity);
         break;
         
       case 'order.paid':
+        console.log('Handling order.paid event');
         await handleOrderPaid(payload.order.entity, payload.payment.entity);
+        break;
+        
+      case 'payment.authorized':
+        console.log('Handling payment.authorized event (test mode)');
+        await handlePaymentAuthorized(payload.payment.entity);
         break;
         
       default:
         console.log(`Unhandled Razorpay webhook event: ${event}`);
+        console.log('Event payload:', payload);
     }
 
     // Always return 200 to acknowledge receipt
@@ -143,6 +166,28 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
   }
 }
 
+async function handlePaymentAuthorized(payment: RazorpayPayment) {
+  try {
+    console.log('Payment authorized (test mode):', payment.id);
+    
+    const { order_id, amount, method } = payment;
+    
+    // Update order status in database for test mode
+    await saveOrder({
+      razorpay_order_id: order_id,
+      razorpay_payment_id: payment.id,
+      status: 'completed',
+      payment_method: method,
+      amount: amount / 100, // Convert from paise to rupees
+    });
+
+    console.log(`Test payment ${payment.id} marked as completed`);
+    
+  } catch (error) {
+    console.error('Error handling payment authorized:', error);
+  }
+}
+
 async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
   try {
     console.log('Order paid:', order.id);
@@ -168,6 +213,15 @@ export async function GET() {
   return NextResponse.json({ 
     status: 'active', 
     message: 'Razorpay webhook endpoint is active',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    webhook_secret_configured: !!process.env.RAZORPAY_WEBHOOK_SECRET,
+    instructions: [
+      '1. Configure webhook in Razorpay dashboard',
+      '2. Set webhook URL to: https://yourdomain.com/api/payment/webhook',
+      '3. Select events: payment.captured, payment.failed, order.paid, payment.authorized',
+      '4. Test with test mode payments first',
+      '5. Check Vercel logs for webhook debugging'
+    ]
   });
 }

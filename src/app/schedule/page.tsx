@@ -22,7 +22,7 @@ export default function SchedulePage() {
   const [isBooking, setIsBooking] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
 
-  // Generate next 7 days with available time slots
+  // Generate next 7 days with available time slots (excluding today and Sundays)
   const generateAvailableSlots = (): DaySlot[] => {
     const days: DaySlot[] = [];
     const timeSlots = [
@@ -32,20 +32,37 @@ export default function SchedulePage() {
       '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM'
     ];
 
-    for (let i = 0; i < 7; i++) {
+    let dayOffset = 1; // Start from tomorrow
+    
+    for (let i = 0; i < 14; i++) { // Generate more days to account for Sundays
       const date = new Date();
-      date.setDate(date.getDate() + i);
+      date.setDate(date.getDate() + dayOffset);
+      
+      const dayOfWeek = date.getDay();
+      
+      // Skip Sundays (0) and today
+      if (dayOfWeek === 0) {
+        dayOffset++;
+        continue;
+      }
+      
+      // Only show 7 available days
+      if (days.length >= 7) break;
       
       const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
       const dateString = date.toLocaleDateString('en-US', { 
         month: 'short', 
-        day: 'numeric' 
+        day: 'numeric',
+        year: 'numeric'
       });
 
+      // Check if this date is already booked by checking database
+      // For now, we'll show all slots as available, but in production
+      // this should check against actual bookings
       const slots: TimeSlot[] = timeSlots.map((time, index) => ({
-        id: `${i}-${index}`,
+        id: `${dayOffset}-${index}`,
         time,
-        available: Math.random() > 0.3 // 70% availability for demo
+        available: true // All slots available for now
       }));
 
       days.push({
@@ -53,6 +70,8 @@ export default function SchedulePage() {
         day: dayName,
         slots
       });
+      
+      dayOffset++;
     }
 
     return days;
