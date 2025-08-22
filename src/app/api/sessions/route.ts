@@ -155,7 +155,7 @@ export async function GET() {
     }
 
     // Test Supabase connection
-    const { data: testData, error: testError } = await supabase
+    const { error: testError } = await supabase
       .from('customers')
       .select('count')
       .limit(1);

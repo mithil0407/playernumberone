@@ -4,16 +4,11 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, 
-  Calendar, 
-  Clock, 
-  Mail, 
-  Phone, 
   DollarSign, 
   CheckCircle, 
   XCircle, 
   AlertCircle,
   RefreshCw,
-  Download,
   Search
 } from 'lucide-react';
 

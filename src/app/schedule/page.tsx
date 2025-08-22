@@ -39,7 +39,7 @@ export default function SchedulePage() {
         const booked: {[key: string]: boolean} = {};
         
         if (data.data) {
-          data.data.forEach((session: any) => {
+          data.data.forEach((session: { status: string; scheduled_date: string; scheduled_time: string }) => {
             if (session.status === 'scheduled') {
               const slotKey = `${session.scheduled_date}-${session.scheduled_time}`;
               booked[slotKey] = true;

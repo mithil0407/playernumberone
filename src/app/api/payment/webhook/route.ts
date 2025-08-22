@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { saveOrder, supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,7 +119,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
     const { order_id, amount, method } = payment;
     
     // First try to find the order by razorpay_order_id
-    const { data: existingOrder, error: findError } = await supabase
+    const { data: existingOrder } = await supabase
       .from('orders')
       .select('*')
       .eq('razorpay_order_id', order_id)
