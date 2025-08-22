@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { saveOrder } from '@/lib/supabase';
+import { saveOrder, supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -118,21 +118,33 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
     
     const { order_id, amount, method } = payment;
     
-    // Update order status in database
-    await saveOrder({
-      razorpay_order_id: order_id,
-      razorpay_payment_id: payment.id,
-      status: 'completed',
-      payment_method: method,
-      amount: amount / 100, // Convert from paise to rupees
-    });
+    // First try to find the order by razorpay_order_id
+    const { data: existingOrder, error: findError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('razorpay_order_id', order_id)
+      .single();
 
-    console.log(`Order ${order_id} marked as completed`);
-    
-    // Here you can add additional logic like:
-    // - Send confirmation email
-    // - Trigger fulfillment process
-    // - Update customer records
+    if (existingOrder) {
+      // Update existing order
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          status: 'completed',
+          razorpay_payment_id: payment.id,
+          payment_method: method,
+          amount: amount / 100
+        })
+        .eq('razorpay_order_id', order_id);
+
+      if (updateError) {
+        console.error('Error updating order:', updateError);
+      } else {
+        console.log(`Order ${order_id} marked as completed`);
+      }
+    } else {
+      console.log(`Order with razorpay_order_id ${order_id} not found`);
+    }
     
   } catch (error) {
     console.error('Error handling payment captured:', error);
@@ -146,20 +158,21 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
     const { order_id, error_code, error_description } = payment;
     
     // Update order status in database
-    await saveOrder({
-      razorpay_order_id: order_id,
-      razorpay_payment_id: payment.id,
-      status: 'failed',
-      error_code,
-      error_description,
-    });
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        status: 'failed',
+        razorpay_payment_id: payment.id,
+        error_code,
+        error_description
+      })
+      .eq('razorpay_order_id', order_id);
 
-    console.log(`Order ${order_id} marked as failed`);
-    
-    // Here you can add additional logic like:
-    // - Send failure notification email
-    // - Log for analytics
-    // - Trigger retry mechanisms
+    if (updateError) {
+      console.error('Error updating failed order:', updateError);
+    } else {
+      console.log(`Order ${order_id} marked as failed`);
+    }
     
   } catch (error) {
     console.error('Error handling payment failed:', error);
@@ -173,15 +186,21 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
     const { order_id, amount, method } = payment;
     
     // Update order status in database for test mode
-    await saveOrder({
-      razorpay_order_id: order_id,
-      razorpay_payment_id: payment.id,
-      status: 'completed',
-      payment_method: method,
-      amount: amount / 100, // Convert from paise to rupees
-    });
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        status: 'completed',
+        razorpay_payment_id: payment.id,
+        payment_method: method,
+        amount: amount / 100
+      })
+      .eq('razorpay_order_id', order_id);
 
-    console.log(`Test payment ${payment.id} marked as completed`);
+    if (updateError) {
+      console.error('Error updating test payment order:', updateError);
+    } else {
+      console.log(`Test payment ${payment.id} marked as completed`);
+    }
     
   } catch (error) {
     console.error('Error handling payment authorized:', error);
@@ -193,15 +212,21 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
     console.log('Order paid:', order.id);
     
     // Update order status in database
-    await saveOrder({
-      razorpay_order_id: order.id,
-      razorpay_payment_id: payment.id,
-      status: 'paid',
-      payment_method: payment.method,
-      amount: order.amount / 100, // Convert from paise to rupees
-    });
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        status: 'paid',
+        razorpay_payment_id: payment.id,
+        payment_method: payment.method,
+        amount: order.amount / 100
+      })
+      .eq('razorpay_order_id', order.id);
 
-    console.log(`Order ${order.id} marked as paid`);
+    if (updateError) {
+      console.error('Error updating paid order:', updateError);
+    } else {
+      console.log(`Order ${order.id} marked as paid`);
+    }
     
   } catch (error) {
     console.error('Error handling order paid:', error);
