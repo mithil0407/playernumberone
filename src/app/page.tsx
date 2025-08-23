@@ -486,7 +486,8 @@ export default function Home() {
                 </p>
               </div>
               
-              <div className="text-center">
+              <div className="text-center space-y-4">
+                {/* Mobile-Optimized CTA */}
                 <Link 
                   href="/checkout" 
                   onClick={() => {
@@ -500,13 +501,32 @@ export default function Home() {
                       });
                     }
                   }}
-                  className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20"
+                  className="group relative w-full max-w-sm mx-auto bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20 flex items-center justify-center gap-3"
                 >
-                  <span className="relative z-10">Transform Now</span>
+                  <span className="relative z-10">🚀 Transform Now</span>
                   <ArrowRight className="w-6 h-6 relative z-10" />
                   {/* Glass shine effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 </Link>
+                
+                {/* Mobile Urgency & Trust */}
+                <div className="max-w-sm mx-auto space-y-3">
+                  <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
+                    <p className="text-red-700 font-semibold text-lg">⏰ Only 20 slots left this week!</p>
+                    <p className="text-red-600 text-sm">Don't miss your transformation opportunity</p>
+                  </div>
+                  
+                                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
+                     <div className="flex items-center gap-2">
+                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                       <span>7-Day Money Back</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                       <span>200+ Success Stories</span>
+                     </div>
+                   </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -564,32 +584,85 @@ export default function Home() {
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
               Join 200+ men who have already transformed their confidence and attractiveness
             </p>
+            <div className="space-y-6">
+              <Link 
+                href="/checkout" 
+                onClick={() => {
+                  // Track final CTA click with Meta Pixel
+                  if (typeof window !== 'undefined' && window.fbq) {
+                    window.fbq('track', 'Lead', {
+                      content_name: 'Final CTA Click',
+                      content_category: 'Transformation Program',
+                      value: 2299,
+                      currency: 'INR'
+                    });
+                  }
+                }}
+                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-blue-600 px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3"
+              >
+                <span className="relative z-10">🚀 Start Your Alpha1 Transformation Today</span>
+                {/* Glass shine effect */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </Link>
+              
+              {/* Mobile Trust & Urgency */}
+              <div className="max-w-sm mx-auto space-y-3">
+                <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-4 text-center">
+                  <p className="text-white font-semibold text-lg">⏰ Limited Time Offer</p>
+                  <p className="text-white/80 text-sm">Only 20 slots available this week</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/80">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <span>7-Day Money Back</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <span>200+ Success Stories</span>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm opacity-75 text-center">₹2,299 • Limited slots available</p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Mobile Sticky CTA - High Conversion */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="text-center">
+                <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
+                <p className="text-lg font-bold text-gray-900">₹2,299</p>
+                <p className="text-xs text-gray-600">Complete Transformation</p>
+              </div>
+            </div>
             <Link 
               href="/checkout" 
               onClick={() => {
-                // Track final CTA click with Meta Pixel
                 if (typeof window !== 'undefined' && window.fbq) {
                   window.fbq('track', 'Lead', {
-                    content_name: 'Final CTA Click',
-                    content_category: 'Transformation Program',
+                    content_name: 'Mobile Sticky CTA',
+                    content_category: 'Mobile Conversion',
                     value: 2299,
                     currency: 'INR'
                   });
                 }
               }}
-              className="group relative inline-flex items-center gap-3 bg-white/90 backdrop-blur-xl text-blue-600 px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-full text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <span className="relative z-10">Start Your Alpha1 Transformation Today</span>
-              {/* Glass shine effect */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              🚀 Start Now
             </Link>
-            <p className="mt-4 text-sm opacity-75">₹2,299 • Limited slots available</p>
-          </motion.div>
+          </div>
         </div>
-      </section>
+      </div>
 
       {/* Footer */}
-      <footer className="py-12 px-4 bg-gray-900 text-white">
+      <footer className="py-12 px-4 bg-gray-900 text-white pb-24 md:pb-12">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
