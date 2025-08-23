@@ -260,24 +260,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Problem Section */}
-      <section className="py-20 px-4 bg-gray-50">
+      {/* Problem Section - Mobile Optimized */}
+      <section className="py-12 md:py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
               Sound Familiar?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               Many men struggle with these exact same issues. You&apos;re not alone.
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {[
               { icon: Users, text: 'Tired of being ignored by women?', color: 'red' },
               { icon: Clock, text: 'Still dressing like a college kid?', color: 'orange' },
@@ -288,18 +288,18 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-1"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-1"
               >
-                <div className={`w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center ${
+                <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${
                   item.color === 'red' ? 'bg-red-100' :
                   item.color === 'orange' ? 'bg-orange-100' : 'bg-blue-100'
                 }`}>
-                  <item.icon className={`w-8 h-8 ${
+                  <item.icon className={`w-6 h-6 md:w-8 md:h-8 ${
                     item.color === 'red' ? 'text-red-600' :
                     item.color === 'orange' ? 'text-orange-600' : 'text-blue-600'
                   }`} />
                 </div>
-                <p className="text-xl font-semibold text-gray-900 text-center">{item.text}</p>
+                <p className="text-lg md:text-xl font-semibold text-gray-900 text-center leading-tight">{item.text}</p>
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -309,37 +309,37 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 px-4">
+      {/* Features Section - Mobile Optimized */}
+      <section id="features" className="py-12 md:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
               What You&apos;ll Get in Alpha1
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               A complete transformation program designed specifically for Indian men
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
               >
-                <div className="w-16 h-16 mb-6 bg-gradient-to-r from-blue-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                  <feature.icon className="w-8 h-8 text-blue-600" />
+                <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-blue-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                  <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-bold mb-4 text-gray-900">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">{feature.title}</h3>
+                <p className="text-sm md:text-base text-gray-600 leading-relaxed">{feature.description}</p>
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -351,14 +351,14 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-8 border border-blue-200 text-center"
+            className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-4 md:p-8 border border-blue-200 text-center"
           >
             <div className="max-w-3xl mx-auto">
-              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-white" />
+              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                <Users className="w-6 h-6 md:w-8 h-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-gray-900">1-on-1 with Expert Female Stylist</h3>
-              <p className="text-lg text-gray-700">
+              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">1-on-1 with Expert Female Stylist</h3>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
                 Work directly with our experienced female stylists who understand what women find attractive. 
                 Get personalized advice based on 5+ years of transforming Indian men.
               </p>
@@ -367,53 +367,53 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="py-20 px-4 bg-gray-50">
+      {/* Testimonials - Mobile Optimized */}
+      <section id="testimonials" className="py-12 md:py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
               Real Stories, Real Results
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
               See how Alpha1 has transformed the lives of men just like you
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
               >
-                <div className="w-full aspect-square mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
+                <div className="w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
                   <LazyImage
                     src={testimonial.image}
                     alt={testimonial.name}
-                    width={400}
-                    height={400}
+                    width={300}
+                    height={300}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                   />
                 </div>
-                <blockquote className="text-gray-700 mb-6 italic text-lg leading-relaxed">
+                <blockquote className="text-gray-700 mb-4 md:mb-6 italic text-base md:text-lg leading-relaxed">
                   &ldquo;{testimonial.story}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500/90 to-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
-                    <span className="text-white font-bold text-sm">{testimonial.name.charAt(0)}</span>
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-500/90 to-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
+                    <span className="text-white font-bold text-xs md:text-sm">{testimonial.name.charAt(0)}</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                    <p className="text-sm text-gray-500">Alpha1 Graduate</p>
+                    <p className="font-semibold text-gray-900 text-sm md:text-base">{testimonial.name}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Alpha1 Graduate</p>
                   </div>
                 </div>
                 
@@ -425,19 +425,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
+      {/* Pricing Section - Mobile Optimized */}
+      <section id="pricing" className="py-12 md:py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
               Limited Time Offer
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               Transform your life with our comprehensive 1-on-1 program
             </p>
           </motion.div>
@@ -448,39 +448,39 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
           >
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
-              <h3 className="text-3xl font-bold mb-2">Alpha1 Full Program</h3>
-              <div className="text-6xl font-bold mb-2">₹2,299</div>
-              <p className="text-xl opacity-90">Complete 1-on-1 transformation</p>
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-8 text-white text-center">
+              <h3 className="text-2xl md:text-3xl font-bold mb-2">Alpha1 Full Program</h3>
+              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,299</div>
+              <p className="text-lg md:text-xl opacity-90">Complete 1-on-1 transformation</p>
             </div>
             
-            <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="p-4 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
                 <div>
-                  <h4 className="text-xl font-bold mb-4 text-gray-900">What&apos;s Included:</h4>
-                  <ul className="space-y-3">
+                  <h4 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900">What&apos;s Included:</h4>
+                  <ul className="space-y-2 md:space-y-3">
                     {features.map((feature, index) => (
                       <li key={index} className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-700">{feature.title}</span>
+                        <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-500 flex-shrink-0" />
+                        <span className="text-gray-700 text-sm md:text-base">{feature.title}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 md:p-6 border border-yellow-200">
                   <div className="text-center">
-                    <div className="text-2xl mb-2">🎁</div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-2">Special Add-on</h4>
-                    <p className="text-gray-700 mb-3">Before & After AI Visualisation</p>
-                    <div className="text-3xl font-bold text-orange-600 mb-1">₹199</div>
-                    <p className="text-sm text-orange-600 font-medium">(Limited time only)</p>
+                    <div className="text-xl md:text-2xl mb-2">🎁</div>
+                    <h4 className="text-base md:text-lg font-bold text-gray-900 mb-2">Special Add-on</h4>
+                    <p className="text-gray-700 mb-3 text-sm md:text-base">Before & After AI Visualisation</p>
+                    <div className="text-2xl md:text-3xl font-bold text-orange-600 mb-1">₹199</div>
+                    <p className="text-xs md:text-sm text-orange-600 font-medium">(Limited time only)</p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8 text-center">
-                <p className="text-red-700 font-semibold text-lg">
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 md:p-6 mb-6 md:mb-8 text-center">
+                <p className="text-red-700 font-semibold text-base md:text-lg">
                   ⚠️ Only 20 slots available per week
                 </p>
               </div>
@@ -532,34 +532,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="py-20 px-4 bg-gray-50">
+      {/* FAQ Section - Mobile Optimized */}
+      <section id="faq" className="py-12 md:py-20 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               Everything you need to know about Alpha1
             </p>
           </motion.div>
           
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {faqs.map((faq, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500"
               >
-                <h3 className="text-xl font-bold mb-4 text-gray-900">{faq.question}</h3>
-                <p className="text-gray-600 text-lg leading-relaxed">{faq.answer}</p>
+                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">{faq.question}</h3>
+                <p className="text-gray-600 text-sm md:text-lg leading-relaxed">{faq.answer}</p>
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -569,18 +569,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
+      {/* Final CTA Section - Mobile Optimized */}
+      <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
               Ready to Transform Your Life?
             </h2>
-            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4">
               Join 200+ men who have already transformed their confidence and attractiveness
             </p>
             <div className="space-y-6">

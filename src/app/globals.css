@@ -219,6 +219,59 @@ img {
     border-radius: 50%;
     flex-shrink: 0;
   }
+  
+  /* Mobile section optimizations */
+  .mobile-optimized {
+    padding: 48px 16px;
+  }
+  
+  .mobile-optimized h2 {
+    font-size: 28px;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  
+  .mobile-optimized p {
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  
+  .mobile-optimized .card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .mobile-optimized .icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+  
+  /* Mobile image optimization */
+  .mobile-optimized img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+  }
+  
+  /* Mobile grid optimization */
+  .mobile-optimized .grid {
+    gap: 16px;
+  }
+  
+  /* Mobile text optimization */
+  .mobile-optimized .text-large {
+    font-size: 18px;
+  }
+  
+  .mobile-optimized .text-medium {
+    font-size: 16px;
+  }
+  
+  .mobile-optimized .text-small {
+    font-size: 14px;
+  }
 }
 
 /* Image hover effects */
