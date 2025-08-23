@@ -46,3 +46,4 @@ CREATE POLICY "Allow public insert on sessions" ON sessions FOR INSERT WITH CHEC
 CREATE POLICY "Allow public read on customers" ON customers FOR SELECT USING (true);
 CREATE POLICY "Allow public read on orders" ON orders FOR SELECT USING (true);
 CREATE POLICY "Allow public read on sessions" ON sessions FOR SELECT USING (true);
+

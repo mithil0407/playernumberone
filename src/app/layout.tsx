@@ -83,6 +83,7 @@ export default function RootLayout({
             style={{ display: 'none' }}
             src="https://www.facebook.com/tr?id=1373360484073939&ev=PageView&noscript=1"
             alt=""
+            loading="lazy"
           />
         </noscript>
         {children}

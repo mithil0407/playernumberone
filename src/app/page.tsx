@@ -15,6 +15,8 @@ declare global {
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
+import LazyImage from '../components/LazyImage';
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -235,11 +237,14 @@ export default function Home() {
                   {/* Glassmorphism Card */}
                   <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-2">
                     <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
-                      <img
+                      <LazyImage
                         src={item.image}
                         alt={item.title}
+                        width={400}
+                        height={400}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                     </div>
@@ -390,11 +395,14 @@ export default function Home() {
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
               >
                 <div className="w-full aspect-square mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
-                  <img
+                  <LazyImage
                     src={testimonial.image}
                     alt={testimonial.name}
+                    width={400}
+                    height={400}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                   />
                 </div>
                 <blockquote className="text-gray-700 mb-6 italic text-lg leading-relaxed">
