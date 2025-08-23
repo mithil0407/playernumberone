@@ -52,7 +52,7 @@ export default function CountdownTimer({ endTime, className = '' }: CountdownTim
     >
       <div className="text-center mb-4">
         <h3 className="text-lg md:text-xl font-bold mb-2">⏰ OFFER ENDS IN</h3>
-        <p className="text-sm opacity-90">Don't miss your transformation opportunity!</p>
+        <p className="text-sm opacity-90">Don&apos;t miss your transformation opportunity!</p>
       </div>
       
       <div className="grid grid-cols-4 gap-2 md:gap-4">

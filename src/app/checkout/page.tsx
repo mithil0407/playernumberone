@@ -249,7 +249,7 @@ export default function CheckoutPage() {
             <span className="font-bold text-lg">⏰ LIMITED TIME OFFER</span>
             <Clock className="w-5 h-5 animate-pulse" />
           </div>
-          <p className="text-sm opacity-90">This exclusive pricing ends soon. Don't miss your transformation opportunity!</p>
+          <p className="text-sm opacity-90">This exclusive pricing ends soon. Don&apos;t miss your transformation opportunity!</p>
         </div>
 
         {/* Mobile Sticky CTA - High Conversion */}
@@ -393,7 +393,7 @@ export default function CheckoutPage() {
                     <span className="font-semibold text-green-800">7-Day Money-Back Guarantee</span>
                   </div>
                   <p className="text-sm text-green-700">
-                    If you're not 100% satisfied with your transformation plan, we'll refund your money. No questions asked.
+                    If you&apos;re not 100% satisfied with your transformation plan, we&apos;ll refund your money. No questions asked.
                   </p>
                 </div>
 
@@ -406,10 +406,10 @@ export default function CheckoutPage() {
                 {/* Final Urgency Message */}
                 <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 text-center">
                   <p className="text-orange-800 font-semibold text-sm mb-1">
-                    ⚡ Don't Wait - Transformations Take Time!
+                    ⚡ Don&apos;t Wait - Transformations Take Time!
                   </p>
                   <p className="text-orange-700 text-xs">
-                    Every day you wait is another day you're missing opportunities. Start your transformation today!
+                    Every day you wait is another day you&apos;re missing opportunities. Start your transformation today!
                   </p>
                 </div>
               </form>
@@ -521,95 +521,11 @@ export default function CheckoutPage() {
               <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <div className="text-center">
                   <p className="text-blue-800 text-sm italic mb-2">
-                    "Alpha1 completely changed my life. I went from being invisible to getting compliments everywhere I go!"
+                    &ldquo;Alpha1 completely changed my life. I went from being invisible to getting compliments everywhere I go!&rdquo;
                   </p>
                   <p className="text-blue-700 text-xs font-medium">- Rahul S., Delhi</p>
                 </div>
               </div>
-            </div>
-          </div>
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    placeholder="Enter your email address"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="addOn"
-                    name="addOn"
-                    checked={formData.addOn}
-                    onChange={handleInputChange}
-                    className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                  />
-                  <label htmlFor="addOn" className="text-sm text-gray-700">
-                    Add AI Before/After Visualization (+₹499) - <span className="text-blue-600 font-medium">Recommended</span>
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 px-8 rounded-full hover:shadow-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none group"
-                >
-                  <span className="relative z-10">
-                    {isProcessing ? 'Processing...' : `Pay ₹${totalAmount.toLocaleString()} Securely`}
-                  </span>
-                  
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                </button>
-              </form>
-
-              <p className="text-xs text-gray-600 mt-4 text-center">
-                By proceeding, you agree to our{' '}
-                <Link href="/terms" className="text-blue-600 hover:underline">terms of service</Link>,{' '}
-                <Link href="/privacy-policy" className="text-blue-600 hover:underline">privacy policy</Link>, and{' '}
-                <Link href="/shipping" className="text-blue-600 hover:underline">shipping policy</Link>.
-              </p>
             </div>
           </div>
 
