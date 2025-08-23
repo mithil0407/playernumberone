@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import Image from "next/image";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -77,13 +78,13 @@ export default function RootLayout({
           `}
         </Script>
         <noscript>
-          <img 
+          <Image 
             height="1" 
             width="1" 
             style={{ display: 'none' }}
             src="https://www.facebook.com/tr?id=1373360484073939&ev=PageView&noscript=1"
             alt=""
-            loading="lazy"
+            priority
           />
         </noscript>
         {children}

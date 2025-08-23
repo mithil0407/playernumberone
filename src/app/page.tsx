@@ -15,7 +15,6 @@ declare global {
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import LazyImage from '../components/LazyImage';
 import { 
   CheckCircle, 
@@ -513,7 +512,7 @@ export default function Home() {
                 <div className="max-w-sm mx-auto space-y-3">
                   <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
                     <p className="text-red-700 font-semibold text-lg">⏰ Only 20 slots left this week!</p>
-                    <p className="text-red-600 text-sm">Don't miss your transformation opportunity</p>
+                    <p className="text-red-600 text-sm">Don&apos;t miss your transformation opportunity</p>
                   </div>
                   
                                      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
