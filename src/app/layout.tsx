@@ -47,6 +47,20 @@ export default function RootLayout({
           `}
         </Script>
 
+        {/* Google Tag (gtag.js) - G-94CVS6PDTF */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-94CVS6PDTF"
+          strategy="afterInteractive"
+        />
+        <Script id="google-tag-old" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-94CVS6PDTF');
+          `}
+        </Script>
+
         {/* Meta Pixel */}
         <Script id="meta-pixel" strategy="afterInteractive">
           {`
