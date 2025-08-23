@@ -241,7 +241,7 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 pb-24 md:pb-8">
+      <div className="max-w-6xl mx-auto px-4 py-4 md:py-6 pb-24 md:pb-8">
         {/* Urgency Banner - Top of Page */}
         <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-2xl mb-6 text-center shadow-lg">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -280,35 +280,22 @@ export default function CheckoutPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">1</div>
-              <span className="text-sm text-gray-600">Landing Page</span>
-            </div>
-            <div className="w-8 h-1 bg-gray-300 rounded-full"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">2</div>
-              <span className="text-sm text-gray-600">Checkout</span>
-            </div>
-            <div className="w-8 h-1 bg-gray-300 rounded-full"></div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-500 text-sm font-bold">3</div>
-              <span className="text-sm text-gray-500">Transformation</span>
-            </div>
-          </div>
 
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-6 text-gray-900">
+
+
+
+
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center mb-4 text-gray-900">
             Complete Your Alpha1 Transformation
           </h1>
 
           {/* High-Conversion Layout: Form First */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Checkout Form - Primary Focus */}
-            <div className="xl:col-span-2 bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/20">
-              <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-900">Your Information</h2>
+            <div className="xl:col-span-2 bg-white/80 backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-white/20">
+              <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900">Your Information</h2>
               
-              <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+              <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
                 {/* Name Field */}
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -321,7 +308,7 @@ export default function CheckoutPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -338,7 +325,7 @@ export default function CheckoutPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -355,7 +342,7 @@ export default function CheckoutPage() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your phone number"
                   />
                 </div>
@@ -381,7 +368,7 @@ export default function CheckoutPage() {
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg text-lg font-bold hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
                   {isProcessing ? 'Processing...' : `Pay ₹${totalAmount.toLocaleString()} & Start Your Transformation`}
                 </button>

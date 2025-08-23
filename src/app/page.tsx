@@ -213,7 +213,7 @@ export default function Home() {
             className="mb-8"
           >
             <CountdownTimer 
-              endTime={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)} // 7 days from now
+              endTime={new Date(Date.now() + 5 * 60 * 1000)} // 5 minutes from now
               className="w-full max-w-md mx-auto"
             />
           </motion.div>
@@ -248,14 +248,14 @@ export default function Home() {
                   className="group relative"
                 >
                   {/* Glassmorphism Card */}
-                  <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-2">
+                  <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1">
                     <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
                       <LazyImage
                         src={item.image}
                         alt={item.title}
                         width={400}
                         height={400}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
                         placeholder="blur"
                         blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                       />
@@ -302,7 +302,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500 hover:-translate-y-1"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
               >
                 <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${
                   item.color === 'red' ? 'bg-red-100' :
@@ -347,7 +347,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-blue-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
                   <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
@@ -405,7 +405,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 hover:-translate-y-2 transition-all duration-500"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 <div className="w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
                   <LazyImage
@@ -413,7 +413,7 @@ export default function Home() {
                     alt={testimonial.name}
                     width={300}
                     height={300}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                   />
@@ -570,7 +570,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 hover:shadow-3xl hover:bg-white/80 transition-all duration-500"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300"
               >
                 <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">{faq.question}</h3>
                 <p className="text-gray-600 text-sm md:text-lg leading-relaxed">{faq.answer}</p>

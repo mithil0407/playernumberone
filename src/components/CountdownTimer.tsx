@@ -10,8 +10,6 @@ interface CountdownTimerProps {
 
 export default function CountdownTimer({ endTime, className = '' }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
     minutes: 0,
     seconds: 0
   });
@@ -23,13 +21,11 @@ export default function CountdownTimer({ endTime, className = '' }: CountdownTim
 
       if (distance > 0) {
         setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000)
         });
       } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setTimeLeft({ minutes: 0, seconds: 0 });
       }
     }, 1000);
 
@@ -37,8 +33,6 @@ export default function CountdownTimer({ endTime, className = '' }: CountdownTim
   }, [endTime]);
 
   const timeUnits = [
-    { value: timeLeft.days, label: 'Days' },
-    { value: timeLeft.hours, label: 'Hours' },
     { value: timeLeft.minutes, label: 'Minutes' },
     { value: timeLeft.seconds, label: 'Seconds' }
   ];
@@ -55,7 +49,7 @@ export default function CountdownTimer({ endTime, className = '' }: CountdownTim
         <p className="text-sm opacity-90">Don&apos;t miss your transformation opportunity!</p>
       </div>
       
-      <div className="grid grid-cols-4 gap-2 md:gap-4">
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
         {timeUnits.map((unit, index) => (
           <motion.div
             key={unit.label}
@@ -74,7 +68,7 @@ export default function CountdownTimer({ endTime, className = '' }: CountdownTim
       
       <div className="text-center mt-4">
         <p className="text-sm opacity-90">
-          🔥 Limited Time: Only 20 slots available this week
+          🔥 Only 5 minutes left to secure your transformation!
         </p>
       </div>
     </motion.div>
