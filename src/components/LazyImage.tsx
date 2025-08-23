@@ -27,8 +27,8 @@ export default function LazyImage({
 }: LazyImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { elementRef, isIntersecting } = useIntersectionObserver({
-    threshold: 0.1,
-    rootMargin: '100px',
+    threshold: 0.05,
+    rootMargin: '50px',
   });
 
   const handleImageLoad = () => {
