@@ -223,11 +223,15 @@ export default function CheckoutPage() {
     }
   };
 
-  const basePrice = 2299;
-  const addOnPrice = 199;
-  const totalAmount = formData.addOn ? basePrice + addOnPrice : basePrice;
-  const originalPrice = 5999;
-  const savings = originalPrice - totalAmount;
+  const [selectedPlan, setSelectedPlan] = useState('advanced'); // 'basic' or 'advanced'
+  const [showUpsellPopup, setShowUpsellPopup] = useState(false);
+  
+  const basicPrice = 799;
+  const advancedPrice = 2500;
+  const upsellPrice = 1999;
+  const totalAmount = selectedPlan === 'basic' ? basicPrice : advancedPrice;
+  const originalValue = 27000;
+  const savings = originalValue - totalAmount;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900">
@@ -260,7 +264,7 @@ export default function CheckoutPage() {
                 <div className="text-center">
                   <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
                   <p className="text-lg font-bold text-gray-900">₹{totalAmount.toLocaleString()}</p>
-                  <p className="text-xs text-gray-600">Complete Transformation</p>
+                  <p className="text-xs text-gray-600">{selectedPlan === 'basic' ? 'PDF Guide' : 'Complete Transformation'}</p>
                 </div>
               </div>
               <button
@@ -269,11 +273,70 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-full text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
               >
-                {isProcessing ? 'Processing...' : '🚀 Start Now'}
+                {isProcessing ? 'Processing...' : selectedPlan === 'basic' ? '📖 Get PDF' : '🚀 Start Now'}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Conditional Upsell Popup */}
+        {showUpsellPopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">🚀 Upgrade to Full Program?</h3>
+                <p className="text-gray-600">Get everything in Basic PLUS personalized coaching!</p>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-purple-900">Advanced Full Program</span>
+                    <span className="text-lg font-bold text-purple-600">₹{upsellPrice}</span>
+                  </div>
+                  <p className="text-sm text-purple-700">Only ₹{upsellPrice - basicPrice} extra!</p>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✅</span>
+                    <span>1-on-1 Personalized Consultation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✅</span>
+                    <span>Personalized Gym & Fitness Plan</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✅</span>
+                    <span>AI Before & After Visualization</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✅</span>
+                    <span>Advanced Grooming & Style</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowUpsellPopup(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Keep Basic Plan
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedPlan('advanced');
+                    setShowUpsellPopup(false);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -347,22 +410,7 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                {/* Add-on Checkbox */}
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="addOn"
-                      checked={formData.addOn}
-                      onChange={handleInputChange}
-                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <div>
-                      <span className="font-semibold text-blue-900">Add AI Before/After Visualization</span>
-                      <p className="text-sm text-blue-700 mt-1">See your transformation before you start - only ₹199 extra!</p>
-                    </div>
-                  </label>
-                </div>
+
 
                 {/* Submit Button */}
                 <button
@@ -370,7 +418,7 @@ export default function CheckoutPage() {
                   disabled={isProcessing}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg text-lg font-bold hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
-                  {isProcessing ? 'Processing...' : `Pay ₹${totalAmount.toLocaleString()} & Start Your Transformation`}
+                  {isProcessing ? 'Processing...' : selectedPlan === 'basic' ? `Pay ₹${totalAmount.toLocaleString()} & Get PDF Guide` : `Pay ₹${totalAmount.toLocaleString()} & Start Full Transformation`}
                 </button>
 
                 {/* Money-Back Guarantee */}
@@ -406,25 +454,55 @@ export default function CheckoutPage() {
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 shadow-2xl border border-blue-200/50">
               <h2 className="text-xl font-bold mb-6 text-gray-900">Order Summary</h2>
               
-              {/* Pricing Psychology - Original vs Discounted */}
+              {/* Plan Selection */}
               <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
-                <div className="text-center mb-4">
-                  <div className="text-3xl font-bold text-gray-900 mb-2">₹{totalAmount.toLocaleString()}</div>
-                  <div className="text-sm text-gray-600 mb-2">Your Special Price</div>
-                </div>
+                <h3 className="font-semibold text-gray-900 mb-4 text-center">Choose Your Plan</h3>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Original Price:</span>
-                    <span className="line-through text-gray-500">₹{originalPrice.toLocaleString()}</span>
+                {/* Basic Plan */}
+                <div className={`border-2 rounded-lg p-3 mb-3 cursor-pointer transition-all ${
+                  selectedPlan === 'basic' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => {
+                  setSelectedPlan('basic');
+                  setShowUpsellPopup(true);
+                }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">Basic Starter PDF</span>
+                    <span className="text-lg font-bold text-gray-900">₹{basicPrice}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-green-600 font-semibold">Your Savings:</span>
-                    <span className="text-green-600 font-bold">₹{savings.toLocaleString()}</span>
+                  <p className="text-sm text-gray-600">Self-paced transformation guide</p>
+                </div>
+
+                {/* Advanced Plan */}
+                <div className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
+                  selectedPlan === 'advanced' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => setSelectedPlan('advanced')}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-gray-900">Advanced Full Program</span>
+                    <span className="text-lg font-bold text-purple-600">₹{advancedPrice}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-blue-600 font-semibold">Discount:</span>
-                    <span className="text-blue-600 font-bold">{Math.round((savings / originalPrice) * 100)}% OFF</span>
+                  <p className="text-sm text-gray-600">Complete 1-on-1 transformation</p>
+                </div>
+
+                {/* Value Framing */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900 mb-1">₹{totalAmount.toLocaleString()}</div>
+                    <div className="text-sm text-gray-600 mb-2">Your Investment</div>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Full Package Value:</span>
+                      <span className="line-through text-gray-500">₹{originalValue.toLocaleString()}+</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-green-600 font-semibold">Your Savings:</span>
+                      <span className="text-green-600 font-bold">₹{savings.toLocaleString()}+</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-600 font-semibold">Discount:</span>
+                      <span className="text-blue-600 font-bold">{Math.round((savings / originalValue) * 100)}% OFF</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -433,27 +511,60 @@ export default function CheckoutPage() {
               <div className="space-y-4 mb-6">
                 <h3 className="font-semibold text-gray-900">What&apos;s Included:</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Complete 1-on-1 Transformation</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Personal Stylist Consultation</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Grooming & Style Guide</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Fitness & Confidence Plan</span>
-                  </div>
-                  {formData.addOn && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-blue-600 font-medium">+ AI Before/After Visualization</span>
-                    </div>
+                  {selectedPlan === 'basic' ? (
+                    <>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Instant Download PDF Guide</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Grooming & Skincare Routine</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Style & Outfit Recommendations</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Gym & Fitness Basics</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Communication & Confidence Hacks</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <span className="text-red-600">❌ No personal 1-on-1 consultation</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Everything in Basic PDF, PLUS:</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-600 font-medium">✅ 1-on-1 Personalized Consultation</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-600 font-medium">✅ Personalized Gym & Fitness Plan</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-600 font-medium">✅ AI Before & After Visualization</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-600 font-medium">✅ Advanced Grooming & Style</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-600 font-medium">✅ Communication & Confidence Coaching</span>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -477,10 +588,10 @@ export default function CheckoutPage() {
               {/* Urgency Message */}
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
                 <p className="text-red-700 font-semibold text-sm">
-                  ⚠️ Only 20 slots available this week
+                  ⚠️ {selectedPlan === 'basic' ? 'Limited Time PDF Offer' : 'Only 20 slots available this week'}
                 </p>
                 <p className="text-red-600 text-xs mt-1">
-                  Secure your transformation slot now!
+                  {selectedPlan === 'basic' ? 'Get your transformation guide now!' : 'Secure your transformation slot now!'}
                 </p>
                 <div className="mt-3 pt-3 border-t border-red-200">
                   <p className="text-red-600 text-xs">

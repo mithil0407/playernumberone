@@ -441,7 +441,7 @@ export default function Home() {
 
       {/* Pricing Section - Mobile Optimized */}
       <section id="pricing" className="py-12 md:py-20 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -449,13 +449,85 @@ export default function Home() {
             className="text-center mb-8 md:mb-16"
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Limited Time Offer
+              Choose Your Transformation Path
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Transform your life with our comprehensive 1-on-1 program
+              Start with our PDF guide or go all-in with personalized coaching
             </p>
           </motion.div>
 
+          {/* Basic Plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 overflow-hidden mb-8"
+          >
+            <div className="bg-gradient-to-r from-gray-600 to-gray-700 p-4 md:p-6 text-white text-center">
+              <h3 className="text-xl md:text-2xl font-bold mb-2">Basic Starter PDF</h3>
+              <div className="text-3xl md:text-5xl font-bold mb-2">₹799</div>
+              <p className="text-base md:text-lg opacity-90">Self-paced transformation guide</p>
+            </div>
+            
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+                <div>
+                  <h4 className="text-lg font-bold mb-3 text-gray-900">What&apos;s Included:</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">Instant Download PDF Guide</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">Grooming & Skincare Routine</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">Style & Outfit Recommendations</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">Gym & Fitness Basics</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">Communication & Confidence Hacks</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                  <div className="text-center">
+                    <div className="text-lg mb-2">❌</div>
+                    <h4 className="font-bold text-red-800 mb-2">No Personal Consultation</h4>
+                    <p className="text-red-700 text-sm">Self-paced transformation only</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <Link 
+                  href="/checkout" 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.fbq) {
+                      window.fbq('track', 'Lead', {
+                        content_name: 'Basic Plan CTA Click',
+                        content_category: 'PDF Guide',
+                        value: 799,
+                        currency: 'INR'
+                      });
+                    }
+                  }}
+                  className="inline-block bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-full font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-300"
+                >
+                  📖 Get PDF Guide
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Advanced Plan */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -463,9 +535,9 @@ export default function Home() {
             className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
           >
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-8 text-white text-center">
-              <h3 className="text-2xl md:text-3xl font-bold mb-2">Alpha1 Full Program</h3>
-              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,299</div>
-              <p className="text-lg md:text-xl opacity-90">Complete 1-on-1 transformation</p>
+              <h3 className="text-2xl md:text-3xl font-bold mb-2">Alpha1 Transformation</h3>
+              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,500</div>
+              <p className="text-lg md:text-xl opacity-90">Advanced Full Program</p>
             </div>
             
             <div className="p-4 md:p-8">
@@ -509,7 +581,7 @@ export default function Home() {
                       window.fbq('track', 'Lead', {
                         content_name: 'Pricing CTA Click',
                         content_category: 'Transformation Program',
-                        value: 2299,
+                        value: 2500,
                         currency: 'INR'
                       });
                     }
