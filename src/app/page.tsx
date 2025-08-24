@@ -218,6 +218,32 @@ export default function Home() {
             />
           </motion.div>
 
+          {/* Product Preview - Book Image */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="mb-12"
+          >
+            <div className="text-center">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+                What You&apos;ll Get
+              </h3>
+              <div className="relative w-32 h-40 mx-auto mb-4">
+                <LazyImage
+                  src="/book.png"
+                  alt="Alpha1 Transformation Guide Preview"
+                  width={128}
+                  height={160}
+                  className="object-contain rounded-lg shadow-xl"
+                />
+              </div>
+              <p className="text-lg text-gray-600 max-w-md mx-auto">
+                Your complete transformation guide with personalized coaching and step-by-step instructions
+              </p>
+            </div>
+          </motion.div>
+
           {/* Hero Transformations */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}

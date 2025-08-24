@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -226,6 +226,7 @@ export default function CheckoutPage() {
 
   const [selectedPlan, setSelectedPlan] = useState('advanced'); // 'basic' or 'advanced'
   const [showUpsellPopup, setShowUpsellPopup] = useState(false);
+  const [upsellTimer, setUpsellTimer] = useState(300); // 5 minutes in seconds
   
   const basicPrice = 799;
   const advancedPrice = 2500;
@@ -233,6 +234,23 @@ export default function CheckoutPage() {
   const totalAmount = selectedPlan === 'basic' ? basicPrice : advancedPrice;
   const originalValue = 27000;
   const savings = originalValue - totalAmount;
+
+  // Timer effect for upsell popup
+  useEffect(() => {
+    if (showUpsellPopup && upsellTimer > 0) {
+      const interval = setInterval(() => {
+        setUpsellTimer(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [showUpsellPopup, upsellTimer]);
+
+  // Reset timer when popup closes
+  useEffect(() => {
+    if (!showUpsellPopup) {
+      setUpsellTimer(300);
+    }
+  }, [showUpsellPopup]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900">
@@ -247,24 +265,7 @@ export default function CheckoutPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-4 md:py-6 pb-24 md:pb-8">
-        {/* Urgency Banner - Top of Page */}
-        <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-2xl mb-6 text-center shadow-lg relative">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <Clock className="w-5 h-5 animate-pulse" />
-            <span className="font-bold text-lg">⏰ LIMITED TIME OFFER</span>
-            <Clock className="w-5 h-5 animate-pulse" />
-          </div>
-          <p className="text-sm opacity-90">This exclusive pricing ends soon. Don&apos;t miss your transformation opportunity!</p>
-          
-          {/* Timer in Top Right Corner */}
-          <div className="absolute top-2 right-4 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1">
-            <div className="text-center">
-              <div className="text-xs opacity-75">Expires in</div>
-              <div className="text-lg font-bold">5:00</div>
-              <div className="text-xs opacity-75">minutes</div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Mobile Sticky CTA - High Conversion */}
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
@@ -318,7 +319,9 @@ export default function CheckoutPage() {
               <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-3 mb-4 text-center">
                 <div className="text-red-600 font-bold text-lg mb-1">⏰ LIMITED TIME OFFER!</div>
                 <div className="text-red-700 text-sm">This upgrade offer expires in:</div>
-                <div className="text-2xl font-bold text-red-600 mt-2">5:00</div>
+                <div className="text-2xl font-bold text-red-600 mt-2">
+                  {Math.floor(upsellTimer / 60)}:{(upsellTimer % 60).toString().padStart(2, '0')}
+                </div>
                 <div className="text-xs text-red-600">minutes</div>
               </div>
 
@@ -332,7 +335,10 @@ export default function CheckoutPage() {
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-purple-900 text-sm md:text-base">Advanced Full Program</span>
-                    <span className="text-lg md:text-xl font-bold text-purple-600">₹{upsellPrice}</span>
+                    <div className="text-right">
+                      <span className="text-lg md:text-xl font-bold text-purple-600">₹{upsellPrice}</span>
+                      <div className="text-sm text-gray-500 line-through">₹{advancedPrice}</div>
+                    </div>
                   </div>
                   <p className="text-xs md:text-sm text-purple-700">Only ₹{upsellPrice - basicPrice} extra!</p>
                 </div>
@@ -453,14 +459,7 @@ export default function CheckoutPage() {
 
 
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg text-lg font-bold hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
-                >
-                  {isProcessing ? 'Processing...' : selectedPlan === 'basic' ? `Pay ₹${totalAmount.toLocaleString()} & Get PDF Guide` : `Pay ₹${totalAmount.toLocaleString()} & Start Full Transformation`}
-                </button>
+
 
                 {/* Money-Back Guarantee */}
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
