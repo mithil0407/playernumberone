@@ -227,11 +227,12 @@ export default function CheckoutPage() {
   const [selectedPlan, setSelectedPlan] = useState('advanced'); // 'basic' or 'advanced'
   const [showUpsellPopup, setShowUpsellPopup] = useState(false);
   const [upsellTimer, setUpsellTimer] = useState(300); // 5 minutes in seconds
+  const [isUpsellActive, setIsUpsellActive] = useState(false); // Track if upsell is active
   
   const basicPrice = 799;
   const advancedPrice = 2500;
   const upsellPrice = 1999;
-  const totalAmount = selectedPlan === 'basic' ? basicPrice : advancedPrice;
+  const totalAmount = isUpsellActive ? upsellPrice : (selectedPlan === 'basic' ? basicPrice : advancedPrice);
   const originalValue = 27000;
   const savings = originalValue - totalAmount;
 
@@ -368,6 +369,7 @@ export default function CheckoutPage() {
                 <button
                   onClick={() => {
                     setSelectedPlan('advanced');
+                    setIsUpsellActive(true); // Activate special upsell pricing
                     setShowUpsellPopup(false);
                   }}
                   className="w-full px-4 py-3 md:py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-bold hover:from-purple-700 hover:to-blue-700 transition-all text-base md:text-lg shadow-lg hover:shadow-xl"
@@ -461,16 +463,7 @@ export default function CheckoutPage() {
 
 
 
-                {/* Money-Back Guarantee */}
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Shield className="w-5 h-5 text-green-600" />
-                    <span className="font-semibold text-green-800">7-Day Money-Back Guarantee</span>
-                  </div>
-                  <p className="text-sm text-green-700">
-                    If you&apos;re not 100% satisfied with your transformation plan, we&apos;ll refund your money. No questions asked.
-                  </p>
-                </div>
+
 
                 {/* Security Notice */}
                 <div className="text-center text-sm text-gray-600">
@@ -525,6 +518,7 @@ export default function CheckoutPage() {
                   selectedPlan === 'basic' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                 }`                } onClick={() => {
                   setSelectedPlan('basic');
+                  setIsUpsellActive(false); // Reset upsell pricing
                   // Show popup after a short delay for better UX
                   setTimeout(() => setShowUpsellPopup(true), 500);
                 }}>
@@ -538,7 +532,10 @@ export default function CheckoutPage() {
                 {/* Advanced Plan */}
                 <div className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
                   selectedPlan === 'advanced' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
-                }`} onClick={() => setSelectedPlan('advanced')}>
+                }`                } onClick={() => {
+                  setSelectedPlan('advanced');
+                  setIsUpsellActive(false); // Reset upsell pricing
+                }}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-gray-900">Advanced Full Program</span>
                     <span className="text-lg font-bold text-purple-600">₹{advancedPrice}</span>
