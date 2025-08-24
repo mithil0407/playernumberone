@@ -222,7 +222,7 @@ export default function ShippingPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
                   <div className="space-y-2">
                     <p className="text-gray-700">
-                      <strong>Email:</strong> <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a>
+                      <strong>Email:</strong> <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline">bramhaan.ai@gmail.com</a>
                     </p>
                     <p className="text-gray-700">
                       <strong>Response Time:</strong> Within 24 hours

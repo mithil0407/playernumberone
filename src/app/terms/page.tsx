@@ -228,8 +228,8 @@ export default function TermsOfServicePage() {
                   If you have any questions about these Terms, please contact us:
                 </p>
                 <div className="space-y-2">
-                  <p><strong>Email:</strong> <a href="mailto:legal@playernumberone.com" className="text-blue-600 hover:underline">legal@playernumberone.com</a></p>
-                  <p><strong>Support:</strong> <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a></p>
+                  <p><strong>Email:</strong> <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline">bramhaan.ai@gmail.com</a></p>
+                                      <p><strong>Support:</strong> <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline">bramhaan.ai@gmail.com</a></p>
                 </div>
                 <Link 
                   href="/contact"

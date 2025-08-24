@@ -227,8 +227,8 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Email Support</h3>
                       <p className="text-gray-600 mb-2">Get help with any questions or issues</p>
-                      <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline font-medium">
-                        support@playernumberone.com
+                      <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline font-medium">
+                        bramhaan.ai@gmail.com
                       </a>
                     </div>
                   </div>

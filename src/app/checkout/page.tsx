@@ -197,8 +197,14 @@ export default function CheckoutPage() {
             });
           }
           
-          // Redirect to success page with payment details
-          window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`;
+          // Redirect based on plan type
+          if (selectedPlan === 'basic') {
+            // Basic plan customers go to basic success page (PDF only)
+            window.location.href = `/checkout/basic-success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`;
+          } else {
+            // Advanced plan customers go to regular success page (with scheduling)
+            window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${response.razorpay_order_id}`;
+          }
         },
         prefill: {
           name: formData.name,
