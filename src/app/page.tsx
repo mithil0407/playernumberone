@@ -504,6 +504,20 @@ export default function Home() {
                     <p className="text-red-700 text-sm">Self-paced transformation only</p>
                   </div>
                 </div>
+                
+                {/* Book Preview */}
+                <div className="text-center mt-4">
+                  <div className="relative w-24 h-32 mx-auto mb-3">
+                    <LazyImage
+                      src="/book.png"
+                      alt="Alpha1 Transformation Guide Preview"
+                      width={96}
+                      height={128}
+                      className="object-contain rounded-lg shadow-md"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-600">PDF Guide Preview</p>
+                </div>
               </div>
               
               <div className="text-center">
@@ -562,6 +576,20 @@ export default function Home() {
                     <div className="text-2xl md:text-3xl font-bold text-orange-600 mb-1">₹199</div>
                     <p className="text-xs md:text-sm text-orange-600 font-medium">(Limited time only)</p>
                   </div>
+                </div>
+                
+                {/* Book Preview for Advanced Plan */}
+                <div className="text-center mt-4">
+                  <div className="relative w-24 h-32 mx-auto mb-3">
+                    <LazyImage
+                      src="/book.png"
+                      alt="Alpha1 Transformation Guide + Coaching"
+                      width={96}
+                      height={128}
+                      className="object-contain rounded-lg shadow-md"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-600">PDF Guide + 1-on-1 Session</p>
                 </div>
               </div>
               

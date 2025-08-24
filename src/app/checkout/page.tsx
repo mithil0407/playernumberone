@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Facebook Pixel types
 interface FacebookPixel {
@@ -282,45 +283,62 @@ export default function CheckoutPage() {
         {/* Conditional Upsell Popup */}
         {showUpsellPopup && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">🚀 Upgrade to Full Program?</h3>
-                <p className="text-gray-600">Get everything in Basic PLUS personalized coaching!</p>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="bg-white rounded-2xl p-4 md:p-6 max-w-sm md:max-w-md w-full shadow-2xl mx-4"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowUpsellPopup(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="text-center mb-4 md:mb-6">
+                <div className="text-3xl mb-2">🚀</div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Upgrade to Full Program?</h3>
+                <p className="text-sm md:text-base text-gray-600">Get everything in Basic PLUS personalized coaching!</p>
               </div>
               
-              <div className="space-y-4 mb-6">
-                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-purple-900">Advanced Full Program</span>
-                    <span className="text-lg font-bold text-purple-600">₹{upsellPrice}</span>
+                    <span className="font-semibold text-purple-900 text-sm md:text-base">Advanced Full Program</span>
+                    <span className="text-lg md:text-xl font-bold text-purple-600">₹{upsellPrice}</span>
                   </div>
-                  <p className="text-sm text-purple-700">Only ₹{upsellPrice - basicPrice} extra!</p>
+                  <p className="text-xs md:text-sm text-purple-700">Only ₹{upsellPrice - basicPrice} extra!</p>
                 </div>
                 
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-xs md:text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-green-500">✅</span>
+                    <span className="text-green-500 text-lg">✅</span>
                     <span>1-on-1 Personalized Consultation</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-green-500">✅</span>
+                    <span className="text-green-500 text-lg">✅</span>
                     <span>Personalized Gym & Fitness Plan</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-green-500">✅</span>
+                    <span className="text-green-500 text-lg">✅</span>
                     <span>AI Before & After Visualization</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-green-500">✅</span>
+                    <span className="text-green-500 text-lg">✅</span>
                     <span>Advanced Grooming & Style</span>
                   </div>
                 </div>
               </div>
               
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
                 <button
                   onClick={() => setShowUpsellPopup(false)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm md:text-base"
                 >
                   Keep Basic Plan
                 </button>
@@ -329,12 +347,12 @@ export default function CheckoutPage() {
                     setSelectedPlan('advanced');
                     setShowUpsellPopup(false);
                   }}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all"
+                  className="flex-1 px-3 md:px-4 py-2 md:py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all text-sm md:text-base"
                 >
                   Upgrade Now
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -461,15 +479,30 @@ export default function CheckoutPage() {
                 {/* Basic Plan */}
                 <div className={`border-2 rounded-lg p-3 mb-3 cursor-pointer transition-all ${
                   selectedPlan === 'basic' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                }`} onClick={() => {
+                }`                } onClick={() => {
                   setSelectedPlan('basic');
-                  setShowUpsellPopup(true);
+                  // Don't show popup immediately, let them see the selection first
                 }}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-gray-900">Basic Starter PDF</span>
                     <span className="text-lg font-bold text-gray-900">₹{basicPrice}</span>
                   </div>
                   <p className="text-sm text-gray-600">Self-paced transformation guide</p>
+                  
+                  {/* Subtle Upsell Button */}
+                  {selectedPlan === 'basic' && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowUpsellPopup(true);
+                        }}
+                        className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium hover:bg-purple-50 py-2 px-3 rounded-lg transition-all duration-200"
+                      >
+                        💡 Want personalized coaching? Upgrade to Advanced →
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Advanced Plan */}
@@ -507,6 +540,28 @@ export default function CheckoutPage() {
                 </div>
               </div>
               
+              {/* Product Visualization */}
+              <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 text-center">What You&apos;ll Get</h3>
+                <div className="text-center">
+                  <div className="relative w-32 h-40 mx-auto mb-4">
+                    <Image
+                      src="/book.png"
+                      alt="Alpha1 Transformation Guide"
+                      fill
+                      className="object-contain rounded-lg shadow-lg"
+                      sizes="(max-width: 768px) 128px, 128px"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {selectedPlan === 'basic' 
+                      ? 'Complete PDF transformation guide' 
+                      : 'Complete PDF guide + 1-on-1 coaching session'
+                    }
+                  </p>
+                </div>
+              </div>
+
               {/* What's Included */}
               <div className="space-y-4 mb-6">
                 <h3 className="font-semibold text-gray-900">What&apos;s Included:</h3>
