@@ -248,13 +248,22 @@ export default function CheckoutPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-4 md:py-6 pb-24 md:pb-8">
         {/* Urgency Banner - Top of Page */}
-        <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-2xl mb-6 text-center shadow-lg">
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-2xl mb-6 text-center shadow-lg relative">
           <div className="flex items-center justify-center gap-3 mb-2">
             <Clock className="w-5 h-5 animate-pulse" />
             <span className="font-bold text-lg">⏰ LIMITED TIME OFFER</span>
             <Clock className="w-5 h-5 animate-pulse" />
           </div>
           <p className="text-sm opacity-90">This exclusive pricing ends soon. Don&apos;t miss your transformation opportunity!</p>
+          
+          {/* Timer in Top Right Corner */}
+          <div className="absolute top-2 right-4 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1">
+            <div className="text-center">
+              <div className="text-xs opacity-75">Expires in</div>
+              <div className="text-lg font-bold">5:00</div>
+              <div className="text-xs opacity-75">minutes</div>
+            </div>
+          </div>
         </div>
 
         {/* Mobile Sticky CTA - High Conversion */}
@@ -264,7 +273,12 @@ export default function CheckoutPage() {
               <div className="flex-1">
                 <div className="text-center">
                   <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
-                  <p className="text-lg font-bold text-gray-900">₹{totalAmount.toLocaleString()}</p>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <p className="text-lg font-bold text-gray-900">₹{totalAmount.toLocaleString()}</p>
+                    {selectedPlan === 'basic' && (
+                      <span className="text-xs text-gray-500 line-through">₹{basicPrice}</span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-600">{selectedPlan === 'basic' ? 'PDF Guide' : 'Complete Transformation'}</p>
                 </div>
               </div>
@@ -379,10 +393,10 @@ export default function CheckoutPage() {
             Complete Your Alpha1 Transformation
           </h1>
 
-          {/* High-Conversion Layout: Form First */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+          {/* Mobile-First Layout: Form → Order Summary → Pay Button */}
+          <div className="space-y-6 lg:space-y-8">
             {/* Checkout Form - Primary Focus */}
-            <div className="xl:col-span-2 bg-white/80 backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-white/20">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 md:p-6 shadow-2xl border border-white/20">
               <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900">Your Information</h2>
               
               <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4">
@@ -619,6 +633,31 @@ export default function CheckoutPage() {
                     </>
                   )}
                 </div>
+              </div>
+
+              {/* Mobile Pay Button - Prominent */}
+              <div className="md:hidden">
+                <button
+                  type="submit"
+                  form="checkout-form"
+                  disabled={isProcessing}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                >
+                  {isProcessing ? 'Processing...' : selectedPlan === 'basic' ? '📖 Get PDF Guide - ₹799' : '🚀 Start Full Transformation - ₹2,500'}
+                </button>
+                <p className="text-xs text-gray-500 text-center mt-2">Complete your information above to proceed</p>
+              </div>
+
+              {/* Desktop Pay Button */}
+              <div className="hidden md:block">
+                <button
+                  type="submit"
+                  form="checkout-form"
+                  disabled={isProcessing}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-xl text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                >
+                  {isProcessing ? 'Processing...' : selectedPlan === 'basic' ? '📖 Get PDF Guide - ₹799' : '🚀 Start Full Transformation - ₹2,500'}
+                </button>
               </div>
 
               {/* Trust Indicators */}
