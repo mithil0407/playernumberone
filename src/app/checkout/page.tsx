@@ -300,6 +300,14 @@ export default function CheckoutPage() {
                 </svg>
               </button>
 
+              {/* Urgency Timer */}
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-3 mb-4 text-center">
+                <div className="text-red-600 font-bold text-lg mb-1">⏰ LIMITED TIME OFFER!</div>
+                <div className="text-red-700 text-sm">This upgrade offer expires in:</div>
+                <div className="text-2xl font-bold text-red-600 mt-2">5:00</div>
+                <div className="text-xs text-red-600">minutes</div>
+              </div>
+
               <div className="text-center mb-4 md:mb-6">
                 <div className="text-3xl mb-2">🚀</div>
                 <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Upgrade to Full Program?</h3>
@@ -335,21 +343,22 @@ export default function CheckoutPage() {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-                <button
-                  onClick={() => setShowUpsellPopup(false)}
-                  className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm md:text-base"
-                >
-                  Keep Basic Plan
-                </button>
+              {/* Mobile-Optimized Buttons */}
+              <div className="space-y-3">
                 <button
                   onClick={() => {
                     setSelectedPlan('advanced');
                     setShowUpsellPopup(false);
                   }}
-                  className="flex-1 px-3 md:px-4 py-2 md:py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-blue-700 transition-all text-sm md:text-base"
+                  className="w-full px-4 py-3 md:py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-bold hover:from-purple-700 hover:to-blue-700 transition-all text-base md:text-lg shadow-lg hover:shadow-xl"
                 >
-                  Upgrade Now
+                  🚀 Upgrade Now - Save ₹{upsellPrice - basicPrice}!
+                </button>
+                <button
+                  onClick={() => setShowUpsellPopup(false)}
+                  className="w-full px-4 py-2 md:py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm md:text-base"
+                >
+                  No thanks, keep Basic Plan
                 </button>
               </div>
             </motion.div>
@@ -472,6 +481,28 @@ export default function CheckoutPage() {
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 shadow-2xl border border-blue-200/50">
               <h2 className="text-xl font-bold mb-6 text-gray-900">Order Summary</h2>
               
+              {/* Product Visualization */}
+              <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 text-center">What You&apos;ll Get</h3>
+                <div className="text-center">
+                  <div className="relative w-48 h-32 mx-auto mb-4">
+                    <Image
+                      src="/book.png"
+                      alt="Alpha1 Transformation Guide"
+                      fill
+                      className="object-contain rounded-lg"
+                      sizes="(max-width: 768px) 192px, 128px"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {selectedPlan === 'basic' 
+                      ? 'Complete PDF transformation guide' 
+                      : 'Complete PDF guide + 1-on-1 coaching session'
+                    }
+                  </p>
+                </div>
+              </div>
+              
               {/* Plan Selection */}
               <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
                 <h3 className="font-semibold text-gray-900 mb-4 text-center">Choose Your Plan</h3>
@@ -481,28 +512,14 @@ export default function CheckoutPage() {
                   selectedPlan === 'basic' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                 }`                } onClick={() => {
                   setSelectedPlan('basic');
-                  // Don't show popup immediately, let them see the selection first
+                  // Show popup after a short delay for better UX
+                  setTimeout(() => setShowUpsellPopup(true), 500);
                 }}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-gray-900">Basic Starter PDF</span>
                     <span className="text-lg font-bold text-gray-900">₹{basicPrice}</span>
                   </div>
                   <p className="text-sm text-gray-600">Self-paced transformation guide</p>
-                  
-                  {/* Subtle Upsell Button */}
-                  {selectedPlan === 'basic' && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowUpsellPopup(true);
-                        }}
-                        className="w-full text-sm text-purple-600 hover:text-purple-700 font-medium hover:bg-purple-50 py-2 px-3 rounded-lg transition-all duration-200"
-                      >
-                        💡 Want personalized coaching? Upgrade to Advanced →
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* Advanced Plan */}
@@ -540,27 +557,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               
-              {/* Product Visualization */}
-              <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-4 text-center">What You&apos;ll Get</h3>
-                <div className="text-center">
-                  <div className="relative w-32 h-40 mx-auto mb-4">
-                    <Image
-                      src="/book.png"
-                      alt="Alpha1 Transformation Guide"
-                      fill
-                      className="object-contain rounded-lg shadow-lg"
-                      sizes="(max-width: 768px) 128px, 128px"
-                    />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {selectedPlan === 'basic' 
-                      ? 'Complete PDF transformation guide' 
-                      : 'Complete PDF guide + 1-on-1 coaching session'
-                    }
-                  </p>
-                </div>
-              </div>
+
 
               {/* What's Included */}
               <div className="space-y-4 mb-6">
