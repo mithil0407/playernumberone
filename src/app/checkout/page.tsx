@@ -230,7 +230,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const [selectedPlan, setSelectedPlan] = useState('advanced'); // 'basic' or 'advanced'
+  const [selectedPlan, setSelectedPlan] = useState('basic'); // 'basic' or 'advanced'
   const [showUpsellPopup, setShowUpsellPopup] = useState(false);
   const [upsellTimer, setUpsellTimer] = useState(300); // 5 minutes in seconds
   const [isUpsellActive, setIsUpsellActive] = useState(false); // Track if upsell is active
