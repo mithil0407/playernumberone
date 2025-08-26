@@ -5,10 +5,10 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, addOn, amount } = body;
+    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, consultation_price, dating_guide_price } = body;
 
     // Validate required fields
-    if (!name || !email || !phone || !amount) {
+    if (!customer_name || !customer_email || !customer_phone || !amount) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
     
     try {
       const customer = await saveCustomer({
-        name,
-        email,
-        phone
+        name: customer_name,
+        email: customer_email,
+        phone: customer_phone
       });
       customerId = customer.id!;
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       const order = await saveOrder({
         customer_id: customer.id!,
         amount,
-        add_on: addOn,
+        add_on: add_ons.consultation || add_ons.dating_guide, // Check if any add-ons are selected
         status: 'pending',
         razorpay_order_id: orderId
       });
@@ -68,11 +68,16 @@ export async function POST(request: NextRequest) {
         currency: 'INR',
         receipt: orderId,
         notes: {
-          customer_name: name,
-          customer_email: email,
-          customer_phone: phone,
-          add_on: addOn ? 'true' : 'false',
-          service: 'Alpha1 Transformation Program',
+          customer_name: customer_name,
+          customer_email: customer_email,
+          customer_phone: customer_phone,
+          base_product: base_product,
+          consultation_addon: add_ons.consultation ? 'true' : 'false',
+          dating_guide_addon: add_ons.dating_guide ? 'true' : 'false',
+          total_base_price: total_base_price,
+          consultation_price: consultation_price,
+          dating_guide_price: dating_guide_price,
+          service: 'Alpha1 Grooming Guide',
           db_order_id: dbOrderId,
           customer_id: customerId
         },
@@ -108,19 +113,21 @@ export async function POST(request: NextRequest) {
         key: process.env.RAZORPAY_KEY_ID,
         customer: {
           id: customerId,
-          name,
-          email,
-          contact: phone,
+          name: customer_name,
+          email: customer_email,
+          contact: customer_phone,
         },
         order: {
           id: dbOrderId,
           amount,
-          add_on: addOn,
+          add_on: add_ons.consultation || add_ons.dating_guide,
           status: 'pending'
         },
         notes: {
-          service: 'Alpha1 Transformation Program',
-          add_on: addOn,
+          service: 'Alpha1 Grooming Guide',
+          base_product: base_product,
+          consultation_addon: add_ons.consultation,
+          dating_guide_addon: add_ons.dating_guide,
         },
         customer_id: customerId,
         db_order_id: dbOrderId

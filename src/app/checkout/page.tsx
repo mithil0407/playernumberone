@@ -6,6 +6,41 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 
+// Razorpay types
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayResponse) => void;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  theme: {
+    color: string;
+  };
+}
+
+interface RazorpayInstance {
+  open(): void;
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+  }
+}
+
 interface FormData {
   firstName: string;
   email: string;
@@ -116,19 +151,51 @@ export default function CheckoutPage() {
 
       const responseData = await response.json();
       
-      // Track purchase event
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Purchase', {
-          value: totalAmount,
-          currency: 'INR',
-          content_ids: ['alpha1_grooming_guide'],
-          content_type: 'product',
-          content_name: 'Alpha1 Grooming Guide'
-        });
+      if (!responseData.success) {
+        throw new Error(responseData.error || 'Payment initialization failed');
       }
       
-      // Redirect to success page
-      window.location.href = `/checkout/success?payment_id=${responseData.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}`;
+      // Load Razorpay script
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => {
+        // Initialize Razorpay payment
+        const options = {
+          key: responseData.key,
+          amount: responseData.amount,
+          currency: responseData.currency,
+          name: 'PlayerNumberOne Alpha1',
+          description: 'Alpha1 Grooming Guide',
+          order_id: responseData.razorpay_order_id,
+          handler: function (response: RazorpayResponse) {
+            // Payment successful
+            if (typeof window !== 'undefined' && window.fbq) {
+              window.fbq('track', 'Purchase', {
+                value: totalAmount,
+                currency: 'INR',
+                content_ids: ['alpha1_grooming_guide'],
+                content_type: 'product',
+                content_name: 'Alpha1 Grooming Guide'
+              });
+            }
+            
+            // Redirect to success page
+            window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}`;
+          },
+          prefill: {
+            name: formData.firstName,
+            email: formData.email,
+            contact: formData.phone
+          },
+          theme: {
+            color: '#3B82F6'
+          }
+        };
+        
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      };
+      document.body.appendChild(script);
       
     } catch (error) {
       console.error('Payment error:', error);
