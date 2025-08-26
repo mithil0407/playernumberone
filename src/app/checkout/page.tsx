@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users } from 'lucide-react';
 
 interface FormData {
@@ -227,15 +228,6 @@ export default function CheckoutPage() {
                 <p className="text-xs text-gray-500 mt-1">Enter exactly 10 digits</p>
               </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
-              >
-                {isProcessing ? 'Processing...' : `Pay ₹${totalAmount.toLocaleString()} & Get Started`}
-              </button>
-
               {/* Security Notice */}
               <div className="text-center text-sm text-gray-600">
                 <p>🔒 Your payment is secure and encrypted</p>
@@ -343,7 +335,21 @@ export default function CheckoutPage() {
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h3>
               
-              <div className="space-y-3 mb-4">
+              {/* Product Image */}
+              <div className="text-center mb-6">
+                <div className="relative w-48 h-32 mx-auto mb-4">
+                  <Image
+                    src="/book.png"
+                    alt="Alpha1 Grooming Guide"
+                    fill
+                    className="object-contain rounded-lg"
+                    sizes="(max-width: 768px) 192px, 128px"
+                  />
+                </div>
+                <p className="text-sm text-gray-600">Your Alpha1 Grooming Guide</p>
+              </div>
+              
+              <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Alpha1 Grooming Guide</span>
                   <span className="font-semibold">₹{totalBasePrice}</span>
@@ -370,6 +376,16 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+              
+              {/* Payment Button */}
+              <button
+                type="submit"
+                form="checkout-form"
+                disabled={isProcessing}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-4"
+              >
+                {isProcessing ? 'Processing...' : '🚀 Start My Transformation Now'}
+              </button>
               
               <div className="text-center text-sm text-gray-600">
                 <p>Pay via Razorpay – 100% Safe & Secure</p>
