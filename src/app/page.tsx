@@ -477,21 +477,21 @@ export default function Home() {
               Choose Your Transformation Path
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Start with our PDF guide or go all-in with personalized coaching
+              Your Alpha1 Transformation Package
             </p>
           </motion.div>
 
-          {/* Basic Plan */}
+          {/* Main Product */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 overflow-hidden mb-8"
           >
-            <div className="bg-gradient-to-r from-gray-600 to-gray-700 p-4 md:p-6 text-white text-center">
-              <h3 className="text-xl md:text-2xl font-bold mb-2">Basic Starter PDF</h3>
-              <div className="text-3xl md:text-5xl font-bold mb-2">₹799</div>
-              <p className="text-base md:text-lg opacity-90">Self-paced transformation guide</p>
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-6 text-white text-center">
+              <h3 className="text-xl md:text-2xl font-bold mb-2">Alpha1 Grooming Guide</h3>
+              <div className="text-3xl md:text-5xl font-bold mb-2">₹499 + GST</div>
+              <p className="text-base md:text-lg opacity-90">Complete men&apos;s grooming transformation</p>
             </div>
             
             <div className="p-4 md:p-6">
@@ -501,32 +501,32 @@ export default function Home() {
                   <ul className="space-y-2">
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Instant Download PDF Guide</span>
+                      <span className="text-gray-700 text-sm">Complete grooming routine for hair, skin & face</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Grooming & Skincare Routine</span>
+                      <span className="text-gray-700 text-sm">Perfume & accessory guide to always smell premium</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Style & Outfit Recommendations</span>
+                      <span className="text-gray-700 text-sm">Style foundations that make you look sharp instantly</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Gym & Fitness Basics</span>
+                      <span className="text-gray-700 text-sm">Avoid rookie mistakes that make men look cheap</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Communication & Confidence Hacks</span>
+                      <span className="text-gray-700 text-sm">Quick, practical hacks to look like a high-value man</span>
                     </li>
                   </ul>
                 </div>
                 
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
                   <div className="text-center">
-                    <div className="text-lg mb-2">❌</div>
-                    <h4 className="font-bold text-red-800 mb-2">No Personal Consultation</h4>
-                    <p className="text-red-700 text-sm">Self-paced transformation only</p>
+                    <div className="text-lg mb-2">✅</div>
+                    <h4 className="font-bold text-blue-800 mb-2">Instant Access</h4>
+                    <p className="text-blue-700 text-sm">Download & start implementing today</p>
                   </div>
                 </div>
                 
@@ -535,13 +535,13 @@ export default function Home() {
                   <div className="relative w-24 h-32 mx-auto mb-3">
                     <LazyImage
                       src="/book.png"
-                      alt="Alpha1 Transformation Guide Preview"
+                      alt="Alpha1 Grooming Guide Preview"
                       width={96}
                       height={128}
                       className="object-contain rounded-lg shadow-md"
                     />
                   </div>
-                  <p className="text-xs text-gray-600">PDF Guide Preview</p>
+                  <p className="text-xs text-gray-600">Grooming Guide Preview</p>
                 </div>
               </div>
               
@@ -551,16 +551,16 @@ export default function Home() {
                   onClick={() => {
                     if (typeof window !== 'undefined' && window.fbq) {
                       window.fbq('track', 'Lead', {
-                        content_name: 'Basic Plan CTA Click',
-                        content_category: 'PDF Guide',
-                        value: 799,
+                        content_name: 'Grooming Guide CTA Click',
+                        content_category: 'Grooming Guide',
+                        value: 499,
                         currency: 'INR'
                       });
                     }
                   }}
-                  className="inline-block bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-full font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-300"
+                  className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
                 >
-                  📖 Get PDF Guide
+                  🚀 Get Your Grooming Guide
                 </Link>
               </div>
             </div>
@@ -762,7 +762,7 @@ export default function Home() {
                 </div>
               </div>
               
-                              <p className="text-sm opacity-75 text-center">₹799 • Limited slots available</p>
+                              <p className="text-sm opacity-75 text-center">₹499 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -775,7 +775,7 @@ export default function Home() {
             <div className="flex-1">
               <div className="text-center">
                 <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
-                <p className="text-lg font-bold text-gray-900">₹799</p>
+                <p className="text-lg font-bold text-gray-900">₹499 + GST</p>
                 <p className="text-xs text-gray-600">Complete Transformation</p>
               </div>
             </div>
