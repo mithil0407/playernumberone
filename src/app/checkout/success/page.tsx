@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -62,26 +62,26 @@ export default function SuccessPage() {
         </h1>
         
         <p className="text-xl mb-8 text-gray-300">
-          Welcome to Alpha1! Your transformation journey begins now.
+          Welcome to IconOne! Your style transformation journey begins now.
         </p>
         
         <div className="bg-gray-800 rounded-lg p-6 mb-8 border border-gray-600">
-          <h2 className="text-2xl font-bold mb-4 text-blue-400">What&apos;s Next?</h2>
+          <h2 className="text-2xl font-bold mb-4 text-rose-400">What&apos;s Next?</h2>
           
           <div className="space-y-4 text-left">
             <div className="flex items-start gap-3">
-              <Calendar className="w-6 h-6 text-blue-400 mt-1 flex-shrink-0" />
+              <Calendar className="w-6 h-6 text-rose-400 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold">Schedule Your Session</h3>
+                <h3 className="font-semibold">Schedule Your Style Session</h3>
                 <p className="text-gray-400 text-sm">Book your 1-on-1 consultation with our expert stylist</p>
               </div>
             </div>
             
             <div className="flex items-start gap-3">
-              <Users className="w-6 h-6 text-blue-400 mt-1 flex-shrink-0" />
+              <Users className="w-6 h-6 text-rose-400 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold">Personalized Assessment</h3>
-                <p className="text-gray-400 text-sm">Get your custom transformation roadmap</p>
+                <h3 className="font-semibold">Personalized Style Assessment</h3>
+                <p className="text-gray-400 text-sm">Get your custom style transformation roadmap</p>
               </div>
             </div>
           </div>
@@ -89,9 +89,9 @@ export default function SuccessPage() {
         
         <Link
           href="/schedule"
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-4 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
+          className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
         >
-          Schedule Your Session <ArrowRight className="w-6 h-6" />
+          Schedule Your Style Session <ArrowRight className="w-6 h-6" />
         </Link>
         
         <div className="mt-8 text-sm text-gray-400">
@@ -100,5 +100,20 @@ export default function SuccessPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <SuccessPageContent />
+    </Suspense>
   );
 }

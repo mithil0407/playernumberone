@@ -239,12 +239,12 @@ export default function SchedulePage() {
             <CheckCircle className="w-12 h-12 text-green-400" />
           </div>
           
-                      <h1 className="text-3xl font-bold mb-4 text-green-400">
-              You&apos;re Booked! 🎉
-            </h1>
+                                <h1 className="text-3xl font-bold mb-4 text-green-400">
+            You&apos;re Booked! 🎉
+          </h1>
           
           <p className="text-xl mb-6 text-gray-300">
-            Your Alpha1 transformation session is confirmed for
+            Your IconOne style consultation is confirmed for
           </p>
           
           <div className="bg-gray-800 rounded-lg p-6 mb-8">
@@ -277,10 +277,10 @@ export default function SchedulePage() {
             className="text-center"
           >
             <h1 className="text-3xl md:text-4xl font-bold mb-2">
-              Schedule Your Alpha1 Session
+              Schedule Your IconOne Style Session
             </h1>
             <p className="text-gray-400 text-lg">
-              Choose your preferred time for your 1-on-1 transformation consultation
+              Choose your preferred time for your 1-on-1 style consultation
             </p>
             <button
               onClick={fetchBookedSlots}
@@ -376,23 +376,23 @@ export default function SchedulePage() {
           transition={{ delay: 0.2 }}
         >
           {/* Session Info */}
-          <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-6 mb-8">
+          <div className="bg-rose-900/30 border border-rose-500/30 rounded-lg p-6 mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <Users className="w-6 h-6 text-blue-400" />
-              <h2 className="text-xl font-semibold">Session Details</h2>
+              <Users className="w-6 h-6 text-rose-400" />
+              <h2 className="text-xl font-semibold">Style Session Details</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-gray-400">Duration:</span>
-                <span className="ml-2 font-semibold">60 minutes</span>
+                <span className="ml-2 font-semibold">20 minutes</span>
               </div>
               <div>
                 <span className="text-gray-400">Format:</span>
                 <span className="ml-2 font-semibold">Video Call</span>
               </div>
               <div>
-                <span className="text-gray-400">Stylist:</span>
-                <span className="ml-2 font-semibold">Expert Female Stylist</span>
+                <span className="text-gray-400">Consultant:</span>
+                <span className="ml-2 font-semibold">Expert Style Consultant</span>
               </div>
             </div>
           </div>
@@ -400,7 +400,7 @@ export default function SchedulePage() {
           {/* Date Selection */}
           <div className="mb-8">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
+              <Calendar className="w-5 h-5 text-rose-400" />
               Select Date
             </h3>
             
@@ -411,7 +411,7 @@ export default function SchedulePage() {
                   onClick={() => handleDateSelect(day.date)}
                   className={`p-4 rounded-lg border transition-all duration-200 ${
                     selectedDate === day.date
-                      ? 'border-blue-500 bg-blue-900/30 text-blue-400'
+                      ? 'border-rose-500 bg-rose-900/30 text-rose-400'
                       : 'border-gray-600 bg-gray-800 hover:border-gray-500'
                   }`}
                 >
@@ -430,7 +430,7 @@ export default function SchedulePage() {
               className="mb-8"
             >
               <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-400" />
+                <Clock className="w-5 h-5 text-rose-400" />
                 Select Time for {selectedDate}
               </h3>
               
@@ -446,7 +446,7 @@ export default function SchedulePage() {
                         !slot.available
                           ? 'border-gray-700 bg-gray-800 text-gray-500 cursor-not-allowed'
                           : selectedTime === slot.time
-                          ? 'border-blue-500 bg-blue-900/30 text-blue-400'
+                          ? 'border-rose-500 bg-rose-900/30 text-rose-400'
                           : 'border-gray-600 bg-gray-800 hover:border-gray-500'
                       }`}
                     >
@@ -467,7 +467,7 @@ export default function SchedulePage() {
               <button
                 onClick={handleBooking}
                 disabled={isBooking}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white px-12 py-4 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto"
+                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white px-12 py-4 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto"
               >
                 {isBooking ? 'Booking Your Session...' : 'Confirm Session'}
                 {!isBooking && <ArrowRight className="w-6 h-6" />}
@@ -489,14 +489,14 @@ export default function SchedulePage() {
             <h3 className="text-lg font-semibold mb-4">What to Expect</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
               <div className="space-y-2">
-                <p>• 15 min consultation about your goals</p>
-                <p>• 30 min style & grooming assessment</p>
-                <p>• 15 min personalized action plan</p>
+                <p>• 5 min style goals discussion</p>
+                <p>• 10 min personalized style assessment</p>
+                <p>• 5 min action plan & next steps</p>
               </div>
               <div className="space-y-2">
-                <p>• Receive your transformation roadmap</p>
-                <p>• Get access to exclusive resources</p>
-                <p>• Schedule follow-up sessions</p>
+                <p>• Receive your style transformation roadmap</p>
+                <p>• Get access to exclusive style resources</p>
+                <p>• Schedule follow-up style sessions</p>
               </div>
             </div>
           </motion.div>

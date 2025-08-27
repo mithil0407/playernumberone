@@ -56,27 +56,23 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Product pricing
-  const basePrice = 499;
-  const gstRate = 0.18;
-  const gstAmount = Math.round(basePrice * gstRate);
-  const totalBasePrice = basePrice + gstAmount;
+  const basePrice = 999;
+  const totalBasePrice = basePrice; // No GST for main product
   
   // Add-ons
-  const [consultationAddon, setConsultationAddon] = useState(false);
-  const [datingGuideAddon, setDatingGuideAddon] = useState(false);
+  const [shoppingGuideAddon, setShoppingGuideAddon] = useState(false);
+  const [wellnessPlanAddon, setWellnessPlanAddon] = useState(false);
   
-  const consultationPrice = 599;
-  const consultationGst = Math.round(consultationPrice * gstRate);
-  const consultationTotal = consultationPrice + consultationGst;
+  const shoppingGuidePrice = 799;
+  const shoppingGuideTotal = shoppingGuidePrice;
   
-  const datingGuidePrice = 399;
-  const datingGuideGst = Math.round(datingGuidePrice * gstRate);
-  const datingGuideTotal = datingGuidePrice + datingGuideGst;
+  const wellnessPlanPrice = 399;
+  const wellnessPlanTotal = wellnessPlanPrice;
   
   // Calculate total
   const totalAmount = totalBasePrice + 
-    (consultationAddon ? consultationTotal : 0) + 
-    (datingGuideAddon ? datingGuideTotal : 0);
+    (shoppingGuideAddon ? shoppingGuideTotal : 0) + 
+    (wellnessPlanAddon ? wellnessPlanTotal : 0);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -126,14 +122,14 @@ export default function CheckoutPage() {
         customer_email: formData.email,
         customer_phone: formData.phone,
         amount: totalAmount,
-        base_product: 'Alpha1 Grooming Guide',
+        base_product: 'IconOne Style Consultation',
         add_ons: {
-          consultation: consultationAddon,
-          dating_guide: datingGuideAddon
+          shopping_guide: shoppingGuideAddon,
+          wellness_plan: wellnessPlanAddon
         },
         total_base_price: totalBasePrice,
-        consultation_price: consultationAddon ? consultationTotal : 0,
-        dating_guide_price: datingGuideAddon ? datingGuideTotal : 0
+        shopping_guide_price: shoppingGuideAddon ? shoppingGuideTotal : 0,
+        wellness_plan_price: wellnessPlanAddon ? wellnessPlanTotal : 0
       };
 
       // Call payment API
@@ -169,8 +165,8 @@ export default function CheckoutPage() {
           key: responseData.key,
           amount: responseData.amount,
           currency: responseData.currency,
-          name: 'PlayerNumberOne Alpha1',
-          description: 'Alpha1 Grooming Guide',
+          name: 'PlayerNumberOne IconOne',
+          description: 'IconOne Style Consultation',
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
             // Payment successful
@@ -227,9 +223,9 @@ export default function CheckoutPage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors">
+                      <Link href="/" className="flex items-center gap-2 text-rose-600 hover:text-rose-700 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            Back to Alpha1
+            Back to IconOne
           </Link>
         </div>
       </header>
@@ -242,10 +238,10 @@ export default function CheckoutPage() {
           className="text-center mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Alpha1 Order Page
+            IconOne Style Consultation
           </h1>
           <p className="text-lg text-gray-600">
-            Enter Your Best Name & Email Id To Proceed Your Order
+            Enter Your Details To Begin Your Style Transformation
           </p>
         </motion.div>
 
@@ -332,86 +328,86 @@ export default function CheckoutPage() {
             <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Main Product</h3>
               
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mb-4">
-                <h4 className="font-bold text-gray-900 mb-2">Alpha1 Grooming Guide</h4>
-                <div className="text-2xl font-bold text-blue-600 mb-2">
-                  ₹{basePrice} + GST = ₹{totalBasePrice}
-                </div>
-                
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li>• Complete men&apos;s grooming routine for hair, skin & face</li>
-                  <li>• Perfume & accessory guide to always smell & look premium</li>
-                  <li>• Style foundations that make you look sharp instantly</li>
-                  <li>• Avoid rookie mistakes that make men look cheap</li>
-                  <li>• Quick, practical hacks to look like a high-value man</li>
-                </ul>
+                              <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl p-4 mb-4">
+                              <h4 className="font-bold text-gray-900 mb-2">IconOne Style Consultation</h4>
+              <div className="text-2xl font-bold text-rose-600 mb-2">
+                ₹{basePrice}
+              </div>
+              
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>• Complete style assessment tailored to your features</li>
+                <li>• Personalized color palette that makes your skin glow</li>
+                <li>• Body-flattering silhouettes that work with your shape</li>
+                <li>• Hair & beauty advice for your unique features</li>
+                <li>• 20-minute one-on-one call with expert stylist</li>
+              </ul>
               </div>
             </div>
 
-            {/* Add-on 1: Consultation */}
+            {/* Add-on 1: Shopping Guide */}
             <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
               <div className="flex items-start gap-3 mb-4">
                 <input
                   type="checkbox"
-                  id="consultation"
-                  checked={consultationAddon}
-                  onChange={(e) => setConsultationAddon(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                  id="shoppingGuide"
+                  checked={shoppingGuideAddon}
+                  onChange={(e) => setShoppingGuideAddon(e.target.checked)}
+                  className="w-5 h-5 text-rose-600 border-gray-300 rounded focus:ring-rose-500 mt-1"
                 />
                 <div className="flex-1">
-                  <label htmlFor="consultation" className="font-bold text-gray-900 cursor-pointer">
-                    ✅ Yes! I Also Add &quot;1-on-1 Consultation with Attraction Expert&quot; to my Order
+                  <label htmlFor="shoppingGuide" className="font-bold text-gray-900 cursor-pointer">
+                    ✅ Yes! I Also Add &quot;Curated Shopping Guide&quot; to my Order
                   </label>
                   <div className="text-lg font-bold text-green-600 mt-1">
-                    Special One-Time Offer, Only ₹{consultationPrice} + GST
+                    Special One-Time Offer, Only ₹{shoppingGuidePrice}
                   </div>
                 </div>
               </div>
               
               <ul className="space-y-2 text-sm text-gray-700 ml-8">
-                <li>• Personalised advice on grooming, style & confidence</li>
-                <li>• Get a step-by-step attraction strategy tailored just for you</li>
-                <li>• Fix social & dating mistakes instantly</li>
-                <li>• Direct answers from an expert who has helped 100s of men</li>
+                <li>• Direct links to pieces that work for YOUR style profile</li>
+                <li>• Complete wardrobe blueprints for work, social & everyday</li>
+                <li>• Mix-and-match formulas – 20 pieces create 50+ looks</li>
+                <li>• Investment vs. budget breakdowns for smart spending</li>
               </ul>
               
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800 font-semibold">
-                  LIMITED OFFER: Access this exclusive consultation by ticking the box above.
+                  LIMITED OFFER: Access this exclusive shopping guide by ticking the box above.
                 </p>
               </div>
             </div>
 
-            {/* Add-on 2: Dating Guide */}
+            {/* Add-on 2: Wellness Plan */}
             <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
               <div className="flex items-start gap-3 mb-4">
                 <input
                   type="checkbox"
-                  id="datingGuide"
-                  checked={datingGuideAddon}
-                  onChange={(e) => setDatingGuideAddon(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                  id="wellnessPlan"
+                  checked={wellnessPlanAddon}
+                  onChange={(e) => setWellnessPlanAddon(e.target.checked)}
+                  className="w-5 h-5 text-rose-600 border-gray-300 rounded focus:ring-rose-500 mt-1"
                 />
                 <div className="flex-1">
-                  <label htmlFor="datingGuide" className="font-bold text-gray-900 cursor-pointer">
-                    ✅ Yes! Also Add &quot;Alpha Dating & Influence Guide&quot; to my Order
+                  <label htmlFor="wellnessPlan" className="font-bold text-gray-900 cursor-pointer">
+                    ✅ Yes! Also Add &quot;Wellness & Confidence Plan&quot; to my Order
                   </label>
                   <div className="text-lg font-bold text-green-600 mt-1">
-                    Special One-Time Offer, Only ₹{datingGuidePrice} + GST
+                    Special One-Time Offer, Only ₹{wellnessPlanPrice}
                   </div>
                 </div>
               </div>
               
               <ul className="space-y-2 text-sm text-gray-700 ml-8">
-                <li>• Learn proven attraction psychology</li>
-                <li>• Decode women&apos;s signals & respond confidently</li>
-                <li>• Build natural charisma without being try-hard</li>
-                <li>• Conversation hacks to project authority & charm</li>
+                <li>• 28-day body confidence program for real women</li>
+                <li>• Home workout options plus gym alternatives</li>
+                <li>• Nourishing meal plans that energize, don&apos;t deprive</li>
+                <li>• Confidence-building rituals for inner radiance</li>
               </ul>
               
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800 font-semibold">
-                  LIMITED OFFER: Access this exclusive guide by ticking the box above.
+                  LIMITED OFFER: Access this exclusive wellness plan by ticking the box above.
                 </p>
               </div>
             </div>
@@ -431,26 +427,26 @@ export default function CheckoutPage() {
                     sizes="(max-width: 768px) 192px, 128px"
                   />
                 </div>
-                <p className="text-sm text-gray-600">Your Alpha1 Grooming Guide</p>
+                                  <p className="text-sm text-gray-600">Your IconOne Style Guide</p>
               </div>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Alpha1 Grooming Guide</span>
+                  <span className="text-gray-700">IconOne Style Consultation</span>
                   <span className="font-semibold">₹{totalBasePrice}</span>
                 </div>
                 
-                {consultationAddon && (
+                {shoppingGuideAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>+ 1-on-1 Consultation</span>
-                    <span className="font-semibold">₹{consultationTotal}</span>
+                    <span>+ Curated Shopping Guide</span>
+                    <span className="font-semibold">₹{shoppingGuideTotal}</span>
                   </div>
                 )}
                 
-                {datingGuideAddon && (
+                {wellnessPlanAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>+ Alpha Dating Guide</span>
-                    <span className="font-semibold">₹{datingGuideTotal}</span>
+                    <span>+ Wellness & Confidence Plan</span>
+                    <span className="font-semibold">₹{wellnessPlanTotal}</span>
                   </div>
                 )}
                 
@@ -467,9 +463,9 @@ export default function CheckoutPage() {
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-4"
+                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-4 px-6 rounded-xl text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-4"
               >
-                {isProcessing ? 'Processing...' : '🚀 Start My Transformation Now'}
+                {isProcessing ? 'Processing...' : '✨ Start My Style Transformation Now'}
               </button>
               
               <div className="text-center text-sm text-gray-600">
