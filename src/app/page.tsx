@@ -15,7 +15,7 @@ declare global {
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import LazyImage from '../components/LazyImage';
+import Image from 'next/image';
 import CountdownTimer from '../components/CountdownTimer';
 import { 
   CheckCircle, 
@@ -35,43 +35,43 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const features = [
-    { icon: CheckCircle, title: 'Grooming & Skincare Routine', description: 'Personalized grooming plan for your skin type' },
-    { icon: Target, title: 'Style & Outfit Recommendations', description: 'Clothing that matches your body type & personality' },
-    { icon: TrendingUp, title: 'Gym Plan', description: 'Custom fitness routine based on your height/weight' },
-    { icon: Heart, title: 'Perfume & Accessories', description: 'Complete accessory guide to complete your look' },
-    { icon: Zap, title: 'Communication & Confidence', description: 'Tips to boost your confidence around women' }
+    { icon: CheckCircle, title: 'Personal Style Assessment', description: 'Discover your unique style based on body shape, lifestyle & personality' },
+    { icon: Target, title: 'Personalized Color Palette', description: 'Colors that make your skin glow and enhance your natural beauty' },
+    { icon: TrendingUp, title: 'Wardrobe Blueprint', description: 'Mix-and-match formulas for effortless, elegant looks' },
+    { icon: Heart, title: 'Beauty & Wellness Plan', description: 'Confidence-building rituals for inner and outer radiance' },
+    { icon: Zap, title: 'Expert Style Consultation', description: '20-minute personalized call with our leading stylist' }
   ];
 
   const testimonials = [
     {
-      name: 'Rahul, 26',
-      story: 'Went from being invisible to getting noticed. Alpha1 changed everything.',
+      name: 'Priya, 28',
+      story: 'Finally discovered my signature style. I feel confident and elegant in my own skin.',
       image: '/skin.webp'
     },
     {
-      name: 'Vikram, 28',
-      story: 'My dating life completely transformed after just 2 weeks.',
+      name: 'Ananya, 32',
+      story: 'The color palette changed everything! People keep asking what I did differently.',
       image: '/slim.webp'
     },
     {
-      name: 'Arjun, 24',
-      story: 'Finally got the confidence to approach women. Results were immediate.',
+      name: 'Shreya, 26',
+      story: 'Shopping is no longer overwhelming. I know exactly what works for me.',
       image: '/stylish.webp'
     }
   ];
 
   const faqs = [
     {
-      question: 'Will this really make me more attractive?',
-      answer: 'Yes! Alpha1 focuses on your complete transformation - grooming, style, fitness, and confidence. We\'ve helped 200+ men become more attractive and confident.'
+      question: 'Will this really help me look more elegant and confident?',
+      answer: 'Absolutely! IconOne focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We\'ve helped 200+ women discover their signature style.'
     },
     {
-      question: 'What if I don\'t like the suggestions?',
-      answer: 'We work 1-on-1 with you to ensure you love your new look. Your stylist will adapt recommendations to your preferences and comfort level.'
+      question: 'What if the style suggestions don\'t feel like me?',
+      answer: 'We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level.'
     },
     {
-      question: 'How soon will I see results?',
-      answer: 'Most men see immediate improvements in confidence and attention from women within the first week. Full transformation typically takes 2-3 weeks.'
+      question: 'How quickly will I see results?',
+      answer: 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.'
     }
   ];
 
@@ -83,8 +83,8 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
-              <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Alpha1
+              <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
+                IconOne
               </Link>
             </div>
 
@@ -152,12 +152,12 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
-              <span className="text-gray-900">Stop Losing Out Because of Your</span>{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Looks.</span>
+              <span className="text-gray-900">Stop Feeling Invisible. Start Feeling</span>{' '}
+              <span className="bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Irresistible.</span>
             </h1>
             
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-gray-900">
-              Become the Man Women Notice.
+              Discover the Elegant, Confident You.
             </h2>
 
             {/* Product Preview - Book Image */}
@@ -169,7 +169,7 @@ export default function Home() {
             >
               <div className="text-center">
                 <div className="relative w-48 h-60 mx-auto mb-4">
-                  <LazyImage
+                  <Image
                     src="/book.png"
                     alt="Alpha1 Transformation Guide Preview"
                     width={192}
@@ -178,7 +178,7 @@ export default function Home() {
                   />
                 </div>
                 <p className="text-lg text-gray-600 max-w-md mx-auto">
-                  Your complete transformation guide with personalized coaching and step-by-step instructions
+                  Your complete style transformation guide with personalized consultation and expert guidance
                 </p>
               </div>
             </motion.div>
@@ -190,7 +190,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl md:text-2xl mb-12 text-gray-600 max-w-3xl mx-auto leading-relaxed"
           >
-            Alpha1 is a 1-on-1 transformation program by India&apos;s top stylists — grooming, dressing, fitness, confidence.
+            IconOne is a personalized style transformation program by India&apos;s leading stylists — elegance, confidence, and authentic self-expression.
           </motion.p>
           
           <motion.div
@@ -210,7 +210,7 @@ export default function Home() {
                   });
                 }
               }}
-              className="group relative bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-10 py-4 rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20"
+              className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-10 py-4 rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20"
             >
               <span className="relative z-10">Start Your Transformation</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
@@ -221,7 +221,7 @@ export default function Home() {
             <div className="flex items-center gap-3 bg-white/60 backdrop-blur-xl px-6 py-4 rounded-full border border-white/30 shadow-lg">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full border-2 border-white shadow-sm"></div>
+                  <div key={i} className="w-8 h-8 bg-gradient-to-r from-rose-400 to-pink-400 rounded-full border-2 border-white shadow-sm"></div>
                 ))}
               </div>
               <span className="text-gray-700 font-medium">200+ transformations</span>
@@ -252,18 +252,18 @@ export default function Home() {
           >
             <div className="text-center mb-12">
               <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                Real Transformations in Just Weeks
+                Real Style Transformations in Just Weeks
               </h3>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                See how our personalized approach transforms ordinary men into confident, attractive individuals
+                See how our personalized approach helps women discover their signature style and radiate confidence
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { image: '/grooming.webp', title: 'Grooming Mastery', description: 'Learn professional grooming techniques that enhance your natural features and create a polished, attractive appearance.' },
-                { image: '/gym.webp', title: 'Fitness & Confidence', description: 'Build the physique and mindset that radiates confidence and attracts positive attention from everyone around you.' },
-                { image: '/style.webp', title: 'Style Transformation', description: 'Discover your personal style with clothing that fits perfectly and expresses your best, most confident self.' }
+                { image: '/style.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
+                { image: '/grooming.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
+                { image: '/gym.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
               ].map((item, index) => (
                 <motion.div
                   key={index}
@@ -275,7 +275,7 @@ export default function Home() {
                   {/* Glassmorphism Card */}
                   <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1">
                     <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
-                      <LazyImage
+                      <Image
                         src={item.image}
                         alt={item.title}
                         width={400}
@@ -311,16 +311,16 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
               Sound Familiar?
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Many men struggle with these exact same issues. You&apos;re not alone.
-            </p>
+                          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+                Many women feel the same way. You&apos;re not alone in this journey.
+              </p>
           </motion.div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {[
-              { icon: Users, text: 'Tired of being ignored by women?', color: 'red' },
-              { icon: Clock, text: 'Still dressing like a college kid?', color: 'orange' },
-              { icon: Heart, text: 'Confidence low because of looks?', color: 'blue' }
+              { icon: Users, text: 'Feel overlooked or invisible in social settings?', color: 'red' },
+              { icon: Clock, text: 'Confused about what styles actually suit you?', color: 'orange' },
+              { icon: Heart, text: 'Lost confidence in your appearance?', color: 'rose' }
             ].map((item, index) => (
               <motion.div
                 key={index}
@@ -331,11 +331,11 @@ export default function Home() {
               >
                 <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${
                   item.color === 'red' ? 'bg-red-100' :
-                  item.color === 'orange' ? 'bg-orange-100' : 'bg-blue-100'
+                  item.color === 'orange' ? 'bg-orange-100' : 'bg-rose-100'
                 }`}>
                   <item.icon className={`w-6 h-6 md:w-8 md:h-8 ${
                     item.color === 'red' ? 'text-red-600' :
-                    item.color === 'orange' ? 'text-orange-600' : 'text-blue-600'
+                    item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
                   }`} />
                 </div>
                 <p className="text-lg md:text-xl font-semibold text-gray-900 text-center leading-tight">{item.text}</p>
@@ -358,10 +358,10 @@ export default function Home() {
             className="text-center mb-8 md:mb-16"
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              What You&apos;ll Get in Alpha1
+              What You&apos;ll Get in IconOne
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              A complete transformation program designed specifically for Indian men
+              A complete style transformation program designed specifically for Indian women
             </p>
           </motion.div>
           
@@ -374,8 +374,8 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
-                <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-blue-100/80 to-purple-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                  <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
+                <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-rose-100/80 to-pink-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                  <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-rose-600" />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">{feature.title}</h3>
                 <p className="text-sm md:text-base text-gray-600 leading-relaxed">{feature.description}</p>
@@ -390,16 +390,16 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-4 md:p-8 border border-blue-200 text-center"
+            className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-3xl p-4 md:p-8 border border-rose-200 text-center"
           >
             <div className="max-w-3xl mx-auto">
-              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center">
                 <Users className="w-6 h-6 md:w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">1-on-1 with Expert Female Stylist</h3>
+              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">1-on-1 with Expert Style Consultant</h3>
               <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Work directly with our experienced female stylists who understand what women find attractive. 
-                Get personalized advice based on 5+ years of transforming Indian men.
+                Work directly with our experienced style consultants who understand the unique beauty of Indian women. 
+                Get personalized advice based on 5+ years of transforming women&apos;s confidence through style.
               </p>
             </div>
           </motion.div>
@@ -419,7 +419,7 @@ export default function Home() {
               Real Stories, Real Results
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              See how Alpha1 has transformed the lives of men just like you
+              See how IconOne has transformed the confidence of women just like you
             </p>
           </motion.div>
           
@@ -433,7 +433,7 @@ export default function Home() {
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 <div className="w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
-                  <LazyImage
+                  <Image
                     src={testimonial.image}
                     alt={testimonial.name}
                     width={300}
@@ -447,12 +447,12 @@ export default function Home() {
                   &ldquo;{testimonial.story}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-500/90 to-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
                     <span className="text-white font-bold text-xs md:text-sm">{testimonial.name.charAt(0)}</span>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 text-sm md:text-base">{testimonial.name}</p>
-                    <p className="text-xs md:text-sm text-gray-500">Alpha1 Graduate</p>
+                    <p className="text-xs md:text-sm text-gray-500">IconOne Graduate</p>
                   </div>
                 </div>
                 
@@ -474,10 +474,10 @@ export default function Home() {
             className="text-center mb-8 md:mb-16"
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Choose Your Transformation Path
+              Choose Your Style Transformation
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Your Alpha1 Transformation Package
+              Your IconOne Style Transformation Package
             </p>
           </motion.div>
 
@@ -488,10 +488,10 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 overflow-hidden mb-8"
           >
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-6 text-white text-center">
-              <h3 className="text-xl md:text-2xl font-bold mb-2">Alpha1 Grooming Guide</h3>
-              <div className="text-3xl md:text-5xl font-bold mb-2">₹499 + GST</div>
-              <p className="text-base md:text-lg opacity-90">Complete men&apos;s grooming transformation</p>
+            <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
+              <h3 className="text-xl md:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
+              <div className="text-3xl md:text-5xl font-bold mb-2">₹999</div>
+              <p className="text-base md:text-lg opacity-90">Complete personal style transformation</p>
             </div>
             
             <div className="p-4 md:p-6">
@@ -501,47 +501,47 @@ export default function Home() {
                   <ul className="space-y-2">
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Complete grooming routine for hair, skin & face</span>
+                      <span className="text-gray-700 text-sm">Complete style assessment tailored to your features</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Perfume & accessory guide to always smell premium</span>
+                      <span className="text-gray-700 text-sm">Personalized color palette that makes your skin glow</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Style foundations that make you look sharp instantly</span>
+                      <span className="text-gray-700 text-sm">Body-flattering silhouettes that work with your shape</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Avoid rookie mistakes that make men look cheap</span>
+                      <span className="text-gray-700 text-sm">Hair & beauty advice for your unique features</span>
                     </li>
                     <li className="flex items-center gap-3">
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Quick, practical hacks to look like a high-value man</span>
+                      <span className="text-gray-700 text-sm">20-minute one-on-one call with expert stylist</span>
                     </li>
                   </ul>
                 </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-center">
                   <div className="text-center">
-                    <div className="text-lg mb-2">✅</div>
-                    <h4 className="font-bold text-blue-800 mb-2">Instant Access</h4>
-                    <p className="text-blue-700 text-sm">Download & start implementing today</p>
+                    <div className="text-lg mb-2">✨</div>
+                    <h4 className="font-bold text-rose-800 mb-2">Personal Touch</h4>
+                    <p className="text-rose-700 text-sm">Tailored specifically for you</p>
                   </div>
                 </div>
                 
                 {/* Book Preview */}
                 <div className="text-center mt-4">
                   <div className="relative w-24 h-32 mx-auto mb-3">
-                    <LazyImage
+                    <Image
                       src="/book.png"
-                      alt="Alpha1 Grooming Guide Preview"
+                      alt="IconOne Style Guide Preview"
                       width={96}
                       height={128}
                       className="object-contain rounded-lg shadow-md"
                     />
                   </div>
-                  <p className="text-xs text-gray-600">Grooming Guide Preview</p>
+                  <p className="text-xs text-gray-600">Style Guide Preview</p>
                 </div>
               </div>
               
@@ -551,16 +551,16 @@ export default function Home() {
                   onClick={() => {
                     if (typeof window !== 'undefined' && window.fbq) {
                       window.fbq('track', 'Lead', {
-                        content_name: 'Grooming Guide CTA Click',
-                        content_category: 'Grooming Guide',
-                        value: 499,
+                        content_name: 'Style Consultation CTA Click',
+                        content_category: 'Style Consultation',
+                        value: 999,
                         currency: 'INR'
                       });
                     }
                   }}
-                  className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+                  className="inline-block bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:from-rose-600 hover:to-pink-600 transition-all duration-300"
                 >
-                  🚀 Get Your Grooming Guide
+                  ✨ Get Your Style Consultation
                 </Link>
               </div>
             </div>
@@ -573,10 +573,10 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
           >
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-8 text-white text-center">
-              <h3 className="text-2xl md:text-3xl font-bold mb-2">Alpha1 Transformation</h3>
-              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,500</div>
-              <p className="text-lg md:text-xl opacity-90">Advanced Full Program</p>
+            <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-8 text-white text-center">
+              <h3 className="text-2xl md:text-3xl font-bold mb-2">Complete IconOne Package</h3>
+              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,197</div>
+              <p className="text-lg md:text-xl opacity-90">Style + Shopping + Wellness Bundle</p>
             </div>
             
             <div className="p-4 md:p-8">
@@ -595,32 +595,32 @@ export default function Home() {
                 
                 <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 md:p-6 border border-yellow-200">
                   <div className="text-center">
-                    <div className="text-xl md:text-2xl mb-2">🎁</div>
-                    <h4 className="text-base md:text-lg font-bold text-gray-900 mb-2">Special Add-on</h4>
-                    <p className="text-gray-700 mb-3 text-sm md:text-base">Before & After AI Visualisation</p>
-                    <div className="text-2xl md:text-3xl font-bold text-orange-600 mb-1">₹199</div>
-                    <p className="text-xs md:text-sm text-orange-600 font-medium">(Limited time only)</p>
+                    <div className="text-xl md:text-2xl mb-2">💰</div>
+                    <h4 className="text-base md:text-lg font-bold text-gray-900 mb-2">Bundle Savings</h4>
+                    <p className="text-gray-700 mb-3 text-sm md:text-base">Individual Price: ₹2,197</p>
+                    <div className="text-2xl md:text-3xl font-bold text-orange-600 mb-1">Save ₹800</div>
+                    <p className="text-xs md:text-sm text-orange-600 font-medium">(Limited time bundle)</p>
                   </div>
                 </div>
                 
                 {/* Book Preview for Advanced Plan */}
                 <div className="text-center mt-4">
                   <div className="relative w-24 h-32 mx-auto mb-3">
-                    <LazyImage
+                    <Image
                       src="/book.png"
-                      alt="Alpha1 Transformation Guide + Coaching"
+                      alt="IconOne Complete Package"
                       width={96}
                       height={128}
                       className="object-contain rounded-lg shadow-md"
                     />
                   </div>
-                  <p className="text-xs text-gray-600">PDF Guide + 1-on-1 Session</p>
+                  <p className="text-xs text-gray-600">Complete Style Package</p>
                 </div>
               </div>
               
               <div className="bg-red-50 border border-red-200 rounded-2xl p-4 md:p-6 mb-6 md:mb-8 text-center">
                 <p className="text-red-700 font-semibold text-base md:text-lg">
-                  ⚠️ Only 20 slots available per week
+                  ⚠️ Only 15 slots available this week
                 </p>
               </div>
               
@@ -632,16 +632,16 @@ export default function Home() {
                     // Track pricing CTA click with Meta Pixel
                     if (typeof window !== 'undefined' && window.fbq) {
                       window.fbq('track', 'Lead', {
-                        content_name: 'Pricing CTA Click',
-                        content_category: 'Transformation Program',
-                        value: 2500,
+                        content_name: 'Complete Package CTA Click',
+                        content_category: 'Style Transformation Package',
+                        value: 2197,
                         currency: 'INR'
                       });
                     }
                   }}
-                  className="group relative w-full max-w-sm mx-auto bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-xl text-white px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20 flex items-center justify-center gap-3"
+                  className="group relative w-full max-w-sm mx-auto bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20 flex items-center justify-center gap-3"
                 >
-                  <span className="relative z-10">🚀 Transform Now</span>
+                  <span className="relative z-10">✨ Transform Now</span>
                   <ArrowRight className="w-6 h-6 relative z-10" />
                   {/* Glass shine effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -650,8 +650,8 @@ export default function Home() {
                 {/* Mobile Urgency & Trust */}
                 <div className="max-w-sm mx-auto space-y-3">
                   <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
-                    <p className="text-red-700 font-semibold text-lg">⏰ Only 20 slots left this week!</p>
-                    <p className="text-red-600 text-sm">Don&apos;t miss your transformation opportunity</p>
+                    <p className="text-red-700 font-semibold text-lg">⏰ Only 15 slots left this week!</p>
+                    <p className="text-red-600 text-sm">Don&apos;t miss your style transformation opportunity</p>
                   </div>
                   
                                      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
@@ -684,7 +684,7 @@ export default function Home() {
               Frequently Asked Questions
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Everything you need to know about Alpha1
+              Everything you need to know about IconOne
             </p>
           </motion.div>
           
@@ -709,7 +709,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section - Mobile Optimized */}
-      <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-rose-500 to-pink-500">
         <div className="max-w-4xl mx-auto text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -717,10 +717,10 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
-              Ready to Transform Your Life?
+              Ready to Discover Your Signature Style?
             </h2>
             <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4">
-              Join 200+ men who have already transformed their confidence and attractiveness
+              Join 200+ women who have already transformed their confidence and discovered their elegant style
             </p>
             <div className="space-y-6">
               <Link 
@@ -730,15 +730,15 @@ export default function Home() {
                   if (typeof window !== 'undefined' && window.fbq) {
                     window.fbq('track', 'Lead', {
                       content_name: 'Final CTA Click',
-                      content_category: 'Transformation Program',
-                      value: 2299,
+                      content_category: 'Style Transformation Program',
+                      value: 999,
                       currency: 'INR'
                     });
                   }
                 }}
-                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-blue-600 px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3"
+                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-rose-600 px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3"
               >
-                <span className="relative z-10">🚀 Start Your Alpha1 Transformation Today</span>
+                <span className="relative z-10">✨ Start Your IconOne Transformation Today</span>
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </Link>
@@ -747,7 +747,7 @@ export default function Home() {
               <div className="max-w-sm mx-auto space-y-3">
                 <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-4 text-center">
                   <p className="text-white font-semibold text-lg">⏰ Limited Time Offer</p>
-                  <p className="text-white/80 text-sm">Only 20 slots available this week</p>
+                  <p className="text-white/80 text-sm">Only 15 slots available this week</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/80">
@@ -762,7 +762,7 @@ export default function Home() {
                 </div>
               </div>
               
-                              <p className="text-sm opacity-75 text-center">₹499 + GST • Limited slots available</p>
+                              <p className="text-sm opacity-75 text-center">₹999 • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -775,8 +775,8 @@ export default function Home() {
             <div className="flex-1">
               <div className="text-center">
                 <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
-                <p className="text-lg font-bold text-gray-900">₹499 + GST</p>
-                <p className="text-xs text-gray-600">Complete Transformation</p>
+                <p className="text-lg font-bold text-gray-900">₹999</p>
+                <p className="text-xs text-gray-600">Style Transformation</p>
               </div>
             </div>
             <Link 
@@ -786,14 +786,14 @@ export default function Home() {
                   window.fbq('track', 'Lead', {
                     content_name: 'Mobile Sticky CTA',
                     content_category: 'Mobile Conversion',
-                    value: 2299,
+                    value: 999,
                     currency: 'INR'
                   });
                 }
               }}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-full text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300"
+              className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-4 rounded-full text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              🚀 Start Now
+              ✨ Start Now
             </Link>
           </div>
         </div>
@@ -805,11 +805,11 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
             <div className="md:col-span-2">
-              <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                Alpha1
+              <div className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4">
+                IconOne
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
-                Transform your look, boost your confidence, and become the man women notice.
+                Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
               </p>
               <div className="flex gap-4">
                 <a href="mailto:support@playernumberone.com" className="text-gray-400 hover:text-white transition-colors">
@@ -865,7 +865,7 @@ export default function Home() {
 
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-gray-500 text-sm">
-              © 2024 PlayerNumberOne Alpha1. All rights reserved. | Transform with confidence.
+              © 2024 PlayerNumberOne IconOne. All rights reserved. | Transform with elegance.
             </p>
             <p className="text-gray-600 text-xs mt-2">
               Business Legal Name: MITHIL NILESH NAVALAKHA

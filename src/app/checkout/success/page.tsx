@@ -3,8 +3,49 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function SuccessPage() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Extract customer ID and order ID from URL parameters
+    const customerId = searchParams.get('customer_id');
+    const orderId = searchParams.get('order_id');
+    const dbOrderId = searchParams.get('db_order_id');
+    const paymentId = searchParams.get('payment_id');
+    
+    // Store in localStorage for the schedule page to access
+    if (customerId) {
+      localStorage.setItem('customerId', customerId);
+      console.log('Stored customerId:', customerId);
+    }
+    
+    // Prefer db_order_id over order_id for the actual database order ID
+    if (dbOrderId) {
+      localStorage.setItem('orderId', dbOrderId);
+      console.log('Stored orderId (db):', dbOrderId);
+    } else if (orderId) {
+      localStorage.setItem('orderId', orderId);
+      console.log('Stored orderId (razorpay):', orderId);
+    }
+    
+    if (paymentId) {
+      localStorage.setItem('paymentId', paymentId);
+      console.log('Stored paymentId:', paymentId);
+    }
+    
+    // Log what we found
+    console.log('URL Parameters:', {
+      customerId,
+      orderId,
+      dbOrderId,
+      paymentId,
+      allParams: Object.fromEntries(searchParams.entries())
+    });
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
       <motion.div

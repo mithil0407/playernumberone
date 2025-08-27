@@ -47,3 +47,4 @@ CREATE POLICY "Allow public read on customers" ON customers FOR SELECT USING (tr
 CREATE POLICY "Allow public read on orders" ON orders FOR SELECT USING (true);
 CREATE POLICY "Allow public read on sessions" ON sessions FOR SELECT USING (true);
 
+

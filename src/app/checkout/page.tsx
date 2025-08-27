@@ -155,6 +155,11 @@ export default function CheckoutPage() {
         throw new Error(responseData.error || 'Payment initialization failed');
       }
       
+      // Debug: Log the API response
+      console.log('Payment API Response:', responseData);
+      console.log('Customer ID:', responseData.customer_id);
+      console.log('DB Order ID:', responseData.db_order_id);
+      
       // Load Razorpay script
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -179,8 +184,21 @@ export default function CheckoutPage() {
               });
             }
             
-            // Redirect to success page
-            window.location.href = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}`;
+            // Store customer and order IDs in localStorage and sessionStorage for immediate access
+            if (responseData.customer_id) {
+              localStorage.setItem('customerId', responseData.customer_id);
+              sessionStorage.setItem('customerId', responseData.customer_id);
+              console.log('Stored customerId in localStorage and sessionStorage:', responseData.customer_id);
+            }
+            if (responseData.db_order_id) {
+              localStorage.setItem('orderId', responseData.db_order_id);
+              sessionStorage.setItem('orderId', responseData.db_order_id);
+              console.log('Stored orderId in localStorage and sessionStorage:', responseData.db_order_id);
+            }
+            
+            // Redirect to success page with all necessary parameters
+            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}`;
+            window.location.href = successUrl;
           },
           prefill: {
             name: formData.firstName,

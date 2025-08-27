@@ -23,10 +23,31 @@ export default function SchedulePage() {
   const [isBooked, setIsBooked] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<{[key: string]: boolean}>({});
   const [loadingSlots, setLoadingSlots] = useState(true);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Fetch booked slots when component mounts
   useEffect(() => {
     fetchBookedSlots();
+    
+    // Debug: Check storage values
+    const customerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
+    const orderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
+    const paymentId = localStorage.getItem('paymentId') || sessionStorage.getItem('paymentId');
+    
+    setDebugInfo(`Debug Info:
+      Customer ID: ${customerId || 'NULL'}
+      Order ID: ${orderId || 'NULL'}
+      Payment ID: ${paymentId || 'NULL'}
+      localStorage keys: ${Object.keys(localStorage).join(', ')}
+      sessionStorage keys: ${Object.keys(sessionStorage).join(', ')}`);
+    
+    console.log('Schedule page storage check:', {
+      customerId,
+      orderId,
+      paymentId,
+      localStorage: Object.keys(localStorage),
+      sessionStorage: Object.keys(sessionStorage)
+    });
   }, []);
 
   // Fetch booked slots from database
@@ -151,7 +172,17 @@ export default function SchedulePage() {
       });
       
       if (!customerId || !orderId) {
-        alert('Please complete payment first before booking a session. Customer ID: ' + customerId + ', Order ID: ' + orderId);
+        const errorMsg = `Missing required data for booking:
+          Customer ID: ${customerId || 'NULL'}
+          Order ID: ${orderId || 'NULL'}
+          
+          Please ensure you have completed payment and try again.
+          If the issue persists, use the manual input above or contact support.
+          
+          Debug: Check browser console for more details.`;
+        
+        console.error(errorMsg);
+        alert(errorMsg);
         setIsBooking(false);
         return;
       }
@@ -263,6 +294,82 @@ export default function SchedulePage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Debug Section - Remove this in production */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4 mb-8"
+        >
+          <h3 className="text-lg font-semibold text-yellow-400 mb-2">🔧 Debug Information</h3>
+          <pre className="text-xs text-yellow-300 whitespace-pre-wrap">{debugInfo}</pre>
+          
+          {/* Manual Input Fallback */}
+          <div className="mt-4 space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Customer ID (if missing)"
+                id="manualCustomerId"
+                className="flex-1 px-2 py-1 text-xs bg-yellow-800 text-white rounded border border-yellow-600"
+              />
+              <input
+                type="text"
+                placeholder="Order ID (if missing)"
+                id="manualOrderId"
+                className="flex-1 px-2 py-1 text-xs bg-yellow-800 text-white rounded border border-yellow-600"
+              />
+            </div>
+            <button
+              onClick={() => {
+                const manualCustomerId = (document.getElementById('manualCustomerId') as HTMLInputElement)?.value;
+                const manualOrderId = (document.getElementById('manualOrderId') as HTMLInputElement)?.value;
+                
+                if (manualCustomerId) {
+                  localStorage.setItem('customerId', manualCustomerId);
+                  sessionStorage.setItem('customerId', manualCustomerId);
+                  console.log('Manually set customerId:', manualCustomerId);
+                }
+                if (manualOrderId) {
+                  localStorage.setItem('orderId', manualOrderId);
+                  sessionStorage.setItem('orderId', manualOrderId);
+                  console.log('Manually set orderId:', manualOrderId);
+                }
+                
+                // Refresh debug info
+                const customerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
+                const orderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
+                const paymentId = localStorage.getItem('paymentId') || sessionStorage.getItem('paymentId');
+                setDebugInfo(`Debug Info (Updated):
+                  Customer ID: ${customerId || 'NULL'}
+                  Order ID: ${orderId || 'NULL'}
+                  Payment ID: ${paymentId || 'NULL'}
+                  localStorage keys: ${Object.keys(localStorage).join(', ')}
+                  sessionStorage keys: ${Object.keys(sessionStorage).join(', ')}`);
+              }}
+              className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+            >
+              Set Manual IDs
+            </button>
+          </div>
+          
+          <button
+            onClick={() => {
+              const customerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
+              const orderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
+              const paymentId = localStorage.getItem('paymentId') || sessionStorage.getItem('paymentId');
+              setDebugInfo(`Debug Info (Refreshed):
+                Customer ID: ${customerId || 'NULL'}
+                Order ID: ${orderId || 'NULL'}
+                Payment ID: ${paymentId || 'NULL'}
+                localStorage keys: ${Object.keys(localStorage).join(', ')}
+                sessionStorage keys: ${Object.keys(sessionStorage).join(', ')}`);
+            }}
+            className="mt-2 px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+          >
+            Refresh Debug Info
+          </button>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
