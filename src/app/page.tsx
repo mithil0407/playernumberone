@@ -35,11 +35,41 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const features = [
-    { icon: CheckCircle, title: 'Personal Style Assessment', description: 'Discover your unique style based on body shape, lifestyle & personality' },
-    { icon: Target, title: 'Personalized Color Palette', description: 'Colors that make your skin glow and enhance your natural beauty' },
-    { icon: TrendingUp, title: 'Wardrobe Blueprint', description: 'Mix-and-match formulas for effortless, elegant looks' },
-    { icon: Heart, title: 'Beauty & Wellness Plan', description: 'Confidence-building rituals for inner and outer radiance' },
-    { icon: Zap, title: 'Expert Style Consultation', description: '20-minute personalized call with our leading stylist' }
+    { 
+      icon: CheckCircle, 
+      title: 'Personal Style Assessment', 
+      description: 'Discover your unique style based on body shape, lifestyle & personality',
+      image: '/style.webp',
+      imageAlt: 'Style assessment'
+    },
+    { 
+      icon: Target, 
+      title: 'Personalized Color Palette', 
+      description: 'Colors that make your skin glow and enhance your natural beauty',
+      image: '/skin.webp',
+      imageAlt: 'Color palette'
+    },
+    { 
+      icon: TrendingUp, 
+      title: 'Wardrobe Blueprint', 
+      description: 'Mix-and-match formulas for effortless, elegant looks',
+      image: '/stylish.webp',
+      imageAlt: 'Wardrobe blueprint'
+    },
+    { 
+      icon: Heart, 
+      title: 'Beauty & Wellness Plan', 
+      description: 'Confidence-building rituals for inner and outer radiance',
+      image: '/gym.webp',
+      imageAlt: 'Wellness plan'
+    },
+    { 
+      icon: Zap, 
+      title: 'Expert Style Consultation', 
+      description: '20-minute personalized call with our leading stylist',
+      image: '/grooming.webp',
+      imageAlt: 'Style consultation'
+    }
   ];
 
   const testimonials = [
@@ -102,7 +132,7 @@ export default function Home() {
             <div className="hidden md:block">
               <Link
                 href="/checkout"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
               >
                 Start Now
               </Link>
@@ -134,7 +164,7 @@ export default function Home() {
               <a href="#faq" className="block text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium">FAQ</a>
               <Link
                 href="/checkout"
-                className="block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full text-base font-semibold text-center mt-4"
+                className="block bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-3 rounded-full text-base font-semibold text-center mt-4"
               >
                 Start Now
               </Link>
@@ -168,16 +198,22 @@ export default function Home() {
               className="mb-12"
             >
               <div className="text-center">
-                <div className="relative w-48 h-60 mx-auto mb-4">
+                <div className="relative w-72 h-90 md:w-80 md:h-96 mx-auto mb-6">
                   <Image
                     src="/book.png"
-                    alt="Alpha1 Transformation Guide Preview"
-                    width={192}
-                    height={240}
-                    className="object-contain rounded-lg"
+                    alt="IconOne Style Guide Preview"
+                    width={320}
+                    height={400}
+                    className="object-contain rounded-lg shadow-2xl"
+                    priority
                   />
+                  {/* Decorative elements around the book */}
+                  <div className="absolute -top-2 -left-2 w-4 h-4 bg-gradient-to-r from-rose-400 to-pink-400 rounded-full opacity-60 animate-pulse"></div>
+                  <div className="absolute -top-2 -right-2 w-3 h-3 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-60 animate-pulse delay-1000"></div>
+                  <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full opacity-60 animate-pulse delay-2000"></div>
+                  <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-gradient-to-r from-green-400 to-teal-400 rounded-full opacity-60 animate-pulse delay-1500"></div>
                 </div>
-                <p className="text-lg text-gray-600 max-w-md mx-auto">
+                <p className="text-lg md:text-xl text-gray-600 max-w-md mx-auto">
                   Your complete style transformation guide with personalized consultation and expert guidance
                 </p>
               </div>
@@ -240,27 +276,28 @@ export default function Home() {
               className="w-full max-w-md mx-auto"
             />
           </motion.div>
+        </div>
+      </section>
 
-
-
-          {/* Hero Transformations */}
+      {/* Hero Transformations - Moved Right Below Hero */}
+      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.6 }}
-            className="relative max-w-6xl mx-auto"
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="text-center mb-12 md:mb-16"
           >
-            <div className="text-center mb-12">
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                Real Style Transformations in Just Weeks
-              </h3>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                See how our personalized approach helps women discover their signature style and radiate confidence
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
+            <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 md:mb-6">
+              Real Style Transformations in Just Weeks
+            </h3>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              See how our personalized approach helps women discover their signature style and radiate confidence
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {[
                 { image: '/style.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
                 { image: '/grooming.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
                 { image: '/gym.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
@@ -268,13 +305,13 @@ export default function Home() {
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.8 + index * 0.2 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 + index * 0.2 }}
                   className="group relative"
                 >
                   {/* Glassmorphism Card */}
-                  <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
+                  <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
+                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 md:mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
                       <Image
                         src={item.image}
                         alt={item.title}
@@ -286,16 +323,43 @@ export default function Home() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                     </div>
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h4>
-                    <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                    <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">{item.title}</h4>
+                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{item.description}</p>
                     
                     {/* Glass shine effect */}
                     <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   </div>
                 </motion.div>
               ))}
-            </div>
-          </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Stats Section - Added for More Visual Appeal */}
+      <section className="py-12 md:py-16 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+            {[
+              { number: '200+', label: 'Women Transformed', icon: '✨', color: 'from-rose-400 to-pink-400' },
+              { number: '95%', label: 'Confidence Boost', icon: '💪', color: 'from-purple-400 to-indigo-400' },
+              { number: '4.9★', label: 'Customer Rating', icon: '⭐', color: 'from-yellow-400 to-orange-400' },
+              { number: '2-3', label: 'Weeks to Results', icon: '🚀', color: 'from-green-400 to-teal-400' }
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="text-center group"
+              >
+                <div className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 bg-gradient-to-r ${stat.color} rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                  {stat.icon}
+                </div>
+                <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{stat.number}</div>
+                <div className="text-sm md:text-base text-gray-600 font-medium">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -318,9 +382,27 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {[
-              { icon: Users, text: 'Feel overlooked or invisible in social settings?', color: 'red' },
-              { icon: Clock, text: 'Confused about what styles actually suit you?', color: 'orange' },
-              { icon: Heart, text: 'Lost confidence in your appearance?', color: 'rose' }
+              { 
+                icon: Users, 
+                text: 'Feel overlooked or invisible in social settings?', 
+                color: 'red',
+                image: '/skin.webp',
+                imageAlt: 'Woman feeling overlooked'
+              },
+              { 
+                icon: Clock, 
+                text: 'Confused about what styles actually suit you?', 
+                color: 'orange',
+                image: '/style.webp',
+                imageAlt: 'Style confusion'
+              },
+              { 
+                icon: Heart, 
+                text: 'Lost confidence in your appearance?', 
+                color: 'rose',
+                image: '/grooming.webp',
+                imageAlt: 'Confidence building'
+              }
             ].map((item, index) => (
               <motion.div
                 key={index}
@@ -329,6 +411,18 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
               >
+                {/* Problem Image */}
+                <div className="relative w-full h-32 md:h-40 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                  <Image
+                    src={item.image}
+                    alt={item.imageAlt}
+                    width={300}
+                    height={200}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
+                </div>
+                
                 <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${
                   item.color === 'red' ? 'bg-red-100' :
                   item.color === 'orange' ? 'bg-orange-100' : 'bg-rose-100'
@@ -342,6 +436,89 @@ export default function Home() {
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Before/After Visual Section - Added for More Visual Impact */}
+      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12 md:mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+              See the Transformation
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Real results from real women who transformed their style with IconOne
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            {[
+              {
+                before: '/skin.webp',
+                after: '/stylish.webp',
+                title: 'Style Confidence',
+                description: 'From feeling invisible to radiating elegance'
+              },
+              {
+                before: '/slim.webp',
+                after: '/gym.webp',
+                title: 'Wardrobe Mastery',
+                description: 'From style confusion to effortless chic'
+              }
+            ].map((comparison, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                className="group relative"
+              >
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6 text-center">{comparison.title}</h3>
+                  
+                  <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div className="text-center">
+                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">Before</div>
+                      <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                        <Image
+                          src={comparison.before}
+                          alt={`Before ${comparison.title}`}
+                          width={200}
+                          height={200}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">After</div>
+                      <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
+                        <Image
+                          src={comparison.after}
+                          alt={`After ${comparison.title}`}
+                          width={200}
+                          height={200}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">{comparison.description}</p>
+                  
+                  {/* Glass shine effect */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -374,6 +551,18 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
+                {/* Feature Image */}
+                <div className="relative w-full h-32 md:h-40 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                  <Image
+                    src={feature.image}
+                    alt={feature.imageAlt}
+                    width={300}
+                    height={200}
+                    className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                </div>
+                
                 <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-rose-100/80 to-pink-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
                   <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-rose-600" />
                 </div>
@@ -458,6 +647,96 @@ export default function Home() {
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Process Section - Added for More Visual Appeal */}
+      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12 md:mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+              Your Transformation Journey
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Simple steps to unlock your signature style and confidence
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-8">
+            {[
+              {
+                step: '01',
+                title: 'Style Assessment',
+                description: 'Complete your personalized style questionnaire',
+                image: '/style.webp',
+                imageAlt: 'Style assessment'
+              },
+              {
+                step: '02',
+                title: 'Expert Consultation',
+                description: '20-minute call with our style consultant',
+                image: '/grooming.webp',
+                imageAlt: 'Expert consultation'
+              },
+              {
+                step: '03',
+                title: 'Personalized Plan',
+                description: 'Get your custom style transformation roadmap',
+                image: '/stylish.webp',
+                imageAlt: 'Personalized plan'
+              },
+              {
+                step: '04',
+                title: 'Transform & Shine',
+                description: 'Apply your new style and feel confident',
+                image: '/gym.webp',
+                imageAlt: 'Transform and shine'
+              }
+            ].map((process, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                className="group relative text-center"
+              >
+                <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
+                  {/* Step Number */}
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 md:w-12 md:h-12 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-lg">
+                    {process.step}
+                  </div>
+                  
+                  {/* Process Image */}
+                  <div className="relative w-full h-24 md:h-32 mt-4 md:mt-6 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                    <Image
+                      src={process.image}
+                      alt={process.imageAlt}
+                      width={200}
+                      height={150}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                  </div>
+                  
+                  <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-gray-900 leading-tight">{process.title}</h3>
+                  <p className="text-sm md:text-base text-gray-600 leading-relaxed">{process.description}</p>
+                  
+                  {/* Glass shine effect */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+                
+                {/* Connection Line (except for last item) */}
+                {index < 3 && (
+                  <div className="hidden md:block absolute top-1/2 left-full w-full h-0.5 bg-gradient-to-r from-rose-200 to-pink-200 transform -translate-y-1/2 z-0"></div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -671,6 +950,74 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Visual Gallery Section - Added for More Visual Impact */}
+      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12 md:mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+              Style Inspiration Gallery
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Discover the endless possibilities of your personal style transformation
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            {[
+              { image: '/style.webp', alt: 'Elegant style transformation' },
+              { image: '/grooming.webp', alt: 'Beauty and grooming' },
+              { image: '/skin.webp', alt: 'Natural beauty enhancement' },
+              { image: '/stylish.webp', alt: 'Sophisticated style' },
+              { image: '/gym.webp', alt: 'Confidence and wellness' },
+              { image: '/slim.webp', alt: 'Body confidence' },
+              { image: '/grooming.webp', alt: 'Personal care' },
+              { image: '/style.webp', alt: 'Style discovery' }
+            ].map((gallery, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="group relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              >
+                <Image
+                  src={gallery.image}
+                  alt={gallery.alt}
+                  width={300}
+                  height={300}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* Hover overlay with style tip */}
+                <div className="absolute inset-0 flex items-end justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="bg-white/90 backdrop-blur-sm rounded-t-2xl p-3 mb-2 text-center">
+                    <p className="text-xs md:text-sm font-semibold text-gray-800">Style Tip #{index + 1}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="text-center mt-8 md:mt-12"
+          >
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+              Each image represents a different aspect of your style journey. 
+              From color analysis to wardrobe building, discover what makes you uniquely beautiful.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* FAQ Section - Mobile Optimized */}
       <section id="faq" className="py-12 md:py-20 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto">
@@ -702,6 +1049,81 @@ export default function Home() {
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Visual Trust Section - Added for More Visual Impact */}
+      <section className="py-16 md:py-24 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12 md:mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+              Why Women Trust IconOne
+            </h2>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Real results, real women, real transformations
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {[
+              {
+                image: '/skin.webp',
+                title: 'Proven Results',
+                description: '200+ women have transformed their style and confidence',
+                stats: '95% Success Rate'
+              },
+              {
+                image: '/stylish.webp',
+                title: 'Expert Guidance',
+                description: 'Certified stylists with 5+ years of experience',
+                stats: '5-Star Rating'
+              },
+              {
+                image: '/gym.webp',
+                title: 'Personalized Approach',
+                description: 'Every transformation is unique to your style goals',
+                stats: '100% Custom'
+              }
+            ].map((trust, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                className="group relative text-center"
+              >
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
+                  {/* Trust Image */}
+                  <div className="relative w-full h-32 md:h-40 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                    <Image
+                      src={trust.image}
+                      alt={trust.title}
+                      width={300}
+                      height={200}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                  </div>
+                  
+                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-gray-900 leading-tight">{trust.title}</h3>
+                  <p className="text-gray-600 leading-relaxed text-sm md:text-base mb-3 md:mb-4">{trust.description}</p>
+                  
+                  {/* Stats Badge */}
+                  <div className="inline-block bg-gradient-to-r from-rose-100 to-pink-100 px-3 py-2 rounded-full">
+                    <span className="text-sm md:text-base font-semibold text-rose-700">{trust.stats}</span>
+                  </div>
+                  
+                  {/* Glass shine effect */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -797,6 +1219,33 @@ export default function Home() {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Floating Action Button */}
+      <div className="fixed bottom-24 right-6 z-50 md:hidden">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 1 }}
+        >
+          <Link
+            href="/checkout"
+            onClick={() => {
+              // Track mobile FAB click with Meta Pixel
+              if (typeof window !== 'undefined' && window.fbq) {
+                window.fbq('track', 'Lead', {
+                  content_name: 'Mobile FAB Click',
+                  content_category: 'Style Transformation Program'
+                });
+              }
+            }}
+            className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-16 h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center"
+          >
+            <ArrowRight className="w-8 h-8 group-hover:rotate-45 transition-transform duration-300" />
+            {/* Pulse animation */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 animate-ping opacity-20"></div>
+          </Link>
+        </motion.div>
       </div>
 
       {/* Footer */}
