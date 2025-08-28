@@ -174,22 +174,18 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-20 px-4">
+      <section className="pt-20 md:pt-24 pb-16 md:pb-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 leading-tight tracking-tight">
               <span className="text-gray-900">Stop Feeling Invisible. Start Feeling</span>{' '}
               <span className="bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Irresistible.</span>
             </h1>
             
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-gray-900">
-              Discover the Elegant, Confident You.
-            </h2>
-
             {/* Product Preview - Book Image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -198,24 +194,16 @@ export default function Home() {
               className="mb-12"
             >
               <div className="text-center">
-                <div className="relative w-72 h-90 md:w-80 md:h-96 mx-auto mb-6">
+                <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
                   <Image
                     src="/book.png"
                     alt="IconOne Style Guide Preview"
                     width={320}
-                    height={400}
-                    className="object-contain rounded-lg shadow-2xl"
+                    height={320}
+                    className="object-contain"
                     priority
                   />
-                  {/* Decorative elements around the book */}
-                  <div className="absolute -top-2 -left-2 w-4 h-4 bg-gradient-to-r from-rose-400 to-pink-400 rounded-full opacity-60 animate-pulse"></div>
-                  <div className="absolute -top-2 -right-2 w-3 h-3 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full opacity-60 animate-pulse delay-1000"></div>
-                  <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full opacity-60 animate-pulse delay-2000"></div>
-                  <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-gradient-to-r from-green-400 to-teal-400 rounded-full opacity-60 animate-pulse delay-1500"></div>
                 </div>
-                <p className="text-lg md:text-xl text-gray-600 max-w-md mx-auto">
-                  Your complete style transformation guide with personalized consultation and expert guidance
-                </p>
               </div>
             </motion.div>
           </motion.div>
@@ -233,7 +221,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
+            className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16"
           >
             <Link 
               href="/checkout" 
@@ -280,7 +268,7 @@ export default function Home() {
       </section>
 
       {/* Hero Transformations - Moved Right Below Hero */}
-      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-12 md:py-20 lg:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -296,7 +284,7 @@ export default function Home() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
                 { image: '/style.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
                 { image: '/grooming.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
@@ -311,18 +299,16 @@ export default function Home() {
                 >
                   {/* Glassmorphism Card */}
                   <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
-                    <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 md:mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        width={400}
-                        height={400}
-                        className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
-                        placeholder="blur"
-                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-                    </div>
+                                      <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 md:mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                  </div>
                     <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">{item.title}</h4>
                     <p className="text-gray-600 leading-relaxed text-sm md:text-base">{item.description}</p>
                     
@@ -336,7 +322,7 @@ export default function Home() {
       </section>
 
       {/* Visual Stats Section - Added for More Visual Appeal */}
-      <section className="py-12 md:py-16 px-4 bg-white">
+      <section className="py-8 md:py-12 lg:py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
             {[
@@ -380,7 +366,7 @@ export default function Home() {
               </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
               { 
                 icon: Users, 
@@ -412,12 +398,12 @@ export default function Home() {
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
               >
                 {/* Problem Image */}
-                <div className="relative w-full h-32 md:h-40 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                <div className="relative w-full aspect-[9/16] mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                   <Image
                     src={item.image}
                     alt={item.imageAlt}
                     width={300}
-                    height={200}
+                    height={533}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
@@ -487,12 +473,12 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                     <div className="text-center">
                       <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">Before</div>
-                      <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                         <Image
                           src={comparison.before}
                           alt={`Before ${comparison.title}`}
-                          width={200}
-                          height={200}
+                          width={250}
+                          height={250}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
@@ -501,12 +487,12 @@ export default function Home() {
                     
                     <div className="text-center">
                       <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">After</div>
-                      <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
                         <Image
                           src={comparison.after}
                           alt={`After ${comparison.title}`}
-                          width={200}
-                          height={200}
+                          width={250}
+                          height={250}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent"></div>
@@ -542,7 +528,7 @@ export default function Home() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 mb-8 md:mb-16">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -552,12 +538,12 @@ export default function Home() {
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 {/* Feature Image */}
-                <div className="relative w-full h-32 md:h-40 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                <div className="relative w-full aspect-[9/16] mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                   <Image
                     src={feature.image}
                     alt={feature.imageAlt}
                     width={300}
-                    height={200}
+                    height={533}
                     className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
@@ -612,7 +598,7 @@ export default function Home() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
@@ -628,8 +614,6 @@ export default function Home() {
                     width={300}
                     height={300}
                     className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                   />
                 </div>
                 <blockquote className="text-gray-700 mb-4 md:mb-6 italic text-base md:text-lg leading-relaxed">
@@ -670,7 +654,7 @@ export default function Home() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
             {[
               {
                 step: '01',
@@ -715,12 +699,12 @@ export default function Home() {
                   </div>
                   
                   {/* Process Image */}
-                  <div className="relative w-full h-24 md:h-32 mt-4 md:mt-6 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                  <div className="relative w-full aspect-square mt-4 md:mt-6 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                     <Image
                       src={process.image}
                       alt={process.imageAlt}
                       width={200}
-                      height={150}
+                      height={200}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
@@ -967,7 +951,7 @@ export default function Home() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
             {[
               { image: '/style.webp', alt: 'Elegant style transformation' },
               { image: '/grooming.webp', alt: 'Beauty and grooming' },
@@ -1072,7 +1056,7 @@ export default function Home() {
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
               {
                 image: '/skin.webp',
@@ -1102,12 +1086,12 @@ export default function Home() {
               >
                 <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
                   {/* Trust Image */}
-                  <div className="relative w-full h-32 md:h-40 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                  <div className="relative w-full aspect-[9/16] mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                     <Image
                       src={trust.image}
                       alt={trust.title}
                       width={300}
-                      height={200}
+                      height={533}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
