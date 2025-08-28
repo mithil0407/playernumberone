@@ -39,35 +39,35 @@ export default function Home() {
       icon: CheckCircle, 
       title: 'Personal Style Assessment', 
       description: 'Discover your unique style based on body shape, lifestyle & personality',
-      image: '/style.webp',
+      image: '/style-assessment.webp',
       imageAlt: 'Style assessment'
     },
     { 
       icon: Target, 
       title: 'Personalized Color Palette', 
       description: 'Colors that make your skin glow and enhance your natural beauty',
-      image: '/skin.webp',
+      image: '/color-palette.webp',
       imageAlt: 'Color palette'
     },
     { 
       icon: TrendingUp, 
       title: 'Wardrobe Blueprint', 
       description: 'Mix-and-match formulas for effortless, elegant looks',
-      image: '/stylish.webp',
+      image: '/wardrobe-blueprint.webp',
       imageAlt: 'Wardrobe blueprint'
     },
     { 
       icon: Heart, 
       title: 'Beauty & Wellness Plan', 
       description: 'Confidence-building rituals for inner and outer radiance',
-      image: '/gym.webp',
+      image: '/beauty-wellness.webp',
       imageAlt: 'Wellness plan'
     },
     { 
       icon: Zap, 
       title: 'Expert Style Consultation', 
       description: '20-minute personalized call with our leading stylist',
-      image: '/grooming.webp',
+      image: '/expert-consultation.webp',
       imageAlt: 'Style consultation'
     }
   ];
@@ -76,17 +76,17 @@ export default function Home() {
     {
       name: 'Priya, 28',
       story: 'Finally discovered my signature style. I feel confident and elegant in my own skin.',
-      image: '/skin.webp'
+      image: '/testimonial-priya.webp'
     },
     {
       name: 'Ananya, 32',
       story: 'The color palette changed everything! People keep asking what I did differently.',
-      image: '/slim.webp'
+      image: '/testimonial-ananya.webp'
     },
     {
       name: 'Shreya, 26',
       story: 'Shopping is no longer overwhelming. I know exactly what works for me.',
-      image: '/stylish.webp'
+      image: '/testimonial-shreya.webp'
     }
   ];
 
@@ -106,7 +106,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative">
+    <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative touch-manipulation">
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -157,14 +157,14 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/50"
           >
-            <div className="px-4 py-4 space-y-2">
-              <a href="#features" className="block text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium">Features</a>
-              <a href="#testimonials" className="block text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium">Stories</a>
-              <a href="#pricing" className="block text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium">Pricing</a>
-              <a href="#faq" className="block text-gray-600 hover:text-gray-900 px-3 py-2 text-base font-medium">FAQ</a>
+            <div className="px-4 py-6 space-y-3">
+              <a href="#features" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Features</a>
+              <a href="#testimonials" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Stories</a>
+              <a href="#pricing" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Pricing</a>
+              <a href="#faq" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="block bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-3 rounded-full text-base font-semibold text-center mt-4"
+                className="block bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-4 rounded-full text-base font-semibold text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Start Now
               </Link>
@@ -181,7 +181,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
               <span className="text-gray-900">Stop Feeling Invisible. Start Feeling</span>{' '}
               <span className="bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Irresistible.</span>
             </h1>
@@ -234,7 +234,7 @@ export default function Home() {
                   });
                 }
               }}
-              className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-10 py-4 rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20"
+              className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 md:px-10 py-4 md:py-4 rounded-full text-base md:text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20 w-full sm:w-auto justify-center"
             >
               <span className="relative z-10">Start Your Transformation</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
@@ -286,9 +286,9 @@ export default function Home() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
-                { image: '/style.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
-                { image: '/grooming.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
-                { image: '/gym.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
+                { image: '/style-discovery.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
+                { image: '/beauty-routine.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
+                { image: '/wellness-confidence.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
               ].map((item, index) => (
                 <motion.div
                   key={index}
@@ -324,7 +324,7 @@ export default function Home() {
       {/* Visual Stats Section - Added for More Visual Appeal */}
       <section className="py-8 md:py-12 lg:py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
             {[
               { number: '200+', label: 'Women Transformed', icon: '✨', color: 'from-rose-400 to-pink-400' },
               { number: '95%', label: 'Confidence Boost', icon: '💪', color: 'from-purple-400 to-indigo-400' },
@@ -350,7 +350,7 @@ export default function Home() {
       </section>
 
       {/* Problem Section - Mobile Optimized */}
-      <section className="py-12 md:py-20 px-4 bg-gray-50">
+      <section className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -372,21 +372,21 @@ export default function Home() {
                 icon: Users, 
                 text: 'Feel overlooked or invisible in social settings?', 
                 color: 'red',
-                image: '/skin.webp',
+                image: '/feeling-overlooked.webp',
                 imageAlt: 'Woman feeling overlooked'
               },
               { 
                 icon: Clock, 
                 text: 'Confused about what styles actually suit you?', 
                 color: 'orange',
-                image: '/style.webp',
+                image: '/style-confusion.webp',
                 imageAlt: 'Style confusion'
               },
               { 
                 icon: Heart, 
                 text: 'Lost confidence in your appearance?', 
                 color: 'rose',
-                image: '/grooming.webp',
+                image: '/confidence-issues.webp',
                 imageAlt: 'Confidence building'
               }
             ].map((item, index) => (
@@ -395,15 +395,15 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-6 lg:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
               >
                 {/* Problem Image */}
-                <div className="relative w-full aspect-[9/16] mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                   <Image
                     src={item.image}
                     alt={item.imageAlt}
                     width={300}
-                    height={533}
+                    height={300}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
@@ -448,14 +448,14 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {[
               {
-                before: '/skin.webp',
-                after: '/stylish.webp',
+                before: '/style-before.webp',
+                after: '/style-after.webp',
                 title: 'Style Confidence',
                 description: 'From feeling invisible to radiating elegance'
               },
               {
-                before: '/slim.webp',
-                after: '/gym.webp',
+                before: '/wardrobe-before.webp',
+                after: '/wardrobe-after.webp',
                 title: 'Wardrobe Mastery',
                 description: 'From style confusion to effortless chic'
               }
@@ -512,7 +512,7 @@ export default function Home() {
       </section>
 
       {/* Features Section - Mobile Optimized */}
-      <section id="features" className="py-12 md:py-20 px-4">
+      <section id="features" className="py-8 md:py-16 lg:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -538,15 +538,15 @@ export default function Home() {
                 className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 {/* Feature Image */}
-                <div className="relative w-full aspect-[9/16] mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                   <Image
                     src={feature.image}
                     alt={feature.imageAlt}
                     width={300}
-                    height={533}
+                    height={300}
                     className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-transparent"></div>
                 </div>
                 
                 <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-rose-100/80 to-pink-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
@@ -582,7 +582,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials - Mobile Optimized */}
-      <section id="testimonials" className="py-12 md:py-20 px-4 bg-gray-50">
+      <section id="testimonials" className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -660,28 +660,28 @@ export default function Home() {
                 step: '01',
                 title: 'Style Assessment',
                 description: 'Complete your personalized style questionnaire',
-                image: '/style.webp',
+                image: '/step1-assessment.webp',
                 imageAlt: 'Style assessment'
               },
               {
                 step: '02',
                 title: 'Expert Consultation',
                 description: '20-minute call with our style consultant',
-                image: '/grooming.webp',
+                image: '/step2-consultation.webp',
                 imageAlt: 'Expert consultation'
               },
               {
                 step: '03',
                 title: 'Personalized Plan',
                 description: 'Get your custom style transformation roadmap',
-                image: '/stylish.webp',
+                image: '/step3-plan.webp',
                 imageAlt: 'Personalized plan'
               },
               {
                 step: '04',
                 title: 'Transform & Shine',
                 description: 'Apply your new style and feel confident',
-                image: '/gym.webp',
+                image: '/step4-results.webp',
                 imageAlt: 'Transform and shine'
               }
             ].map((process, index) => (
@@ -728,7 +728,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section - Mobile Optimized */}
-      <section id="pricing" className="py-12 md:py-20 px-4">
+      <section id="pricing" className="py-8 md:py-16 lg:py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -752,9 +752,9 @@ export default function Home() {
             className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 overflow-hidden mb-8"
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
-              <h3 className="text-xl md:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
-              <div className="text-3xl md:text-5xl font-bold mb-2">₹999</div>
-              <p className="text-base md:text-lg opacity-90">Complete personal style transformation</p>
+              <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
+              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹999</div>
+              <p className="text-sm md:text-base lg:text-lg opacity-90">Complete personal style transformation</p>
             </div>
             
             <div className="p-4 md:p-6">
@@ -953,14 +953,14 @@ export default function Home() {
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
             {[
-              { image: '/style.webp', alt: 'Elegant style transformation' },
-              { image: '/grooming.webp', alt: 'Beauty and grooming' },
-              { image: '/skin.webp', alt: 'Natural beauty enhancement' },
-              { image: '/stylish.webp', alt: 'Sophisticated style' },
-              { image: '/gym.webp', alt: 'Confidence and wellness' },
-              { image: '/slim.webp', alt: 'Body confidence' },
-              { image: '/grooming.webp', alt: 'Personal care' },
-              { image: '/style.webp', alt: 'Style discovery' }
+              { image: '/gallery-style1.webp', alt: 'Elegant style transformation' },
+              { image: '/gallery-beauty1.webp', alt: 'Beauty and grooming' },
+              { image: '/gallery-natural.webp', alt: 'Natural beauty enhancement' },
+              { image: '/gallery-sophisticated.webp', alt: 'Sophisticated style' },
+              { image: '/gallery-wellness.webp', alt: 'Confidence and wellness' },
+              { image: '/gallery-confidence.webp', alt: 'Body confidence' },
+              { image: '/gallery-care.webp', alt: 'Personal care' },
+              { image: '/gallery-discovery.webp', alt: 'Style discovery' }
             ].map((gallery, index) => (
               <motion.div
                 key={index}
@@ -1003,7 +1003,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Section - Mobile Optimized */}
-      <section id="faq" className="py-12 md:py-20 px-4 bg-gray-50">
+      <section id="faq" className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1059,19 +1059,19 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
               {
-                image: '/skin.webp',
+                image: '/trust-results.webp',
                 title: 'Proven Results',
                 description: '200+ women have transformed their style and confidence',
                 stats: '95% Success Rate'
               },
               {
-                image: '/stylish.webp',
+                image: '/trust-expert.webp',
                 title: 'Expert Guidance',
                 description: 'Certified stylists with 5+ years of experience',
                 stats: '5-Star Rating'
               },
               {
-                image: '/gym.webp',
+                image: '/trust-personalized.webp',
                 title: 'Personalized Approach',
                 description: 'Every transformation is unique to your style goals',
                 stats: '100% Custom'
@@ -1086,15 +1086,15 @@ export default function Home() {
               >
                 <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
                   {/* Trust Image */}
-                  <div className="relative w-full aspect-[9/16] mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                  <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                     <Image
                       src={trust.image}
                       alt={trust.title}
                       width={300}
-                      height={533}
+                      height={300}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-transparent"></div>
                   </div>
                   
                   <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-gray-900 leading-tight">{trust.title}</h3>
@@ -1115,7 +1115,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section - Mobile Optimized */}
-      <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-rose-500 to-pink-500">
+      <section className="py-8 md:py-16 lg:py-20 px-4 bg-gradient-to-r from-rose-500 to-pink-500">
         <div className="max-w-4xl mx-auto text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1197,7 +1197,7 @@ export default function Home() {
                   });
                 }
               }}
-              className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-4 rounded-full text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300"
+              className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 md:px-6 py-4 rounded-full text-base md:text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300 min-h-[48px] flex items-center justify-center"
             >
               ✨ Start Now
             </Link>
@@ -1206,7 +1206,7 @@ export default function Home() {
       </div>
 
       {/* Mobile Floating Action Button */}
-      <div className="fixed bottom-24 right-6 z-50 md:hidden">
+      <div className="fixed bottom-24 right-4 md:right-6 z-50 md:hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1223,9 +1223,9 @@ export default function Home() {
                 });
               }
             }}
-            className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-16 h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center"
+            className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center touch-manipulation"
           >
-            <ArrowRight className="w-8 h-8 group-hover:rotate-45 transition-transform duration-300" />
+            <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:rotate-45 transition-transform duration-300" />
             {/* Pulse animation */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 animate-ping opacity-20"></div>
           </Link>
