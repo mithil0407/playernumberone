@@ -1,5 +1,7 @@
 'use client';
 
+import Head from 'next/head';
+
 // Facebook Pixel types
 interface FacebookPixel {
   (command: 'init', pixelId: string): void;
@@ -106,8 +108,22 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative touch-manipulation">
-      {/* Navigation Bar */}
+    <>
+      <Head>
+        <title>IconOne - Discover Your Signature Style & Transform Your Confidence</title>
+        <meta name="description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives." />
+        <meta name="keywords" content="style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover" />
+        <meta property="og:title" content="IconOne - Discover Your Signature Style & Transform Your Confidence" />
+        <meta property="og:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://playernumberone.com" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="IconOne - Discover Your Signature Style & Transform Your Confidence" />
+        <meta name="twitter:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
+        <link rel="canonical" href="https://playernumberone.com" />
+      </Head>
+      <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative touch-manipulation">
+        {/* Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -1309,6 +1325,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
