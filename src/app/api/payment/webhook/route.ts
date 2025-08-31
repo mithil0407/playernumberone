@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
+import { updateSessionInSheet, updatePaymentStatusInSheet } from '@/lib/googleSheets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -121,7 +122,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
     // First try to find the order by razorpay_order_id
     const { data: existingOrder } = await supabase
       .from('orders')
-      .select('*')
+      .select('*, customers(*)')
       .eq('razorpay_order_id', order_id)
       .single();
 
@@ -141,6 +142,14 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
         console.error('Error updating order:', updateError);
       } else {
         console.log(`Order ${order_id} marked as completed`);
+        
+        // Update payment status in Google Sheets
+        try {
+          await updatePaymentStatusInSheet(existingOrder.customer_id, 'completed');
+          console.log('Payment status updated in Google Sheets');
+        } catch (sheetError) {
+          console.log('Failed to update payment status in Google Sheets:', sheetError);
+        }
       }
     } else {
       console.log(`Order with razorpay_order_id ${order_id} not found`);

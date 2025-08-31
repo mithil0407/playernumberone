@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { updateSessionInSheet } from '@/lib/googleSheets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -126,6 +127,14 @@ export async function POST(request: NextRequest) {
         { error: `Failed to create session: ${error.message || error.details || 'Unknown database error'}` },
         { status: 500 }
       );
+    }
+
+    // Update Google Sheets with session information
+    try {
+      await updateSessionInSheet(customer_id, scheduled_date, scheduled_time);
+      console.log('Session data updated in Google Sheets successfully');
+    } catch (sheetError) {
+      console.log('Failed to update session in Google Sheets:', sheetError);
     }
 
     return NextResponse.json({ 
