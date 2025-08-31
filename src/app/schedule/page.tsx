@@ -23,31 +23,10 @@ export default function SchedulePage() {
   const [isBooked, setIsBooked] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<{[key: string]: boolean}>({});
   const [loadingSlots, setLoadingSlots] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Fetch booked slots when component mounts
   useEffect(() => {
     fetchBookedSlots();
-    
-    // Debug: Check storage values
-    const customerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
-    const orderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
-    const paymentId = localStorage.getItem('paymentId') || sessionStorage.getItem('paymentId');
-    
-    setDebugInfo(`Debug Info:
-      Customer ID: ${customerId || 'NULL'}
-      Order ID: ${orderId || 'NULL'}
-      Payment ID: ${paymentId || 'NULL'}
-      localStorage keys: ${Object.keys(localStorage).join(', ')}
-      sessionStorage keys: ${Object.keys(sessionStorage).join(', ')}`);
-    
-    console.log('Schedule page storage check:', {
-      customerId,
-      orderId,
-      paymentId,
-      localStorage: Object.keys(localStorage),
-      sessionStorage: Object.keys(sessionStorage)
-    });
   }, []);
 
   // Fetch booked slots from database
@@ -276,10 +255,10 @@ export default function SchedulePage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
               Schedule Your IconOne Style Session
             </h1>
-            <p className="text-gray-400 text-lg">
+            <p className="text-gray-400 text-base md:text-lg">
               Choose your preferred time for your 1-on-1 style consultation
             </p>
             <button
@@ -294,81 +273,7 @@ export default function SchedulePage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Debug Section - Remove this in production */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-4 mb-8"
-        >
-          <h3 className="text-lg font-semibold text-yellow-400 mb-2">🔧 Debug Information</h3>
-          <pre className="text-xs text-yellow-300 whitespace-pre-wrap">{debugInfo}</pre>
-          
-          {/* Manual Input Fallback */}
-          <div className="mt-4 space-y-2">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Customer ID (if missing)"
-                id="manualCustomerId"
-                className="flex-1 px-2 py-1 text-xs bg-yellow-800 text-white rounded border border-yellow-600"
-              />
-              <input
-                type="text"
-                placeholder="Order ID (if missing)"
-                id="manualOrderId"
-                className="flex-1 px-2 py-1 text-xs bg-yellow-800 text-white rounded border border-yellow-600"
-              />
-            </div>
-            <button
-              onClick={() => {
-                const manualCustomerId = (document.getElementById('manualCustomerId') as HTMLInputElement)?.value;
-                const manualOrderId = (document.getElementById('manualOrderId') as HTMLInputElement)?.value;
-                
-                if (manualCustomerId) {
-                  localStorage.setItem('customerId', manualCustomerId);
-                  sessionStorage.setItem('customerId', manualCustomerId);
-                  console.log('Manually set customerId:', manualCustomerId);
-                }
-                if (manualOrderId) {
-                  localStorage.setItem('orderId', manualOrderId);
-                  sessionStorage.setItem('orderId', manualOrderId);
-                  console.log('Manually set orderId:', manualOrderId);
-                }
-                
-                // Refresh debug info
-                const customerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
-                const orderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
-                const paymentId = localStorage.getItem('paymentId') || sessionStorage.getItem('paymentId');
-                setDebugInfo(`Debug Info (Updated):
-                  Customer ID: ${customerId || 'NULL'}
-                  Order ID: ${orderId || 'NULL'}
-                  Payment ID: ${paymentId || 'NULL'}
-                  localStorage keys: ${Object.keys(localStorage).join(', ')}
-                  sessionStorage keys: ${Object.keys(sessionStorage).join(', ')}`);
-              }}
-              className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
-            >
-              Set Manual IDs
-            </button>
-          </div>
-          
-          <button
-            onClick={() => {
-              const customerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
-              const orderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
-              const paymentId = localStorage.getItem('paymentId') || sessionStorage.getItem('paymentId');
-              setDebugInfo(`Debug Info (Refreshed):
-                Customer ID: ${customerId || 'NULL'}
-                Order ID: ${orderId || 'NULL'}
-                Payment ID: ${paymentId || 'NULL'}
-                localStorage keys: ${Object.keys(localStorage).join(', ')}
-                sessionStorage keys: ${Object.keys(sessionStorage).join(', ')}`);
-            }}
-            className="mt-2 px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
-          >
-            Refresh Debug Info
-          </button>
-        </motion.div>
+
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -381,7 +286,7 @@ export default function SchedulePage() {
               <Users className="w-6 h-6 text-rose-400" />
               <h2 className="text-xl font-semibold">Style Session Details</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm">
               <div>
                 <span className="text-gray-400">Duration:</span>
                 <span className="ml-2 font-semibold">20 minutes</span>
@@ -404,19 +309,19 @@ export default function SchedulePage() {
               Select Date
             </h3>
             
-            <div className="grid grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
               {availableDays.map((day, index) => (
                 <button
                   key={index}
                   onClick={() => handleDateSelect(day.date)}
-                  className={`p-4 rounded-lg border transition-all duration-200 ${
+                  className={`p-3 md:p-4 rounded-lg border transition-all duration-200 ${
                     selectedDate === day.date
                       ? 'border-rose-500 bg-rose-900/30 text-rose-400'
                       : 'border-gray-600 bg-gray-800 hover:border-gray-500'
                   }`}
                 >
-                  <div className="text-sm text-gray-400">{day.day}</div>
-                  <div className="font-semibold">{day.date}</div>
+                  <div className="text-xs md:text-sm text-gray-400">{day.day}</div>
+                  <div className="text-sm md:text-base font-semibold">{day.date}</div>
                 </button>
               ))}
             </div>
@@ -434,7 +339,7 @@ export default function SchedulePage() {
                 Select Time for {selectedDate}
               </h3>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
                 {availableDays
                   .find(day => day.date === selectedDate)
                   ?.slots.map((slot) => (
@@ -442,7 +347,7 @@ export default function SchedulePage() {
                       key={slot.id}
                       onClick={() => handleTimeSelect(slot.time)}
                       disabled={!slot.available}
-                      className={`p-4 rounded-lg border transition-all duration-200 ${
+                      className={`p-3 md:p-4 rounded-lg border transition-all duration-200 text-sm md:text-base ${
                         !slot.available
                           ? 'border-gray-700 bg-gray-800 text-gray-500 cursor-not-allowed'
                           : selectedTime === slot.time
@@ -467,7 +372,7 @@ export default function SchedulePage() {
               <button
                 onClick={handleBooking}
                 disabled={isBooking}
-                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white px-12 py-4 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto"
+                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white px-8 md:px-12 py-4 rounded-lg text-lg md:text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-full sm:w-auto justify-center"
               >
                 {isBooking ? 'Booking Your Session...' : 'Confirm Session'}
                 {!isBooking && <ArrowRight className="w-6 h-6" />}
@@ -487,7 +392,7 @@ export default function SchedulePage() {
             className="mt-12 bg-gray-800 rounded-lg p-6"
           >
             <h3 className="text-lg font-semibold mb-4">What to Expect</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-sm text-gray-300">
               <div className="space-y-2">
                 <p>• 5 min style goals discussion</p>
                 <p>• 10 min personalized style assessment</p>
