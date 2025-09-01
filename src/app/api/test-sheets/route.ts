@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         customer_name: 'Test Customer',
         customer_email: 'test@example.com',
         customer_phone: '1234567890',
-        order_amount: 999,
+        order_amount: 784,
         order_id: 'test-order-123',
         customer_id: 'test-customer-456',
         payment_status: 'pending',

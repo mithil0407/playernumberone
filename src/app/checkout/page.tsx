@@ -56,8 +56,9 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Product pricing
-  const basePrice = 999;
-  const totalBasePrice = basePrice; // No GST for main product
+  const basePrice = 599;
+  const gstAmount = 185;
+  const totalBasePrice = basePrice + gstAmount; // ₹599 + ₹185 GST = ₹784
   
   // Add-ons
   const [shoppingGuideAddon, setShoppingGuideAddon] = useState(false);

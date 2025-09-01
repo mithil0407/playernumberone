@@ -769,7 +769,7 @@ export default function Home() {
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
               <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
-              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹999</div>
+              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹599 + ₹185 GST</div>
               <p className="text-sm md:text-base lg:text-lg opacity-90">Complete personal style transformation</p>
             </div>
             
@@ -832,7 +832,7 @@ export default function Home() {
                       window.fbq('track', 'Lead', {
                         content_name: 'Style Consultation CTA Click',
                         content_category: 'Style Consultation',
-                        value: 999,
+                        value: 784,
                         currency: 'INR'
                       });
                     }
@@ -1153,7 +1153,7 @@ export default function Home() {
                     window.fbq('track', 'Lead', {
                       content_name: 'Final CTA Click',
                       content_category: 'Style Transformation Program',
-                      value: 999,
+                      value: 784,
                       currency: 'INR'
                     });
                   }
@@ -1184,7 +1184,7 @@ export default function Home() {
                 </div>
               </div>
               
-                              <p className="text-sm opacity-75 text-center">₹999 • Limited slots available</p>
+                              <p className="text-sm opacity-75 text-center">₹599 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -1197,7 +1197,10 @@ export default function Home() {
             <div className="flex-1">
               <div className="text-center">
                 <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
-                <p className="text-lg font-bold text-gray-900">₹999</p>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="text-sm line-through text-gray-500">₹1,999</span>
+                  <span className="text-lg font-bold text-gray-900">₹599 + GST</span>
+                </div>
                 <p className="text-xs text-gray-600">Style Transformation</p>
               </div>
             </div>
@@ -1208,7 +1211,7 @@ export default function Home() {
                   window.fbq('track', 'Lead', {
                     content_name: 'Mobile Sticky CTA',
                     content_category: 'Mobile Conversion',
-                    value: 999,
+                    value: 784,
                     currency: 'INR'
                   });
                 }
