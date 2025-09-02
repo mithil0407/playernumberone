@@ -163,3 +163,50 @@ export async function updatePaymentStatusInSheet(customerId: string, paymentStat
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+export async function updateAddOnsInSheet(customerId: string, addOns: string) {
+  try {
+    if (!process.env.GOOGLE_SHEET_ID) {
+      console.log('Google Sheet ID not configured, skipping sheet update');
+      return { success: false, error: 'Google Sheet not configured' };
+    }
+
+    // First, find the row with the customer ID
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: 'Sheet1!A:M',
+    });
+
+    const rows = response.data.values || [];
+    let rowIndex = -1;
+
+    // Find the row with matching customer ID (column G)
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][6] === customerId) { // Column G (index 6) contains customer_id
+        rowIndex = i + 1; // +1 because sheets are 1-indexed
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      console.log('Customer not found in sheet for add-ons update');
+      return { success: false, error: 'Customer not found in sheet' };
+    }
+
+    // Update the add-ons column (L)
+    const updateResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: `Sheet1!L${rowIndex}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[addOns]],
+      },
+    });
+
+    console.log('Add-ons updated in Google Sheet:', updateResponse.data);
+    return { success: true, data: updateResponse.data };
+  } catch (error) {
+    console.error('Error updating add-ons in Google Sheet:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

@@ -6,7 +6,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, consultation_price, dating_guide_price } = body;
+    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, shopping_guide_price, wellness_plan_price } = body;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       const order = await saveOrder({
         customer_id: customer.id!,
         amount,
-        add_on: add_ons.consultation || add_ons.dating_guide, // Check if any add-ons are selected
+        add_on: add_ons.shopping_guide || add_ons.wellness_plan, // Check if any add-ons are selected
         status: 'pending',
         razorpay_order_id: orderId
       });
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       // Add customer data to Google Sheets
       try {
         const addOnsString = [
-          add_ons.consultation ? 'Shopping Guide' : '',
-          add_ons.dating_guide ? 'Wellness Plan' : ''
+          add_ons.shopping_guide ? 'Shopping Guide' : '',
+          add_ons.wellness_plan ? 'Wellness Plan' : ''
         ].filter(Boolean).join(', ');
         
         await addCustomerToSheet({
@@ -97,11 +97,11 @@ export async function POST(request: NextRequest) {
           customer_email: customer_email,
           customer_phone: customer_phone,
           base_product: base_product,
-          consultation_addon: add_ons.consultation ? 'true' : 'false',
-          dating_guide_addon: add_ons.dating_guide ? 'true' : 'false',
+          shopping_guide_addon: add_ons.shopping_guide ? 'true' : 'false',
+          wellness_plan_addon: add_ons.wellness_plan ? 'true' : 'false',
           total_base_price: total_base_price,
-          consultation_price: consultation_price,
-          dating_guide_price: dating_guide_price,
+          shopping_guide_price: shopping_guide_price,
+          wellness_plan_price: wellness_plan_price,
           service: 'Alpha1 Grooming Guide',
           db_order_id: dbOrderId,
           customer_id: customerId

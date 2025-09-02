@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
-import { updateSessionInSheet, updatePaymentStatusInSheet } from '@/lib/googleSheets';
+import { updateSessionInSheet, updatePaymentStatusInSheet, updateAddOnsInSheet } from '@/lib/googleSheets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -147,8 +147,18 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
         try {
           await updatePaymentStatusInSheet(existingOrder.customer_id, 'completed');
           console.log('Payment status updated in Google Sheets');
+          
+          // Also update add-ons if they exist
+          const addOnsString = [
+            existingOrder.add_on ? 'Shopping Guide, Wellness Plan' : ''
+          ].filter(Boolean).join(', ');
+          
+          if (addOnsString) {
+            await updateAddOnsInSheet(existingOrder.customer_id, addOnsString);
+            console.log('Add-ons updated in Google Sheets');
+          }
         } catch (sheetError) {
-          console.log('Failed to update payment status in Google Sheets:', sheetError);
+          console.log('Failed to update Google Sheets:', sheetError);
         }
       }
     } else {
