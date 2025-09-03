@@ -2,208 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, CheckCircle, ArrowRight, Users } from 'lucide-react';
-
-interface TimeSlot {
-  id: string;
-  time: string;
-  available: boolean;
-}
-
-interface DaySlot {
-  date: string;
-  day: string;
-  slots: TimeSlot[];
-}
+import { CheckCircle, ArrowRight, Users, Calendar } from 'lucide-react';
+import Script from 'next/script';
+import Head from 'next/head';
 
 export default function SchedulePage() {
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [selectedTime, setSelectedTime] = useState<string>('');
-  const [isBooking, setIsBooking] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState<{[key: string]: boolean}>({});
-  const [loadingSlots, setLoadingSlots] = useState(true);
+  const [customerId, setCustomerId] = useState<string>('');
+  const [orderId, setOrderId] = useState<string>('');
 
-  // Fetch booked slots when component mounts
+  // Get customer ID and order ID from storage
   useEffect(() => {
-    fetchBookedSlots();
+    const storedCustomerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
+    const storedOrderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
+    
+    setCustomerId(storedCustomerId || '');
+    setOrderId(storedOrderId || '');
+    
+    console.log('Schedule page storage check:', {
+      customerId: storedCustomerId,
+      orderId: storedOrderId,
+      localStorage: Object.keys(localStorage),
+      sessionStorage: Object.keys(sessionStorage)
+    });
   }, []);
 
-  // Fetch booked slots from database
-  const fetchBookedSlots = async () => {
-    try {
-      setLoadingSlots(true);
-      const response = await fetch('/api/sessions');
-      if (response.ok) {
-        const data = await response.json();
-        const booked: {[key: string]: boolean} = {};
-        
-        if (data.data) {
-          data.data.forEach((session: { status: string; scheduled_date: string; scheduled_time: string }) => {
-            if (session.status === 'scheduled') {
-              const slotKey = `${session.scheduled_date}-${session.scheduled_time}`;
-              booked[slotKey] = true;
-            }
-          });
-        }
-        
-        setBookedSlots(booked);
-        console.log('Booked slots loaded:', booked);
-      }
-    } catch (error) {
-      console.error('Error fetching booked slots:', error);
-    } finally {
-      setLoadingSlots(false);
-    }
-  };
-
-  // Generate next 7 days with available time slots (excluding today and Sundays)
-  const generateAvailableSlots = (): DaySlot[] => {
-    const days: DaySlot[] = [];
-    const timeSlots = [
-      '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', 
-      '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
-      '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', 
-      '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM'
-    ];
-
-    let dayOffset = 1; // Start from tomorrow
-    
-    for (let i = 0; i < 14; i++) { // Generate more days to account for Sundays
-      const date = new Date();
-      date.setDate(date.getDate() + dayOffset);
-      
-      const dayOfWeek = date.getDay();
-      
-      // Skip Sundays (0) and today
-      if (dayOfWeek === 0) {
-        dayOffset++;
-        continue;
-      }
-      
-      // Only show 7 available days
-      if (days.length >= 7) break;
-      
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-      const dateString = date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        year: 'numeric'
-      });
-
-      // Check real-time availability against booked slots
-      const slots: TimeSlot[] = timeSlots.map((time, index) => {
-        const slotKey = `${dateString}-${time}`;
-        const isBooked = bookedSlots[slotKey] || false;
-        
-        return {
-          id: `${dayOffset}-${index}`,
-          time,
-          available: !isBooked
-        };
-      });
-
-      days.push({
-        date: dateString,
-        day: dayName,
-        slots
-      });
-      
-      dayOffset++;
-    }
-
-    return days;
-  };
-
-  const availableDays = generateAvailableSlots();
-
-  const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
-    setSelectedTime('');
-  };
-
-  const handleTimeSelect = (time: string) => {
-    const slotKey = `${selectedDate}-${time}`;
-    const isBooked = bookedSlots[slotKey] || false;
-    
-    if (isBooked) {
-      alert('This time slot is already booked. Please choose a different time.');
-      return;
-    }
-    
-    setSelectedTime(time);
-  };
-
-  const handleBooking = async () => {
-    if (!selectedDate || !selectedTime) return;
-    
-    setIsBooking(true);
-    
-    try {
-      // Get customer ID from localStorage (set during checkout)
-      const customerId = localStorage.getItem('customerId');
-      const orderId = localStorage.getItem('orderId');
-      
-      console.log('localStorage data:', {
-        customerId,
-        orderId,
-        allKeys: Object.keys(localStorage)
-      });
-      
-      if (!customerId || !orderId) {
-        const errorMsg = `Missing required data for booking:
-          Customer ID: ${customerId || 'NULL'}
-          Order ID: ${orderId || 'NULL'}
-          
-          Please ensure you have completed payment and try again.
-          If the issue persists, use the manual input above or contact support.
-          
-          Debug: Check browser console for more details.`;
-        
-        console.error(errorMsg);
-        alert(errorMsg);
-        setIsBooking(false);
-        return;
-      }
-      
-      console.log('Attempting to book session with:', {
-        customer_id: customerId,
-        order_id: orderId,
-        scheduled_date: selectedDate,
-        scheduled_time: selectedTime
-      });
-      
-      // Create session in database
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customer_id: customerId,
-          order_id: orderId,
-          scheduled_date: selectedDate,
-          scheduled_time: selectedTime,
-          status: 'scheduled'
-        }),
-      });
-      
-      if (response.ok) {
-        setIsBooked(true);
-        console.log('Session booked successfully');
-        // Refresh booked slots after successful booking
-        fetchBookedSlots();
-      } else {
-        const errorData = await response.json();
-        console.error('Session booking failed:', errorData);
-        alert(`Failed to book session: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error booking session:', error);
-      alert('Failed to book session. Please try again.');
-    } finally {
-      setIsBooking(false);
-    }
+  // Handle Google Calendar booking completion
+  const handleBookingComplete = () => {
+    setIsBooked(true);
+    console.log('Google Calendar booking completed');
   };
 
   if (isBooked) {
@@ -218,17 +45,17 @@ export default function SchedulePage() {
             <CheckCircle className="w-12 h-12 text-green-400" />
           </div>
           
-                                <h1 className="text-3xl font-bold mb-4 text-green-400">
+          <h1 className="text-3xl font-bold mb-4 text-green-400">
             You&apos;re Booked! 🎉
           </h1>
           
           <p className="text-xl mb-6 text-gray-300">
-            Your IconOne style consultation is confirmed for
+            Your IconOne style consultation is confirmed
           </p>
           
           <div className="bg-gray-800 rounded-lg p-6 mb-8">
             <div className="text-2xl font-bold text-blue-400 mb-2">
-              {selectedDate} at {selectedTime}
+              Session Scheduled Successfully
             </div>
             <p className="text-gray-400">
               You&apos;ll receive a confirmation email with meeting details shortly.
@@ -246,7 +73,11 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <>
+      <Head>
+        <link href="https://calendar.google.com/calendar/scheduling-button-script.css" rel="stylesheet" />
+      </Head>
+      <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -261,20 +92,11 @@ export default function SchedulePage() {
             <p className="text-gray-400 text-base md:text-lg">
               Choose your preferred time for your 1-on-1 style consultation
             </p>
-            <button
-              onClick={fetchBookedSlots}
-              disabled={loadingSlots}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loadingSlots ? 'Loading...' : 'Refresh Availability'}
-            </button>
           </motion.div>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -302,87 +124,47 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          {/* Date Selection */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-rose-400" />
-              Select Date
-            </h3>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
-              {availableDays.map((day, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleDateSelect(day.date)}
-                  className={`p-3 md:p-4 rounded-lg border transition-all duration-200 ${
-                    selectedDate === day.date
-                      ? 'border-rose-500 bg-rose-900/30 text-rose-400'
-                      : 'border-gray-600 bg-gray-800 hover:border-gray-500'
-                  }`}
-                >
-                  <div className="text-xs md:text-sm text-gray-400">{day.day}</div>
-                  <div className="text-sm md:text-base font-semibold">{day.date}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Time Selection */}
-          {selectedDate && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-rose-400" />
-                Select Time for {selectedDate}
-              </h3>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
-                {availableDays
-                  .find(day => day.date === selectedDate)
-                  ?.slots.map((slot) => (
-                    <button
-                      key={slot.id}
-                      onClick={() => handleTimeSelect(slot.time)}
-                      disabled={!slot.available}
-                      className={`p-3 md:p-4 rounded-lg border transition-all duration-200 text-sm md:text-base ${
-                        !slot.available
-                          ? 'border-gray-700 bg-gray-800 text-gray-500 cursor-not-allowed'
-                          : selectedTime === slot.time
-                          ? 'border-rose-500 bg-rose-900/30 text-rose-400'
-                          : 'border-gray-600 bg-gray-800 hover:border-gray-500'
-                      }`}
-                    >
-                      {slot.time}
-                    </button>
-                  ))}
+          {/* Google Calendar Integration */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
+          >
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-white" />
               </div>
-            </motion.div>
-          )}
-
-          {/* Booking Button */}
-          {selectedDate && selectedTime && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center"
-            >
-              <button
-                onClick={handleBooking}
-                disabled={isBooking}
-                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:opacity-50 text-white px-8 md:px-12 py-4 rounded-lg text-lg md:text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-full sm:w-auto justify-center"
-              >
-                {isBooking ? 'Booking Your Session...' : 'Confirm Session'}
-                {!isBooking && <ArrowRight className="w-6 h-6" />}
-              </button>
-              
-              <p className="text-sm text-gray-400 mt-4">
-                You&apos;ll receive a confirmation email with meeting details
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">Book Your Session</h2>
+              <p className="text-gray-300 text-lg">
+                Select your preferred time slot below
               </p>
-            </motion.div>
-          )}
+            </div>
+
+            {/* Google Calendar Appointment Scheduling */}
+            <div className="flex justify-center">
+              <div 
+                id="google-calendar-booking"
+                className="w-full max-w-md"
+              />
+            </div>
+
+            {/* Google Calendar Scripts */}
+            <Script
+              src="https://calendar.google.com/calendar/scheduling-button-script.js"
+              strategy="afterInteractive"
+              onLoad={() => {
+                if (typeof window !== 'undefined' && (window as any).calendar) {
+                  (window as any).calendar.schedulingButton.load({
+                    url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0RS48hFcWr-j-DSV5CvjwrBmp1YwJrffy5HElAvXOJGY6Saxc5CKaIczLocRFa57nMH7LMiC9j?gv=true',
+                    color: '#EC4899', // Rose color to match IconOne theme
+                    label: 'Book IconOne Style Session',
+                    target: document.getElementById('google-calendar-booking'),
+                  });
+                }
+              }}
+            />
+          </motion.div>
 
           {/* Instructions */}
           <motion.div
@@ -405,8 +187,47 @@ export default function SchedulePage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Customer Info Display */}
+          {customerId && orderId && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8 bg-blue-900/30 border border-blue-500/30 rounded-lg p-4"
+            >
+              <h3 className="text-sm font-semibold text-blue-400 mb-2">✅ Payment Verified</h3>
+              <p className="text-xs text-blue-300">
+                Customer ID: {customerId.substring(0, 8)}... | Order ID: {orderId.substring(0, 8)}...
+              </p>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Mobile Floating Action Button */}
+      <div className="fixed bottom-6 right-4 md:right-6 z-50 md:hidden">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 1 }}
+        >
+          <button
+            onClick={() => {
+              const calendarElement = document.getElementById('google-calendar-booking');
+              if (calendarElement) {
+                calendarElement.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center touch-manipulation"
+          >
+            <Calendar className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform duration-300" />
+            {/* Pulse animation */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 animate-ping opacity-20"></div>
+          </button>
         </motion.div>
       </div>
     </div>
+    </>
   );
 }

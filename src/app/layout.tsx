@@ -78,13 +78,12 @@ export default function RootLayout({
           `}
         </Script>
         <noscript>
-          <Image 
+          <img 
             height="1" 
             width="1" 
             style={{ display: 'none' }}
             src="https://www.facebook.com/tr?id=1373360484073939&ev=PageView&noscript=1"
             alt=""
-            priority
           />
         </noscript>
         {children}
