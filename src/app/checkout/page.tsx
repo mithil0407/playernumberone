@@ -264,12 +264,12 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
         {/* Urgency Banner */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-full text-lg font-bold mb-6 text-center animate-pulse"
+          className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg font-bold mb-4 md:mb-6 text-center animate-pulse"
         >
           ⚡ LIMITED TIME: 50% OFF + FREE BONUSES - Only 7 Spots Left Today! ⚡
         </motion.div>
@@ -279,19 +279,19 @@ export default function CheckoutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/70 backdrop-blur-xl rounded-2xl p-4 mb-6 flex flex-wrap justify-center gap-4"
+          className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
         >
-          <div className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-2 rounded-full">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-sm font-semibold">2,847+ Happy Clients</span>
+          <div className="flex items-center gap-1 md:gap-2 bg-green-100 text-green-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+            <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-xs md:text-sm font-semibold">2,847+ Happy Clients</span>
           </div>
-          <div className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-2 rounded-full">
-            <Lock className="w-4 h-4" />
-            <span className="text-sm font-semibold">100% Secure</span>
+          <div className="flex items-center gap-1 md:gap-2 bg-blue-100 text-blue-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+            <Lock className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-xs md:text-sm font-semibold">100% Secure</span>
           </div>
-          <div className="flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-2 rounded-full">
-            <Star className="w-4 h-4" />
-            <span className="text-sm font-semibold">4.9/5 Rating</span>
+          <div className="flex items-center gap-1 md:gap-2 bg-yellow-100 text-yellow-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+            <Star className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-xs md:text-sm font-semibold">4.9/5 Rating</span>
           </div>
         </motion.div>
 
@@ -300,17 +300,17 @@ export default function CheckoutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="space-y-4 mb-8"
+          className="space-y-3 md:space-y-4 mb-6 md:mb-8"
         >
-          <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-4 text-center">
-            <div className="text-red-600 font-bold text-lg">
+          <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-red-600 font-bold text-base md:text-lg">
               👀 {viewerCount} people are viewing this right now
             </div>
           </div>
           
-          <div className="bg-gray-900 text-white rounded-2xl p-4 text-center">
-            <div className="text-lg mb-2">Offer Expires In:</div>
-            <div className="text-3xl font-bold text-yellow-400">
+          <div className="bg-gray-900 text-white rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-base md:text-lg mb-1 md:mb-2">Offer Expires In:</div>
+            <div className="text-2xl md:text-3xl font-bold text-yellow-400">
               {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
             </div>
           </div>
@@ -321,36 +321,36 @@ export default function CheckoutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-center mb-8"
+          className="text-center mb-6 md:mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
             Your Personal Style Transformation Starts Now!
           </h1>
           
-          <div className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            <span className="line-through text-gray-400 mr-4">₹{originalPrice}</span>
+          <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
+            <span className="line-through text-gray-400 mr-2 md:mr-4">₹{originalPrice}</span>
             <span className="text-green-600">₹{discountedPrice}</span>
           </div>
           
-          <div className="bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold text-lg inline-block animate-bounce">
+          <div className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-2 rounded-full font-bold text-base md:text-lg inline-block animate-bounce">
             YOU SAVE ₹{savings} TODAY!
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
           {/* Order Form */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
+            className="bg-white/70 backdrop-blur-xl rounded-3xl p-4 md:p-8 shadow-2xl border border-white/20"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Information</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Your Information</h2>
             
-            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               {/* First Name */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
                   First Name *
                 </label>
                 <input
@@ -360,14 +360,14 @@ export default function CheckoutPage() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 text-base"
                   placeholder="Enter your first name"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
                   Email ID *
                 </label>
                 <input
@@ -377,14 +377,14 @@ export default function CheckoutPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 text-base"
                   placeholder="Enter your email address"
                 />
               </div>
 
               {/* Phone Number */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
                   Phone Number *
                 </label>
                 <input
@@ -395,14 +395,14 @@ export default function CheckoutPage() {
                   onChange={handleInputChange}
                   required
                   maxLength={10}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 text-base"
                   placeholder="Enter 10-digit phone number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Enter exactly 10 digits</p>
               </div>
 
               {/* Security Notice */}
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-xs md:text-sm text-gray-600">
                 <p>🔒 Your payment is secure and encrypted</p>
                 <p className="mt-1">By clicking above, you agree to our terms of service and privacy policy</p>
               </div>
@@ -416,58 +416,59 @@ export default function CheckoutPage() {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="space-y-6"
           >
-            {/* Main Product */}
-            <div className="bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-4 right-[-30px] bg-yellow-400 text-gray-900 px-8 py-1 transform rotate-45 text-xs font-bold">
+                        {/* Main Product */}
+            <div className="bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-3xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-2 md:top-4 right-[-30px] bg-yellow-400 text-gray-900 px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
                 BEST SELLER
               </div>
               
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">🎨</span>
-                <h3 className="text-xl font-bold">IconOne Personal Style Consultation</h3>
+              <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                <span className="text-xl md:text-2xl">🎨</span>
+                <h3 className="text-lg md:text-xl font-bold">IconOne Personal Style Consultation</h3>
               </div>
               
-              <div className="text-2xl font-bold mb-4">
-                ₹{originalPrice} <span className="text-green-300">₹{discountedPrice}</span>
+              <div className="text-xl md:text-2xl font-bold mb-3 md:mb-4">
+                <span className="line-through text-gray-300 mr-2 md:mr-4">₹{originalPrice}</span>
+                <span className="text-green-300">₹{discountedPrice}</span>
               </div>
               
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+              <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                <li className="flex items-start gap-2 md:gap-3">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                   <span>Complete style DNA analysis (₹499 value)</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                <li className="flex items-start gap-2 md:gap-3">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                   <span>Your perfect color palette revealed</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                <li className="flex items-start gap-2 md:gap-3">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                   <span>Body-flattering silhouettes mapped</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                <li className="flex items-start gap-2 md:gap-3">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                   <span>Hair & makeup blueprint included</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                <li className="flex items-start gap-2 md:gap-3">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                   <span>20-min 1-on-1 expert consultation call</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                <li className="flex items-start gap-2 md:gap-3">
+                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                   <span>Lifetime access to your style profile</span>
                 </li>
               </ul>
             </div>
 
             {/* Free Bonuses */}
-            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-dashed border-orange-300 rounded-3xl p-6">
-              <h4 className="text-orange-700 font-bold text-lg text-center mb-4">🎁 TODAY ONLY: Get These FREE Bonuses!</h4>
+            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-dashed border-orange-300 rounded-3xl p-4 md:p-6">
+              <h4 className="text-orange-700 font-bold text-base md:text-lg text-center mb-3 md:mb-4">🎁 TODAY ONLY: Get These FREE Bonuses!</h4>
               
-              <div className="space-y-4">
-                <div className="bg-white rounded-xl p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-2">BONUS #1: Celebrity Style Secrets Guide</div>
-                  <div className="text-sm text-green-600 font-semibold mb-2">
-                    <span className="line-through text-gray-400 mr-2">Value: ₹299</span>
+              <div className="space-y-3 md:space-y-4">
+                <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
+                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">BONUS #1: Celebrity Style Secrets Guide</div>
+                  <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2">
+                    <span className="line-through text-gray-400 mr-1 md:mr-2">Value: ₹299</span>
                     <span className="text-green-600">FREE Today!</span>
                   </div>
                   <div className="text-xs text-gray-600">
@@ -475,10 +476,10 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-xl p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-2">BONUS #2: Instant Confidence Checklist</div>
-                  <div className="text-sm text-green-600 font-semibold mb-2">
-                    <span className="line-through text-gray-400 mr-2">Value: ₹199</span>
+                <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
+                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">BONUS #2: Instant Confidence Checklist</div>
+                  <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2">
+                    <span className="line-through text-gray-400 mr-1 md:mr-2">Value: ₹199</span>
                     <span className="text-green-600">FREE Today!</span>
                   </div>
                   <div className="text-xs text-gray-600">
@@ -486,10 +487,10 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-xl p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-2">BONUS #3: WhatsApp Support Group (3 Days)</div>
-                  <div className="text-sm text-green-600 font-semibold mb-2">
-                    <span className="line-through text-gray-400 mr-2">Value: ₹499</span>
+                <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
+                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">BONUS #3: WhatsApp Support Group (3 Days)</div>
+                  <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2">
+                    <span className="line-through text-gray-400 mr-1 md:mr-2">Value: ₹499</span>
                     <span className="text-green-600">FREE Today!</span>
                   </div>
                   <div className="text-xs text-gray-600">
@@ -619,12 +620,12 @@ export default function CheckoutPage() {
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-6 rounded-full text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-4 hover:scale-105 transform"
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-full text-lg md:text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform"
               >
                 {isProcessing ? 'Processing...' : '🔥 YES! Transform My Style Now →'}
               </button>
               
-              <div className="text-center text-sm text-gray-600 mb-4">
+              <div className="text-center text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
                 <p>Pay via Razorpay – 100% Safe & Secure</p>
               </div>
               
