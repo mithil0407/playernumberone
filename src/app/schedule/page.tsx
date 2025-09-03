@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight, Users, Calendar } from 'lucide-react';
+import { CheckCircle, Users, Calendar } from 'lucide-react';
 import Script from 'next/script';
 import Head from 'next/head';
 
@@ -26,12 +26,6 @@ export default function SchedulePage() {
       sessionStorage: Object.keys(sessionStorage)
     });
   }, []);
-
-  // Handle Google Calendar booking completion
-  const handleBookingComplete = () => {
-    setIsBooked(true);
-    console.log('Google Calendar booking completed');
-  };
 
   if (isBooked) {
     return (
@@ -154,7 +148,9 @@ export default function SchedulePage() {
               src="https://calendar.google.com/calendar/scheduling-button-script.js"
               strategy="afterInteractive"
               onLoad={() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (typeof window !== 'undefined' && (window as any).calendar) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   (window as any).calendar.schedulingButton.load({
                     url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0RS48hFcWr-j-DSV5CvjwrBmp1YwJrffy5HElAvXOJGY6Saxc5CKaIczLocRFa57nMH7LMiC9j?gv=true',
                     color: '#EC4899', // Rose color to match IconOne theme

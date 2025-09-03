@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
-import { updateSessionInSheet, updatePaymentStatusInSheet, updateAddOnsInSheet } from '@/lib/googleSheets';
+import { updatePaymentStatusInSheet, updateAddOnsInSheet } from '@/lib/googleSheets';
 
 export async function POST(request: NextRequest) {
   try {

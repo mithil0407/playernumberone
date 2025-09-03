@@ -66,7 +66,6 @@ export default function CheckoutPage() {
   
   const shoppingBlueprintOriginalPrice = 1599;
   const shoppingBlueprintDiscountedPrice = 699;
-  const shoppingBlueprintSavings = shoppingBlueprintOriginalPrice - shoppingBlueprintDiscountedPrice;
   
   const glowUpProgramOriginalPrice = 799;
   const glowUpProgramDiscountedPrice = 299;
@@ -410,7 +409,7 @@ export default function CheckoutPage() {
               {/* Testimonial */}
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-700 italic">
-                  "I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything - I get compliments daily now!"
+                  &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything - I get compliments daily now!&quot;
                 </p>
                 <p className="text-xs text-gray-600 mt-2">- Priya S., Mumbai (Verified Buyer)</p>
               </div>
