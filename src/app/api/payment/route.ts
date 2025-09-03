@@ -6,7 +6,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, shopping_guide_price, wellness_plan_price } = body;
+    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, shopping_blueprint_price, glow_up_program_price } = body;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       const order = await saveOrder({
         customer_id: customer.id!,
         amount,
-        add_on: add_ons.shopping_guide || add_ons.wellness_plan, // Check if any add-ons are selected
+        add_on: add_ons.shopping_blueprint || add_ons.glow_up_program, // Check if any add-ons are selected
         status: 'pending',
         razorpay_order_id: orderId
       });
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       // Add customer data to Google Sheets
       try {
         const addOnsString = [
-          add_ons.shopping_guide ? 'Shopping Guide' : '',
-          add_ons.wellness_plan ? 'Wellness Plan' : ''
+          add_ons.shopping_blueprint ? 'Shopping Blueprint' : '',
+          add_ons.glow_up_program ? 'Glow Up Program' : ''
         ].filter(Boolean).join(', ');
         
         await addCustomerToSheet({
@@ -97,12 +97,12 @@ export async function POST(request: NextRequest) {
           customer_email: customer_email,
           customer_phone: customer_phone,
           base_product: base_product,
-          shopping_guide_addon: add_ons.shopping_guide ? 'true' : 'false',
-          wellness_plan_addon: add_ons.wellness_plan ? 'true' : 'false',
+          shopping_blueprint_addon: add_ons.shopping_blueprint ? 'true' : 'false',
+          glow_up_program_addon: add_ons.glow_up_program ? 'true' : 'false',
           total_base_price: total_base_price,
-          shopping_guide_price: shopping_guide_price,
-          wellness_plan_price: wellness_plan_price,
-          service: 'Alpha1 Grooming Guide',
+          shopping_blueprint_price: shopping_blueprint_price,
+          glow_up_program_price: glow_up_program_price,
+          service: 'IconOne Style Consultation',
           db_order_id: dbOrderId,
           customer_id: customerId
         },
@@ -145,14 +145,14 @@ export async function POST(request: NextRequest) {
         order: {
           id: dbOrderId,
           amount,
-          add_on: add_ons.consultation || add_ons.dating_guide,
+          add_on: add_ons.shopping_blueprint || add_ons.glow_up_program,
           status: 'pending'
         },
         notes: {
-          service: 'Alpha1 Grooming Guide',
+          service: 'IconOne Style Consultation',
           base_product: base_product,
-          consultation_addon: add_ons.consultation,
-          dating_guide_addon: add_ons.dating_guide,
+          shopping_blueprint_addon: add_ons.shopping_blueprint,
+          glow_up_program_addon: add_ons.glow_up_program,
         },
         customer_id: customerId,
         db_order_id: dbOrderId
