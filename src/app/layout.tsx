@@ -28,6 +28,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta httpEquiv="Permissions-Policy" content="payment=*" />
       </head>
       <body className={inter.className}>
         {/* Google Analytics 4 */}
@@ -85,6 +86,19 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+        
+        {/* Error handling for blocked scripts */}
+        <Script id="error-handler" strategy="afterInteractive">
+          {`
+            window.addEventListener('error', function(e) {
+              if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+                console.log('Script blocked by ad blocker or privacy settings:', e.filename);
+                // Don't show error to user, just log it
+                return;
+              }
+            });
+          `}
+        </Script>
         {children}
         
         {/* Vercel Analytics */}

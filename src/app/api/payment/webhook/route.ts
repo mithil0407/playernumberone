@@ -150,7 +150,6 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
           ].filter(Boolean).join(', ');
           
           await addCustomerToSheet({
-            timestamp: new Date().toISOString(),
             customer_name: existingOrder.customers.name,
             customer_email: existingOrder.customers.email,
             customer_phone: existingOrder.customers.phone,
@@ -239,7 +238,6 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
           ].filter(Boolean).join(', ');
           
           await addCustomerToSheet({
-            timestamp: new Date().toISOString(),
             customer_name: existingOrder.customers.name,
             customer_email: existingOrder.customers.email,
             customer_phone: existingOrder.customers.phone,

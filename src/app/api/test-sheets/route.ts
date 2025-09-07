@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
     if (test_mode) {
       // Test data
       const testData = {
-        timestamp: new Date().toISOString(),
         customer_name: 'Test Customer',
         customer_email: 'test@example.com',
         customer_phone: '1234567890',

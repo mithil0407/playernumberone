@@ -1,10 +1,29 @@
 import { google } from 'googleapis';
 
 // Initialize Google Sheets API
+const getPrivateKey = () => {
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  if (!privateKey) return undefined;
+  
+  // Handle different private key formats
+  let formattedKey = privateKey
+    .replace(/\\n/g, '\n')  // Replace escaped newlines
+    .replace(/"/g, '')       // Remove quotes
+    .trim();                // Remove whitespace
+  
+  console.log('Private key processing:');
+  console.log('- Original length:', privateKey.length);
+  console.log('- Formatted length:', formattedKey.length);
+  console.log('- Starts with:', formattedKey.substring(0, 30));
+  console.log('- Ends with:', formattedKey.substring(formattedKey.length - 30));
+  
+  return formattedKey;
+};
+
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    private_key: getPrivateKey(),
   },
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
@@ -12,7 +31,6 @@ const auth = new google.auth.GoogleAuth({
 const sheets = google.sheets({ version: 'v4', auth });
 
 export interface CustomerData {
-  timestamp: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -20,9 +38,6 @@ export interface CustomerData {
   order_id: string;
   customer_id: string;
   payment_status: string;
-  scheduled_date?: string;
-  scheduled_time?: string;
-  session_status?: string;
   add_ons?: string;
   service_type: string;
 }
@@ -34,9 +49,24 @@ export async function addCustomerToSheet(data: CustomerData) {
       return { success: false, error: 'Google Sheet not configured' };
     }
 
+    // Check if private key is properly formatted
+    const privateKey = getPrivateKey();
+    if (!privateKey) {
+      console.error('Invalid private key format - please check your GOOGLE_PRIVATE_KEY environment variable');
+      return { success: false, error: 'Invalid private key format' };
+    }
+
+    // Debug environment variables
+    console.log('Google Sheets Environment Check:');
+    console.log('- Sheet ID configured:', !!process.env.GOOGLE_SHEET_ID);
+    console.log('- Service Account configured:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+    console.log('- Private Key configured:', !!process.env.GOOGLE_PRIVATE_KEY);
+    console.log('- Private Key length:', process.env.GOOGLE_PRIVATE_KEY?.length || 0);
+    console.log('- Formatted Private Key length:', privateKey.length);
+    console.log('- Private Key starts with:', process.env.GOOGLE_PRIVATE_KEY?.substring(0, 20) || 'N/A');
+
     const values = [
       [
-        data.timestamp,
         data.customer_name,
         data.customer_email,
         data.customer_phone,
@@ -44,17 +74,16 @@ export async function addCustomerToSheet(data: CustomerData) {
         data.order_id,
         data.customer_id,
         data.payment_status,
-        data.scheduled_date || '',
-        data.scheduled_time || '',
-        data.session_status || '',
         data.add_ons || '',
         data.service_type,
       ],
     ];
 
+    console.log('Sending data to Google Sheets:', values[0]);
+
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: 'Sheet1!A:M', // Adjust range based on your sheet columns
+      range: 'Sheet1!A:I', // Updated range for 9 columns (removed timestamp, scheduled_date, scheduled_time, session_status)
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
