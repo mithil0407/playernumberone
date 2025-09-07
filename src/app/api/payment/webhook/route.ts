@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
-import { updatePaymentStatusInSheet, updateAddOnsInSheet } from '@/lib/googleSheets';
+import { addCustomerToSheet } from '@/lib/googleSheets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -143,22 +143,27 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
       } else {
         console.log(`Order ${order_id} marked as completed`);
         
-        // Update payment status in Google Sheets
+        // Add customer data to Google Sheets (only after successful payment)
         try {
-          await updatePaymentStatusInSheet(existingOrder.customer_id, 'completed');
-          console.log('Payment status updated in Google Sheets');
-          
-          // Also update add-ons if they exist
           const addOnsString = [
-            existingOrder.add_on ? 'Shopping Guide, Wellness Plan' : ''
+            existingOrder.add_on ? 'Shopping Blueprint, Glow Up Program' : ''
           ].filter(Boolean).join(', ');
           
-          if (addOnsString) {
-            await updateAddOnsInSheet(existingOrder.customer_id, addOnsString);
-            console.log('Add-ons updated in Google Sheets');
-          }
+          await addCustomerToSheet({
+            timestamp: new Date().toISOString(),
+            customer_name: existingOrder.customers.name,
+            customer_email: existingOrder.customers.email,
+            customer_phone: existingOrder.customers.phone,
+            order_amount: existingOrder.amount,
+            order_id: existingOrder.id,
+            customer_id: existingOrder.customer_id,
+            payment_status: 'completed',
+            add_ons: addOnsString,
+            service_type: 'IconOne Style Consultation'
+          });
+          console.log('Customer data added to Google Sheets after successful payment');
         } catch (sheetError) {
-          console.log('Failed to update Google Sheets:', sheetError);
+          console.log('Failed to add customer to Google Sheets:', sheetError);
         }
       }
     } else {
@@ -219,6 +224,37 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
       console.error('Error updating test payment order:', updateError);
     } else {
       console.log(`Test payment ${payment.id} marked as completed`);
+      
+      // Add customer data to Google Sheets for test payments too
+      try {
+        const { data: existingOrder } = await supabase
+          .from('orders')
+          .select('*, customers(*)')
+          .eq('razorpay_order_id', order_id)
+          .single();
+          
+        if (existingOrder) {
+          const addOnsString = [
+            existingOrder.add_on ? 'Shopping Blueprint, Glow Up Program' : ''
+          ].filter(Boolean).join(', ');
+          
+          await addCustomerToSheet({
+            timestamp: new Date().toISOString(),
+            customer_name: existingOrder.customers.name,
+            customer_email: existingOrder.customers.email,
+            customer_phone: existingOrder.customers.phone,
+            order_amount: existingOrder.amount,
+            order_id: existingOrder.id,
+            customer_id: existingOrder.customer_id,
+            payment_status: 'completed',
+            add_ons: addOnsString,
+            service_type: 'IconOne Style Consultation'
+          });
+          console.log('Test customer data added to Google Sheets');
+        }
+      } catch (sheetError) {
+        console.log('Failed to add test customer to Google Sheets:', sheetError);
+      }
     }
     
   } catch (error) {

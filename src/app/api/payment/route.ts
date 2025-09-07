@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCustomer, saveOrder, supabase } from '@/lib/supabase';
-import { addCustomerToSheet } from '@/lib/googleSheets';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -53,29 +52,7 @@ export async function POST(request: NextRequest) {
       });
       dbOrderId = order.id!;
       
-      // Add customer data to Google Sheets
-      try {
-        const addOnsString = [
-          add_ons.shopping_blueprint ? 'Shopping Blueprint' : '',
-          add_ons.glow_up_program ? 'Glow Up Program' : ''
-        ].filter(Boolean).join(', ');
-        
-        await addCustomerToSheet({
-          timestamp: new Date().toISOString(),
-          customer_name: customer_name,
-          customer_email: customer_email,
-          customer_phone: customer_phone,
-          order_amount: amount,
-          order_id: dbOrderId,
-          customer_id: customerId,
-          payment_status: 'pending',
-          add_ons: addOnsString,
-          service_type: 'IconOne Style Consultation'
-        });
-        console.log('Customer data added to Google Sheets successfully');
-      } catch (sheetError) {
-        console.log('Failed to add customer to Google Sheets:', sheetError);
-      }
+      // Note: Google Sheets integration moved to webhook - only add data after payment completion
     } catch (error) {
       console.log('Supabase not configured, using mock IDs:', error);
     }

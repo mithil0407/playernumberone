@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Users, Calendar } from 'lucide-react';
-import Script from 'next/script';
 import Head from 'next/head';
 
 export default function SchedulePage() {
@@ -69,7 +68,7 @@ export default function SchedulePage() {
   return (
     <>
       <Head>
-        <link href="https://calendar.google.com/calendar/scheduling-button-script.css" rel="stylesheet" />
+        <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
       </Head>
       <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
@@ -118,7 +117,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          {/* Google Calendar Integration */}
+          {/* Calendly Integration */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -135,31 +134,14 @@ export default function SchedulePage() {
               </p>
             </div>
 
-            {/* Google Calendar Appointment Scheduling */}
+            {/* Calendly Inline Widget */}
             <div className="flex justify-center">
               <div 
-                id="google-calendar-booking"
-                className="w-full max-w-md"
+                className="calendly-inline-widget" 
+                data-url="https://calendly.com/mithilfx007/30min?hide_gdpr_banner=1" 
+                style={{minWidth: '320px', height: '700px'}}
               />
             </div>
-
-            {/* Google Calendar Scripts */}
-            <Script
-              src="https://calendar.google.com/calendar/scheduling-button-script.js"
-              strategy="afterInteractive"
-              onLoad={() => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (typeof window !== 'undefined' && (window as any).calendar) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (window as any).calendar.schedulingButton.load({
-                    url: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0RS48hFcWr-j-DSV5CvjwrBmp1YwJrffy5HElAvXOJGY6Saxc5CKaIczLocRFa57nMH7LMiC9j?gv=true',
-                    color: '#EC4899', // Rose color to match IconOne theme
-                    label: 'Book IconOne Style Session',
-                    target: document.getElementById('google-calendar-booking'),
-                  });
-                }
-              }}
-            />
           </motion.div>
 
           {/* Instructions */}
@@ -210,9 +192,9 @@ export default function SchedulePage() {
         >
           <button
             onClick={() => {
-              const calendarElement = document.getElementById('google-calendar-booking');
-              if (calendarElement) {
-                calendarElement.scrollIntoView({ behavior: 'smooth' });
+              const calendlyElement = document.querySelector('.calendly-inline-widget');
+              if (calendlyElement) {
+                calendlyElement.scrollIntoView({ behavior: 'smooth' });
               }
             }}
             className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center touch-manipulation"
