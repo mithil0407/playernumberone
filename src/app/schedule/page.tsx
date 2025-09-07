@@ -3,27 +3,45 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Users, Calendar } from 'lucide-react';
-import Head from 'next/head';
+import Script from 'next/script';
 
 export default function SchedulePage() {
   const [isBooked, setIsBooked] = useState(false);
-  const [customerId, setCustomerId] = useState<string>('');
-  const [orderId, setOrderId] = useState<string>('');
+  const [calendlyLoaded, setCalendlyLoaded] = useState(false);
 
-  // Get customer ID and order ID from storage
+  // Initialize Calendly widget when component mounts
   useEffect(() => {
-    const storedCustomerId = localStorage.getItem('customerId') || sessionStorage.getItem('customerId');
-    const storedOrderId = localStorage.getItem('orderId') || sessionStorage.getItem('orderId');
-    
-    setCustomerId(storedCustomerId || '');
-    setOrderId(storedOrderId || '');
-    
-    console.log('Schedule page storage check:', {
-      customerId: storedCustomerId,
-      orderId: storedOrderId,
-      localStorage: Object.keys(localStorage),
-      sessionStorage: Object.keys(sessionStorage)
-    });
+    const initCalendly = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof window !== 'undefined' && (window as any).Calendly) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).Calendly.initInlineWidget({
+          url: 'https://calendly.com/mithilfx007/30min?hide_gdpr_banner=1',
+          parentElement: document.getElementById('calendly-widget'),
+          prefill: {},
+          utm: {}
+        });
+        setCalendlyLoaded(true);
+      }
+    };
+
+    // Check if Calendly is already loaded
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== 'undefined' && (window as any).Calendly) {
+      initCalendly();
+    } else {
+      // Wait for Calendly to load
+      const checkCalendly = setInterval(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (typeof window !== 'undefined' && (window as any).Calendly) {
+          initCalendly();
+          clearInterval(checkCalendly);
+        }
+      }, 100);
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => clearInterval(checkCalendly), 10000);
+    }
   }, []);
 
   if (isBooked) {
@@ -67,9 +85,10 @@ export default function SchedulePage() {
 
   return (
     <>
-      <Head>
-        <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
-      </Head>
+      <Script
+        src="https://assets.calendly.com/assets/external/widget.js"
+        strategy="afterInteractive"
+      />
       <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700">
@@ -137,10 +156,19 @@ export default function SchedulePage() {
             {/* Calendly Inline Widget */}
             <div className="flex justify-center">
               <div 
-                className="calendly-inline-widget" 
-                data-url="https://calendly.com/mithilfx007/30min?hide_gdpr_banner=1" 
-                style={{minWidth: '320px', height: '700px'}}
-              />
+                id="calendly-widget"
+                className="w-full max-w-4xl"
+                style={{minWidth: '320px', height: calendlyLoaded ? '700px' : '400px'}}
+              >
+                {!calendlyLoaded && (
+                  <div className="flex items-center justify-center h-full bg-gray-800 rounded-lg">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                      <p className="text-gray-300">Loading calendar...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -166,20 +194,6 @@ export default function SchedulePage() {
             </div>
           </motion.div>
 
-          {/* Customer Info Display */}
-          {customerId && orderId && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-8 bg-blue-900/30 border border-blue-500/30 rounded-lg p-4"
-            >
-              <h3 className="text-sm font-semibold text-blue-400 mb-2">✅ Payment Verified</h3>
-              <p className="text-xs text-blue-300">
-                Customer ID: {customerId.substring(0, 8)}... | Order ID: {orderId.substring(0, 8)}...
-              </p>
-            </motion.div>
-          )}
         </motion.div>
       </div>
 
@@ -192,7 +206,7 @@ export default function SchedulePage() {
         >
           <button
             onClick={() => {
-              const calendlyElement = document.querySelector('.calendly-inline-widget');
+              const calendlyElement = document.getElementById('calendly-widget');
               if (calendlyElement) {
                 calendlyElement.scrollIntoView({ behavior: 'smooth' });
               }
