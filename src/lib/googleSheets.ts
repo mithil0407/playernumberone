@@ -6,7 +6,7 @@ const getPrivateKey = () => {
   if (!privateKey) return undefined;
   
   // Handle different private key formats
-  let formattedKey = privateKey
+  const formattedKey = privateKey
     .replace(/\\n/g, '\n')  // Replace escaped newlines
     .replace(/"/g, '')       // Remove quotes
     .trim();                // Remove whitespace

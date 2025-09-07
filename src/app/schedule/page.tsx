@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Users, Calendar } from 'lucide-react';
+import { Users, Calendar } from 'lucide-react';
 import Script from 'next/script';
 
 export default function SchedulePage() {
-  const [isBooked, setIsBooked] = useState(false);
   const [calendlyLoaded, setCalendlyLoaded] = useState(false);
 
   // Initialize Calendly widget when component mounts
@@ -43,45 +42,6 @@ export default function SchedulePage() {
       setTimeout(() => clearInterval(checkCalendly), 10000);
     }
   }, []);
-
-  if (isBooked) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto px-4"
-        >
-          <div className="bg-green-900/30 border border-green-500/30 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-            <CheckCircle className="w-12 h-12 text-green-400" />
-          </div>
-          
-          <h1 className="text-3xl font-bold mb-4 text-green-400">
-            You&apos;re Booked! 🎉
-          </h1>
-          
-          <p className="text-xl mb-6 text-gray-300">
-            Your IconOne style consultation is confirmed
-          </p>
-          
-          <div className="bg-gray-800 rounded-lg p-6 mb-8">
-            <div className="text-2xl font-bold text-blue-400 mb-2">
-              Session Scheduled Successfully
-            </div>
-            <p className="text-gray-400">
-              You&apos;ll receive a confirmation email with meeting details shortly.
-            </p>
-          </div>
-          
-          <div className="space-y-4 text-sm text-gray-400">
-            <p>✅ Session details sent to your email</p>
-            <p>✅ Calendar invite added</p>
-            <p>✅ Reminder set for 1 hour before</p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <>
