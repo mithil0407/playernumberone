@@ -197,28 +197,61 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
               <span className="text-gray-900">Style Like the Stars. Expert Fashion Consultations for the Modern Indian Woman.</span>
             </h1>
             
-            {/* Product Preview - Book Image */}
+            {/* Hero Image - Tripti */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="mb-12"
+              className="mb-8"
             >
               <div className="text-center">
                 <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
                   <Image
-                    src="/book.png"
-                    alt="IconOne Style Guide Preview"
+                    src="/tripti.png"
+                    alt="IconOne Style Transformation"
                     width={320}
                     height={320}
                     className="object-contain"
                     priority
                   />
                 </div>
+              </div>
+            </motion.div>
+            
+            {/* Press Trust Strip - Right below the image */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mb-8"
+            >
+              <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">As Seen In</p>
+              <div className="flex items-center justify-center gap-6 md:gap-8 flex-wrap">
+                <Image
+                  src="/times-of-india-logo.png"
+                  alt="Times of India"
+                  width={120}
+                  height={40}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
+                />
+                <Image
+                  src="/femina-logo.png"
+                  alt="Femina"
+                  width={120}
+                  height={40}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
+                />
+                <Image
+                  src="/vogue-india-logo.png"
+                  alt="Vogue India"
+                  width={120}
+                  height={40}
+                  className="opacity-70 hover:opacity-100 transition-opacity"
+                />
               </div>
             </motion.div>
           </motion.div>
@@ -231,39 +264,6 @@ export default function Home() {
           >
             IconOne brings celebrity-level fashion expertise to you with personalized 1-on-1 consultations, curated shopping guides, and transformation programs — trusted by 2,800+ clients across India.
           </motion.p>
-          
-          {/* Press Trust Strip */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-8 md:mb-12"
-          >
-            <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">As Seen In</p>
-            <div className="flex items-center justify-center gap-6 md:gap-8 flex-wrap">
-              <Image
-                src="/times-of-india-logo.png"
-                alt="Times of India"
-                width={120}
-                height={40}
-                className="opacity-70 hover:opacity-100 transition-opacity"
-              />
-              <Image
-                src="/femina-logo.png"
-                alt="Femina"
-                width={120}
-                height={40}
-                className="opacity-70 hover:opacity-100 transition-opacity"
-              />
-              <Image
-                src="/vogue-india-logo.png"
-                alt="Vogue India"
-                width={120}
-                height={40}
-                className="opacity-70 hover:opacity-100 transition-opacity"
-              />
-            </div>
-          </motion.div>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
