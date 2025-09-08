@@ -209,9 +209,9 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mb-8"
+              className="mb-4"
             >
-              <div className="flex items-center justify-center gap-6 md:gap-8 flex-wrap">
+              <div className="flex items-center justify-center gap-4 md:gap-6">
                 <Image
                   src="/times-of-india-logo.png"
                   alt="Times of India"
@@ -241,15 +241,15 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="mb-8"
+              className="mb-4"
             >
               <div className="text-center">
-                <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
+                <div className="relative w-48 h-48 md:w-64 md:h-64 mx-auto mb-2">
                   <Image
                     src="/book.png"
                     alt="IconOne Style Guide Preview"
-                    width={320}
-                    height={320}
+                    width={256}
+                    height={256}
                     className="object-contain"
                     priority
                   />
