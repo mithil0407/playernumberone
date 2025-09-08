@@ -198,7 +198,11 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
-              <span className="text-gray-900">Style Like the Stars. Expert Fashion Consultations for the Modern Indian Woman.</span>
+              <span className="text-gray-900">Style Like the </span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Stars</span>
+              <span className="text-gray-900">. Expert </span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Fashion Consultations</span>
+              <span className="text-gray-900"> for the Modern Indian Woman.</span>
             </h1>
             
             {/* Hero Image - Tripti */}
@@ -315,56 +319,85 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Hero Transformations - Moved Right Below Hero */}
-      <section className="py-12 md:py-20 lg:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
+      {/* Before/After Visual Section - Moved Right Below Hero */}
+      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
+            transition={{ duration: 0.8 }}
             className="text-center mb-12 md:mb-16"
           >
-            <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 md:mb-6">
-              Real Style Transformations in Just Weeks
-            </h3>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+              See the Transformation
+            </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              See how our personalized approach helps women discover their signature style and radiate confidence
+              Real results from real women who transformed their style with IconOne
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {[
-                { image: '/style-discovery.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
-                { image: '/beauty-routine.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
-                { image: '/wellness-confidence.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.4 + index * 0.2 }}
-                  className="group relative"
-                >
-                  {/* Glassmorphism Card */}
-                  <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
-                                      <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 md:mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      width={300}
-                      height={300}
-                      className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-                  </div>
-                    <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">{item.title}</h4>
-                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{item.description}</p>
+              {
+                before: '/style-before.webp',
+                after: '/style-after.webp',
+                title: 'Style Confidence',
+                description: 'From feeling invisible to radiating elegance'
+              },
+              {
+                before: '/wardrobe-before.webp',
+                after: '/wardrobe-after.webp',
+                title: 'Wardrobe Mastery',
+                description: 'From style confusion to effortless chic'
+              }
+            ].map((comparison, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                className="group relative"
+              >
+                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30">
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6 text-center">{comparison.title}</h3>
+                  
+                  <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div className="text-center">
+                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">Before</div>
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                        <Image
+                          src={comparison.before}
+                          alt={`Before ${comparison.title}`}
+                          width={250}
+                          height={250}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                      </div>
+                    </div>
                     
-                    {/* Glass shine effect */}
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="text-center">
+                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">After</div>
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
+                        <Image
+                          src={comparison.after}
+                          alt={`After ${comparison.title}`}
+                          width={250}
+                          height={250}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent"></div>
+                      </div>
+                    </div>
                   </div>
-                </motion.div>
-              ))}
+                  
+                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">{comparison.description}</p>
+                  
+                  {/* Glass shine effect */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -443,7 +476,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-6 lg:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-6 lg:p-8 border border-white/20 md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
               >
                 {/* Problem Image */}
                 <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
@@ -476,85 +509,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Before/After Visual Section - Added for More Visual Impact */}
-      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Transformations - Real Style Transformations */}
+      <section className="py-12 md:py-20 lg:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1, delay: 0.2 }}
             className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              See the Transformation
-            </h2>
+            <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 md:mb-6">
+              Real Style Transformations in Just Weeks
+            </h3>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Real results from real women who transformed their style with IconOne
+              See how our personalized approach helps women discover their signature style and radiate confidence
             </p>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
-              {
-                before: '/style-before.webp',
-                after: '/style-after.webp',
-                title: 'Style Confidence',
-                description: 'From feeling invisible to radiating elegance'
-              },
-              {
-                before: '/wardrobe-before.webp',
-                after: '/wardrobe-after.webp',
-                title: 'Wardrobe Mastery',
-                description: 'From style confusion to effortless chic'
-              }
-            ].map((comparison, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative"
-              >
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6 text-center">{comparison.title}</h3>
-                  
-                  <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
-                    <div className="text-center">
-                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">Before</div>
-                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                        <Image
-                          src={comparison.before}
-                          alt={`Before ${comparison.title}`}
-                          width={250}
-                          height={250}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-                      </div>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">After</div>
-                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
-                        <Image
-                          src={comparison.after}
-                          alt={`After ${comparison.title}`}
-                          width={250}
-                          height={250}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent"></div>
-                      </div>
-                    </div>
+                { image: '/style-discovery.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
+                { image: '/beauty-routine.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
+                { image: '/wellness-confidence.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 + index * 0.2 }}
+                  className="group relative"
+                >
+                  {/* Glassmorphism Card */}
+                  <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
+                                      <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 md:mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                   </div>
-                  
-                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">{comparison.description}</p>
-                  
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                </div>
-              </motion.div>
-            ))}
+                    <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">{item.title}</h4>
+                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{item.description}</p>
+                    
+                    {/* Glass shine effect */}
+                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  </div>
+                </motion.div>
+              ))}
           </div>
         </div>
       </section>
@@ -583,7 +587,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 border border-white/20 md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 {/* Feature Image */}
                 <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
@@ -653,7 +657,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
+                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 border border-white/20 md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
               >
                 <div className="w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
                   <Image
@@ -797,7 +801,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 overflow-hidden mb-8"
+            className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/20 overflow-hidden mb-8"
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
               <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
@@ -882,7 +886,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
+            className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/20 overflow-hidden"
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-8 text-white text-center">
               <h3 className="text-2xl md:text-3xl font-bold mb-2">Complete IconOne Package</h3>
