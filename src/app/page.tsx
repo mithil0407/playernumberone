@@ -1199,7 +1199,7 @@ export default function Home() {
                 <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited to 15 clients this month</p>
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <span className="text-sm line-through text-gray-500">₹5,999</span>
-                  <span className="text-lg font-bold text-gray-900">₹1,199 + GST</span>
+                  <span className="text-lg font-bold text-gray-900">₹1,199</span>
                 </div>
                 <p className="text-xs text-gray-600">Style Transformation</p>
               </div>
