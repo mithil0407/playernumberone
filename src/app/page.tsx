@@ -208,9 +208,9 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="-mt-8 mb-2"
+              className="-mt-4 mb-2"
             >
-              <p className="text-sm md:text-base text-gray-500 mb-1 font-medium text-center">Featured on:</p>
+              <p className="text-sm md:text-base text-gray-500 mb-3 font-medium text-center">Featured on:</p>
               <div className="flex items-center justify-center gap-4 md:gap-6">
                 <Image
                   src="/times-of-india-logo.png"
