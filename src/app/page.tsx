@@ -198,8 +198,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
-              <span className="text-gray-900">Stop Feeling Invisible. Start Feeling</span>{' '}
-              <span className="bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">Irresistible.</span>
+              <span className="text-gray-900">Style Like the Stars. Expert Fashion Consultations for the Modern Indian Woman.</span>
             </h1>
             
             {/* Product Preview - Book Image */}
@@ -228,10 +227,43 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-xl md:text-2xl mb-12 text-gray-600 max-w-3xl mx-auto leading-relaxed"
+            className="text-xl md:text-2xl mb-8 text-gray-600 max-w-4xl mx-auto leading-relaxed"
           >
-            IconOne is a personalized style transformation program by India&apos;s leading stylists — elegance, confidence, and authentic self-expression.
+            IconOne brings celebrity-level fashion expertise to you with personalized 1-on-1 consultations, curated shopping guides, and transformation programs — trusted by 2,800+ clients across India.
           </motion.p>
+          
+          {/* Press Trust Strip */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mb-8 md:mb-12"
+          >
+            <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">As Seen In</p>
+            <div className="flex items-center justify-center gap-6 md:gap-8 flex-wrap">
+              <Image
+                src="/times-of-india-logo.png"
+                alt="Times of India"
+                width={120}
+                height={40}
+                className="opacity-70 hover:opacity-100 transition-opacity"
+              />
+              <Image
+                src="/femina-logo.png"
+                alt="Femina"
+                width={120}
+                height={40}
+                className="opacity-70 hover:opacity-100 transition-opacity"
+              />
+              <Image
+                src="/vogue-india-logo.png"
+                alt="Vogue India"
+                width={120}
+                height={40}
+                className="opacity-70 hover:opacity-100 transition-opacity"
+              />
+            </div>
+          </motion.div>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -252,7 +284,7 @@ export default function Home() {
               }}
               className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 md:px-10 py-4 md:py-4 rounded-full text-base md:text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20 w-full sm:w-auto justify-center"
             >
-              <span className="relative z-10">Start Your Transformation</span>
+              <span className="relative z-10">Book My Consultation Now →</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
               {/* Glass shine effect */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
