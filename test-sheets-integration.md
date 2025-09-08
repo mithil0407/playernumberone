@@ -39,3 +39,4 @@ curl -X POST http://localhost:3000/api/test-sheets -H "Content-Type: application
 - ✅ **Test payments**: `payment_status: 'pending'`
 
 Once you update the Sheet ID, the integration will work perfectly! 🎉
+

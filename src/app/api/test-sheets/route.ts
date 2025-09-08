@@ -4,11 +4,21 @@ import { addCustomerToSheet } from '@/lib/googleSheets';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { test_mode = true } = body;
+    const { test_mode = true, manual_test = false } = body;
 
-    if (test_mode) {
-      // Test data
-      const testData = {
+    if (test_mode || manual_test) {
+      // Use provided data for manual test, or default test data
+      const testData = manual_test ? {
+        customer_name: body.customer_name || 'Manual Test Customer',
+        customer_email: body.customer_email || 'manual@example.com',
+        customer_phone: body.customer_phone || '1234567890',
+        order_amount: body.order_amount || 784,
+        order_id: body.order_id || 'manual-order-123',
+        customer_id: body.customer_id || 'manual-customer-456',
+        payment_status: body.payment_status || 'completed',
+        add_ons: body.add_ons || 'Manual Test Add-on',
+        service_type: body.service_type || 'IconOne Style Consultation'
+      } : {
         customer_name: 'Test Customer',
         customer_email: 'test@example.com',
         customer_phone: '1234567890',

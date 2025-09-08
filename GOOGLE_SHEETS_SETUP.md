@@ -147,3 +147,4 @@ Timestamp | Customer Name | Email | Phone | Amount | Order ID | Customer ID | Pa
 - Google Sheets API has quotas but is generally free for this usage
 - Monitor usage in Google Cloud Console
 - Set up billing alerts if needed
+

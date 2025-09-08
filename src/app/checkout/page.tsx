@@ -57,19 +57,19 @@ export default function CheckoutPage() {
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   
   // Product pricing
-  const originalPrice = 1199;
-  const discountedPrice = 599;
+  const originalPrice = 5999;
+  const discountedPrice = 1199;
   const savings = originalPrice - discountedPrice;
   
   // Add-ons
   const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(true); // Default checked
   const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false);
   
-  const shoppingBlueprintOriginalPrice = 1599;
+  const shoppingBlueprintOriginalPrice = 1499;
   const shoppingBlueprintDiscountedPrice = 699;
   
   const glowUpProgramOriginalPrice = 799;
-  const glowUpProgramDiscountedPrice = 299;
+  const glowUpProgramDiscountedPrice = 399;
   const glowUpProgramSavings = glowUpProgramOriginalPrice - glowUpProgramDiscountedPrice;
   
   // Calculate total
@@ -77,11 +77,11 @@ export default function CheckoutPage() {
     (shoppingBlueprintAddon ? shoppingBlueprintDiscountedPrice : 0) + 
     (glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0);
   
-  const totalValue = originalPrice + 997 + // Base + Free bonuses
+  const totalValue = originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
     (shoppingBlueprintAddon ? shoppingBlueprintOriginalPrice : 0) + 
     (glowUpProgramAddon ? glowUpProgramOriginalPrice : 0);
   
-  const totalSavings = totalValue - totalAmount;
+  // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
 
   // Countdown timer effect
   useEffect(() => {
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg font-bold mb-4 md:mb-6 text-center animate-pulse"
         >
-          ⚡ LIMITED TIME: 50% OFF + FREE BONUSES - Only 7 Spots Left Today! ⚡
+          ⚡ LIMITED TIME: 80% OFF + FREE BONUSES - Only 15 Spots Left This Month! ⚡
         </motion.div>
 
         {/* Trust Badges */}
@@ -324,7 +324,7 @@ export default function CheckoutPage() {
           className="text-center mb-6 md:mb-8"
         >
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
-            Your Personal Style Transformation Starts Now!
+            Your Personal Style Transformation Starts Now
           </h1>
           
           <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
@@ -427,72 +427,67 @@ export default function CheckoutPage() {
                 <h3 className="text-lg md:text-xl font-bold">IconOne Personal Style Consultation</h3>
               </div>
               
+              <div className="text-sm md:text-base text-gray-300 mb-3 md:mb-4">
+                Delivered 1-on-1 by Certified Fashion & Image Consultants
+              </div>
+              
               <div className="text-xl md:text-2xl font-bold mb-3 md:mb-4">
                 <span className="line-through text-gray-300 mr-2 md:mr-4">₹{originalPrice}</span>
                 <span className="text-green-300">₹{discountedPrice}</span>
               </div>
               
-              <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
-                <li className="flex items-start gap-2 md:gap-3">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                  <span>Complete style DNA analysis (₹499 value)</span>
-                </li>
-                <li className="flex items-start gap-2 md:gap-3">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                  <span>Your perfect color palette revealed</span>
-                </li>
-                <li className="flex items-start gap-2 md:gap-3">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                  <span>Body-flattering silhouettes mapped</span>
-                </li>
-                <li className="flex items-start gap-2 md:gap-3">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                  <span>Hair & makeup blueprint included</span>
-                </li>
-                <li className="flex items-start gap-2 md:gap-3">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                  <span>20-min 1-on-1 expert consultation call</span>
-                </li>
-                <li className="flex items-start gap-2 md:gap-3">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                  <span>Lifetime access to your style profile</span>
-                </li>
-              </ul>
+              <div className="mb-3 md:mb-4">
+                <div className="text-sm md:text-base font-semibold mb-2">What you get:</div>
+                <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <span>Complete Style DNA Analysis</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <span>Personalized Color Palette</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <span>Body-Flattering Silhouette Mapping</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <span>Hair & Makeup Blueprint</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <span>20-min Private Consultation Call</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <span>Lifetime Access to Your Style Profile</span>
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* Free Bonuses */}
             <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-dashed border-orange-300 rounded-3xl p-4 md:p-6">
-              <h4 className="text-orange-700 font-bold text-base md:text-lg text-center mb-3 md:mb-4">🎁 TODAY ONLY: Get These FREE Bonuses!</h4>
+              <h4 className="text-orange-700 font-bold text-base md:text-lg text-center mb-3 md:mb-4">Included at No Extra Charge (₹1,000+ value):</h4>
               
               <div className="space-y-3 md:space-y-4">
                 <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">BONUS #1: Celebrity Style Secrets Guide</div>
-                  <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2">
-                    <span className="line-through text-gray-400 mr-1 md:mr-2">Value: ₹299</span>
-                    <span className="text-green-600">FREE Today!</span>
-                  </div>
+                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">Celebrity Stylist Secrets Guide</div>
                   <div className="text-xs text-gray-600">
                     Discover the exact style formulas Bollywood stylists use
                   </div>
                 </div>
                 
                 <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">BONUS #2: Instant Confidence Checklist</div>
-                  <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2">
-                    <span className="line-through text-gray-400 mr-1 md:mr-2">Value: ₹199</span>
-                    <span className="text-green-600">FREE Today!</span>
-                  </div>
+                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">Instant Confidence Routine Checklist</div>
                   <div className="text-xs text-gray-600">
                     5-minute morning routine to look & feel amazing
                   </div>
                 </div>
                 
                 <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">BONUS #3: WhatsApp Support Group (3 Days)</div>
-                  <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2">
-                    <span className="line-through text-gray-400 mr-1 md:mr-2">Value: ₹499</span>
-                    <span className="text-green-600">FREE Today!</span>
-                  </div>
+                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">3-Day WhatsApp Style Access</div>
                   <div className="text-xs text-gray-600">
                     Get instant style advice from experts & community
                   </div>
@@ -503,15 +498,15 @@ export default function CheckoutPage() {
             {/* Testimonial */}
             <div className="bg-green-50 border-l-4 border-green-500 rounded-xl p-4">
               <p className="text-sm text-gray-700 italic">
-                &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything - I get compliments daily now!&quot;
+                &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything – I get compliments daily now.&quot;
               </p>
-              <p className="text-xs text-gray-600 mt-2 font-semibold">- Priya S., Mumbai (Verified Buyer)</p>
+              <p className="text-xs text-gray-600 mt-2 font-semibold">– Priya S., Mumbai (Verified Buyer)</p>
             </div>
 
             {/* Add-on 1: Shopping Blueprint */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-3xl p-6 relative">
               <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-xs font-bold">
-                93% OF CUSTOMERS ADD THIS
+                Most Clients Also Add This
               </div>
               
               <label className="flex items-start gap-4 cursor-pointer">
@@ -529,9 +524,8 @@ export default function CheckoutPage() {
                     <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">56% OFF</span>
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                    <li>• Exact shopping links for YOUR style (saves hours!)</li>
+                    <li>• Exact shopping links tailored to YOUR style DNA</li>
                     <li>• 20 pieces = 50+ outfit combinations</li>
-                    <li>• Budget-friendly alternatives included</li>
                     <li>• Seasonal wardrobe updates for 1 year</li>
                   </ul>
                   <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mt-3 text-center text-sm font-semibold">
@@ -558,10 +552,9 @@ export default function CheckoutPage() {
                     <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                    <li>• Customized fitness plan (home + gym options)</li>
-                    <li>• Nutrition guide for glowing skin & energy</li>
-                    <li>• Daily confidence boosters & affirmations</li>
-                    <li>• Progress tracker & accountability partner</li>
+                    <li>• Customized fitness & nutrition for glowing skin</li>
+                    <li>• Home + gym workout options</li>
+                    <li>• Daily confidence boosters + progress tracker</li>
                   </ul>
                 </div>
               </label>
@@ -581,20 +574,20 @@ export default function CheckoutPage() {
                 </div>
                 
                 <div className="flex justify-between items-center text-green-600">
-                  <span>FREE Bonuses (₹997 value)</span>
+                  <span>FREE Bonuses (₹1,000+ value)</span>
                   <span className="font-semibold">FREE</span>
                 </div>
                 
                 {shoppingBlueprintAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>Shopping Blueprint</span>
+                    <span>Shopping Blueprint (Optional)</span>
                     <span className="font-semibold">₹{shoppingBlueprintDiscountedPrice}</span>
                   </div>
                 )}
                 
                 {glowUpProgramAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>30-Day Glow Up</span>
+                    <span>Glow Up Program (Optional)</span>
                     <span className="font-semibold">₹{glowUpProgramDiscountedPrice}</span>
                   </div>
                 )}
@@ -608,9 +601,8 @@ export default function CheckoutPage() {
                     <span>You Pay:</span>
                     <span className="text-blue-600">₹{totalAmount.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm text-green-600 font-semibold">
-                    <span>You Save:</span>
-                    <span>₹{totalSavings.toLocaleString()} ({Math.round((totalSavings/totalValue)*100)}% OFF!)</span>
+                  <div className="text-center text-sm text-gray-600 mt-2">
+                    Total if all selected: ₹{totalAmount.toLocaleString()} (Value over ₹{totalValue.toLocaleString()})
                   </div>
                 </div>
               </div>

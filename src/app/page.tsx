@@ -769,7 +769,7 @@ export default function Home() {
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
               <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
-              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹599 + ₹185 GST</div>
+              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹1,199 + ₹216 GST</div>
               <p className="text-sm md:text-base lg:text-lg opacity-90">Complete personal style transformation</p>
             </div>
             
@@ -854,7 +854,7 @@ export default function Home() {
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-8 text-white text-center">
               <h3 className="text-2xl md:text-3xl font-bold mb-2">Complete IconOne Package</h3>
-              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,197</div>
+              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,297</div>
               <p className="text-lg md:text-xl opacity-90">Style + Shopping + Wellness Bundle</p>
             </div>
             
@@ -1196,10 +1196,10 @@ export default function Home() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <div className="text-center">
-                <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited Time Offer</p>
+                <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited to 15 clients this month</p>
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-sm line-through text-gray-500">₹1,999</span>
-                  <span className="text-lg font-bold text-gray-900">₹599 + GST</span>
+                  <span className="text-sm line-through text-gray-500">₹5,999</span>
+                  <span className="text-lg font-bold text-gray-900">₹1,199 + GST</span>
                 </div>
                 <p className="text-xs text-gray-600">Style Transformation</p>
               </div>
