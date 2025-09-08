@@ -198,42 +198,19 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
-              <span className="text-gray-900">Style Like the </span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Stars</span>
-              <span className="text-gray-900">. Expert </span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Fashion Consultations</span>
-              <span className="text-gray-900"> for the Modern Indian Woman.</span>
+              <div className="text-gray-900">Style Like the Stars</div>
+              <div className="text-gray-900">Expert Fashion Consultations</div>
+              <div className="text-gray-900">for the</div>
+              <div className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Modern Indian Woman</div>
             </h1>
             
-            {/* Hero Image - Tripti */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="mb-8"
-            >
-              <div className="text-center">
-                <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
-                  <Image
-                    src="/tripti.png"
-                    alt="IconOne Style Transformation"
-                    width={320}
-                    height={320}
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-              </div>
-            </motion.div>
-            
-            {/* Press Trust Strip - Right below the image */}
+            {/* Press Logos - Right below hero text */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mb-8"
             >
-              <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">As Seen In</p>
               <div className="flex items-center justify-center gap-6 md:gap-8 flex-wrap">
                 <Image
                   src="/times-of-india-logo.png"
@@ -256,6 +233,27 @@ export default function Home() {
                   height={40}
                   className="opacity-70 hover:opacity-100 transition-opacity"
                 />
+              </div>
+            </motion.div>
+            
+            {/* Hero Image - Book */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="mb-8"
+            >
+              <div className="text-center">
+                <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
+                  <Image
+                    src="/book.png"
+                    alt="IconOne Style Guide Preview"
+                    width={320}
+                    height={320}
+                    className="object-contain"
+                    priority
+                  />
+                </div>
               </div>
             </motion.div>
           </motion.div>
