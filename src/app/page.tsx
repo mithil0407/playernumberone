@@ -210,7 +210,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mt-12 mb-2"
             >
-              <p className="text-sm md:text-base text-gray-500 mb-3 font-medium text-center">Featured on:</p>
+              <p className="text-sm md:text-base text-gray-500 mb-1 font-medium text-center">Featured on:</p>
               <div className="flex items-center justify-center gap-4 md:gap-6">
                 <Image
                   src="/times-of-india-logo.png"
