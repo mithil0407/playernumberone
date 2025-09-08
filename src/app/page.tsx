@@ -197,8 +197,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
-              <div className="text-gray-900">Style Like the Stars</div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
               <div className="text-gray-900">Expert Fashion Consultations</div>
               <div className="text-gray-900">for the</div>
               <div className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Modern Indian Woman</div>
@@ -211,6 +210,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mb-4"
             >
+              <p className="text-sm md:text-base text-gray-500 mb-3 font-medium text-center">Featured on:</p>
               <div className="flex items-center justify-center gap-4 md:gap-6">
                 <Image
                   src="/times-of-india-logo.png"
@@ -241,10 +241,10 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="mb-4"
+              className="mb-2"
             >
               <div className="text-center">
-                <div className="relative w-48 h-48 md:w-64 md:h-64 mx-auto mb-2">
+                <div className="relative w-48 h-48 md:w-64 md:h-64 mx-auto">
                   <Image
                     src="/book.png"
                     alt="IconOne Style Guide Preview"
@@ -803,7 +803,7 @@ export default function Home() {
           >
             <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
               <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
-              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹1,199 + ₹216 GST</div>
+              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹1,199</div>
               <p className="text-sm md:text-base lg:text-lg opacity-90">Complete personal style transformation</p>
             </div>
             
