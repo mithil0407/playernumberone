@@ -1,61 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Calendar } from 'lucide-react';
-import Script from 'next/script';
+import Cal, { getCalApi } from "@calcom/embed-react";
 
 export default function SchedulePage() {
-  const [calLoaded, setCalLoaded] = useState(false);
-
-  // Initialize Cal.com widget when component mounts
   useEffect(() => {
-    const initCal = () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof window !== 'undefined' && (window as any).Cal) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).Cal("init", "30min", {origin:"https://app.cal.com"});
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).Cal.ns["30min"]("inline", {
-          elementOrSelector:"#my-cal-inline-30min",
-          config: {"layout":"month_view"},
-          calLink: "iconone-wpnx1q/30min",
-        });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).Cal.ns["30min"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
-        
-        setCalLoaded(true);
-      }
-    };
-
-    // Check if Cal is already loaded
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).Cal) {
-      initCal();
-    } else {
-      // Wait for Cal to load
-      const checkCal = setInterval(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (typeof window !== 'undefined' && (window as any).Cal) {
-          initCal();
-          clearInterval(checkCal);
-        }
-      }, 100);
-
-      // Cleanup interval after 10 seconds
-      setTimeout(() => clearInterval(checkCal), 10000);
-    }
+    (async function () {
+      const cal = await getCalApi({"namespace":"30min"});
+      cal("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+    })();
   }, []);
 
   return (
-    <>
-      <Script
-        src="https://app.cal.com/embed/embed.js"
-        strategy="afterInteractive"
-      />
-      <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -119,21 +78,15 @@ export default function SchedulePage() {
               </p>
             </div>
 
-                    {/* Cal.com Inline Widget */}
+                    {/* Cal.com React Component */}
                     <div className="flex justify-center">
-                      <div
-                        id="my-cal-inline-30min"
-                        className="w-full max-w-4xl"
-                        style={{minWidth: '320px', height: calLoaded ? '700px' : '400px'}}
-                      >
-                        {!calLoaded && (
-                          <div className="flex items-center justify-center h-full bg-gray-800 rounded-lg">
-                            <div className="text-center">
-                              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                              <p className="text-gray-300">Loading calendar...</p>
-                            </div>
-                          </div>
-                        )}
+                      <div className="w-full max-w-4xl" style={{minWidth: '320px', height: '700px'}}>
+                        <Cal 
+                          namespace="30min"
+                          calLink="iconone-wpnx1q/30min"
+                          style={{width:"100%",height:"100%",overflow:"scroll"}}
+                          config={{"layout":"month_view"}}
+                        />
                       </div>
                     </div>
           </motion.div>
@@ -172,7 +125,7 @@ export default function SchedulePage() {
         >
                   <button
                     onClick={() => {
-                      const calElement = document.getElementById('my-cal-inline-30min');
+                      const calElement = document.querySelector('[data-cal-namespace="30min"]');
                       if (calElement) {
                         calElement.scrollIntoView({ behavior: 'smooth' });
                       }
@@ -186,6 +139,5 @@ export default function SchedulePage() {
         </motion.div>
       </div>
     </div>
-    </>
   );
 }

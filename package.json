@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@calcom/embed-react": "^1.5.3",
     "@headlessui/react": "^2.2.7",
     "@supabase/supabase-js": "^2.55.0",
     "@vercel/analytics": "^1.5.0",
