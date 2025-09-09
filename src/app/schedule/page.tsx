@@ -6,47 +6,53 @@ import { Users, Calendar } from 'lucide-react';
 import Script from 'next/script';
 
 export default function SchedulePage() {
-  const [calendlyLoaded, setCalendlyLoaded] = useState(false);
+  const [calLoaded, setCalLoaded] = useState(false);
 
-  // Initialize Calendly widget when component mounts
+  // Initialize Cal.com widget when component mounts
   useEffect(() => {
-    const initCalendly = () => {
+    const initCal = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof window !== 'undefined' && (window as any).Calendly) {
+      if (typeof window !== 'undefined' && (window as any).Cal) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).Calendly.initInlineWidget({
-          url: 'https://calendly.com/mithilfx007/30min?hide_gdpr_banner=1',
-          parentElement: document.getElementById('calendly-widget'),
-          prefill: {},
-          utm: {}
+        (window as any).Cal("init", "30min", {origin:"https://app.cal.com"});
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).Cal.ns["30min"]("inline", {
+          elementOrSelector:"#my-cal-inline-30min",
+          config: {"layout":"month_view"},
+          calLink: "iconone-wpnx1q/30min",
         });
-        setCalendlyLoaded(true);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).Cal.ns["30min"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+        
+        setCalLoaded(true);
       }
     };
 
-    // Check if Calendly is already loaded
+    // Check if Cal is already loaded
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).Calendly) {
-      initCalendly();
+    if (typeof window !== 'undefined' && (window as any).Cal) {
+      initCal();
     } else {
-      // Wait for Calendly to load
-      const checkCalendly = setInterval(() => {
+      // Wait for Cal to load
+      const checkCal = setInterval(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (typeof window !== 'undefined' && (window as any).Calendly) {
-          initCalendly();
-          clearInterval(checkCalendly);
+        if (typeof window !== 'undefined' && (window as any).Cal) {
+          initCal();
+          clearInterval(checkCal);
         }
       }, 100);
 
       // Cleanup interval after 10 seconds
-      setTimeout(() => clearInterval(checkCalendly), 10000);
+      setTimeout(() => clearInterval(checkCal), 10000);
     }
   }, []);
 
   return (
     <>
       <Script
-        src="https://assets.calendly.com/assets/external/widget.js"
+        src="https://app.cal.com/embed/embed.js"
         strategy="afterInteractive"
       />
       <div className="min-h-screen bg-gray-900 text-white">
@@ -113,23 +119,23 @@ export default function SchedulePage() {
               </p>
             </div>
 
-            {/* Calendly Inline Widget */}
-            <div className="flex justify-center">
-              <div 
-                id="calendly-widget"
-                className="w-full max-w-4xl"
-                style={{minWidth: '320px', height: calendlyLoaded ? '700px' : '400px'}}
-              >
-                {!calendlyLoaded && (
-                  <div className="flex items-center justify-center h-full bg-gray-800 rounded-lg">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                      <p className="text-gray-300">Loading calendar...</p>
+                    {/* Cal.com Inline Widget */}
+                    <div className="flex justify-center">
+                      <div
+                        id="my-cal-inline-30min"
+                        className="w-full max-w-4xl"
+                        style={{minWidth: '320px', height: calLoaded ? '700px' : '400px'}}
+                      >
+                        {!calLoaded && (
+                          <div className="flex items-center justify-center h-full bg-gray-800 rounded-lg">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                              <p className="text-gray-300">Loading calendar...</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
           </motion.div>
 
           {/* Instructions */}
@@ -164,15 +170,15 @@ export default function SchedulePage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 1 }}
         >
-          <button
-            onClick={() => {
-              const calendlyElement = document.getElementById('calendly-widget');
-              if (calendlyElement) {
-                calendlyElement.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center touch-manipulation"
-          >
+                  <button
+                    onClick={() => {
+                      const calElement = document.getElementById('my-cal-inline-30min');
+                      if (calElement) {
+                        calElement.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center touch-manipulation"
+                  >
             <Calendar className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform duration-300" />
             {/* Pulse animation */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 animate-ping opacity-20"></div>
