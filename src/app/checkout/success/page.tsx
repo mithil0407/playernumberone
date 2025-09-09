@@ -47,41 +47,41 @@ function SuccessPageContent() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="text-center max-w-2xl mx-auto px-4"
       >
-        <div className="bg-green-900/30 border border-green-500/30 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
-          <CheckCircle className="w-16 h-16 text-green-400" />
+        <div className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+          <CheckCircle className="w-16 h-16 text-green-600" />
         </div>
         
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-green-400">
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
           Payment Successful! 🎉
         </h1>
         
-        <p className="text-xl mb-8 text-gray-300">
+        <p className="text-xl mb-8 text-gray-600">
           Welcome to IconOne! Your style transformation journey begins now.
         </p>
         
-        <div className="bg-gray-800 rounded-lg p-6 mb-8 border border-gray-600">
-          <h2 className="text-2xl font-bold mb-4 text-rose-400">What&apos;s Next?</h2>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-8 border border-white/30">
+          <h2 className="text-2xl font-bold mb-4 text-gray-900">What&apos;s Next?</h2>
           
           <div className="space-y-4 text-left">
             <div className="flex items-start gap-3">
-              <Calendar className="w-6 h-6 text-rose-400 mt-1 flex-shrink-0" />
+              <Calendar className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold">Schedule Your Style Session</h3>
-                <p className="text-gray-400 text-sm">Book your 1-on-1 consultation with our expert stylist</p>
+                <h3 className="font-semibold text-gray-900">Schedule Your Style Session</h3>
+                <p className="text-gray-600 text-sm">Book your 1-on-1 consultation with our expert stylist</p>
               </div>
             </div>
             
             <div className="flex items-start gap-3">
-              <Users className="w-6 h-6 text-rose-400 mt-1 flex-shrink-0" />
+              <Users className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold">Personalized Style Assessment</h3>
-                <p className="text-gray-400 text-sm">Get your custom style transformation roadmap</p>
+                <h3 className="font-semibold text-gray-900">Personalized Style Assessment</h3>
+                <p className="text-gray-600 text-sm">Get your custom style transformation roadmap</p>
               </div>
             </div>
           </div>
@@ -89,12 +89,12 @@ function SuccessPageContent() {
         
         <Link
           href="/schedule"
-          className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-lg text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
+          className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
         >
           Schedule Your Style Session <ArrowRight className="w-6 h-6" />
         </Link>
         
-        <div className="mt-8 text-sm text-gray-400">
+        <div className="mt-8 text-sm text-gray-500">
           <p>You&apos;ll receive a confirmation email with all the details.</p>
           <p>Questions? Contact us at support@playernumberone.com</p>
         </div>
@@ -106,10 +106,10 @@ function SuccessPageContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
-          <p>Loading...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     }>
