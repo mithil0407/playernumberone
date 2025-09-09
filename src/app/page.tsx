@@ -197,7 +197,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 lg:mb-8 leading-tight tracking-tight px-2">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-3 md:mb-5 lg:mb-6 leading-tight tracking-tight px-2">
               <div className="text-gray-900">Expert Fashion Consultations</div>
               <div className="text-gray-900">for the</div>
               <div className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Modern Indian Woman</div>
@@ -208,9 +208,9 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-12 mb-2"
+              className="mt-16 mb-0"
             >
-              <p className="text-sm md:text-base text-gray-500 mb-0 font-medium text-center">Featured on:</p>
+              <p className="text-sm md:text-base text-gray-500 mt-2 mb-1 font-medium text-center">Featured on:</p>
               <div className="flex items-center justify-center gap-4 md:gap-6">
                 <Image
                   src="/times-of-india-logo.png"
@@ -258,14 +258,7 @@ export default function Home() {
             </motion.div>
           </motion.div>
           
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-xl md:text-2xl mb-8 text-gray-600 max-w-4xl mx-auto leading-relaxed"
-          >
-            IconOne brings celebrity-level fashion expertise to you with personalized 1-on-1 consultations, curated shopping guides, and transformation programs — trusted by 2,800+ clients across India.
-          </motion.p>
+          {/* Subtext removed as requested */}
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -284,7 +277,7 @@ export default function Home() {
                   });
                 }
               }}
-              className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 md:px-10 py-4 md:py-4 rounded-full text-base md:text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20 w-full sm:w-auto justify-center"
+              className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 md:px-12 py-4 md:py-5 rounded-full text-lg md:text-xl font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20 w-full sm:w-auto justify-center"
             >
               <span className="relative z-10">Book My Consultation Now →</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
@@ -851,7 +844,7 @@ export default function Home() {
                       alt="IconOne Style Guide Preview"
                       width={96}
                       height={128}
-                      className="object-contain rounded-lg shadow-md"
+                      className="object-contain"
                     />
                   </div>
                   <p className="text-xs text-gray-600">Style Guide Preview</p>
@@ -924,7 +917,7 @@ export default function Home() {
                       alt="IconOne Complete Package"
                       width={96}
                       height={128}
-                      className="object-contain rounded-lg shadow-md"
+                      className="object-contain"
                     />
                   </div>
                   <p className="text-xs text-gray-600">Complete Style Package</p>
