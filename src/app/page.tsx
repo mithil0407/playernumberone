@@ -188,7 +188,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-40 pb-32 px-6 lg:px-8 relative overflow-hidden" id="hero">
+      <section className="pt-20 md:pt-40 pb-16 md:pb-32 px-4 md:px-6 lg:px-8 relative overflow-hidden" id="hero">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
             {/* Press Logos */}
@@ -196,30 +196,30 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="mt-8 mb-8"
+              className="mt-4 md:mt-8 mb-4 md:mb-8"
             >
               <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">Featured on:</p>
-              <div className="flex items-center justify-center gap-6 md:gap-8">
+              <div className="flex items-center justify-center gap-3 md:gap-6 lg:gap-8">
                 <Image
                   src="/times-of-india-logo.png"
                   alt="Times of India"
-                  width={120}
-                  height={40}
-                  className="opacity-70 hover:opacity-100 transition-opacity"
+                  width={80}
+                  height={30}
+                  className="opacity-70 hover:opacity-100 transition-opacity md:w-[120px] md:h-[40px]"
                 />
                 <Image
                   src="/femina-logo.png"
                   alt="Femina"
-                  width={120}
-                  height={40}
-                  className="opacity-70 hover:opacity-100 transition-opacity"
+                  width={80}
+                  height={30}
+                  className="opacity-70 hover:opacity-100 transition-opacity md:w-[120px] md:h-[40px]"
                 />
                 <Image
                   src="/vogue-india-logo.png"
                   alt="Vogue India"
-                  width={120}
-                  height={40}
-                  className="opacity-70 hover:opacity-100 transition-opacity"
+                  width={80}
+                  height={30}
+                  className="opacity-70 hover:opacity-100 transition-opacity md:w-[120px] md:h-[40px]"
                 />
               </div>
             </motion.div>
@@ -227,19 +227,19 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-6xl md:text-8xl font-light text-gray-900 mb-8 leading-tight tracking-tight font-['Playfair Display',serif]"
+              className="text-4xl md:text-6xl lg:text-8xl font-light text-gray-900 mb-6 md:mb-8 leading-tight tracking-tight font-['Playfair Display',serif]"
             >
               Bespoke Fashion
               <br />
               <span className="bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent font-semibold">Consultations</span>
               <br />
-              <span className="text-4xl md:text-5xl font-light text-gray-600 font-['Cormorant Garamond',serif]">for the Modern Indian Woman</span>
+              <span className="text-2xl md:text-4xl lg:text-5xl font-light text-gray-600 font-['Cormorant Garamond',serif]">for the Modern Indian Woman</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed font-light font-['Inter',sans-serif]"
+              className="text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto leading-relaxed font-light font-['Inter',sans-serif] px-4"
             >
               Elevate your presence. Transform your confidence. Discover the artistry of personal style 
               with our curated fashion expertise.
@@ -250,11 +250,11 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="max-w-4xl mx-auto mb-12"
+              className="max-w-4xl mx-auto mb-8 md:mb-12"
             >
-              <div className="bg-gradient-to-br from-pink-100 via-white to-rose-100 rounded-3xl p-8 md:p-12 shadow-2xl border border-pink-100">
+              <div className="bg-gradient-to-br from-pink-100 via-white to-rose-100 rounded-3xl p-6 md:p-8 lg:p-12 shadow-2xl border border-pink-100">
               <div className="text-center">
-                  <div className="relative w-80 h-80 md:w-96 md:h-96 mx-auto mb-6">
+                  <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
                   <Image
                     src="/book.png"
                     alt="IconOne Style Guide Preview"
@@ -264,8 +264,8 @@ export default function Home() {
                     priority
                   />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-light text-gray-800 mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
-                  <p className="text-gray-600 font-light text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
+                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-gray-800 mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
+                  <p className="text-gray-600 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
                 </div>
               </div>
           </motion.div>
@@ -286,7 +286,7 @@ export default function Home() {
                   });
                 }
               }}
-                className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-12 py-6 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
+                className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
             >
                 Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
             </Link>
@@ -297,27 +297,27 @@ export default function Home() {
       </section>
 
       {/* Elegant Stats */}
-      <section className="py-24 bg-gradient-to-b from-white to-rose-50">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
+      <section className="py-16 md:py-24 bg-gradient-to-b from-white to-rose-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12 mb-12 md:mb-20">
             <div className="text-center group">
-              <div className="text-5xl font-light text-rose-600 mb-3 group-hover:scale-110 transition-transform duration-300">200+</div>
-              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Transformations</div>
+              <div className="text-3xl md:text-5xl font-light text-rose-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">200+</div>
+              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Transformations</div>
                       </div>
             <div className="text-center group">
-              <div className="text-5xl font-light text-rose-600 mb-3 group-hover:scale-110 transition-transform duration-300">95%</div>
-              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Confidence Elevation</div>
+              <div className="text-3xl md:text-5xl font-light text-rose-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">95%</div>
+              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Confidence Elevation</div>
                     </div>
             <div className="text-center group">
-              <div className="flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                <span className="text-5xl font-light text-rose-600">4.9</span>
-                <Star className="h-7 w-7 text-amber-400 fill-current ml-2" />
+              <div className="flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">
+                <span className="text-3xl md:text-5xl font-light text-rose-600">4.9</span>
+                <Star className="h-5 w-5 md:h-7 md:w-7 text-amber-400 fill-current ml-1 md:ml-2" />
                       </div>
-              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Client Satisfaction</div>
+              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Client Satisfaction</div>
                     </div>
             <div className="text-center group">
-              <div className="text-5xl font-light text-rose-600 mb-3 group-hover:scale-110 transition-transform duration-300">2-3</div>
-              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Weeks to Elegance</div>
+              <div className="text-3xl md:text-5xl font-light text-rose-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">2-3</div>
+              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Weeks to Elegance</div>
                   </div>
           </div>
         </div>
@@ -326,13 +326,13 @@ export default function Home() {
 
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-white relative">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
-          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">What You Receive</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Every consultation is tailored to celebrate your individuality and elevate your personal style.</p>
+      <section id="features" className="py-16 md:py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">What You Receive</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Every consultation is tailored to celebrate your individuality and elevate your personal style.</p>
                 </div>
                 
-        <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           {[
             { icon: <Sparkles className="h-8 w-8 text-rose-500" />, title: "Personal Style Assessment" },
             { icon: <Gem className="h-8 w-8 text-rose-500" />, title: "Curated Outfit Planning" },
@@ -341,26 +341,26 @@ export default function Home() {
             { icon: <Award className="h-8 w-8 text-rose-500" />, title: "Confidence Coaching" },
             { icon: <Trophy className="h-8 w-8 text-rose-500" />, title: "Event-Specific Styling" }
           ].map((item, i) => (
-            <div key={i} className="p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-              <div className="flex flex-col items-center space-y-4">
+            <div key={i} className="p-6 md:p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
+              <div className="flex flex-col items-center space-y-3 md:space-y-4">
                 {item.icon}
-                <h3 className="text-2xl font-light font-['Cormorant Garamond',serif] text-center">{item.title}</h3>
-                  </div>
-                  </div>
+                <h3 className="text-lg md:text-2xl font-light font-['Cormorant Garamond',serif] text-center">{item.title}</h3>
+              </div>
+            </div>
               ))}
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-gradient-to-b from-rose-50 to-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
-          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">Client Stories</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Hear from women who transformed their confidence and presence with IconOne.</p>
+      <section id="testimonials" className="py-16 md:py-24 bg-gradient-to-b from-rose-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">Client Stories</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Hear from women who transformed their confidence and presence with IconOne.</p>
                 </div>
-        <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
             {testimonials.map((testimonial, index) => (
-            <div key={index} className="p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-              <div className="space-y-4">
+            <div key={index} className="p-6 md:p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
+              <div className="space-y-3 md:space-y-4">
                 <div className="aspect-square bg-gradient-to-br from-pink-100 via-white to-rose-100 flex items-center justify-center rounded-lg overflow-hidden">
                   <Image
                     src={testimonial.image}
@@ -370,38 +370,38 @@ export default function Home() {
                     className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
-                <p className="text-gray-700 font-light font-['Inter',sans-serif] text-center">&ldquo;{testimonial.story}&rdquo;</p>
+                <p className="text-gray-700 font-light font-['Inter',sans-serif] text-center text-sm md:text-base">&ldquo;{testimonial.story}&rdquo;</p>
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-2">{testimonial.name}</p>
                   <div className="flex justify-center gap-1">
-                    <Star className="h-5 w-5 text-amber-400 fill-current" />
-                    <Star className="h-5 w-5 text-amber-400 fill-current" />
-                    <Star className="h-5 w-5 text-amber-400 fill-current" />
-                    <Star className="h-5 w-5 text-amber-400 fill-current" />
-                    <Star className="h-5 w-5 text-amber-400 fill-current" />
-                  </div>
+                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
+                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
+                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
+                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
+                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
                   </div>
                 </div>
+              </div>
             </div>
             ))}
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
-          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">Investment</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Select a package that aligns with your journey to elegance.</p>
+      <section id="pricing" className="py-16 md:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">Investment</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Select a package that aligns with your journey to elegance.</p>
                   </div>
 
           {/* Main Product */}
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 mb-12">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 mb-8 md:mb-12">
           <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
-            <div className="p-8 md:p-12">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">IconOne Style Consultation</h3>
-                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,199</div>
-                <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
+            <div className="p-6 md:p-8 lg:p-12">
+              <div className="text-center mb-6 md:mb-8">
+                <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-['Playfair Display',serif] text-gray-900">IconOne Style Consultation</h3>
+                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,199</div>
+                <p className="text-base md:text-lg lg:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
