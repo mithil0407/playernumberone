@@ -29,7 +29,14 @@ import {
   Target,
   TrendingUp,
   Menu,
-  X
+  X,
+  Star,
+  Sparkles,
+  Crown,
+  Gem,
+  Shield,
+  Trophy,
+  Award
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -122,38 +129,29 @@ export default function Home() {
         <meta name="twitter:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <link rel="canonical" href="https://playernumberone.com" />
       </Head>
-      <div className="min-h-screen bg-white text-gray-900 overflow-hidden relative touch-manipulation">
-        {/* Navigation Bar */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-pink-500 bg-clip-text text-transparent">
-                IconOne
-              </Link>
+      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth">
+        {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-rose-100 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-pink-300 rounded-full flex items-center justify-center shadow-md">
+                <Crown className="h-6 w-6 text-white" />
             </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-8">
-                <a href="#features" className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors">Features</a>
-                <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors">Stories</a>
-                <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors">Pricing</a>
-                <a href="#faq" className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors">FAQ</a>
+              <span className="text-3xl font-light tracking-wide text-gray-900 font-['Cormorant Garamond',serif]">Icon<span className="font-semibold text-rose-600">One</span></span>
               </div>
-            </div>
-
-            {/* CTA Button */}
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center space-x-10 font-['Inter',sans-serif]">
+              <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Features</a>
+              <a href="#testimonials" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Stories</a>
+              <a href="#pricing" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Investment</a>
+              <a href="#faq" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">FAQ</a>
               <Link
                 href="/checkout"
-                className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+                className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
               >
-                Start Now
+                Begin Journey
               </Link>
             </div>
-
             {/* Mobile menu button */}
             <div className="md:hidden">
               <button
@@ -171,18 +169,18 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/50"
+            className="md:hidden bg-white/95 backdrop-blur-xl border-t border-rose-100"
           >
-            <div className="px-4 py-6 space-y-3">
-              <a href="#features" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Features</a>
-              <a href="#testimonials" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Stories</a>
-              <a href="#pricing" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Pricing</a>
-              <a href="#faq" className="block text-gray-600 hover:text-gray-900 px-4 py-3 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">FAQ</a>
+            <div className="px-6 py-6 space-y-4">
+              <a href="#features" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Features</a>
+              <a href="#testimonials" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Stories</a>
+              <a href="#pricing" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Investment</a>
+              <a href="#faq" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="block bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-4 rounded-full text-base font-semibold text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-8 py-4 rounded-full text-base font-light tracking-wide text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Start Now
+                Begin Journey
               </Link>
             </div>
           </motion.div>
@@ -190,28 +188,18 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 md:pt-24 pb-16 md:pb-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-3 md:mb-5 lg:mb-6 leading-tight tracking-tight px-2">
-              <div className="text-gray-900">Expert Fashion Consultations</div>
-              <div className="text-gray-900">for the</div>
-              <div className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-pink-500">Modern Indian Woman</div>
-            </h1>
-            
-            {/* Press Logos - Right below hero text */}
+      <section className="pt-40 pb-32 px-6 lg:px-8 relative overflow-hidden" id="hero">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            {/* Press Logos */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-16 mb-0"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-8 mb-8"
             >
-              <p className="text-sm md:text-base text-gray-500 mt-2 mb-1 font-medium text-center">Featured on:</p>
-              <div className="flex items-center justify-center gap-4 md:gap-6">
+              <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">Featured on:</p>
+              <div className="flex items-center justify-center gap-6 md:gap-8">
                 <Image
                   src="/times-of-india-logo.png"
                   alt="Times of India"
@@ -235,36 +223,57 @@ export default function Home() {
                 />
               </div>
             </motion.div>
-            
-            {/* Hero Image - Book */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="-mt-10 mb-2"
+            <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-6xl md:text-8xl font-light text-gray-900 mb-8 leading-tight tracking-tight font-['Playfair Display',serif]"
             >
+              Bespoke Fashion
+              <br />
+              <span className="bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent font-semibold">Consultations</span>
+              <br />
+              <span className="text-4xl md:text-5xl font-light text-gray-600 font-['Cormorant Garamond',serif]">for the Modern Indian Woman</span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed font-light font-['Inter',sans-serif]"
+            >
+              Elevate your presence. Transform your confidence. Discover the artistry of personal style 
+              with our curated fashion expertise.
+            </motion.p>
+            
+            {/* Book Image Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="max-w-4xl mx-auto mb-12"
+            >
+              <div className="bg-gradient-to-br from-pink-100 via-white to-rose-100 rounded-3xl p-8 md:p-12 shadow-2xl border border-pink-100">
               <div className="text-center">
-                <div className="relative w-48 h-48 md:w-64 md:h-64 mx-auto">
+                  <div className="relative w-80 h-80 md:w-96 md:h-96 mx-auto mb-6">
                   <Image
                     src="/book.png"
                     alt="IconOne Style Guide Preview"
-                    width={256}
-                    height={256}
-                    className="object-contain"
+                      width={400}
+                      height={400}
+                      className="object-contain drop-shadow-2xl"
                     priority
                   />
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-light text-gray-800 mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
+                  <p className="text-gray-600 font-light text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
                 </div>
               </div>
-            </motion.div>
           </motion.div>
-          
-          {/* Subtext removed as requested */}
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16"
+              transition={{ duration: 0.8, delay: 0.6 }}
           >
             <Link 
               href="/checkout" 
@@ -277,40 +286,247 @@ export default function Home() {
                   });
                 }
               }}
-              className="group relative bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 md:px-12 py-4 md:py-5 rounded-full text-lg md:text-xl font-semibold hover:shadow-2xl hover:scale-105 transition-all duration-500 flex items-center gap-3 border border-white/20 w-full sm:w-auto justify-center"
+                className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-12 py-6 text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
             >
-              <span className="relative z-10">Book My Consultation Now →</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
-              {/* Glass shine effect */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
             </Link>
-            
-            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-xl px-6 py-4 rounded-full border border-white/30 shadow-lg">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-8 h-8 bg-gradient-to-r from-rose-400 to-pink-400 rounded-full border-2 border-white shadow-sm"></div>
-                ))}
-              </div>
-              <span className="text-gray-700 font-medium">200+ transformations</span>
-            </div>
           </motion.div>
 
-          {/* Countdown Timer for Urgency */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mb-8"
-          >
-            <CountdownTimer 
-              endTime={new Date(Date.now() + 5 * 60 * 1000)} // 5 minutes from now
-              className="w-full max-w-md mx-auto"
-            />
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Before/After Visual Section - Moved Right Below Hero */}
+      {/* Elegant Stats */}
+      <section className="py-24 bg-gradient-to-b from-white to-rose-50">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
+            <div className="text-center group">
+              <div className="text-5xl font-light text-rose-600 mb-3 group-hover:scale-110 transition-transform duration-300">200+</div>
+              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Transformations</div>
+                      </div>
+            <div className="text-center group">
+              <div className="text-5xl font-light text-rose-600 mb-3 group-hover:scale-110 transition-transform duration-300">95%</div>
+              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Confidence Elevation</div>
+                    </div>
+            <div className="text-center group">
+              <div className="flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                <span className="text-5xl font-light text-rose-600">4.9</span>
+                <Star className="h-7 w-7 text-amber-400 fill-current ml-2" />
+                      </div>
+              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Client Satisfaction</div>
+                    </div>
+            <div className="text-center group">
+              <div className="text-5xl font-light text-rose-600 mb-3 group-hover:scale-110 transition-transform duration-300">2-3</div>
+              <div className="text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Weeks to Elegance</div>
+                  </div>
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
+          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">What You Receive</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Every consultation is tailored to celebrate your individuality and elevate your personal style.</p>
+                </div>
+                
+        <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto px-6 lg:px-8">
+          {[
+            { icon: <Sparkles className="h-8 w-8 text-rose-500" />, title: "Personal Style Assessment" },
+            { icon: <Gem className="h-8 w-8 text-rose-500" />, title: "Curated Outfit Planning" },
+            { icon: <Heart className="h-8 w-8 text-rose-500" />, title: "Makeup & Grooming Guidance" },
+            { icon: <Shield className="h-8 w-8 text-rose-500" />, title: "Wardrobe Strategy" },
+            { icon: <Award className="h-8 w-8 text-rose-500" />, title: "Confidence Coaching" },
+            { icon: <Trophy className="h-8 w-8 text-rose-500" />, title: "Event-Specific Styling" }
+          ].map((item, i) => (
+            <div key={i} className="p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
+              <div className="flex flex-col items-center space-y-4">
+                {item.icon}
+                <h3 className="text-2xl font-light font-['Cormorant Garamond',serif] text-center">{item.title}</h3>
+                  </div>
+                  </div>
+              ))}
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-24 bg-gradient-to-b from-rose-50 to-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
+          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">Client Stories</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Hear from women who transformed their confidence and presence with IconOne.</p>
+                </div>
+        <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto px-6 lg:px-8">
+            {testimonials.map((testimonial, index) => (
+            <div key={index} className="p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
+              <div className="space-y-4">
+                <div className="aspect-square bg-gradient-to-br from-pink-100 via-white to-rose-100 flex items-center justify-center rounded-lg overflow-hidden">
+                  <Image
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    width={300}
+                    height={300}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+                <p className="text-gray-700 font-light font-['Inter',sans-serif] text-center">&ldquo;{testimonial.story}&rdquo;</p>
+                <div className="text-center">
+                  <p className="text-sm text-gray-500 mb-2">{testimonial.name}</p>
+                  <div className="flex justify-center gap-1">
+                    <Star className="h-5 w-5 text-amber-400 fill-current" />
+                    <Star className="h-5 w-5 text-amber-400 fill-current" />
+                    <Star className="h-5 w-5 text-amber-400 fill-current" />
+                    <Star className="h-5 w-5 text-amber-400 fill-current" />
+                    <Star className="h-5 w-5 text-amber-400 fill-current" />
+                  </div>
+                  </div>
+                </div>
+            </div>
+            ))}
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
+          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">Investment</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Select a package that aligns with your journey to elegance.</p>
+                  </div>
+
+          {/* Main Product */}
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 mb-12">
+          <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+            <div className="p-8 md:p-12">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">IconOne Style Consultation</h3>
+                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,199</div>
+                <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Complete style assessment tailored to your features</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Personalized color palette that makes your skin glow</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Body-flattering silhouettes that work with your shape</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Hair & beauty advice for your unique features</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">20-minute one-on-one call with expert stylist</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-6 text-center">
+                  <div className="text-center">
+                    <div className="text-3xl mb-4">✨</div>
+                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Personal Touch</h4>
+                    <p className="text-gray-600 font-light font-['Inter',sans-serif]">Tailored specifically for you</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <Link 
+                  href="/checkout" 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.fbq) {
+                      window.fbq('track', 'Lead', {
+                        content_name: 'Style Consultation CTA Click',
+                        content_category: 'Style Consultation',
+                        value: 1199,
+                        currency: 'INR'
+                      });
+                    }
+                  }}
+                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
+                >
+                  ✨ Get Your Style Consultation
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Advanced Plan */}
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+            <div className="p-8 md:p-12">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">Complete IconOne Package</h3>
+                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹2,297</div>
+                <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Style + Shopping + Wellness Bundle</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
+                  <ul className="space-y-4">
+                    {features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700 font-light font-['Inter',sans-serif]">{feature.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6 text-center">
+                  <div className="text-center">
+                    <div className="text-3xl mb-4">💰</div>
+                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Bundle Savings</h4>
+                    <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,197</p>
+                    <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹800</div>
+                    <p className="text-sm text-orange-600 font-light font-['Inter',sans-serif]">(Limited time bundle)</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6 mb-8 text-center">
+                <p className="text-red-700 font-light text-lg font-['Inter',sans-serif]">
+                  ⚠️ Only 15 slots available this week
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <Link 
+                  href="/checkout" 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.fbq) {
+                      window.fbq('track', 'Lead', {
+                        content_name: 'Complete Package CTA Click',
+                        content_category: 'Style Transformation Package',
+                        value: 2297,
+                        currency: 'INR'
+                      });
+                    }
+                  }}
+                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
+                >
+                  ✨ Transform Now
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* Before/After Visual Section */}
       <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -319,7 +535,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+            <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif] text-gray-900">
               See the Transformation
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
@@ -349,12 +565,12 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 className="group relative"
               >
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6 text-center">{comparison.title}</h3>
+                <div className="bg-white rounded-2xl shadow-lg border-rose-100 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1 transition-transform duration-300">
+                  <h3 className="text-2xl md:text-3xl font-light text-gray-900 mb-6 md:mb-8 text-center font-['Playfair Display',serif]">{comparison.title}</h3>
                   
-                  <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
+                  <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                     <div className="text-center">
-                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">Before</div>
+                      <div className="text-sm md:text-base font-light text-gray-600 mb-3 font-['Inter',sans-serif]">Before</div>
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                         <Image
                           src={comparison.before}
@@ -368,7 +584,7 @@ export default function Home() {
                     </div>
                     
                     <div className="text-center">
-                      <div className="text-sm md:text-base font-semibold text-gray-600 mb-2">After</div>
+                      <div className="text-sm md:text-base font-light text-gray-600 mb-3 font-['Inter',sans-serif]">After</div>
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
                         <Image
                           src={comparison.after}
@@ -382,10 +598,7 @@ export default function Home() {
                     </div>
                   </div>
                   
-                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">{comparison.description}</p>
-                  
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <p className="text-base md:text-lg text-gray-600 text-center leading-relaxed font-light font-['Inter',sans-serif]">{comparison.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -393,35 +606,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Visual Stats Section - Added for More Visual Appeal */}
-      <section className="py-8 md:py-12 lg:py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 lg:gap-8">
-            {[
-              { number: '200+', label: 'Women Transformed', icon: '✨', color: 'from-rose-400 to-pink-400' },
-              { number: '95%', label: 'Confidence Boost', icon: '💪', color: 'from-purple-400 to-indigo-400' },
-              { number: '4.9★', label: 'Customer Rating', icon: '⭐', color: 'from-yellow-400 to-orange-400' },
-              { number: '2-3', label: 'Weeks to Results', icon: '🚀', color: 'from-green-400 to-teal-400' }
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="text-center group"
-              >
-                <div className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 bg-gradient-to-r ${stat.color} rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  {stat.icon}
-                </div>
-                <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{stat.number}</div>
-                <div className="text-sm md:text-base text-gray-600 font-medium">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Problem Section - Mobile Optimized */}
+      {/* Problem Section */}
       <section className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -430,17 +615,17 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
+            <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif] text-gray-900">
               Sound Familiar?
             </h2>
-                          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-                Many women feel the same way. You&apos;re not alone in this journey.
-              </p>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+              Many women feel the same way. You&apos;re not alone in this journey.
+            </p>
           </motion.div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
-              { 
+              {
                 icon: Users, 
                 text: 'Feel overlooked or invisible in social settings?', 
                 color: 'red',
@@ -467,20 +652,20 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-6 lg:p-8 border border-white/20 md:hover:bg-white/80 md:transition-all md:duration-300 md:hover:-translate-y-1"
+                className="group relative bg-white rounded-2xl shadow-lg border-rose-100 p-4 md:p-6 lg:p-8 hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1 transition-transform duration-300"
               >
                 {/* Problem Image */}
-                <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                  <Image
+                  <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                    <Image
                     src={item.image}
                     alt={item.imageAlt}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-cover"
-                  />
+                      width={300}
+                      height={300}
+                      className="w-full h-full object-cover"
+                    />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
-                </div>
-                
+                  </div>
+                  
                 <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${
                   item.color === 'red' ? 'bg-red-100' :
                   item.color === 'orange' ? 'bg-orange-100' : 'bg-rose-100'
@@ -489,592 +674,10 @@ export default function Home() {
                     item.color === 'red' ? 'text-red-600' :
                     item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
                   }`} />
-                </div>
-                <p className="text-lg md:text-xl font-semibold text-gray-900 text-center leading-tight">{item.text}</p>
-                
-                {/* Glass shine effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Hero Transformations - Real Style Transformations */}
-      <section className="py-12 md:py-20 lg:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="text-center mb-12 md:mb-16"
-          >
-            <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 md:mb-6">
-              Real Style Transformations in Just Weeks
-            </h3>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              See how our personalized approach helps women discover their signature style and radiate confidence
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-            {[
-                { image: '/style-discovery.webp', title: 'Personal Style Discovery', description: 'Discover your unique style signature with colors, silhouettes, and pieces that make you feel authentically beautiful.' },
-                { image: '/beauty-routine.webp', title: 'Elegant Beauty Routine', description: 'Master the art of effortless elegance with personalized beauty and grooming techniques that enhance your natural glow.' },
-                { image: '/wellness-confidence.webp', title: 'Confidence & Wellness', description: 'Build inner and outer strength with wellness plans designed for busy women who want to feel radiant and energized.' }
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.4 + index * 0.2 }}
-                  className="group relative"
-                >
-                  {/* Glassmorphism Card */}
-                  <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
-                                      <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-4 md:mb-6 bg-gradient-to-br from-gray-100 to-gray-50">
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      width={300}
-                      height={300}
-                      className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
                   </div>
-                    <h4 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 md:mb-4">{item.title}</h4>
-                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{item.description}</p>
-                    
-                    {/* Glass shine effect */}
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  </div>
-                </motion.div>
-              ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section - Mobile Optimized */}
-      <section id="features" className="py-8 md:py-16 lg:py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              What You&apos;ll Get in IconOne
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              A complete style transformation program designed specifically for Indian women
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 mb-8 md:mb-16">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 border border-white/20 md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
-              >
-                {/* Feature Image */}
-                <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                  <Image
-                    src={feature.image}
-                    alt={feature.imageAlt}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-transparent"></div>
-                </div>
-                
-                <div className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-6 bg-gradient-to-r from-rose-100/80 to-pink-100/80 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                  <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-rose-600" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">{feature.title}</h3>
-                <p className="text-sm md:text-base text-gray-600 leading-relaxed">{feature.description}</p>
-                
-                {/* Glass shine effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-3xl p-4 md:p-8 border border-rose-200 text-center"
-          >
-            <div className="max-w-3xl mx-auto">
-              <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 md:w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">1-on-1 with Expert Style Consultant</h3>
-              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
-                Work directly with our experienced style consultants who understand the unique beauty of Indian women. 
-                Get personalized advice based on 5+ years of transforming women&apos;s confidence through style.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Testimonials - Mobile Optimized */}
-      <section id="testimonials" className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Real Stories, Real Results
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              See how IconOne has transformed the confidence of women just like you
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 border border-white/20 md:hover:bg-white/80 md:hover:-translate-y-1 md:transition-all md:duration-300"
-              >
-                <div className="w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 border border-white/30">
-                  <Image
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-cover md:transition-transform md:duration-300 md:hover:scale-105"
-                  />
-                </div>
-                <blockquote className="text-gray-700 mb-4 md:mb-6 italic text-base md:text-lg leading-relaxed">
-                  &ldquo;{testimonial.story}&rdquo;
-                </blockquote>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
-                    <span className="text-white font-bold text-xs md:text-sm">{testimonial.name.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm md:text-base">{testimonial.name}</p>
-                    <p className="text-xs md:text-sm text-gray-500">IconOne Graduate</p>
-                  </div>
-                </div>
-                
-                {/* Glass shine effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Visual Process Section - Added for More Visual Appeal */}
-      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Your Transformation Journey
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Simple steps to unlock your signature style and confidence
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Style Assessment',
-                description: 'Complete your personalized style questionnaire',
-                image: '/step1-assessment.webp',
-                imageAlt: 'Style assessment'
-              },
-              {
-                step: '02',
-                title: 'Expert Consultation',
-                description: '20-minute call with our style consultant',
-                image: '/step2-consultation.webp',
-                imageAlt: 'Expert consultation'
-              },
-              {
-                step: '03',
-                title: 'Personalized Plan',
-                description: 'Get your custom style transformation roadmap',
-                image: '/step3-plan.webp',
-                imageAlt: 'Personalized plan'
-              },
-              {
-                step: '04',
-                title: 'Transform & Shine',
-                description: 'Apply your new style and feel confident',
-                image: '/step4-results.webp',
-                imageAlt: 'Transform and shine'
-              }
-            ].map((process, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative text-center"
-              >
-                <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
-                  {/* Step Number */}
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 md:w-12 md:h-12 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-lg">
-                    {process.step}
-                  </div>
-                  
-                  {/* Process Image */}
-                  <div className="relative w-full aspect-square mt-4 md:mt-6 mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                    <Image
-                      src={process.image}
-                      alt={process.imageAlt}
-                      width={200}
-                      height={200}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
-                  </div>
-                  
-                  <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-gray-900 leading-tight">{process.title}</h3>
-                  <p className="text-sm md:text-base text-gray-600 leading-relaxed">{process.description}</p>
+                <p className="text-lg md:text-xl font-light text-gray-900 text-center leading-relaxed font-['Inter',sans-serif]">{item.text}</p>
                   
                   {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                </div>
-                
-                {/* Connection Line (except for last item) */}
-                {index < 3 && (
-                  <div className="hidden md:block absolute top-1/2 left-full w-full h-0.5 bg-gradient-to-r from-rose-200 to-pink-200 transform -translate-y-1/2 z-0"></div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section - Mobile Optimized */}
-      <section id="pricing" className="py-8 md:py-16 lg:py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Choose Your Style Transformation
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Your IconOne Style Transformation Package
-            </p>
-          </motion.div>
-
-          {/* Main Product */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/20 overflow-hidden mb-8"
-          >
-            <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-6 text-white text-center">
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2">IconOne Style Consultation</h3>
-              <div className="text-2xl md:text-3xl lg:text-5xl font-bold mb-2">₹1,199</div>
-              <p className="text-sm md:text-base lg:text-lg opacity-90">Complete personal style transformation</p>
-            </div>
-            
-            <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-                <div>
-                  <h4 className="text-lg font-bold mb-3 text-gray-900">What&apos;s Included:</h4>
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-3">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Complete style assessment tailored to your features</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Personalized color palette that makes your skin glow</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Body-flattering silhouettes that work with your shape</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">Hair & beauty advice for your unique features</span>
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">20-minute one-on-one call with expert stylist</span>
-                    </li>
-                  </ul>
-                </div>
-                
-                <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-center">
-                  <div className="text-center">
-                    <div className="text-lg mb-2">✨</div>
-                    <h4 className="font-bold text-rose-800 mb-2">Personal Touch</h4>
-                    <p className="text-rose-700 text-sm">Tailored specifically for you</p>
-                  </div>
-                </div>
-                
-                {/* Book Preview */}
-                <div className="text-center mt-4">
-                  <div className="relative w-24 h-32 mx-auto mb-3">
-                    <Image
-                      src="/book.png"
-                      alt="IconOne Style Guide Preview"
-                      width={96}
-                      height={128}
-                      className="object-contain"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-600">Style Guide Preview</p>
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <Link 
-                  href="/checkout" 
-                  onClick={() => {
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Style Consultation CTA Click',
-                        content_category: 'Style Consultation',
-                        value: 784,
-                        currency: 'INR'
-                      });
-                    }
-                  }}
-                  className="inline-block bg-gradient-to-r from-rose-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:from-rose-600 hover:to-pink-600 transition-all duration-300"
-                >
-                  ✨ Get Your Style Consultation
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Advanced Plan */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/20 overflow-hidden"
-          >
-            <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-4 md:p-8 text-white text-center">
-              <h3 className="text-2xl md:text-3xl font-bold mb-2">Complete IconOne Package</h3>
-              <div className="text-4xl md:text-6xl font-bold mb-2">₹2,297</div>
-              <p className="text-lg md:text-xl opacity-90">Style + Shopping + Wellness Bundle</p>
-            </div>
-            
-            <div className="p-4 md:p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
-                <div>
-                  <h4 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900">What&apos;s Included:</h4>
-                  <ul className="space-y-2 md:space-y-3">
-                    {features.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-3">
-                        <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm md:text-base">{feature.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-4 md:p-6 border border-yellow-200">
-                  <div className="text-center">
-                    <div className="text-xl md:text-2xl mb-2">💰</div>
-                    <h4 className="text-base md:text-lg font-bold text-gray-900 mb-2">Bundle Savings</h4>
-                    <p className="text-gray-700 mb-3 text-sm md:text-base">Individual Price: ₹2,197</p>
-                    <div className="text-2xl md:text-3xl font-bold text-orange-600 mb-1">Save ₹800</div>
-                    <p className="text-xs md:text-sm text-orange-600 font-medium">(Limited time bundle)</p>
-                  </div>
-                </div>
-                
-                {/* Book Preview for Advanced Plan */}
-                <div className="text-center mt-4">
-                  <div className="relative w-24 h-32 mx-auto mb-3">
-                    <Image
-                      src="/book.png"
-                      alt="IconOne Complete Package"
-                      width={96}
-                      height={128}
-                      className="object-contain"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-600">Complete Style Package</p>
-                </div>
-              </div>
-              
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 md:p-6 mb-6 md:mb-8 text-center">
-                <p className="text-red-700 font-semibold text-base md:text-lg">
-                  ⚠️ Only 15 slots available this week
-                </p>
-              </div>
-              
-              <div className="text-center space-y-4">
-                {/* Mobile-Optimized CTA */}
-                <Link 
-                  href="/checkout" 
-                  onClick={() => {
-                    // Track pricing CTA click with Meta Pixel
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Complete Package CTA Click',
-                        content_category: 'Style Transformation Package',
-                        value: 2197,
-                        currency: 'INR'
-                      });
-                    }
-                  }}
-                  className="group relative w-full max-w-sm mx-auto bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-xl text-white px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/20 flex items-center justify-center gap-3"
-                >
-                  <span className="relative z-10">✨ Transform Now</span>
-                  <ArrowRight className="w-6 h-6 relative z-10" />
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                </Link>
-                
-                {/* Mobile Urgency & Trust */}
-                <div className="max-w-sm mx-auto space-y-3">
-                  <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-center">
-                    <p className="text-red-700 font-semibold text-lg">⏰ Only 15 slots left this week!</p>
-                    <p className="text-red-600 text-sm">Don&apos;t miss your style transformation opportunity</p>
-                  </div>
-                  
-                                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
-                     <div className="flex items-center gap-2">
-                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                       <span>7-Day Money Back</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                       <span>200+ Success Stories</span>
-                     </div>
-                   </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Visual Gallery Section - Added for More Visual Impact */}
-      <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Style Inspiration Gallery
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Discover the endless possibilities of your personal style transformation
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-            {[
-              { image: '/gallery-style1.webp', alt: 'Elegant style transformation' },
-              { image: '/gallery-beauty1.webp', alt: 'Beauty and grooming' },
-              { image: '/gallery-natural.webp', alt: 'Natural beauty enhancement' },
-              { image: '/gallery-sophisticated.webp', alt: 'Sophisticated style' },
-              { image: '/gallery-wellness.webp', alt: 'Confidence and wellness' },
-              { image: '/gallery-confidence.webp', alt: 'Body confidence' },
-              { image: '/gallery-care.webp', alt: 'Personal care' },
-              { image: '/gallery-discovery.webp', alt: 'Style discovery' }
-            ].map((gallery, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
-              >
-                <Image
-                  src={gallery.image}
-                  alt={gallery.alt}
-                  width={300}
-                  height={300}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
-                {/* Hover overlay with style tip */}
-                <div className="absolute inset-0 flex items-end justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="bg-white/90 backdrop-blur-sm rounded-t-2xl p-3 mb-2 text-center">
-                    <p className="text-xs md:text-sm font-semibold text-gray-800">Style Tip #{index + 1}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-center mt-8 md:mt-12"
-          >
-            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Each image represents a different aspect of your style journey. 
-              From color analysis to wardrobe building, discover what makes you uniquely beautiful.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* FAQ Section - Mobile Optimized */}
-      <section id="faq" className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Everything you need to know about IconOne
-            </p>
-          </motion.div>
-          
-          <div className="space-y-4 md:space-y-6">
-            {faqs.map((faq, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20 md:hover:shadow-3xl md:hover:bg-white/80 md:transition-all md:duration-300"
-              >
-                <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900 leading-tight">{faq.question}</h3>
-                <p className="text-gray-600 text-sm md:text-lg leading-relaxed">{faq.answer}</p>
-                
-                {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </motion.div>
             ))}
@@ -1082,82 +685,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Visual Trust Section - Added for More Visual Impact */}
-      <section className="py-16 md:py-24 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12 md:mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 text-gray-900">
-              Why Women Trust IconOne
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Real results, real women, real transformations
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-            {[
-              {
-                image: '/trust-results.webp',
-                title: 'Proven Results',
-                description: '200+ women have transformed their style and confidence',
-                stats: '95% Success Rate'
-              },
-              {
-                image: '/trust-expert.webp',
-                title: 'Expert Guidance',
-                description: 'Certified stylists with 5+ years of experience',
-                stats: '5-Star Rating'
-              },
-              {
-                image: '/trust-personalized.webp',
-                title: 'Personalized Approach',
-                description: 'Every transformation is unique to your style goals',
-                stats: '100% Custom'
-              }
-            ].map((trust, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative text-center"
-              >
-                <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-white/30 shadow-2xl md:hover:shadow-3xl md:hover:bg-white/90 md:transition-all md:duration-300 md:hover:-translate-y-2">
-                  {/* Trust Image */}
-                  <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                    <Image
-                      src={trust.image}
-                      alt={trust.title}
-                      width={300}
-                      height={300}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-transparent"></div>
-                  </div>
-                  
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-gray-900 leading-tight">{trust.title}</h3>
-                  <p className="text-gray-600 leading-relaxed text-sm md:text-base mb-3 md:mb-4">{trust.description}</p>
-                  
-                  {/* Stats Badge */}
-                  <div className="inline-block bg-gradient-to-r from-rose-100 to-pink-100 px-3 py-2 rounded-full">
-                    <span className="text-sm md:text-base font-semibold text-rose-700">{trust.stats}</span>
-                  </div>
-                  
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      {/* FAQ Section */}
+      <section id="faq" className="py-24 bg-gradient-to-b from-rose-50 to-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
+          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">Frequently Asked Questions</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Everything you need to know about our consultations.</p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+        <div className="max-w-4xl mx-auto space-y-8">
+          {faqs.map((faq, index) => (
+            <div key={index} className="text-left p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-rose-100 hover:-translate-y-1 transition-transform duration-300">
+              <h3 className="text-xl font-light mb-3 font-['Cormorant Garamond',serif] text-gray-900">{faq.question}</h3>
+              <p className="text-gray-600 font-light font-['Inter',sans-serif]">{faq.answer}</p>
+              </div>
+          ))}
         </div>
       </section>
 
-      {/* Final CTA Section - Mobile Optimized */}
+      {/* Final CTA Section */}
       <section className="py-8 md:py-16 lg:py-20 px-4 bg-gradient-to-r from-rose-500 to-pink-500">
         <div className="max-w-4xl mx-auto text-center text-white">
           <motion.div
@@ -1165,10 +709,10 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6">
+            <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">
               Ready to Discover Your Signature Style?
             </h2>
-            <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4">
+            <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4 font-light font-['Inter',sans-serif]">
               Join 200+ women who have already transformed their confidence and discovered their elegant style
             </p>
             <div className="space-y-6">
@@ -1180,12 +724,12 @@ export default function Home() {
                     window.fbq('track', 'Lead', {
                       content_name: 'Final CTA Click',
                       content_category: 'Style Transformation Program',
-                      value: 784,
+                      value: 1199,
                       currency: 'INR'
                     });
                   }
                 }}
-                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-rose-600 px-8 py-4 rounded-full text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3"
+                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-rose-600 px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
               >
                 <span className="relative z-10">✨ Start Your IconOne Transformation Today</span>
                 {/* Glass shine effect */}
@@ -1195,11 +739,11 @@ export default function Home() {
               {/* Mobile Trust & Urgency */}
               <div className="max-w-sm mx-auto space-y-3">
                 <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-4 text-center">
-                  <p className="text-white font-semibold text-lg">⏰ Limited Time Offer</p>
-                  <p className="text-white/80 text-sm">Only 15 slots available this week</p>
+                  <p className="text-white font-light text-lg font-['Inter',sans-serif]">⏰ Limited Time Offer</p>
+                  <p className="text-white/80 text-sm font-light font-['Inter',sans-serif]">Only 15 slots available this week</p>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/80">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/80 font-light font-['Inter',sans-serif]">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                     <span>7-Day Money Back</span>
@@ -1211,80 +755,19 @@ export default function Home() {
                 </div>
               </div>
               
-                              <p className="text-sm opacity-75 text-center">₹599 + GST • Limited slots available</p>
+              <p className="text-sm opacity-75 text-center">₹1,199 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Mobile Sticky CTA - High Conversion */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <div className="text-center">
-                <p className="text-sm text-red-600 font-semibold mb-1">⏰ Limited to 15 clients this month</p>
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-sm line-through text-gray-500">₹5,999</span>
-                  <span className="text-lg font-bold text-gray-900">₹1,199</span>
-                </div>
-                <p className="text-xs text-gray-600">Style Transformation</p>
-              </div>
-            </div>
-            <Link 
-              href="/checkout" 
-              onClick={() => {
-                if (typeof window !== 'undefined' && window.fbq) {
-                  window.fbq('track', 'Lead', {
-                    content_name: 'Mobile Sticky CTA',
-                    content_category: 'Mobile Conversion',
-                    value: 784,
-                    currency: 'INR'
-                  });
-                }
-              }}
-              className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 md:px-6 py-4 rounded-full text-base md:text-lg font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300 min-h-[48px] flex items-center justify-center"
-            >
-              ✨ Start Now
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Floating Action Button */}
-      <div className="fixed bottom-24 right-4 md:right-6 z-50 md:hidden">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 1 }}
-        >
-          <Link
-            href="/checkout"
-            onClick={() => {
-              // Track mobile FAB click with Meta Pixel
-              if (typeof window !== 'undefined' && window.fbq) {
-                window.fbq('track', 'Lead', {
-                  content_name: 'Mobile FAB Click',
-                  content_category: 'Style Transformation Program'
-                });
-              }
-            }}
-            className="group relative bg-gradient-to-r from-rose-500 to-pink-500 text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center touch-manipulation"
-          >
-            <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:rotate-45 transition-transform duration-300" />
-            {/* Pulse animation */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 animate-ping opacity-20"></div>
-          </Link>
-        </motion.div>
-      </div>
-
       {/* Footer */}
-      <footer className="py-12 px-4 bg-gray-900 text-white pb-24 md:pb-12">
-        <div className="max-w-6xl mx-auto">
+      <footer className="py-16 bg-gradient-to-b from-white to-rose-50 border-t border-rose-100">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
             <div className="md:col-span-2">
-              <div className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4">
+              <div className="text-3xl font-light bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4 font-['Playfair Display',serif]">
                 IconOne
               </div>
               <p className="text-gray-400 mb-4 max-w-md">

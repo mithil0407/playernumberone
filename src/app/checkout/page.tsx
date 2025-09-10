@@ -264,12 +264,12 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8 pb-24 md:pb-8">
         {/* Urgency Banner */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg font-bold mb-4 md:mb-6 text-center animate-pulse"
+          className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg font-light mb-4 md:mb-6 text-center animate-pulse font-['Inter',sans-serif]"
         >
           ⚡ LIMITED TIME: 80% OFF + FREE BONUSES - Only 15 Spots Left This Month! ⚡
         </motion.div>
@@ -283,15 +283,15 @@ export default function CheckoutPage() {
         >
           <div className="flex items-center gap-1 md:gap-2 bg-green-100 text-green-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
             <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm font-semibold">2,847+ Happy Clients</span>
+            <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">2,847+ Happy Clients</span>
           </div>
           <div className="flex items-center gap-1 md:gap-2 bg-blue-100 text-blue-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Lock className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm font-semibold">100% Secure</span>
+            <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">100% Secure</span>
           </div>
           <div className="flex items-center gap-1 md:gap-2 bg-yellow-100 text-yellow-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Star className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm font-semibold">4.9/5 Rating</span>
+            <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">4.9/5 Rating</span>
           </div>
         </motion.div>
 
@@ -303,14 +303,14 @@ export default function CheckoutPage() {
           className="space-y-3 md:space-y-4 mb-6 md:mb-8"
         >
           <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-red-600 font-bold text-base md:text-lg">
+            <div className="text-red-600 font-light text-base md:text-lg font-['Inter',sans-serif]">
               👀 {viewerCount} people are viewing this right now
             </div>
           </div>
           
           <div className="bg-gray-900 text-white rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-base md:text-lg mb-1 md:mb-2">Offer Expires In:</div>
-            <div className="text-2xl md:text-3xl font-bold text-yellow-400">
+            <div className="text-base md:text-lg mb-1 md:mb-2 font-light font-['Inter',sans-serif]">Offer Expires In:</div>
+            <div className="text-2xl md:text-3xl font-light text-yellow-400 font-['Cormorant Garamond',serif]">
               {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
             </div>
           </div>
@@ -323,34 +323,34 @@ export default function CheckoutPage() {
           transition={{ delay: 0.3 }}
           className="text-center mb-6 md:mb-8"
         >
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-light text-gray-900 mb-4 md:mb-6 font-['Playfair Display',serif]">
             Your Personal Style Transformation Starts Now
           </h1>
           
-          <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
-            <span className="line-through text-gray-400 mr-2 md:mr-4">₹{originalPrice}</span>
-            <span className="text-green-600">₹{discountedPrice}</span>
+          <div className="text-4xl md:text-5xl lg:text-6xl font-light text-gray-900 mb-3 md:mb-4">
+            <span className="line-through text-gray-400 mr-2 md:mr-4 font-['Inter',sans-serif]">₹{originalPrice}</span>
+            <span className="text-green-600 font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
           </div>
           
-          <div className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-2 rounded-full font-bold text-base md:text-lg inline-block animate-bounce">
+          <div className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-2 rounded-full font-light text-base md:text-lg inline-block animate-bounce font-['Inter',sans-serif]">
             YOU SAVE ₹{savings} TODAY!
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           {/* Order Form */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-white/70 backdrop-blur-xl rounded-3xl p-4 md:p-8 shadow-2xl border border-white/20"
+            className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20"
           >
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Your Information</h2>
+            <h2 className="text-2xl md:text-3xl font-light text-gray-900 mb-4 md:mb-6 font-['Cormorant Garamond',serif]">Your Information</h2>
             
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               {/* First Name */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                <label htmlFor="firstName" className="block text-sm font-light text-gray-700 mb-1 md:mb-2 font-['Inter',sans-serif]">
                   First Name *
                 </label>
                 <input
@@ -367,7 +367,7 @@ export default function CheckoutPage() {
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                <label htmlFor="email" className="block text-sm font-light text-gray-700 mb-1 md:mb-2 font-['Inter',sans-serif]">
                   Email ID *
                 </label>
                 <input
@@ -384,7 +384,7 @@ export default function CheckoutPage() {
 
               {/* Phone Number */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                <label htmlFor="phone" className="block text-sm font-light text-gray-700 mb-1 md:mb-2 font-['Inter',sans-serif]">
                   Phone Number *
                 </label>
                 <input
@@ -402,7 +402,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Security Notice */}
-              <div className="text-center text-xs md:text-sm text-gray-600">
+              <div className="text-center text-xs md:text-sm text-gray-600 font-light font-['Inter',sans-serif]">
                 <p>🔒 Your payment is secure and encrypted</p>
                 <p className="mt-1">By clicking above, you agree to our terms of service and privacy policy</p>
               </div>
@@ -414,31 +414,31 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="space-y-6"
+            className="space-y-6 md:space-y-8"
           >
                         {/* Main Product */}
-            <div className="bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-3xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
+            <div className="bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
               <div className="absolute top-2 md:top-4 right-[-30px] bg-yellow-400 text-gray-900 px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
                 BEST SELLER
               </div>
               
               <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
                 <span className="text-xl md:text-2xl">🎨</span>
-                <h3 className="text-lg md:text-xl font-bold">IconOne Personal Style Consultation</h3>
+                <h3 className="text-xl md:text-2xl font-light font-['Cormorant Garamond',serif]">IconOne Personal Style Consultation</h3>
               </div>
               
-              <div className="text-sm md:text-base text-gray-300 mb-3 md:mb-4">
+              <div className="text-sm md:text-base text-gray-300 mb-3 md:mb-4 font-light font-['Inter',sans-serif]">
                 Delivered 1-on-1 by Certified Fashion & Image Consultants
               </div>
               
-              <div className="text-xl md:text-2xl font-bold mb-3 md:mb-4">
-                <span className="line-through text-gray-300 mr-2 md:mr-4">₹{originalPrice}</span>
-                <span className="text-green-300">₹{discountedPrice}</span>
+              <div className="text-2xl md:text-3xl font-light mb-3 md:mb-4">
+                <span className="line-through text-gray-300 mr-2 md:mr-4 font-['Inter',sans-serif]">₹{originalPrice}</span>
+                <span className="text-green-300 font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
               </div>
               
               <div className="mb-3 md:mb-4">
-                <div className="text-sm md:text-base font-semibold mb-2">What you get:</div>
-                <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                <div className="text-sm md:text-base font-light mb-2 font-['Inter',sans-serif]">What you get:</div>
+                <ul className="space-y-1 md:space-y-2 text-xs md:text-sm font-light font-['Inter',sans-serif]">
                   <li className="flex items-start gap-2 md:gap-3">
                     <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
                     <span>Complete Style DNA Analysis</span>
@@ -468,27 +468,27 @@ export default function CheckoutPage() {
             </div>
 
             {/* Free Bonuses */}
-            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-dashed border-orange-300 rounded-3xl p-4 md:p-6">
-              <h4 className="text-orange-700 font-bold text-base md:text-lg text-center mb-3 md:mb-4">Included at No Extra Charge (₹1,000+ value):</h4>
+            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-dashed border-orange-300 rounded-3xl p-6 md:p-8">
+              <h4 className="text-orange-700 font-light text-base md:text-lg text-center mb-3 md:mb-4 font-['Cormorant Garamond',serif]">Included at No Extra Charge (₹1,000+ value):</h4>
               
               <div className="space-y-3 md:space-y-4">
                 <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">Celebrity Stylist Secrets Guide</div>
-                  <div className="text-xs text-gray-600">
+                  <div className="font-light text-gray-900 mb-1 md:mb-2 text-sm md:text-base font-['Inter',sans-serif]">Celebrity Stylist Secrets Guide</div>
+                  <div className="text-xs text-gray-600 font-light font-['Inter',sans-serif]">
                     Discover the exact style formulas Bollywood stylists use
                   </div>
                 </div>
                 
                 <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">Instant Confidence Routine Checklist</div>
-                  <div className="text-xs text-gray-600">
+                  <div className="font-light text-gray-900 mb-1 md:mb-2 text-sm md:text-base font-['Inter',sans-serif]">Instant Confidence Routine Checklist</div>
+                  <div className="text-xs text-gray-600 font-light font-['Inter',sans-serif]">
                     5-minute morning routine to look & feel amazing
                   </div>
                 </div>
                 
                 <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-bold text-gray-900 mb-1 md:mb-2 text-sm md:text-base">3-Day WhatsApp Style Access</div>
-                  <div className="text-xs text-gray-600">
+                  <div className="font-light text-gray-900 mb-1 md:mb-2 text-sm md:text-base font-['Inter',sans-serif]">3-Day WhatsApp Style Access</div>
+                  <div className="text-xs text-gray-600 font-light font-['Inter',sans-serif]">
                     Get instant style advice from experts & community
                   </div>
                 </div>
@@ -497,14 +497,14 @@ export default function CheckoutPage() {
 
             {/* Testimonial */}
             <div className="bg-green-50 border-l-4 border-green-500 rounded-xl p-4">
-              <p className="text-sm text-gray-700 italic">
+              <p className="text-sm text-gray-700 italic font-light font-['Inter',sans-serif]">
                 &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything – I get compliments daily now.&quot;
               </p>
-              <p className="text-xs text-gray-600 mt-2 font-semibold">– Priya S., Mumbai (Verified Buyer)</p>
+              <p className="text-xs text-gray-600 mt-2 font-light font-['Inter',sans-serif]">– Priya S., Mumbai (Verified Buyer)</p>
             </div>
 
             {/* Add-on 1: Shopping Blueprint */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-3xl p-6 relative">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-3xl p-6 md:p-8 relative">
               <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-xs font-bold">
                 Most Clients Also Add This
               </div>
@@ -517,18 +517,18 @@ export default function CheckoutPage() {
                   className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-bold text-gray-900 text-lg mb-2">✨ Complete Shopping Blueprint</div>
+                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">✨ Complete Shopping Blueprint</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-gray-400">₹{shoppingBlueprintOriginalPrice}</span>
-                    <span className="text-green-600 font-bold text-xl">₹{shoppingBlueprintDiscountedPrice}</span>
+                    <span className="text-green-600 font-light text-xl font-['Cormorant Garamond',serif]">₹{shoppingBlueprintDiscountedPrice}</span>
                     <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">56% OFF</span>
                   </div>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <ul className="text-sm text-gray-600 space-y-1 ml-4 font-light font-['Inter',sans-serif]">
                     <li>• Exact shopping links tailored to YOUR style DNA</li>
                     <li>• 20 pieces = 50+ outfit combinations</li>
                     <li>• Seasonal wardrobe updates for 1 year</li>
                   </ul>
-                  <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mt-3 text-center text-sm font-semibold">
+                  <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mt-3 text-center text-sm font-light font-['Inter',sans-serif]">
                     ⚡ One-Time Offer: Never Available At This Price Again!
                   </div>
                 </div>
@@ -536,7 +536,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Add-on 2: Glow Up Program */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
               <label className="flex items-start gap-4 cursor-pointer">
                 <input
                   type="checkbox"
@@ -545,13 +545,13 @@ export default function CheckoutPage() {
                   className="w-6 h-6 text-rose-600 border-gray-300 rounded focus:ring-rose-500 mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-bold text-gray-900 text-lg mb-2">💪 30-Day Glow Up Program</div>
+                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">💪 30-Day Glow Up Program</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-gray-400">₹{glowUpProgramOriginalPrice}</span>
-                    <span className="text-orange-600 font-bold text-xl">₹{glowUpProgramDiscountedPrice}</span>
+                    <span className="text-orange-600 font-light text-xl font-['Cormorant Garamond',serif]">₹{glowUpProgramDiscountedPrice}</span>
                     <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
                   </div>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <ul className="text-sm text-gray-600 space-y-1 ml-4 font-light font-['Inter',sans-serif]">
                     <li>• Customized fitness & nutrition for glowing skin</li>
                     <li>• Home + gym workout options</li>
                     <li>• Daily confidence boosters + progress tracker</li>
@@ -561,47 +561,47 @@ export default function CheckoutPage() {
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h3>
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
+              <h3 className="text-xl font-light text-gray-900 mb-4 font-['Cormorant Garamond',serif]">Order Summary</h3>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700">IconOne Style Consultation</span>
-                  <span className="font-semibold">
+                  <span className="text-gray-700 font-light font-['Inter',sans-serif]">IconOne Style Consultation</span>
+                  <span className="font-light font-['Inter',sans-serif]">
                     <span className="line-through text-gray-400 mr-2">₹{originalPrice}</span>
                     <span className="text-green-600">₹{discountedPrice}</span>
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-center text-green-600">
-                  <span>FREE Bonuses (₹1,000+ value)</span>
-                  <span className="font-semibold">FREE</span>
+                  <span className="font-light font-['Inter',sans-serif]">FREE Bonuses (₹1,000+ value)</span>
+                  <span className="font-light font-['Inter',sans-serif]">FREE</span>
                 </div>
                 
                 {shoppingBlueprintAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>Shopping Blueprint (Optional)</span>
-                    <span className="font-semibold">₹{shoppingBlueprintDiscountedPrice}</span>
+                    <span className="font-light font-['Inter',sans-serif]">Shopping Blueprint (Optional)</span>
+                    <span className="font-light font-['Inter',sans-serif]">₹{shoppingBlueprintDiscountedPrice}</span>
                   </div>
                 )}
                 
                 {glowUpProgramAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span>Glow Up Program (Optional)</span>
-                    <span className="font-semibold">₹{glowUpProgramDiscountedPrice}</span>
+                    <span className="font-light font-['Inter',sans-serif]">Glow Up Program (Optional)</span>
+                    <span className="font-light font-['Inter',sans-serif]">₹{glowUpProgramDiscountedPrice}</span>
                   </div>
                 )}
                 
                 <div className="border-t border-gray-200 pt-3">
-                  <div className="flex justify-between items-center text-sm text-gray-600">
+                  <div className="flex justify-between items-center text-sm text-gray-600 font-light font-['Inter',sans-serif]">
                     <span>Total Value:</span>
                     <span className="line-through">₹{totalValue.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center text-lg font-bold">
-                    <span>You Pay:</span>
-                    <span className="text-blue-600">₹{totalAmount.toLocaleString()}</span>
+                  <div className="flex justify-between items-center text-lg font-light">
+                    <span className="font-['Inter',sans-serif]">You Pay:</span>
+                    <span className="text-blue-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
                   </div>
-                  <div className="text-center text-sm text-gray-600 mt-2">
+                  <div className="text-center text-sm text-gray-600 mt-2 font-light font-['Inter',sans-serif]">
                     Total if all selected: ₹{totalAmount.toLocaleString()} (Value over ₹{totalValue.toLocaleString()})
                   </div>
                 </div>
@@ -612,12 +612,12 @@ export default function CheckoutPage() {
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-full text-lg md:text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform"
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-full text-lg md:text-xl font-light shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-['Inter',sans-serif]"
               >
                 {isProcessing ? 'Processing...' : '🔥 YES! Transform My Style Now →'}
               </button>
               
-              <div className="text-center text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
+              <div className="text-center text-xs md:text-sm text-gray-600 mb-3 md:mb-4 font-light font-['Inter',sans-serif]">
                 <p>Pay via Razorpay – 100% Safe & Secure</p>
               </div>
               
@@ -625,17 +625,17 @@ export default function CheckoutPage() {
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Shield className="w-5 h-5 text-green-600" />
-                  <span className="font-bold text-green-800">30-Day Money-Back Guarantee</span>
+                  <span className="font-light text-green-800 font-['Inter',sans-serif]">30-Day Money-Back Guarantee</span>
                 </div>
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-green-700 font-light font-['Inter',sans-serif]">
                   Love your new style or get 100% of your money back. No questions asked!
                 </p>
               </div>
               
               {/* Payment Methods */}
               <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600 mb-2">Accepted Payment Methods:</p>
-                <div className="flex justify-center gap-3 text-sm text-gray-500">
+                <p className="text-sm text-gray-600 mb-2 font-light font-['Inter',sans-serif]">Accepted Payment Methods:</p>
+                <div className="flex justify-center gap-3 text-sm text-gray-500 font-light font-['Inter',sans-serif]">
                   <span>💳 UPI</span>
                   <span>💳 Cards</span>
                   <span>💳 Netbanking</span>
@@ -645,23 +645,45 @@ export default function CheckoutPage() {
             </div>
 
             {/* Trust Indicators */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
+                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
                   <Shield className="w-5 h-5 text-green-500" />
                   <span>Secure payment with Razorpay</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
+                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
                   <Clock className="w-5 h-5 text-blue-500" />
                   <span>Instant access to your guides</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
+                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
                   <Users className="w-5 h-5 text-purple-500" />
                   <span>100s of successful transformations</span>
                 </div>
               </div>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Sticky Mobile CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-rose-100 p-4 md:hidden z-50">
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">
+              Total: <span className="font-light text-green-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
+            </div>
+            <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">
+              {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
+            </div>
+          </div>
+          <button
+            type="submit"
+            form="checkout-form"
+            disabled={isProcessing}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-full text-lg font-light shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 hover:scale-105 transform font-['Inter',sans-serif]"
+          >
+            {isProcessing ? 'Processing...' : '🔥 Transform My Style Now →'}
+          </button>
         </div>
       </div>
     </div>
