@@ -129,7 +129,7 @@ export default function Home() {
         <meta name="twitter:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <link rel="canonical" href="https://playernumberone.com" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth">
+      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-rose-100 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -203,23 +203,23 @@ export default function Home() {
                 <Image
                   src="/times-of-india-logo.png"
                   alt="Times of India"
-                  width={80}
-                  height={30}
-                  className="opacity-70 hover:opacity-100 transition-opacity md:w-[120px] md:h-[40px]"
+                  width={120}
+                  height={40}
+                  className="opacity-70 hover:opacity-100 transition-opacity h-[30px] w-auto md:h-[70px]"
                 />
                 <Image
                   src="/femina-logo.png"
                   alt="Femina"
-                  width={80}
-                  height={30}
-                  className="opacity-70 hover:opacity-100 transition-opacity md:w-[120px] md:h-[40px]"
+                  width={120}
+                  height={40}
+                  className="opacity-70 hover:opacity-100 transition-opacity h-[30px] w-auto md:h-[70px]"
                 />
                 <Image
                   src="/vogue-india-logo.png"
                   alt="Vogue India"
-                  width={80}
-                  height={30}
-                  className="opacity-70 hover:opacity-100 transition-opacity md:w-[120px] md:h-[40px]"
+                  width={120}
+                  height={40}
+                  className="opacity-70 hover:opacity-100 transition-opacity h-[30px] w-auto md:h-[70px]"
                 />
               </div>
             </motion.div>
@@ -838,6 +838,37 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Sticky Mobile CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-rose-100 p-4 md:hidden z-50">
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">Complete Package</div>
+              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">₹1,199</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">Offer Expires In:</div>
+              <div className="text-sm font-light text-rose-600 font-['Cormorant Garamond',serif]">14:59:23</div>
+            </div>
+          </div>
+          <Link
+            href="/checkout"
+            onClick={() => {
+              // Track CTA click with Meta Pixel
+              if (typeof window !== 'undefined' && window.fbq) {
+                window.fbq('track', 'Lead', {
+                  content_name: 'Mobile Sticky CTA Click',
+                  content_category: 'Transformation Program'
+                });
+              }
+            }}
+            className="w-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-6 py-3 text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide text-center block font-['Inter',sans-serif]"
+          >
+            Begin Your Transformation
+          </Link>
+        </div>
+      </div>
       </div>
     </>
   );
