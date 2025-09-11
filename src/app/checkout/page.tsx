@@ -227,7 +227,7 @@ export default function CheckoutPage() {
             }
             
             // Redirect to success page with all necessary parameters
-            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&total_amount=${totalAmount}&shopping_blueprint=${shoppingBlueprintAddon}&glow_up_program=${glowUpProgramAddon}`;
+            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}`;
             window.location.href = successUrl;
           },
           prefill: {

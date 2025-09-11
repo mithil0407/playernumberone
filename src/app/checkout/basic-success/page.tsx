@@ -3,48 +3,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CheckCircle, Download, Clock, Mail, ArrowRight, Home } from 'lucide-react';
-import { useEffect } from 'react';
 
 export default function BasicSuccessPage() {
-  useEffect(() => {
-    // Meta Pixel tracking for successful purchase
-    if (typeof window !== 'undefined' && window.fbq) {
-      // Try to get total amount from URL parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const totalAmountParam = urlParams.get('total_amount');
-      let totalAmount = 1199; // Default base price
-      
-      if (totalAmountParam) {
-        totalAmount = parseInt(totalAmountParam);
-      } else {
-        // Calculate total based on add-ons (fallback)
-        const shoppingBlueprintAddon = urlParams.get('shopping_blueprint') === 'true';
-        const glowUpProgramAddon = urlParams.get('glow_up_program') === 'true';
-        
-        totalAmount = 1199 + 
-          (shoppingBlueprintAddon ? 699 : 0) + 
-          (glowUpProgramAddon ? 399 : 0);
-      }
-      
-      window.fbq('track', 'Purchase', {
-        value: totalAmount,
-        currency: 'INR',
-        content_ids: ['iconone_style_consultation'],
-        content_type: 'product',
-        content_name: 'IconOne Style Consultation',
-        order_id: 'basic_success_' + Date.now()
-      });
-      
-      // Track successful conversion
-      window.fbq('track', 'CompleteRegistration', {
-        content_name: 'IconOne Style Consultation Success',
-        value: totalAmount,
-        currency: 'INR'
-      });
-      
-      console.log('Meta Pixel Purchase and CompleteRegistration events fired on basic-success page with total amount:', totalAmount);
-    }
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">

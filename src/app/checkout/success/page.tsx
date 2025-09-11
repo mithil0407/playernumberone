@@ -36,46 +36,6 @@ function SuccessPageContent() {
       console.log('Stored paymentId:', paymentId);
     }
     
-    // Meta Pixel tracking for successful purchase
-    if (typeof window !== 'undefined' && window.fbq) {
-      // Get total amount from URL parameters or calculate from add-ons
-      const totalAmountParam = searchParams.get('total_amount');
-      let totalAmount = 1199; // Default base price
-      
-      if (totalAmountParam) {
-        totalAmount = parseInt(totalAmountParam);
-      } else {
-        // Calculate total based on add-ons (fallback)
-        // Base price: ₹1,199
-        // Shopping Blueprint (default): ₹699
-        // Glow Up Program: ₹399 (if selected)
-        const shoppingBlueprintAddon = searchParams.get('shopping_blueprint') === 'true';
-        const glowUpProgramAddon = searchParams.get('glow_up_program') === 'true';
-        
-        totalAmount = 1199 + 
-          (shoppingBlueprintAddon ? 699 : 0) + 
-          (glowUpProgramAddon ? 399 : 0);
-      }
-      
-      window.fbq('track', 'Purchase', {
-        value: totalAmount,
-        currency: 'INR',
-        content_ids: ['iconone_style_consultation'],
-        content_type: 'product',
-        content_name: 'IconOne Style Consultation',
-        order_id: dbOrderId || orderId,
-        customer_id: customerId
-      });
-      
-      // Track successful conversion
-      window.fbq('track', 'CompleteRegistration', {
-        content_name: 'IconOne Style Consultation Success',
-        value: totalAmount,
-        currency: 'INR'
-      });
-      
-      console.log('Meta Pixel Purchase and CompleteRegistration events fired with total amount:', totalAmount);
-    }
     
     // Log what we found
     console.log('URL Parameters:', {
