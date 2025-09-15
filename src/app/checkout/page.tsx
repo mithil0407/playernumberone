@@ -58,15 +58,15 @@ export default function CheckoutPage() {
   
   // Product pricing
   const originalPrice = 5999;
-  const discountedPrice = 1199;
+  const discountedPrice = 1499;
   const savings = originalPrice - discountedPrice;
   
   // Add-ons
   const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(true); // Default checked
   const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false);
   
-  const shoppingBlueprintOriginalPrice = 1499;
-  const shoppingBlueprintDiscountedPrice = 699;
+  const shoppingBlueprintOriginalPrice = 1999;
+  const shoppingBlueprintDiscountedPrice = 999;
   
   const glowUpProgramOriginalPrice = 799;
   const glowUpProgramDiscountedPrice = 399;
@@ -461,7 +461,7 @@ export default function CheckoutPage() {
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
                     <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>Lifetime Access to Your Style Profile</span>
+                    <span>Lifetime Style Profile Access</span>
                   </li>
                 </ul>
               </div>
@@ -517,16 +517,17 @@ export default function CheckoutPage() {
                   className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">✨ Complete Shopping Blueprint</div>
+                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">✨ Styled Looks Pack</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-gray-400">₹{shoppingBlueprintOriginalPrice}</span>
                     <span className="text-green-600 font-light text-xl font-['Cormorant Garamond',serif]">₹{shoppingBlueprintDiscountedPrice}</span>
                     <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">56% OFF</span>
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4 font-light font-['Inter',sans-serif]">
-                    <li>• Exact shopping links tailored to YOUR style DNA</li>
-                    <li>• 20 pieces = 50+ outfit combinations</li>
-                    <li>• Seasonal wardrobe updates for 1 year</li>
+                    <li>🎉 4 Party Outfits</li>
+                    <li>✈️ 4 Travel Outfits</li>
+                    <li>👕 4 Casual Outfits</li>
+                    <li>💼 4 Office Outfits</li>
                   </ul>
                   <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mt-3 text-center text-sm font-light font-['Inter',sans-serif]">
                     ⚡ One-Time Offer: Never Available At This Price Again!
@@ -545,16 +546,19 @@ export default function CheckoutPage() {
                   className="w-6 h-6 text-rose-600 border-gray-300 rounded focus:ring-rose-500 mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">💪 30-Day Glow Up Program</div>
+                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">Beauty & Confidence Essentials Pack</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-gray-400">₹{glowUpProgramOriginalPrice}</span>
                     <span className="text-orange-600 font-light text-xl font-['Cormorant Garamond',serif]">₹{glowUpProgramDiscountedPrice}</span>
                     <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
                   </div>
                   <ul className="text-sm text-gray-600 space-y-1 ml-4 font-light font-['Inter',sans-serif]">
-                    <li>• Customized fitness & nutrition for glowing skin</li>
-                    <li>• Home + gym workout options</li>
-                    <li>• Daily confidence boosters + progress tracker</li>
+                    <li>💄 Signature Makeup & Lipstick Guide</li>
+                    <li>• Quick & natural makeup routine</li>
+                    <li>• Your perfect lipstick shade (skin-matched)</li>
+                    <li>👙 Lingerie Fit & Essentials Guide</li>
+                    <li>• Correct bra styles for your body</li>
+                    <li>• Shapewear essentials to flatter any outfit</li>
                   </ul>
                 </div>
               </label>
@@ -580,14 +584,14 @@ export default function CheckoutPage() {
                 
                 {shoppingBlueprintAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span className="font-light font-['Inter',sans-serif]">Shopping Blueprint (Optional)</span>
+                    <span className="font-light font-['Inter',sans-serif]">Styled Looks Pack (Optional)</span>
                     <span className="font-light font-['Inter',sans-serif]">₹{shoppingBlueprintDiscountedPrice}</span>
                   </div>
                 )}
                 
                 {glowUpProgramAddon && (
                   <div className="flex justify-between items-center text-green-600">
-                    <span className="font-light font-['Inter',sans-serif]">Glow Up Program (Optional)</span>
+                    <span className="font-light font-['Inter',sans-serif]">Beauty & Confidence Essentials Pack (Optional)</span>
                     <span className="font-light font-['Inter',sans-serif]">₹{glowUpProgramDiscountedPrice}</span>
                   </div>
                 )}

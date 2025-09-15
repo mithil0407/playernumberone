@@ -400,7 +400,7 @@ export default function Home() {
             <div className="p-6 md:p-8 lg:p-12">
               <div className="text-center mb-6 md:mb-8">
                 <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-['Playfair Display',serif] text-gray-900">IconOne Style Consultation</h3>
-                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,199</div>
+                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,499</div>
                 <p className="text-base md:text-lg lg:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
               </div>
               
@@ -448,7 +448,7 @@ export default function Home() {
                       window.fbq('track', 'Lead', {
                         content_name: 'Style Consultation CTA Click',
                         content_category: 'Style Consultation',
-                        value: 1199,
+                        value: 1499,
                         currency: 'INR'
                       });
                     }
@@ -468,7 +468,7 @@ export default function Home() {
             <div className="p-8 md:p-12">
               <div className="text-center mb-8">
                 <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">Complete IconOne Package</h3>
-                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹2,297</div>
+                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹2,497</div>
                 <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Style + Shopping + Wellness Bundle</p>
               </div>
               
@@ -489,8 +489,8 @@ export default function Home() {
                   <div className="text-center">
                     <div className="text-3xl mb-4">💰</div>
                     <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Bundle Savings</h4>
-                    <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,197</p>
-                    <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹800</div>
+                    <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,397</p>
+                    <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹900</div>
                     <p className="text-sm text-orange-600 font-light font-['Inter',sans-serif]">(Limited time bundle)</p>
                   </div>
                 </div>
@@ -510,7 +510,7 @@ export default function Home() {
                       window.fbq('track', 'Lead', {
                         content_name: 'Complete Package CTA Click',
                         content_category: 'Style Transformation Package',
-                        value: 2297,
+                        value: 2497,
                         currency: 'INR'
                       });
                     }
@@ -724,7 +724,7 @@ export default function Home() {
                     window.fbq('track', 'Lead', {
                       content_name: 'Final CTA Click',
                       content_category: 'Style Transformation Program',
-                      value: 1199,
+                      value: 1499,
                       currency: 'INR'
                     });
                   }
@@ -755,7 +755,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <p className="text-sm opacity-75 text-center">₹1,199 + GST • Limited slots available</p>
+              <p className="text-sm opacity-75 text-center">₹1,499 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -845,7 +845,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">Complete Package</div>
-              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">₹1,199</div>
+              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">₹1,499</div>
             </div>
             <div className="text-right">
               <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">Offer Expires In:</div>
