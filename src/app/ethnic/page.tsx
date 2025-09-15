@@ -94,17 +94,17 @@ export default function EthnicPage() {
     {
       name: 'Meera, 29',
       story: 'My wedding look was absolutely stunning! The lehenga selection was perfect for my body type.',
-      image: '/testimonial-priya.webp'
+      image: '/testimonial-meera.webp'
     },
     {
       name: 'Kavya, 31',
       story: 'Finally found ethnic wear that makes me feel confident at every festival and celebration.',
-      image: '/testimonial-ananya.webp'
+      image: '/testimonial-kavya.webp'
     },
     {
       name: 'Riya, 27',
       story: 'The office ethnic collection helped me maintain my cultural identity while looking professional.',
-      image: '/testimonial-shreya.webp'
+      image: '/testimonial-riya.webp'
     }
   ];
 
