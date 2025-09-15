@@ -404,9 +404,9 @@ export default function Home() {
                 <p className="text-base md:text-lg lg:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div>
-                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
+              <div className="max-w-4xl mx-auto">
+                <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif] text-center">What&apos;s Included:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   <ul className="space-y-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
@@ -420,6 +420,8 @@ export default function Home() {
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 font-light font-['Inter',sans-serif]">Body-flattering silhouettes that work with your shape</span>
                     </li>
+                  </ul>
+                  <ul className="space-y-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 font-light font-['Inter',sans-serif]">Hair & beauty advice for your unique features</span>
@@ -428,15 +430,21 @@ export default function Home() {
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 font-light font-['Inter',sans-serif]">20-minute one-on-one call with expert stylist</span>
                     </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Lifetime access to your personalized style profile</span>
+                    </li>
                   </ul>
                 </div>
                 
-                <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-6 text-center">
-                  <div className="text-center">
-                    <div className="text-3xl mb-4">✨</div>
-                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Personal Touch</h4>
-                    <p className="text-gray-600 font-light font-['Inter',sans-serif]">Tailored specifically for you</p>
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-6 mb-8 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-lg">👑</span>
+                    </div>
+                    <h4 className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">Premium Experience</h4>
                   </div>
+                  <p className="text-gray-600 font-light font-['Inter',sans-serif]">1-on-1 consultation with certified fashion experts</p>
                 </div>
               </div>
               
@@ -462,67 +470,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Advanced Plan */}
-        <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
-            <div className="p-8 md:p-12">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">Complete IconOne Package</h3>
-                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹2,497</div>
-                <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Style + Shopping + Wellness Bundle</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div>
-                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
-                  <ul className="space-y-4">
-                    {features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700 font-light font-['Inter',sans-serif]">{feature.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6 text-center">
-                  <div className="text-center">
-                    <div className="text-3xl mb-4">💰</div>
-                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Bundle Savings</h4>
-                    <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,397</p>
-                    <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹900</div>
-                    <p className="text-sm text-orange-600 font-light font-['Inter',sans-serif]">(Limited time bundle)</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6 mb-8 text-center">
-                <p className="text-red-700 font-light text-lg font-['Inter',sans-serif]">
-                  ⚠️ Only 15 slots available this week
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <Link 
-                  href="/checkout" 
-                  onClick={() => {
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Complete Package CTA Click',
-                        content_category: 'Style Transformation Package',
-                        value: 2497,
-                        currency: 'INR'
-                      });
-                    }
-                  }}
-                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
-                >
-                  ✨ Transform Now
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
 
