@@ -62,8 +62,8 @@ export default function CheckoutPage() {
   const savings = originalPrice - discountedPrice;
   
   // Add-ons
-  const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(true); // Default checked
-  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false);
+  const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(false); // Default unchecked
+  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(true); // Default checked
   
   const shoppingBlueprintOriginalPrice = 1999;
   const shoppingBlueprintDiscountedPrice = 999;
@@ -534,8 +534,8 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </label>
-            </div>
-
+                </div>
+                
             {/* Add-on 2: Glow Up Program */}
             <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
               <label className="flex items-start gap-4 cursor-pointer">
@@ -557,8 +557,8 @@ export default function CheckoutPage() {
                     <li>• Quick & natural makeup routine</li>
                     <li>• Your perfect lipstick shade (skin-matched)</li>
                     <li>👙 Lingerie Fit & Essentials Guide</li>
-                    <li>• Correct bra styles for your body</li>
-                    <li>• Shapewear essentials to flatter any outfit</li>
+                      <li>• Correct bra styles for your body</li>
+                      <li>• Shapewear essentials to flatter any outfit</li>
                   </ul>
                 </div>
               </label>
@@ -674,7 +674,8 @@ export default function CheckoutPage() {
         <div className="max-w-sm mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">
-              Total: <span className="font-light text-green-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
+              <span className="line-through text-gray-400 mr-2">₹5,999</span>
+              <span className="font-light text-green-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
             </div>
             <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">
               {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
