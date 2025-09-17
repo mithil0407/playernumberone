@@ -792,7 +792,10 @@ export default function Home() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">Complete Package</div>
-              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">₹1,499</div>
+              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">
+                <span className="line-through text-gray-400 mr-2">₹5,999</span>
+                <span className="text-green-600">₹1,499</span>
+              </div>
             </div>
             <div className="text-right">
               <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">Offer Expires In:</div>
