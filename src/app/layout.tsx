@@ -1,11 +1,17 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { Playfair_Display } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Playfair_Display, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { Suspense } from "react";
 import "./globals.css";
+import { Suspense } from "react";
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,16 +19,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const canela = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-canela",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "ICONIK - Bespoke Fashion Consultations for the Modern Indian Woman",
-  description:
-    "Elevate your presence. Transform your confidence. Discover the artistry of personal style with our curated fashion expertise.",
+  title: "ICONIK - Luxury Style Consultations",
+  description: "Discover your signature style with bespoke fashion consultations for the modern woman",
   generator: "v0.app",
 };
 
@@ -33,9 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable} ${canela.variable} ${GeistMono.variable} antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
-        <Analytics />
+      <body
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${playfairDisplay.variable} ${inter.variable}`}
+      >
+        <Suspense>
+          {children}
+          <Analytics />
+        </Suspense>
       </body>
     </html>
   );

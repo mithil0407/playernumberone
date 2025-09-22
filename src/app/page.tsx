@@ -128,22 +128,22 @@ export default function Home() {
         <meta name="twitter:description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <link rel="canonical" href="https://playernumberone.com" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-white via-white to-rose-50 text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
+      <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-rose-100 z-50 shadow-sm">
+      <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-3">
-              <span className="text-3xl font-light tracking-wide text-gray-900 font-display">ICONIK</span>
+            <div className="flex items-center">
+              <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
             </div>
-            <div className="hidden md:flex items-center space-x-10 font-['Inter',sans-serif]">
-              <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Features</a>
-              <a href="#testimonials" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Stories</a>
-              <a href="#pricing" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Investment</a>
-              <a href="#faq" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">FAQ</a>
+            <div className="hidden md:flex items-center space-x-12">
+              <a href="#features" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Features</a>
+              <a href="#testimonials" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Stories</a>
+              <a href="#pricing" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Investment</a>
+              <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="bg-brand-cta hover:opacity-90 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
+                className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
               >
                 Begin Journey
               </Link>
@@ -152,7 +152,7 @@ export default function Home() {
             <div className="md:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-600 hover:text-gray-900 p-2"
+                className="text-luxury-charcoal/60 hover:text-luxury-charcoal p-2"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -165,16 +165,16 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden bg-white/95 backdrop-blur-xl border-t border-rose-100"
+            className="md:hidden bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream"
           >
             <div className="px-6 py-6 space-y-4">
-              <a href="#features" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Features</a>
-              <a href="#testimonials" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Stories</a>
-              <a href="#pricing" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Investment</a>
-              <a href="#faq" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">FAQ</a>
+              <a href="#features" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Features</a>
+              <a href="#testimonials" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Stories</a>
+              <a href="#pricing" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Investment</a>
+              <a href="#faq" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-8 py-4 rounded-full text-base font-light tracking-wide text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="block bg-luxury-charcoal text-luxury-warm-white px-8 py-4 rounded-full luxury-body text-center mt-6 transition-all duration-300"
               >
                 Begin Journey
               </Link>
@@ -184,7 +184,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 md:pt-40 pb-16 md:pb-32 px-4 md:px-6 lg:px-8 relative overflow-hidden" id="hero">
+      <section className="pt-32 md:pt-48 pb-24 md:pb-32 px-4 md:px-6 lg:px-8 relative" id="hero">
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-16">
             {/* Press Logos */}
@@ -194,51 +194,58 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-4 md:mt-8 mb-4 md:mb-8"
             >
-              <p className="text-sm md:text-base text-gray-500 mb-4 font-medium text-center">Featured on:</p>
-              <div className="flex items-center justify-center gap-3 md:gap-6 lg:gap-8">
+              <p className="luxury-body text-luxury-charcoal/60 mb-8">Featured in</p>
+              <div className="flex items-center justify-center gap-8 md:gap-12">
                 <Image
                   src="/times-of-india-logo.png"
                   alt="Times of India"
                   width={120}
                   height={40}
-                  className="opacity-70 hover:opacity-100 transition-opacity h-[30px] w-auto md:h-[70px]"
+                  className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
                 />
                 <Image
                   src="/femina-logo.png"
                   alt="Femina"
                   width={120}
                   height={40}
-                  className="opacity-70 hover:opacity-100 transition-opacity h-[30px] w-auto md:h-[70px]"
+                  className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
                 />
                 <Image
                   src="/vogue-india-logo.png"
                   alt="Vogue India"
                   width={120}
                   height={40}
-                  className="opacity-70 hover:opacity-100 transition-opacity h-[30px] w-auto md:h-[70px]"
+                  className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
                 />
               </div>
             </motion.div>
             <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl md:text-6xl lg:text-8xl font-light text-gray-900 mb-6 md:mb-8 leading-tight tracking-tight font-display"
+              className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-8 leading-[0.9] tracking-tight"
             >
               Bespoke Fashion
               <br />
-              <span className="bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent font-semibold">Consultations</span>
-              <br />
-              <span className="text-2xl md:text-4xl lg:text-5xl font-light text-gray-600 font-display">for the Modern Indian Woman</span>
+              <span className="text-luxury-accent">Consultations</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto leading-relaxed font-light font-['Inter',sans-serif] px-4"
+              className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 mb-4 max-w-2xl mx-auto"
             >
-              Elevate your presence. Transform your confidence. Discover the artistry of personal style 
-              with our curated fashion expertise.
+              for the Modern Indian Woman
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="text-lg md:text-xl luxury-body text-luxury-charcoal/60 mb-16 max-w-3xl mx-auto leading-relaxed"
+            >
+              Elevate your presence. Transform your confidence. Discover the artistry of personal style with our
+              curated fashion expertise.
             </motion.p>
             
             {/* Book Image Card */}
@@ -248,7 +255,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.5 }}
               className="max-w-4xl mx-auto mb-8 md:mb-12"
             >
-              <div className="bg-gradient-to-br from-pink-100 via-white to-rose-100 rounded-3xl p-6 md:p-8 lg:p-12 shadow-2xl border border-pink-100">
+              <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-8 md:p-12 lg:p-16 border border-luxury-cream">
               <div className="text-center">
                   <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
                   <Image
@@ -260,8 +267,12 @@ export default function Home() {
                     priority
                   />
                   </div>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-gray-800 mb-2 font-display">Your Personal Style Guide</h3>
-                  <p className="text-gray-600 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
+                    <h3 className="text-2xl md:text-3xl lg:text-4xl luxury-heading text-luxury-charcoal mb-4">
+                      Your Personal Style Guide
+                    </h3>
+                    <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl">
+                      Comprehensive style transformation roadmap
+                    </p>
                 </div>
               </div>
           </motion.div>
@@ -282,7 +293,7 @@ export default function Home() {
                   });
                 }
               }}
-                className="inline-block bg-brand-cta hover:opacity-90 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
+                className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
             >
                 Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
             </Link>
@@ -293,28 +304,34 @@ export default function Home() {
       </section>
 
       {/* Elegant Stats */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-white to-rose-50">
+      <section className="py-20 md:py-32 bg-luxury-cream/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12 mb-12 md:mb-20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
             <div className="text-center group">
-              <div className="text-3xl md:text-5xl font-light text-rose-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">200+</div>
-              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Transformations</div>
-                      </div>
+              <div className="text-4xl md:text-6xl luxury-heading text-luxury-accent mb-4 group-hover:scale-105 transition-transform duration-300">
+                200+
+              </div>
+              <div className="luxury-body text-luxury-charcoal/70">Transformations</div>
+            </div>
             <div className="text-center group">
-              <div className="text-3xl md:text-5xl font-light text-rose-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">95%</div>
-              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Confidence Elevation</div>
-                    </div>
+              <div className="text-4xl md:text-6xl luxury-heading text-luxury-accent mb-4 group-hover:scale-105 transition-transform duration-300">
+                95%
+              </div>
+              <div className="luxury-body text-luxury-charcoal/70">Confidence Elevation</div>
+            </div>
             <div className="text-center group">
-              <div className="flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">
-                <span className="text-3xl md:text-5xl font-light text-rose-600">4.9</span>
-                <Star className="h-5 w-5 md:h-7 md:w-7 text-amber-400 fill-current ml-1 md:ml-2" />
-                      </div>
-              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Client Satisfaction</div>
-                    </div>
+              <div className="flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
+                <span className="text-4xl md:text-6xl luxury-heading text-luxury-accent">4.9</span>
+                <Star className="h-6 w-6 md:h-8 md:w-8 text-luxury-gold fill-current ml-2" />
+              </div>
+              <div className="luxury-body text-luxury-charcoal/70">Client Satisfaction</div>
+            </div>
             <div className="text-center group">
-              <div className="text-3xl md:text-5xl font-light text-rose-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">2-3</div>
-              <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Weeks to Elegance</div>
-                  </div>
+              <div className="text-4xl md:text-6xl luxury-heading text-luxury-accent mb-4 group-hover:scale-105 transition-transform duration-300">
+                2-3
+              </div>
+              <div className="luxury-body text-luxury-charcoal/70">Weeks to Elegance</div>
+            </div>
           </div>
         </div>
       </section>
@@ -322,134 +339,158 @@ export default function Home() {
 
 
       {/* Features Section */}
-      <section id="features" className="py-16 md:py-24 bg-white relative">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-display">What You Receive</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Every consultation is tailored to celebrate your individuality and elevate your personal style.</p>
-                </div>
+      <section id="features" className="py-20 md:py-32 bg-luxury-warm-white relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
+          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You Receive</h2>
+          <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
+            Every consultation is tailored to celebrate your individuality and elevate your personal style.
+          </p>
+        </div>
                 
-        <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           {[
-            { icon: <Sparkles className="h-8 w-8 text-rose-500" />, title: "Personal Style Assessment" },
-            { icon: <Gem className="h-8 w-8 text-rose-500" />, title: "Curated Outfit Planning" },
-            { icon: <Heart className="h-8 w-8 text-rose-500" />, title: "Makeup & Grooming Guidance" },
-            { icon: <Shield className="h-8 w-8 text-rose-500" />, title: "Wardrobe Strategy" },
-            { icon: <Award className="h-8 w-8 text-rose-500" />, title: "Confidence Coaching" },
-            { icon: <Trophy className="h-8 w-8 text-rose-500" />, title: "Event-Specific Styling" }
+            { icon: <Sparkles className="h-8 w-8 text-luxury-accent" />, title: "Personal Style Assessment" },
+            { icon: <Gem className="h-8 w-8 text-luxury-accent" />, title: "Curated Outfit Planning" },
+            { icon: <Heart className="h-8 w-8 text-luxury-accent" />, title: "Makeup & Grooming Guidance" },
+            { icon: <Shield className="h-8 w-8 text-luxury-accent" />, title: "Wardrobe Strategy" },
+            { icon: <Award className="h-8 w-8 text-luxury-accent" />, title: "Confidence Coaching" },
+            { icon: <Trophy className="h-8 w-8 text-luxury-accent" />, title: "Event-Specific Styling" }
           ].map((item, i) => (
-            <div key={i} className="p-6 md:p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-              <div className="flex flex-col items-center space-y-3 md:space-y-4">
-                {item.icon}
-                <h3 className="text-lg md:text-2xl font-light font-display text-center">{item.title}</h3>
+            <div
+              key={i}
+              className="p-8 md:p-10 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-2xl hover:-translate-y-2 group"
+            >
+              <div className="flex flex-col items-center space-y-6">
+                <div className="group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
+                <h3 className="text-xl md:text-2xl luxury-heading text-center text-luxury-charcoal">{item.title}</h3>
               </div>
             </div>
-              ))}
+          ))}
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-16 md:py-24 bg-gradient-to-b from-rose-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-display">Client Stories</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto text-base md:text-lg px-4">Hear from women who transformed their confidence and presence with ICONIK.</p>
-                </div>
-        <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            {testimonials.map((testimonial, index) => (
-            <div key={index} className="p-6 md:p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-              <div className="space-y-3 md:space-y-4">
-                <div className="aspect-square bg-gradient-to-br from-pink-100 via-white to-rose-100 flex items-center justify-center rounded-lg overflow-hidden">
+      <section id="testimonials" className="py-20 md:py-32 bg-luxury-cream/20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
+          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">Client Stories</h2>
+          <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
+            Hear from women who transformed their confidence and presence with ICONIK.
+          </p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          {testimonials.map((testimonial, index) => (
+            <div
+              key={index}
+              className="p-8 md:p-10 bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl hover:-translate-y-2 group"
+            >
+              <div className="space-y-6">
+                <div className="aspect-square bg-luxury-cream/50 flex items-center justify-center rounded-xl overflow-hidden">
                   <Image
-                    src={testimonial.image}
+                    src={testimonial.image || "/placeholder.svg"}
                     alt={testimonial.name}
                     width={300}
                     height={300}
-                    className="w-full h-full object-cover rounded-lg"
+                    className="w-full h-full object-cover rounded-xl"
                   />
                 </div>
-                <p className="text-gray-700 font-light font-['Inter',sans-serif] text-center text-sm md:text-base">&ldquo;{testimonial.story}&rdquo;</p>
+                <p className="luxury-body text-luxury-charcoal/80 text-center text-lg leading-relaxed">
+                  &ldquo;{testimonial.story}&rdquo;
+                </p>
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-2">{testimonial.name}</p>
+                  <p className="luxury-body text-luxury-charcoal/60 mb-3">{testimonial.name}</p>
                   <div className="flex justify-center gap-1">
-                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
-                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
-                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
-                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
-                    <Star className="h-4 w-4 md:h-5 md:w-5 text-amber-400 fill-current" />
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 text-luxury-gold fill-current" />
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
-            ))}
+          ))}
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-16 md:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-display">Investment</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Select a package that aligns with your journey to elegance.</p>
-                  </div>
+      <section id="pricing" className="py-20 md:py-32 bg-luxury-warm-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
+          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">Investment</h2>
+          <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
+            Select a package that aligns with your journey to elegance.
+          </p>
+        </div>
 
           {/* Main Product */}
-        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 mb-8 md:mb-12">
-          <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
-            <div className="p-6 md:p-8 lg:p-12">
-              <div className="text-center mb-6 md:mb-8">
-                <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-display text-gray-900">ICONIK Style Consultation</h3>
-                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] text-gradient-brand">₹1,199</div>
-                <p className="text-base md:text-lg lg:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 mb-12 md:mb-16">
+          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-2">
+            <div className="p-8 md:p-12 lg:p-16">
+              <div className="text-center mb-12">
+                <h3 className="text-3xl md:text-4xl lg:text-5xl luxury-heading mb-6 text-luxury-charcoal">
+                  ICONIK Style Consultation
+                </h3>
+                <div className="text-5xl md:text-6xl lg:text-7xl luxury-heading mb-6 text-luxury-accent">₹1,199</div>
+                <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
+                  Complete personal style transformation
+                </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
                 <div>
-                  <h4 className="text-xl font-light mb-6 text-gray-900 font-display">What&apos;s Included:</h4>
-                  <ul className="space-y-4">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Complete style assessment tailored to your features</span>
+                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What's Included:</h4>
+                  <ul className="space-y-6">
+                    <li className="flex items-start gap-4">
+                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                        Complete style assessment tailored to your features
+                      </span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Personalized color palette that makes your skin glow</span>
+                    <li className="flex items-start gap-4">
+                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                        Personalized color palette that makes your skin glow
+                      </span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Body-flattering silhouettes that work with your shape</span>
+                    <li className="flex items-start gap-4">
+                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                        Body-flattering silhouettes that work with your shape
+                      </span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Hair & beauty advice for your unique features</span>
+                    <li className="flex items-start gap-4">
+                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                        Hair & beauty advice for your unique features
+                      </span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">20-minute one-on-one call with expert stylist</span>
+                    <li className="flex items-start gap-4">
+                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                        20-minute one-on-one call with expert stylist
+                      </span>
                     </li>
                   </ul>
                 </div>
                 
-                <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-6 text-center">
-                  <div className="text-center">
-                    <div className="text-3xl mb-4">✨</div>
-                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Personal Touch</h4>
-                    <p className="text-gray-600 font-light font-['Inter',sans-serif]">Tailored specifically for you</p>
-                  </div>
+                <div className="bg-luxury-gold/10 border border-luxury-gold/20 rounded-2xl p-8 text-center">
+                  <div className="text-4xl mb-6">✨</div>
+                  <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Personal Touch</h4>
+                  <p className="luxury-body text-luxury-charcoal/70 text-lg">Tailored specifically for you</p>
                 </div>
               </div>
               
               <div className="text-center">
-                <Link 
-                  href="/checkout" 
+                <Link
+                  href="/checkout"
                   onClick={() => {
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Style Consultation CTA Click',
-                        content_category: 'Style Consultation',
+                    if (typeof window !== "undefined" && window.fbq) {
+                      window.fbq("track", "Lead", {
+                        content_name: "Style Consultation CTA Click",
+                        content_category: "Style Consultation",
                         value: 1199,
-                        currency: 'INR'
-                      });
+                        currency: "INR",
+                      })
                     }
                   }}
-                  className="inline-block bg-brand-cta hover:opacity-90 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300"
+                  className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   ✨ Get Your Style Consultation
                 </Link>
@@ -460,58 +501,58 @@ export default function Home() {
 
         {/* Advanced Plan */}
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-2">
             <div className="p-8 md:p-12">
-                <div className="text-center mb-8">
-                <h3 className="text-3xl md:text-4xl font-light mb-4 font-display text-gray-900">Complete ICONIK Package</h3>
-                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] text-gradient-brand">₹2,297</div>
-                <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Style + Shopping + Wellness Bundle</p>
+              <div className="text-center mb-8">
+                <h3 className="text-3xl md:text-4xl luxury-heading mb-4 text-luxury-charcoal">
+                  Complete ICONIK Package
+                </h3>
+                <div className="text-5xl md:text-6xl luxury-heading mb-4 text-luxury-accent">₹2,297</div>
+                <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
+                  Style + Shopping + Wellness Bundle
+                </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
                 <div>
-                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
-                  <ul className="space-y-4">
+                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What's Included:</h4>
+                  <ul className="space-y-6">
                     {features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700 font-light font-['Inter',sans-serif]">{feature.title}</span>
+                      <li key={index} className="flex items-start gap-4">
+                        <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                        <span className="luxury-body text-luxury-charcoal/80 text-lg">{feature.title}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
-                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6 text-center">
-                  <div className="text-center">
-                    <div className="text-3xl mb-4">💰</div>
-                    <h4 className="text-xl font-light text-gray-900 mb-3 font-display">Bundle Savings</h4>
-                    <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,197</p>
-                    <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹800</div>
-                    <p className="text-sm text-orange-600 font-light font-['Inter',sans-serif]">(Limited time bundle)</p>
-                  </div>
+                <div className="bg-luxury-gold/10 border border-luxury-gold/20 rounded-2xl p-8 text-center">
+                  <div className="text-4xl mb-6">💰</div>
+                  <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Bundle Savings</h4>
+                  <p className="luxury-body text-luxury-charcoal/70 mb-3 text-lg">Individual Price: ₹2,197</p>
+                  <div className="text-3xl luxury-heading text-luxury-accent mb-2">Save ₹800</div>
+                  <p className="luxury-body text-luxury-accent text-sm">Limited time bundle</p>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6 mb-8 text-center">
-                <p className="text-red-700 font-light text-lg font-['Inter',sans-serif]">
-                  ⚠️ Only 15 slots available this week
-                </p>
+              <div className="bg-luxury-red/10 border border-luxury-red/20 rounded-2xl p-6 mb-8 text-center">
+                <p className="luxury-body text-luxury-red-700 text-lg">⚠️ Only 15 slots available this week</p>
               </div>
               
               <div className="text-center">
-                <Link 
-                  href="/checkout" 
+                <Link
+                  href="/checkout"
                   onClick={() => {
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Complete Package CTA Click',
-                        content_category: 'Style Transformation Package',
+                    if (typeof window !== "undefined" && window.fbq) {
+                      window.fbq("track", "Lead", {
+                        content_name: "Complete Package CTA Click",
+                        content_category: "Style Transformation Package",
                         value: 2297,
-                        currency: 'INR'
-                      });
+                        currency: "INR",
+                      })
                     }
                   }}
-                  className="inline-block bg-brand-cta hover:opacity-90 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300"
+                  className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   ✨ Transform Now
                 </Link>
@@ -698,79 +739,80 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-8 md:py-16 lg:py-20 px-4 bg-brand-cta">
-        <div className="max-w-4xl mx-auto text-center text-white">
+      <section className="py-20 md:py-32 px-4 bg-luxury-charcoal">
+        <div className="max-w-4xl mx-auto text-center text-luxury-warm-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-5xl font-light mb-6 font-display">
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-warm-white">
               Ready to Discover Your Signature Style?
             </h2>
-            <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4 font-light font-['Inter',sans-serif]">
+            <p className="text-xl md:text-2xl luxury-subheading mb-12 opacity-90 max-w-2xl mx-auto">
               Join 200+ women who have already transformed their confidence and discovered their elegant style
             </p>
-            <div className="space-y-6">
-          <Link 
-                href="/checkout" 
+            <div className="space-y-8">
+              <Link
+                href="/checkout"
                 onClick={() => {
                   // Track final CTA click with Meta Pixel
-                  if (typeof window !== 'undefined' && window.fbq) {
-                    window.fbq('track', 'Lead', {
-                      content_name: 'Final CTA Click',
-                      content_category: 'Style Transformation Program',
+                  if (typeof window !== "undefined" && window.fbq) {
+                    window.fbq("track", "Lead", {
+                      content_name: "Final CTA Click",
+                      content_category: "Style Transformation Program",
                       value: 1199,
-                      currency: 'INR'
-                    });
+                      currency: "INR",
+                    })
                   }
                 }}
-                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-gradient-brand px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3"
+                className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
               >
                 <span className="relative z-10">✨ Start Your ICONIK Transformation Today</span>
                 {/* Glass shine effect */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-luxury-warm-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </Link>
               
-              {/* Mobile Trust & Urgency */}
-              <div className="max-w-sm mx-auto space-y-3">
-                <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-4 text-center">
-                  <p className="text-white font-light text-lg font-['Inter',sans-serif]">⏰ Limited Time Offer</p>
-                  <p className="text-white/80 text-sm font-light font-['Inter',sans-serif]">Only 15 slots available this week</p>
+              {/* Trust & Urgency */}
+              <div className="max-w-sm mx-auto space-y-4">
+                <div className="bg-luxury-warm-white/10 backdrop-blur-xl border border-luxury-warm-white/20 rounded-2xl p-6 text-center">
+                  <p className="luxury-body text-luxury-warm-white text-lg">⏰ Limited Time Offer</p>
+                  <p className="luxury-body text-luxury-warm-white/80">Only 15 slots available this week</p>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/80 font-light font-['Inter',sans-serif]">
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 luxury-body text-luxury-warm-white/80">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-luxury-gold rounded-full"></div>
                     <span>7-Day Money Back</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    <div className="w-3 h-3 bg-luxury-gold rounded-full"></div>
                     <span>200+ Success Stories</span>
                   </div>
                 </div>
               </div>
-              
-              <p className="text-sm opacity-75 text-center">₹1,199 + GST • Limited slots available</p>
+
+              <p className="luxury-body opacity-75 text-center">₹1,199 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-16 bg-gradient-to-b from-white to-rose-50 border-t border-rose-100">
+      <footer className="py-20 bg-luxury-cream/30 border-t border-luxury-cream">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             {/* Brand */}
             <div className="md:col-span-2">
-              <div className="text-3xl font-light bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4 font-display">
-                ICONIK
-              </div>
-              <p className="text-gray-400 mb-4 max-w-md">
+              <div className="text-3xl luxury-heading text-luxury-charcoal mb-6">ICONIK</div>
+              <p className="luxury-body text-luxury-charcoal/70 mb-6 max-w-md leading-relaxed">
                 Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
               </p>
               <div className="flex gap-4">
-                <a href="mailto:support@playernumberone.com" className="text-gray-400 hover:text-white transition-colors">
+                <a
+                  href="mailto:support@playernumberone.com"
+                  className="luxury-body text-luxury-charcoal/60 hover:text-luxury-accent transition-colors"
+                >
                   support@playernumberone.com
                 </a>
               </div>
@@ -778,57 +820,107 @@ export default function Home() {
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-white font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
+              <h3 className="luxury-heading text-luxury-charcoal mb-6">Quick Links</h3>
+              <ul className="space-y-3">
                 <li>
-                  <a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a>
+                  <a
+                    href="#features"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Features
+                  </a>
                 </li>
                 <li>
-                  <a href="#testimonials" className="text-gray-400 hover:text-white transition-colors">Stories</a>
+                  <a
+                    href="#testimonials"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Stories
+                  </a>
                 </li>
                 <li>
-                  <a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a>
+                  <a
+                    href="#pricing"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Pricing
+                  </a>
                 </li>
                 <li>
-                  <a href="#faq" className="text-gray-400 hover:text-white transition-colors">FAQ</a>
+                  <a
+                    href="#faq"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    FAQ
+                  </a>
                 </li>
               </ul>
             </div>
 
             {/* Legal & Support */}
             <div>
-              <h3 className="text-white font-semibold mb-4">Legal & Support</h3>
-              <ul className="space-y-2">
+              <h3 className="luxury-heading text-luxury-charcoal mb-6">Legal & Support</h3>
+              <ul className="space-y-3">
                 <li>
-                  <Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link>
+                  <Link
+                    href="/about"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    About Us
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link>
+                  <Link
+                    href="/contact"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Contact Us
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/shipping" className="text-gray-400 hover:text-white transition-colors">Shipping & Delivery</Link>
+                  <Link
+                    href="/shipping"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Shipping & Delivery
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/refund-policy" className="text-gray-400 hover:text-white transition-colors">Refund Policy</Link>
+                  <Link
+                    href="/refund-policy"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Refund Policy
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link>
+                  <Link
+                    href="/terms"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
+                  <Link
+                    href="/privacy-policy"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-gray-500 text-sm">
+          <div className="border-t border-luxury-cream pt-8 text-center">
+            <p className="luxury-body text-luxury-charcoal/60">
               © 2024 PlayerNumberOne ICONIK. All rights reserved. | Transform with elegance.
             </p>
-            <p className="text-gray-600 text-xs mt-2">
+            <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
               Business Legal Name: MITHIL NILESH NAVALAKHA
             </p>
-            <p className="text-gray-600 text-xs mt-1">
+            <p className="luxury-body text-luxury-charcoal/50 text-sm mt-1">
               Results may vary. Individual success depends on effort and commitment to the program.
             </p>
           </div>
@@ -836,30 +928,30 @@ export default function Home() {
       </footer>
 
       {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-rose-100 p-4 md:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-4 md:hidden z-50">
         <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">Complete Package</div>
-              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">₹1,199</div>
+              <div className="luxury-body text-luxury-charcoal/70">Complete Package</div>
+              <div className="text-2xl luxury-heading text-luxury-charcoal">₹1,199</div>
             </div>
             <div className="text-right">
-              <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">Offer Expires In:</div>
-              <div className="text-sm font-light text-rose-600 font-['Cormorant Garamond',serif]">14:59:23</div>
+              <div className="luxury-body text-luxury-charcoal/60 text-sm">Offer Expires In:</div>
+              <div className="luxury-body text-luxury-accent">14:59:23</div>
             </div>
           </div>
           <Link
             href="/checkout"
             onClick={() => {
               // Track CTA click with Meta Pixel
-              if (typeof window !== 'undefined' && window.fbq) {
-                window.fbq('track', 'Lead', {
-                  content_name: 'Mobile Sticky CTA Click',
-                  content_category: 'Transformation Program'
-                });
+              if (typeof window !== "undefined" && window.fbq) {
+                window.fbq("track", "Lead", {
+                  content_name: "Mobile Sticky CTA Click",
+                  content_category: "Transformation Program",
+                })
               }
             }}
-            className="w-full bg-brand-cta hover:opacity-90 text-white px-6 py-3 text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide text-center block"
+            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block"
           >
             Begin Your Transformation
           </Link>

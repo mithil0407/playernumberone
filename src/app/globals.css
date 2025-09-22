@@ -1,77 +1,162 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Refined brand palette (soft, elegant, high-contrast on white) */
-  --brand-bg: #ffffff;              /* primary canvas */
-  --brand-text: #1A1523;            /* rich plum-brown for legibility */
-  --brand-accent: #8B86E5;          /* periwinkle/lavender accent */
-  --brand-accent-2: #F06A7A;        /* rose accent for CTAs */
-  --brand-muted: #6B6478;           /* muted body */
+  /* Luxury color palette inspired by high-end fashion brands */
+  --background: oklch(0.98 0.005 85);
+  --foreground: oklch(0.15 0.01 85);
+  --card: oklch(0.99 0.003 85);
+  --card-foreground: oklch(0.15 0.01 85);
+  --popover: oklch(0.99 0.003 85);
+  --popover-foreground: oklch(0.15 0.01 85);
+  --primary: oklch(0.12 0.02 85);
+  --primary-foreground: oklch(0.98 0.005 85);
+  --secondary: oklch(0.94 0.01 85);
+  --secondary-foreground: oklch(0.15 0.01 85);
+  --muted: oklch(0.95 0.008 85);
+  --muted-foreground: oklch(0.45 0.015 85);
+  --accent: oklch(0.92 0.012 85);
+  --accent-foreground: oklch(0.15 0.01 85);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.98 0.005 85);
+  --border: oklch(0.88 0.01 85);
+  --input: oklch(0.92 0.008 85);
+  --ring: oklch(0.35 0.02 85);
 
-  /* Subtle tints for backgrounds/cards */
-  --tint-rose-25: #FFF5F7;
-  --tint-lav-25: #F6F4FF;
-  --tint-warm-25: #FFFDF7;
+  /* Luxury brand colors */
+  --luxury-gold: oklch(0.75 0.08 85);
+  --luxury-gold-foreground: oklch(0.12 0.02 85);
+  --luxury-cream: oklch(0.96 0.01 85);
+  --luxury-charcoal: oklch(0.18 0.015 85);
+  --luxury-warm-white: oklch(0.98 0.005 85);
+  --luxury-accent: oklch(0.35 0.02 85);
 
-  /* Fallbacks for Tailwind @theme */
-  --background: var(--brand-bg);
-  --foreground: var(--brand-text);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.12 0.015 85);
+  --foreground: oklch(0.95 0.008 85);
+  --card: oklch(0.15 0.018 85);
+  --card-foreground: oklch(0.95 0.008 85);
+  --popover: oklch(0.15 0.018 85);
+  --popover-foreground: oklch(0.95 0.008 85);
+  --primary: oklch(0.92 0.012 85);
+  --primary-foreground: oklch(0.12 0.015 85);
+  --secondary: oklch(0.22 0.02 85);
+  --secondary-foreground: oklch(0.95 0.008 85);
+  --muted: oklch(0.18 0.018 85);
+  --muted-foreground: oklch(0.65 0.015 85);
+  --accent: oklch(0.25 0.022 85);
+  --accent-foreground: oklch(0.95 0.008 85);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.95 0.008 85);
+  --border: oklch(0.25 0.02 85);
+  --input: oklch(0.22 0.02 85);
+  --ring: oklch(0.75 0.08 85);
+
+  --luxury-gold: oklch(0.85 0.06 85);
+  --luxury-gold-foreground: oklch(0.12 0.015 85);
+  --luxury-cream: oklch(0.18 0.018 85);
+  --luxury-charcoal: oklch(0.92 0.012 85);
+  --luxury-warm-white: oklch(0.15 0.018 85);
+  --luxury-accent: oklch(0.75 0.08 85);
 }
 
 @theme inline {
+  /* Premium typography with Playfair Display for headings */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: "Playfair Display", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Custom luxury color tokens */
+  --color-luxury-gold: var(--luxury-gold);
+  --color-luxury-gold-foreground: var(--luxury-gold-foreground);
+  --color-luxury-cream: var(--luxury-cream);
+  --color-luxury-charcoal: var(--luxury-charcoal);
+  --color-luxury-warm-white: var(--luxury-warm-white);
+  --color-luxury-accent: var(--luxury-accent);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
+  body {
+    @apply bg-background text-foreground;
+  }
 
-body {
-  background:
-    radial-gradient(60% 80% at 10% 0%, var(--tint-lav-25), transparent 55%),
-    radial-gradient(50% 70% at 90% 5%, var(--tint-rose-25), transparent 55%),
-    linear-gradient(180deg, var(--brand-bg), var(--tint-warm-25) 60%);
-  color: var(--foreground);
-}
+  /* Custom luxury typography styles */
+  .luxury-heading {
+    font-family: "Playfair Display", serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
 
-/* Typography helpers */
-.font-display {
-  font-family: var(--font-canela), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-}
+  .luxury-subheading {
+    font-family: "Inter", sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+  }
 
-/* Accent utilities to blend with existing utilities */
-.text-accent { color: var(--brand-accent); }
-.text-brand { color: var(--brand-text); }
-.bg-accent { background-color: var(--brand-accent); }
-.bg-brand { background-color: var(--brand-bg); }
-.btn-brand {
-  background-image: linear-gradient(90deg, var(--brand-red), var(--brand-accent));
-  color: white;
-}
-.badge-soft {
-  background: linear-gradient(180deg, var(--lavender-50), #ffffff);
-  border: 1px solid color-mix(in oklab, var(--brand-accent) 30%, #ffffff);
-}
-
-/* Brand utilities */
-.btn-primary {
-  background-image: linear-gradient(90deg, var(--brand-accent-2), var(--brand-accent));
-  color: #ffffff;
-}
-
-.bg-brand-cta {
-  background-image: linear-gradient(90deg, var(--brand-accent-2), var(--brand-accent));
-}
-
-.text-gradient-brand {
-  background-image: linear-gradient(90deg, var(--brand-accent-2), var(--brand-accent));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  .luxury-body {
+    font-family: "Inter", sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    line-height: 1.6;
+  }
 }
