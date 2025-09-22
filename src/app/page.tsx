@@ -32,7 +32,6 @@ import {
   X,
   Star,
   Sparkles,
-  Crown,
   Gem,
   Shield,
   Trophy,
@@ -117,29 +116,26 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>IconOne - Discover Your Signature Style & Transform Your Confidence</title>
-        <meta name="description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives." />
+        <title>ICONIK - Discover Your Signature Style & Transform Your Confidence</title>
+        <meta name="description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives." />
         <meta name="keywords" content="style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover" />
-        <meta property="og:title" content="IconOne - Discover Your Signature Style & Transform Your Confidence" />
-        <meta property="og:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
+        <meta property="og:title" content="ICONIK - Discover Your Signature Style & Transform Your Confidence" />
+        <meta property="og:description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://playernumberone.com" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="IconOne - Discover Your Signature Style & Transform Your Confidence" />
-        <meta name="twitter:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
+        <meta name="twitter:title" content="ICONIK - Discover Your Signature Style & Transform Your Confidence" />
+        <meta name="twitter:description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <link rel="canonical" href="https://playernumberone.com" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
+      <div className="min-h-screen bg-gradient-to-b from-white via-white to-rose-50 text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-rose-100 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-pink-300 rounded-full flex items-center justify-center shadow-md">
-                <Crown className="h-6 w-6 text-white" />
+              <span className="text-3xl font-light tracking-wide text-gray-900 font-display">ICONIK</span>
             </div>
-              <span className="text-3xl font-light tracking-wide text-gray-900 font-['Cormorant Garamond',serif]">Icon<span className="font-semibold text-rose-600">One</span></span>
-              </div>
             <div className="hidden md:flex items-center space-x-10 font-['Inter',sans-serif]">
               <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Features</a>
               <a href="#testimonials" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Stories</a>
@@ -147,7 +143,7 @@ export default function Home() {
               <a href="#faq" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">FAQ</a>
               <Link
                 href="/checkout"
-                className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
+                className="bg-brand-cta hover:opacity-90 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
               >
                 Begin Journey
               </Link>
@@ -264,7 +260,7 @@ export default function Home() {
                     priority
                   />
                   </div>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-gray-800 mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
+                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-gray-800 mb-2 font-display">Your Personal Style Guide</h3>
                   <p className="text-gray-600 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
                 </div>
               </div>
@@ -275,7 +271,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
           >
-            <Link 
+              <Link 
               href="/checkout" 
               onClick={() => {
                 // Track CTA click with Meta Pixel
@@ -286,7 +282,7 @@ export default function Home() {
                   });
                 }
               }}
-                className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
+                className="inline-block bg-brand-cta hover:opacity-90 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
             >
                 Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
             </Link>
@@ -328,7 +324,7 @@ export default function Home() {
       {/* Features Section */}
       <section id="features" className="py-16 md:py-24 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">What You Receive</h2>
+          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-display">What You Receive</h2>
           <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Every consultation is tailored to celebrate your individuality and elevate your personal style.</p>
                 </div>
                 
@@ -344,7 +340,7 @@ export default function Home() {
             <div key={i} className="p-6 md:p-8 shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 bg-white rounded-2xl hover:-translate-y-1 transition-transform duration-300">
               <div className="flex flex-col items-center space-y-3 md:space-y-4">
                 {item.icon}
-                <h3 className="text-lg md:text-2xl font-light font-['Cormorant Garamond',serif] text-center">{item.title}</h3>
+                <h3 className="text-lg md:text-2xl font-light font-display text-center">{item.title}</h3>
               </div>
             </div>
               ))}
@@ -354,8 +350,8 @@ export default function Home() {
       {/* Testimonials Section */}
       <section id="testimonials" className="py-16 md:py-24 bg-gradient-to-b from-rose-50 to-white">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">Client Stories</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Hear from women who transformed their confidence and presence with IconOne.</p>
+          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-display">Client Stories</h2>
+          <p className="text-gray-600 font-light max-w-3xl mx-auto text-base md:text-lg px-4">Hear from women who transformed their confidence and presence with ICONIK.</p>
                 </div>
         <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
             {testimonials.map((testimonial, index) => (
@@ -390,7 +386,7 @@ export default function Home() {
       {/* Pricing Section */}
       <section id="pricing" className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">Investment</h2>
+          <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-display">Investment</h2>
           <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Select a package that aligns with your journey to elegance.</p>
                   </div>
 
@@ -399,14 +395,14 @@ export default function Home() {
           <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
             <div className="p-6 md:p-8 lg:p-12">
               <div className="text-center mb-6 md:mb-8">
-                <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-['Playfair Display',serif] text-gray-900">IconOne Style Consultation</h3>
-                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,199</div>
+                <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-display text-gray-900">ICONIK Style Consultation</h3>
+                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] text-gradient-brand">₹1,199</div>
                 <p className="text-base md:text-lg lg:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div>
-                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
+                  <h4 className="text-xl font-light mb-6 text-gray-900 font-display">What&apos;s Included:</h4>
                   <ul className="space-y-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
@@ -453,7 +449,7 @@ export default function Home() {
                       });
                     }
                   }}
-                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
+                  className="inline-block bg-brand-cta hover:opacity-90 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300"
                 >
                   ✨ Get Your Style Consultation
                 </Link>
@@ -466,9 +462,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
             <div className="p-8 md:p-12">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">Complete IconOne Package</h3>
-                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹2,297</div>
+                <div className="text-center mb-8">
+                <h3 className="text-3xl md:text-4xl font-light mb-4 font-display text-gray-900">Complete ICONIK Package</h3>
+                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] text-gradient-brand">₹2,297</div>
                 <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Style + Shopping + Wellness Bundle</p>
               </div>
               
@@ -488,7 +484,7 @@ export default function Home() {
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6 text-center">
                   <div className="text-center">
                     <div className="text-3xl mb-4">💰</div>
-                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Bundle Savings</h4>
+                    <h4 className="text-xl font-light text-gray-900 mb-3 font-display">Bundle Savings</h4>
                     <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,197</p>
                     <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹800</div>
                     <p className="text-sm text-orange-600 font-light font-['Inter',sans-serif]">(Limited time bundle)</p>
@@ -515,7 +511,7 @@ export default function Home() {
                       });
                     }
                   }}
-                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
+                  className="inline-block bg-brand-cta hover:opacity-90 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300"
                 >
                   ✨ Transform Now
                 </Link>
@@ -535,11 +531,11 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif] text-gray-900">
+            <h2 className="text-5xl font-light mb-6 font-display text-gray-900">
               See the Transformation
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-              Real results from real women who transformed their style with IconOne
+              Real results from real women who transformed their style with ICONIK
             </p>
           </motion.div>
           
@@ -566,11 +562,11 @@ export default function Home() {
                 className="group relative"
               >
                 <div className="bg-white rounded-2xl shadow-lg border-rose-100 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1 transition-transform duration-300">
-                  <h3 className="text-2xl md:text-3xl font-light text-gray-900 mb-6 md:mb-8 text-center font-['Playfair Display',serif]">{comparison.title}</h3>
+                <h3 className="text-2xl md:text-3xl font-light text-gray-900 mb-6 md:mb-8 text-center font-display">{comparison.title}</h3>
                   
                   <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                     <div className="text-center">
-                      <div className="text-sm md:text-base font-light text-gray-600 mb-3 font-['Inter',sans-serif]">Before</div>
+                      <div className="text-sm md:text-base font-light text-gray-600 mb-3">Before</div>
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                         <Image
                           src={comparison.before}
@@ -584,7 +580,7 @@ export default function Home() {
                     </div>
                     
                     <div className="text-center">
-                      <div className="text-sm md:text-base font-light text-gray-600 mb-3 font-['Inter',sans-serif]">After</div>
+                      <div className="text-sm md:text-base font-light text-gray-600 mb-3">After</div>
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
                         <Image
                           src={comparison.after}
@@ -615,7 +611,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif] text-gray-900">
+            <h2 className="text-5xl font-light mb-6 font-display text-gray-900">
               Sound Familiar?
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
@@ -675,7 +671,7 @@ export default function Home() {
                     item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
                   }`} />
                   </div>
-                <p className="text-lg md:text-xl font-light text-gray-900 text-center leading-relaxed font-['Inter',sans-serif]">{item.text}</p>
+                <p className="text-lg md:text-xl font-light text-gray-900 text-center leading-relaxed">{item.text}</p>
                   
                   {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -688,13 +684,13 @@ export default function Home() {
       {/* FAQ Section */}
       <section id="faq" className="py-24 bg-gradient-to-b from-rose-50 to-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
-          <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">Frequently Asked Questions</h2>
+          <h2 className="text-5xl font-light mb-6 font-display">Frequently Asked Questions</h2>
           <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Everything you need to know about our consultations.</p>
                 </div>
         <div className="max-w-4xl mx-auto space-y-8">
           {faqs.map((faq, index) => (
             <div key={index} className="text-left p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-rose-100 hover:-translate-y-1 transition-transform duration-300">
-              <h3 className="text-xl font-light mb-3 font-['Cormorant Garamond',serif] text-gray-900">{faq.question}</h3>
+              <h3 className="text-xl font-light mb-3 font-display text-gray-900">{faq.question}</h3>
               <p className="text-gray-600 font-light font-['Inter',sans-serif]">{faq.answer}</p>
               </div>
           ))}
@@ -702,21 +698,21 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-8 md:py-16 lg:py-20 px-4 bg-gradient-to-r from-rose-500 to-pink-500">
+      <section className="py-8 md:py-16 lg:py-20 px-4 bg-brand-cta">
         <div className="max-w-4xl mx-auto text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-5xl font-light mb-6 font-['Playfair Display',serif]">
+            <h2 className="text-5xl font-light mb-6 font-display">
               Ready to Discover Your Signature Style?
             </h2>
             <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4 font-light font-['Inter',sans-serif]">
               Join 200+ women who have already transformed their confidence and discovered their elegant style
             </p>
             <div className="space-y-6">
-              <Link 
+          <Link 
                 href="/checkout" 
                 onClick={() => {
                   // Track final CTA click with Meta Pixel
@@ -729,9 +725,9 @@ export default function Home() {
                     });
                   }
                 }}
-                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-rose-600 px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
+                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-gradient-brand px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3"
               >
-                <span className="relative z-10">✨ Start Your IconOne Transformation Today</span>
+                <span className="relative z-10">✨ Start Your ICONIK Transformation Today</span>
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </Link>
@@ -767,8 +763,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
             <div className="md:col-span-2">
-              <div className="text-3xl font-light bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4 font-['Playfair Display',serif]">
-                IconOne
+              <div className="text-3xl font-light bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4 font-display">
+                ICONIK
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
                 Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
@@ -827,7 +823,7 @@ export default function Home() {
 
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-gray-500 text-sm">
-              © 2024 PlayerNumberOne IconOne. All rights reserved. | Transform with elegance.
+              © 2024 PlayerNumberOne ICONIK. All rights reserved. | Transform with elegance.
             </p>
             <p className="text-gray-600 text-xs mt-2">
               Business Legal Name: MITHIL NILESH NAVALAKHA
@@ -863,7 +859,7 @@ export default function Home() {
                 });
               }
             }}
-            className="w-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-6 py-3 text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide text-center block font-['Inter',sans-serif]"
+            className="w-full bg-brand-cta hover:opacity-90 text-white px-6 py-3 text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide text-center block"
           >
             Begin Your Transformation
           </Link>

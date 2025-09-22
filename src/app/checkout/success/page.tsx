@@ -63,7 +63,7 @@ function SuccessPageContent() {
         </h1>
         
         <p className="text-xl mb-8 text-gray-600">
-          Welcome to IconOne! Your style transformation journey begins now.
+          Welcome to ICONIK! Your style transformation journey begins now.
         </p>
         
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-8 border border-white/30">
@@ -90,7 +90,7 @@ function SuccessPageContent() {
         
         <Link
           href="/schedule"
-          className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
+          className="bg-brand-cta hover:opacity-90 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
         >
           Schedule Your Style Session <ArrowRight className="w-6 h-6" />
         </Link>

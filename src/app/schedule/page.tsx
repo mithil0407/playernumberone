@@ -24,7 +24,7 @@ export default function SchedulePage() {
             className="text-center"
           >
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-gray-900">
-              Schedule Your IconOne Style Session
+              Schedule Your ICONIK Style Session
             </h1>
             <p className="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto">
               Choose your preferred time for your 1-on-1 style consultation
@@ -69,7 +69,7 @@ export default function SchedulePage() {
             className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 border border-white/30"
           >
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <div className="w-16 h-16 bg-brand-cta rounded-full mx-auto mb-4 flex items-center justify-center">
                 <Calendar className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">Book Your Session</h2>
@@ -83,7 +83,7 @@ export default function SchedulePage() {
                       <div className="w-full max-w-4xl" style={{minWidth: '320px', height: '700px'}}>
                         <Cal 
                           namespace="30min"
-                          calLink="iconone-wpnx1q/30min"
+                          calLink="iconik-wpnx1q/30min"
                           style={{width:"100%",height:"100%",overflow:"scroll"}}
                           config={{"layout":"month_view"}}
                         />

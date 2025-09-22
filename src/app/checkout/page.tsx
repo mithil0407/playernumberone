@@ -259,7 +259,7 @@ export default function CheckoutPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2 text-rose-600 hover:text-rose-700 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            Back to Iconik
+            Back to ICONIK
           </Link>
         </div>
       </header>

@@ -1,23 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand palette */
-  --brand-bg: #FFE66D;      /* warm cream */
-  --brand-text: #1C1018;    /* deep aubergine */
-  --brand-accent: #9593D9;  /* periwinkle */
-  --brand-red: #DA3E52;     /* rose red */
+  /* Refined brand palette (soft, elegant, high-contrast on white) */
+  --brand-bg: #ffffff;              /* primary canvas */
+  --brand-text: #1A1523;            /* rich plum-brown for legibility */
+  --brand-accent: #8B86E5;          /* periwinkle/lavender accent */
+  --brand-accent-2: #F06A7A;        /* rose accent for CTAs */
+  --brand-muted: #6B6478;           /* muted body */
 
-  /* Lavender spectrum */
-  --lavender-50:  #F7F6FF;
-  --lavender-100: #EEEAFE;
-  --lavender-200: #E0DDFB;
-  --lavender-300: #C6BFF5;
-  --lavender-400: #ACA2EE;
-  --lavender-500: #9387E4; /* close to accent */
-  --lavender-600: #7B6FD4;
-  --lavender-700: #655ABF;
-  --lavender-800: #544CA1;
-  --lavender-900: #473F86;
+  /* Subtle tints for backgrounds/cards */
+  --tint-rose-25: #FFF5F7;
+  --tint-lav-25: #F6F4FF;
+  --tint-warm-25: #FFFDF7;
 
   /* Fallbacks for Tailwind @theme */
   --background: var(--brand-bg);
@@ -27,7 +21,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -39,14 +33,15 @@
 }
 
 body {
-  background: radial-gradient(60% 80% at 10% 10%, var(--lavender-50), transparent 60%),
-              radial-gradient(50% 70% at 90% 0%, var(--lavender-100), transparent 60%),
-              linear-gradient(180deg, var(--brand-bg), #FFF7B5 70%);
+  background:
+    radial-gradient(60% 80% at 10% 0%, var(--tint-lav-25), transparent 55%),
+    radial-gradient(50% 70% at 90% 5%, var(--tint-rose-25), transparent 55%),
+    linear-gradient(180deg, var(--brand-bg), var(--tint-warm-25) 60%);
   color: var(--foreground);
 }
 
 /* Typography helpers */
-h1, h2, h3, .font-display {
+.font-display {
   font-family: var(--font-canela), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
@@ -62,4 +57,21 @@ h1, h2, h3, .font-display {
 .badge-soft {
   background: linear-gradient(180deg, var(--lavender-50), #ffffff);
   border: 1px solid color-mix(in oklab, var(--brand-accent) 30%, #ffffff);
+}
+
+/* Brand utilities */
+.btn-primary {
+  background-image: linear-gradient(90deg, var(--brand-accent-2), var(--brand-accent));
+  color: #ffffff;
+}
+
+.bg-brand-cta {
+  background-image: linear-gradient(90deg, var(--brand-accent-2), var(--brand-accent));
+}
+
+.text-gradient-brand {
+  background-image: linear-gradient(90deg, var(--brand-accent-2), var(--brand-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

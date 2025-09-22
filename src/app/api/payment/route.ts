@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
           total_base_price: total_base_price,
           shopping_blueprint_price: shopping_blueprint_price,
           glow_up_program_price: glow_up_program_price,
-          service: 'IconOne Style Consultation',
+          service: 'ICONIK Style Consultation',
           db_order_id: dbOrderId,
           customer_id: customerId
         },
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
           status: 'pending'
         },
         notes: {
-          service: 'IconOne Style Consultation',
+          service: 'ICONIK Style Consultation',
           base_product: base_product,
           shopping_blueprint_addon: add_ons.shopping_blueprint,
           glow_up_program_addon: add_ons.glow_up_program,
