@@ -18,7 +18,6 @@ declare global {
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import CountdownTimer from '../components/CountdownTimer';
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -435,7 +434,7 @@ export default function Home() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
                 <div>
-                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What's Included:</h4>
+                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What&apos;s Included:</h4>
                   <ul className="space-y-6">
                     <li className="flex items-start gap-4">
                       <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
@@ -515,7 +514,7 @@ export default function Home() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
                 <div>
-                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What's Included:</h4>
+                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What&apos;s Included:</h4>
                   <ul className="space-y-6">
                     {features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-4">

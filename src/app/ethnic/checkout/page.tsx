@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock, Flower2 } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 
 // Razorpay types
 interface RazorpayResponse {

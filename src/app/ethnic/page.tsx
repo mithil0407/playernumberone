@@ -21,24 +21,12 @@ import Image from 'next/image';
 import { 
   CheckCircle, 
   ArrowRight, 
-  Clock, 
-  Users,
   Heart,
-  Zap,
-  Target,
-  TrendingUp,
   Menu,
   X,
   Star,
-  Sparkles,
-  Crown,
   Gem,
-  Shield,
-  Trophy,
-  Award,
-  Flower2,
-  Star as StarIcon,
-  Sparkle
+  Flower2
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -53,7 +41,7 @@ export default function EthnicPage() {
       color: 'amber'
     },
     { 
-      icon: StarIcon, 
+      icon: Star, 
       title: 'Festival Wear', 
       description: 'Navratri, Diwali & cultural celebration outfits',
       color: 'orange'
