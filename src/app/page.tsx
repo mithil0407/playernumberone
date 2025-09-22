@@ -426,7 +426,7 @@ export default function Home() {
                 <h3 className="text-3xl md:text-4xl lg:text-5xl luxury-heading mb-6 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-5xl md:text-6xl lg:text-7xl luxury-heading mb-6 text-luxury-accent">₹1,199</div>
+                <div className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 text-luxury-accent">₹1,199</div>
                 <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
@@ -506,7 +506,7 @@ export default function Home() {
                 <h3 className="text-3xl md:text-4xl luxury-heading mb-4 text-luxury-charcoal">
                   Complete ICONIK Package
                 </h3>
-                <div className="text-5xl md:text-6xl luxury-heading mb-4 text-luxury-accent">₹2,297</div>
+                <div className="text-5xl md:text-6xl font-semibold mb-4 text-luxury-accent">₹2,297</div>
                 <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
                   Style + Shopping + Wellness Bundle
                 </p>
@@ -529,7 +529,7 @@ export default function Home() {
                   <div className="text-4xl mb-6">💰</div>
                   <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Bundle Savings</h4>
                   <p className="luxury-body text-luxury-charcoal/70 mb-3 text-lg">Individual Price: ₹2,197</p>
-                  <div className="text-3xl luxury-heading text-luxury-accent mb-2">Save ₹800</div>
+                  <div className="text-3xl font-semibold text-luxury-accent mb-2">Save ₹800</div>
                   <p className="luxury-body text-luxury-accent text-sm">Limited time bundle</p>
                 </div>
               </div>
@@ -722,17 +722,24 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-24 bg-gradient-to-b from-rose-50 to-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16">
-          <h2 className="text-5xl font-light mb-6 font-display">Frequently Asked Questions</h2>
-          <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif]">Everything you need to know about our consultations.</p>
-                </div>
-        <div className="max-w-4xl mx-auto space-y-8">
+      <section id="faq" className="py-20 md:py-32 bg-luxury-cream/20">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16 md:mb-24">
+          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">
+            Frequently Asked Questions
+          </h2>
+          <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
+            Everything you need to know about our consultations.
+          </p>
+        </div>
+        <div className="max-w-4xl mx-auto space-y-6">
           {faqs.map((faq, index) => (
-            <div key={index} className="text-left p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-rose-100 hover:-translate-y-1 transition-transform duration-300">
-              <h3 className="text-xl font-light mb-3 font-display text-gray-900">{faq.question}</h3>
-              <p className="text-gray-600 font-light font-['Inter',sans-serif]">{faq.answer}</p>
-              </div>
+            <div
+              key={index}
+              className="text-left p-8 md:p-10 bg-luxury-warm-white/80 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-1"
+            >
+              <h3 className="text-xl md:text-2xl luxury-heading mb-4 text-luxury-charcoal">{faq.question}</h3>
+              <p className="luxury-body text-luxury-charcoal/80 text-lg leading-relaxed">{faq.answer}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -932,7 +939,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="luxury-body text-luxury-charcoal/70">Complete Package</div>
-              <div className="text-2xl luxury-heading text-luxury-charcoal">₹1,199</div>
+              <div className="text-2xl font-semibold text-luxury-charcoal">₹1,199</div>
             </div>
             <div className="text-right">
               <div className="luxury-body text-luxury-charcoal/60 text-sm">Offer Expires In:</div>

@@ -126,22 +126,22 @@ export default function EthnicPage() {
         <meta name="twitter:description" content="Ethnic Elegance Package: Discover your perfect traditional Indian wear with personalized recommendations." />
         <link rel="canonical" href="https://playernumberone.com/ethnic" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-cream-50 to-orange-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
+      <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
-        <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-amber-100 z-50 shadow-sm">
+        <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               <div className="flex items-center space-x-3">
-                <span className="text-3xl font-light tracking-wide text-gray-900 font-display">ICONIK</span>
+                <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
               </div>
-              <div className="hidden md:flex items-center space-x-10 font-['Inter',sans-serif]">
-                <a href="#features" className="text-gray-700 hover:text-amber-600 transition-colors font-light tracking-wide">Features</a>
-                <a href="#testimonials" className="text-gray-700 hover:text-amber-600 transition-colors font-light tracking-wide">Stories</a>
-                <a href="#pricing" className="text-gray-700 hover:text-amber-600 transition-colors font-light tracking-wide">Investment</a>
-                <a href="#faq" className="text-gray-700 hover:text-amber-600 transition-colors font-light tracking-wide">FAQ</a>
+              <div className="hidden md:flex items-center space-x-12">
+                <a href="#features" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Features</a>
+                <a href="#testimonials" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Stories</a>
+                <a href="#pricing" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Investment</a>
+                <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">FAQ</a>
                 <Link
                   href="/ethnic/checkout"
-                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
+                  className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
                 >
                   Begin Journey
                 </Link>
@@ -150,7 +150,7 @@ export default function EthnicPage() {
               <div className="md:hidden">
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="text-gray-600 hover:text-gray-900 p-2"
+                  className="text-luxury-charcoal/60 hover:text-luxury-charcoal p-2"
                 >
                   {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>

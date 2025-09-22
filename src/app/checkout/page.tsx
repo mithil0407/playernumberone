@@ -253,11 +253,11 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 text-gray-900">
+    <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
+      <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 text-rose-600 hover:text-rose-700 transition-colors">
+          <Link href="/" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
             <ArrowLeft className="w-5 h-5" />
             Back to ICONIK
           </Link>
@@ -269,7 +269,7 @@ export default function CheckoutPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg font-light mb-4 md:mb-6 text-center animate-pulse font-['Inter',sans-serif]"
+          className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg luxury-body mb-4 md:mb-6 text-center animate-pulse"
         >
           ⚡ LIMITED TIME: 80% OFF + FREE BONUSES - Only 15 Spots Left This Month! ⚡
         </motion.div>
@@ -279,19 +279,19 @@ export default function CheckoutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
+          className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
         >
-          <div className="flex items-center gap-1 md:gap-2 bg-green-100 text-green-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">2,847+ Happy Clients</span>
+            <span className="text-xs md:text-sm luxury-body">2,847+ Happy Clients</span>
           </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-blue-100 text-blue-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Lock className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">100% Secure</span>
+            <span className="text-xs md:text-sm luxury-body">100% Secure</span>
           </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-yellow-100 text-yellow-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Star className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">4.9/5 Rating</span>
+            <span className="text-xs md:text-sm luxury-body">4.9/5 Rating</span>
           </div>
         </motion.div>
 
@@ -302,15 +302,15 @@ export default function CheckoutPage() {
           transition={{ delay: 0.2 }}
           className="space-y-3 md:space-y-4 mb-6 md:mb-8"
         >
-          <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-red-600 font-light text-base md:text-lg font-['Inter',sans-serif]">
+          <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-luxury-accent luxury-body text-base md:text-lg">
               👀 {viewerCount} people are viewing this right now
             </div>
           </div>
           
-          <div className="bg-gray-900 text-white rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-base md:text-lg mb-1 md:mb-2 font-light font-['Inter',sans-serif]">Offer Expires In:</div>
-            <div className="text-2xl md:text-3xl font-light text-yellow-400 font-['Cormorant Garamond',serif]">
+          <div className="bg-luxury-charcoal text-luxury-warm-white rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-base md:text-lg mb-1 md:mb-2 luxury-body">Offer Expires In:</div>
+            <div className="text-2xl md:text-3xl font-semibold text-luxury-gold">
               {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
             </div>
           </div>
@@ -323,16 +323,16 @@ export default function CheckoutPage() {
           transition={{ delay: 0.3 }}
           className="text-center mb-6 md:mb-8"
         >
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-light text-gray-900 mb-4 md:mb-6 font-['Playfair Display',serif]">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
             Your Personal Style Transformation Starts Now
           </h1>
           
-          <div className="text-4xl md:text-5xl lg:text-6xl font-light text-gray-900 mb-3 md:mb-4">
-            <span className="line-through text-gray-400 mr-2 md:mr-4 font-['Inter',sans-serif]">₹{originalPrice}</span>
-            <span className="text-green-600 font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
+          <div className="text-4xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
+            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
+            <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
           </div>
           
-          <div className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-2 rounded-full font-light text-base md:text-lg inline-block animate-bounce font-['Inter',sans-serif]">
+          <div className="bg-luxury-gold text-luxury-charcoal px-4 md:px-6 py-2 rounded-full luxury-body text-base md:text-lg inline-block animate-bounce">
             YOU SAVE ₹{savings} TODAY!
           </div>
         </motion.div>
@@ -343,14 +343,14 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20"
+            className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-luxury-cream"
           >
-            <h2 className="text-2xl md:text-3xl font-light text-gray-900 mb-4 md:mb-6 font-['Cormorant Garamond',serif]">Your Information</h2>
+            <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">Your Information</h2>
             
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               {/* First Name */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-light text-gray-700 mb-1 md:mb-2 font-['Inter',sans-serif]">
+                <label htmlFor="firstName" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
                   First Name *
                 </label>
                 <input
@@ -360,14 +360,14 @@ export default function CheckoutPage() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm"
                   placeholder="Enter your first name"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-light text-gray-700 mb-1 md:mb-2 font-['Inter',sans-serif]">
+                <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
                   Email ID *
                 </label>
                 <input
@@ -377,14 +377,14 @@ export default function CheckoutPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm"
                   placeholder="Enter your email address"
                 />
               </div>
 
               {/* Phone Number */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-light text-gray-700 mb-1 md:mb-2 font-['Inter',sans-serif]">
+                <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
                   Phone Number *
                 </label>
                 <input
@@ -395,14 +395,14 @@ export default function CheckoutPage() {
                   onChange={handleInputChange}
                   required
                   maxLength={10}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm"
                   placeholder="Enter 10-digit phone number"
                 />
-                <p className="text-xs text-gray-500 mt-1">Enter exactly 10 digits</p>
+                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>
               </div>
 
               {/* Security Notice */}
-              <div className="text-center text-xs md:text-sm text-gray-600 font-light font-['Inter',sans-serif]">
+              <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60">
                 <p>🔒 Your payment is secure and encrypted</p>
                 <p className="mt-1">By clicking above, you agree to our terms of service and privacy policy</p>
               </div>
@@ -417,14 +417,14 @@ export default function CheckoutPage() {
             className="space-y-6 md:space-y-8"
           >
                         {/* Main Product */}
-            <div className="bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-2 md:top-4 right-[-30px] bg-yellow-400 text-gray-900 px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
+            <div className="bg-luxury-charcoal text-luxury-warm-white rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-2 md:top-4 right-[-30px] bg-luxury-gold text-luxury-charcoal px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
                 BEST SELLER
               </div>
               
               <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
                 <span className="text-xl md:text-2xl">🎨</span>
-                <h3 className="text-xl md:text-2xl font-light font-['Cormorant Garamond',serif]">Iconik Personal Style Consultation</h3>
+                <h3 className="text-xl md:text-2xl luxury-heading">ICONIK Personal Style Consultation</h3>
               </div>
               
               <div className="text-sm md:text-base text-gray-300 mb-3 md:mb-4 font-light font-['Inter',sans-serif]">
