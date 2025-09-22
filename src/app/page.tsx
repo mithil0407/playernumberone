@@ -223,13 +223,13 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl md:text-6xl lg:text-8xl font-light text-gray-900 mb-6 md:mb-8 leading-tight tracking-tight font-['Playfair Display',serif]"
+              className="text-4xl md:text-6xl lg:text-8xl font-light text-gray-900 mb-6 md:mb-8 leading-tight tracking-tight font-display"
             >
               Bespoke Fashion
               <br />
               <span className="bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent font-semibold">Consultations</span>
               <br />
-              <span className="text-2xl md:text-4xl lg:text-5xl font-light text-gray-600 font-['Cormorant Garamond',serif]">for the Modern Indian Woman</span>
+              <span className="text-2xl md:text-4xl lg:text-5xl font-light text-gray-600 font-display">for the Modern Indian Woman</span>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
