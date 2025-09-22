@@ -158,7 +158,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
             customer_id: existingOrder.customer_id,
             payment_status: 'completed',
             add_ons: addOnsString,
-            service_type: 'Iconik Style Consultation'
+            service_type: 'IconOne Style Consultation'
           });
           console.log('Customer data added to Google Sheets after successful payment');
         } catch (sheetError) {
@@ -246,7 +246,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
             customer_id: existingOrder.customer_id,
             payment_status: 'completed',
             add_ons: addOnsString,
-            service_type: 'Iconik Style Consultation'
+            service_type: 'IconOne Style Consultation'
           });
           console.log('Test customer data added to Google Sheets');
         }

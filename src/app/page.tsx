@@ -117,34 +117,37 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Iconik - Discover Your Signature Style & Transform Your Confidence</title>
-        <meta name="description" content="Iconik: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives." />
+        <title>IconOne - Discover Your Signature Style & Transform Your Confidence</title>
+        <meta name="description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives." />
         <meta name="keywords" content="style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover" />
-        <meta property="og:title" content="Iconik - Discover Your Signature Style & Transform Your Confidence" />
-        <meta property="og:description" content="Iconik: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
+        <meta property="og:title" content="IconOne - Discover Your Signature Style & Transform Your Confidence" />
+        <meta property="og:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://playernumberone.com" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Iconik - Discover Your Signature Style & Transform Your Confidence" />
-        <meta name="twitter:description" content="Iconik: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
+        <meta name="twitter:title" content="IconOne - Discover Your Signature Style & Transform Your Confidence" />
+        <meta name="twitter:description" content="IconOne: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <link rel="canonical" href="https://playernumberone.com" />
       </Head>
-      <div className="min-h-screen bg-[#FFE66D] font-['Playfair Display',serif] text-[#1C1018] scroll-smooth overflow-x-hidden pb-20 md:pb-0">
+      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-[#9593D9]/30 z-50 shadow-sm">
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-rose-100 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
-              <span className="text-3xl font-light tracking-wide font-['Cormorant Garamond',serif]">ICONIK</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-pink-300 rounded-full flex items-center justify-center shadow-md">
+                <Crown className="h-6 w-6 text-white" />
             </div>
+              <span className="text-3xl font-light tracking-wide text-gray-900 font-['Cormorant Garamond',serif]">Icon<span className="font-semibold text-rose-600">One</span></span>
+              </div>
             <div className="hidden md:flex items-center space-x-10 font-['Inter',sans-serif]">
-              <a href="#features" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">Features</a>
-              <a href="#testimonials" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">Stories</a>
-              <a href="#pricing" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">Investment</a>
-              <a href="#faq" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">FAQ</a>
+              <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Features</a>
+              <a href="#testimonials" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Stories</a>
+              <a href="#pricing" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Investment</a>
+              <a href="#faq" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">FAQ</a>
               <Link
                 href="/checkout"
-                className="bg-gradient-to-r from-[#DA3E52] to-[#9593D9] hover:opacity-90 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
+                className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
               >
                 Begin Journey
               </Link>
@@ -166,7 +169,7 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-                className="md:hidden bg-white/95 backdrop-blur-xl border-t border-[#9593D9]/30"
+            className="md:hidden bg-white/95 backdrop-blur-xl border-t border-rose-100"
           >
             <div className="px-6 py-6 space-y-4">
               <a href="#features" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">Features</a>
@@ -175,7 +178,7 @@ export default function Home() {
               <a href="#faq" className="block text-gray-700 hover:text-rose-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-rose-50 transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="block bg-gradient-to-r from-[#DA3E52] to-[#9593D9] text-white px-8 py-4 rounded-full text-base font-light tracking-wide text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-8 py-4 rounded-full text-base font-light tracking-wide text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Begin Journey
               </Link>
@@ -261,8 +264,8 @@ export default function Home() {
                     priority
                   />
                   </div>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-[#1C1018] mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
-                  <p className="text-[#1C1018]/70 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
+                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-gray-800 mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
+                  <p className="text-gray-600 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
                 </div>
               </div>
           </motion.div>
@@ -283,7 +286,7 @@ export default function Home() {
                   });
                 }
               }}
-                  className="inline-block bg-gradient-to-r from-[#DA3E52] to-[#9593D9] hover:opacity-90 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
+                className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
             >
                 Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
             </Link>
@@ -396,14 +399,14 @@ export default function Home() {
           <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
             <div className="p-6 md:p-8 lg:p-12">
               <div className="text-center mb-6 md:mb-8">
-                <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-['Playfair Display',serif] text-gray-900">Iconik Style Consultation</h3>
-                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,499</div>
+                <h3 className="text-2xl md:text-3xl lg:text-4xl font-light mb-3 md:mb-4 font-['Playfair Display',serif] text-gray-900">IconOne Style Consultation</h3>
+                <div className="text-4xl md:text-5xl lg:text-6xl font-light mb-3 md:mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹1,199</div>
                 <p className="text-base md:text-lg lg:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Complete personal style transformation</p>
               </div>
               
-              <div className="max-w-4xl mx-auto">
-                <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif] text-center">What&apos;s Included:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
                   <ul className="space-y-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
@@ -417,8 +420,6 @@ export default function Home() {
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 font-light font-['Inter',sans-serif]">Body-flattering silhouettes that work with your shape</span>
                     </li>
-                  </ul>
-                  <ul className="space-y-4">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 font-light font-['Inter',sans-serif]">Hair & beauty advice for your unique features</span>
@@ -427,21 +428,15 @@ export default function Home() {
                       <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 font-light font-['Inter',sans-serif]">20-minute one-on-one call with expert stylist</span>
                     </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 font-light font-['Inter',sans-serif]">Lifetime access to your personalized style profile</span>
-                    </li>
                   </ul>
                 </div>
                 
-                <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-6 mb-8 text-center">
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-lg">👑</span>
-                    </div>
-                    <h4 className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">Premium Experience</h4>
+                <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-6 text-center">
+                  <div className="text-center">
+                    <div className="text-3xl mb-4">✨</div>
+                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Personal Touch</h4>
+                    <p className="text-gray-600 font-light font-['Inter',sans-serif]">Tailored specifically for you</p>
                   </div>
-                  <p className="text-gray-600 font-light font-['Inter',sans-serif]">1-on-1 consultation with certified fashion experts</p>
                 </div>
               </div>
               
@@ -453,12 +448,12 @@ export default function Home() {
                       window.fbq('track', 'Lead', {
                         content_name: 'Style Consultation CTA Click',
                         content_category: 'Style Consultation',
-                        value: 1499,
+                        value: 1199,
                         currency: 'INR'
                       });
                     }
                   }}
-                  className="inline-block bg-gradient-to-r from-[#DA3E52] to-[#9593D9] text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
+                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
                 >
                   ✨ Get Your Style Consultation
                 </Link>
@@ -467,6 +462,67 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Advanced Plan */}
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="bg-white rounded-2xl shadow-lg border-rose-100 hover:shadow-xl transition-shadow duration-300 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+            <div className="p-8 md:p-12">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl md:text-4xl font-light mb-4 font-['Playfair Display',serif] text-gray-900">Complete IconOne Package</h3>
+                <div className="text-5xl md:text-6xl font-light mb-4 font-['Cormorant Garamond',serif] bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">₹2,297</div>
+                <p className="text-lg md:text-xl font-light text-gray-600 font-['Inter',sans-serif]">Style + Shopping + Wellness Bundle</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h4 className="text-xl font-light mb-6 text-gray-900 font-['Cormorant Garamond',serif]">What&apos;s Included:</h4>
+                  <ul className="space-y-4">
+                    {features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700 font-light font-['Inter',sans-serif]">{feature.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-6 text-center">
+                  <div className="text-center">
+                    <div className="text-3xl mb-4">💰</div>
+                    <h4 className="text-xl font-light text-gray-900 mb-3 font-['Cormorant Garamond',serif]">Bundle Savings</h4>
+                    <p className="text-gray-600 font-light font-['Inter',sans-serif] mb-3">Individual Price: ₹2,197</p>
+                    <div className="text-3xl font-light text-orange-600 mb-2 font-['Cormorant Garamond',serif]">Save ₹800</div>
+                    <p className="text-sm text-orange-600 font-light font-['Inter',sans-serif]">(Limited time bundle)</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-2xl p-6 mb-8 text-center">
+                <p className="text-red-700 font-light text-lg font-['Inter',sans-serif]">
+                  ⚠️ Only 15 slots available this week
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <Link 
+                  href="/checkout" 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.fbq) {
+                      window.fbq('track', 'Lead', {
+                        content_name: 'Complete Package CTA Click',
+                        content_category: 'Style Transformation Package',
+                        value: 2297,
+                        currency: 'INR'
+                      });
+                    }
+                  }}
+                  className="inline-block bg-gradient-to-r from-rose-600 to-pink-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300 font-['Inter',sans-serif]"
+                >
+                  ✨ Transform Now
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
 
@@ -646,7 +702,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-8 md:py-16 lg:py-20 px-4 bg-gradient-to-r from-[#DA3E52] to-[#9593D9]">
+      <section className="py-8 md:py-16 lg:py-20 px-4 bg-gradient-to-r from-rose-500 to-pink-500">
         <div className="max-w-4xl mx-auto text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -668,14 +724,14 @@ export default function Home() {
                     window.fbq('track', 'Lead', {
                       content_name: 'Final CTA Click',
                       content_category: 'Style Transformation Program',
-                      value: 1499,
+                      value: 1199,
                       currency: 'INR'
                     });
                   }
                 }}
-                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-[#DA3E52] px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
+                className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-rose-600 px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
               >
-                <span className="relative z-10">✨ Start Your Iconik Transformation Today</span>
+                <span className="relative z-10">✨ Start Your IconOne Transformation Today</span>
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </Link>
@@ -699,7 +755,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <p className="text-sm opacity-75 text-center">₹1,499 + GST • Limited slots available</p>
+              <p className="text-sm opacity-75 text-center">₹1,199 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -711,8 +767,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Brand */}
             <div className="md:col-span-2">
-              <div className="text-3xl font-light bg-gradient-to-r from-[#DA3E52] to-[#9593D9] bg-clip-text text-transparent mb-4 font-['Playfair Display',serif]">
-                Iconik
+              <div className="text-3xl font-light bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent mb-4 font-['Playfair Display',serif]">
+                IconOne
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
                 Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
@@ -771,7 +827,7 @@ export default function Home() {
 
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-gray-500 text-sm">
-              © 2024 PlayerNumberOne Iconik. All rights reserved. | Transform with elegance.
+              © 2024 PlayerNumberOne IconOne. All rights reserved. | Transform with elegance.
             </p>
             <p className="text-gray-600 text-xs mt-2">
               Business Legal Name: MITHIL NILESH NAVALAKHA
@@ -789,10 +845,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">Complete Package</div>
-              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">
-                <span className="line-through text-gray-400 mr-2">₹5,999</span>
-                <span className="text-green-600">₹1,499</span>
-              </div>
+              <div className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">₹1,199</div>
             </div>
             <div className="text-right">
               <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">Offer Expires In:</div>

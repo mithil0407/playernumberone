@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         customer_id: body.customer_id || 'manual-customer-456',
         payment_status: body.payment_status || 'completed',
         add_ons: body.add_ons || 'Manual Test Add-on',
-        service_type: body.service_type || 'Iconik Style Consultation'
+        service_type: body.service_type || 'IconOne Style Consultation'
       } : {
         customer_name: 'Test Customer',
         customer_email: 'test@example.com',
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         customer_id: 'test-customer-456',
         payment_status: 'pending',
         add_ons: 'Shopping Guide',
-        service_type: 'Iconik Style Consultation'
+        service_type: 'IconOne Style Consultation'
       };
 
       const result = await addCustomerToSheet(testData);
