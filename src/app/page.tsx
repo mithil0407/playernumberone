@@ -129,22 +129,19 @@ export default function Home() {
         <meta name="twitter:description" content="Iconik: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
         <link rel="canonical" href="https://playernumberone.com" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50 font-['Playfair Display',serif] text-gray-900 scroll-smooth overflow-x-hidden pb-20 md:pb-0">
+      <div className="min-h-screen bg-[#FFE66D] font-['Playfair Display',serif] text-[#1C1018] scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-rose-100 z-50 shadow-sm">
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-[#9593D9]/30 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#DA3E52] to-[#9593D9] rounded-full flex items-center justify-center shadow-md">
-                <Crown className="h-6 w-6 text-white" />
+            <div className="flex items-center">
+              <span className="text-3xl font-light tracking-wide font-['Cormorant Garamond',serif]">ICONIK</span>
             </div>
-              <span className="text-3xl font-light tracking-wide text-gray-900 font-['Cormorant Garamond',serif]">Icon<span className="font-semibold">ik</span></span>
-              </div>
             <div className="hidden md:flex items-center space-x-10 font-['Inter',sans-serif]">
-              <a href="#features" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Features</a>
-              <a href="#testimonials" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Stories</a>
-              <a href="#pricing" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">Investment</a>
-              <a href="#faq" className="text-gray-700 hover:text-rose-600 transition-colors font-light tracking-wide">FAQ</a>
+              <a href="#features" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">Features</a>
+              <a href="#testimonials" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">Stories</a>
+              <a href="#pricing" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">Investment</a>
+              <a href="#faq" className="text-[#1C1018] hover:text-[#DA3E52] transition-colors font-light tracking-wide">FAQ</a>
               <Link
                 href="/checkout"
                 className="bg-gradient-to-r from-[#DA3E52] to-[#9593D9] hover:opacity-90 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide"
@@ -264,8 +261,8 @@ export default function Home() {
                     priority
                   />
                   </div>
-                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-gray-800 mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
-                  <p className="text-gray-600 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
+                  <h3 className="text-xl md:text-2xl lg:text-3xl font-light text-[#1C1018] mb-2 font-['Cormorant Garamond',serif]">Your Personal Style Guide</h3>
+                  <p className="text-[#1C1018]/70 font-light text-base md:text-lg font-['Inter',sans-serif]">Comprehensive style transformation roadmap</p>
                 </div>
               </div>
           </motion.div>
