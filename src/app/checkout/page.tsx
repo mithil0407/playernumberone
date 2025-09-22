@@ -156,7 +156,7 @@ export default function CheckoutPage() {
         customer_email: formData.email,
         customer_phone: formData.phone,
         amount: totalAmount,
-        base_product: 'IconOne Style Consultation',
+        base_product: 'Iconik Style Consultation',
         add_ons: {
           shopping_blueprint: shoppingBlueprintAddon,
           glow_up_program: glowUpProgramAddon
@@ -199,8 +199,8 @@ export default function CheckoutPage() {
           key: responseData.key,
           amount: responseData.amount,
           currency: responseData.currency,
-          name: 'PlayerNumberOne IconOne',
-          description: 'IconOne Style Consultation',
+          name: 'Iconik',
+          description: 'Iconik Style Consultation',
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
             // Payment successful
@@ -210,7 +210,7 @@ export default function CheckoutPage() {
                 currency: 'INR',
                 content_ids: ['iconone_style_consultation'],
                 content_type: 'product',
-                content_name: 'IconOne Style Consultation'
+                content_name: 'Iconik Style Consultation'
               });
             }
             
@@ -259,7 +259,7 @@ export default function CheckoutPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2 text-rose-600 hover:text-rose-700 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            Back to IconOne
+            Back to Iconik
           </Link>
         </div>
       </header>
@@ -424,7 +424,7 @@ export default function CheckoutPage() {
               
               <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
                 <span className="text-xl md:text-2xl">🎨</span>
-                <h3 className="text-xl md:text-2xl font-light font-['Cormorant Garamond',serif]">IconOne Personal Style Consultation</h3>
+                <h3 className="text-xl md:text-2xl font-light font-['Cormorant Garamond',serif]">Iconik Personal Style Consultation</h3>
               </div>
               
               <div className="text-sm md:text-base text-gray-300 mb-3 md:mb-4 font-light font-['Inter',sans-serif]">
@@ -570,7 +570,7 @@ export default function CheckoutPage() {
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700 font-light font-['Inter',sans-serif]">IconOne Style Consultation</span>
+                  <span className="text-gray-700 font-light font-['Inter',sans-serif]">Iconik Style Consultation</span>
                   <span className="font-light font-['Inter',sans-serif]">
                     <span className="line-through text-gray-400 mr-2">₹{originalPrice}</span>
                     <span className="text-green-600">₹{discountedPrice}</span>

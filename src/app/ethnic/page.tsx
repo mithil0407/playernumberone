@@ -126,7 +126,7 @@ export default function EthnicPage() {
   return (
     <>
       <Head>
-        <title>Ethnic Elegance Package - Embrace Your Cultural Elegance | IconOne</title>
+        <title>Ethnic Elegance Package - Embrace Your Cultural Elegance | Iconik</title>
         <meta name="description" content="Ethnic Elegance Package: Discover your perfect traditional Indian wear. 14 ethnic outfits with accessories, footwear & styling guide. Pan-Indian recommendations." />
         <meta name="keywords" content="ethnic wear, traditional indian wear, sarees, lehengas, kurtas, ethnic fashion, cultural elegance, indian fashion" />
         <meta property="og:title" content="Ethnic Elegance Package - Embrace Your Cultural Elegance" />
@@ -334,7 +334,7 @@ export default function EthnicPage() {
         <section id="testimonials" className="py-16 md:py-24 bg-gradient-to-b from-white to-amber-50">
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-5xl font-light mb-4 md:mb-6 font-['Playfair Display',serif]">Client Stories</h2>
-            <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Hear from women who embraced their cultural elegance with IconOne.</p>
+            <p className="text-gray-600 font-light max-w-3xl mx-auto font-['Inter',sans-serif] text-base md:text-lg px-4">Hear from women who embraced their cultural elegance with Iconik.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
             {ethnicTestimonials.map((testimonial, index) => (
@@ -379,7 +379,7 @@ export default function EthnicPage() {
                 See the Ethnic Transformation
               </h2>
               <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-                Real results from real women who embraced their cultural elegance with IconOne
+                Real results from real women who embraced their cultural elegance with Iconik
               </p>
             </motion.div>
             
@@ -564,7 +564,7 @@ export default function EthnicPage() {
                 Ready to Embrace Your Cultural Elegance?
               </h2>
               <p className="text-lg md:text-xl mb-6 md:mb-8 opacity-90 max-w-2xl mx-auto px-4 font-light font-['Inter',sans-serif]">
-                Join 150+ women who have discovered their perfect ethnic style with IconOne
+                Join 150+ women who have discovered their perfect ethnic style with Iconik
               </p>
               <div className="space-y-6">
                 <Link 
@@ -615,7 +615,7 @@ export default function EthnicPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
               <div className="md:col-span-2">
                 <div className="text-3xl font-light bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent mb-4 font-['Bebas Neue',sans-serif]">
-                  IconOne
+                  Iconik
                 </div>
                 <p className="text-gray-400 mb-4 max-w-md">
                   Embrace your cultural elegance with traditional Indian wear that celebrates your heritage.
@@ -672,7 +672,7 @@ export default function EthnicPage() {
 
             <div className="border-t border-gray-800 pt-8 text-center">
               <p className="text-gray-500 text-sm">
-                © 2024 PlayerNumberOne IconOne. All rights reserved. | Embrace cultural elegance.
+              © 2024 PlayerNumberOne Iconik. All rights reserved. | Embrace cultural elegance.
               </p>
               <p className="text-gray-600 text-xs mt-2">
                 Business Legal Name: MITHIL NILESH NAVALAKHA

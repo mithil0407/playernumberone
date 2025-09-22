@@ -181,7 +181,7 @@ export default function EthnicCheckoutPage() {
           key: responseData.key,
           amount: responseData.amount,
           currency: responseData.currency,
-          name: 'PlayerNumberOne IconOne',
+          name: 'Iconik',
           description: 'Ethnic Elegance Package',
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
@@ -600,3 +600,4 @@ export default function EthnicCheckoutPage() {
     </div>
   );
 }
+
