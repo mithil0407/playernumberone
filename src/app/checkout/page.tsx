@@ -468,27 +468,27 @@ export default function CheckoutPage() {
             </div>
 
             {/* Free Bonuses */}
-            <div className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-dashed border-orange-300 rounded-3xl p-6 md:p-8">
-              <h4 className="text-orange-700 font-light text-base md:text-lg text-center mb-3 md:mb-4 font-['Cormorant Garamond',serif]">Included at No Extra Charge (₹1,000+ value):</h4>
+            <div className="bg-luxury-gold/10 border-2 border-dashed border-luxury-gold/30 rounded-3xl p-6 md:p-8">
+              <h4 className="text-luxury-charcoal luxury-heading text-base md:text-lg text-center mb-3 md:mb-4">Included at No Extra Charge (₹1,000+ value):</h4>
               
               <div className="space-y-3 md:space-y-4">
-                <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-light text-gray-900 mb-1 md:mb-2 text-sm md:text-base font-['Inter',sans-serif]">Celebrity Stylist Secrets Guide</div>
-                  <div className="text-xs text-gray-600 font-light font-['Inter',sans-serif]">
+                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-luxury-cream">
+                  <div className="luxury-body text-luxury-charcoal mb-1 md:mb-2 text-sm md:text-base">Celebrity Stylist Secrets Guide</div>
+                  <div className="text-xs luxury-body text-luxury-charcoal/60">
                     Discover the exact style formulas Bollywood stylists use
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-light text-gray-900 mb-1 md:mb-2 text-sm md:text-base font-['Inter',sans-serif]">Instant Confidence Routine Checklist</div>
-                  <div className="text-xs text-gray-600 font-light font-['Inter',sans-serif]">
+                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-luxury-cream">
+                  <div className="luxury-body text-luxury-charcoal mb-1 md:mb-2 text-sm md:text-base">Instant Confidence Routine Checklist</div>
+                  <div className="text-xs luxury-body text-luxury-charcoal/60">
                     5-minute morning routine to look & feel amazing
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-xl p-3 md:p-4 shadow-lg">
-                  <div className="font-light text-gray-900 mb-1 md:mb-2 text-sm md:text-base font-['Inter',sans-serif]">3-Day WhatsApp Style Access</div>
-                  <div className="text-xs text-gray-600 font-light font-['Inter',sans-serif]">
+                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-luxury-cream">
+                  <div className="luxury-body text-luxury-charcoal mb-1 md:mb-2 text-sm md:text-base">3-Day WhatsApp Style Access</div>
+                  <div className="text-xs luxury-body text-luxury-charcoal/60">
                     Get instant style advice from experts & community
                   </div>
                 </div>
@@ -496,16 +496,16 @@ export default function CheckoutPage() {
             </div>
 
             {/* Testimonial */}
-            <div className="bg-green-50 border-l-4 border-green-500 rounded-xl p-4">
-              <p className="text-sm text-gray-700 italic font-light font-['Inter',sans-serif]">
+            <div className="bg-luxury-gold/10 border-l-4 border-luxury-gold rounded-xl p-4">
+              <p className="text-sm luxury-body text-luxury-charcoal italic">
                 &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything – I get compliments daily now.&quot;
               </p>
-              <p className="text-xs text-gray-600 mt-2 font-light font-['Inter',sans-serif]">– Priya S., Mumbai (Verified Buyer)</p>
+              <p className="text-xs luxury-body text-luxury-charcoal/60 mt-2">– Priya S., Mumbai (Verified Buyer)</p>
             </div>
 
             {/* Add-on 1: Shopping Blueprint */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-3xl p-6 md:p-8 relative">
-              <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-xs font-bold">
+            <div className="bg-luxury-cream/40 border-2 border-luxury-cream rounded-3xl p-6 md:p-8 relative">
+              <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-luxury-accent text-luxury-warm-white px-4 py-1 rounded-full text-xs font-bold">
                 Most Clients Also Add This
               </div>
               
@@ -514,22 +514,22 @@ export default function CheckoutPage() {
                   type="checkbox"
                   checked={shoppingBlueprintAddon}
                   onChange={(e) => setShoppingBlueprintAddon(e.target.checked)}
-                  className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-1"
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">✨ Styled Looks Pack</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">✨ Styled Looks Pack</div>
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="line-through text-gray-400">₹{shoppingBlueprintOriginalPrice}</span>
-                    <span className="text-green-600 font-light text-xl font-['Cormorant Garamond',serif]">₹{shoppingBlueprintDiscountedPrice}</span>
-                    <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">56% OFF</span>
+                    <span className="line-through text-luxury-charcoal/40 font-semibold">₹{shoppingBlueprintOriginalPrice}</span>
+                    <span className="text-luxury-accent font-semibold text-xl">₹{shoppingBlueprintDiscountedPrice}</span>
+                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">56% OFF</span>
                   </div>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4 font-light font-['Inter',sans-serif]">
+                  <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
                     <li>🎉 4 Party Outfits</li>
                     <li>✈️ 4 Travel Outfits</li>
                     <li>👕 4 Casual Outfits</li>
                     <li>💼 4 Office Outfits</li>
                   </ul>
-                  <div className="bg-yellow-100 text-yellow-800 p-3 rounded-lg mt-3 text-center text-sm font-light font-['Inter',sans-serif]">
+                  <div className="bg-luxury-gold/20 text-luxury-charcoal p-3 rounded-lg mt-3 text-center text-sm luxury-body">
                     ⚡ One-Time Offer: Never Available At This Price Again!
                   </div>
                 </div>
@@ -537,22 +537,22 @@ export default function CheckoutPage() {
                 </div>
                 
             {/* Add-on 2: Glow Up Program */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
               <label className="flex items-start gap-4 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={glowUpProgramAddon}
                   onChange={(e) => setGlowUpProgramAddon(e.target.checked)}
-                  className="w-6 h-6 text-rose-600 border-gray-300 rounded focus:ring-rose-500 mt-1"
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-light text-gray-900 text-lg mb-2 font-['Cormorant Garamond',serif]">Beauty & Confidence Essentials Pack</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">Beauty & Confidence Essentials Pack</div>
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="line-through text-gray-400">₹{glowUpProgramOriginalPrice}</span>
-                    <span className="text-orange-600 font-light text-xl font-['Cormorant Garamond',serif]">₹{glowUpProgramDiscountedPrice}</span>
-                    <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
+                    <span className="line-through text-luxury-charcoal/40 font-semibold">₹{glowUpProgramOriginalPrice}</span>
+                    <span className="text-luxury-accent font-semibold text-xl">₹{glowUpProgramDiscountedPrice}</span>
+                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
                   </div>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4 font-light font-['Inter',sans-serif]">
+                  <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
                     <li>💄 Signature Makeup & Lipstick Guide</li>
                     <li>• Quick & natural makeup routine</li>
                     <li>• Your perfect lipstick shade (skin-matched)</li>
@@ -565,47 +565,47 @@ export default function CheckoutPage() {
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
-              <h3 className="text-xl font-light text-gray-900 mb-4 font-['Cormorant Garamond',serif]">Order Summary</h3>
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
+              <h3 className="text-xl luxury-heading text-luxury-charcoal mb-4">Order Summary</h3>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700 font-light font-['Inter',sans-serif]">Iconik Style Consultation</span>
-                  <span className="font-light font-['Inter',sans-serif]">
-                    <span className="line-through text-gray-400 mr-2">₹{originalPrice}</span>
-                    <span className="text-green-600">₹{discountedPrice}</span>
+                  <span className="luxury-body text-luxury-charcoal">ICONIK Style Consultation</span>
+                  <span className="luxury-body">
+                    <span className="line-through text-luxury-charcoal/40 mr-2 font-semibold">₹{originalPrice}</span>
+                    <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center text-green-600">
-                  <span className="font-light font-['Inter',sans-serif]">FREE Bonuses (₹1,000+ value)</span>
-                  <span className="font-light font-['Inter',sans-serif]">FREE</span>
+                <div className="flex justify-between items-center text-luxury-accent">
+                  <span className="luxury-body">FREE Bonuses (₹1,000+ value)</span>
+                  <span className="luxury-body">FREE</span>
                 </div>
                 
                 {shoppingBlueprintAddon && (
-                  <div className="flex justify-between items-center text-green-600">
-                    <span className="font-light font-['Inter',sans-serif]">Styled Looks Pack (Optional)</span>
-                    <span className="font-light font-['Inter',sans-serif]">₹{shoppingBlueprintDiscountedPrice}</span>
+                  <div className="flex justify-between items-center text-luxury-accent">
+                    <span className="luxury-body">Styled Looks Pack (Optional)</span>
+                    <span className="luxury-body font-semibold">₹{shoppingBlueprintDiscountedPrice}</span>
                   </div>
                 )}
                 
                 {glowUpProgramAddon && (
-                  <div className="flex justify-between items-center text-green-600">
-                    <span className="font-light font-['Inter',sans-serif]">Beauty & Confidence Essentials Pack (Optional)</span>
-                    <span className="font-light font-['Inter',sans-serif]">₹{glowUpProgramDiscountedPrice}</span>
+                  <div className="flex justify-between items-center text-luxury-accent">
+                    <span className="luxury-body">Beauty & Confidence Essentials Pack (Optional)</span>
+                    <span className="luxury-body font-semibold">₹{glowUpProgramDiscountedPrice}</span>
                   </div>
                 )}
                 
-                <div className="border-t border-gray-200 pt-3">
-                  <div className="flex justify-between items-center text-sm text-gray-600 font-light font-['Inter',sans-serif]">
+                <div className="border-t border-luxury-cream pt-3">
+                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/60">
                     <span>Total Value:</span>
                     <span className="line-through">₹{totalValue.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center text-lg font-light">
-                    <span className="font-['Inter',sans-serif]">You Pay:</span>
-                    <span className="text-blue-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="luxury-body">You Pay:</span>
+                    <span className="text-luxury-accent font-semibold">₹{totalAmount.toLocaleString()}</span>
                   </div>
-                  <div className="text-center text-sm text-gray-600 mt-2 font-light font-['Inter',sans-serif]">
+                  <div className="text-center text-sm luxury-body text-luxury-charcoal/60 mt-2">
                     Total if all selected: ₹{totalAmount.toLocaleString()} (Value over ₹{totalValue.toLocaleString()})
                   </div>
                 </div>
@@ -616,30 +616,30 @@ export default function CheckoutPage() {
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-full text-lg md:text-xl font-light shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-['Inter',sans-serif]"
+                className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-3 md:py-4 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform"
               >
                 {isProcessing ? 'Processing...' : '🔥 YES! Transform My Style Now →'}
               </button>
               
-              <div className="text-center text-xs md:text-sm text-gray-600 mb-3 md:mb-4 font-light font-['Inter',sans-serif]">
+              <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60 mb-3 md:mb-4">
                 <p>Pay via Razorpay – 100% Safe & Secure</p>
               </div>
               
               {/* Money Back Guarantee */}
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <div className="bg-luxury-gold/10 border border-luxury-gold/20 rounded-xl p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Shield className="w-5 h-5 text-green-600" />
-                  <span className="font-light text-green-800 font-['Inter',sans-serif]">30-Day Money-Back Guarantee</span>
+                  <Shield className="w-5 h-5 text-luxury-gold" />
+                  <span className="luxury-body text-luxury-charcoal">30-Day Money-Back Guarantee</span>
                 </div>
-                <p className="text-sm text-green-700 font-light font-['Inter',sans-serif]">
+                <p className="text-sm luxury-body text-luxury-charcoal/70">
                   Love your new style or get 100% of your money back. No questions asked!
                 </p>
               </div>
               
               {/* Payment Methods */}
               <div className="mt-4 text-center">
-                <p className="text-sm text-gray-600 mb-2 font-light font-['Inter',sans-serif]">Accepted Payment Methods:</p>
-                <div className="flex justify-center gap-3 text-sm text-gray-500 font-light font-['Inter',sans-serif]">
+                <p className="text-sm luxury-body text-luxury-charcoal/60 mb-2">Accepted Payment Methods:</p>
+                <div className="flex justify-center gap-3 text-sm luxury-body text-luxury-charcoal/50">
                   <span>💳 UPI</span>
                   <span>💳 Cards</span>
                   <span>💳 Netbanking</span>
