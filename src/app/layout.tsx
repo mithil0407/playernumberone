@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const canela = Playfair_Display({ subsets: ["latin"], variable: "--font-canela", display: "swap" });
 
 export const metadata: Metadata = {
   title: "PlayerNumberOne Alpha1 - Transform Your Confidence & Attractiveness",
@@ -30,7 +31,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
       </head>
-      <body className={inter.className}>
+      <body className={`font-sans ${inter.variable} ${canela.variable} antialiased`}>
         {/* Google Analytics 4 */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-V4126JH4EJ"

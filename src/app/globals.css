@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand palette */
+  --brand-bg: #FFE66D;      /* warm cream */
+  --brand-text: #1C1018;    /* deep aubergine */
+  --brand-accent: #9593D9;  /* periwinkle */
+  --brand-red: #DA3E52;     /* rose red */
+
+  /* Lavender spectrum */
+  --lavender-50:  #F7F6FF;
+  --lavender-100: #EEEAFE;
+  --lavender-200: #E0DDFB;
+  --lavender-300: #C6BFF5;
+  --lavender-400: #ACA2EE;
+  --lavender-500: #9387E4; /* close to accent */
+  --lavender-600: #7B6FD4;
+  --lavender-700: #655ABF;
+  --lavender-800: #544CA1;
+  --lavender-900: #473F86;
+
+  /* Fallbacks for Tailwind @theme */
+  --background: var(--brand-bg);
+  --foreground: var(--brand-text);
 }
 
 @theme inline {
@@ -20,7 +39,27 @@
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(60% 80% at 10% 10%, var(--lavender-50), transparent 60%),
+              radial-gradient(50% 70% at 90% 0%, var(--lavender-100), transparent 60%),
+              linear-gradient(180deg, var(--brand-bg), #FFF7B5 70%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Typography helpers */
+h1, h2, h3, .font-display {
+  font-family: var(--font-canela), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+/* Accent utilities to blend with existing utilities */
+.text-accent { color: var(--brand-accent); }
+.text-brand { color: var(--brand-text); }
+.bg-accent { background-color: var(--brand-accent); }
+.bg-brand { background-color: var(--brand-bg); }
+.btn-brand {
+  background-image: linear-gradient(90deg, var(--brand-red), var(--brand-accent));
+  color: white;
+}
+.badge-soft {
+  background: linear-gradient(180deg, var(--lavender-50), #ffffff);
+  border: 1px solid color-mix(in oklab, var(--brand-accent) 30%, #ffffff);
 }
