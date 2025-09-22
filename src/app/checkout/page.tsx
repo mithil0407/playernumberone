@@ -422,46 +422,45 @@ export default function CheckoutPage() {
                 BEST SELLER
               </div>
               
-              <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
-                <span className="text-xl md:text-2xl">🎨</span>
-                <h3 className="text-xl md:text-2xl luxury-heading">ICONIK Personal Style Consultation</h3>
-              </div>
+              <div className="mb-3 md:mb-4">
+                <h3 className="text-xl md:text-2xl luxury-heading mb-2">ICONIK Personal Style Consultation</h3>
               
-              <div className="text-sm md:text-base text-gray-300 mb-3 md:mb-4 font-light font-['Inter',sans-serif]">
-                Delivered 1-on-1 by Certified Fashion & Image Consultants
-              </div>
-              
-              <div className="text-2xl md:text-3xl font-light mb-3 md:mb-4">
-                <span className="line-through text-gray-300 mr-2 md:mr-4 font-['Inter',sans-serif]">₹{originalPrice}</span>
-                <span className="text-green-300 font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
+                <p className="text-sm md:text-base luxury-body text-luxury-warm-white/80 mb-3 md:mb-4">
+                  Delivered 1-on-1 by Certified Fashion & Image Consultants
+                </p>
+                
+                <div className="text-2xl md:text-3xl mb-3 md:mb-4">
+                  <span className="line-through text-luxury-warm-white/60 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
+                  <span className="text-luxury-gold font-semibold">₹{discountedPrice}</span>
+                </div>
               </div>
               
               <div className="mb-3 md:mb-4">
-                <div className="text-sm md:text-base font-light mb-2 font-['Inter',sans-serif]">What you get:</div>
-                <ul className="space-y-1 md:space-y-2 text-xs md:text-sm font-light font-['Inter',sans-serif]">
+                <h4 className="luxury-heading text-luxury-warm-white mb-2">What you get:</h4>
+                <ul className="space-y-2">
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>Complete Style DNA Analysis</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-warm-white/90">Complete Style DNA Analysis</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>Personalized Color Palette</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-warm-white/90">Personalized Color Palette</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>Body-Flattering Silhouette Mapping</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-warm-white/90">Body-Flattering Silhouette Mapping</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>Hair & Makeup Blueprint</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-warm-white/90">Hair & Makeup Blueprint</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>20-min Private Consultation Call</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-warm-white/90">20-min Private Consultation Call</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                    <span>Lifetime Style Profile Access</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-warm-white/90">Lifetime Style Profile Access</span>
                   </li>
                 </ul>
               </div>

@@ -571,10 +571,10 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-5xl font-light mb-6 font-display text-gray-900">
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-charcoal">
               See the Transformation
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+            <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 max-w-3xl mx-auto">
               Real results from real women who transformed their style with ICONIK
             </p>
           </motion.div>
@@ -601,12 +601,12 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 className="group relative"
               >
-                <div className="bg-white rounded-2xl shadow-lg border-rose-100 p-6 md:p-8 hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1 transition-transform duration-300">
-                <h3 className="text-2xl md:text-3xl font-light text-gray-900 mb-6 md:mb-8 text-center font-display">{comparison.title}</h3>
+                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-2">
+                <h3 className="text-3xl md:text-4xl luxury-heading text-luxury-charcoal mb-8 text-center">{comparison.title}</h3>
                   
                   <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                     <div className="text-center">
-                      <div className="text-sm md:text-base font-light text-gray-600 mb-3">Before</div>
+                      <div className="luxury-body text-luxury-charcoal/60 mb-4">Before</div>
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                         <Image
                           src={comparison.before}
@@ -620,7 +620,7 @@ export default function Home() {
                     </div>
                     
                     <div className="text-center">
-                      <div className="text-sm md:text-base font-light text-gray-600 mb-3">After</div>
+                      <div className="luxury-body text-luxury-charcoal/60 mb-4">After</div>
                       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
                         <Image
                           src={comparison.after}
@@ -634,7 +634,7 @@ export default function Home() {
                     </div>
                   </div>
                   
-                  <p className="text-base md:text-lg text-gray-600 text-center leading-relaxed font-light font-['Inter',sans-serif]">{comparison.description}</p>
+                  <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 text-center leading-relaxed">{comparison.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -643,7 +643,7 @@ export default function Home() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-8 md:py-16 lg:py-20 px-4 bg-gray-50">
+      <section className="py-20 md:py-32 px-4 bg-luxury-warm-white">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -651,10 +651,10 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-8 md:mb-16"
           >
-            <h2 className="text-5xl font-light mb-6 font-display text-gray-900">
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-charcoal">
               Sound Familiar?
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+            <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 max-w-3xl mx-auto">
               Many women feel the same way. You&apos;re not alone in this journey.
             </p>
           </motion.div>
@@ -688,7 +688,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
-                className="group relative bg-white rounded-2xl shadow-lg border-rose-100 p-4 md:p-6 lg:p-8 hover:shadow-xl transition-shadow duration-300 hover:-translate-y-1 transition-transform duration-300"
+                className="group relative bg-luxury-cream/40 backdrop-blur-sm rounded-3xl p-6 md:p-8 lg:p-10 border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 hover:-translate-y-2"
               >
                 {/* Problem Image */}
                   <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
@@ -711,7 +711,7 @@ export default function Home() {
                     item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
                   }`} />
                   </div>
-                <p className="text-lg md:text-xl font-light text-gray-900 text-center leading-relaxed">{item.text}</p>
+                <p className="text-xl md:text-2xl luxury-heading text-luxury-charcoal text-center leading-relaxed">{item.text}</p>
                   
                   {/* Glass shine effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
