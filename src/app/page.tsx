@@ -36,10 +36,34 @@ import {
   Trophy,
   Award
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({
+    minutes: 5,
+    seconds: 0
+  });
+
+  // 5-minute countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime.minutes === 0 && prevTime.seconds === 0) {
+          // Reset to 5 minutes when timer reaches 0
+          return { minutes: 5, seconds: 0 };
+        }
+        
+        if (prevTime.seconds === 0) {
+          return { minutes: prevTime.minutes - 1, seconds: 59 };
+        }
+        
+        return { minutes: prevTime.minutes, seconds: prevTime.seconds - 1 };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const features = [
     { 
@@ -934,9 +958,9 @@ export default function Home() {
       </footer>
 
       {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-4 md:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
         <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <div className="luxury-body text-luxury-charcoal/70">Complete Package</div>
               <div className="text-2xl font-semibold text-luxury-charcoal">
@@ -946,7 +970,9 @@ export default function Home() {
             </div>
             <div className="text-right">
               <div className="luxury-body text-luxury-charcoal/60 text-sm">Offer Expires In:</div>
-              <div className="luxury-body text-luxury-accent">14:59:23</div>
+              <div className="luxury-body text-luxury-accent">
+                {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+              </div>
             </div>
           </div>
           <Link
@@ -960,7 +986,7 @@ export default function Home() {
                 })
               }
             }}
-            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block"
+            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-5 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center block"
           >
             Begin Your Transformation
           </Link>
