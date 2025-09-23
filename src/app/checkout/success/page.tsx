@@ -48,41 +48,41 @@ function SuccessPageContent() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+    <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="text-center max-w-2xl mx-auto px-4"
       >
-        <div className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
-          <CheckCircle className="w-16 h-16 text-green-600" />
+        <div className="bg-luxury-gold/20 border border-luxury-gold/30 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
+          <CheckCircle className="w-16 h-16 text-luxury-gold" />
         </div>
         
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+        <h1 className="text-4xl md:text-5xl luxury-heading mb-6 text-luxury-charcoal">
           Payment Successful! 🎉
         </h1>
         
-        <p className="text-xl mb-8 text-gray-600">
+        <p className="text-xl mb-8 luxury-body text-luxury-charcoal/70">
           Welcome to ICONIK! Your style transformation journey begins now.
         </p>
         
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-8 border border-white/30">
-          <h2 className="text-2xl font-bold mb-4 text-gray-900">What&apos;s Next?</h2>
+        <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-8 mb-8 border border-luxury-cream">
+          <h2 className="text-2xl luxury-heading mb-6 text-luxury-charcoal">What&apos;s Next?</h2>
           
-          <div className="space-y-4 text-left">
-            <div className="flex items-start gap-3">
-              <Calendar className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0" />
+          <div className="space-y-6 text-left">
+            <div className="flex items-start gap-4">
+              <Calendar className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-gray-900">Schedule Your Style Session</h3>
-                <p className="text-gray-600 text-sm">Book your 1-on-1 consultation with our expert stylist</p>
+                <h3 className="luxury-heading text-luxury-charcoal mb-2">Schedule Your Style Session</h3>
+                <p className="luxury-body text-luxury-charcoal/60">Book your 1-on-1 consultation with our expert stylist</p>
               </div>
             </div>
             
-            <div className="flex items-start gap-3">
-              <Users className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0" />
+            <div className="flex items-start gap-4">
+              <Users className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-gray-900">Personalized Style Assessment</h3>
-                <p className="text-gray-600 text-sm">Get your custom style transformation roadmap</p>
+                <h3 className="luxury-heading text-luxury-charcoal mb-2">Personalized Style Assessment</h3>
+                <p className="luxury-body text-luxury-charcoal/60">Get your custom style transformation roadmap</p>
               </div>
             </div>
           </div>
@@ -90,12 +90,12 @@ function SuccessPageContent() {
         
         <Link
           href="/schedule"
-          className="bg-brand-cta hover:opacity-90 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
+          className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-12 py-4 rounded-full text-xl luxury-body transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
         >
           Schedule Your Style Session <ArrowRight className="w-6 h-6" />
         </Link>
         
-        <div className="mt-8 text-sm text-gray-500">
+        <div className="mt-8 text-sm luxury-body text-luxury-charcoal/60">
           <p>You&apos;ll receive a confirmation email with all the details.</p>
           <p>Questions? Contact us at support@playernumberone.com</p>
         </div>
@@ -107,10 +107,10 @@ function SuccessPageContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-luxury-accent mx-auto mb-4"></div>
+          <p className="luxury-body text-luxury-charcoal/60">Loading...</p>
         </div>
       </div>
     }>
