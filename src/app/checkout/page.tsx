@@ -669,22 +669,28 @@ export default function CheckoutPage() {
       </div>
 
       {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-rose-100 p-4 md:hidden z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-4 md:hidden z-50">
         <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">
-              <span className="line-through text-gray-400 mr-2">₹5,999</span>
-              <span className="font-light text-green-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="luxury-body text-luxury-charcoal/70">Complete Package</div>
+              <div className="text-2xl font-semibold text-luxury-charcoal">
+                <span className="line-through text-luxury-charcoal/40 mr-2">₹5,999</span>
+                ₹{totalAmount.toLocaleString()}
+              </div>
             </div>
-            <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">
-              {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left
+            <div className="text-right">
+              <div className="luxury-body text-luxury-charcoal/60 text-sm">Offer Expires In:</div>
+              <div className="luxury-body text-luxury-accent">
+                {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+              </div>
             </div>
           </div>
           <button
             type="submit"
             form="checkout-form"
             disabled={isProcessing}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-full text-lg font-light shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 hover:scale-105 transform font-['Inter',sans-serif]"
+            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform"
           >
             {isProcessing ? 'Processing...' : '🔥 Transform My Style Now →'}
           </button>

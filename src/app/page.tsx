@@ -939,7 +939,10 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="luxury-body text-luxury-charcoal/70">Complete Package</div>
-              <div className="text-2xl font-semibold text-luxury-charcoal">₹1,199</div>
+              <div className="text-2xl font-semibold text-luxury-charcoal">
+                <span className="line-through text-luxury-charcoal/40 mr-2">₹5,999</span>
+                ₹1,499
+              </div>
             </div>
             <div className="text-right">
               <div className="luxury-body text-luxury-charcoal/60 text-sm">Offer Expires In:</div>
