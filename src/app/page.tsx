@@ -224,7 +224,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-8 leading-[0.9] tracking-tight"
             >
-              Bespoke Fashion
+              Personalised Fashion
               <br />
               <span className="text-luxury-accent">Consultations</span>
             </motion.h1>
