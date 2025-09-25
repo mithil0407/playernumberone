@@ -9,18 +9,18 @@ interface MetaPixelData {
   event_name?: string;
   button_name?: string;
   location?: string;
-  [key: string]: any; // Allow additional properties for Meta Pixel flexibility
+  [key: string]: string | number | boolean | string[] | undefined; // Allow additional properties for Meta Pixel flexibility
 }
 
 declare global {
   interface Window {
-    fbq: (event: string, ...args: MetaPixelData[]) => void;
+    fbq: (command: string, event: string, data?: MetaPixelData) => void;
   }
 }
 
 export const trackEvent = (event: string, data?: MetaPixelData) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', event, data);
+    window.fbq('track', event, data || {});
   }
 };
 

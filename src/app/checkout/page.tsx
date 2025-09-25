@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
+import { trackAddToCart, trackRemoveFromCart, trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -127,41 +128,27 @@ export default function CheckoutPage() {
 
   // Track add-on changes for Meta Pixel
   const handleAddonChange = (addonType: 'shopping' | 'glowup', checked: boolean) => {
-    if (typeof window !== 'undefined' && window.fbq) {
-      const addonDetails = {
-        shopping: {
-          name: 'Styled Looks Pack',
-          price: checked ? 999 : 0,
-          id: 'styled_looks_pack'
-        },
-        glowup: {
-          name: 'Beauty & Confidence Essentials Pack',
-          price: checked ? 399 : 0,
-          id: 'beauty_confidence_pack'
-        }
-      };
-      
-      const addon = addonDetails[addonType];
-      
-      if (checked) {
-        // Track AddToCart when addon is selected
-        window.fbq('track', 'AddToCart', {
-          content_name: addon.name,
-          content_type: 'product',
-          content_ids: [addon.id],
-          value: addon.price,
-          currency: 'INR'
-        });
-      } else {
-        // Track RemoveFromCart when addon is deselected
-        window.fbq('track', 'RemoveFromCart', {
-          content_name: addon.name,
-          content_type: 'product',
-          content_ids: [addon.id],
-          value: addon.price,
-          currency: 'INR'
-        });
+    const addonDetails = {
+      shopping: {
+        name: 'Styled Looks Pack',
+        price: checked ? 999 : 0,
+        id: 'styled_looks_pack'
+      },
+      glowup: {
+        name: 'Beauty & Confidence Essentials Pack',
+        price: checked ? 399 : 0,
+        id: 'beauty_confidence_pack'
       }
+    };
+    
+    const addon = addonDetails[addonType];
+    
+    if (checked) {
+      // Track AddToCart when addon is selected
+      trackAddToCart(addon.name, addon.price, addon.id);
+    } else {
+      // Track RemoveFromCart when addon is deselected
+      trackRemoveFromCart(addon.name, addon.price, addon.id);
     }
     
     // Update state
@@ -197,16 +184,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     
     // Track InitiateCheckout event
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'InitiateCheckout', {
-        value: totalAmount,
-        currency: 'INR',
-        content_type: 'product',
-        content_name: 'ICONIK Style Consultation',
-        content_ids: ['iconik_style_consultation'],
-        num_items: 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0)
-      });
-    }
+    trackInitiateCheckout(totalAmount, 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0));
     
     try {
       // Create order data
@@ -263,15 +241,7 @@ export default function CheckoutPage() {
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
             // Payment successful
-            if (typeof window !== 'undefined' && window.fbq) {
-              window.fbq('track', 'Purchase', {
-                value: totalAmount,
-                currency: 'INR',
-                content_ids: ['iconone_style_consultation'],
-                content_type: 'product',
-                content_name: 'Iconik Style Consultation'
-              });
-            }
+            trackPurchase(totalAmount, 'Iconik Style Consultation', 'iconone_style_consultation');
             
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {

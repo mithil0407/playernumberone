@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
+import { trackEthnicPurchase } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -186,15 +187,7 @@ export default function EthnicCheckoutPage() {
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
             // Payment successful
-            if (typeof window !== 'undefined' && window.fbq) {
-              window.fbq('track', 'Purchase', {
-                value: totalAmount,
-                currency: 'INR',
-                content_ids: ['ethnic_elegance_package'],
-                content_type: 'product',
-                content_name: 'Ethnic Elegance Package'
-              });
-            }
+            trackEthnicPurchase(totalAmount);
             
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {

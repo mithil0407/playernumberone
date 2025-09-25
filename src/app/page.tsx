@@ -1,20 +1,7 @@
 'use client';
 
 import Head from 'next/head';
-
-// Facebook Pixel types
-interface FacebookPixel {
-  (command: 'init', pixelId: string): void;
-  (command: 'track', eventName: string, parameters?: Record<string, unknown>): void;
-  (command: 'trackCustom', eventName: string, parameters?: Record<string, unknown>): void;
-}
-
-declare global {
-  interface Window {
-    fbq: FacebookPixel;
-  }
-}
-
+import { trackLead } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -309,12 +296,7 @@ export default function Home() {
               href="/checkout" 
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                if (typeof window !== 'undefined' && window.fbq) {
-                  window.fbq('track', 'Lead', {
-                    content_name: 'Hero CTA Click',
-                    content_category: 'Transformation Program'
-                  });
-                }
+                trackLead(undefined, 'Hero CTA Click');
               }}
                 className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
             >
@@ -504,14 +486,7 @@ export default function Home() {
                 <Link
                   href="/checkout"
                   onClick={() => {
-                    if (typeof window !== "undefined" && window.fbq) {
-                      window.fbq("track", "Lead", {
-                        content_name: "Style Consultation CTA Click",
-                        content_category: "Style Consultation",
-                        value: 1199,
-                        currency: "INR",
-                      })
-                    }
+                    trackLead(1199, "Style Consultation CTA Click");
                   }}
                   className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
@@ -566,14 +541,7 @@ export default function Home() {
                 <Link
                   href="/checkout"
                   onClick={() => {
-                    if (typeof window !== "undefined" && window.fbq) {
-                      window.fbq("track", "Lead", {
-                        content_name: "Complete Package CTA Click",
-                        content_category: "Style Transformation Package",
-                        value: 2297,
-                        currency: "INR",
-                      })
-                    }
+                    trackLead(2297, "Complete Package CTA Click");
                   }}
                   className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
@@ -787,14 +755,7 @@ export default function Home() {
                 href="/checkout"
                 onClick={() => {
                   // Track final CTA click with Meta Pixel
-                  if (typeof window !== "undefined" && window.fbq) {
-                    window.fbq("track", "Lead", {
-                      content_name: "Final CTA Click",
-                      content_category: "Style Transformation Program",
-                      value: 1199,
-                      currency: "INR",
-                    })
-                  }
+                  trackLead(1199, "Final CTA Click");
                 }}
                 className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
               >
@@ -979,12 +940,7 @@ export default function Home() {
             href="/checkout"
             onClick={() => {
               // Track CTA click with Meta Pixel
-              if (typeof window !== "undefined" && window.fbq) {
-                window.fbq("track", "Lead", {
-                  content_name: "Mobile Sticky CTA Click",
-                  content_category: "Transformation Program",
-                })
-              }
+              trackLead(undefined, "Mobile Sticky CTA Click");
             }}
             className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-5 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center block"
           >

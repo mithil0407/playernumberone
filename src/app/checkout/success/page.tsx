@@ -5,6 +5,7 @@ import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { trackPurchase, trackCompleteRegistration, trackLead } from '@/lib/metaPixel';
 
 function SuccessPageContent() {
   const searchParams = useSearchParams();
@@ -37,31 +38,14 @@ function SuccessPageContent() {
     }
     
     // Enhanced Meta Pixel tracking for successful purchase
-    if (typeof window !== 'undefined' && window.fbq) {
-      // Track successful purchase completion
-      window.fbq('track', 'Purchase', {
-        value: 1499, // Default ICONIK consultation price
-        currency: 'INR',
-        content_type: 'product',
-        content_name: 'ICONIK Style Consultation',
-        content_ids: ['iconik_style_consultation'],
-        num_items: 1
-      });
-      
-      // Track successful payment completion
-      window.fbq('track', 'CompleteRegistration', {
-        content_name: 'ICONIK Customer Registration',
-        value: 1499,
-        currency: 'INR'
-      });
-      
-      // Track lead generation success
-      window.fbq('track', 'Lead', {
-        content_name: 'ICONIK Style Consultation Purchase',
-        value: 1499,
-        currency: 'INR'
-      });
-    }
+    // Track successful purchase completion
+    trackPurchase(1499, 'ICONIK Style Consultation', 'iconik_style_consultation');
+    
+    // Track successful payment completion
+    trackCompleteRegistration(1499, 'ICONIK Customer Registration');
+    
+    // Track lead generation success
+    trackLead(1499, 'ICONIK Style Consultation Purchase');
     
     // Log what we found
     console.log('URL Parameters:', {

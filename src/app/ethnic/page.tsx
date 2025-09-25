@@ -1,20 +1,7 @@
 'use client';
 
 import Head from 'next/head';
-
-// Facebook Pixel types
-interface FacebookPixel {
-  (command: 'init', pixelId: string): void;
-  (command: 'track', eventName: string, parameters?: Record<string, unknown>): void;
-  (command: 'trackCustom', eventName: string, parameters?: Record<string, unknown>): void;
-}
-
-declare global {
-  interface Window {
-    fbq: FacebookPixel;
-  }
-}
-
+import { trackEthnicLead } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -215,12 +202,7 @@ export default function EthnicPage() {
                 <Link 
                   href="/ethnic/checkout" 
                   onClick={() => {
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Ethnic Hero CTA Click',
-                        content_category: 'Ethnic Elegance Package'
-                      });
-                    }
+                    trackEthnicLead();
                   }}
                   className="inline-block bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 md:px-12 py-4 md:py-6 text-base md:text-lg rounded-full shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 font-light tracking-wide"
                 >
@@ -502,14 +484,7 @@ export default function EthnicPage() {
                   <Link 
                     href="/ethnic/checkout" 
                     onClick={() => {
-                      if (typeof window !== 'undefined' && window.fbq) {
-                        window.fbq('track', 'Lead', {
-                          content_name: 'Ethnic Elegance Package CTA Click',
-                          content_category: 'Ethnic Elegance Package',
-                          value: 1999,
-                          currency: 'INR'
-                        });
-                      }
+                      trackEthnicLead(1999);
                     }}
                     className="inline-block bg-gradient-to-r from-amber-500 to-orange-600 text-white px-12 py-4 rounded-full text-lg font-light hover:shadow-xl transition-all duration-300"
                   >
@@ -555,14 +530,7 @@ export default function EthnicPage() {
                 <Link 
                   href="/ethnic/checkout" 
                   onClick={() => {
-                    if (typeof window !== 'undefined' && window.fbq) {
-                      window.fbq('track', 'Lead', {
-                        content_name: 'Final Ethnic CTA Click',
-                        content_category: 'Ethnic Elegance Package',
-                        value: 1999,
-                        currency: 'INR'
-                      });
-                    }
+                    trackEthnicLead(1999);
                   }}
                   className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-amber-600 px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
                 >
@@ -685,12 +653,7 @@ export default function EthnicPage() {
             <Link
               href="/ethnic/checkout"
               onClick={() => {
-                if (typeof window !== 'undefined' && window.fbq) {
-                  window.fbq('track', 'Lead', {
-                    content_name: 'Mobile Ethnic CTA Click',
-                    content_category: 'Ethnic Elegance Package'
-                  });
-                }
+                trackEthnicLead();
               }}
               className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-6 py-3 text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300 font-light tracking-wide text-center block font-['Inter',sans-serif]"
             >
