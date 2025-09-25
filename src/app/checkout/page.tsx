@@ -151,7 +151,7 @@ export default function CheckoutPage() {
           content_ids: [addon.id],
           value: addon.price,
           currency: 'INR'
-        } as any);
+        });
       } else {
         // Track RemoveFromCart when addon is deselected
         window.fbq('track', 'RemoveFromCart', {
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
           content_ids: [addon.id],
           value: addon.price,
           currency: 'INR'
-        } as any);
+        });
       }
     }
     
@@ -205,7 +205,7 @@ export default function CheckoutPage() {
         content_name: 'ICONIK Style Consultation',
         content_ids: ['iconik_style_consultation'],
         num_items: 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0)
-      } as any);
+      });
     }
     
     try {
@@ -270,7 +270,7 @@ export default function CheckoutPage() {
                 content_ids: ['iconone_style_consultation'],
                 content_type: 'product',
                 content_name: 'Iconik Style Consultation'
-              } as any);
+              });
             }
             
             // Store customer and order IDs in localStorage and sessionStorage for immediate access

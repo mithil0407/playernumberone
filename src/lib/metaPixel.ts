@@ -9,6 +9,7 @@ interface MetaPixelData {
   event_name?: string;
   button_name?: string;
   location?: string;
+  [key: string]: any; // Allow additional properties for Meta Pixel flexibility
 }
 
 declare global {
