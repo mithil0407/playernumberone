@@ -1,11 +1,23 @@
 // Meta Pixel tracking utilities for ICONIK
+interface MetaPixelData {
+  content_type?: string;
+  content_name?: string;
+  content_ids?: string[];
+  value?: number;
+  currency?: string;
+  num_items?: number;
+  event_name?: string;
+  button_name?: string;
+  location?: string;
+}
+
 declare global {
   interface Window {
-    fbq: (event: string, ...args: any[]) => void;
+    fbq: (event: string, ...args: MetaPixelData[]) => void;
   }
 }
 
-export const trackEvent = (event: string, data?: any) => {
+export const trackEvent = (event: string, data?: MetaPixelData) => {
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('track', event, data);
   }
