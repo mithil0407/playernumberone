@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import MetaPixelProvider from "@/components/MetaPixelProvider";
+import MetaPixelDebugger from "@/components/MetaPixelDebugger";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -63,7 +65,7 @@ export default function RootLayout({
         </Script>
 
         {/* Meta Pixel */}
-        <Script id="meta-pixel" strategy="afterInteractive">
+        <Script id="meta-pixel-base" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -73,22 +75,26 @@ export default function RootLayout({
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            
+          `}
+        </Script>
+        
+        <Script id="meta-pixel-init" strategy="afterInteractive">
+          {`
             fbq('init', '1373360484073939');
             fbq('track', 'PageView');
             
-            // Enhanced tracking for e-commerce
+            // Debug logging
+            console.log('Meta Pixel initialized with ID: 1373360484073939');
+            
+            // Track initial page view
             fbq('track', 'ViewContent', {
               content_type: 'website',
-              content_name: 'ICONIK Fashion Consultation'
-            });
-            
-            // Track page load time for optimization
-            window.addEventListener('load', function() {
-              fbq('track', 'PageView');
+              content_name: 'ICONIK Fashion Consultation',
+              content_category: 'Fashion Consultation'
             });
           `}
         </Script>
+        
         <noscript>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
@@ -112,7 +118,14 @@ export default function RootLayout({
             });
           `}
         </Script>
-        {children}
+        
+        {/* Meta Pixel Provider */}
+        <MetaPixelProvider>
+          {children}
+        </MetaPixelProvider>
+        
+        {/* Meta Pixel Debugger (Development Only) */}
+        <MetaPixelDebugger />
         
         {/* Vercel Analytics */}
         <Analytics />
