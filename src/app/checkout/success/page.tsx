@@ -46,21 +46,21 @@ function SuccessPageContent() {
         content_name: 'ICONIK Style Consultation',
         content_ids: ['iconik_style_consultation'],
         num_items: 1
-      });
+      } as any);
       
       // Track successful payment completion
       window.fbq('track', 'CompleteRegistration', {
         content_name: 'ICONIK Customer Registration',
         value: 1499,
         currency: 'INR'
-      });
+      } as any);
       
       // Track lead generation success
       window.fbq('track', 'Lead', {
         content_name: 'ICONIK Style Consultation Purchase',
         value: 1499,
         currency: 'INR'
-      });
+      } as any);
     }
     
     // Log what we found

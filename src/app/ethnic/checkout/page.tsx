@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock, Flower2 } from 'lucide-react';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -193,7 +193,7 @@ export default function EthnicCheckoutPage() {
                 content_ids: ['ethnic_elegance_package'],
                 content_type: 'product',
                 content_name: 'Ethnic Elegance Package'
-              });
+              } as any);
             }
             
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
