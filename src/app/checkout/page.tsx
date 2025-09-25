@@ -125,6 +125,53 @@ export default function CheckoutPage() {
     }));
   };
 
+  // Track add-on changes for Meta Pixel
+  const handleAddonChange = (addonType: 'shopping' | 'glowup', checked: boolean) => {
+    if (typeof window !== 'undefined' && window.fbq) {
+      const addonDetails = {
+        shopping: {
+          name: 'Styled Looks Pack',
+          price: checked ? 999 : 0,
+          id: 'styled_looks_pack'
+        },
+        glowup: {
+          name: 'Beauty & Confidence Essentials Pack',
+          price: checked ? 399 : 0,
+          id: 'beauty_confidence_pack'
+        }
+      };
+      
+      const addon = addonDetails[addonType];
+      
+      if (checked) {
+        // Track AddToCart when addon is selected
+        window.fbq('track', 'AddToCart', {
+          content_name: addon.name,
+          content_type: 'product',
+          content_ids: [addon.id],
+          value: addon.price,
+          currency: 'INR'
+        });
+      } else {
+        // Track RemoveFromCart when addon is deselected
+        window.fbq('track', 'RemoveFromCart', {
+          content_name: addon.name,
+          content_type: 'product',
+          content_ids: [addon.id],
+          value: addon.price,
+          currency: 'INR'
+        });
+      }
+    }
+    
+    // Update state
+    if (addonType === 'shopping') {
+      setShoppingBlueprintAddon(checked);
+    } else {
+      setGlowUpProgramAddon(checked);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -148,6 +195,18 @@ export default function CheckoutPage() {
     }
     
     setIsProcessing(true);
+    
+    // Track InitiateCheckout event
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', {
+        value: totalAmount,
+        currency: 'INR',
+        content_type: 'product',
+        content_name: 'ICONIK Style Consultation',
+        content_ids: ['iconik_style_consultation'],
+        num_items: 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0)
+      });
+    }
     
     try {
       // Create order data
@@ -512,7 +571,7 @@ export default function CheckoutPage() {
                 <input
                   type="checkbox"
                   checked={shoppingBlueprintAddon}
-                  onChange={(e) => setShoppingBlueprintAddon(e.target.checked)}
+                  onChange={(e) => handleAddonChange('shopping', e.target.checked)}
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
                 />
                 <div className="flex-1">
@@ -541,7 +600,7 @@ export default function CheckoutPage() {
                 <input
                   type="checkbox"
                   checked={glowUpProgramAddon}
-                  onChange={(e) => setGlowUpProgramAddon(e.target.checked)}
+                  onChange={(e) => handleAddonChange('glowup', e.target.checked)}
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
                 />
                 <div className="flex-1">
