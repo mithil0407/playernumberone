@@ -698,19 +698,19 @@ export default function CheckoutPage() {
       </div>
 
       {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
-        <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="luxury-body text-luxury-charcoal/70">Complete Package</div>
-              <div className="text-2xl font-semibold text-luxury-charcoal">
-                <span className="line-through text-luxury-charcoal/40 mr-2">₹5,999</span>
-                ₹{totalAmount.toLocaleString()}
+      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-2 md:hidden z-50">
+        <div className="max-w-xs mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1">
+              <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-semibold text-luxury-charcoal">₹{totalAmount.toLocaleString()}</span>
+                <span className="line-through text-luxury-charcoal/40 text-sm">₹5,999</span>
               </div>
             </div>
-            <div className="text-right">
-              <div className="luxury-body text-luxury-charcoal/60 text-sm">Offer Expires In:</div>
-              <div className="luxury-body text-luxury-accent">
+            <div className="text-right ml-2">
+              <div className="luxury-body text-luxury-charcoal/60 text-xs">Expires:</div>
+              <div className="luxury-body text-luxury-accent text-sm font-medium">
                 {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
               </div>
             </div>
@@ -719,7 +719,7 @@ export default function CheckoutPage() {
             type="submit"
             form="checkout-form"
             disabled={isProcessing}
-            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-5 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform"
+            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-2 text-sm rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform"
           >
             {isProcessing ? 'Processing...' : '🔥 Transform My Style Now →'}
           </button>
