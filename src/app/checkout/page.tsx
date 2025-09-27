@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 import { trackAddToCart, trackRemoveFromCart, trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
 
@@ -42,20 +43,17 @@ declare global {
 }
 
 interface FormData {
-  firstName: string;
   email: string;
-  phone: string;
 }
 
 export default function CheckoutPage() {
   const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    email: '',
-    phone: ''
+    email: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [viewerCount, setViewerCount] = useState(23);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
+  const [showExitIntent, setShowExitIntent] = useState(false);
   
   // Product pricing
   const originalPrice = 5999;
@@ -109,16 +107,20 @@ export default function CheckoutPage() {
     return () => clearInterval(viewerTimer);
   }, []);
 
+  // Exit intent detection
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 0 && !showExitIntent) {
+        setShowExitIntent(true);
+      }
+    };
+
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [showExitIntent]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    // Phone number validation - only allow 10 digits
-    if (name === 'phone') {
-      const phoneRegex = /^\d{0,10}$/;
-      if (!phoneRegex.test(value)) {
-        return; // Don't update if invalid
-      }
-    }
     
     setFormData(prev => ({
       ...prev,
@@ -162,22 +164,10 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone number
-    if (formData.phone.length !== 10) {
-      alert('Please enter a valid 10-digit phone number');
-      return;
-    }
-    
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       alert('Please enter a valid email address');
-      return;
-    }
-    
-    // Validate first name
-    if (formData.firstName.trim().length < 2) {
-      alert('Please enter your first name');
       return;
     }
     
@@ -189,9 +179,9 @@ export default function CheckoutPage() {
     try {
       // Create order data
       const orderData = {
-        customer_name: formData.firstName,
+        customer_name: formData.email.split('@')[0], // Use email prefix as name
         customer_email: formData.email,
-        customer_phone: formData.phone,
+        customer_phone: '0000000000', // Placeholder for now
         amount: totalAmount,
         base_product: 'Iconik Style Consultation',
         add_ons: {
@@ -260,9 +250,9 @@ export default function CheckoutPage() {
             window.location.href = successUrl;
           },
           prefill: {
-            name: formData.firstName,
+            name: formData.email.split('@')[0],
             email: formData.email,
-            contact: formData.phone
+            contact: '0000000000'
           },
           theme: {
             color: '#EC4899'
@@ -345,24 +335,66 @@ export default function CheckoutPage() {
           </div>
         </motion.div>
 
-        {/* Hero Section */}
+        {/* Hero Section - Mobile Optimized */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="text-center mb-6 md:mb-8"
         >
-          <h1 className="text-3xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
             Your Personal Style Transformation Starts Now
           </h1>
           
-          <div className="text-4xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
+          <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
             <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
             <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
           </div>
           
-          <div className="bg-luxury-gold text-luxury-charcoal px-4 md:px-6 py-2 rounded-full luxury-body text-base md:text-lg inline-block animate-bounce">
+          <div className="bg-luxury-gold text-luxury-charcoal px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
             YOU SAVE ₹{savings} TODAY!
+          </div>
+        </motion.div>
+
+        {/* WhatsApp Testimonials - Mobile First */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-6 md:mb-8"
+        >
+          <h2 className="text-xl md:text-2xl luxury-heading text-center mb-4 text-luxury-charcoal">
+            Real Results from Real Women
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-4 border border-luxury-cream">
+              <Image 
+                src="/testimonial-shreya.webp" 
+                alt="Shreya's transformation testimonial"
+                width={400}
+                height={300}
+                className="w-full rounded-xl mb-3"
+              />
+              <p className="text-sm luxury-body text-luxury-charcoal/80 italic">
+                &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything.&quot;
+              </p>
+              <p className="text-xs luxury-body text-luxury-charcoal/60 mt-2">– Shreya, Mumbai</p>
+            </div>
+            
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-4 border border-luxury-cream">
+              <Image 
+                src="/testimonial-kavya.webp" 
+                alt="Kavya's transformation testimonial"
+                width={400}
+                height={300}
+                className="w-full rounded-xl mb-3"
+              />
+              <p className="text-sm luxury-body text-luxury-charcoal/80 italic">
+                &quot;Finally found my style! The consultation was worth every penny. I get compliments daily now.&quot;
+              </p>
+              <p className="text-xs luxury-body text-luxury-charcoal/60 mt-2">– Kavya, Delhi</p>
+            </div>
           </div>
         </motion.div>
 
@@ -374,30 +406,13 @@ export default function CheckoutPage() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-luxury-cream"
           >
-            <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">Your Information</h2>
+            <h2 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">Get Your Style Consultation</h2>
             
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-              {/* First Name */}
-              <div>
-                <label htmlFor="firstName" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm"
-                  placeholder="Enter your first name"
-                />
-              </div>
-
-              {/* Email */}
+              {/* Email Only - Simplified */}
               <div>
                 <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
-                  Email ID *
+                  Email Address *
                 </label>
                 <input
                   type="email"
@@ -406,34 +421,16 @@ export default function CheckoutPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm"
+                  className="w-full px-3 md:px-4 py-3 md:py-4 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm text-base"
                   placeholder="Enter your email address"
                 />
-              </div>
-
-              {/* Phone Number */}
-              <div>
-                <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  maxLength={10}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm"
-                  placeholder="Enter 10-digit phone number"
-                />
-                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>
+                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">We&apos;ll send your style guide to this email</p>
               </div>
 
               {/* Security Notice */}
               <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60">
                 <p>🔒 Your payment is secure and encrypted</p>
-                <p className="mt-1">By clicking above, you agree to our terms of service and privacy policy</p>
+                <p className="mt-1">By clicking below, you agree to our terms of service and privacy policy</p>
               </div>
             </form>
           </motion.div>
@@ -639,12 +636,12 @@ export default function CheckoutPage() {
                 </div>
               </div>
               
-              {/* Payment Button */}
+              {/* Payment Button - Mobile Optimized */}
               <button
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
-                className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-3 md:py-4 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform"
+                className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-semibold"
               >
                 {isProcessing ? 'Processing...' : '🔥 YES! Transform My Style Now →'}
               </button>
@@ -697,10 +694,10 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-2 md:hidden z-50">
-        <div className="max-w-xs mx-auto">
-          <div className="flex items-center justify-between mb-2">
+      {/* Sticky Mobile CTA - Enhanced */}
+      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
@@ -719,12 +716,51 @@ export default function CheckoutPage() {
             type="submit"
             form="checkout-form"
             disabled={isProcessing}
-            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform"
+            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-4 text-base rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform font-semibold"
           >
             {isProcessing ? 'Processing...' : '🔥 Transform My Style Now →'}
           </button>
         </div>
       </div>
+
+      {/* Exit Intent Popup */}
+      {showExitIntent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-luxury-warm-white rounded-3xl p-6 max-w-sm w-full relative">
+            <button
+              onClick={() => setShowExitIntent(false)}
+              className="absolute top-4 right-4 text-luxury-charcoal/60 hover:text-luxury-charcoal"
+            >
+              ✕
+            </button>
+            
+            <div className="text-center mb-4">
+              <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Wait! Don&apos;t Miss Out!</h3>
+              <p className="text-sm luxury-body text-luxury-charcoal/70">
+                Get an extra 10% off your style consultation
+              </p>
+            </div>
+            
+            <div className="bg-luxury-gold/20 rounded-xl p-4 mb-4 text-center">
+              <div className="text-2xl font-semibold text-luxury-charcoal">
+                ₹1,349 <span className="text-sm line-through text-luxury-charcoal/60">₹1,499</span>
+              </div>
+              <div className="text-xs luxury-body text-luxury-charcoal/60">Save ₹150 more!</div>
+            </div>
+            
+            <button
+              onClick={() => {
+                setShowExitIntent(false);
+                // Scroll to form
+                document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300"
+            >
+              Claim My Discount Now
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
