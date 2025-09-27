@@ -44,14 +44,15 @@ declare global {
 
 interface FormData {
   email: string;
+  phone: string;
 }
 
 export default function CheckoutPage() {
   const [formData, setFormData] = useState<FormData>({
-    email: ''
+    email: '',
+    phone: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [viewerCount, setViewerCount] = useState(23);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [showExitIntent, setShowExitIntent] = useState(false);
   
@@ -98,15 +99,6 @@ export default function CheckoutPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Viewer count animation
-  useEffect(() => {
-    const viewerTimer = setInterval(() => {
-      setViewerCount(20 + Math.floor(Math.random() * 8));
-    }, 5000);
-
-    return () => clearInterval(viewerTimer);
-  }, []);
-
   // Exit intent detection
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
@@ -121,6 +113,14 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Phone number validation - only allow 10 digits
+    if (name === 'phone') {
+      const phoneRegex = /^\d{0,10}$/;
+      if (!phoneRegex.test(value)) {
+        return; // Don't update if invalid
+      }
+    }
     
     setFormData(prev => ({
       ...prev,
@@ -164,6 +164,12 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate phone number
+    if (formData.phone.length !== 10) {
+      alert('Please enter a valid 10-digit phone number');
+      return;
+    }
+    
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
@@ -181,7 +187,7 @@ export default function CheckoutPage() {
       const orderData = {
         customer_name: formData.email.split('@')[0], // Use email prefix as name
         customer_email: formData.email,
-        customer_phone: '0000000000', // Placeholder for now
+        customer_phone: formData.phone,
         amount: totalAmount,
         base_product: 'Iconik Style Consultation',
         add_ons: {
@@ -252,7 +258,7 @@ export default function CheckoutPage() {
           prefill: {
             name: formData.email.split('@')[0],
             email: formData.email,
-            contact: '0000000000'
+            contact: formData.phone
           },
           theme: {
             color: '#EC4899'
@@ -284,15 +290,6 @@ export default function CheckoutPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-4 md:py-8 pb-24 md:pb-8">
-        {/* Urgency Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 md:py-3 rounded-full text-sm md:text-lg luxury-body mb-4 md:mb-6 text-center animate-pulse"
-        >
-          ⚡ LIMITED TIME: 80% OFF + FREE BONUSES - Only 15 Spots Left This Month! ⚡
-        </motion.div>
-
         {/* Trust Badges */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -311,27 +308,6 @@ export default function CheckoutPage() {
           <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Star className="w-3 h-3 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm luxury-body">4.9/5 Rating</span>
-          </div>
-        </motion.div>
-
-        {/* Social Proof & Countdown */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-3 md:space-y-4 mb-6 md:mb-8"
-        >
-          <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-luxury-accent luxury-body text-base md:text-lg">
-              👀 {viewerCount} people are viewing this right now
-            </div>
-          </div>
-          
-          <div className="bg-luxury-charcoal text-luxury-warm-white rounded-2xl p-3 md:p-4 text-center">
-            <div className="text-base md:text-lg mb-1 md:mb-2 luxury-body">Offer Expires In:</div>
-            <div className="text-2xl md:text-3xl font-semibold text-luxury-gold">
-              {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-            </div>
           </div>
         </motion.div>
 
@@ -399,19 +375,19 @@ export default function CheckoutPage() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          {/* Order Form */}
+          {/* Order Form - Simplified Design */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-luxury-cream"
+            className="bg-white border-2 border-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl"
           >
-            <h2 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">Get Your Style Consultation</h2>
+            <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-6 text-center">Get Your Style Consultation</h2>
             
-            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-              {/* Email Only - Simplified */}
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+              {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-1 md:mb-2">
+                <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">
                   Email Address *
                 </label>
                 <input
@@ -421,14 +397,32 @@ export default function CheckoutPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 md:px-4 py-3 md:py-4 border border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-transparent transition-all duration-300 luxury-body bg-luxury-warm-white/50 backdrop-blur-sm text-base"
+                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
                   placeholder="Enter your email address"
                 />
-                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">We&apos;ll send your style guide to this email</p>
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  maxLength={10}
+                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
+                  placeholder="Enter 10-digit phone number"
+                />
+                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>
               </div>
 
               {/* Security Notice */}
-              <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60">
+              <div className="text-center text-sm luxury-body text-luxury-charcoal/60 bg-luxury-cream/30 rounded-xl p-4">
                 <p>🔒 Your payment is secure and encrypted</p>
                 <p className="mt-1">By clicking below, you agree to our terms of service and privacy policy</p>
               </div>
