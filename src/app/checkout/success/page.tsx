@@ -5,7 +5,7 @@ import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackPurchase, trackCompleteRegistration, trackLead } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackLead } from '@/lib/metaPixel';
 
 function SuccessPageContent() {
   const searchParams = useSearchParams();
@@ -38,9 +38,6 @@ function SuccessPageContent() {
     }
     
     // Enhanced Meta Pixel tracking for successful purchase
-    // Track successful purchase completion
-    trackPurchase(1499, 'ICONIK Style Consultation', 'iconik_style_consultation');
-    
     // Track successful payment completion
     trackCompleteRegistration(1499, 'ICONIK Customer Registration');
     
