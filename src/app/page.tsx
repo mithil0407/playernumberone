@@ -66,6 +66,14 @@ export default function Home() {
     setCurrentImageIndex(index);
   };
 
+  // Preload all images for faster transitions
+  useEffect(() => {
+    transformationImages.forEach((image) => {
+      const img = new window.Image();
+      img.src = image.src;
+    });
+  }, []);
+
   // 5-minute countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
@@ -310,14 +318,8 @@ export default function Home() {
                       height={320}
                       className="w-full h-full object-cover"
                       priority
+                      loading="eager"
                     />
-                    {/* Overlay with testimonial text */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm rounded-b-2xl p-4">
-                      <p className="text-white text-sm luxury-body text-center">
-                        &quot;{transformationImages[currentImageIndex].testimonial}&quot;
-                      </p>
-                      <p className="text-luxury-gold text-xs mt-1 text-center">- {transformationImages[currentImageIndex].name}</p>
-                    </div>
                   </div>
                   
                   {/* Right Arrow */}
@@ -327,6 +329,16 @@ export default function Home() {
                   >
                     <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-accent" />
                   </button>
+                </div>
+                
+                {/* Testimonial Text Below Image */}
+                <div className="text-center mt-6 px-4">
+                  <p className="text-luxury-charcoal text-sm md:text-base luxury-body leading-relaxed mb-2">
+                    &quot;{transformationImages[currentImageIndex].testimonial}&quot;
+                  </p>
+                  <p className="text-luxury-accent text-xs md:text-sm luxury-body font-medium">
+                    - {transformationImages[currentImageIndex].name}
+                  </p>
                 </div>
                 
                 {/* Dots Indicator */}
