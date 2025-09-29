@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { 
   CheckCircle, 
   ArrowRight, 
+  ArrowLeft,
   Clock, 
   Users,
   Heart,
@@ -27,10 +28,43 @@ import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState({
     minutes: 5,
     seconds: 0
   });
+
+  // Transformation images data
+  const transformationImages = [
+    {
+      src: '/transformation-1.webp',
+      testimonial: 'Finally found my signature style! I feel confident every day.',
+      name: 'Shreya, Mumbai'
+    },
+    {
+      src: '/transformation-2.webp',
+      testimonial: 'The color palette changed everything. I get compliments daily!',
+      name: 'Kavya, Delhi'
+    },
+    {
+      src: '/transformation-3.webp',
+      testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.',
+      name: 'Priya, Bangalore'
+    }
+  ];
+
+  // Navigation functions
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
 
   // 5-minute countdown timer
   useEffect(() => {
@@ -239,53 +273,76 @@ export default function Home() {
               <br />
               <span className="text-luxury-accent">Consultations</span>
             </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 mb-4 max-w-2xl mx-auto"
-            >
-              for the Modern Indian Woman
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-lg md:text-xl luxury-body text-luxury-charcoal/60 mb-16 max-w-3xl mx-auto leading-relaxed"
-            >
-              Elevate your presence. Transform your confidence. Discover the artistry of personal style with our
-              curated fashion expertise.
-            </motion.p>
             
-            {/* Book Image Card */}
+            {/* Testimonial Slideshow Above the Fold */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
               className="max-w-4xl mx-auto mb-8 md:mb-12"
             >
-              <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-8 md:p-12 lg:p-16 border border-luxury-cream">
-              <div className="text-center">
-                  <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
-                  <Image
-                    src="/book.png"
-                    alt="IconOne Style Guide Preview"
-                      width={400}
-                      height={400}
-                      className="object-contain drop-shadow-2xl"
-                    priority
-                  />
+              <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-luxury-cream">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-2">
+                    Real Results from Real Women
+                  </h3>
+                  <p className="luxury-body text-luxury-charcoal/70 text-lg">
+                    See the transformations our clients have achieved
+                  </p>
+                </div>
+                
+                {/* Single Transformation Image with Arrow */}
+                <div className="flex items-center justify-center gap-4 md:gap-6">
+                  {/* Left Arrow */}
+                  <button 
+                    onClick={prevImage}
+                    className="p-2 md:p-3 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 rounded-full transition-all duration-300 group"
+                  >
+                    <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-accent" />
+                  </button>
+                  
+                  {/* 1:1 Square Image Placeholder */}
+                  <div className="relative w-64 h-64 md:w-80 md:h-80 bg-luxury-cream/30 rounded-2xl overflow-hidden border-2 border-luxury-cream">
+                    <Image
+                      src={transformationImages[currentImageIndex].src}
+                      alt="Style Transformation"
+                      width={320}
+                      height={320}
+                      className="w-full h-full object-cover"
+                      priority
+                    />
+                    {/* Overlay with testimonial text */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm rounded-b-2xl p-4">
+                      <p className="text-white text-sm luxury-body text-center">
+                        &quot;{transformationImages[currentImageIndex].testimonial}&quot;
+                      </p>
+                      <p className="text-luxury-gold text-xs mt-1 text-center">- {transformationImages[currentImageIndex].name}</p>
+                    </div>
                   </div>
-                    <h3 className="text-2xl md:text-3xl lg:text-4xl luxury-heading text-luxury-charcoal mb-4">
-                      Your Personal Style Guide
-                    </h3>
-                    <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl">
-                      Comprehensive style transformation roadmap
-                    </p>
+                  
+                  {/* Right Arrow */}
+                  <button 
+                    onClick={nextImage}
+                    className="p-2 md:p-3 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 rounded-full transition-all duration-300 group"
+                  >
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-accent" />
+                  </button>
+                </div>
+                
+                {/* Dots Indicator */}
+                <div className="flex justify-center gap-2 mt-6">
+                  {transformationImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
+                        index === currentImageIndex ? 'bg-luxury-accent' : 'bg-luxury-charcoal/30'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
-          </motion.div>
+            </motion.div>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -371,6 +428,36 @@ export default function Home() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Book Image Card - Moved Lower */}
+      <section className="py-20 md:py-32 bg-luxury-warm-white">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-8 md:p-12 lg:p-16 border border-luxury-cream"
+          >
+            <div className="text-center">
+              <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
+                <Image
+                  src="/book.png"
+                  alt="IconOne Style Guide Preview"
+                  width={400}
+                  height={400}
+                  className="object-contain drop-shadow-2xl"
+                />
+              </div>
+              <h3 className="text-2xl md:text-3xl lg:text-4xl luxury-heading text-luxury-charcoal mb-4">
+                Your Personal Style Guide
+              </h3>
+              <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl">
+                Comprehensive style transformation roadmap
+              </p>
+            </div>
+          </motion.div>
         </div>
       </section>
 
