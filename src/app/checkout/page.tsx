@@ -63,7 +63,7 @@ export default function CheckoutPage() {
   
   // Add-ons
   const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(false); // Default unchecked
-  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(true); // Default checked
+  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false); // Default unchecked
   
   const shoppingBlueprintOriginalPrice = 1999;
   const shoppingBlueprintDiscountedPrice = 999;
