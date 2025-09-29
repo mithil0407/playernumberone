@@ -1018,14 +1018,14 @@ export default function Home() {
       </footer>
 
       {/* Sticky Mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-2 md:hidden z-50">
-        <div className="max-w-xs mx-auto">
-          <div className="flex items-center justify-between mb-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-lg font-semibold text-luxury-charcoal">₹1,499</span>
-                <span className="line-through text-luxury-charcoal/40 text-sm">₹5,999</span>
+                <span className="text-base font-semibold text-luxury-charcoal">₹1,499</span>
+                <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
             <div className="text-right ml-2">
@@ -1041,7 +1041,7 @@ export default function Home() {
               // Track CTA click with Meta Pixel
               trackLead(undefined, "Mobile Sticky CTA Click");
             }}
-            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-2 text-sm rounded-full transition-all duration-300 luxury-body text-center block"
+            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold"
           >
             Begin Your Transformation
           </Link>
