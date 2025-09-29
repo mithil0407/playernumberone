@@ -55,6 +55,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [showExitIntent, setShowExitIntent] = useState(false);
+  const [showAddonPopup, setShowAddonPopup] = useState(false);
   
   // Product pricing
   const originalPrice = 5999;
@@ -163,6 +164,12 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if no add-ons are selected
+    if (!shoppingBlueprintAddon && !glowUpProgramAddon) {
+      setShowAddonPopup(true);
+      return;
+    }
     
     // Validate phone number
     if (formData.phone.length !== 10) {
@@ -717,7 +724,102 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Exit Intent Popup */}
+        {/* Add-on Selection Popup */}
+        {showAddonPopup && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-luxury-warm-white rounded-3xl p-6 max-w-md w-full relative">
+              <button
+                onClick={() => setShowAddonPopup(false)}
+                className="absolute top-4 right-4 text-luxury-charcoal/60 hover:text-luxury-charcoal"
+              >
+                ✕
+              </button>
+              
+              <div className="text-center mb-6">
+                <h3 className="text-2xl luxury-heading text-luxury-charcoal mb-2">Complete Your Style Journey</h3>
+                <p className="text-sm luxury-body text-luxury-charcoal/70">
+                  Add these powerful tools to maximize your transformation
+                </p>
+              </div>
+              
+              {/* Add-on Options */}
+              <div className="space-y-4 mb-6">
+                {/* Shopping Blueprint */}
+                <div className="bg-luxury-cream/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-luxury-charcoal">Shopping Blueprint</h4>
+                      <p className="text-xs text-luxury-charcoal/60">Personal shopping guide & recommendations</p>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-luxury-accent font-semibold">₹999</span>
+                        <span className="text-xs line-through text-luxury-charcoal/40">₹1,999</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShoppingBlueprintAddon(!shoppingBlueprintAddon)}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        shoppingBlueprintAddon 
+                          ? 'bg-luxury-accent border-luxury-accent' 
+                          : 'border-luxury-charcoal/30'
+                      }`}
+                    >
+                      {shoppingBlueprintAddon && <span className="text-white text-xs">✓</span>}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Glow Up Program */}
+                <div className="bg-luxury-cream/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-luxury-charcoal">Glow Up Program</h4>
+                      <p className="text-xs text-luxury-charcoal/60">Beauty & wellness transformation guide</p>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-luxury-accent font-semibold">₹399</span>
+                        <span className="text-xs line-through text-luxury-charcoal/40">₹799</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setGlowUpProgramAddon(!glowUpProgramAddon)}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        glowUpProgramAddon 
+                          ? 'bg-luxury-accent border-luxury-accent' 
+                          : 'border-luxury-charcoal/30'
+                      }`}
+                    >
+                      {glowUpProgramAddon && <span className="text-white text-xs">✓</span>}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAddonPopup(false);
+                    // Proceed with payment without add-ons
+                    const form = document.getElementById('checkout-form') as HTMLFormElement;
+                    if (form) {
+                      form.requestSubmit();
+                    }
+                  }}
+                  className="flex-1 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 text-luxury-charcoal py-3 rounded-full text-sm luxury-body font-medium transition-all duration-300"
+                >
+                  Continue Without Add-ons
+                </button>
+                <button
+                  onClick={() => setShowAddonPopup(false)}
+                  className="flex-1 bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-3 rounded-full text-sm luxury-body font-semibold transition-all duration-300"
+                >
+                  Add Selected Items
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Exit Intent Popup */}
       {showExitIntent && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-luxury-warm-white rounded-3xl p-6 max-w-sm w-full relative">
