@@ -368,8 +368,8 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-4 border border-luxury-cream">
               <Image 
-                src="/testimonial-shreya.webp" 
-                alt="Shreya's transformation testimonial"
+                src="/text1.webp" 
+                alt="WhatsApp testimonial screenshot"
                 width={400}
                 height={300}
                 className="w-full rounded-xl mb-3"
@@ -382,8 +382,8 @@ export default function CheckoutPage() {
             
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-4 border border-luxury-cream">
               <Image 
-                src="/testimonial-kavya.webp" 
-                alt="Kavya's transformation testimonial"
+                src="/text2.webp" 
+                alt="WhatsApp testimonial screenshot"
                 width={400}
                 height={300}
                 className="w-full rounded-xl mb-3"
