@@ -63,24 +63,30 @@ export default function CheckoutPage() {
   const savings = originalPrice - discountedPrice;
   
   // Add-ons
-  const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(false); // Default unchecked
-  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false); // Default unchecked
+  const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(false); // 16 Styled Looks
+  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false); // Beauty and Makeup Plan
+  const [skinHairBlueprintAddon, setSkinHairBlueprintAddon] = useState(false); // Skin and Hair Blueprint
   
-  const shoppingBlueprintOriginalPrice = 1999;
-  const shoppingBlueprintDiscountedPrice = 999;
+  const shoppingBlueprintOriginalPrice = 1399;
+  const shoppingBlueprintDiscountedPrice = 699;
   
   const glowUpProgramOriginalPrice = 799;
   const glowUpProgramDiscountedPrice = 399;
+  
+  const skinHairBlueprintOriginalPrice = 1999;
+  const skinHairBlueprintDiscountedPrice = 999;
   const glowUpProgramSavings = glowUpProgramOriginalPrice - glowUpProgramDiscountedPrice;
   
   // Calculate total
   const totalAmount = discountedPrice + 
     (shoppingBlueprintAddon ? shoppingBlueprintDiscountedPrice : 0) + 
-    (glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0);
+    (glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0) +
+    (skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0);
   
   const totalValue = originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
     (shoppingBlueprintAddon ? shoppingBlueprintOriginalPrice : 0) + 
-    (glowUpProgramAddon ? glowUpProgramOriginalPrice : 0);
+    (glowUpProgramAddon ? glowUpProgramOriginalPrice : 0) +
+    (skinHairBlueprintAddon ? skinHairBlueprintOriginalPrice : 0);
   
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
 
@@ -130,17 +136,22 @@ export default function CheckoutPage() {
   };
 
   // Track add-on changes for Meta Pixel
-  const handleAddonChange = (addonType: 'shopping' | 'glowup', checked: boolean) => {
+  const handleAddonChange = (addonType: 'shopping' | 'glowup' | 'skinhair', checked: boolean) => {
     const addonDetails = {
       shopping: {
-        name: 'Styled Looks Pack',
-        price: checked ? 999 : 0,
+        name: '16 Styled Looks',
+        price: checked ? 699 : 0,
         id: 'styled_looks_pack'
       },
       glowup: {
-        name: 'Beauty & Confidence Essentials Pack',
+        name: 'Beauty and Makeup Plan',
         price: checked ? 399 : 0,
-        id: 'beauty_confidence_pack'
+        id: 'beauty_makeup_plan'
+      },
+      skinhair: {
+        name: 'Skin and Hair Blueprint',
+        price: checked ? 999 : 0,
+        id: 'skin_hair_blueprint'
       }
     };
     
@@ -157,6 +168,8 @@ export default function CheckoutPage() {
     // Update state
     if (addonType === 'shopping') {
       setShoppingBlueprintAddon(checked);
+    } else if (addonType === 'skinhair') {
+      setSkinHairBlueprintAddon(checked);
     } else {
       setGlowUpProgramAddon(checked);
     }
@@ -166,7 +179,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     
     // Check if no add-ons are selected
-    if (!shoppingBlueprintAddon && !glowUpProgramAddon) {
+    if (!shoppingBlueprintAddon && !glowUpProgramAddon && !skinHairBlueprintAddon) {
       setShowAddonPopup(true);
       return;
     }
@@ -187,7 +200,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     
     // Track InitiateCheckout event
-    trackInitiateCheckout(totalAmount, 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0));
+    trackInitiateCheckout(totalAmount, 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0) + (skinHairBlueprintAddon ? 1 : 0));
     
     try {
       // Create order data
@@ -199,11 +212,13 @@ export default function CheckoutPage() {
         base_product: 'Iconik Style Consultation',
         add_ons: {
           shopping_blueprint: shoppingBlueprintAddon,
-          glow_up_program: glowUpProgramAddon
+          glow_up_program: glowUpProgramAddon,
+          skin_hair_blueprint: skinHairBlueprintAddon
         },
         total_base_price: discountedPrice,
         shopping_blueprint_price: shoppingBlueprintAddon ? shoppingBlueprintDiscountedPrice : 0,
-        glow_up_program_price: glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0
+        glow_up_program_price: glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0,
+        skin_hair_blueprint_price: skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0
       };
 
       // Call payment API
@@ -543,11 +558,11 @@ export default function CheckoutPage() {
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
                 />
                 <div className="flex-1">
-                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">✨ Styled Looks Pack</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">✨ 16 Styled Looks</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-luxury-charcoal/40 font-semibold">₹{shoppingBlueprintOriginalPrice}</span>
                     <span className="text-luxury-accent font-semibold text-xl">₹{shoppingBlueprintDiscountedPrice}</span>
-                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">56% OFF</span>
+                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">50% OFF</span>
                   </div>
                   <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
                     <li>🎉 4 Party Outfits</li>
@@ -572,7 +587,7 @@ export default function CheckoutPage() {
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
                 />
                 <div className="flex-1">
-                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">Beauty & Confidence Essentials Pack</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">💄 Beauty and Makeup Plan</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-luxury-charcoal/40 font-semibold">₹{glowUpProgramOriginalPrice}</span>
                     <span className="text-luxury-accent font-semibold text-xl">₹{glowUpProgramDiscountedPrice}</span>
@@ -585,6 +600,33 @@ export default function CheckoutPage() {
                     <li>👙 Lingerie Fit & Essentials Guide</li>
                       <li>• Correct bra styles for your body</li>
                       <li>• Shapewear essentials to flatter any outfit</li>
+                  </ul>
+                </div>
+              </label>
+            </div>
+
+            {/* Add-on 3: Skin and Hair Blueprint */}
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
+              <label className="flex items-start gap-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={skinHairBlueprintAddon}
+                  onChange={(e) => handleAddonChange('skinhair', e.target.checked)}
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
+                />
+                <div className="flex-1">
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">🌿 Skin and Hair Blueprint</div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="line-through text-luxury-charcoal/40 font-semibold">₹{skinHairBlueprintOriginalPrice}</span>
+                    <span className="text-luxury-accent font-semibold text-xl">₹{skinHairBlueprintDiscountedPrice}</span>
+                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">50% OFF</span>
+                  </div>
+                  <p className="text-sm luxury-body text-luxury-charcoal/70 mb-2">Ayurvedic remedies for natural beauty transformation:</p>
+                  <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
+                    <li>✨ Clear skin & blemish removal remedies</li>
+                    <li>🌞 Natural tan removal treatments</li>
+                    <li>💆 Thicker, healthier hair growth solutions</li>
+                    <li>🌱 Natural, chemical-free Ayurvedic recipes</li>
                   </ul>
                 </div>
               </label>
@@ -610,15 +652,22 @@ export default function CheckoutPage() {
                 
                 {shoppingBlueprintAddon && (
                   <div className="flex justify-between items-center text-luxury-accent">
-                    <span className="luxury-body">Styled Looks Pack (Optional)</span>
+                    <span className="luxury-body">16 Styled Looks (Optional)</span>
                     <span className="luxury-body font-semibold">₹{shoppingBlueprintDiscountedPrice}</span>
                   </div>
                 )}
                 
                 {glowUpProgramAddon && (
                   <div className="flex justify-between items-center text-luxury-accent">
-                    <span className="luxury-body">Beauty & Confidence Essentials Pack (Optional)</span>
+                    <span className="luxury-body">Beauty and Makeup Plan (Optional)</span>
                     <span className="luxury-body font-semibold">₹{glowUpProgramDiscountedPrice}</span>
+                  </div>
+                )}
+                
+                {skinHairBlueprintAddon && (
+                  <div className="flex justify-between items-center text-luxury-accent">
+                    <span className="luxury-body">Skin and Hair Blueprint (Optional)</span>
+                    <span className="luxury-body font-semibold">₹{skinHairBlueprintDiscountedPrice}</span>
                   </div>
                 )}
                 
@@ -744,15 +793,15 @@ export default function CheckoutPage() {
               
               {/* Add-on Options */}
               <div className="space-y-4 mb-6">
-                {/* Shopping Blueprint */}
+                {/* 16 Styled Looks */}
                 <div className="bg-luxury-cream/30 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-luxury-charcoal">Shopping Blueprint</h4>
-                      <p className="text-xs text-luxury-charcoal/60">Personal shopping guide & recommendations</p>
-                      <div className="flex items-baseline gap-2 mt-1">
-                        <span className="text-luxury-accent font-semibold">₹999</span>
-                        <span className="text-xs line-through text-luxury-charcoal/40">₹1,999</span>
+                      <h4 className="font-semibold text-luxury-charcoal">16 Styled Looks</h4>
+                      <p className="text-xs text-luxury-charcoal/60 mt-1">Curated outfit combinations tailored to your style</p>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-luxury-accent font-semibold">₹699</span>
+                        <span className="text-xs line-through text-luxury-charcoal/40">₹1,399</span>
                       </div>
                     </div>
                     <button
@@ -768,13 +817,13 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 
-                {/* Glow Up Program */}
+                {/* Beauty and Makeup Plan */}
                 <div className="bg-luxury-cream/30 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-luxury-charcoal">Glow Up Program</h4>
-                      <p className="text-xs text-luxury-charcoal/60">Beauty & wellness transformation guide</p>
-                      <div className="flex items-baseline gap-2 mt-1">
+                      <h4 className="font-semibold text-luxury-charcoal">Beauty and Makeup Plan</h4>
+                      <p className="text-xs text-luxury-charcoal/60 mt-1">Complete beauty routine & makeup guide for your look</p>
+                      <div className="flex items-baseline gap-2 mt-2">
                         <span className="text-luxury-accent font-semibold">₹399</span>
                         <span className="text-xs line-through text-luxury-charcoal/40">₹799</span>
                       </div>
@@ -788,6 +837,30 @@ export default function CheckoutPage() {
                       }`}
                     >
                       {glowUpProgramAddon && <span className="text-white text-xs">✓</span>}
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Skin and Hair Blueprint */}
+                <div className="bg-luxury-cream/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-luxury-charcoal">Skin and Hair Blueprint</h4>
+                      <p className="text-xs text-luxury-charcoal/60 mt-1">Ayurvedic remedies for clear skin, tan removal & thicker hair</p>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-luxury-accent font-semibold">₹999</span>
+                        <span className="text-xs line-through text-luxury-charcoal/40">₹1,999</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSkinHairBlueprintAddon(!skinHairBlueprintAddon)}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        skinHairBlueprintAddon 
+                          ? 'bg-luxury-accent border-luxury-accent' 
+                          : 'border-luxury-charcoal/30'
+                      }`}
+                    >
+                      {skinHairBlueprintAddon && <span className="text-white text-xs">✓</span>}
                     </button>
                   </div>
                 </div>
