@@ -1,8 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
-import Link from 'next/link';
+import { CheckCircle, Calendar } from 'lucide-react';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { trackCompleteRegistration, trackLead } from '@/lib/metaPixel';
@@ -17,7 +16,7 @@ function SuccessPageContent() {
     const dbOrderId = searchParams.get('db_order_id');
     const paymentId = searchParams.get('payment_id');
     
-    // Store in localStorage for the schedule page to access
+    // Store in localStorage for future reference
     if (customerId) {
       localStorage.setItem('customerId', customerId);
       console.log('Stored customerId:', customerId);
@@ -76,34 +75,24 @@ function SuccessPageContent() {
         <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-8 mb-8 border border-luxury-cream">
           <h2 className="text-2xl luxury-heading mb-6 text-luxury-charcoal">What&apos;s Next?</h2>
           
-          <div className="space-y-6 text-left">
-            <div className="flex items-start gap-4">
-              <Calendar className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
-              <div>
-                <h3 className="luxury-heading text-luxury-charcoal mb-2">Schedule Your Style Session</h3>
-                <p className="luxury-body text-luxury-charcoal/60">Book your 1-on-1 consultation with our expert stylist</p>
+          <div className="space-y-6 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 bg-luxury-accent/20 rounded-full flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-luxury-accent" />
               </div>
-            </div>
-            
-            <div className="flex items-start gap-4">
-              <Users className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
               <div>
-                <h3 className="luxury-heading text-luxury-charcoal mb-2">Personalized Style Assessment</h3>
-                <p className="luxury-body text-luxury-charcoal/60">Get your custom style transformation roadmap</p>
+                <h3 className="luxury-heading text-luxury-charcoal mb-3 text-2xl">Check Your Messages!</h3>
+                <p className="luxury-body text-luxury-charcoal/70 text-lg max-w-xl mx-auto">
+                  You will receive a link via email and WhatsApp to book your style consultation meeting. 
+                  Please check your inbox and messages shortly.
+                </p>
               </div>
             </div>
           </div>
         </div>
         
-        <Link
-          href="/schedule"
-          className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-12 py-4 rounded-full text-xl luxury-body transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
-        >
-          Schedule Your Style Session <ArrowRight className="w-6 h-6" />
-        </Link>
-        
         <div className="mt-8 text-sm luxury-body text-luxury-charcoal/60">
-          <p>You&apos;ll receive a confirmation email with all the details.</p>
+          <p className="mb-2">You&apos;ll receive a confirmation email with all the details.</p>
           <p>Questions? Contact us at support@playernumberone.com</p>
         </div>
       </motion.div>

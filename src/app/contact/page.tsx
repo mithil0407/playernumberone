@@ -279,11 +279,6 @@ export default function ContactPage() {
                           → What is your refund policy?
                         </Link>
                       </li>
-                      <li>
-                        <Link href="/schedule" className="text-blue-600 hover:underline">
-                          → How do I schedule my session?
-                        </Link>
-                      </li>
                     </ul>
                   </div>
 
