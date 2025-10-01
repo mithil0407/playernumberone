@@ -175,15 +175,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Check if no add-ons are selected
-    if (!shoppingBlueprintAddon && !glowUpProgramAddon && !skinHairBlueprintAddon) {
-      setShowAddonPopup(true);
-      return;
-    }
-    
+  const processPayment = async () => {
     // Validate phone number
     if (formData.phone.length !== 10) {
       alert('Please enter a valid 10-digit phone number');
@@ -299,6 +291,19 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Check if no add-ons are selected
+    if (!shoppingBlueprintAddon && !glowUpProgramAddon && !skinHairBlueprintAddon) {
+      setShowAddonPopup(true);
+      return;
+    }
+    
+    // Process payment if add-ons are selected
+    await processPayment();
+  };
+
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
       {/* Header */}
@@ -365,33 +370,25 @@ export default function CheckoutPage() {
             Real Results from Real Women
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-4 border border-luxury-cream">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream">
               <Image 
                 src="/text1.webp" 
                 alt="WhatsApp testimonial screenshot"
                 width={400}
                 height={300}
-                className="w-full rounded-xl mb-3"
+                className="w-full rounded-xl"
               />
-              <p className="text-sm luxury-body text-luxury-charcoal/80 italic">
-                &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything.&quot;
-              </p>
-              <p className="text-xs luxury-body text-luxury-charcoal/60 mt-2">– Shreya, Mumbai</p>
             </div>
             
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-4 border border-luxury-cream">
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream">
               <Image 
                 src="/text2.webp" 
                 alt="WhatsApp testimonial screenshot"
                 width={400}
                 height={300}
-                className="w-full rounded-xl mb-3"
+                className="w-full rounded-xl"
               />
-              <p className="text-sm luxury-body text-luxury-charcoal/80 italic">
-                &quot;Finally found my style! The consultation was worth every penny. I get compliments daily now.&quot;
-              </p>
-              <p className="text-xs luxury-body text-luxury-charcoal/60 mt-2">– Kavya, Delhi</p>
             </div>
           </div>
         </motion.div>
@@ -545,17 +542,20 @@ export default function CheckoutPage() {
             </div>
 
             {/* Add-on 1: Shopping Blueprint */}
-            <div className="bg-luxury-cream/40 border-2 border-luxury-cream rounded-3xl p-6 md:p-8 relative">
+            <div 
+              onClick={() => handleAddonChange('shopping', !shoppingBlueprintAddon)}
+              className="bg-luxury-cream/40 border-2 border-luxury-cream rounded-3xl p-6 md:p-8 relative cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
+            >
               <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-luxury-accent text-luxury-warm-white px-4 py-1 rounded-full text-xs font-bold">
                 Most Clients Also Add This
               </div>
               
-              <label className="flex items-start gap-4 cursor-pointer">
+              <div className="flex items-start gap-4">
                 <input
                   type="checkbox"
                   checked={shoppingBlueprintAddon}
-                  onChange={(e) => handleAddonChange('shopping', e.target.checked)}
-                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
+                  readOnly
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
                 />
                 <div className="flex-1">
                   <div className="luxury-heading text-luxury-charcoal text-lg mb-2">✨ 16 Styled Looks</div>
@@ -574,17 +574,20 @@ export default function CheckoutPage() {
                     ⚡ One-Time Offer: Never Available At This Price Again!
                   </div>
                 </div>
-              </label>
+              </div>
                 </div>
                 
             {/* Add-on 2: Glow Up Program */}
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
-              <label className="flex items-start gap-4 cursor-pointer">
+            <div 
+              onClick={() => handleAddonChange('glowup', !glowUpProgramAddon)}
+              className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
+            >
+              <div className="flex items-start gap-4">
                 <input
                   type="checkbox"
                   checked={glowUpProgramAddon}
-                  onChange={(e) => handleAddonChange('glowup', e.target.checked)}
-                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
+                  readOnly
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
                 />
                 <div className="flex-1">
                   <div className="luxury-heading text-luxury-charcoal text-lg mb-2">💄 Beauty and Makeup Plan</div>
@@ -602,17 +605,20 @@ export default function CheckoutPage() {
                       <li>• Shapewear essentials to flatter any outfit</li>
                   </ul>
                 </div>
-              </label>
+              </div>
             </div>
 
             {/* Add-on 3: Skin and Hair Blueprint */}
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
-              <label className="flex items-start gap-4 cursor-pointer">
+            <div 
+              onClick={() => handleAddonChange('skinhair', !skinHairBlueprintAddon)}
+              className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
+            >
+              <div className="flex items-start gap-4">
                 <input
                   type="checkbox"
                   checked={skinHairBlueprintAddon}
-                  onChange={(e) => handleAddonChange('skinhair', e.target.checked)}
-                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1"
+                  readOnly
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
                 />
                 <div className="flex-1">
                   <div className="luxury-heading text-luxury-charcoal text-lg mb-2">🌿 Skin and Hair Blueprint</div>
@@ -629,7 +635,7 @@ export default function CheckoutPage() {
                     <li>🌱 Natural, chemical-free Ayurvedic recipes</li>
                   </ul>
                 </div>
-              </label>
+              </div>
             </div>
 
             {/* Order Summary */}
@@ -794,7 +800,10 @@ export default function CheckoutPage() {
               {/* Add-on Options */}
               <div className="space-y-4 mb-6">
                 {/* 16 Styled Looks */}
-                <div className="bg-luxury-cream/30 rounded-xl p-4">
+                <div 
+                  onClick={() => handleAddonChange('shopping', !shoppingBlueprintAddon)}
+                  className="bg-luxury-cream/30 rounded-xl p-4 cursor-pointer hover:bg-luxury-cream/50 transition-all duration-300"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <h4 className="font-semibold text-luxury-charcoal">16 Styled Looks</h4>
@@ -804,8 +813,7 @@ export default function CheckoutPage() {
                         <span className="text-xs line-through text-luxury-charcoal/40">₹1,399</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setShoppingBlueprintAddon(!shoppingBlueprintAddon)}
+                    <div
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                         shoppingBlueprintAddon 
                           ? 'bg-luxury-accent border-luxury-accent' 
@@ -813,12 +821,15 @@ export default function CheckoutPage() {
                       }`}
                     >
                       {shoppingBlueprintAddon && <span className="text-white text-xs">✓</span>}
-                    </button>
+                    </div>
                   </div>
                 </div>
                 
                 {/* Beauty and Makeup Plan */}
-                <div className="bg-luxury-cream/30 rounded-xl p-4">
+                <div 
+                  onClick={() => handleAddonChange('glowup', !glowUpProgramAddon)}
+                  className="bg-luxury-cream/30 rounded-xl p-4 cursor-pointer hover:bg-luxury-cream/50 transition-all duration-300"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <h4 className="font-semibold text-luxury-charcoal">Beauty and Makeup Plan</h4>
@@ -828,8 +839,7 @@ export default function CheckoutPage() {
                         <span className="text-xs line-through text-luxury-charcoal/40">₹799</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setGlowUpProgramAddon(!glowUpProgramAddon)}
+                    <div
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                         glowUpProgramAddon 
                           ? 'bg-luxury-accent border-luxury-accent' 
@@ -837,12 +847,15 @@ export default function CheckoutPage() {
                       }`}
                     >
                       {glowUpProgramAddon && <span className="text-white text-xs">✓</span>}
-                    </button>
+                    </div>
                   </div>
                 </div>
                 
                 {/* Skin and Hair Blueprint */}
-                <div className="bg-luxury-cream/30 rounded-xl p-4">
+                <div 
+                  onClick={() => handleAddonChange('skinhair', !skinHairBlueprintAddon)}
+                  className="bg-luxury-cream/30 rounded-xl p-4 cursor-pointer hover:bg-luxury-cream/50 transition-all duration-300"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <h4 className="font-semibold text-luxury-charcoal">Skin and Hair Blueprint</h4>
@@ -852,8 +865,7 @@ export default function CheckoutPage() {
                         <span className="text-xs line-through text-luxury-charcoal/40">₹1,999</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setSkinHairBlueprintAddon(!skinHairBlueprintAddon)}
+                    <div
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                         skinHairBlueprintAddon 
                           ? 'bg-luxury-accent border-luxury-accent' 
@@ -861,7 +873,7 @@ export default function CheckoutPage() {
                       }`}
                     >
                       {skinHairBlueprintAddon && <span className="text-white text-xs">✓</span>}
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -869,13 +881,10 @@ export default function CheckoutPage() {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setShowAddonPopup(false);
                     // Proceed with payment without add-ons
-                    const form = document.getElementById('checkout-form') as HTMLFormElement;
-                    if (form) {
-                      form.requestSubmit();
-                    }
+                    await processPayment();
                   }}
                   className="flex-1 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 text-luxury-charcoal py-3 rounded-full text-sm luxury-body font-medium transition-all duration-300"
                 >

@@ -236,17 +236,17 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 md:pt-48 pb-24 md:pb-32 px-4 md:px-6 lg:px-8 relative" id="hero">
+      <section className="pt-24 md:pt-32 pb-12 md:pb-16 px-4 md:px-6 lg:px-8 relative" id="hero">
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8">
             {/* Press Logos */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="mt-4 md:mt-8 mb-4 md:mb-8"
+              className="mt-2 md:mt-4 mb-3 md:mb-4"
             >
-              <p className="luxury-body text-luxury-charcoal/60 mb-8">Featured in</p>
+              <p className="luxury-body text-luxury-charcoal/60 mb-4">Featured in</p>
               <div className="flex items-center justify-center gap-8 md:gap-12">
                 <Image
                   src="/times-of-india-logo.png"
@@ -275,7 +275,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-8 leading-[0.9] tracking-tight"
+              className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
               Personalised Fashion
               <br />
@@ -287,14 +287,14 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="max-w-4xl mx-auto mb-8 md:mb-12"
+              className="max-w-4xl mx-auto mb-4 md:mb-6"
             >
-              <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-luxury-cream">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-2">
+              <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-luxury-cream">
+                <div className="text-center mb-4">
+                  <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-1">
                     Real Results from Real Women
                   </h3>
-                  <p className="luxury-body text-luxury-charcoal/70 text-lg">
+                  <p className="luxury-body text-luxury-charcoal/70 text-base md:text-lg">
                     See the transformations our clients have achieved
                   </p>
                 </div>
