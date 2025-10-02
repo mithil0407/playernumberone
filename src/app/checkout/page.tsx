@@ -456,90 +456,55 @@ export default function CheckoutPage() {
             className="space-y-6 md:space-y-8"
           >
                         {/* Main Product */}
-            <div className="bg-luxury-charcoal text-luxury-warm-white rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div className="bg-luxury-warm-white border-2 border-luxury-charcoal text-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
               <div className="absolute top-2 md:top-4 right-[-30px] bg-luxury-gold text-luxury-charcoal px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
                 BEST SELLER
               </div>
               
               <div className="mb-3 md:mb-4">
-                <h3 className="text-xl md:text-2xl luxury-heading mb-2">ICONIK Personal Style Consultation</h3>
+                <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Personal Style Consultation</h3>
               
-                <p className="text-sm md:text-base luxury-body text-luxury-warm-white/80 mb-3 md:mb-4">
+                <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3 md:mb-4">
                   Delivered 1-on-1 by Certified Fashion & Image Consultants
                 </p>
                 
                 <div className="text-2xl md:text-3xl mb-3 md:mb-4">
-                  <span className="line-through text-luxury-warm-white/60 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-                  <span className="text-luxury-gold font-semibold">₹{discountedPrice}</span>
+                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
+                  <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
                 </div>
               </div>
               
               <div className="mb-3 md:mb-4">
-                <h4 className="luxury-heading text-luxury-warm-white mb-2">What you get:</h4>
+                <h4 className="luxury-heading text-luxury-charcoal mb-2">What you get:</h4>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-warm-white/90">Complete Style DNA Analysis</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Complete Style DNA Analysis</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-warm-white/90">Personalized Color Palette</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Personalized Color Palette</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-warm-white/90">Body-Flattering Silhouette Mapping</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Body-Flattering Silhouette Mapping</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-warm-white/90">Hair & Makeup Blueprint</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Hair & Makeup Blueprint</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-warm-white/90">20-min Private Consultation Call</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">20-min Private Consultation Call</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-gold flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-warm-white/90">Lifetime Style Profile Access</span>
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Lifetime Style Profile Access</span>
                   </li>
                 </ul>
               </div>
             </div>
 
-            {/* Free Bonuses */}
-            <div className="bg-luxury-gold/10 border-2 border-dashed border-luxury-gold/30 rounded-3xl p-6 md:p-8">
-              <h4 className="text-luxury-charcoal luxury-heading text-base md:text-lg text-center mb-3 md:mb-4">Included at No Extra Charge (₹1,000+ value):</h4>
-              
-              <div className="space-y-3 md:space-y-4">
-                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-luxury-cream">
-                  <div className="luxury-body text-luxury-charcoal mb-1 md:mb-2 text-sm md:text-base">Celebrity Stylist Secrets Guide</div>
-                  <div className="text-xs luxury-body text-luxury-charcoal/60">
-                    Discover the exact style formulas Bollywood stylists use
-                  </div>
-                </div>
-                
-                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-luxury-cream">
-                  <div className="luxury-body text-luxury-charcoal mb-1 md:mb-2 text-sm md:text-base">Instant Confidence Routine Checklist</div>
-                  <div className="text-xs luxury-body text-luxury-charcoal/60">
-                    5-minute morning routine to look & feel amazing
-                  </div>
-                </div>
-                
-                <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-luxury-cream">
-                  <div className="luxury-body text-luxury-charcoal mb-1 md:mb-2 text-sm md:text-base">3-Day WhatsApp Style Access</div>
-                  <div className="text-xs luxury-body text-luxury-charcoal/60">
-                    Get instant style advice from experts & community
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial */}
-            <div className="bg-luxury-gold/10 border-l-4 border-luxury-gold rounded-xl p-4">
-              <p className="text-sm luxury-body text-luxury-charcoal italic">
-                &quot;I saved ₹15,000 on clothes that actually work for me! The color analysis alone changed everything – I get compliments daily now.&quot;
-              </p>
-              <p className="text-xs luxury-body text-luxury-charcoal/60 mt-2">– Priya S., Mumbai (Verified Buyer)</p>
-            </div>
 
             {/* Add-on 1: Shopping Blueprint */}
             <div 
@@ -757,8 +722,8 @@ export default function CheckoutPage() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-lg font-semibold text-luxury-charcoal">₹{totalAmount.toLocaleString()}</span>
-                <span className="line-through text-luxury-charcoal/40 text-sm">₹5,999</span>
+                <span className="text-base font-semibold text-luxury-charcoal">₹{totalAmount.toLocaleString()}</span>
+                <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
             <div className="text-right ml-2">
