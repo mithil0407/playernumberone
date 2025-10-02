@@ -722,7 +722,7 @@ export default function CheckoutPage() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold text-luxury-charcoal">₹{totalAmount.toLocaleString()}</span>
+                <span className="text-xs font-semibold text-luxury-charcoal">₹{totalAmount.toLocaleString()}</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
