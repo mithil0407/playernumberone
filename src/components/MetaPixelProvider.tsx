@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { initMetaPixel, trackPageView, testMetaPixel } from '@/lib/metaPixel';
+import { initMetaPixel, trackPageView, trackViewContent } from '@/lib/metaPixel';
 
 interface MetaPixelProviderProps {
   children: React.ReactNode;
@@ -9,27 +9,15 @@ interface MetaPixelProviderProps {
 
 export default function MetaPixelProvider({ children }: MetaPixelProviderProps) {
   useEffect(() => {
-    // Initialize Meta Pixel when component mounts
+    // Initialize Meta Pixel only once
     initMetaPixel();
     
-    // Track page view
+    // Track initial page view
     trackPageView();
     
-    // Test Meta Pixel functionality
-    testMetaPixel();
+    // Track initial content view
+    trackViewContent('ICONIK Style Consultation', 1499, ['iconik_style_consultation']);
     
-    // Track page visibility changes
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        trackPageView();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, []);
 
   return <>{children}</>;

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCart, trackRemoveFromCart, trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
+import { trackAddToCart, trackRemoveFromCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -133,6 +133,13 @@ export default function CheckoutPage() {
       ...prev,
       [name]: value
     }));
+
+    // Update Meta Pixel with user data for advanced matching when both fields have valid data
+    if (name === 'email' && value.includes('@') && formData.phone.length === 10) {
+      updateUserData(value, formData.phone);
+    } else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) {
+      updateUserData(formData.email, value);
+    }
   };
 
   // Track add-on changes for Meta Pixel
@@ -191,8 +198,9 @@ export default function CheckoutPage() {
     
     setIsProcessing(true);
     
-    // Track InitiateCheckout event
-    trackInitiateCheckout(totalAmount, 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0) + (skinHairBlueprintAddon ? 1 : 0));
+    // Track InitiateCheckout event with correct item count
+    const itemCount = 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0) + (skinHairBlueprintAddon ? 1 : 0);
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation');
     
     try {
       // Create order data
@@ -250,8 +258,17 @@ export default function CheckoutPage() {
           description: 'Iconik Style Consultation',
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
-            // Payment successful
-            trackPurchase(totalAmount, 'Iconik Style Consultation', 'iconone_style_consultation');
+            // Payment successful - Track detailed purchase with all items
+            const purchasedItems = ['iconik_style_consultation'];
+            if (shoppingBlueprintAddon) purchasedItems.push('styled_looks_pack');
+            if (glowUpProgramAddon) purchasedItems.push('beauty_makeup_plan');
+            if (skinHairBlueprintAddon) purchasedItems.push('skin_hair_blueprint');
+            
+            // Track SINGLE purchase event with all items (no duplicates)
+            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length);
+            
+            // Store purchase amount and customer data for success page tracking
+            localStorage.setItem('purchaseAmount', totalAmount.toString());
             
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {
@@ -265,8 +282,8 @@ export default function CheckoutPage() {
               console.log('Stored orderId in localStorage and sessionStorage:', responseData.db_order_id);
             }
             
-            // Redirect to success page with all necessary parameters
-            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}`;
+            // Redirect to success page with all necessary parameters including amount
+            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
             window.location.href = successUrl;
           },
           prefill: {

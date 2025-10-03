@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
-import MetaPixelDebugger from "@/components/MetaPixelDebugger";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -78,25 +77,7 @@ export default function RootLayout({
           `}
         </Script>
         
-        <Script id="meta-pixel-init" strategy="afterInteractive">
-          {`
-            fbq('init', '1373360484073939');
-            fbq('track', 'PageView');
-            
-            // Debug logging
-            console.log('Meta Pixel initialized with ID: 1373360484073939');
-            
-            // Track initial page view
-            fbq('track', 'ViewContent', {
-              content_type: 'website',
-              content_name: 'ICONIK Fashion Consultation',
-              content_category: 'Fashion Consultation'
-            });
-          `}
-        </Script>
-        
         <noscript>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             height="1" 
             width="1" 
@@ -106,26 +87,10 @@ export default function RootLayout({
           />
         </noscript>
         
-        {/* Error handling for blocked scripts */}
-        <Script id="error-handler" strategy="afterInteractive">
-          {`
-            window.addEventListener('error', function(e) {
-              if (e.message && e.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-                console.log('Script blocked by ad blocker or privacy settings:', e.filename);
-                // Don't show error to user, just log it
-                return;
-              }
-            });
-          `}
-        </Script>
-        
         {/* Meta Pixel Provider */}
         <MetaPixelProvider>
           {children}
         </MetaPixelProvider>
-        
-        {/* Meta Pixel Debugger (Development Only) */}
-        <MetaPixelDebugger />
         
         {/* Vercel Analytics */}
         <Analytics />

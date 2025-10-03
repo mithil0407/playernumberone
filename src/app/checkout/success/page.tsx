@@ -37,11 +37,15 @@ function SuccessPageContent() {
     }
     
     // Enhanced Meta Pixel tracking for successful purchase
+    // Get the actual purchase amount from localStorage or URL params
+    const purchaseAmount = searchParams.get('amount') || localStorage.getItem('purchaseAmount') || '1499';
+    const amount = parseInt(purchaseAmount);
+    
     // Track successful payment completion
-    trackCompleteRegistration(1499, 'ICONIK Customer Registration');
+    trackCompleteRegistration(amount, 'ICONIK Customer Registration');
     
     // Track lead generation success
-    trackLead(1499, 'ICONIK Style Consultation Purchase');
+    trackLead(amount, 'ICONIK Style Consultation Purchase');
     
     // Log what we found
     console.log('URL Parameters:', {
