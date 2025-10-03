@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
+import MetaPixelTest from "@/components/MetaPixelTest";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -66,6 +67,7 @@ export default function RootLayout({
         {/* Meta Pixel */}
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`
+            console.log('Loading Meta Pixel script...');
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
             n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -74,6 +76,15 @@ export default function RootLayout({
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
+            
+            // Debug: Check if fbq is available
+            setTimeout(function() {
+              if (typeof fbq !== 'undefined') {
+                console.log('Meta Pixel script loaded successfully!');
+              } else {
+                console.error('Meta Pixel script failed to load!');
+              }
+            }, 1000);
           `}
         </Script>
         
@@ -91,6 +102,9 @@ export default function RootLayout({
         <MetaPixelProvider>
           {children}
         </MetaPixelProvider>
+        
+        {/* Meta Pixel Test Component (Development) */}
+        <MetaPixelTest />
         
         {/* Vercel Analytics */}
         <Analytics />

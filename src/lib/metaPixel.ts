@@ -34,10 +34,12 @@ const isPixelLoaded = (): boolean => {
 
 // Initialize Meta Pixel with advanced matching
 export const initMetaPixel = (userData?: { em?: string; ph?: string; [key: string]: string | undefined }) => {
-  if (typeof window !== 'undefined' && window.fbq && !window.fbq.loaded) {
+  if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('init', '1373360484073939', userData || {});
     window.fbq.loaded = true;
     console.log('Meta Pixel initialized with advanced matching:', userData ? 'with user data' : 'without user data');
+  } else {
+    console.error('Meta Pixel not available for initialization');
   }
 };
 
@@ -57,13 +59,15 @@ export const updateUserData = (email?: string, phone?: string) => {
 
 // Generic event tracking with deduplication
 const trackEvent = (eventName: string, data?: MetaPixelData) => {
-  if (isPixelLoaded()) {
+  if (typeof window !== 'undefined' && window.fbq) {
     // Add event ID to prevent duplicates
     const eventId = `${eventName}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const eventData = { ...data, event_id: eventId };
     
     window.fbq('track', eventName, eventData);
     console.log(`Meta Pixel: ${eventName} tracked`, eventData);
+  } else {
+    console.error(`Meta Pixel: Cannot track ${eventName} - pixel not loaded`);
   }
 };
 
