@@ -43,8 +43,8 @@ export default function ContactPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 text-center max-w-md"
         >
-          <div className="w-16 h-16 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 mx-auto mb-6 bg-luxury-pink-bg rounded-full flex items-center justify-center">
+            <CheckCircle className="w-8 h-8 text-luxury-accent" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Message Sent!</h2>
           <p className="text-gray-600 mb-6">
@@ -234,13 +234,13 @@ export default function ContactPage() {
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <MessageCircle className="w-6 h-6 text-green-600" />
+                    <div className="w-12 h-12 bg-luxury-pink-bg rounded-full flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-6 h-6 text-luxury-accent" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">WhatsApp Support</h3>
                       <p className="text-gray-600 mb-2">Quick responses for urgent queries</p>
-                      <a href="https://wa.me/919876543210" className="text-green-600 hover:underline font-medium">
+                      <a href="https://wa.me/919876543210" className="text-luxury-accent hover:underline font-medium">
                         +91 98765 43210
                       </a>
                     </div>

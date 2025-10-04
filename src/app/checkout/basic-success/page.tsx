@@ -20,9 +20,9 @@ export default function BasicSuccessPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-24 h-24 mx-auto mb-8 bg-green-100 rounded-full flex items-center justify-center"
+            className="w-24 h-24 mx-auto mb-8 bg-luxury-pink-bg rounded-full flex items-center justify-center"
           >
-            <CheckCircle className="w-12 h-12 text-green-600" />
+            <CheckCircle className="w-12 h-12 text-luxury-accent" />
           </motion.div>
 
           {/* Main Success Message */}

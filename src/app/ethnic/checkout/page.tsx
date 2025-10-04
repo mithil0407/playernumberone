@@ -256,7 +256,7 @@ export default function EthnicCheckoutPage() {
           transition={{ delay: 0.1 }}
           className="bg-white/70 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
         >
-          <div className="flex items-center gap-1 md:gap-2 bg-green-100 text-green-800 px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-accent px-2 md:px-3 py-1 md:py-2 rounded-full">
             <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm font-light font-['Inter',sans-serif]">150+ Happy Clients</span>
           </div>
@@ -304,7 +304,7 @@ export default function EthnicCheckoutPage() {
           
           <div className="text-4xl md:text-5xl lg:text-6xl font-light text-gray-900 mb-3 md:mb-4">
             <span className="line-through text-gray-400 mr-2 md:mr-4 font-['Inter',sans-serif]">₹{originalPrice}</span>
-            <span className="text-green-600 font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
+            <span className="text-luxury-accent font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
           </div>
           
           <div className="bg-yellow-400 text-gray-900 px-4 md:px-6 py-2 rounded-full font-light text-base md:text-lg inline-block animate-bounce font-['Inter',sans-serif]">
@@ -408,34 +408,34 @@ export default function EthnicCheckoutPage() {
               
               <div className="text-2xl md:text-3xl font-light mb-3 md:mb-4">
                 <span className="line-through text-gray-300 mr-2 md:mr-4 font-['Inter',sans-serif]">₹{originalPrice}</span>
-                <span className="text-green-300 font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
+                <span className="text-luxury-accent font-['Cormorant Garamond',serif]">₹{discountedPrice}</span>
               </div>
               
               <div className="mb-3 md:mb-4">
                 <div className="text-sm md:text-base font-light mb-2 font-['Inter',sans-serif]">What you get:</div>
                 <ul className="space-y-1 md:space-y-2 text-xs md:text-sm font-light font-['Inter',sans-serif]">
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
                     <span>14 curated ethnic outfits across all categories</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
                     <span>Complete accessories & footwear guide</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
                     <span>Pan-Indian regional style recommendations</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
                     <span>Personalized styling for your body type</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
                     <span>20-min Private Consultation Call</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
                     <span>Lifetime Access to Your Ethnic Style Profile</span>
                   </li>
                 </ul>
@@ -471,7 +471,7 @@ export default function EthnicCheckoutPage() {
             </div>
 
             {/* Testimonial */}
-            <div className="bg-green-50 border-l-4 border-green-500 rounded-xl p-4">
+            <div className="bg-luxury-pink-bg border-l-4 border-luxury-accent rounded-xl p-4">
               <p className="text-sm text-gray-700 italic font-light font-['Inter',sans-serif]">
                 &quot;My wedding lehenga selection was absolutely perfect! The ethnic styling guide helped me look stunning at every celebration.&quot;
               </p>
@@ -487,11 +487,11 @@ export default function EthnicCheckoutPage() {
                   <span className="text-gray-700 font-light font-['Inter',sans-serif]">Ethnic Elegance Package</span>
                   <span className="font-light font-['Inter',sans-serif]">
                     <span className="line-through text-gray-400 mr-2">₹{originalPrice}</span>
-                    <span className="text-green-600">₹{discountedPrice}</span>
+                    <span className="text-luxury-accent">₹{discountedPrice}</span>
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center text-green-600">
+                <div className="flex justify-between items-center text-luxury-accent">
                   <span className="font-light font-['Inter',sans-serif]">FREE Bonuses (₹1,000+ value)</span>
                   <span className="font-light font-['Inter',sans-serif]">FREE</span>
                 </div>
@@ -526,12 +526,12 @@ export default function EthnicCheckoutPage() {
               </div>
               
               {/* Money Back Guarantee */}
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <div className="bg-luxury-pink-bg border border-luxury-accent/30 rounded-xl p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Shield className="w-5 h-5 text-green-600" />
-                  <span className="font-light text-green-800 font-['Inter',sans-serif]">30-Day Money-Back Guarantee</span>
+                  <Shield className="w-5 h-5 text-luxury-accent" />
+                  <span className="font-light text-luxury-accent font-['Inter',sans-serif]">30-Day Money-Back Guarantee</span>
                 </div>
-                <p className="text-sm text-green-700 font-light font-['Inter',sans-serif]">
+                <p className="text-sm text-luxury-accent/80 font-light font-['Inter',sans-serif]">
                   Love your ethnic style or get 100% of your money back. No questions asked!
                 </p>
               </div>
@@ -552,7 +552,7 @@ export default function EthnicCheckoutPage() {
             <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
-                  <Shield className="w-5 h-5 text-green-500" />
+                  <Shield className="w-5 h-5 text-luxury-accent" />
                   <span>Secure payment with Razorpay</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
@@ -574,7 +574,7 @@ export default function EthnicCheckoutPage() {
         <div className="max-w-sm mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm font-light text-gray-600 font-['Inter',sans-serif]">
-              Total: <span className="font-light text-green-600 font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
+              Total: <span className="font-light text-luxury-accent font-['Cormorant Garamond',serif]">₹{totalAmount.toLocaleString()}</span>
             </div>
             <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">
               {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')} left

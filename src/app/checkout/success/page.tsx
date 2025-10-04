@@ -54,7 +54,7 @@ function SuccessPageContent() {
         className="text-center max-w-2xl mx-auto px-4"
       >
         <div className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-full w-24 h-24 mx-auto mb-8 flex items-center justify-center">
-          <CheckCircle className="w-16 h-16 text-green-600" />
+          <CheckCircle className="w-16 h-16 text-luxury-accent" />
         </div>
         
         <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">

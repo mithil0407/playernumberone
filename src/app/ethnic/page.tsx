@@ -546,11 +546,11 @@ export default function EthnicPage() {
                   
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-white/80 font-light font-['Inter',sans-serif]">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-luxury-accent rounded-full"></div>
                       <span>7-Day Money Back</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-luxury-accent rounded-full"></div>
                       <span>150+ Success Stories</span>
                     </div>
                   </div>

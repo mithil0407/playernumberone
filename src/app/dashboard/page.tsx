@@ -91,7 +91,7 @@ export default function DashboardPage() {
       case 'completed':
       case 'paid':
       case 'scheduled':
-        return 'text-green-600 bg-green-100';
+        return 'text-luxury-accent bg-luxury-pink-bg';
       case 'pending':
         return 'text-yellow-600 bg-yellow-100';
       case 'failed':
