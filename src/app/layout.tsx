@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
-import MetaPixelTest from "@/components/MetaPixelTest";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -103,8 +102,6 @@ export default function RootLayout({
           {children}
         </MetaPixelProvider>
         
-        {/* Meta Pixel Test Component (Development) */}
-        <MetaPixelTest />
         
         {/* Vercel Analytics */}
         <Analytics />
