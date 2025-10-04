@@ -153,10 +153,10 @@ export default function EthnicPage() {
               className="md:hidden bg-white/95 backdrop-blur-xl border-t border-amber-100"
             >
               <div className="px-6 py-6 space-y-4">
-                <a href="#features" className="block text-gray-700 hover:text-amber-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-amber-50 transition-colors">Features</a>
-                <a href="#testimonials" className="block text-gray-700 hover:text-amber-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-amber-50 transition-colors">Stories</a>
-                <a href="#pricing" className="block text-gray-700 hover:text-amber-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-amber-50 transition-colors">Investment</a>
-                <a href="#faq" className="block text-gray-700 hover:text-amber-600 px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-amber-50 transition-colors">FAQ</a>
+                <a href="#features" className="block text-gray-700 hover:text-luxury-accent px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-luxury-cream transition-colors">Features</a>
+                <a href="#testimonials" className="block text-gray-700 hover:text-luxury-accent px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-luxury-cream transition-colors">Stories</a>
+                <a href="#pricing" className="block text-gray-700 hover:text-luxury-accent px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-luxury-cream transition-colors">Investment</a>
+                <a href="#faq" className="block text-gray-700 hover:text-luxury-accent px-4 py-3 text-base font-light tracking-wide rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
                 <Link
                   href="/ethnic/checkout"
                   className="block bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-4 rounded-full text-base font-light tracking-wide text-center mt-6 shadow-lg hover:shadow-xl transition-all duration-300"
@@ -218,22 +218,22 @@ export default function EthnicPage() {
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12 mb-12 md:mb-20">
               <div className="text-center group">
-                <div className="text-3xl md:text-5xl font-light text-amber-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">150+</div>
+                <div className="text-3xl md:text-5xl font-light text-luxury-accent mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">150+</div>
                 <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Ethnic Transformations</div>
               </div>
               <div className="text-center group">
-                <div className="text-3xl md:text-5xl font-light text-amber-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">14</div>
+                <div className="text-3xl md:text-5xl font-light text-luxury-accent mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">14</div>
                 <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Curated Outfits</div>
               </div>
               <div className="text-center group">
                 <div className="flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl md:text-5xl font-light text-amber-600">4.8</span>
+                  <span className="text-3xl md:text-5xl font-light text-luxury-accent">4.8</span>
                   <Star className="h-5 w-5 md:h-7 md:w-7 text-amber-400 fill-current ml-1 md:ml-2" />
                 </div>
                 <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Client Satisfaction</div>
               </div>
               <div className="text-center group">
-                <div className="text-3xl md:text-5xl font-light text-amber-600 mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">Pan</div>
+                <div className="text-3xl md:text-5xl font-light text-luxury-accent mb-2 md:mb-3 group-hover:scale-110 transition-transform duration-300">Pan</div>
                 <div className="text-sm md:text-base text-gray-600 font-light tracking-wide font-['Inter',sans-serif]">Indian Coverage</div>
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function EthnicPage() {
                     feature.color === 'amber' ? 'bg-amber-100' : 'bg-orange-100'
                   }`}>
                     <feature.icon className={`h-8 w-8 ${
-                      feature.color === 'amber' ? 'text-amber-600' : 'text-orange-600'
+                      feature.color === 'amber' ? 'text-luxury-accent' : 'text-luxury-accent'
                     }`} />
                   </div>
                   <h3 className="text-lg md:text-xl font-light font-display text-center">{feature.title}</h3>
@@ -471,7 +471,7 @@ export default function EthnicPage() {
                   
                   <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-8 text-center">
                     <div className="flex items-center justify-center gap-3 mb-3">
-                      <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-luxury-accent rounded-full flex items-center justify-center">
                         <span className="text-white text-lg">🌸</span>
                       </div>
                       <h4 className="text-xl font-light text-gray-900 font-['Cormorant Garamond',serif]">Cultural Heritage</h4>
@@ -532,7 +532,7 @@ export default function EthnicPage() {
                   onClick={() => {
                     trackEthnicLead(1999);
                   }}
-                  className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-amber-600 px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
+                  className="group relative w-full max-w-sm mx-auto bg-white/90 backdrop-blur-xl text-luxury-accent px-8 py-4 rounded-full text-xl font-light hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-white/30 flex items-center justify-center gap-3 font-['Inter',sans-serif]"
                 >
                   <span className="relative z-10">🌸 Start Your Ethnic Transformation Today</span>
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -574,7 +574,7 @@ export default function EthnicPage() {
                   Embrace your cultural elegance with traditional Indian wear that celebrates your heritage.
                 </p>
                 <div className="flex gap-4">
-                  <a href="mailto:support@playernumberone.com" className="text-gray-400 hover:text-amber-600 transition-colors">
+                  <a href="mailto:support@playernumberone.com" className="text-gray-400 hover:text-luxury-accent transition-colors">
                     support@playernumberone.com
                   </a>
                 </div>
@@ -584,16 +584,16 @@ export default function EthnicPage() {
                 <h3 className="text-white font-semibold mb-4">Quick Links</h3>
                 <ul className="space-y-2">
                   <li>
-                    <a href="#features" className="text-gray-400 hover:text-amber-600 transition-colors">Features</a>
+                    <a href="#features" className="text-gray-400 hover:text-luxury-accent transition-colors">Features</a>
                   </li>
                   <li>
-                    <a href="#testimonials" className="text-gray-400 hover:text-amber-600 transition-colors">Stories</a>
+                    <a href="#testimonials" className="text-gray-400 hover:text-luxury-accent transition-colors">Stories</a>
                   </li>
                   <li>
-                    <a href="#pricing" className="text-gray-400 hover:text-amber-600 transition-colors">Pricing</a>
+                    <a href="#pricing" className="text-gray-400 hover:text-luxury-accent transition-colors">Pricing</a>
                   </li>
                   <li>
-                    <a href="#faq" className="text-gray-400 hover:text-amber-600 transition-colors">FAQ</a>
+                    <a href="#faq" className="text-gray-400 hover:text-luxury-accent transition-colors">FAQ</a>
                   </li>
                 </ul>
               </div>
@@ -602,22 +602,22 @@ export default function EthnicPage() {
                 <h3 className="text-white font-semibold mb-4">Legal & Support</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="/about" className="text-gray-400 hover:text-amber-600 transition-colors">About Us</Link>
+                    <Link href="/about" className="text-gray-400 hover:text-luxury-accent transition-colors">About Us</Link>
                   </li>
                   <li>
-                    <Link href="/contact" className="text-gray-400 hover:text-amber-600 transition-colors">Contact Us</Link>
+                    <Link href="/contact" className="text-gray-400 hover:text-luxury-accent transition-colors">Contact Us</Link>
                   </li>
                   <li>
-                    <Link href="/shipping" className="text-gray-400 hover:text-amber-600 transition-colors">Shipping & Delivery</Link>
+                    <Link href="/shipping" className="text-gray-400 hover:text-luxury-accent transition-colors">Shipping & Delivery</Link>
                   </li>
                   <li>
-                    <Link href="/refund-policy" className="text-gray-400 hover:text-amber-600 transition-colors">Refund Policy</Link>
+                    <Link href="/refund-policy" className="text-gray-400 hover:text-luxury-accent transition-colors">Refund Policy</Link>
                   </li>
                   <li>
-                    <Link href="/terms" className="text-gray-400 hover:text-amber-600 transition-colors">Terms of Service</Link>
+                    <Link href="/terms" className="text-gray-400 hover:text-luxury-accent transition-colors">Terms of Service</Link>
                   </li>
                   <li>
-                    <Link href="/privacy-policy" className="text-gray-400 hover:text-amber-600 transition-colors">Privacy Policy</Link>
+                    <Link href="/privacy-policy" className="text-gray-400 hover:text-luxury-accent transition-colors">Privacy Policy</Link>
                   </li>
                 </ul>
               </div>
@@ -647,7 +647,7 @@ export default function EthnicPage() {
               </div>
               <div className="text-right">
                 <div className="text-xs font-light text-gray-500 font-['Inter',sans-serif]">Limited Time</div>
-                <div className="text-sm font-light text-amber-600 font-['Cormorant Garamond',serif]">15 slots left</div>
+                <div className="text-sm font-light text-luxury-accent font-['Cormorant Garamond',serif]">15 slots left</div>
               </div>
             </div>
             <Link

@@ -211,7 +211,7 @@ export default function EthnicCheckoutPage() {
             contact: formData.phone
           },
           theme: {
-            color: '#F59E0B'
+            color: '#E91E63'
           }
         };
         
@@ -232,7 +232,7 @@ export default function EthnicCheckoutPage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-amber-200/50 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/ethnic" className="flex items-center gap-2 text-amber-600 hover:text-amber-700 transition-colors">
+          <Link href="/ethnic" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-accent/80 transition-colors">
             <ArrowLeft className="w-5 h-5" />
             Back to Ethnic Elegance
           </Link>

@@ -292,7 +292,7 @@ export default function CheckoutPage() {
             contact: formData.phone
           },
           theme: {
-            color: '#EC4899'
+            color: '#E91E63'
           }
         };
         
