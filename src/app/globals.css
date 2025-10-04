@@ -3,36 +3,36 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Luxury Pink Color Palette - Rose Quartz & Champagne Theme */
-  --background: oklch(0.995 0.005 330);
-  --foreground: oklch(0.18 0.015 330);
-  --card: oklch(0.998 0.003 330);
-  --card-foreground: oklch(0.18 0.015 330);
-  --popover: oklch(0.998 0.003 330);
-  --popover-foreground: oklch(0.18 0.015 330);
-  --primary: oklch(0.62 0.16 330);
-  --primary-foreground: oklch(0.995 0.005 330);
-  --secondary: oklch(0.96 0.015 330);
-  --secondary-foreground: oklch(0.18 0.015 330);
-  --muted: oklch(0.97 0.008 330);
-  --muted-foreground: oklch(0.45 0.012 330);
-  --accent: oklch(0.58 0.14 330);
-  --accent-foreground: oklch(0.995 0.005 330);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.995 0.005 330);
-  --border: oklch(0.92 0.008 330);
-  --input: oklch(0.98 0.008 330);
-  --ring: oklch(0.62 0.16 330);
+  /* Base Colors - Brighter and warmer */
+  --background: #fff9f5;
+  --foreground: #4a2c3e;
+  --card: #fff9f5;
+  --card-foreground: #4a2c3e;
+  --popover: #fff9f5;
+  --popover-foreground: #4a2c3e;
+  --primary: #ff6b9d;
+  --primary-foreground: #fff9f5;
+  --secondary: #ffe8e0;
+  --secondary-foreground: #4a2c3e;
+  --muted: #fff0f5;
+  --muted-foreground: #4a2c3e;
+  --accent: #ff6b9d;
+  --accent-foreground: #fff9f5;
+  --destructive: #e85a8a;
+  --destructive-foreground: #fff9f5;
+  --border: #ffb3d1;
+  --input: #fff9f5;
+  --ring: #ff6b9d;
 
-  /* Luxury Pink Brand Colors - Rose Quartz & Champagne Palette */
-  --luxury-gold: oklch(0.85 0.08 85);
-  --luxury-gold-foreground: oklch(0.18 0.015 330);
-  --luxury-cream: oklch(0.97 0.008 330);
-  --luxury-charcoal: oklch(0.18 0.015 330);
-  --luxury-warm-white: oklch(0.995 0.005 330);
-  --luxury-accent: oklch(0.62 0.16 330);
-  --luxury-green: oklch(0.62 0.16 330);
-  --luxury-pink-bg: oklch(0.95 0.06 330);
+  /* Luxury Pink Brand Colors - Bright and Warm Palette */
+  --luxury-gold: #ffb347;
+  --luxury-gold-foreground: #4a2c3e;
+  --luxury-cream: #ffe8e0;
+  --luxury-charcoal: #4a2c3e;
+  --luxury-warm-white: #fff9f5;
+  --luxury-accent: #ff6b9d;
+  --luxury-green: #ff6b9d;
+  --luxury-pink-bg: #fff0f5;
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -51,34 +51,34 @@
 }
 
 .dark {
-  --background: oklch(0.18 0.02 330);
-  --foreground: oklch(0.92 0.015 330);
-  --card: oklch(0.22 0.025 330);
-  --card-foreground: oklch(0.92 0.015 330);
-  --popover: oklch(0.22 0.025 330);
-  --popover-foreground: oklch(0.92 0.015 330);
-  --primary: oklch(0.72 0.18 330);
-  --primary-foreground: oklch(0.18 0.02 330);
-  --secondary: oklch(0.28 0.025 330);
-  --secondary-foreground: oklch(0.92 0.015 330);
-  --muted: oklch(0.25 0.02 330);
-  --muted-foreground: oklch(0.70 0.015 330);
-  --accent: oklch(0.32 0.03 330);
-  --accent-foreground: oklch(0.92 0.015 330);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.92 0.015 330);
-  --border: oklch(0.32 0.025 330);
-  --input: oklch(0.28 0.025 330);
-  --ring: oklch(0.72 0.18 330);
+  --background: #4a2c3e;
+  --foreground: #fff9f5;
+  --card: #4a2c3e;
+  --card-foreground: #fff9f5;
+  --popover: #4a2c3e;
+  --popover-foreground: #fff9f5;
+  --primary: #ff6b9d;
+  --primary-foreground: #fff9f5;
+  --secondary: #e85a8a;
+  --secondary-foreground: #fff9f5;
+  --muted: #4a2c3e;
+  --muted-foreground: #ffb3d1;
+  --accent: #ff6b9d;
+  --accent-foreground: #fff9f5;
+  --destructive: #e85a8a;
+  --destructive-foreground: #fff9f5;
+  --border: #e85a8a;
+  --input: #4a2c3e;
+  --ring: #ff6b9d;
 
-  --luxury-gold: oklch(0.88 0.10 85);
-  --luxury-gold-foreground: oklch(0.95 0.01 330);
-  --luxury-cream: oklch(0.20 0.02 330);
-  --luxury-charcoal: oklch(0.95 0.01 330);
-  --luxury-warm-white: oklch(0.15 0.01 330);
-  --luxury-accent: oklch(0.72 0.18 330);
-  --luxury-green: oklch(0.72 0.18 330);
-  --luxury-pink-bg: oklch(0.25 0.06 330);
+  --luxury-gold: #ffb347;
+  --luxury-gold-foreground: #fff9f5;
+  --luxury-cream: #4a2c3e;
+  --luxury-charcoal: #fff9f5;
+  --luxury-warm-white: #4a2c3e;
+  --luxury-accent: #ff6b9d;
+  --luxury-green: #ff6b9d;
+  --luxury-pink-bg: #4a2c3e;
 }
 
 @theme inline {

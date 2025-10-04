@@ -195,7 +195,7 @@ export default function Home() {
               <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
+                className="bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
               >
                 Begin Journey
               </Link>
@@ -226,7 +226,7 @@ export default function Home() {
               <a href="#faq" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
               <Link
                 href="/checkout"
-                className="block bg-luxury-charcoal text-luxury-warm-white px-8 py-4 rounded-full luxury-body text-center mt-6 transition-all duration-300"
+                className="block bg-luxury-accent text-luxury-warm-white px-8 py-4 rounded-full luxury-body text-center mt-6 transition-all duration-300"
               >
                 Begin Journey
               </Link>
@@ -304,7 +304,7 @@ export default function Home() {
                   {/* Left Arrow */}
                   <button 
                     onClick={prevImage}
-                    className="p-2 md:p-3 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 rounded-full transition-all duration-300 group"
+                    className="p-2 md:p-3 bg-luxury-accent/10 hover:bg-luxury-accent/20 rounded-full transition-all duration-300 group"
                   >
                     <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
                   </button>
@@ -325,7 +325,7 @@ export default function Home() {
                   {/* Right Arrow */}
                   <button 
                     onClick={nextImage}
-                    className="p-2 md:p-3 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 rounded-full transition-all duration-300 group"
+                    className="p-2 md:p-3 bg-luxury-accent/10 hover:bg-luxury-accent/20 rounded-full transition-all duration-300 group"
                   >
                     <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
                   </button>
@@ -348,7 +348,7 @@ export default function Home() {
                       key={index}
                       onClick={() => goToImage(index)}
                       className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
-                        index === currentImageIndex ? 'bg-luxury-accent' : 'bg-luxury-charcoal/30'
+                        index === currentImageIndex ? 'bg-luxury-accent' : 'bg-luxury-accent/30'
                       }`}
                     />
                   ))}
@@ -367,7 +367,7 @@ export default function Home() {
                 // Track CTA click with Meta Pixel
                 trackCTAClick('Begin Your Transformation', 'Hero Section');
               }}
-                className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
+                className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
             >
                 Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
             </Link>
@@ -587,7 +587,7 @@ export default function Home() {
                   onClick={() => {
                     trackCTAClick('Style Consultation', 'Pricing Section', 1199);
                   }}
-                  className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   ✨ Get Your Style Consultation
                 </Link>
@@ -642,7 +642,7 @@ export default function Home() {
                   onClick={() => {
                     trackCTAClick('Complete Package', 'Pricing Section', 2297);
                   }}
-                  className="inline-flex items-center bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   ✨ Transform Now
                 </Link>
@@ -836,7 +836,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 md:py-32 px-4 bg-luxury-charcoal">
+      <section className="py-20 md:py-32 px-4 bg-luxury-accent">
         <div className="max-w-4xl mx-auto text-center text-luxury-warm-white">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -1041,7 +1041,7 @@ export default function Home() {
               // Track CTA click with Meta Pixel
               trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1199);
             }}
-            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold"
+            className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-4 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold"
           >
             Begin Your Transformation
           </Link>

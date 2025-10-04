@@ -283,7 +283,7 @@ export default function EthnicCheckoutPage() {
             </div>
           </div>
           
-          <div className="bg-gray-900 text-white rounded-2xl p-3 md:p-4 text-center">
+          <div className="bg-luxury-accent text-luxury-warm-white rounded-2xl p-3 md:p-4 text-center">
             <div className="text-base md:text-lg mb-1 md:mb-2 font-light font-['Inter',sans-serif]">Offer Expires In:</div>
             <div className="text-2xl md:text-3xl font-light text-yellow-400 font-['Cormorant Garamond',serif]">
               {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}

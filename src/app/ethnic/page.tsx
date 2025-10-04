@@ -128,7 +128,7 @@ export default function EthnicPage() {
                 <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">FAQ</a>
                 <Link
                   href="/ethnic/checkout"
-                  className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
+                  className="bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
                 >
                   Begin Journey
                 </Link>

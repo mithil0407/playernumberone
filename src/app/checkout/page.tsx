@@ -679,7 +679,7 @@ export default function CheckoutPage() {
                 type="submit"
                 form="checkout-form"
                 disabled={isProcessing}
-                className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-semibold"
+                className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-semibold"
               >
                 {isProcessing ? 'Processing...' : '🔥 YES! Transform My Style Now →'}
               </button>
@@ -754,7 +754,7 @@ export default function CheckoutPage() {
             type="submit"
             form="checkout-form"
             disabled={isProcessing}
-            className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-4 py-4 text-base rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform font-semibold"
+            className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-4 py-4 text-base rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform font-semibold"
           >
             {isProcessing ? 'Processing...' : '🔥 Transform My Style Now →'}
           </button>
@@ -868,13 +868,13 @@ export default function CheckoutPage() {
                     // Proceed with payment without add-ons
                     await processPayment();
                   }}
-                  className="flex-1 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 text-luxury-charcoal py-3 rounded-full text-sm luxury-body font-medium transition-all duration-300"
+                  className="flex-1 bg-luxury-accent/10 hover:bg-luxury-accent/20 text-luxury-accent py-3 rounded-full text-sm luxury-body font-medium transition-all duration-300"
                 >
                   Continue Without Add-ons
                 </button>
                 <button
                   onClick={() => setShowAddonPopup(false)}
-                  className="flex-1 bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-3 rounded-full text-sm luxury-body font-semibold transition-all duration-300"
+                  className="flex-1 bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-sm luxury-body font-semibold transition-all duration-300"
                 >
                   Add Selected Items
                 </button>
@@ -914,7 +914,7 @@ export default function CheckoutPage() {
                 // Scroll to form
                 document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300"
+              className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300"
             >
               Claim My Discount Now
             </button>
