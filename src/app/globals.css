@@ -3,7 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Luxury color palette - Light Pink Theme */
+  /* Luxury color palette - Cohesive Light Theme */
   --background: oklch(0.995 0.003 85);
   --foreground: oklch(0.15 0.01 85);
   --card: oklch(0.998 0.002 85);
@@ -12,25 +12,27 @@
   --popover-foreground: oklch(0.15 0.01 85);
   --primary: oklch(0.65 0.15 340);
   --primary-foreground: oklch(0.995 0.003 85);
-  --secondary: oklch(0.98 0.01 85);
+  --secondary: oklch(0.96 0.02 85);
   --secondary-foreground: oklch(0.15 0.01 85);
   --muted: oklch(0.97 0.005 85);
   --muted-foreground: oklch(0.45 0.01 85);
-  --accent: oklch(0.50 0.12 340);
+  --accent: oklch(0.60 0.12 340);
   --accent-foreground: oklch(0.995 0.003 85);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.995 0.003 85);
   --border: oklch(0.92 0.005 85);
   --input: oklch(0.98 0.005 85);
-  --ring: oklch(0.50 0.12 340);
+  --ring: oklch(0.60 0.12 340);
 
-  /* Luxury brand colors - Light Pink Palette */
-  --luxury-gold: oklch(0.80 0.10 85);
+  /* Luxury brand colors - Cohesive Light Palette */
+  --luxury-gold: oklch(0.82 0.12 85);
   --luxury-gold-foreground: oklch(0.15 0.01 85);
-  --luxury-cream: oklch(0.98 0.005 85);
+  --luxury-cream: oklch(0.96 0.02 85);
   --luxury-charcoal: oklch(0.15 0.01 85);
   --luxury-warm-white: oklch(0.995 0.003 85);
-  --luxury-accent: oklch(0.50 0.12 340);
+  --luxury-accent: oklch(0.65 0.15 340);
+  --luxury-green: oklch(0.55 0.15 140);
+  --luxury-pink-bg: oklch(0.95 0.08 340);
 
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -69,12 +71,14 @@
   --input: oklch(0.28 0.025 85);
   --ring: oklch(0.75 0.18 340);
 
-  --luxury-gold: oklch(0.90 0.08 85);
-  --luxury-gold-foreground: oklch(0.15 0.01 85);
+  --luxury-gold: oklch(0.88 0.10 85);
+  --luxury-gold-foreground: oklch(0.95 0.01 85);
   --luxury-cream: oklch(0.20 0.02 85);
   --luxury-charcoal: oklch(0.95 0.01 85);
   --luxury-warm-white: oklch(0.15 0.01 85);
-  --luxury-accent: oklch(0.60 0.15 340);
+  --luxury-accent: oklch(0.70 0.15 340);
+  --luxury-green: oklch(0.65 0.15 140);
+  --luxury-pink-bg: oklch(0.25 0.08 340);
 }
 
 @theme inline {
@@ -108,6 +112,8 @@
   --color-luxury-charcoal: var(--luxury-charcoal);
   --color-luxury-warm-white: var(--luxury-warm-white);
   --color-luxury-accent: var(--luxury-accent);
+  --color-luxury-green: var(--luxury-green);
+  --color-luxury-pink-bg: var(--luxury-pink-bg);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

@@ -189,10 +189,10 @@ export default function Home() {
               <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
             </div>
             <div className="hidden md:flex items-center space-x-12">
-              <a href="#features" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Features</a>
-              <a href="#testimonials" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Stories</a>
-              <a href="#pricing" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">Investment</a>
-              <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-accent transition-colors">FAQ</a>
+              <a href="#features" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Features</a>
+              <a href="#testimonials" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Stories</a>
+              <a href="#pricing" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Investment</a>
+              <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">FAQ</a>
               <Link
                 href="/checkout"
                 className="bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
@@ -220,10 +220,10 @@ export default function Home() {
             className="md:hidden bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream"
           >
             <div className="px-6 py-6 space-y-4">
-              <a href="#features" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Features</a>
-              <a href="#testimonials" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Stories</a>
-              <a href="#pricing" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Investment</a>
-              <a href="#faq" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-accent px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
+              <a href="#features" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Features</a>
+              <a href="#testimonials" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Stories</a>
+              <a href="#pricing" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Investment</a>
+              <a href="#faq" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
               <Link
                 href="/checkout"
                 className="block bg-luxury-charcoal text-luxury-warm-white px-8 py-4 rounded-full luxury-body text-center mt-6 transition-all duration-300"
@@ -279,7 +279,7 @@ export default function Home() {
             >
               Personalised Fashion
               <br />
-              <span className="text-luxury-accent">Consultations</span>
+              <span className="text-luxury-green">Consultations</span>
             </motion.h1>
             
             {/* Testimonial Slideshow Above the Fold */}
@@ -306,7 +306,7 @@ export default function Home() {
                     onClick={prevImage}
                     className="p-2 md:p-3 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 rounded-full transition-all duration-300 group"
                   >
-                    <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-accent" />
+                    <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
                   </button>
                   
                   {/* 1:1 Square Image Placeholder */}
@@ -327,7 +327,7 @@ export default function Home() {
                     onClick={nextImage}
                     className="p-2 md:p-3 bg-luxury-charcoal/10 hover:bg-luxury-charcoal/20 rounded-full transition-all duration-300 group"
                   >
-                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-accent" />
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
                   </button>
                 </div>
                 
@@ -336,7 +336,7 @@ export default function Home() {
                   <p className="text-luxury-charcoal text-sm md:text-base luxury-body leading-relaxed mb-2">
                     &quot;{transformationImages[currentImageIndex].testimonial}&quot;
                   </p>
-                  <p className="text-luxury-accent text-xs md:text-sm luxury-body font-medium">
+                  <p className="text-luxury-green text-xs md:text-sm luxury-body font-medium">
                     - {transformationImages[currentImageIndex].name}
                   </p>
                 </div>
@@ -382,26 +382,26 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
             <div className="text-center group">
-              <div className="text-4xl md:text-6xl luxury-heading text-luxury-accent mb-4 group-hover:scale-105 transition-transform duration-300">
+              <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
                 200+
               </div>
               <div className="luxury-body text-luxury-charcoal/70">Transformations</div>
             </div>
             <div className="text-center group">
-              <div className="text-4xl md:text-6xl luxury-heading text-luxury-accent mb-4 group-hover:scale-105 transition-transform duration-300">
+              <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
                 95%
               </div>
               <div className="luxury-body text-luxury-charcoal/70">Confidence Elevation</div>
             </div>
             <div className="text-center group">
               <div className="flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                <span className="text-4xl md:text-6xl luxury-heading text-luxury-accent">4.9</span>
+                <span className="text-4xl md:text-6xl luxury-heading text-luxury-green">4.9</span>
                 <Star className="h-6 w-6 md:h-8 md:w-8 text-luxury-gold fill-current ml-2" />
               </div>
               <div className="luxury-body text-luxury-charcoal/70">Client Satisfaction</div>
             </div>
             <div className="text-center group">
-              <div className="text-4xl md:text-6xl luxury-heading text-luxury-accent mb-4 group-hover:scale-105 transition-transform duration-300">
+              <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
                 2-3
               </div>
               <div className="luxury-body text-luxury-charcoal/70">Weeks to Elegance</div>
@@ -423,12 +423,12 @@ export default function Home() {
                 
         <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           {[
-            { icon: <Sparkles className="h-8 w-8 text-luxury-accent" />, title: "Personal Style Assessment" },
-            { icon: <Gem className="h-8 w-8 text-luxury-accent" />, title: "Curated Outfit Planning" },
-            { icon: <Heart className="h-8 w-8 text-luxury-accent" />, title: "Makeup & Grooming Guidance" },
-            { icon: <Shield className="h-8 w-8 text-luxury-accent" />, title: "Wardrobe Strategy" },
-            { icon: <Award className="h-8 w-8 text-luxury-accent" />, title: "Confidence Coaching" },
-            { icon: <Trophy className="h-8 w-8 text-luxury-accent" />, title: "Event-Specific Styling" }
+            { icon: <Sparkles className="h-8 w-8 text-luxury-green" />, title: "Personal Style Assessment" },
+            { icon: <Gem className="h-8 w-8 text-luxury-green" />, title: "Curated Outfit Planning" },
+            { icon: <Heart className="h-8 w-8 text-luxury-green" />, title: "Makeup & Grooming Guidance" },
+            { icon: <Shield className="h-8 w-8 text-luxury-green" />, title: "Wardrobe Strategy" },
+            { icon: <Award className="h-8 w-8 text-luxury-green" />, title: "Confidence Coaching" },
+            { icon: <Trophy className="h-8 w-8 text-luxury-green" />, title: "Event-Specific Styling" }
           ].map((item, i) => (
             <div
               key={i}
@@ -531,7 +531,7 @@ export default function Home() {
                 <h3 className="text-3xl md:text-4xl lg:text-5xl luxury-heading mb-6 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 text-luxury-accent">₹1,199</div>
+                <div className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 text-luxury-green">₹1,199</div>
                 <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
@@ -542,31 +542,31 @@ export default function Home() {
                   <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What&apos;s Included:</h4>
                   <ul className="space-y-6">
                     <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
                         Complete style assessment tailored to your features
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
                         Personalized color palette that makes your skin glow
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
                         Body-flattering silhouettes that work with your shape
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
                         Hair & beauty advice for your unique features
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
                         20-minute one-on-one call with expert stylist
                       </span>
@@ -574,7 +574,7 @@ export default function Home() {
                   </ul>
                 </div>
                 
-                <div className="bg-luxury-gold/10 border border-luxury-gold/20 rounded-2xl p-8 text-center">
+                <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-2xl p-8 text-center">
                   <div className="text-4xl mb-6">✨</div>
                   <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Personal Touch</h4>
                   <p className="luxury-body text-luxury-charcoal/70 text-lg">Tailored specifically for you</p>
@@ -604,7 +604,7 @@ export default function Home() {
                 <h3 className="text-3xl md:text-4xl luxury-heading mb-4 text-luxury-charcoal">
                   Complete ICONIK Package
                 </h3>
-                <div className="text-5xl md:text-6xl font-semibold mb-4 text-luxury-accent">₹2,297</div>
+                <div className="text-5xl md:text-6xl font-semibold mb-4 text-luxury-green">₹2,297</div>
                 <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
                   Style + Shopping + Wellness Bundle
                 </p>
@@ -616,19 +616,19 @@ export default function Home() {
                   <ul className="space-y-6">
                     {features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-4">
-                        <CheckCircle className="w-6 h-6 text-luxury-accent flex-shrink-0 mt-1" />
+                        <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                         <span className="luxury-body text-luxury-charcoal/80 text-lg">{feature.title}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
-                <div className="bg-luxury-gold/10 border border-luxury-gold/20 rounded-2xl p-8 text-center">
+                <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-2xl p-8 text-center">
                   <div className="text-4xl mb-6">💰</div>
                   <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Bundle Savings</h4>
                   <p className="luxury-body text-luxury-charcoal/70 mb-3 text-lg">Individual Price: ₹2,197</p>
-                  <div className="text-3xl font-semibold text-luxury-accent mb-2">Save ₹800</div>
-                  <p className="luxury-body text-luxury-accent text-sm">Limited time bundle</p>
+                  <div className="text-3xl font-semibold text-luxury-green mb-2">Save ₹800</div>
+                  <p className="luxury-body text-luxury-green text-sm">Limited time bundle</p>
                 </div>
               </div>
               
@@ -901,7 +901,7 @@ export default function Home() {
               <div className="flex gap-4">
                 <a
                   href="mailto:support@playernumberone.com"
-                  className="luxury-body text-luxury-charcoal/60 hover:text-luxury-accent transition-colors"
+                  className="luxury-body text-luxury-charcoal/60 hover:text-luxury-green transition-colors"
                 >
                   support@playernumberone.com
                 </a>
@@ -915,7 +915,7 @@ export default function Home() {
                 <li>
                   <a
                     href="#features"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Features
                   </a>
@@ -923,7 +923,7 @@ export default function Home() {
                 <li>
                   <a
                     href="#testimonials"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Stories
                   </a>
@@ -931,7 +931,7 @@ export default function Home() {
                 <li>
                   <a
                     href="#pricing"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Pricing
                   </a>
@@ -939,7 +939,7 @@ export default function Home() {
                 <li>
                   <a
                     href="#faq"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     FAQ
                   </a>
@@ -954,7 +954,7 @@ export default function Home() {
                 <li>
                   <Link
                     href="/about"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     About Us
                   </Link>
@@ -962,7 +962,7 @@ export default function Home() {
                 <li>
                   <Link
                     href="/contact"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Contact Us
                   </Link>
@@ -970,7 +970,7 @@ export default function Home() {
                 <li>
                   <Link
                     href="/shipping"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Shipping & Delivery
                   </Link>
@@ -978,7 +978,7 @@ export default function Home() {
                 <li>
                   <Link
                     href="/refund-policy"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Refund Policy
                   </Link>
@@ -986,7 +986,7 @@ export default function Home() {
                 <li>
                   <Link
                     href="/terms"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Terms of Service
                   </Link>
@@ -994,7 +994,7 @@ export default function Home() {
                 <li>
                   <Link
                     href="/privacy-policy"
-                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-accent transition-colors"
+                    className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
                   >
                     Privacy Policy
                   </Link>
@@ -1024,13 +1024,13 @@ export default function Home() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold text-luxury-charcoal">₹1,499</span>
+                <span className="text-base font-semibold text-luxury-green">₹1,499</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
             <div className="text-right ml-2">
               <div className="luxury-body text-luxury-charcoal/60 text-xs">Expires:</div>
-              <div className="luxury-body text-luxury-accent text-sm font-medium">
+              <div className="luxury-body text-luxury-green text-sm font-medium">
                 {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
               </div>
             </div>

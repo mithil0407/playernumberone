@@ -341,15 +341,15 @@ export default function CheckoutPage() {
           transition={{ delay: 0.1 }}
           className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
         >
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm luxury-body">2,847+ Happy Clients</span>
           </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Lock className="w-3 h-3 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm luxury-body">100% Secure</span>
           </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-gold/20 text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
+          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Star className="w-3 h-3 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm luxury-body">4.9/5 Rating</span>
           </div>
@@ -368,10 +368,10 @@ export default function CheckoutPage() {
           
           <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
             <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-            <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
+            <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
           </div>
           
-          <div className="bg-luxury-gold text-luxury-charcoal px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
+          <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
             YOU SAVE ₹{savings} TODAY!
           </div>
         </motion.div>
@@ -487,7 +487,7 @@ export default function CheckoutPage() {
                 
                 <div className="text-2xl md:text-3xl mb-3 md:mb-4">
                   <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-                  <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
+                  <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
                 </div>
               </div>
               
@@ -543,7 +543,7 @@ export default function CheckoutPage() {
                   <div className="luxury-heading text-luxury-charcoal text-lg mb-2">✨ 16 Styled Looks</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-luxury-charcoal/40 font-semibold">₹{shoppingBlueprintOriginalPrice}</span>
-                    <span className="text-luxury-accent font-semibold text-xl">₹{shoppingBlueprintDiscountedPrice}</span>
+                    <span className="text-luxury-green font-semibold text-xl">₹{shoppingBlueprintDiscountedPrice}</span>
                     <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">50% OFF</span>
                   </div>
                   <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
@@ -575,7 +575,7 @@ export default function CheckoutPage() {
                   <div className="luxury-heading text-luxury-charcoal text-lg mb-2">💄 Beauty and Makeup Plan</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-luxury-charcoal/40 font-semibold">₹{glowUpProgramOriginalPrice}</span>
-                    <span className="text-luxury-accent font-semibold text-xl">₹{glowUpProgramDiscountedPrice}</span>
+                    <span className="text-luxury-green font-semibold text-xl">₹{glowUpProgramDiscountedPrice}</span>
                     <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
                   </div>
                   <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
@@ -606,7 +606,7 @@ export default function CheckoutPage() {
                   <div className="luxury-heading text-luxury-charcoal text-lg mb-2">🌿 Skin and Hair Blueprint</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="line-through text-luxury-charcoal/40 font-semibold">₹{skinHairBlueprintOriginalPrice}</span>
-                    <span className="text-luxury-accent font-semibold text-xl">₹{skinHairBlueprintDiscountedPrice}</span>
+                    <span className="text-luxury-green font-semibold text-xl">₹{skinHairBlueprintDiscountedPrice}</span>
                     <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">50% OFF</span>
                   </div>
                   <p className="text-sm luxury-body text-luxury-charcoal/70 mb-2">Ayurvedic remedies for natural beauty transformation:</p>
@@ -629,7 +629,7 @@ export default function CheckoutPage() {
                   <span className="luxury-body text-luxury-charcoal">ICONIK Style Consultation</span>
                   <span className="luxury-body">
                     <span className="line-through text-luxury-charcoal/40 mr-2 font-semibold">₹{originalPrice}</span>
-                    <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
+                    <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
                   </span>
                 </div>
                 
@@ -666,7 +666,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between items-center text-lg">
                     <span className="luxury-body">You Pay:</span>
-                    <span className="text-luxury-accent font-semibold">₹{totalAmount.toLocaleString()}</span>
+                    <span className="text-luxury-green font-semibold">₹{totalAmount.toLocaleString()}</span>
                   </div>
                   <div className="text-center text-sm luxury-body text-luxury-charcoal/60 mt-2">
                     Total if all selected: ₹{totalAmount.toLocaleString()} (Value over ₹{totalValue.toLocaleString()})
@@ -739,7 +739,7 @@ export default function CheckoutPage() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xs font-semibold text-luxury-charcoal">₹{totalAmount.toLocaleString()}</span>
+                <span className="text-xs font-semibold text-luxury-green">₹{totalAmount.toLocaleString()}</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
@@ -791,7 +791,7 @@ export default function CheckoutPage() {
                       <h4 className="font-semibold text-luxury-charcoal">16 Styled Looks</h4>
                       <p className="text-xs text-luxury-charcoal/60 mt-1">Curated outfit combinations tailored to your style</p>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-luxury-accent font-semibold">₹699</span>
+                        <span className="text-luxury-green font-semibold">₹699</span>
                         <span className="text-xs line-through text-luxury-charcoal/40">₹1,399</span>
                       </div>
                     </div>
@@ -817,7 +817,7 @@ export default function CheckoutPage() {
                       <h4 className="font-semibold text-luxury-charcoal">Beauty and Makeup Plan</h4>
                       <p className="text-xs text-luxury-charcoal/60 mt-1">Complete beauty routine & makeup guide for your look</p>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-luxury-accent font-semibold">₹399</span>
+                        <span className="text-luxury-green font-semibold">₹399</span>
                         <span className="text-xs line-through text-luxury-charcoal/40">₹799</span>
                       </div>
                     </div>
@@ -843,7 +843,7 @@ export default function CheckoutPage() {
                       <h4 className="font-semibold text-luxury-charcoal">Skin and Hair Blueprint</h4>
                       <p className="text-xs text-luxury-charcoal/60 mt-1">Ayurvedic remedies for clear skin, tan removal & thicker hair</p>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-luxury-accent font-semibold">₹999</span>
+                        <span className="text-luxury-green font-semibold">₹999</span>
                         <span className="text-xs line-through text-luxury-charcoal/40">₹1,999</span>
                       </div>
                     </div>
