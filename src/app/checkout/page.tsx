@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -77,20 +77,26 @@ export default function CheckoutPage() {
   const skinHairBlueprintDiscountedPrice = 999;
   const glowUpProgramSavings = glowUpProgramOriginalPrice - glowUpProgramDiscountedPrice;
   
-  // Calculate total
-  const totalAmount = discountedPrice + 
+  // Memoize total calculations to prevent unnecessary recalculations
+  const totalAmount = useMemo(() => 
+    discountedPrice + 
     (shoppingBlueprintAddon ? shoppingBlueprintDiscountedPrice : 0) + 
     (glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0) +
-    (skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0);
+    (skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0),
+    [shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon]
+  );
   
-  const totalValue = originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
+  const totalValue = useMemo(() => 
+    originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
     (shoppingBlueprintAddon ? shoppingBlueprintOriginalPrice : 0) + 
     (glowUpProgramAddon ? glowUpProgramOriginalPrice : 0) +
-    (skinHairBlueprintAddon ? skinHairBlueprintOriginalPrice : 0);
+    (skinHairBlueprintAddon ? skinHairBlueprintOriginalPrice : 0),
+    [shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon]
+  );
   
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
 
-  // Countdown timer effect
+  // Optimized countdown timer - only update when time actually changes
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -99,7 +105,7 @@ export default function CheckoutPage() {
         } else if (prev.minutes > 0) {
           return { minutes: prev.minutes - 1, seconds: 59 };
         }
-        return prev;
+        return prev; // No change, prevents unnecessary re-render
       });
     }, 1000);
 
@@ -118,7 +124,8 @@ export default function CheckoutPage() {
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, [showExitIntent]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Optimized input change handler with memoized validation
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
     // Phone number validation - only allow 10 digits
@@ -140,35 +147,35 @@ export default function CheckoutPage() {
     } else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) {
       updateUserData(formData.email, value);
     }
-  };
+  }, [formData.phone, formData.email]);
 
-  // Track add-on changes for Meta Pixel
-  const handleAddonChange = (addonType: 'shopping' | 'glowup' | 'skinhair', checked: boolean) => {
-    const addonDetails = {
-      shopping: {
-        name: '16 Styled Looks',
-        price: checked ? 699 : 0,
-        id: 'styled_looks_pack'
-      },
-      glowup: {
-        name: 'Beauty and Makeup Plan',
-        price: checked ? 399 : 0,
-        id: 'beauty_makeup_plan'
-      },
-      skinhair: {
-        name: 'Skin and Hair Blueprint',
-        price: checked ? 999 : 0,
-        id: 'skin_hair_blueprint'
-      }
-    };
-    
+  // Memoize addon details to prevent recreation on every render
+  const addonDetails = useMemo(() => ({
+    shopping: {
+      name: '16 Styled Looks',
+      price: 699,
+      id: 'styled_looks_pack'
+    },
+    glowup: {
+      name: 'Beauty and Makeup Plan',
+      price: 399,
+      id: 'beauty_makeup_plan'
+    },
+    skinhair: {
+      name: 'Skin and Hair Blueprint',
+      price: 999,
+      id: 'skin_hair_blueprint'
+    }
+  }), []);
+
+  // Optimized add-on change handler with immediate Meta tracking
+  const handleAddonChange = useCallback((addonType: 'shopping' | 'glowup' | 'skinhair', checked: boolean) => {
     const addon = addonDetails[addonType];
     
+    // Track immediately for accurate Meta Pixel data
     if (checked) {
-      // Track AddToCart when addon is selected
       trackAddToCart(addon.name, addon.price, addon.id);
     } else {
-      // Track RemoveFromCart when addon is deselected
       trackRemoveFromCart(addon.name, addon.price, addon.id);
     }
     
@@ -180,9 +187,10 @@ export default function CheckoutPage() {
     } else {
       setGlowUpProgramAddon(checked);
     }
-  };
+  }, [addonDetails]);
 
-  const processPayment = async () => {
+  // Memoize payment processing function to prevent recreation
+  const processPayment = useCallback(async () => {
     // Validate phone number
     if (formData.phone.length !== 10) {
       alert('Please enter a valid 10-digit phone number');
@@ -306,9 +314,10 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  };
+  }, [formData, totalAmount, shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoize submit handler
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Check if no add-ons are selected
@@ -319,7 +328,7 @@ export default function CheckoutPage() {
     
     // Process payment if add-ons are selected
     await processPayment();
-  };
+  }, [shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon, processPayment]);
 
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
