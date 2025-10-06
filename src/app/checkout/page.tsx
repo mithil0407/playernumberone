@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCart, trackRemoveFromCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -55,7 +55,6 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [showExitIntent, setShowExitIntent] = useState(false);
-  const [showAddonPopup, setShowAddonPopup] = useState(false);
   
   // Product pricing
   const originalPrice = 5999;
@@ -168,15 +167,13 @@ export default function CheckoutPage() {
     }
   }), []);
 
-  // Optimized add-on change handler with immediate Meta tracking
+  // Optimized add-on change handler with Meta tracking only for additions
   const handleAddonChange = useCallback((addonType: 'shopping' | 'glowup' | 'skinhair', checked: boolean) => {
     const addon = addonDetails[addonType];
     
-    // Track immediately for accurate Meta Pixel data
+    // Track only when addon is added (not removed)
     if (checked) {
       trackAddToCart(addon.name, addon.price, addon.id);
-    } else {
-      trackRemoveFromCart(addon.name, addon.price, addon.id);
     }
     
     // Update state
@@ -320,15 +317,9 @@ export default function CheckoutPage() {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if no add-ons are selected
-    if (!shoppingBlueprintAddon && !glowUpProgramAddon && !skinHairBlueprintAddon) {
-      setShowAddonPopup(true);
-      return;
-    }
-    
-    // Process payment if add-ons are selected
+    // Process payment directly without addon popup
     await processPayment();
-  }, [shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon, processPayment]);
+  }, [processPayment]);
 
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
@@ -770,127 +761,6 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-        {/* Add-on Selection Popup */}
-        {showAddonPopup && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-luxury-warm-white rounded-3xl p-6 max-w-md w-full relative">
-              <button
-                onClick={() => setShowAddonPopup(false)}
-                className="absolute top-4 right-4 text-luxury-charcoal/60 hover:text-luxury-charcoal"
-              >
-                ✕
-              </button>
-              
-              <div className="text-center mb-6">
-                <h3 className="text-2xl luxury-heading text-luxury-charcoal mb-2">Complete Your Style Journey</h3>
-                <p className="text-sm luxury-body text-luxury-charcoal/70">
-                  Add these powerful tools to maximize your transformation
-                </p>
-              </div>
-              
-              {/* Add-on Options */}
-              <div className="space-y-4 mb-6">
-                {/* 16 Styled Looks */}
-                <div 
-                  onClick={() => handleAddonChange('shopping', !shoppingBlueprintAddon)}
-                  className="bg-luxury-cream/30 rounded-xl p-4 cursor-pointer hover:bg-luxury-cream/50 transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-luxury-charcoal">16 Styled Looks</h4>
-                      <p className="text-xs text-luxury-charcoal/60 mt-1">Curated outfit combinations tailored to your style</p>
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-luxury-green font-semibold">₹699</span>
-                        <span className="text-xs line-through text-luxury-charcoal/40">₹1,399</span>
-                      </div>
-                    </div>
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        shoppingBlueprintAddon 
-                          ? 'bg-luxury-accent border-luxury-accent' 
-                          : 'border-luxury-charcoal/30'
-                      }`}
-                    >
-                      {shoppingBlueprintAddon && <span className="text-white text-xs">✓</span>}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Beauty and Makeup Plan */}
-                <div 
-                  onClick={() => handleAddonChange('glowup', !glowUpProgramAddon)}
-                  className="bg-luxury-cream/30 rounded-xl p-4 cursor-pointer hover:bg-luxury-cream/50 transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-luxury-charcoal">Beauty and Makeup Plan</h4>
-                      <p className="text-xs text-luxury-charcoal/60 mt-1">Complete beauty routine & makeup guide for your look</p>
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-luxury-green font-semibold">₹399</span>
-                        <span className="text-xs line-through text-luxury-charcoal/40">₹799</span>
-                      </div>
-                    </div>
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        glowUpProgramAddon 
-                          ? 'bg-luxury-accent border-luxury-accent' 
-                          : 'border-luxury-charcoal/30'
-                      }`}
-                    >
-                      {glowUpProgramAddon && <span className="text-white text-xs">✓</span>}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Skin and Hair Blueprint */}
-                <div 
-                  onClick={() => handleAddonChange('skinhair', !skinHairBlueprintAddon)}
-                  className="bg-luxury-cream/30 rounded-xl p-4 cursor-pointer hover:bg-luxury-cream/50 transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-luxury-charcoal">Skin and Hair Blueprint</h4>
-                      <p className="text-xs text-luxury-charcoal/60 mt-1">Ayurvedic remedies for clear skin, tan removal & thicker hair</p>
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-luxury-green font-semibold">₹999</span>
-                        <span className="text-xs line-through text-luxury-charcoal/40">₹1,999</span>
-                      </div>
-                    </div>
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        skinHairBlueprintAddon 
-                          ? 'bg-luxury-accent border-luxury-accent' 
-                          : 'border-luxury-charcoal/30'
-                      }`}
-                    >
-                      {skinHairBlueprintAddon && <span className="text-white text-xs">✓</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={async () => {
-                    setShowAddonPopup(false);
-                    // Proceed with payment without add-ons
-                    await processPayment();
-                  }}
-                  className="flex-1 bg-luxury-accent/10 hover:bg-luxury-accent/20 text-luxury-accent py-3 rounded-full text-sm luxury-body font-medium transition-all duration-300"
-                >
-                  Continue Without Add-ons
-                </button>
-                <button
-                  onClick={() => setShowAddonPopup(false)}
-                  className="flex-1 bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-sm luxury-body font-semibold transition-all duration-300"
-                >
-                  Add Selected Items
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Exit Intent Popup */}
       {showExitIntent && (
