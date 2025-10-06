@@ -531,7 +531,7 @@ export default function Home() {
                 <h3 className="text-3xl md:text-4xl lg:text-5xl luxury-heading mb-6 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 text-luxury-green">₹1,199</div>
+                <div className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-6 text-luxury-green">₹1,199</div>
                 <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
@@ -604,7 +604,7 @@ export default function Home() {
                 <h3 className="text-3xl md:text-4xl luxury-heading mb-4 text-luxury-charcoal">
                   Complete ICONIK Package
                 </h3>
-                <div className="text-5xl md:text-6xl font-semibold mb-4 text-luxury-green">₹2,297</div>
+                <div className="text-3xl md:text-4xl font-semibold mb-4 text-luxury-green">₹2,297</div>
                 <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
                   Style + Shopping + Wellness Bundle
                 </p>
@@ -627,7 +627,7 @@ export default function Home() {
                   <div className="text-4xl mb-6">💰</div>
                   <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Bundle Savings</h4>
                   <p className="luxury-body text-luxury-charcoal/70 mb-3 text-lg">Individual Price: ₹2,197</p>
-                  <div className="text-3xl font-semibold text-luxury-green mb-2">Save ₹800</div>
+                  <div className="text-2xl font-semibold text-luxury-green mb-2">Save ₹800</div>
                   <p className="luxury-body text-luxury-green text-sm">Limited time bundle</p>
                 </div>
               </div>
@@ -1041,7 +1041,7 @@ export default function Home() {
               // Track CTA click with Meta Pixel
               trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1199);
             }}
-            className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-4 py-3 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold"
+            className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
           >
             Begin Your Transformation
           </Link>
