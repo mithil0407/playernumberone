@@ -24,7 +24,7 @@ import {
   Trophy,
   Award
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,7 +35,7 @@ export default function Home() {
   });
 
   // Transformation images data
-  const transformationImages = [
+  const transformationImages = useMemo(() => [
     {
       src: '/transformation-1.webp',
       testimonial: 'Finally found my signature style! I feel confident every day.',
@@ -51,7 +51,7 @@ export default function Home() {
       testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.',
       name: 'Priya, Bangalore'
     }
-  ];
+  ], []);
 
   // Navigation functions
   const nextImage = () => {

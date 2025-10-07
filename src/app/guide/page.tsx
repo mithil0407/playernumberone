@@ -4,7 +4,6 @@ import Head from 'next/head';
 import { trackCTAClick } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
   CheckCircle, 
   ArrowRight, 

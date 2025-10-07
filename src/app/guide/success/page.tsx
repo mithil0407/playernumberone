@@ -114,7 +114,7 @@ function GuideSuccessPageContent() {
 
           {/* What's in Your Guide */}
           <div className="bg-luxury-pink-bg/30 backdrop-blur-sm rounded-3xl p-6 mb-8 border border-luxury-cream">
-            <h2 className="text-2xl luxury-heading text-luxury-charcoal mb-6">📖 What's in Your ICONIK Guide?</h2>
+            <h2 className="text-2xl luxury-heading text-luxury-charcoal mb-6">📖 What&apos;s in Your ICONIK Guide?</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
               <div className="space-y-2">

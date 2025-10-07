@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Shield, CheckCircle, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, CheckCircle, Lock, Star } from 'lucide-react';
 import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // Razorpay types
