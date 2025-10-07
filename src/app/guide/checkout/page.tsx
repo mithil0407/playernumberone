@@ -54,7 +54,6 @@ export default function GuideCheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
-  const [showExitIntent, setShowExitIntent] = useState(false);
   
   // Add-ons
   const [presenceGuideAddon, setPresenceGuideAddon] = useState(false);
@@ -118,7 +117,7 @@ export default function GuideCheckoutPage() {
     } else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) {
       updateUserData(formData.email, value);
     }
-  }, [formData.phone, formData.email]);
+  }, [formData.phone, formData.email, presenceGuideAddon, magnetismPlaybookAddon]);
 
   // Memoize payment processing function to prevent recreation
   const processPayment = useCallback(async () => {
@@ -477,7 +476,7 @@ export default function GuideCheckoutPage() {
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
                 />
                 <div className="flex-1">
-                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">"The ICONIK Presence Guide"</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">&ldquo;The ICONIK Presence Guide&rdquo;</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-luxury-green font-semibold text-xl">₹{presenceGuidePrice} + GST</span>
                     <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">Special One-Time Offer</span>
@@ -515,7 +514,7 @@ export default function GuideCheckoutPage() {
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
                 />
                 <div className="flex-1">
-                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">"The Feminine Magnetism Playbook"</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">&ldquo;The Feminine Magnetism Playbook&rdquo;</div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-luxury-green font-semibold text-xl">₹{magnetismPlaybookPrice} + GST</span>
                     <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">Special One-Time Offer</span>

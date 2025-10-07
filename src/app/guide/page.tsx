@@ -9,10 +9,6 @@ import {
   CheckCircle, 
   ArrowRight, 
   ArrowLeft,
-  Heart,
-  Zap,
-  Target,
-  TrendingUp,
   Menu,
   X,
   Star
