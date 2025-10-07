@@ -1,4 +1,4 @@
-gi'use client';
+'use client';
 
 import Head from 'next/head';
 import { trackCTAClick } from '@/lib/metaPixel';
