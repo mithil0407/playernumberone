@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Shield, CheckCircle, Lock, Star } from 'lucide-react';
-import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { ArrowLeft, Shield, CheckCircle, Lock, Star, Clock, Users } from 'lucide-react';
+import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -53,6 +53,7 @@ export default function GuideCheckoutPage() {
     phone: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [showExitIntent, setShowExitIntent] = useState(false);
   
   // Product pricing
@@ -62,6 +63,22 @@ export default function GuideCheckoutPage() {
   
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() => discountedPrice, []);
+  
+  // Optimized countdown timer - only update when time actually changes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev.seconds > 0) {
+          return { ...prev, seconds: prev.seconds - 1 };
+        } else if (prev.minutes > 0) {
+          return { minutes: prev.minutes - 1, seconds: 59 };
+        }
+        return prev; // No change, prevents unnecessary re-render
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
 
   // Exit intent detection
@@ -251,12 +268,12 @@ export default function GuideCheckoutPage() {
           className="text-center mb-6 md:mb-8"
         >
           <h1 className="text-2xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
-            Get Your ICONIK Styling Guide
+            Your Style Guide Transformation Starts Now
           </h1>
           
           <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
             <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice.toLocaleString()}</span>
-            <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
+            <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
           </div>
           
           <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
@@ -361,91 +378,232 @@ export default function GuideCheckoutPage() {
           </div>
         </motion.div>
 
-        {/* Order Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-luxury-warm-white/90 backdrop-blur-xl rounded-3xl p-4 md:p-6 border border-luxury-cream shadow-lg"
-        >
-          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-luxury-charcoal mb-2">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 bg-luxury-warm-white/50 backdrop-blur-sm border border-luxury-cream rounded-lg focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent text-luxury-charcoal placeholder-luxury-charcoal/50"
-                placeholder="your@email.com"
-              />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+          {/* Order Form - Simplified Design */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="bg-white border-2 border-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl"
+          >
+            <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-6 text-center">Get Your Style Guide</h2>
+            
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
+                  placeholder="Enter your email address"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-luxury-charcoal mb-2">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-                maxLength={10}
-                className="w-full px-4 py-3 bg-luxury-warm-white/50 backdrop-blur-sm border border-luxury-cream rounded-lg focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent text-luxury-charcoal placeholder-luxury-charcoal/50"
-                placeholder="10-digit mobile number"
-              />
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  maxLength={10}
+                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
+                  placeholder="Enter 10-digit phone number"
+                />
+                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>
+              </div>
+
+              {/* Security Notice */}
+              <div className="text-center text-sm luxury-body text-luxury-charcoal/60 bg-luxury-cream/30 rounded-xl p-4">
+                <p>🔒 Your payment is secure and encrypted</p>
+                <p className="mt-1">By clicking below, you agree to our terms of service and privacy policy</p>
+              </div>
+            </form>
+          </motion.div>
+
+          {/* Order Summary */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="space-y-6 md:space-y-8"
+          >
+            {/* Main Product */}
+            <div className="bg-luxury-warm-white border-2 border-luxury-charcoal text-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-2 md:top-4 right-[-30px] bg-luxury-gold text-luxury-charcoal px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
+                BEST VALUE
+              </div>
+              
+              <div className="mb-3 md:mb-4">
+                <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Style Guide</h3>
+              
+                <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3 md:mb-4">
+                  Complete personal style transformation guide
+                </p>
+                
+                <div className="text-2xl md:text-3xl mb-3 md:mb-4">
+                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice.toLocaleString()}</span>
+                  <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
+                </div>
+              </div>
+              
+              <div className="mb-3 md:mb-4">
+                <h4 className="luxury-heading text-luxury-charcoal mb-2">What you get:</h4>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Body Shape Discovery & Analysis</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Face Shape & Color Palette Guide</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Wardrobe Foundation Checklist</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Style Archetype Quiz & Results</span>
+                  </li>
+                  <li className="flex items-start gap-2 md:gap-3">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                    <span className="luxury-body text-luxury-charcoal/80">Mix & Match System (30+ Outfits)</span>
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* Order Summary */}
-            <div className="bg-luxury-cream/30 rounded-xl p-4">
-              <h4 className="font-semibold text-luxury-charcoal mb-3">Order Summary</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="luxury-body text-luxury-charcoal/80">ICONIK Styling Guide</span>
-                  <span className="text-luxury-accent font-semibold">₹{discountedPrice}</span>
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
+              <h3 className="text-xl luxury-heading text-luxury-charcoal mb-4">Order Summary</h3>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="luxury-body text-luxury-charcoal">ICONIK Style Guide</span>
+                  <span className="luxury-body">
+                    <span className="line-through text-luxury-charcoal/40 mr-2 font-semibold">₹{originalPrice.toLocaleString()}</span>
+                    <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="luxury-body text-luxury-charcoal/80">Fast Action Bonuses</span>
-                  <span className="text-luxury-accent font-semibold">FREE</span>
+                
+                <div className="flex justify-between items-center text-luxury-accent">
+                  <span className="luxury-body">FREE Bonuses (₹3,500+ value)</span>
+                  <span className="luxury-body">FREE</span>
                 </div>
-                <div className="border-t border-luxury-cream pt-2">
-                  <div className="flex justify-between">
-                    <span className="luxury-body text-luxury-charcoal font-semibold">Total</span>
-                    <span className="text-luxury-accent font-semibold text-lg">₹{totalAmount}</span>
+                
+                <div className="border-t border-luxury-cream pt-3">
+                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/60">
+                    <span>Total Value:</span>
+                    <span className="line-through">₹{(originalPrice + 3500).toLocaleString()}</span>
                   </div>
-                  <div className="text-xs luxury-body text-luxury-charcoal/60 mt-1">
-                    + GST as applicable
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="luxury-body">You Pay:</span>
+                    <span className="text-luxury-green font-semibold">₹{totalAmount.toLocaleString()}</span>
                   </div>
+                  <div className="text-center text-sm luxury-body text-luxury-charcoal/60 mt-2">
+                    Total: ₹{totalAmount.toLocaleString()} (Value over ₹{(originalPrice + 3500).toLocaleString()})
+                  </div>
+                </div>
+              </div>
+              
+              {/* Payment Button - Mobile Optimized */}
+              <button
+                type="submit"
+                form="checkout-form"
+                disabled={isProcessing}
+                className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-semibold"
+              >
+                {isProcessing ? 'Processing...' : '🔥 YES! Get My Guide Now →'}
+              </button>
+              
+              <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60 mb-3 md:mb-4">
+                <p>Pay via Razorpay – 100% Safe & Secure</p>
+              </div>
+              
+              {/* Money Back Guarantee */}
+              <div className="bg-luxury-gold/10 border border-luxury-gold/20 rounded-xl p-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Shield className="w-5 h-5 text-luxury-gold" />
+                  <span className="luxury-body text-luxury-charcoal">30-Day Money-Back Guarantee</span>
+                </div>
+                <p className="text-sm luxury-body text-luxury-charcoal/70">
+                  Love your new style or get 100% of your money back. No questions asked!
+                </p>
+              </div>
+              
+              {/* Payment Methods */}
+              <div className="mt-4 text-center">
+                <p className="text-sm luxury-body text-luxury-charcoal/60 mb-2">Accepted Payment Methods:</p>
+                <div className="flex justify-center gap-3 text-sm luxury-body text-luxury-charcoal/50">
+                  <span>💳 UPI</span>
+                  <span>💳 Cards</span>
+                  <span>💳 Netbanking</span>
+                  <span>💳 Wallets</span>
                 </div>
               </div>
             </div>
 
-            {/* Security Badge */}
-            <div className="bg-luxury-pink-bg/30 border border-luxury-accent/30 rounded-xl p-4 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Shield className="w-5 h-5 text-luxury-accent" />
-                <span className="font-light text-luxury-accent font-['Inter',sans-serif]">30-Day Money-Back Guarantee</span>
+            {/* Trust Indicators */}
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
+                  <Shield className="w-5 h-5 text-luxury-accent" />
+                  <span>Secure payment with Razorpay</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <span>Instant access to your guide</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
+                  <Users className="w-5 h-5 text-purple-500" />
+                  <span>100s of successful transformations</span>
+                </div>
               </div>
-              <p className="text-sm text-luxury-accent/80 font-light font-['Inter',sans-serif]">
-                Not satisfied? Get a full refund within 30 days, no questions asked.
-              </p>
             </div>
+          </motion.div>
+        </div>
 
+        {/* Sticky Mobile CTA - Enhanced */}
+        <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
+          <div className="max-w-sm mx-auto">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex-1">
+                <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Guide</div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xs font-semibold text-luxury-green">₹{totalAmount.toLocaleString()}</span>
+                  <span className="line-through text-luxury-charcoal/40 text-xs">₹25,000</span>
+                </div>
+              </div>
+              <div className="text-right ml-2">
+                <div className="luxury-body text-luxury-charcoal/60 text-xs">Expires:</div>
+                <div className="luxury-body text-luxury-accent text-sm font-medium">
+                  {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+                </div>
+              </div>
+            </div>
             <button
               type="submit"
+              form="checkout-form"
               disabled={isProcessing}
-              className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-semibold"
+              className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-4 py-4 text-base rounded-full transition-all duration-300 luxury-body text-center disabled:opacity-50 hover:scale-105 transform font-semibold"
             >
-              {isProcessing ? 'Processing...' : '🔥 Get Your Guide Now →'}
+              {isProcessing ? 'Processing...' : '🔥 Get My Guide Now →'}
             </button>
-          </form>
-        </motion.div>
+          </div>
+        </div>
 
         {/* Exit Intent Popup */}
         {showExitIntent && (
@@ -458,18 +616,30 @@ export default function GuideCheckoutPage() {
                 ✕
               </button>
               
-              <div className="text-center">
-                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-3">Wait! Don&apos;t Miss Out</h3>
-                <p className="luxury-body text-luxury-charcoal/70 mb-4">
-                  This special price won&apos;t last forever. Get your ICONIK guide now and start your transformation today!
+              <div className="text-center mb-4">
+                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Wait! Don&apos;t Miss Out!</h3>
+                <p className="text-sm luxury-body text-luxury-charcoal/70">
+                  Get an extra 10% off your style guide
                 </p>
-                <Link
-                  href="/guide/checkout"
-                  className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300 block text-center"
-                >
-                  Get My Guide Now
-                </Link>
               </div>
+              
+              <div className="bg-luxury-gold/20 rounded-xl p-4 mb-4 text-center">
+                <div className="text-2xl font-semibold text-luxury-charcoal">
+                  ₹449 <span className="text-sm line-through text-luxury-charcoal/60">₹499</span>
+                </div>
+                <div className="text-xs luxury-body text-luxury-charcoal/60">Save ₹50 more!</div>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowExitIntent(false);
+                  // Scroll to form
+                  document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300"
+              >
+                Claim My Discount Now
+              </button>
             </div>
           </div>
         )}
