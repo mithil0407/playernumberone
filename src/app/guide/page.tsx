@@ -153,15 +153,15 @@ export default function GuidePage() {
   const faqs = [
     {
       question: 'Will this guide really help me look more elegant and confident?',
-      answer: 'Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We\'ve helped 200+ women discover their signature style.'
+      answer: 'Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We\'ve helped 200+ women discover their signature style through our comprehensive digital guide.'
     },
     {
       question: 'What if the style suggestions don\'t feel like me?',
-      answer: 'We work with you to ensure the style feels authentically you. The guide will help you adapt all recommendations to match your personality and comfort level.'
+      answer: 'The guide is designed to help you find your authentic style. It provides frameworks and tools that you can adapt to match your personality and comfort level, ensuring everything feels genuinely you.'
     },
     {
       question: 'How quickly will I see results?',
-      answer: 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.'
+      answer: 'Most women see immediate improvements in how they feel about their appearance within the first week of implementing the guide. The complete transformation and confidence boost typically develops over 2-3 weeks.'
     }
   ];
 
@@ -283,9 +283,9 @@ export default function GuidePage() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
-              ICONIK Styling
+              From Ordinary to Iconic
               <br />
-              <span className="text-luxury-green">Guide</span>
+              <span className="text-luxury-green">Start Your Style Revolution</span>
             </motion.h1>
             
             {/* Testimonial Slideshow Above the Fold */}
@@ -419,31 +419,81 @@ export default function GuidePage() {
       {/* Features Section */}
       <section id="features" className="py-20 md:py-32 bg-luxury-warm-white relative">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You Receive</h2>
+          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You'll Receive</h2>
           <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-            Every guide is tailored to celebrate your individuality and elevate your personal style.
+            A complete step-by-step digital style guide that helps you define your personal style, discover what flatters your body, and build a wardrobe that radiates confidence.
           </p>
         </div>
-                
-        <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          {[
-            { icon: <Sparkles className="h-8 w-8 text-luxury-green" />, title: "Personal Style Assessment" },
-            { icon: <Gem className="h-8 w-8 text-luxury-green" />, title: "Curated Outfit Planning" },
-            { icon: <Heart className="h-8 w-8 text-luxury-green" />, title: "Makeup & Grooming Guidance" },
-            { icon: <Shield className="h-8 w-8 text-luxury-green" />, title: "Wardrobe Strategy" },
-            { icon: <Award className="h-8 w-8 text-luxury-green" />, title: "Confidence Coaching" },
-            { icon: <Trophy className="h-8 w-8 text-luxury-green" />, title: "Event-Specific Styling" }
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="p-8 md:p-10 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-2xl hover:-translate-y-2 group"
-            >
-              <div className="flex flex-col items-center space-y-6">
-                <div className="group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
-                <h3 className="text-xl md:text-2xl luxury-heading text-center text-luxury-charcoal">{item.title}</h3>
+        
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 mb-16">
+          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl border border-luxury-cream p-8 md:p-12">
+            <h3 className="text-2xl md:text-3xl luxury-heading mb-8 text-luxury-charcoal text-center">
+              Inside the ICONIK Guide:
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { title: "Body Shape Discovery", description: "Learn silhouettes that flatter your figure" },
+                { title: "Face Shape & Color Palette", description: "Discover shades that make your skin glow" },
+                { title: "Wardrobe Foundation", description: "Essential pieces for every Indian woman" },
+                { title: "Style Archetype Quiz", description: "Find your true fashion personality" },
+                { title: "Mix & Match System", description: "30+ outfit ideas using 10 smart pieces" },
+                { title: "Occasion Styling", description: "Office, festive, date-night & daily looks" },
+                { title: "Accessories & Footwear Guide", description: "Finish every outfit perfectly" },
+                { title: "Confidence Blueprint", description: "Tips on posture, posing & presence" },
+                { title: "Smart Shopping System", description: "Build a wardrobe that saves time and money" }
+              ].map((item, index) => (
+                <div key={index} className="flex items-start gap-4">
+                  <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
+                  <div>
+                    <h4 className="luxury-heading text-luxury-charcoal mb-2">{item.title}</h4>
+                    <p className="luxury-body text-luxury-charcoal/80">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="text-center mt-8">
+              <p className="text-xl luxury-body text-luxury-charcoal/80">
+                💡 Everything you need to master your personal style — in one guide.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Fast Action Bonuses */}
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8">
+          <div className="bg-luxury-pink-bg/50 backdrop-blur-sm rounded-3xl border border-luxury-cream p-8 md:p-12">
+            <h3 className="text-2xl md:text-3xl luxury-heading mb-8 text-luxury-charcoal text-center">
+              💎 Fast Action Bonuses (Worth ₹3,500 — FREE Today)
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-luxury-warm-white/80 rounded-2xl p-6">
+                <h4 className="text-xl luxury-heading text-luxury-charcoal mb-3">
+                  🎁 Posing & Confidence Guide (₹1,500 Value)
+                </h4>
+                <p className="luxury-body text-luxury-charcoal/80">
+                  Learn how to pose and move in front of the camera like a natural. Perfect for photos, reels, or your first fashion shoot.
+                </p>
+              </div>
+              
+              <div className="bg-luxury-warm-white/80 rounded-2xl p-6">
+                <h4 className="text-xl luxury-heading text-luxury-charcoal mb-3">
+                  🎁 Smart Shopping Masterlist (₹2,000 Value)
+                </h4>
+                <p className="luxury-body text-luxury-charcoal/80">
+                  Every essential piece to build your Iconik wardrobe — on a real Indian budget.
+                </p>
               </div>
             </div>
-          ))}
+            
+            <div className="text-center mt-6">
+              <p className="text-lg luxury-body text-luxury-charcoal/80">
+                ✨ Free with your guide for a limited time
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -518,214 +568,7 @@ export default function GuidePage() {
         </div>
       </section>
 
-        {/* Real Transformations Section */}
-        <section className="py-20 px-4">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">
-                Real Indian Transformations
-              </h2>
-            </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.1 }}
-                className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl p-6 border border-luxury-cream text-center"
-              >
-                <div className="w-16 h-16 bg-luxury-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">👩</span>
-                </div>
-                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Ananya – 27, Bangalore</h3>
-                <p className="luxury-body text-luxury-charcoal/80">
-                  From corporate formals to effortless chic. Says she finally enjoys dressing up again.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl p-6 border border-luxury-cream text-center"
-              >
-                <div className="w-16 h-16 bg-luxury-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">👩</span>
-                </div>
-                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Kritika – 34, Pune</h3>
-                <p className="luxury-body text-luxury-charcoal/80">
-                  Discovered her true color palette — now gets daily compliments for her glow-up.
-                </p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl p-6 border border-luxury-cream text-center"
-              >
-                <div className="w-16 h-16 bg-luxury-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">👩</span>
-                </div>
-                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Riya – 29, Mumbai</h3>
-                <p className="luxury-body text-luxury-charcoal/80">
-                  Always thought fashion was &quot;not for her.&quot; After Iconik, she gets DMs asking where she shops.
-                </p>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Before / After Transformations */}
-        <section className="py-20 px-4 bg-luxury-cream/20">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-12"
-            >
-              <h2 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-4">
-                Real Style Transformations
-              </h2>
-              <p className="luxury-body text-luxury-charcoal/70">
-                See how the ICONIK approach elevates everyday looks into confident, elegant style.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              {/* Transformation 1 */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-4 border border-luxury-cream"
-              >
-                <div className="rounded-2xl overflow-hidden mb-3">
-                  <img src="/style-before.webp" alt="Before" className="w-full object-cover" />
-                </div>
-                <div className="rounded-2xl overflow-hidden">
-                  <img src="/style-after.webp" alt="After" className="w-full object-cover" />
-                </div>
-              </motion.div>
-
-              {/* Transformation 2 */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7 }}
-                className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-4 border border-luxury-cream"
-              >
-                <div className="rounded-2xl overflow-hidden mb  -3">
-                  <img src="/wardrobe-before.webp" alt="Before" className="w-full object-cover" />
-                </div>
-                <div className="rounded-2xl overflow-hidden">
-                  <img src="/wardrobe-after.webp" alt="After" className="w-full object-cover" />
-                </div>
-              </motion.div>
-
-              {/* Transformation 3 */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-4 border border-luxury-cream"
-              >
-                <div className="rounded-2xl overflow-hidden mb-3">
-                  <img src="/ethnic-traditional-before.webp" alt="Before" className="w-full object-cover" />
-                </div>
-                <div className="rounded-2xl overflow-hidden">
-                  <img src="/ethnic-traditional-after.webp" alt="After" className="w-full object-cover" />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="py-20 px-4 bg-luxury-cream/20">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">
-                With Iconik, You&apos;ll Learn To:
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.1 }}
-                  className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-6 border border-luxury-cream hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="w-12 h-12 bg-luxury-pink-bg rounded-full flex items-center justify-center mb-4">
-                    <feature.icon className="w-6 h-6 text-luxury-accent" />
-                  </div>
-                  <h3 className="text-xl luxury-heading text-luxury-charcoal mb-3">
-                    ✅ {feature.title}
-                  </h3>
-                  <p className="luxury-body text-luxury-charcoal/80">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* What You Get Section */}
-        <section className="py-20 px-4">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">
-                💎 What You Get Inside Iconik
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                'Body Shape Discovery – Learn what flatters your unique figure',
-                'Face Shape & Color Palette – Find your best colors and jewelry tones',
-                'Wardrobe Foundation – The must-have pieces for every Indian woman',
-                'Style Archetype Quiz – Discover your true fashion identity',
-                'Mix & Match System – Create 30+ outfits from 10 pieces',
-                'Styling for Occasions – Office, casual, festive, and date-ready looks',
-                'Accessories & Footwear Guide – How to complete your look smartly',
-                'Confidence Blueprint – How to walk, pose, and carry your style',
-                'Smart Shopping Framework – Avoid impulsive buys forever',
-                'Bonus: Outfit Inspiration Library – 100+ look ideas curated by stylists'
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="flex items-start gap-3 p-4 bg-luxury-cream/30 rounded-xl"
-                >
-                  <CheckCircle className="w-5 h-5 text-luxury-accent flex-shrink-0 mt-1" />
-                  <span className="luxury-body text-luxury-charcoal/80">{item}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
 
       {/* Pricing Section */}
       <section id="pricing" className="py-20 md:py-32 bg-luxury-warm-white">
@@ -757,31 +600,31 @@ export default function GuidePage() {
                     <li className="flex items-start gap-4">
                       <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
-                        Body Shape Discovery & Analysis
+                        Complete Digital Style Guide
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
                       <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
-                        Face Shape & Color Palette Guide
+                        Body Shape & Color Analysis
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
                       <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
-                        Wardrobe Foundation Checklist
+                        Wardrobe Foundation System
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
                       <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
-                        Style Archetype Quiz & Results
+                        Style Archetype Assessment
                       </span>
                     </li>
                     <li className="flex items-start gap-4">
                       <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
                       <span className="luxury-body text-luxury-charcoal/80 text-lg">
-                        Mix & Match System (30+ Outfits)
+                        30+ Outfit Combinations Guide
                       </span>
                     </li>
                   </ul>
