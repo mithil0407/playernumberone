@@ -173,7 +173,7 @@ export default function GuideCheckoutPage() {
           order_id: responseData.order_id,
           handler: async (response: RazorpayResponse) => {
             // Track purchase
-            trackPurchase(totalAmount, 1, 'ICONIK Styling Guide');
+            trackPurchase(totalAmount, 'ICONIK Styling Guide', ['iconik_guide'], 1);
             
             // Redirect to success page with parameters
             const successUrl = `/guide/success?customer_id=${responseData.customer_id}&order_id=${responseData.order_id}&db_order_id=${responseData.db_order_id}&payment_id=${response.razorpay_payment_id}`;
