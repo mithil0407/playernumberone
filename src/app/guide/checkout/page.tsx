@@ -166,11 +166,13 @@ export default function GuideCheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      if (!response.ok) {
-        throw new Error('Payment initialization failed');
-      }
-
       const responseData = await response.json();
+      
+      console.log('Payment API response:', responseData);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${responseData.error || 'Payment initialization failed'}`);
+      }
       
       if (!responseData.success) {
         throw new Error(responseData.error || 'Payment initialization failed');
@@ -180,6 +182,8 @@ export default function GuideCheckoutPage() {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.onload = () => {
+        console.log('Razorpay script loaded successfully');
+        
         // Initialize Razorpay payment
         const options = {
           key: responseData.key,
@@ -187,8 +191,10 @@ export default function GuideCheckoutPage() {
           currency: 'INR',
           name: 'ICONIK',
           description: 'ICONIK Styling Guide',
-          order_id: responseData.order_id,
+          order_id: responseData.razorpay_order_id,
           handler: async (response: RazorpayResponse) => {
+            console.log('Payment successful:', response);
+            
             // Track purchase with all items
             const purchasedItems = ['iconik_guide'];
             if (presenceGuideAddon) purchasedItems.push('presence_guide');
@@ -199,6 +205,12 @@ export default function GuideCheckoutPage() {
             // Redirect to success page with parameters
             const successUrl = `/guide/success?customer_id=${responseData.customer_id}&order_id=${responseData.order_id}&db_order_id=${responseData.db_order_id}&payment_id=${response.razorpay_payment_id}`;
             window.location.href = successUrl;
+          },
+          modal: {
+            ondismiss: () => {
+              console.log('Payment modal dismissed');
+              setIsProcessing(false);
+            }
           },
           prefill: {
             name: formData.email.split('@')[0],
@@ -213,6 +225,13 @@ export default function GuideCheckoutPage() {
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       };
+      
+      script.onerror = () => {
+        console.error('Failed to load Razorpay script');
+        setIsProcessing(false);
+        alert('Failed to load payment system. Please try again or contact support.');
+      };
+      
       document.body.appendChild(script);
       
     } catch (error) {
