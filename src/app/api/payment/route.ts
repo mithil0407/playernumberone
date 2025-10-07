@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCustomer, saveOrder, supabase } from '@/lib/supabase';
+import { saveCustomer, saveOrder, supabase, getCustomerByEmail } from '@/lib/supabase';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, shopping_blueprint_price, glow_up_program_price } = body;
+    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, presence_guide_price, magnetism_playbook_price } = body;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -35,18 +35,25 @@ export async function POST(request: NextRequest) {
     let dbOrderId = 'mock-order-id';
     
     try {
-      const customer = await saveCustomer({
-        name: customer_name,
-        email: customer_email,
-        phone: customer_phone
-      });
+      // First try to get existing customer
+      let customer = await getCustomerByEmail(customer_email);
+      
+      if (!customer) {
+        // Customer doesn't exist, create new one
+        customer = await saveCustomer({
+          name: customer_name,
+          email: customer_email,
+          phone: customer_phone
+        });
+      }
+      
       customerId = customer.id!;
 
       // Save order to database with temporary ID first
       const order = await saveOrder({
         customer_id: customer.id!,
         amount,
-        add_on: add_ons.shopping_blueprint || add_ons.glow_up_program, // Check if any add-ons are selected
+        add_on: add_ons.presence_guide || add_ons.magnetism_playbook, // Check if any add-ons are selected
         status: 'pending',
         razorpay_order_id: orderId
       });
@@ -74,12 +81,12 @@ export async function POST(request: NextRequest) {
           customer_email: customer_email,
           customer_phone: customer_phone,
           base_product: base_product,
-          shopping_blueprint_addon: add_ons.shopping_blueprint ? 'true' : 'false',
-          glow_up_program_addon: add_ons.glow_up_program ? 'true' : 'false',
+          presence_guide_addon: add_ons.presence_guide ? 'true' : 'false',
+          magnetism_playbook_addon: add_ons.magnetism_playbook ? 'true' : 'false',
           total_base_price: total_base_price,
-          shopping_blueprint_price: shopping_blueprint_price,
-          glow_up_program_price: glow_up_program_price,
-          service: 'ICONIK Style Consultation',
+          presence_guide_price: presence_guide_price,
+          magnetism_playbook_price: magnetism_playbook_price,
+          service: 'ICONIK Style Guide',
           db_order_id: dbOrderId,
           customer_id: customerId
         },
@@ -122,14 +129,14 @@ export async function POST(request: NextRequest) {
         order: {
           id: dbOrderId,
           amount,
-          add_on: add_ons.shopping_blueprint || add_ons.glow_up_program,
+          add_on: add_ons.presence_guide || add_ons.magnetism_playbook,
           status: 'pending'
         },
         notes: {
-          service: 'ICONIK Style Consultation',
+          service: 'ICONIK Style Guide',
           base_product: base_product,
-          shopping_blueprint_addon: add_ons.shopping_blueprint,
-          glow_up_program_addon: add_ons.glow_up_program,
+          presence_guide_addon: add_ons.presence_guide,
+          magnetism_playbook_addon: add_ons.magnetism_playbook,
         },
         customer_id: customerId,
         db_order_id: dbOrderId

@@ -17,13 +17,23 @@ const mockSupabaseClient = {
 // Only create real client if we have valid environment variables
 let supabase: SupabaseClient = mockSupabaseClient;
 
-if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+// Check if we're in production or have valid env vars
+const isProduction = process.env.NODE_ENV === 'production';
+const hasValidEnvVars = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+                       process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+                       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder-key';
+
+if (hasValidEnvVars) {
   try {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
+    console.log('Supabase client created successfully');
   } catch (error) {
-    console.warn('Failed to create Supabase client, using mock:', error);
+    console.error('Failed to create Supabase client:', error);
     supabase = mockSupabaseClient;
   }
+} else {
+  console.warn('Supabase environment variables not properly configured, using mock client');
 }
 
 export { supabase };
@@ -65,6 +75,19 @@ export interface Session {
 
 // Database operations
 export const saveCustomer = async (customer: Customer) => {
+  // First, try to find existing customer by email
+  const { data: existingCustomer } = await supabase
+    .from('customers')
+    .select('*')
+    .eq('email', customer.email)
+    .single();
+
+  if (existingCustomer) {
+    // Customer exists, return existing customer
+    return existingCustomer;
+  }
+
+  // Customer doesn't exist, create new one
   const { data, error } = await supabase
     .from('customers')
     .insert([customer])
