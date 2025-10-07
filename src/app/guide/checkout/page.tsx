@@ -56,13 +56,26 @@ export default function GuideCheckoutPage() {
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [showExitIntent, setShowExitIntent] = useState(false);
   
+  // Add-ons
+  const [presenceGuideAddon, setPresenceGuideAddon] = useState(false);
+  const [magnetismPlaybookAddon, setMagnetismPlaybookAddon] = useState(false);
+  
   // Product pricing
   const originalPrice = 25000;
   const discountedPrice = 499;
   const savings = originalPrice - discountedPrice;
   
+  // Add-on pricing
+  const presenceGuidePrice = 379;
+  const magnetismPlaybookPrice = 399;
+  
   // Memoize total calculations to prevent unnecessary recalculations
-  const totalAmount = useMemo(() => discountedPrice, []);
+  const totalAmount = useMemo(() => 
+    discountedPrice + 
+    (presenceGuideAddon ? presenceGuidePrice : 0) + 
+    (magnetismPlaybookAddon ? magnetismPlaybookPrice : 0),
+    [presenceGuideAddon, magnetismPlaybookAddon]
+  );
   
   // Optimized countdown timer - only update when time actually changes
   useEffect(() => {
@@ -81,17 +94,6 @@ export default function GuideCheckoutPage() {
   }, []);
 
 
-  // Exit intent detection
-  useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !showExitIntent) {
-        setShowExitIntent(true);
-      }
-    };
-
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
-  }, [showExitIntent]);
 
   // Optimized input change handler with memoized validation
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,8 +137,9 @@ export default function GuideCheckoutPage() {
     
     setIsProcessing(true);
     
-    // Track InitiateCheckout event
-    trackInitiateCheckout(totalAmount, 1, 'ICONIK Styling Guide');
+    // Track InitiateCheckout event with correct item count
+    const itemCount = 1 + (presenceGuideAddon ? 1 : 0) + (magnetismPlaybookAddon ? 1 : 0);
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Styling Guide');
     
     try {
       // Create order data
@@ -147,14 +150,12 @@ export default function GuideCheckoutPage() {
         amount: totalAmount,
         base_product: 'ICONIK Styling Guide',
         add_ons: {
-          shopping_blueprint: false,
-          glow_up_program: false,
-          skin_hair_blueprint: false
+          presence_guide: presenceGuideAddon,
+          magnetism_playbook: magnetismPlaybookAddon
         },
         total_base_price: discountedPrice,
-        shopping_blueprint_price: 0,
-        glow_up_program_price: 0,
-        skin_hair_blueprint_price: 0
+        presence_guide_price: presenceGuideAddon ? presenceGuidePrice : 0,
+        magnetism_playbook_price: magnetismPlaybookAddon ? magnetismPlaybookPrice : 0
       };
 
       // Call payment API
@@ -189,8 +190,12 @@ export default function GuideCheckoutPage() {
           description: 'ICONIK Styling Guide',
           order_id: responseData.order_id,
           handler: async (response: RazorpayResponse) => {
-            // Track purchase
-            trackPurchase(totalAmount, 'ICONIK Styling Guide', ['iconik_guide'], 1);
+            // Track purchase with all items
+            const purchasedItems = ['iconik_guide'];
+            if (presenceGuideAddon) purchasedItems.push('presence_guide');
+            if (magnetismPlaybookAddon) purchasedItems.push('magnetism_playbook');
+            
+            trackPurchase(totalAmount, 'ICONIK Styling Guide', purchasedItems, purchasedItems.length);
             
             // Redirect to success page with parameters
             const successUrl = `/guide/success?customer_id=${responseData.customer_id}&order_id=${responseData.order_id}&db_order_id=${responseData.db_order_id}&payment_id=${response.razorpay_payment_id}`;
@@ -346,37 +351,6 @@ export default function GuideCheckoutPage() {
           </div>
         </motion.div>
 
-        {/* Fast Action Bonuses */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-luxury-pink-bg/50 backdrop-blur-xl rounded-3xl p-4 md:p-6 mb-6 md:mb-8 border border-luxury-cream"
-        >
-          <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-4 text-center">
-            🔥 Fast Action Bonuses (Limited Time)
-          </h3>
-          
-          <div className="space-y-4">
-            <div className="bg-luxury-warm-white/80 rounded-xl p-4">
-              <h4 className="font-semibold text-luxury-charcoal mb-2">
-                Bonus #1: Posing & Confidence Guide (₹1,500 Value)
-              </h4>
-              <p className="text-sm luxury-body text-luxury-charcoal/80">
-                Learn how to pose and move in front of the camera like a natural. Perfect for photos, reels, or your first fashion shoot.
-              </p>
-            </div>
-            
-            <div className="bg-luxury-warm-white/80 rounded-xl p-4">
-              <h4 className="font-semibold text-luxury-charcoal mb-2">
-                Bonus #2: Shopping Masterlist (₹2,000 Value)
-              </h4>
-              <p className="text-sm luxury-body text-luxury-charcoal/80">
-                Every essential piece to build your Iconik wardrobe — on a real Indian budget.
-              </p>
-            </div>
-          </div>
-        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           {/* Order Form - Simplified Design */}
@@ -486,6 +460,82 @@ export default function GuideCheckoutPage() {
               </div>
             </div>
 
+            {/* Add-on 1: Presence Guide */}
+            <div 
+              onClick={() => setPresenceGuideAddon(!presenceGuideAddon)}
+              className="bg-luxury-cream/40 border-2 border-luxury-cream rounded-3xl p-6 md:p-8 relative cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
+            >
+              <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-luxury-accent text-luxury-warm-white px-4 py-1 rounded-full text-xs font-bold">
+                💎 Add-On 1
+              </div>
+              
+              <div className="flex items-start gap-4">
+                <input
+                  type="checkbox"
+                  checked={presenceGuideAddon}
+                  readOnly
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
+                />
+                <div className="flex-1">
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">"The ICONIK Presence Guide"</div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-luxury-green font-semibold text-xl">₹{presenceGuidePrice} + GST</span>
+                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">Special One-Time Offer</span>
+                  </div>
+                  <div className="luxury-body text-luxury-charcoal/80 text-sm mb-3">
+                    Master the Art of Effortless Authority & Confidence
+                  </div>
+                  <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
+                    <li>• Learn posture and body-language secrets of confident women</li>
+                    <li>• Project calm power and elegance in every setting</li>
+                    <li>• Use your voice to influence and command attention naturally</li>
+                    <li>• Build a magnetic presence that makes people listen and respect you</li>
+                  </ul>
+                  <div className="bg-luxury-gold/20 text-luxury-charcoal p-3 rounded-lg mt-3 text-center text-sm luxury-body">
+                    Limited Offer: Unlock this exclusive guide by ticking the box above.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Add-on 2: Magnetism Playbook */}
+            <div 
+              onClick={() => setMagnetismPlaybookAddon(!magnetismPlaybookAddon)}
+              className="bg-luxury-cream/40 border-2 border-luxury-cream rounded-3xl p-6 md:p-8 relative cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
+            >
+              <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-luxury-accent text-luxury-warm-white px-4 py-1 rounded-full text-xs font-bold">
+                💖 Add-On 2
+              </div>
+              
+              <div className="flex items-start gap-4">
+                <input
+                  type="checkbox"
+                  checked={magnetismPlaybookAddon}
+                  readOnly
+                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
+                />
+                <div className="flex-1">
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">"The Feminine Magnetism Playbook"</div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-luxury-green font-semibold text-xl">₹{magnetismPlaybookPrice} + GST</span>
+                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">Special One-Time Offer</span>
+                  </div>
+                  <div className="luxury-body text-luxury-charcoal/80 text-sm mb-3">
+                    Unlock the Power of Feminine Energy & Charisma
+                  </div>
+                  <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
+                    <li>• Balance strength with grace to become irresistibly confident</li>
+                    <li>• Understand emotional cues and connect deeply in relationships</li>
+                    <li>• Cultivate allure without effort or pretense</li>
+                    <li>• Express your femininity with authenticity and self-respect</li>
+                  </ul>
+                  <div className="bg-luxury-gold/20 text-luxury-charcoal p-3 rounded-lg mt-3 text-center text-sm luxury-body">
+                    Limited Offer: Access this exclusive guide only with your order today.
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Order Summary */}
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream">
               <h3 className="text-xl luxury-heading text-luxury-charcoal mb-4">Order Summary</h3>
@@ -499,22 +549,27 @@ export default function GuideCheckoutPage() {
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center text-luxury-accent">
-                  <span className="luxury-body">FREE Bonuses (₹3,500+ value)</span>
-                  <span className="luxury-body">FREE</span>
-                </div>
+                {presenceGuideAddon && (
+                  <div className="flex justify-between items-center text-luxury-accent">
+                    <span className="luxury-body">The ICONIK Presence Guide</span>
+                    <span className="luxury-body font-semibold">₹{presenceGuidePrice}</span>
+                  </div>
+                )}
+                
+                {magnetismPlaybookAddon && (
+                  <div className="flex justify-between items-center text-luxury-accent">
+                    <span className="luxury-body">The Feminine Magnetism Playbook</span>
+                    <span className="luxury-body font-semibold">₹{magnetismPlaybookPrice}</span>
+                  </div>
+                )}
                 
                 <div className="border-t border-luxury-cream pt-3">
-                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/60">
-                    <span>Total Value:</span>
-                    <span className="line-through">₹{(originalPrice + 3500).toLocaleString()}</span>
-                  </div>
                   <div className="flex justify-between items-center text-lg">
                     <span className="luxury-body">You Pay:</span>
                     <span className="text-luxury-green font-semibold">₹{totalAmount.toLocaleString()}</span>
                   </div>
                   <div className="text-center text-sm luxury-body text-luxury-charcoal/60 mt-2">
-                    Total: ₹{totalAmount.toLocaleString()} (Value over ₹{(originalPrice + 3500).toLocaleString()})
+                    Total: ₹{totalAmount.toLocaleString()} + GST
                   </div>
                 </div>
               </div>
@@ -605,44 +660,6 @@ export default function GuideCheckoutPage() {
           </div>
         </div>
 
-        {/* Exit Intent Popup */}
-        {showExitIntent && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-luxury-warm-white rounded-3xl p-6 max-w-sm w-full relative">
-              <button
-                onClick={() => setShowExitIntent(false)}
-                className="absolute top-4 right-4 text-luxury-charcoal/60 hover:text-luxury-charcoal"
-              >
-                ✕
-              </button>
-              
-              <div className="text-center mb-4">
-                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Wait! Don&apos;t Miss Out!</h3>
-                <p className="text-sm luxury-body text-luxury-charcoal/70">
-                  Get an extra 10% off your style guide
-                </p>
-              </div>
-              
-              <div className="bg-luxury-gold/20 rounded-xl p-4 mb-4 text-center">
-                <div className="text-2xl font-semibold text-luxury-charcoal">
-                  ₹449 <span className="text-sm line-through text-luxury-charcoal/60">₹499</span>
-                </div>
-                <div className="text-xs luxury-body text-luxury-charcoal/60">Save ₹50 more!</div>
-              </div>
-              
-              <button
-                onClick={() => {
-                  setShowExitIntent(false);
-                  // Scroll to form
-                  document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300"
-              >
-                Claim My Discount Now
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
