@@ -168,9 +168,8 @@ export default function GuideCheckoutPage() {
 
       const responseData = await response.json();
       
-      console.log('Payment API response:', responseData);
-      
       if (!response.ok) {
+        console.error('Payment API error:', responseData);
         throw new Error(`HTTP ${response.status}: ${responseData.error || 'Payment initialization failed'}`);
       }
       
@@ -182,7 +181,6 @@ export default function GuideCheckoutPage() {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.onload = () => {
-        console.log('Razorpay script loaded successfully');
         
         // Initialize Razorpay payment
         const options = {
@@ -193,7 +191,6 @@ export default function GuideCheckoutPage() {
           description: 'ICONIK Styling Guide',
           order_id: responseData.razorpay_order_id,
           handler: async (response: RazorpayResponse) => {
-            console.log('Payment successful:', response);
             
             // Track purchase with all items
             const purchasedItems = ['iconik_guide'];
@@ -208,7 +205,6 @@ export default function GuideCheckoutPage() {
           },
           modal: {
             ondismiss: () => {
-              console.log('Payment modal dismissed');
               setIsProcessing(false);
             }
           },
@@ -219,6 +215,14 @@ export default function GuideCheckoutPage() {
           },
           theme: {
             color: '#E91E63'
+          },
+          // Disable some tracking features that cause browser warnings
+          retry: {
+            enabled: false
+          },
+          // Reduce fingerprinting attempts
+          notes: {
+            integration: 'checkout'
           }
         };
         
@@ -227,7 +231,6 @@ export default function GuideCheckoutPage() {
       };
       
       script.onerror = () => {
-        console.error('Failed to load Razorpay script');
         setIsProcessing(false);
         alert('Failed to load payment system. Please try again or contact support.');
       };
