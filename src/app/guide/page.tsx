@@ -297,6 +297,72 @@ export default function GuidePage() {
           </div>
         </section>
 
+        {/* Before / After Transformations */}
+        <section className="py-20 px-4 bg-luxury-cream/20">
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-4">
+                Real Style Transformations
+              </h2>
+              <p className="luxury-body text-luxury-charcoal/70">
+                See how the ICONIK approach elevates everyday looks into confident, elegant style.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              {/* Transformation 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-4 border border-luxury-cream"
+              >
+                <div className="rounded-2xl overflow-hidden mb-3">
+                  <img src="/style-before.webp" alt="Before" className="w-full object-cover" />
+                </div>
+                <div className="rounded-2xl overflow-hidden">
+                  <img src="/style-after.webp" alt="After" className="w-full object-cover" />
+                </div>
+              </motion.div>
+
+              {/* Transformation 2 */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7 }}
+                className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-4 border border-luxury-cream"
+              >
+                <div className="rounded-2xl overflow-hidden mb  -3">
+                  <img src="/wardrobe-before.webp" alt="Before" className="w-full object-cover" />
+                </div>
+                <div className="rounded-2xl overflow-hidden">
+                  <img src="/wardrobe-after.webp" alt="After" className="w-full object-cover" />
+                </div>
+              </motion.div>
+
+              {/* Transformation 3 */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-4 border border-luxury-cream"
+              >
+                <div className="rounded-2xl overflow-hidden mb-3">
+                  <img src="/ethnic-traditional-before.webp" alt="Before" className="w-full object-cover" />
+                </div>
+                <div className="rounded-2xl overflow-hidden">
+                  <img src="/ethnic-traditional-after.webp" alt="After" className="w-full object-cover" />
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Features Section */}
         <section id="features" className="py-20 px-4 bg-luxury-cream/20">
           <div className="max-w-6xl mx-auto">
