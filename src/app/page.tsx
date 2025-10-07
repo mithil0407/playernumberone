@@ -72,7 +72,7 @@ export default function Home() {
       const img = new window.Image();
       img.src = image.src;
     });
-  }, []);
+  }, [transformationImages]);
 
   // 5-minute countdown timer
   useEffect(() => {

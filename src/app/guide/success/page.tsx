@@ -81,7 +81,7 @@ function GuideSuccessPageContent() {
                 <div className="text-left">
                   <h3 className="font-semibold text-luxury-charcoal mb-2">Within 5 Minutes</h3>
                   <p className="luxury-body text-luxury-charcoal/80">
-                    You'll receive an email with your ICONIK Styling Guide download link. Check your inbox (and spam folder just in case).
+                    You&apos;ll receive an email with your ICONIK Styling Guide download link. Check your inbox (and spam folder just in case).
                   </p>
                 </div>
               </div>
@@ -187,7 +187,7 @@ function GuideSuccessPageContent() {
           <div className="bg-luxury-cream/30 backdrop-blur-sm rounded-3xl p-6 mb-8 border border-luxury-cream">
             <h2 className="text-xl luxury-heading text-luxury-charcoal mb-4">💬 Need Help?</h2>
             <p className="luxury-body text-luxury-charcoal/80 mb-4">
-              If you don't receive your guide within 10 minutes, or if you have any questions, reach out to us:
+              If you don&apos;t receive your guide within 10 minutes, or if you have any questions, reach out to us:
             </p>
             <div className="space-y-2">
               <a 

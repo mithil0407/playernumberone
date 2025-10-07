@@ -8,71 +8,23 @@ import Image from 'next/image';
 import { 
   CheckCircle, 
   ArrowRight, 
-  ArrowLeft,
   Clock, 
-  Users,
   Heart,
   Zap,
   Target,
   TrendingUp,
   Menu,
   X,
-  Star,
-  Sparkles,
-  Gem,
-  Shield,
-  Trophy,
-  Award
+  Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function GuidePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState({
     minutes: 5,
     seconds: 0
   });
-
-  // Transformation images data
-  const transformationImages = [
-    {
-      src: '/transformation-1.webp',
-      testimonial: 'I never thought I could look this good in my own clothes. Iconik made me see fashion differently.',
-      name: 'Sakshi, 30, Delhi'
-    },
-    {
-      src: '/transformation-2.webp',
-      testimonial: 'Now my friends ask me to shop for them. Worth every rupee.',
-      name: 'Priya, 26, Hyderabad'
-    },
-    {
-      src: '/transformation-3.webp',
-      testimonial: 'Finally, a styling system made for Indian women who don\'t want to overspend.',
-      name: 'Megha, 33, Mumbai'
-    }
-  ];
-
-  // Navigation functions
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
-  };
-
-  const goToImage = (index: number) => {
-    setCurrentImageIndex(index);
-  };
-
-  // Preload all images for faster transitions
-  useEffect(() => {
-    transformationImages.forEach((image) => {
-      const img = new window.Image();
-      img.src = image.src;
-    });
-  }, []);
 
   // 5-minute countdown timer
   useEffect(() => {
@@ -229,17 +181,17 @@ export default function GuidePage() {
               </p>
               
               <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 mb-8 leading-relaxed">
-                If you've ever looked at a well-dressed woman and thought,<br />
-                <span className="italic">"Wish I could look like that — but I don't even know where to start,"</span><br />
+                If you&apos;ve ever looked at a well-dressed woman and thought,<br />
+                <span className="italic">&quot;Wish I could look like that — but I don&apos;t even know where to start,&quot;</span><br />
                 then keep reading…
               </p>
 
               <div className="bg-luxury-pink-bg/50 backdrop-blur-sm rounded-3xl p-6 md:p-8 mb-8 border border-luxury-cream">
                 <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-4">
-                  You Don't Need a Huge Wardrobe. You Don't Need to Be Skinny. You Don't Need to Copy Influencers.
+                  You Don&apos;t Need a Huge Wardrobe. You Don&apos;t Need to Be Skinny. You Don&apos;t Need to Copy Influencers.
                 </h2>
                 <p className="text-lg luxury-body text-luxury-charcoal/80 mb-6">
-                  You'll be shocked when you realize how simple it is to look effortlessly stylish once you learn the Iconik System — a framework used by stylists to turn everyday women into fashion icons.
+                  You&apos;ll be shocked when you realize how simple it is to look effortlessly stylish once you learn the Iconik System — a framework used by stylists to turn everyday women into fashion icons.
                 </p>
                 <p className="text-lg luxury-body text-luxury-charcoal/80">
                   Skip the endless YouTube styling videos, trial-and-error shopping, and outfit confusion.
@@ -339,7 +291,7 @@ export default function GuidePage() {
                 </div>
                 <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Riya – 29, Mumbai</h3>
                 <p className="luxury-body text-luxury-charcoal/80">
-                  Always thought fashion was "not for her." After Iconik, she gets DMs asking where she shops.
+                  Always thought fashion was &quot;not for her.&quot; After Iconik, she gets DMs asking where she shops.
                 </p>
               </motion.div>
             </div>
@@ -356,7 +308,7 @@ export default function GuidePage() {
               className="text-center mb-16"
             >
               <h2 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">
-                With Iconik, You'll Learn To:
+                With Iconik, You&apos;ll Learn To:
               </h2>
             </motion.div>
 
@@ -532,7 +484,7 @@ export default function GuidePage() {
                 Six months later — your style, your posture, your confidence… all transformed.
               </p>
               <p className="text-lg md:text-xl luxury-body mb-8 opacity-90">
-                You didn't need expensive clothes. You just needed Iconik.
+                You didn&apos;t need expensive clothes. You just needed Iconik.
               </p>
               <Link
                 href="/guide/checkout"

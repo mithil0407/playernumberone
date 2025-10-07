@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { ArrowLeft, Shield, CheckCircle, Lock } from 'lucide-react';
+import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -53,7 +53,6 @@ export default function GuideCheckoutPage() {
     phone: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [showExitIntent, setShowExitIntent] = useState(false);
   
   // Product pricing
@@ -63,24 +62,7 @@ export default function GuideCheckoutPage() {
   
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() => discountedPrice, []);
-  
-  const totalValue = useMemo(() => originalPrice, []);
 
-  // Optimized countdown timer - only update when time actually changes
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { minutes: prev.minutes - 1, seconds: 59 };
-        }
-        return prev; // No change, prevents unnecessary re-render
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Exit intent detection
   useEffect(() => {
@@ -477,9 +459,9 @@ export default function GuideCheckoutPage() {
               </button>
               
               <div className="text-center">
-                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-3">Wait! Don't Miss Out</h3>
+                <h3 className="text-xl luxury-heading text-luxury-charcoal mb-3">Wait! Don&apos;t Miss Out</h3>
                 <p className="luxury-body text-luxury-charcoal/70 mb-4">
-                  This special price won't last forever. Get your ICONIK guide now and start your transformation today!
+                  This special price won&apos;t last forever. Get your ICONIK guide now and start your transformation today!
                 </p>
                 <Link
                   href="/guide/checkout"
