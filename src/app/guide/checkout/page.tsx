@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, CheckCircle, Lock, Star, Clock, Users } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {

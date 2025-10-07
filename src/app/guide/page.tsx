@@ -9,20 +9,13 @@ import {
   CheckCircle, 
   ArrowRight, 
   ArrowLeft,
-  Clock, 
-  Users,
   Heart,
   Zap,
   Target,
   TrendingUp,
   Menu,
   X,
-  Star,
-  Sparkles,
-  Gem,
-  Shield,
-  Trophy,
-  Award
+  Star
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 
@@ -94,43 +87,6 @@ export default function GuidePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const features = [
-    { 
-      icon: CheckCircle, 
-      title: 'Personal Style Assessment', 
-      description: 'Discover your unique style based on body shape, lifestyle & personality',
-      image: '/style-assessment.webp',
-      imageAlt: 'Style assessment'
-    },
-    { 
-      icon: Target, 
-      title: 'Personalized Color Palette', 
-      description: 'Colors that make your skin glow and enhance your natural beauty',
-      image: '/color-palette.webp',
-      imageAlt: 'Color palette'
-    },
-    { 
-      icon: TrendingUp, 
-      title: 'Wardrobe Blueprint', 
-      description: 'Mix-and-match formulas for effortless, elegant looks',
-      image: '/wardrobe-blueprint.webp',
-      imageAlt: 'Wardrobe blueprint'
-    },
-    { 
-      icon: Heart, 
-      title: 'Beauty & Wellness Plan', 
-      description: 'Confidence-building rituals for inner and outer radiance',
-      image: '/beauty-wellness.webp',
-      imageAlt: 'Wellness plan'
-    },
-    { 
-      icon: Zap, 
-      title: 'Expert Style Consultation', 
-      description: '20-minute personalized call with our leading stylist',
-      image: '/expert-consultation.webp',
-      imageAlt: 'Style consultation'
-    }
-  ];
 
   const testimonials = [
     {
@@ -419,7 +375,7 @@ export default function GuidePage() {
       {/* Features Section */}
       <section id="features" className="py-20 md:py-32 bg-luxury-warm-white relative">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You'll Receive</h2>
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You&apos;ll Receive</h2>
           <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
             A complete step-by-step digital style guide that helps you define your personal style, discover what flatters your body, and build a wardrobe that radiates confidence.
           </p>
