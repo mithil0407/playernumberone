@@ -61,35 +61,27 @@ export default function CheckoutPage() {
   const savings = originalPrice - discountedPrice;
   
   // Add-ons
-  const [shoppingBlueprintAddon, setShoppingBlueprintAddon] = useState(false); // 16 Styled Looks
-  const [glowUpProgramAddon, setGlowUpProgramAddon] = useState(false); // Beauty and Makeup Plan
+  const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
   const [skinHairBlueprintAddon, setSkinHairBlueprintAddon] = useState(false); // Skin and Hair Blueprint
   
-  const shoppingBlueprintOriginalPrice = 1399;
-  const shoppingBlueprintDiscountedPrice = 699;
-  
-  const glowUpProgramOriginalPrice = 799;
-  const glowUpProgramDiscountedPrice = 399;
+  const divaDietPlanPrice = 299;
   
   const skinHairBlueprintOriginalPrice = 1999;
   const skinHairBlueprintDiscountedPrice = 999;
-  const glowUpProgramSavings = glowUpProgramOriginalPrice - glowUpProgramDiscountedPrice;
   
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() => 
     discountedPrice + 
-    (shoppingBlueprintAddon ? shoppingBlueprintDiscountedPrice : 0) + 
-    (glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0) +
+    (divaDietPlanAddon ? divaDietPlanPrice : 0) +
     (skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0),
-    [shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon]
+    [divaDietPlanAddon, skinHairBlueprintAddon]
   );
   
   const totalValue = useMemo(() => 
     originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
-    (shoppingBlueprintAddon ? shoppingBlueprintOriginalPrice : 0) + 
-    (glowUpProgramAddon ? glowUpProgramOriginalPrice : 0) +
+    (divaDietPlanAddon ? divaDietPlanPrice : 0) +
     (skinHairBlueprintAddon ? skinHairBlueprintOriginalPrice : 0),
-    [shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon]
+    [divaDietPlanAddon, skinHairBlueprintAddon]
   );
   
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
@@ -137,15 +129,10 @@ export default function CheckoutPage() {
 
   // Memoize addon details to prevent recreation on every render
   const addonDetails = useMemo(() => ({
-    shopping: {
-      name: '16 Styled Looks',
-      price: 699,
-      id: 'styled_looks_pack'
-    },
-    glowup: {
-      name: 'Beauty and Makeup Plan',
-      price: 399,
-      id: 'beauty_makeup_plan'
+    divadiet: {
+      name: 'Diva Diet Plan',
+      price: 299,
+      id: 'diva_diet_plan'
     },
     skinhair: {
       name: 'Skin and Hair Blueprint',
@@ -155,7 +142,7 @@ export default function CheckoutPage() {
   }), []);
 
   // Optimized add-on change handler with Meta tracking only for additions
-  const handleAddonChange = useCallback((addonType: 'shopping' | 'glowup' | 'skinhair', checked: boolean) => {
+  const handleAddonChange = useCallback((addonType: 'divadiet' | 'skinhair', checked: boolean) => {
     const addon = addonDetails[addonType];
     
     // Track only when addon is added (not removed)
@@ -164,12 +151,10 @@ export default function CheckoutPage() {
     }
     
     // Update state
-    if (addonType === 'shopping') {
-      setShoppingBlueprintAddon(checked);
+    if (addonType === 'divadiet') {
+      setDivaDietPlanAddon(checked);
     } else if (addonType === 'skinhair') {
       setSkinHairBlueprintAddon(checked);
-    } else {
-      setGlowUpProgramAddon(checked);
     }
   }, [addonDetails]);
 
@@ -191,7 +176,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     
     // Track InitiateCheckout event with correct item count
-    const itemCount = 1 + (shoppingBlueprintAddon ? 1 : 0) + (glowUpProgramAddon ? 1 : 0) + (skinHairBlueprintAddon ? 1 : 0);
+    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (skinHairBlueprintAddon ? 1 : 0);
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation');
     
     try {
@@ -203,13 +188,11 @@ export default function CheckoutPage() {
         amount: totalAmount,
         base_product: 'Iconik Style Consultation',
         add_ons: {
-          shopping_blueprint: shoppingBlueprintAddon,
-          glow_up_program: glowUpProgramAddon,
+          diva_diet_plan: divaDietPlanAddon,
           skin_hair_blueprint: skinHairBlueprintAddon
         },
         total_base_price: discountedPrice,
-        shopping_blueprint_price: shoppingBlueprintAddon ? shoppingBlueprintDiscountedPrice : 0,
-        glow_up_program_price: glowUpProgramAddon ? glowUpProgramDiscountedPrice : 0,
+        diva_diet_plan_price: divaDietPlanAddon ? divaDietPlanPrice : 0,
         skin_hair_blueprint_price: skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0
       };
 
@@ -252,8 +235,7 @@ export default function CheckoutPage() {
           handler: function (response: RazorpayResponse) {
             // Payment successful - Track detailed purchase with all items
             const purchasedItems = ['iconik_style_consultation'];
-            if (shoppingBlueprintAddon) purchasedItems.push('styled_looks_pack');
-            if (glowUpProgramAddon) purchasedItems.push('beauty_makeup_plan');
+            if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
             if (skinHairBlueprintAddon) purchasedItems.push('skin_hair_blueprint');
             
             // Track SINGLE purchase event with all items (no duplicates)
@@ -298,7 +280,7 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, shoppingBlueprintAddon, glowUpProgramAddon, skinHairBlueprintAddon]);
+  }, [formData, totalAmount, divaDietPlanAddon, skinHairBlueprintAddon]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -510,9 +492,9 @@ export default function CheckoutPage() {
             </div>
 
 
-            {/* Add-on 1: Shopping Blueprint */}
+            {/* Add-on 1: Diva Diet Plan */}
             <div 
-              onClick={() => handleAddonChange('shopping', !shoppingBlueprintAddon)}
+              onClick={() => handleAddonChange('divadiet', !divaDietPlanAddon)}
               className="bg-luxury-cream/40 border-2 border-luxury-cream rounded-3xl p-6 md:p-8 relative cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
             >
               <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2 bg-luxury-accent text-luxury-warm-white px-4 py-1 rounded-full text-xs font-bold">
@@ -522,62 +504,29 @@ export default function CheckoutPage() {
               <div className="flex items-start gap-4">
                 <input
                   type="checkbox"
-                  checked={shoppingBlueprintAddon}
+                  checked={divaDietPlanAddon}
                   readOnly
                   className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
                 />
                 <div className="flex-1">
-                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">✨ 16 Styled Looks</div>
+                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">🥗 Diva Diet Plan</div>
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="line-through text-luxury-charcoal/40 font-semibold">₹{shoppingBlueprintOriginalPrice}</span>
-                    <span className="text-luxury-green font-semibold text-xl">₹{shoppingBlueprintDiscountedPrice}</span>
-                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">50% OFF</span>
+                    <span className="text-luxury-green font-semibold text-xl">₹{divaDietPlanPrice}</span>
                   </div>
                   <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
-                    <li>🎉 4 Party Outfits</li>
-                    <li>✈️ 4 Travel Outfits</li>
-                    <li>👕 4 Casual Outfits</li>
-                    <li>💼 4 Office Outfits</li>
+                    <li>🍽️ Personalized meal plans tailored to your lifestyle</li>
+                    <li>💪 Nutrition guide for glowing skin and healthy hair</li>
+                    <li>🥑 Easy-to-follow recipes and portion control tips</li>
+                    <li>📊 Weekly progress tracking and adjustments</li>
                   </ul>
                   <div className="bg-luxury-gold/20 text-luxury-charcoal p-3 rounded-lg mt-3 text-center text-sm luxury-body">
-                    ⚡ One-Time Offer: Never Available At This Price Again!
+                    ⚡ Complete your transformation inside & out!
                   </div>
-                </div>
-              </div>
-                </div>
-                
-            {/* Add-on 2: Glow Up Program */}
-            <div 
-              onClick={() => handleAddonChange('glowup', !glowUpProgramAddon)}
-              className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
-            >
-              <div className="flex items-start gap-4">
-                <input
-                  type="checkbox"
-                  checked={glowUpProgramAddon}
-                  readOnly
-                  className="w-6 h-6 text-luxury-accent border-luxury-cream rounded focus:ring-luxury-accent mt-1 pointer-events-none"
-                />
-                <div className="flex-1">
-                  <div className="luxury-heading text-luxury-charcoal text-lg mb-2">💄 Beauty and Makeup Plan</div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="line-through text-luxury-charcoal/40 font-semibold">₹{glowUpProgramOriginalPrice}</span>
-                    <span className="text-luxury-green font-semibold text-xl">₹{glowUpProgramDiscountedPrice}</span>
-                    <span className="bg-luxury-accent text-luxury-warm-white px-2 py-1 rounded-full text-xs">SAVE ₹{glowUpProgramSavings}</span>
-                  </div>
-                  <ul className="text-sm luxury-body text-luxury-charcoal/70 space-y-1 ml-4">
-                    <li>💄 Signature Makeup & Lipstick Guide</li>
-                    <li>• Quick & natural makeup routine</li>
-                    <li>• Your perfect lipstick shade (skin-matched)</li>
-                    <li>👙 Lingerie Fit & Essentials Guide</li>
-                      <li>• Correct bra styles for your body</li>
-                      <li>• Shapewear essentials to flatter any outfit</li>
-                  </ul>
                 </div>
               </div>
             </div>
 
-            {/* Add-on 3: Skin and Hair Blueprint */}
+            {/* Add-on 2: Skin and Hair Blueprint */}
             <div 
               onClick={() => handleAddonChange('skinhair', !skinHairBlueprintAddon)}
               className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-luxury-cream cursor-pointer hover:bg-luxury-cream/60 transition-all duration-300"
@@ -625,17 +574,10 @@ export default function CheckoutPage() {
                   <span className="luxury-body">FREE</span>
                 </div>
                 
-                {shoppingBlueprintAddon && (
+                {divaDietPlanAddon && (
                   <div className="flex justify-between items-center text-luxury-accent">
-                    <span className="luxury-body">16 Styled Looks (Optional)</span>
-                    <span className="luxury-body font-semibold">₹{shoppingBlueprintDiscountedPrice}</span>
-                  </div>
-                )}
-                
-                {glowUpProgramAddon && (
-                  <div className="flex justify-between items-center text-luxury-accent">
-                    <span className="luxury-body">Beauty and Makeup Plan (Optional)</span>
-                    <span className="luxury-body font-semibold">₹{glowUpProgramDiscountedPrice}</span>
+                    <span className="luxury-body">Diva Diet Plan (Optional)</span>
+                    <span className="luxury-body font-semibold">₹{divaDietPlanPrice}</span>
                   </div>
                 )}
                 

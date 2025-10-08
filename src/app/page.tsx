@@ -578,6 +578,18 @@ export default function Home() {
                         20-minute one-on-one call with expert stylist
                       </span>
                     </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        16 Styled Looks for every occasion
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        Beauty and Makeup Plan personalized for you
+                      </span>
+                    </li>
                   </ul>
                 </div>
                 
