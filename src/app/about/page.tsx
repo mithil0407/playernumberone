@@ -1,10 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, User, Mail, MapPin, Briefcase } from 'lucide-react';
+import { trackPageView } from '@/lib/metaPixel';
 
 export default function AboutPage() {
+  // Track page view on mount
+  useEffect(() => {
+    trackPageView();
+  }, []);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}

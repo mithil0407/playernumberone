@@ -1,7 +1,7 @@
 'use client';
 
 import Head from 'next/head';
-import { trackCTAClick } from '@/lib/metaPixel';
+import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,6 +22,12 @@ export default function GuidePage() {
     minutes: 5,
     seconds: 0
   });
+
+  // Track page view and product view on mount
+  useEffect(() => {
+    trackPageView();
+    trackViewContent('ICONIK Style Guide', 499, ['iconik_style_guide']);
+  }, []);
 
   // Transformation images data
   const transformationImages = useMemo(() => [

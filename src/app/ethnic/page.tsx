@@ -1,7 +1,7 @@
 'use client';
 
 import Head from 'next/head';
-import { trackEthnicLead } from '@/lib/metaPixel';
+import { trackEthnicLead, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,10 +15,16 @@ import {
   Gem,
   Flower2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function EthnicPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Track page view and product view on mount
+  useEffect(() => {
+    trackPageView();
+    trackViewContent('Ethnic Elegance Package', 1999, ['ethnic_elegance_package']);
+  }, []);
 
   const ethnicFeatures = [
     { 

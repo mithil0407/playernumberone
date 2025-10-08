@@ -5,16 +5,23 @@ import { CheckCircle, Download, Mail, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { trackCompleteRegistration, trackPageView } from '@/lib/metaPixel';
 
 function GuideSuccessPageContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    // Track page view
+    trackPageView();
+    
     // Extract customer ID and order ID from URL parameters
     const customerId = searchParams.get('customer_id');
     const orderId = searchParams.get('order_id');
     const dbOrderId = searchParams.get('db_order_id');
     const paymentId = searchParams.get('payment_id');
+    
+    // Track successful guide purchase completion
+    trackCompleteRegistration(499, 'ICONIK Style Guide Purchase');
     
     // Store in localStorage for future reference
     if (customerId) {

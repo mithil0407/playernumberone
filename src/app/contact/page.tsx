@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Mail, MessageCircle, Clock, CheckCircle, Send } from 'lucide-react';
+import { trackPageView, trackLead } from '@/lib/metaPixel';
 
 export default function ContactPage() {
+  // Track page view on mount
+  useEffect(() => {
+    trackPageView();
+  }, []);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -27,6 +32,9 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    // Track contact form submission as Lead
+    trackLead(undefined, 'Contact Form Submission');
     
     // Simulate form submission
     setTimeout(() => {

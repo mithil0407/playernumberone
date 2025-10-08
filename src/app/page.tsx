@@ -1,7 +1,7 @@
 'use client';
 
 import Head from 'next/head';
-import { trackCTAClick } from '@/lib/metaPixel';
+import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,6 +33,12 @@ export default function Home() {
     minutes: 5,
     seconds: 0
   });
+
+  // Track page view and product view on mount
+  useEffect(() => {
+    trackPageView();
+    trackViewContent('ICONIK Style Consultation', 1199, ['iconik_style_consultation']);
+  }, []);
 
   // Transformation images data
   const transformationImages = useMemo(() => [
@@ -277,9 +283,9 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
-              Personalised Fashion
+              Your Personal Blueprint
               <br />
-              <span className="text-luxury-green">Consultations</span>
+              to <span className="text-luxury-green">Flawless Style</span>
             </motion.h1>
             
             {/* Testimonial Slideshow Above the Fold */}
@@ -378,7 +384,7 @@ export default function Home() {
       </section>
 
       {/* Elegant Stats */}
-      <section className="py-20 md:py-32 bg-luxury-cream/30">
+      <section className="py-12 md:py-20 bg-luxury-cream/30">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
             <div className="text-center group">
@@ -411,7 +417,7 @@ export default function Home() {
       </section>
 
       {/* ICONIK Method Section */}
-      <section className="py-16 md:py-24 bg-luxury-warm-white">
+      <section className="py-10 md:py-16 bg-luxury-warm-white">
         <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-5xl lg:text-6xl luxury-heading text-luxury-charcoal mb-4 leading-tight">
             The ICONIK Method: Your Personal Blueprint to Flawless Style
@@ -420,7 +426,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 md:py-32 bg-luxury-warm-white relative">
+      <section id="features" className="pt-8 pb-20 md:pt-12 md:pb-32 bg-luxury-warm-white relative">
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
           <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You Receive</h2>
           <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
