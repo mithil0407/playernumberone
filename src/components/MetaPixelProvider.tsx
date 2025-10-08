@@ -26,7 +26,7 @@ export default function MetaPixelProvider({ children }: MetaPixelProviderProps) 
         window.fbq('track', 'ViewContent', {
           content_type: 'product',
           content_name: 'ICONIK Style Consultation',
-          value: 1499,
+          value: 1199,
           currency: 'INR',
           content_ids: ['iconik_style_consultation']
         });

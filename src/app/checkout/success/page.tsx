@@ -62,7 +62,7 @@ function SuccessPageContent() {
         </h1>
         
         <p className="text-xl mb-8 text-gray-600">
-          Welcome to IconOne! Your style transformation journey begins now.
+          Welcome to ICONIK! Your style transformation journey begins now.
         </p>
         
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-8 border border-white/30">

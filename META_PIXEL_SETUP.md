@@ -154,3 +154,4 @@ If you encounter issues:
 5. Check the Meta Pixel documentation
 
 The implementation follows Facebook's best practices and should work reliably across all modern browsers.
+

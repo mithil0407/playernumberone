@@ -462,7 +462,7 @@ export default function GuidePage() {
               <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
                 <Image
                   src="/book.png"
-                  alt="IconOne Style Guide Preview"
+                  alt="ICONIK Style Guide Preview"
                   width={400}
                   height={400}
                   className="object-contain drop-shadow-2xl"

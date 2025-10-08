@@ -153,7 +153,7 @@ export default function Home() {
   const faqs = [
     {
       question: 'Will this really help me look more elegant and confident?',
-      answer: 'Absolutely! IconOne focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We\'ve helped 200+ women discover their signature style.'
+      answer: 'Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We\'ve helped 200+ women discover their signature style.'
     },
     {
       question: 'What if the style suggestions don\'t feel like me?',
@@ -410,7 +410,14 @@ export default function Home() {
         </div>
       </section>
 
-
+      {/* ICONIK Method Section */}
+      <section className="py-16 md:py-24 bg-luxury-warm-white">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-5xl lg:text-6xl luxury-heading text-luxury-charcoal mb-4 leading-tight">
+            The ICONIK Method: Your Personal Blueprint to Flawless Style
+          </h2>
+        </div>
+      </section>
 
       {/* Features Section */}
       <section id="features" className="py-20 md:py-32 bg-luxury-warm-white relative">
@@ -421,22 +428,22 @@ export default function Home() {
           </p>
         </div>
                 
-        <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
           {[
-            { icon: <Sparkles className="h-8 w-8 text-luxury-green" />, title: "Personal Style Assessment" },
-            { icon: <Gem className="h-8 w-8 text-luxury-green" />, title: "Curated Outfit Planning" },
-            { icon: <Heart className="h-8 w-8 text-luxury-green" />, title: "Makeup & Grooming Guidance" },
-            { icon: <Shield className="h-8 w-8 text-luxury-green" />, title: "Wardrobe Strategy" },
-            { icon: <Award className="h-8 w-8 text-luxury-green" />, title: "Confidence Coaching" },
-            { icon: <Trophy className="h-8 w-8 text-luxury-green" />, title: "Event-Specific Styling" }
+            { icon: <Sparkles className="h-6 w-6 text-luxury-green" />, title: "Personal Style Assessment" },
+            { icon: <Gem className="h-6 w-6 text-luxury-green" />, title: "Curated Outfit Planning" },
+            { icon: <Heart className="h-6 w-6 text-luxury-green" />, title: "Makeup & Grooming Guidance" },
+            { icon: <Shield className="h-6 w-6 text-luxury-green" />, title: "Wardrobe Strategy" },
+            { icon: <Award className="h-6 w-6 text-luxury-green" />, title: "Confidence Coaching" },
+            { icon: <Trophy className="h-6 w-6 text-luxury-green" />, title: "Event-Specific Styling" }
           ].map((item, i) => (
             <div
               key={i}
-              className="p-8 md:p-10 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-2xl hover:-translate-y-2 group"
+              className="p-5 md:p-6 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-xl hover:-translate-y-1 group"
             >
-              <div className="flex flex-col items-center space-y-6">
+              <div className="flex flex-col items-center space-y-3">
                 <div className="group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
-                <h3 className="text-xl md:text-2xl luxury-heading text-center text-luxury-charcoal">{item.title}</h3>
+                <h3 className="text-sm md:text-base luxury-heading text-center text-luxury-charcoal">{item.title}</h3>
               </div>
             </div>
           ))}
@@ -456,7 +463,7 @@ export default function Home() {
               <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
                 <Image
                   src="/book.png"
-                  alt="IconOne Style Guide Preview"
+                  alt="ICONIK Style Guide Preview"
                   width={400}
                   height={400}
                   className="object-contain drop-shadow-2xl"
@@ -524,60 +531,60 @@ export default function Home() {
         </div>
 
           {/* Main Product */}
-        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 mb-12 md:mb-16">
-          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-2">
-            <div className="p-8 md:p-12 lg:p-16">
-              <div className="text-center mb-12">
-                <h3 className="text-3xl md:text-4xl lg:text-5xl luxury-heading mb-6 text-luxury-charcoal">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 mb-8 md:mb-12">
+          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-1">
+            <div className="p-6 md:p-8">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-6 text-luxury-green">₹1,199</div>
-                <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
+                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,199</div>
+                <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What&apos;s Included:</h4>
-                  <ul className="space-y-6">
-                    <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                  <h4 className="text-lg luxury-heading mb-4 text-luxury-charcoal">What&apos;s Included:</h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
                         Complete style assessment tailored to your features
                       </span>
                     </li>
-                    <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
                         Personalized color palette that makes your skin glow
                       </span>
                     </li>
-                    <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
                         Body-flattering silhouettes that work with your shape
                       </span>
                     </li>
-                    <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
                         Hair & beauty advice for your unique features
                       </span>
                     </li>
-                    <li className="flex items-start gap-4">
-                      <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-lg">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
                         20-minute one-on-one call with expert stylist
                       </span>
                     </li>
                   </ul>
                 </div>
                 
-                <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-2xl p-8 text-center">
-                  <div className="text-4xl mb-6">✨</div>
-                  <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Personal Touch</h4>
-                  <p className="luxury-body text-luxury-charcoal/70 text-lg">Tailored specifically for you</p>
+                <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-xl p-5 text-center">
+                  <div className="text-3xl mb-3">✨</div>
+                  <h4 className="text-lg luxury-heading text-luxury-charcoal mb-2">Personal Touch</h4>
+                  <p className="luxury-body text-luxury-charcoal/70 text-sm">Tailored specifically for you</p>
                 </div>
               </div>
               
@@ -587,7 +594,7 @@ export default function Home() {
                   onClick={() => {
                     trackCTAClick('Style Consultation', 'Pricing Section', 1199);
                   }}
-                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   ✨ Get Your Style Consultation
                 </Link>
@@ -597,43 +604,43 @@ export default function Home() {
         </div>
 
         {/* Advanced Plan */}
-        <div className="max-w-6xl mx-auto px-6 lg:px-8">
-          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-3xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-2">
-            <div className="p-8 md:p-12">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl md:text-4xl luxury-heading mb-4 text-luxury-charcoal">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
+          <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-1">
+            <div className="p-6 md:p-8">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                   Complete ICONIK Package
                 </h3>
-                <div className="text-3xl md:text-4xl font-semibold mb-4 text-luxury-green">₹2,297</div>
-                <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70">
+                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹2,297</div>
+                <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                   Style + Shopping + Wellness Bundle
                 </p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <h4 className="text-2xl luxury-heading mb-8 text-luxury-charcoal">What&apos;s Included:</h4>
-                  <ul className="space-y-6">
+                  <h4 className="text-lg luxury-heading mb-4 text-luxury-charcoal">What&apos;s Included:</h4>
+                  <ul className="space-y-3">
                     {features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-4">
-                        <CheckCircle className="w-6 h-6 text-luxury-green flex-shrink-0 mt-1" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-lg">{feature.title}</span>
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                        <span className="luxury-body text-luxury-charcoal/80 text-sm">{feature.title}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 
-                <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-2xl p-8 text-center">
-                  <div className="text-4xl mb-6">💰</div>
-                  <h4 className="text-2xl luxury-heading text-luxury-charcoal mb-4">Bundle Savings</h4>
-                  <p className="luxury-body text-luxury-charcoal/70 mb-3 text-lg">Individual Price: ₹2,197</p>
-                  <div className="text-2xl font-semibold text-luxury-green mb-2">Save ₹800</div>
-                  <p className="luxury-body text-luxury-green text-sm">Limited time bundle</p>
+                <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-xl p-5 text-center">
+                  <div className="text-3xl mb-3">💰</div>
+                  <h4 className="text-lg luxury-heading text-luxury-charcoal mb-2">Bundle Savings</h4>
+                  <p className="luxury-body text-luxury-charcoal/70 mb-2 text-sm">Individual Price: ₹2,197</p>
+                  <div className="text-xl font-semibold text-luxury-green mb-1">Save ₹800</div>
+                  <p className="luxury-body text-luxury-green text-xs">Limited time bundle</p>
                 </div>
               </div>
               
-              <div className="bg-luxury-red/10 border border-luxury-red/20 rounded-2xl p-6 mb-8 text-center">
-                <p className="luxury-body text-luxury-red-700 text-lg">⚠️ Only 15 slots available this week</p>
+              <div className="bg-luxury-red/10 border border-luxury-red/20 rounded-xl p-4 mb-6 text-center">
+                <p className="luxury-body text-luxury-red-700 text-sm">⚠️ Only 15 slots available this week</p>
               </div>
               
               <div className="text-center">
@@ -642,7 +649,7 @@ export default function Home() {
                   onClick={() => {
                     trackCTAClick('Complete Package', 'Pricing Section', 2297);
                   }}
-                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-16 py-5 rounded-full text-xl luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   ✨ Transform Now
                 </Link>
@@ -814,22 +821,22 @@ export default function Home() {
 
       {/* FAQ Section */}
       <section id="faq" className="py-20 md:py-32 bg-luxury-cream/20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-16 md:mb-24">
-          <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-12 md:mb-16">
+          <h2 className="text-3xl md:text-5xl luxury-heading mb-4 text-luxury-charcoal">
             Frequently Asked Questions
           </h2>
-          <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
+          <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-base md:text-lg">
             Everything you need to know about our consultations.
           </p>
         </div>
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-4">
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className="text-left p-8 md:p-10 bg-luxury-warm-white/80 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-1"
+              className="text-left p-5 md:p-6 bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-1"
             >
-              <h3 className="text-xl md:text-2xl luxury-heading mb-4 text-luxury-charcoal">{faq.question}</h3>
-              <p className="luxury-body text-luxury-charcoal/80 text-lg leading-relaxed">{faq.answer}</p>
+              <h3 className="text-base md:text-lg luxury-heading mb-2 text-luxury-charcoal">{faq.question}</h3>
+              <p className="luxury-body text-luxury-charcoal/80 text-sm md:text-base leading-relaxed">{faq.answer}</p>
             </div>
           ))}
         </div>
@@ -1024,7 +1031,7 @@ export default function Home() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold text-luxury-green">₹1,499</span>
+                <span className="text-base font-semibold text-luxury-green">₹1,199</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>

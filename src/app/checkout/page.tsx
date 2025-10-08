@@ -54,11 +54,10 @@ export default function CheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
-  const [showExitIntent, setShowExitIntent] = useState(false);
   
   // Product pricing
   const originalPrice = 5999;
-  const discountedPrice = 1499;
+  const discountedPrice = 1199;
   const savings = originalPrice - discountedPrice;
   
   // Add-ons
@@ -110,18 +109,6 @@ export default function CheckoutPage() {
 
     return () => clearInterval(timer);
   }, []);
-
-  // Exit intent detection
-  useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (e.clientY <= 0 && !showExitIntent) {
-        setShowExitIntent(true);
-      }
-    };
-
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
-  }, [showExitIntent]);
 
   // Optimized input change handler with memoized validation
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -760,46 +747,6 @@ export default function CheckoutPage() {
           </button>
         </div>
       </div>
-
-
-        {/* Exit Intent Popup */}
-      {showExitIntent && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-luxury-warm-white rounded-3xl p-6 max-w-sm w-full relative">
-            <button
-              onClick={() => setShowExitIntent(false)}
-              className="absolute top-4 right-4 text-luxury-charcoal/60 hover:text-luxury-charcoal"
-            >
-              ✕
-            </button>
-            
-            <div className="text-center mb-4">
-              <h3 className="text-xl luxury-heading text-luxury-charcoal mb-2">Wait! Don&apos;t Miss Out!</h3>
-              <p className="text-sm luxury-body text-luxury-charcoal/70">
-                Get an extra 10% off your style consultation
-              </p>
-            </div>
-            
-            <div className="bg-luxury-gold/20 rounded-xl p-4 mb-4 text-center">
-              <div className="text-2xl font-semibold text-luxury-charcoal">
-                ₹1,349 <span className="text-sm line-through text-luxury-charcoal/60">₹1,499</span>
-              </div>
-              <div className="text-xs luxury-body text-luxury-charcoal/60">Save ₹150 more!</div>
-            </div>
-            
-            <button
-              onClick={() => {
-                setShowExitIntent(false);
-                // Scroll to form
-                document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-3 rounded-full text-base luxury-body font-semibold transition-all duration-300"
-            >
-              Claim My Discount Now
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
