@@ -602,6 +602,23 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Free Outfit Recommendation - Alternative Option */}
+              <div className="mb-4 md:mb-5">
+                <a
+                  href="https://api.whatsapp.com/send/?phone=919130048899&text=Hi+ICONIK%21+I%27d+love+to+get+my+free+outfit+recommendation.&type=phone_number&app_absent=0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-luxury-pink-bg/40 backdrop-blur-sm border border-luxury-accent/20 rounded-xl p-3 md:p-4 hover:bg-luxury-pink-bg/60 hover:border-luxury-accent/40 transition-all duration-300 text-center"
+                >
+                  <p className="luxury-body text-luxury-charcoal/80 text-sm md:text-base mb-1">
+                    🤔 Still unsure? <span className="text-luxury-accent font-semibold">Try a Free Outfit Recommendation</span> first!
+                  </p>
+                  <p className="luxury-body text-luxury-charcoal/60 text-xs md:text-sm">
+                    Get instant style advice on WhatsApp — no commitment needed
+                  </p>
+                </a>
+              </div>
               
               {/* Payment Button - Mobile Optimized */}
               <button
