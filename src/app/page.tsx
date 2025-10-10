@@ -312,7 +312,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
-              <span className="text-luxury-green">Transform</span> Your Look
+              <span className="text-luxury-green">Transform</span> Yourself<br />from Average to <span className="text-luxury-green">Iconik</span>
             </motion.h1>
 
             {/* Free Outfit Recommendation CTA */}
@@ -473,15 +473,6 @@ export default function Home() {
               <div className="luxury-body text-luxury-charcoal/70">Weeks to Elegance</div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ICONIK Method Section */}
-      <section className="py-10 md:py-16 bg-luxury-warm-white">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-5xl lg:text-6xl luxury-heading text-luxury-charcoal mb-4 leading-tight">
-            The ICONIK Method: Your Personal Blueprint to Flawless Style
-          </h2>
         </div>
       </section>
 
