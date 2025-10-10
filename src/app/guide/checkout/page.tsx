@@ -117,7 +117,7 @@ export default function GuideCheckoutPage() {
     } else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) {
       updateUserData(formData.email, value);
     }
-  }, [formData.phone, formData.email, presenceGuideAddon, magnetismPlaybookAddon]);
+  }, [formData.phone, formData.email]);
 
   // Memoize payment processing function to prevent recreation
   const processPayment = useCallback(async () => {
@@ -242,7 +242,7 @@ export default function GuideCheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount]);
+  }, [formData, totalAmount, presenceGuideAddon, magnetismPlaybookAddon, discountedPrice, presenceGuidePrice, magnetismPlaybookPrice]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {

@@ -17,8 +17,7 @@ const mockSupabaseClient = {
 // Only create real client if we have valid environment variables
 let supabase: SupabaseClient = mockSupabaseClient;
 
-// Check if we're in production or have valid env vars
-const isProduction = process.env.NODE_ENV === 'production';
+// Check if we have valid env vars
 const hasValidEnvVars = process.env.NEXT_PUBLIC_SUPABASE_URL && 
                        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
                        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&

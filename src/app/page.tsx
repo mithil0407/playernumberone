@@ -1181,7 +1181,7 @@ export default function Home() {
               onClick={() => setShowFreeOfferPopup(false)}
               className="w-full luxury-body text-luxury-charcoal/60 hover:text-luxury-charcoal text-sm transition-colors"
             >
-              No thanks, I'll decide later
+              No thanks, I&apos;ll decide later
             </button>
           </motion.div>
         </div>
