@@ -75,37 +75,45 @@ function SuccessPageContent() {
           Welcome to ICONIK! Your style transformation journey begins now.
         </p>
         
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 mb-8 border border-white/30">
-          <h2 className="text-2xl font-bold mb-4 text-gray-900">What&apos;s Next?</h2>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8 border border-white/30">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">What&apos;s Next?</h2>
           
-          <div className="space-y-4 text-left">
+          <div className="space-y-5 text-left">
             <div className="flex items-start gap-3">
-              <Calendar className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0" />
+              <CheckCircle className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-gray-900">Schedule Your Style Session</h3>
-                <p className="text-gray-600 text-sm">Book your 1-on-1 consultation with our expert stylist</p>
+                <h3 className="font-semibold text-gray-900 mb-1">Order Confirmation Sent</h3>
+                <p className="text-gray-600 text-sm">You&apos;ll receive a message confirming your order with all the details</p>
               </div>
             </div>
             
             <div className="flex items-start gap-3">
-              <Users className="w-6 h-6 text-rose-500 mt-1 flex-shrink-0" />
+              <Calendar className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-gray-900">Personalized Style Assessment</h3>
-                <p className="text-gray-600 text-sm">Get your custom style transformation roadmap</p>
+                <h3 className="font-semibold text-gray-900 mb-1">Booking Link Coming Soon</h3>
+                <p className="text-gray-600 text-sm">We&apos;ll send you a link to schedule your 1-on-1 style consultation with our expert stylist</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Users className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Personalized Style Assessment</h3>
+                <p className="text-gray-600 text-sm">Get ready for your custom style transformation roadmap</p>
               </div>
             </div>
           </div>
         </div>
         
         <Link
-          href="/schedule"
+          href="/"
           className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
         >
-          Schedule Your Style Session <ArrowRight className="w-6 h-6" />
+          Back to Home <ArrowRight className="w-6 h-6" />
         </Link>
         
         <div className="mt-8 text-sm text-gray-500">
-          <p>You&apos;ll receive a confirmation email with all the details.</p>
+          <p>Check your email/WhatsApp for your order confirmation and booking link.</p>
           <p>Questions? Contact us at support@playernumberone.com</p>
         </div>
       </motion.div>
