@@ -101,8 +101,7 @@ export async function POST(request: NextRequest) {
         .eq('id', dbOrderId)
         .then(({ error }) => {
           if (error) console.log('Failed to update order with Razorpay ID:', error);
-        })
-        .catch(err => console.log('Error updating order:', err));
+        });
 
       // OPTIMIZATION #3: Return minimal payload - only what frontend needs
       return NextResponse.json({

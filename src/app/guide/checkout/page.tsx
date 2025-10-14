@@ -277,7 +277,7 @@ export default function GuideCheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, presenceGuideAddon, magnetismPlaybookAddon, discountedPrice, presenceGuidePrice, magnetismPlaybookPrice]);
+  }, [formData, totalAmount, presenceGuideAddon, magnetismPlaybookAddon, discountedPrice, presenceGuidePrice, magnetismPlaybookPrice, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
