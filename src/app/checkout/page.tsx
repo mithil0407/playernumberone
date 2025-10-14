@@ -688,9 +688,17 @@ export default function CheckoutPage() {
               
               {/* Payment Button - Mobile Optimized */}
               <button
-                type="submit"
-                form="checkout-form"
+                type="button"
                 disabled={isProcessing}
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const hasAddons = divaDietPlanAddon || skinHairBlueprintAddon;
+                  if (!hasAddons) {
+                    setShowAddonPopup(true);
+                  } else {
+                    await processPayment();
+                  }
+                }}
                 className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mb-3 md:mb-4 hover:scale-105 transform font-semibold"
               >
                 {isProcessing ? 'Processing...' : '🔥 YES! Transform My Style Now →'}
