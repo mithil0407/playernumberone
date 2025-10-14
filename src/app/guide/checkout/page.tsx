@@ -209,6 +209,7 @@ export default function GuideCheckoutPage() {
           currency: 'INR',
           name: 'ICONIK',
           description: 'ICONIK Styling Guide',
+          image: `${window.location.origin}/book.png`, // Logo displayed on Razorpay checkout
           order_id: responseData.razorpay_order_id,
           handler: async (response: RazorpayResponse) => {
             
