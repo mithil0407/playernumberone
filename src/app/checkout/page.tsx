@@ -54,6 +54,7 @@ export default function CheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   
   // Product pricing
   const originalPrice = 5999;
@@ -85,6 +86,29 @@ export default function CheckoutPage() {
   );
   
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
+
+  // OPTIMIZATION #1: Preload Razorpay script immediately on page load
+  useEffect(() => {
+    // Check if script already exists
+    if (document.querySelector('script[src*="razorpay.com"]')) {
+      setRazorpayLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => console.error('Failed to preload Razorpay');
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup if component unmounts before load
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
 
   // Optimized countdown timer - only update when time actually changes
   useEffect(() => {
@@ -220,17 +244,16 @@ export default function CheckoutPage() {
       console.log('Customer ID:', responseData.customer_id);
       console.log('DB Order ID:', responseData.db_order_id);
       
-      // Load Razorpay script
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => {
+      // OPTIMIZATION #1: Use preloaded Razorpay script (no more waiting for download)
+      const initializeRazorpay = () => {
         // Initialize Razorpay payment
         const options = {
           key: responseData.key,
           amount: responseData.amount,
           currency: responseData.currency,
-          name: 'Iconik',
+          name: 'Iconik One On One',
           description: 'Iconik Style Consultation',
+          image: `${window.location.origin}/logopayment.webp`, // Logo displayed on Razorpay checkout
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
             // Payment successful - Track detailed purchase with all items
@@ -273,14 +296,35 @@ export default function CheckoutPage() {
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       };
-      document.body.appendChild(script);
+
+      // Check if Razorpay is already loaded, otherwise wait for it
+      if (razorpayLoaded && window.Razorpay) {
+        initializeRazorpay();
+      } else {
+        // Wait for Razorpay to load
+        const checkRazorpay = setInterval(() => {
+          if (window.Razorpay) {
+            clearInterval(checkRazorpay);
+            initializeRazorpay();
+          }
+        }, 100);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          clearInterval(checkRazorpay);
+          if (!window.Razorpay) {
+            setIsProcessing(false);
+            alert('Failed to load payment system. Please try again or contact support.');
+          }
+        }, 10000);
+      }
       
     } catch (error) {
       console.error('Payment error:', error);
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, divaDietPlanAddon, skinHairBlueprintAddon]);
+  }, [formData, totalAmount, divaDietPlanAddon, skinHairBlueprintAddon, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
