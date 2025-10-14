@@ -57,6 +57,22 @@ export default function CheckoutPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [showAddonPopup, setShowAddonPopup] = useState(false);
   const [popupDismissed, setPopupDismissed] = useState(false); // Track if user dismissed popup
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  
+  // Testimonial images
+  const testimonialImages = [
+    { src: '/text1.webp', alt: 'Client testimonial 1' },
+    { src: '/text2.webp', alt: 'Client testimonial 2' }
+  ];
+
+  // Auto-rotate testimonials
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonialImages.length);
+    }, 4000); // Change every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [testimonialImages.length]);
   
   // Product pricing
   const originalPrice = 5999;
@@ -405,25 +421,54 @@ export default function CheckoutPage() {
           </div>
         </motion.div>
 
-        {/* WhatsApp Testimonial - Single for Speed */}
+        {/* WhatsApp Testimonial Carousel - 40% Smaller */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mb-6 md:mb-8 max-w-md mx-auto"
+          className="mb-6 md:mb-8 max-w-xs mx-auto"
         >
-          <h2 className="text-xl md:text-2xl luxury-heading text-center mb-4 text-luxury-charcoal">
+          <h2 className="text-lg md:text-xl luxury-heading text-center mb-3 text-luxury-charcoal">
             Real Results from Real Women
           </h2>
           
-          <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 border border-luxury-cream">
-            <Image 
-              src="/text1.webp" 
-              alt="WhatsApp testimonial screenshot"
-              width={400}
-              height={300}
-              className="w-full rounded-xl"
-            />
+          <div className="relative">
+            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream overflow-hidden">
+              <div className="relative" style={{ aspectRatio: '4/3' }}>
+                {testimonialImages.map((testimonial, index) => (
+                  <div
+                    key={index}
+                    className={`absolute inset-0 transition-opacity duration-500 ${
+                      index === currentTestimonial ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <Image 
+                      src={testimonial.src}
+                      alt={testimonial.alt}
+                      width={320}
+                      height={240}
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Carousel Dots */}
+            <div className="flex justify-center gap-2 mt-3">
+              {testimonialImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentTestimonial(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentTestimonial 
+                      ? 'bg-luxury-accent w-6' 
+                      : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
+                  }`}
+                  aria-label={`View testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </motion.div>
 
