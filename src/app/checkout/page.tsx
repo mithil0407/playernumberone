@@ -56,6 +56,7 @@ export default function CheckoutPage() {
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [showAddonPopup, setShowAddonPopup] = useState(false);
+  const [popupDismissed, setPopupDismissed] = useState(false); // Track if user dismissed popup
   
   // Product pricing
   const originalPrice = 5999;
@@ -334,14 +335,14 @@ export default function CheckoutPage() {
     // Check if no add-ons are selected
     const hasAddons = divaDietPlanAddon || skinHairBlueprintAddon;
     
-    if (!hasAddons) {
-      // Show add-on popup if no add-ons selected
+    // Only show popup if: no add-ons AND popup hasn't been dismissed
+    if (!hasAddons && !popupDismissed) {
       setShowAddonPopup(true);
     } else {
-      // Process payment directly if add-ons are already selected
+      // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
-  }, [processPayment, divaDietPlanAddon, skinHairBlueprintAddon]);
+  }, [processPayment, divaDietPlanAddon, skinHairBlueprintAddon, popupDismissed]);
 
   // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
@@ -693,7 +694,7 @@ export default function CheckoutPage() {
                 onClick={async (e) => {
                   e.preventDefault();
                   const hasAddons = divaDietPlanAddon || skinHairBlueprintAddon;
-                  if (!hasAddons) {
+                  if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                   } else {
                     await processPayment();
@@ -789,24 +790,28 @@ export default function CheckoutPage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="bg-luxury-warm-white rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            className="bg-luxury-warm-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl"
           >
             {/* Header */}
-            <div className="sticky top-0 bg-luxury-warm-white border-b border-luxury-cream p-4 md:p-6 z-10">
-              <div className="flex items-start justify-between mb-2">
+            <div className="sticky top-0 bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream p-4 z-10">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-1">
-                    🎁 Wait! Don&apos;t Miss These Exclusive Add-Ons
+                  <h3 className="text-lg md:text-xl luxury-heading text-luxury-charcoal mb-1">
+                    🎁 Boost Your Transformation
                   </h3>
-                  <p className="text-sm luxury-body text-luxury-charcoal/70">
-                    Boost your transformation with these limited-time offers
+                  <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70">
+                    Add these to get the complete package
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowAddonPopup(false)}
-                  className="text-luxury-charcoal/40 hover:text-luxury-charcoal p-2 -mr-2 -mt-2"
+                  onClick={() => {
+                    setShowAddonPopup(false);
+                    setPopupDismissed(true); // Mark as dismissed
+                  }}
+                  className="text-luxury-charcoal/40 hover:text-luxury-charcoal p-1 -mr-1 -mt-1 flex-shrink-0"
+                  aria-label="Close"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -814,51 +819,47 @@ export default function CheckoutPage() {
             </div>
 
             {/* Add-ons Content */}
-            <div className="p-4 md:p-6 space-y-4">
+            <div className="p-3 md:p-4 space-y-3">
               {/* Diva Diet Plan Add-on */}
               <div
                 onClick={() => setDivaDietPlanAddon(!divaDietPlanAddon)}
-                className={`border-2 rounded-2xl p-4 md:p-5 cursor-pointer transition-all duration-300 ${
+                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${
                   divaDietPlanAddon
-                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg scale-[1.02]'
+                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
                     : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                 }`}
               >
-                <div className="flex items-start gap-3 md:gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                <div className="flex items-start gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                     divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                   }`}>
                     {divaDietPlanAddon && (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="luxury-heading text-luxury-charcoal text-base md:text-lg">
-                        💪 Diva Diet Plan Blueprint
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
+                        💪 Diva Diet Plan
                       </h4>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-lg">₹{divaDietPlanPrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">₹{divaDietPlanPrice}</span>
                       </div>
                     </div>
-                    <p className="text-sm luxury-body text-luxury-charcoal/80 mb-3">
-                      Your personalized nutrition plan designed for Indian women who want to feel confident inside and out.
+                    <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
+                      Personalized nutrition for Indian women
                     </p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-start gap-2 text-sm luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Custom meal plans for your body type</span>
+                    <div className="space-y-1">
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>Custom meal plans</span>
                       </div>
-                      <div className="flex items-start gap-2 text-sm luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Indian recipes & ingredients</span>
-                      </div>
-                      <div className="flex items-start gap-2 text-sm luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Sustainable weight management</span>
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>Indian recipes</span>
                       </div>
                     </div>
                   </div>
@@ -868,52 +869,49 @@ export default function CheckoutPage() {
               {/* Skin & Hair Blueprint Add-on */}
               <div
                 onClick={() => setSkinHairBlueprintAddon(!skinHairBlueprintAddon)}
-                className={`border-2 rounded-2xl p-4 md:p-5 cursor-pointer transition-all duration-300 relative overflow-hidden ${
+                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${
                   skinHairBlueprintAddon
-                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg scale-[1.02]'
+                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
                     : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                 }`}
               >
-                <div className="absolute top-2 right-2 bg-luxury-accent text-white text-xs px-2 py-1 rounded-full font-semibold">
-                  50% OFF
-                </div>
-                
-                <div className="flex items-start gap-3 md:gap-4">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                <div className="flex items-start gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                     skinHairBlueprintAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                   }`}>
                     {skinHairBlueprintAddon && (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="luxury-heading text-luxury-charcoal text-base md:text-lg pr-12">
-                        ✨ Complete Skin & Hair Blueprint
-                      </h4>
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="flex-1">
+                        <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
+                          ✨ Skin & Hair Blueprint
+                        </h4>
+                        <span className="inline-block bg-luxury-accent text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold mt-0.5">
+                          50% OFF
+                        </span>
+                      </div>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-lg">₹{skinHairBlueprintDiscountedPrice}</span>
-                        <span className="block text-xs line-through text-luxury-charcoal/40">₹{skinHairBlueprintOriginalPrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">₹{skinHairBlueprintDiscountedPrice}</span>
+                        <span className="block text-[10px] line-through text-luxury-charcoal/40">₹{skinHairBlueprintOriginalPrice}</span>
                       </div>
                     </div>
-                    <p className="text-sm luxury-body text-luxury-charcoal/80 mb-3">
-                      Everything you need for glowing skin and gorgeous hair — the foundation of true beauty.
+                    <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
+                      Glowing skin & gorgeous hair guide
                     </p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-start gap-2 text-sm luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Personalized skincare routine</span>
+                    <div className="space-y-1">
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>Skincare routine</span>
                       </div>
-                      <div className="flex items-start gap-2 text-sm luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Hair care & treatment guide</span>
-                      </div>
-                      <div className="flex items-start gap-2 text-sm luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Product recommendations for Indian skin</span>
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>Hair care guide</span>
                       </div>
                     </div>
                   </div>
@@ -922,24 +920,24 @@ export default function CheckoutPage() {
             </div>
 
             {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-luxury-warm-white border-t border-luxury-cream p-4 md:p-6 space-y-3">
+            <div className="sticky bottom-0 bg-luxury-warm-white/95 backdrop-blur-xl border-t border-luxury-cream p-3 md:p-4 space-y-2">
               <button
                 onClick={async () => {
                   setShowAddonPopup(false);
                   await processPayment();
                 }}
                 disabled={isProcessing}
-                className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-white py-3.5 md:py-4 rounded-full luxury-body font-semibold transition-all duration-300 disabled:opacity-50 hover:scale-[1.02] transform text-base md:text-lg shadow-lg"
+                className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-white py-3 md:py-3.5 rounded-full luxury-body font-semibold transition-all duration-300 disabled:opacity-50 hover:scale-[1.01] transform text-sm md:text-base shadow-lg"
               >
-                {isProcessing ? 'Processing...' : `Continue with Add-ons (₹${totalAmount.toLocaleString()})`}
+                {isProcessing ? 'Processing...' : `Add & Pay ₹${totalAmount.toLocaleString()}`}
               </button>
               
               <button
                 onClick={continueWithoutAddons}
                 disabled={isProcessing}
-                className="w-full bg-transparent hover:bg-luxury-cream/50 text-luxury-charcoal/70 py-3 rounded-full luxury-body transition-all duration-300 disabled:opacity-50 text-sm"
+                className="w-full bg-transparent hover:bg-luxury-cream/50 text-luxury-charcoal/60 py-2.5 rounded-full luxury-body transition-all duration-300 disabled:opacity-50 text-xs md:text-sm"
               >
-                No thanks, continue without add-ons
+                No thanks, continue without
               </button>
             </div>
           </motion.div>
