@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -187,9 +187,11 @@ export default function CheckoutPage() {
   const handleAddonChange = useCallback((addonType: 'divadiet' | 'skinhair', checked: boolean) => {
     const addon = addonDetails[addonType];
     
-    // Track only when addon is added (not removed)
+    // Track addon changes
     if (checked) {
       trackAddToCart(addon.name, addon.price, addon.id);
+    } else {
+      trackRemoveFromCart(addon.name, addon.price, addon.id);
     }
     
     // Update state
@@ -434,7 +436,7 @@ export default function CheckoutPage() {
           
           <div className="relative">
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream overflow-hidden">
-              <div className="relative" style={{ aspectRatio: '4/3' }}>
+              <div className="relative" style={{ aspectRatio: '9/16' }}>
                 {testimonialImages.map((testimonial, index) => (
                   <div
                     key={index}
@@ -445,8 +447,8 @@ export default function CheckoutPage() {
                     <Image 
                       src={testimonial.src}
                       alt={testimonial.alt}
-                      width={320}
-                      height={240}
+                      width={180}
+                      height={320}
                       className="w-full h-full object-cover rounded-xl"
                     />
                   </div>
@@ -728,6 +730,7 @@ export default function CheckoutPage() {
                   const hasAddons = divaDietPlanAddon || skinHairBlueprintAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
+                    trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount);
                   } else {
                     await processPayment();
                   }
@@ -810,6 +813,7 @@ export default function CheckoutPage() {
                   onClick={() => {
                     setShowAddonPopup(false);
                     setPopupDismissed(true); // Mark as dismissed
+                    trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button');
                   }}
                   className="text-luxury-charcoal/40 hover:text-luxury-charcoal p-1 -mr-1 -mt-1 flex-shrink-0"
                   aria-label="Close"
@@ -927,6 +931,7 @@ export default function CheckoutPage() {
               <button
                 onClick={async () => {
                   setShowAddonPopup(false);
+                  trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount);
                   await processPayment();
                 }}
                 disabled={isProcessing}
@@ -936,7 +941,10 @@ export default function CheckoutPage() {
               </button>
               
               <button
-                onClick={continueWithoutAddons}
+                onClick={() => {
+                  trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount);
+                  continueWithoutAddons();
+                }}
                 disabled={isProcessing}
                 className="w-full bg-transparent hover:bg-luxury-cream/50 text-luxury-charcoal/60 py-2.5 rounded-full luxury-body transition-all duration-300 disabled:opacity-50 text-xs md:text-sm"
               >
