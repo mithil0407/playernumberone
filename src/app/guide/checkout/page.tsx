@@ -54,6 +54,7 @@ export default function GuideCheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   
   // Add-ons
   const [presenceGuideAddon, setPresenceGuideAddon] = useState(false);
@@ -76,6 +77,29 @@ export default function GuideCheckoutPage() {
     [presenceGuideAddon, magnetismPlaybookAddon]
   );
   
+  // Preload Razorpay script immediately on page load (OPTIMIZATION #1)
+  useEffect(() => {
+    // Check if script already exists
+    if (document.querySelector('script[src*="razorpay.com"]')) {
+      setRazorpayLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => console.error('Failed to preload Razorpay');
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup if component unmounts before load
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
   // Optimized countdown timer - only update when time actually changes
   useEffect(() => {
     const timer = setInterval(() => {
@@ -177,12 +201,8 @@ export default function GuideCheckoutPage() {
         throw new Error(responseData.error || 'Payment initialization failed');
       }
       
-      // Load Razorpay script
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => {
-        
-        // Initialize Razorpay payment
+      // Use preloaded Razorpay script (OPTIMIZATION #1)
+      const initializeRazorpay = () => {
         const options = {
           key: responseData.key,
           amount: responseData.amount,
@@ -229,13 +249,28 @@ export default function GuideCheckoutPage() {
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       };
-      
-      script.onerror = () => {
-        setIsProcessing(false);
-        alert('Failed to load payment system. Please try again or contact support.');
-      };
-      
-      document.body.appendChild(script);
+
+      // Check if Razorpay is already loaded, otherwise wait for it
+      if (razorpayLoaded && window.Razorpay) {
+        initializeRazorpay();
+      } else {
+        // Wait for Razorpay to load
+        const checkRazorpay = setInterval(() => {
+          if (window.Razorpay) {
+            clearInterval(checkRazorpay);
+            initializeRazorpay();
+          }
+        }, 100);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          clearInterval(checkRazorpay);
+          if (!window.Razorpay) {
+            setIsProcessing(false);
+            alert('Failed to load payment system. Please try again or contact support.');
+          }
+        }, 10000);
+      }
       
     } catch (error) {
       console.error('Payment error:', error);

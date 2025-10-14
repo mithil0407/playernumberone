@@ -74,22 +74,17 @@ export interface Session {
 
 // Database operations
 export const saveCustomer = async (customer: Customer) => {
-  // First, try to find existing customer by email
-  const { data: existingCustomer } = await supabase
-    .from('customers')
-    .select('*')
-    .eq('email', customer.email)
-    .single();
-
-  if (existingCustomer) {
-    // Customer exists, return existing customer
-    return existingCustomer;
-  }
-
-  // Customer doesn't exist, create new one
+  // OPTIMIZATION #2: Use UPSERT (single query instead of SELECT + INSERT)
+  // This uses PostgreSQL's ON CONFLICT clause for atomic upsert
   const { data, error } = await supabase
     .from('customers')
-    .insert([customer])
+    .upsert(
+      [customer],
+      { 
+        onConflict: 'email',  // Conflict on email column (must have unique constraint)
+        ignoreDuplicates: false  // Update if exists
+      }
+    )
     .select()
     .single();
 

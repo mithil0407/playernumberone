@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCustomer, saveOrder, supabase, getCustomerByEmail } from '@/lib/supabase';
+import { saveCustomer, saveOrder, supabase } from '@/lib/supabase';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -35,17 +35,12 @@ export async function POST(request: NextRequest) {
     let dbOrderId = 'mock-order-id';
     
     try {
-      // First try to get existing customer
-      let customer = await getCustomerByEmail(customer_email);
-      
-      if (!customer) {
-        // Customer doesn't exist, create new one
-        customer = await saveCustomer({
-          name: customer_name,
-          email: customer_email,
-          phone: customer_phone
-        });
-      }
+      // OPTIMIZATION #2: Single UPSERT query (was SELECT + INSERT)
+      const customer = await saveCustomer({
+        name: customer_name,
+        email: customer_email,
+        phone: customer_phone
+      });
       
       customerId = customer.id!;
 
@@ -98,47 +93,25 @@ export async function POST(request: NextRequest) {
         throw new Error('Failed to create Razorpay order');
       }
 
-      // Update database with Razorpay order ID
-      try {
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({ razorpay_order_id: razorpayOrder.id })
-          .eq('id', dbOrderId);
-        
-        if (updateError) {
-          console.log('Failed to update order with Razorpay ID:', updateError);
-        }
-      } catch (error) {
-        console.log('Failed to update order with Razorpay ID:', error);
-      }
+      // OPTIMIZATION #3: Defer non-critical database update (don't block response)
+      // Update order with Razorpay ID asynchronously - don't await
+      supabase
+        .from('orders')
+        .update({ razorpay_order_id: razorpayOrder.id })
+        .eq('id', dbOrderId)
+        .then(({ error }) => {
+          if (error) console.log('Failed to update order with Razorpay ID:', error);
+        })
+        .catch(err => console.log('Error updating order:', err));
 
-      // Return order details for frontend Razorpay integration
+      // OPTIMIZATION #3: Return minimal payload - only what frontend needs
       return NextResponse.json({
         success: true,
-        order_id: orderId,
+        key: process.env.RAZORPAY_KEY_ID,
         razorpay_order_id: razorpayOrder.id,
         amount: amountInPaise,
-        currency: 'INR',
-        key: process.env.RAZORPAY_KEY_ID,
-        customer: {
-          id: customerId,
-          name: customer_name,
-          email: customer_email,
-          contact: customer_phone,
-        },
-        order: {
-          id: dbOrderId,
-          amount,
-          add_on: add_ons.presence_guide || add_ons.magnetism_playbook,
-          status: 'pending'
-        },
-        notes: {
-          service: 'ICONIK Style Guide',
-          base_product: base_product,
-          presence_guide_addon: add_ons.presence_guide,
-          magnetism_playbook_addon: add_ons.magnetism_playbook,
-        },
         customer_id: customerId,
+        order_id: orderId,
         db_order_id: dbOrderId
       });
 
