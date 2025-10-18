@@ -312,7 +312,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
-              Stop Wearing What Everyone Else Wears<br />— <span className="text-luxury-green">Discover Your Signature Style in 24 hours</span>
+              <span className="text-luxury-green">Discover Your Signature Style in 24 hours</span>
             </motion.h1>
 
             {/* Hero Subtitle */}
