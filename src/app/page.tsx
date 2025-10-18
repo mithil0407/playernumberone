@@ -323,11 +323,11 @@ export default function Home() {
               className="max-w-xl mx-auto mb-6 md:mb-8"
             >
               <a
-                href="https://api.whatsapp.com/send/?phone=919130048899&text=Hi+ICONIK%21+I%27d+love+to+get+my+2+outfit+recommendations+for+%E2%82%B9199.&type=phone_number&app_absent=0"
+                href="https://api.whatsapp.com/send/?phone=919130048899&text=Hi+ICONIK%21+I%27d+love+to+get+my+2+outfit+recommendations+for+%E2%82%B9299.&type=phone_number&app_absent=0"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
-                  trackCTAClick('2 Outfit Recommendations for ₹199', 'Hero Section - WhatsApp');
+                  trackCTAClick('2 Outfit Recommendations for ₹299', 'Hero Section - WhatsApp');
                 }}
                 className="block bg-luxury-pink-bg/50 backdrop-blur-sm border border-luxury-accent/30 rounded-xl p-3 md:p-3 hover:bg-luxury-pink-bg/70 hover:border-luxury-accent/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
@@ -339,7 +339,7 @@ export default function Home() {
                   </div>
                   <div className="text-left flex-1">
                     <p className="luxury-heading text-luxury-charcoal text-sm md:text-base mb-0.5">
-                      Get <span className="text-luxury-accent">2 outfit recommendations for ₹199</span>
+                      Get <span className="text-luxury-accent">2 outfit recommendations for ₹299</span>
                     </p>
                     <p className="luxury-body text-luxury-charcoal/70 text-xs">
                       Chat with our stylists on WhatsApp — no signup needed!
@@ -1147,7 +1147,7 @@ export default function Home() {
                 Not ready yet?
               </h3>
               <p className="luxury-body text-luxury-charcoal/80 text-base md:text-lg mb-2">
-                Get <span className="text-luxury-accent font-semibold">2 outfit recommendations for ₹199</span> — directly on WhatsApp.
+                Get <span className="text-luxury-accent font-semibold">2 outfit recommendations for ₹299</span> — directly on WhatsApp.
               </p>
               <p className="luxury-body text-luxury-charcoal/60 text-sm">
                 No sign-up. Just pure style advice.
@@ -1155,11 +1155,11 @@ export default function Home() {
             </div>
 
             <a
-              href="https://api.whatsapp.com/send/?phone=919130048899&text=Hi+ICONIK%21+I%27d+love+to+get+my+2+outfit+recommendations+for+%E2%82%B9199.&type=phone_number&app_absent=0"
+              href="https://api.whatsapp.com/send/?phone=919130048899&text=Hi+ICONIK%21+I%27d+love+to+get+my+2+outfit+recommendations+for+%E2%82%B9299.&type=phone_number&app_absent=0"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => {
-                trackCTAClick('2 Outfit Recommendations for ₹199', 'Exit Intent Popup - WhatsApp');
+                trackCTAClick('2 Outfit Recommendations for ₹299', 'Exit Intent Popup - WhatsApp');
                 setShowFreeOfferPopup(false);
               }}
               className="flex items-center justify-center gap-2 w-full bg-luxury-accent hover:bg-luxury-accent/90 text-luxury-warm-white px-8 py-4 rounded-full text-lg luxury-body font-semibold shadow-lg hover:shadow-xl transition-all duration-300 mb-3"
