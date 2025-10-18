@@ -8,15 +8,15 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PlayerNumberOne Alpha1 - Transform Your Confidence & Attractiveness",
-  description: "Join 200+ men who transformed their lives with Alpha1. Get personalized grooming, style, fitness & confidence coaching. Start your transformation today!",
-  keywords: "men transformation, grooming, style, fitness, confidence, attractiveness, coaching, Alpha1",
+  title: "ICONIK - Discover Your Signature Style & Transform Your Confidence",
+  description: "ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives.",
+  keywords: "style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover",
   openGraph: {
-    title: "PlayerNumberOne Alpha1 - Transform Your Confidence & Attractiveness",
-    description: "Join 200+ men who transformed their lives with Alpha1. Get personalized grooming, style, fitness & confidence coaching.",
+    title: "ICONIK - Discover Your Signature Style & Transform Your Confidence",
+    description: "ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence.",
     type: "website",
-    url: "https://www.playernumber1.pro",
-    siteName: "PlayerNumberOne Alpha1",
+    url: "https://playernumberone.com",
+    siteName: "ICONIK",
   },
 };
 
@@ -43,8 +43,8 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-V4126JH4EJ', {
-              page_title: 'PlayerNumberOne Alpha1',
-              page_location: 'https://www.playernumber1.pro'
+              page_title: 'ICONIK',
+              page_location: 'https://playernumberone.com'
             });
           `}
         </Script>
