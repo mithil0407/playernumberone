@@ -423,12 +423,12 @@ export default function CheckoutPage() {
           </div>
         </motion.div>
 
-        {/* WhatsApp Testimonial Carousel - 60% Size (40% Smaller) */}
+        {/* WhatsApp Testimonial Carousel - 75% Size (25% Smaller) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mb-6 md:mb-8 max-w-[162px] mx-auto"
+          className="mb-6 md:mb-8 max-w-[203px] mx-auto"
         >
           <h2 className="text-lg md:text-xl luxury-heading text-center mb-3 text-luxury-charcoal">
             Real Results from Real Women
@@ -447,8 +447,8 @@ export default function CheckoutPage() {
                     <Image
                       src={testimonial.src}
                       alt={testimonial.alt}
-                      width={108}
-                      height={192}
+                      width={135}
+                      height={240}
                       className="w-full h-full object-cover rounded-xl"
                     />
                   </div>
