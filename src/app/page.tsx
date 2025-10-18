@@ -312,14 +312,24 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
-              <span className="text-luxury-green">Transform</span> Yourself<br />from Average to <span className="text-luxury-green">Iconik</span>
+              Stop Wearing What Everyone Else Wears<br />— <span className="text-luxury-green">Discover Your Signature Style in 24 hours</span>
             </motion.h1>
+
+            {/* Hero Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-lg md:text-xl lg:text-2xl luxury-body text-luxury-charcoal/80 max-w-4xl mx-auto mb-8 leading-relaxed"
+            >
+              Get <span className="font-semibold text-luxury-accent">16 personalized outfits</span>, your <span className="font-semibold text-luxury-green">color palette</span>, and a <span className="font-semibold text-luxury-accent">1-on-1 stylist call</span> — all for <span className="font-bold text-luxury-green">₹1,199</span> <span className="text-sm">(no hidden costs)</span>
+            </motion.p>
 
             {/* Clear Doubts WhatsApp CTA */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
               className="max-w-xl mx-auto mb-6 md:mb-8"
             >
               <a
@@ -424,7 +434,7 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
           >
               <Link 
               href="/checkout" 
