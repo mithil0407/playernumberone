@@ -81,26 +81,24 @@ export default function CheckoutPage() {
   
   // Add-ons
   const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
-  const [skinHairBlueprintAddon, setSkinHairBlueprintAddon] = useState(false); // Skin and Hair Blueprint
+  const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
   
   const divaDietPlanPrice = 299;
-  
-  const skinHairBlueprintOriginalPrice = 1999;
-  const skinHairBlueprintDiscountedPrice = 999;
+  const smartShoppersGuidePrice = 499;
   
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() => 
     discountedPrice + 
     (divaDietPlanAddon ? divaDietPlanPrice : 0) +
-    (skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0),
-    [divaDietPlanAddon, skinHairBlueprintAddon]
+    (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
+    [divaDietPlanAddon, smartShoppersGuideAddon]
   );
   
   const totalValue = useMemo(() => 
     originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
     (divaDietPlanAddon ? divaDietPlanPrice : 0) +
-    (skinHairBlueprintAddon ? skinHairBlueprintOriginalPrice : 0),
-    [divaDietPlanAddon, skinHairBlueprintAddon]
+    (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
+    [divaDietPlanAddon, smartShoppersGuideAddon]
   );
   
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
@@ -177,9 +175,9 @@ export default function CheckoutPage() {
       id: 'diva_diet_plan'
     },
     skinhair: {
-      name: 'Skin and Hair Blueprint',
-      price: 999,
-      id: 'skin_hair_blueprint'
+      name: 'Smart Shoppers Guide',
+      price: 499,
+      id: 'smart_shoppers_guide'
     }
   }), []);
 
@@ -198,7 +196,7 @@ export default function CheckoutPage() {
     if (addonType === 'divadiet') {
       setDivaDietPlanAddon(checked);
     } else if (addonType === 'skinhair') {
-      setSkinHairBlueprintAddon(checked);
+      setSmartShoppersGuideAddon(checked);
     }
   }, [addonDetails]);
 
@@ -220,7 +218,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     
     // Track InitiateCheckout event with correct item count
-    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (skinHairBlueprintAddon ? 1 : 0);
+    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0);
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation');
     
     try {
@@ -233,11 +231,11 @@ export default function CheckoutPage() {
         base_product: 'Iconik Style Consultation',
         add_ons: {
           diva_diet_plan: divaDietPlanAddon,
-          skin_hair_blueprint: skinHairBlueprintAddon
+          smart_shoppers_guide: smartShoppersGuideAddon
         },
         total_base_price: discountedPrice,
         diva_diet_plan_price: divaDietPlanAddon ? divaDietPlanPrice : 0,
-        skin_hair_blueprint_price: skinHairBlueprintAddon ? skinHairBlueprintDiscountedPrice : 0
+        smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0
       };
 
       // Call payment API
@@ -279,7 +277,7 @@ export default function CheckoutPage() {
             // Payment successful - Track detailed purchase with all items
             const purchasedItems = ['iconik_style_consultation'];
             if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
-            if (skinHairBlueprintAddon) purchasedItems.push('skin_hair_blueprint');
+            if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
             
             // Track SINGLE purchase event with all items (no duplicates)
             trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length);
@@ -344,14 +342,14 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, divaDietPlanAddon, skinHairBlueprintAddon, razorpayLoaded]);
+  }, [formData, totalAmount, divaDietPlanAddon, smartShoppersGuideAddon, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Check if no add-ons are selected
-    const hasAddons = divaDietPlanAddon || skinHairBlueprintAddon;
+    const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
     
     // Only show popup if: no add-ons AND popup hasn't been dismissed
     if (!hasAddons && !popupDismissed) {
@@ -360,7 +358,7 @@ export default function CheckoutPage() {
       // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
-  }, [processPayment, divaDietPlanAddon, skinHairBlueprintAddon, popupDismissed]);
+  }, [processPayment, divaDietPlanAddon, smartShoppersGuideAddon, popupDismissed]);
 
   // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
@@ -633,20 +631,20 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Add-on 2: Skin & Hair Blueprint */}
+                {/* Add-on 2: Smart Shopper's Guide */}
                 <div 
-                  onClick={() => handleAddonChange('skinhair', !skinHairBlueprintAddon)}
+                  onClick={() => handleAddonChange('skinhair', !smartShoppersGuideAddon)}
                   className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${
-                    skinHairBlueprintAddon
+                    smartShoppersGuideAddon
                       ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
                       : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      skinHairBlueprintAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                      smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                     }`}>
-                      {skinHairBlueprintAddon && (
+                      {smartShoppersGuideAddon && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
@@ -656,22 +654,20 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="flex-1">
-                          <h4 className="luxury-heading text-luxury-charcoal text-base">✨ Skin & Hair Blueprint</h4>
-                          <span className="inline-block bg-luxury-accent text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold mt-0.5">
-                            50% OFF
-                          </span>
+                          <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper&apos;s Guide</h4>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <span className="text-luxury-green font-semibold text-lg">₹{skinHairBlueprintDiscountedPrice}</span>
-                          <span className="block text-[10px] line-through text-luxury-charcoal/40">₹{skinHairBlueprintOriginalPrice}</span>
+                          <span className="text-luxury-green font-semibold text-lg">₹{smartShoppersGuidePrice}</span>
                         </div>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Ayurvedic beauty transformation guide
+                        Stop wasting 3+ hours searching for the right stores and brands. Get our curated brand guide for YOUR body type + budget — plus sizing hacks that save you from returns.
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Clear skin</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Healthy hair</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ Best brands for your body shape</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ Budget breakdowns</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ Sizing recommendations</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ What to avoid</span>
                       </div>
                     </div>
                   </div>
@@ -694,10 +690,10 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 
-                {skinHairBlueprintAddon && (
+                {smartShoppersGuideAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                    <span>+ Skin & Hair</span>
-                    <span>₹{skinHairBlueprintDiscountedPrice}</span>
+                    <span>+ Shopper&apos;s Guide</span>
+                    <span>₹{smartShoppersGuidePrice}</span>
                   </div>
                 )}
               </div>
@@ -727,7 +723,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = divaDietPlanAddon || skinHairBlueprintAddon;
+                  const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount);
@@ -853,20 +849,20 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Skin & Hair Blueprint Add-on */}
+              {/* Smart Shopper's Guide Add-on */}
               <div
-                onClick={() => setSkinHairBlueprintAddon(!skinHairBlueprintAddon)}
+                onClick={() => setSmartShoppersGuideAddon(!smartShoppersGuideAddon)}
                 className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${
-                  skinHairBlueprintAddon
+                  smartShoppersGuideAddon
                     ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
                     : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                    skinHairBlueprintAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                    smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                   }`}>
-                    {skinHairBlueprintAddon && (
+                    {smartShoppersGuideAddon && (
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -877,28 +873,32 @@ export default function CheckoutPage() {
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="flex-1">
                         <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                          ✨ Skin & Hair Blueprint
+                          🛍️ Smart Shopper&apos;s Guide
                         </h4>
-                        <span className="inline-block bg-luxury-accent text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold mt-0.5">
-                          50% OFF
-                        </span>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">₹{skinHairBlueprintDiscountedPrice}</span>
-                        <span className="block text-[10px] line-through text-luxury-charcoal/40">₹{skinHairBlueprintOriginalPrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">₹{smartShoppersGuidePrice}</span>
                       </div>
                     </div>
                     <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                      Glowing skin & gorgeous hair guide
+                      Stop wasting 3+ hours searching. Get our curated brand guide for YOUR body type + budget.
                     </p>
                     <div className="space-y-1">
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Skincare routine</span>
+                        <span>Best brands for your body shape</span>
                       </div>
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Hair care guide</span>
+                        <span>Budget breakdowns (affordable to premium)</span>
+                      </div>
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>Sizing recommendations by brand</span>
+                      </div>
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>What to avoid based on your palette</span>
                       </div>
                     </div>
                   </div>
