@@ -654,7 +654,7 @@ export default function CheckoutPage() {
                     
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper's Guide</h4>
+                        <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper&apos;s Guide</h4>
                         <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{smartShoppersGuidePrice}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
@@ -689,7 +689,7 @@ export default function CheckoutPage() {
                 
                 {smartShoppersGuideAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                    <span>+ Smart Shopper's Guide</span>
+                    <span>+ Smart Shopper&apos;s Guide</span>
                     <span>₹{smartShoppersGuidePrice}</span>
                   </div>
                 )}
@@ -869,7 +869,7 @@ export default function CheckoutPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                        🛍️ Smart Shopper's Guide
+                        🛍️ Smart Shopper&apos;s Guide
                       </h4>
                       <div className="text-right flex-shrink-0">
                         <span className="text-luxury-green font-semibold text-base">₹{smartShoppersGuidePrice}</span>
