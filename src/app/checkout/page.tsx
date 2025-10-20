@@ -84,6 +84,7 @@ export default function CheckoutPage() {
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
   
   const divaDietPlanPrice = 299;
+  
   const smartShoppersGuidePrice = 499;
   
   // Memoize total calculations to prevent unnecessary recalculations
@@ -174,15 +175,15 @@ export default function CheckoutPage() {
       price: 299,
       id: 'diva_diet_plan'
     },
-    skinhair: {
-      name: 'Smart Shoppers Guide',
+    smartshopper: {
+      name: 'Smart Shopper\'s Guide',
       price: 499,
       id: 'smart_shoppers_guide'
     }
   }), []);
 
   // Optimized add-on change handler with Meta tracking only for additions
-  const handleAddonChange = useCallback((addonType: 'divadiet' | 'skinhair', checked: boolean) => {
+  const handleAddonChange = useCallback((addonType: 'divadiet' | 'smartshopper', checked: boolean) => {
     const addon = addonDetails[addonType];
     
     // Track addon changes
@@ -195,7 +196,7 @@ export default function CheckoutPage() {
     // Update state
     if (addonType === 'divadiet') {
       setDivaDietPlanAddon(checked);
-    } else if (addonType === 'skinhair') {
+    } else if (addonType === 'smartshopper') {
       setSmartShoppersGuideAddon(checked);
     }
   }, [addonDetails]);
@@ -633,7 +634,7 @@ export default function CheckoutPage() {
 
                 {/* Add-on 2: Smart Shopper's Guide */}
                 <div 
-                  onClick={() => handleAddonChange('skinhair', !smartShoppersGuideAddon)}
+                  onClick={() => handleAddonChange('smartshopper', !smartShoppersGuideAddon)}
                   className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${
                     smartShoppersGuideAddon
                       ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
@@ -653,21 +654,17 @@ export default function CheckoutPage() {
                     
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <div className="flex-1">
-                          <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper&apos;s Guide</h4>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-luxury-green font-semibold text-lg">₹{smartShoppersGuidePrice}</span>
-                        </div>
+                        <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper's Guide</h4>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{smartShoppersGuidePrice}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Stop wasting 3+ hours searching for the right stores and brands. Get our curated brand guide for YOUR body type + budget — plus sizing hacks that save you from returns.
+                        Get our curated brand guide for YOUR body type + budget
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ Best brands for your body shape</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ Budget breakdowns</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ Sizing recommendations</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">✓ What to avoid</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Best brands for you</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Budget breakdowns</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Sizing by brand</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Color-matched tips</span>
                       </div>
                     </div>
                   </div>
@@ -692,7 +689,7 @@ export default function CheckoutPage() {
                 
                 {smartShoppersGuideAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                    <span>+ Shopper&apos;s Guide</span>
+                    <span>+ Smart Shopper's Guide</span>
                     <span>₹{smartShoppersGuidePrice}</span>
                   </div>
                 )}
@@ -871,17 +868,15 @@ export default function CheckoutPage() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <div className="flex-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                          🛍️ Smart Shopper&apos;s Guide
-                        </h4>
-                      </div>
+                      <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
+                        🛍️ Smart Shopper's Guide
+                      </h4>
                       <div className="text-right flex-shrink-0">
                         <span className="text-luxury-green font-semibold text-base">₹{smartShoppersGuidePrice}</span>
                       </div>
                     </div>
                     <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                      Stop wasting 3+ hours searching. Get our curated brand guide for YOUR body type + budget.
+                      Curated brand guide for YOUR body type + budget
                     </p>
                     <div className="space-y-1">
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
@@ -898,7 +893,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>What to avoid based on your palette</span>
+                        <span>What to avoid based on your color palette</span>
                       </div>
                     </div>
                   </div>
