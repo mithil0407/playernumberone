@@ -40,7 +40,7 @@ export default function Home() {
   // Track page view and product view on mount
   useEffect(() => {
     trackPageView();
-    trackViewContent('ICONIK Style Consultation', 1499, ['iconik_style_consultation']);
+    trackViewContent('ICONIK Style Consultation', 1299, ['iconik_style_consultation']);
   }, []);
 
   // Transformation images data
@@ -571,7 +571,7 @@ export default function Home() {
                 <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,499</div>
+                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,299</div>
                 <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
@@ -637,7 +637,7 @@ export default function Home() {
                 <Link
                   href="/checkout"
                   onClick={() => {
-                    trackCTAClick('Style Consultation', 'Pricing Section', 1499);
+                    trackCTAClick('Style Consultation', 'Pricing Section', 1299);
                   }}
                   className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
@@ -906,7 +906,7 @@ export default function Home() {
                 href="/checkout"
                 onClick={() => {
                   // Track final CTA click with Meta Pixel
-                  trackCTAClick('Final CTA', 'Bottom Section', 1499);
+                  trackCTAClick('Final CTA', 'Bottom Section', 1299);
                 }}
                 className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
               >
@@ -934,7 +934,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className="luxury-body opacity-75 text-center">₹1,499 + GST • Limited slots available</p>
+              <p className="luxury-body opacity-75 text-center">₹1,299 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -1076,7 +1076,7 @@ export default function Home() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold text-luxury-green">₹1,499</span>
+                <span className="text-base font-semibold text-luxury-green">₹1,299</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
@@ -1091,7 +1091,7 @@ export default function Home() {
             href="/checkout"
             onClick={() => {
               // Track CTA click with Meta Pixel
-              trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1499);
+              trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1299);
               setHasClickedCTA(true);
             }}
             className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
