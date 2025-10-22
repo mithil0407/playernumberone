@@ -571,7 +571,7 @@ export default function Home() {
                 <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,199</div>
+                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,499</div>
                 <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
@@ -934,7 +934,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className="luxury-body opacity-75 text-center">₹1,199 + GST • Limited slots available</p>
+              <p className="luxury-body opacity-75 text-center">₹1,499 + GST • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -1076,7 +1076,7 @@ export default function Home() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold text-luxury-green">₹1,199</span>
+                <span className="text-base font-semibold text-luxury-green">₹1,499</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
               </div>
             </div>
