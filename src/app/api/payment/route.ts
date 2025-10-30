@@ -5,7 +5,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, presence_guide_price, magnetism_playbook_price } = body;
+    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price } = body;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -76,11 +76,11 @@ export async function POST(request: NextRequest) {
           customer_email: customer_email,
           customer_phone: customer_phone,
           base_product: base_product,
-          presence_guide_addon: add_ons.presence_guide ? 'true' : 'false',
-          magnetism_playbook_addon: add_ons.magnetism_playbook ? 'true' : 'false',
+          diva_diet_plan_addon: add_ons.diva_diet_plan ? 'true' : 'false',
+          smart_shoppers_guide_addon: add_ons.smart_shoppers_guide ? 'true' : 'false',
           total_base_price: total_base_price,
-          presence_guide_price: presence_guide_price,
-          magnetism_playbook_price: magnetism_playbook_price,
+          diva_diet_plan_price: diva_diet_plan_price,
+          smart_shoppers_guide_price: smart_shoppers_guide_price,
           service: 'ICONIK Style Guide',
           db_order_id: dbOrderId,
           customer_id: customerId
