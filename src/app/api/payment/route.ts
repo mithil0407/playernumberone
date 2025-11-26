@@ -5,7 +5,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price } = body;
+    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price } = body;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
     // Generate unique order ID
     const orderId = `alpha1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     
-    // Convert amount to paise (Razorpay expects amount in smallest currency unit)
-    const amountInPaise = Math.round(amount * 100);
+    // Convert amount to smallest currency unit (paise for INR, cents for USD)
+    const amountInSmallestUnit = Math.round(amount * 100);
 
     // Save customer to database
     let customerId = 'mock-customer-id';
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
 
       // Create Razorpay order
       const orderRequest = {
-        amount: amountInPaise,
-        currency: 'INR',
+        amount: amountInSmallestUnit,
+        currency: currency || 'INR',
         receipt: orderId,
         notes: {
           customer_name: customer_name,
@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
         success: true,
         key: process.env.RAZORPAY_KEY_ID,
         razorpay_order_id: razorpayOrder.id,
-        amount: amountInPaise,
+        amount: amountInSmallestUnit,
+        currency: currency || 'INR',
         customer_id: customerId,
         order_id: orderId,
         db_order_id: dbOrderId
