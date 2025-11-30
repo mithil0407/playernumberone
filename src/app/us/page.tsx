@@ -164,7 +164,7 @@ export default function Home() {
     { 
       icon: Zap, 
       title: 'Expert Style Consultation', 
-      description: '20-minute personalized call with our leading stylist',
+      description: '40-minute personalized call with our leading stylist',
       image: '/expert-consultation.webp',
       imageAlt: 'Style consultation'
     }
@@ -315,7 +315,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
             >
-              Premier personal styling for Indian women in the US.
+              Discover Your <span className="text-luxury-accent">Signature Style</span> in <span className="text-luxury-charcoal">24 hours</span>
             </motion.h1>
 
             {/* Hero Subtitle */}
@@ -611,7 +611,7 @@ export default function Home() {
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
                       <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        20-minute one-on-one call with expert stylist
+                        40-minute one-on-one call with expert stylist
                       </span>
                     </li>
                     <li className="flex items-start gap-3">

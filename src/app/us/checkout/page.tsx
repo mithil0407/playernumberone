@@ -587,7 +587,7 @@ export default function CheckoutPage() {
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
                     <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">20-min Private Consultation Call</span>
+                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">40-min Private Consultation Call</span>
                   </li>
                   <li className="flex items-start gap-2 md:gap-3">
                     <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
