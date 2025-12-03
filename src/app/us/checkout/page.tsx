@@ -59,10 +59,11 @@ export default function CheckoutPage() {
   const [popupDismissed, setPopupDismissed] = useState(false); // Track if user dismissed popup
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   
-  // Testimonial images
+  // Testimonials carousel
   const testimonialImages = [
-    { src: '/text1.webp', alt: 'Client testimonial 1' },
-    { src: '/text2.webp', alt: 'Client testimonial 2' }
+    { src: '/us-testimonial-sarah.webp', alt: 'Sarah M., 34, Marketing Director, Chicago', quote: 'I stopped dreading getting dressed for work. Now I actually feel put-together and confident in meetings.' },
+    { src: '/us-testimonial-emily.webp', alt: 'Emily R., 29, New Mom, Austin', quote: 'Six months postpartum and nothing fit. This blueprint showed me what actually works for my new body. Game-changer.' },
+    { src: '/us-testimonial-jessica.webp', alt: 'Jessica L., 31, Financial Analyst, Boston', quote: 'Started a new job and had no idea how to dress for a corporate office. Now I look like I belong there.' }
   ];
 
   // Auto-rotate testimonials
@@ -76,7 +77,7 @@ export default function CheckoutPage() {
   
   // Price values
   const originalPrice = 497;
-  const discountedPrice = 159; // was 199
+  const discountedPrice = 149; // was 199
   const savings = originalPrice - discountedPrice;
   
   // Add-ons

@@ -40,28 +40,25 @@ export default function Home() {
   // Track page view and product view on mount
   useEffect(() => {
     trackPageView();
-    trackViewContent('ICONIK Style Consultation', 199, ['iconik_style_consultation']);
+    trackViewContent('ICONIK Style Consultation', 149, ['iconik_style_consultation']);
   }, []);
 
   // Transformation images data
   const transformationImages = useMemo(() => [
     {
-      src: '/transformation-1.webp',
-      testimonial:
-        "As an H4 visa holder, I felt so lost navigating American workplace fashion. Now I feel confident walking into any room. This was life-changing.",
-      name: 'Anjali Rao, Boston'
+      src: '/us-transformation-1.webp',
+      testimonial: "I stopped dreading getting dressed for work. Now I actually feel put-together and confident in meetings.",
+      name: 'Sarah M., 34, Marketing Director, Chicago'
     },
     {
-      src: '/transformation-2.webp',
-      testimonial:
-        "I'm a petite Indian woman and nothing ever fit right. The body-type guidance alone was worth the price. I finally know what to buy.",
-      name: 'Divya Sharma, Software Engineer, Seattle'
+      src: '/us-transformation-2.webp',
+      testimonial: "Six months postpartum and nothing fit. This blueprint showed me what actually works for my new body. Game-changer.",
+      name: 'Emily R., 29, New Mom, Austin'
     },
     {
-      src: '/transformation-3.webp',
-      testimonial:
-        "I got promoted to Senior Manager 3 months after working with Iconik. My director specifically mentioned my \"executive presence\" in my review. Best career investment I've made.",
-      name: 'Priya Mehta, Product Manager, San Francisco'
+      src: '/us-transformation-3.webp',
+      testimonial: "Started a new job and had no idea how to dress for a corporate office. Now I look like I belong there.",
+      name: 'Jessica L., 31, Financial Analyst, Boston'
     }
   ], []);
 
@@ -172,20 +169,20 @@ export default function Home() {
 
   const testimonials = [
     {
-      name: 'Priya, 28',
-      story: 'Finally discovered my signature style. I feel confident and elegant in my own skin.',
-      image: '/testimonial-priya.webp'
+      name: 'Sarah M., 34, Marketing Director, Chicago',
+      story: 'I stopped dreading getting dressed for work. Now I actually feel put-together and confident in meetings.',
+      image: '/us-testimonial-sarah.webp'
     },
     {
-      name: 'Ananya, 32',
-      story: 'The color palette changed everything! People keep asking what I did differently.',
-      image: '/testimonial-ananya.webp'
+      name: 'Emily R., 29, New Mom, Austin',
+      story: 'Six months postpartum and nothing fit. This blueprint showed me what actually works for my new body. Game-changer.',
+      image: '/us-testimonial-emily.webp'
     },
     {
-      name: 'Shreya, 26',
-      story: 'Shopping is no longer overwhelming. I know exactly what works for me.',
-      image: '/testimonial-shreya.webp'
-    }
+      name: 'Jessica L., 31, Financial Analyst, Boston',
+      story: 'Started a new job and had no idea how to dress for a corporate office. Now I look like I belong there.',
+      image: '/us-testimonial-jessica.webp'
+    },
   ];
 
   const faqs = [
@@ -574,7 +571,7 @@ export default function Home() {
                 <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                   ICONIK Style Consultation
                 </h3>
-                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">$159</div>
+                <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">$149</div>
                 <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                   Complete personal style transformation
                 </p>
@@ -640,7 +637,7 @@ export default function Home() {
                 <Link
                   href="/checkout"
                   onClick={() => {
-                    trackCTAClick('Style Consultation', 'Pricing Section', 159);
+                    trackCTAClick('Style Consultation', 'Pricing Section', 149);
                   }}
                   className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                 >
@@ -728,14 +725,14 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {[
               {
-                before: '/style-before.webp',
-                after: '/style-after.webp',
+                before: '/us-style-confidence-before.webp',
+                after: '/us-style-confidence-after.webp',
                 title: 'Style Confidence',
                 description: 'From feeling invisible to radiating elegance'
               },
               {
-                before: '/wardrobe-before.webp',
-                after: '/wardrobe-after.webp',
+                before: '/us-wardrobe-mastery-before.webp',
+                after: '/us-wardrobe-mastery-after.webp',
                 title: 'Wardrobe Mastery',
                 description: 'From style confusion to effortless chic'
               }
@@ -808,25 +805,25 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {[
               {
-                icon: Users, 
-                text: 'Feel overlooked or invisible in social settings?', 
+                icon: Users,
+                text: 'Feel overlooked or invisible in social settings?',
                 color: 'red',
-                image: '/feeling-overlooked.webp',
+                image: '/us-overlooked.webp',
                 imageAlt: 'Woman feeling overlooked'
               },
-              { 
-                icon: Clock, 
-                text: 'Confused about what styles actually suit you?', 
+              {
+                icon: Clock,
+                text: 'Six months postpartum and nothing fit.',
                 color: 'orange',
-                image: '/style-confusion.webp',
-                imageAlt: 'Style confusion'
+                image: '/us-postpartum.webp',
+                imageAlt: 'Postpartum challenge'
               },
-              { 
-                icon: Heart, 
-                text: 'Lost confidence in your appearance?', 
+              {
+                icon: Heart,
+                text: 'Started a new job and had no idea how to dress for a corporate office.',
                 color: 'rose',
-                image: '/confidence-issues.webp',
-                imageAlt: 'Confidence building'
+                image: '/us-corporate-challenge.webp',
+                imageAlt: 'Corporate office challenge'
               }
             ].map((item, index) => (
               <motion.div
@@ -909,7 +906,7 @@ export default function Home() {
                 href="/us/checkout"
                 onClick={() => {
                   // Track final CTA click with Meta Pixel
-                  trackCTAClick('Final CTA', 'Bottom Section', 159);
+                  trackCTAClick('Final CTA', 'Bottom Section', 149);
                 }}
                 className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
               >
@@ -937,7 +934,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className="luxury-body opacity-75 text-center">$159 • Limited slots available</p>
+              <p className="luxury-body opacity-75 text-center">$149 • Limited slots available</p>
             </div>
           </motion.div>
         </div>
@@ -1079,7 +1076,7 @@ export default function Home() {
             <div className="flex-1">
               <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
               <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold text-luxury-green">$159</span>
+                <span className="text-base font-semibold text-luxury-green">$149</span>
                 <span className="line-through text-luxury-charcoal/40 text-xs">$497</span>
               </div>
             </div>
@@ -1094,7 +1091,7 @@ export default function Home() {
             href="/us/checkout"
             onClick={() => {
               // Track CTA click with Meta Pixel
-              trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 159);
+              trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 149);
               setHasClickedCTA(true);
             }}
             className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
