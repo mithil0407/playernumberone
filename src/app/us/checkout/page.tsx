@@ -435,12 +435,12 @@ export default function CheckoutPage() {
           </div>
         </motion.div>
 
-        {/* WhatsApp Testimonial Carousel - 75% Size (25% Smaller) */}
+        {/* Testimonial Carousel - Square Format */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mb-6 md:mb-8 max-w-[203px] mx-auto"
+          className="mb-6 md:mb-8 max-w-[280px] mx-auto"
         >
           <h2 className="text-lg md:text-xl luxury-heading text-center mb-3 text-luxury-charcoal">
             Real Results from Real Women
@@ -448,7 +448,7 @@ export default function CheckoutPage() {
 
           <div className="relative">
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream overflow-hidden">
-              <div className="relative" style={{ aspectRatio: '9/16' }}>
+              <div className="relative aspect-square">
                 {testimonialImages.map((testimonial, index) => (
                   <div
                     key={index}
@@ -458,8 +458,8 @@ export default function CheckoutPage() {
                     <Image
                       src={testimonial.src}
                       alt={testimonial.alt}
-                      width={135}
-                      height={240}
+                      width={280}
+                      height={280}
                       className="w-full h-full object-cover rounded-xl"
                     />
                   </div>
@@ -611,8 +611,8 @@ export default function CheckoutPage() {
                 <div
                   onClick={() => handleAddonChange('divadiet', !divaDietPlanAddon)}
                   className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
-                      ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                      : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
+                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
+                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
                     }`}
                 >
                   <div className="flex items-start gap-3">
@@ -645,8 +645,8 @@ export default function CheckoutPage() {
                 <div
                   onClick={() => handleAddonChange('smartshopper', !smartShoppersGuideAddon)}
                   className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${smartShoppersGuideAddon
-                      ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                      : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
+                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
+                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
                     }`}
                 >
                   <div className="flex items-start gap-3">
@@ -811,8 +811,8 @@ export default function CheckoutPage() {
               <div
                 onClick={() => setDivaDietPlanAddon(!divaDietPlanAddon)}
                 className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
-                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
-                    : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
+                  ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
+                  : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                   }`}
               >
                 <div className="flex items-start gap-3">
@@ -855,8 +855,8 @@ export default function CheckoutPage() {
               <div
                 onClick={() => setSmartShoppersGuideAddon(!smartShoppersGuideAddon)}
                 className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${smartShoppersGuideAddon
-                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
-                    : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
+                  ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
+                  : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                   }`}
               >
                 <div className="flex items-start gap-3">

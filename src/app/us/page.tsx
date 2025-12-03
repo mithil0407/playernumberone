@@ -606,7 +606,7 @@ export default function Home() {
 
                 <div className="text-center">
                   <Link
-                    href="/checkout"
+                    href="/us/checkout"
                     onClick={() => {
                       trackCTAClick('Style Consultation', 'Pricing Section', 119);
                     }}
