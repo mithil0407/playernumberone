@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart } from '@/lib/metaPixel';
+import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -58,7 +58,7 @@ export default function CheckoutPage() {
   const [showAddonPopup, setShowAddonPopup] = useState(false);
   const [popupDismissed, setPopupDismissed] = useState(false); // Track if user dismissed popup
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  
+
   // Testimonial images
   const testimonialImages = [
     { src: '/text1.webp', alt: 'Client testimonial 1' },
@@ -73,35 +73,46 @@ export default function CheckoutPage() {
 
     return () => clearInterval(interval);
   }, [testimonialImages.length]);
-  
+
   // Product pricing
   const originalPrice = 5999;
   const discountedPrice = 1299;
   const savings = originalPrice - discountedPrice;
-  
+
+  // Track ViewContent on checkout page load
+  useEffect(() => {
+    trackViewContent(
+      'ICONIK Style Consultation - Checkout',
+      discountedPrice,
+      ['iconik_style_consultation'],
+      'INR',
+      'India'
+    );
+  }, [discountedPrice]);
+
   // Add-ons
   const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
-  
+
   const divaDietPlanPrice = 299;
-  
+
   const smartShoppersGuidePrice = 499;
-  
+
   // Memoize total calculations to prevent unnecessary recalculations
-  const totalAmount = useMemo(() => 
-    discountedPrice + 
+  const totalAmount = useMemo(() =>
+    discountedPrice +
     (divaDietPlanAddon ? divaDietPlanPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
     [divaDietPlanAddon, smartShoppersGuideAddon]
   );
-  
-  const totalValue = useMemo(() => 
+
+  const totalValue = useMemo(() =>
     originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
     (divaDietPlanAddon ? divaDietPlanPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
     [divaDietPlanAddon, smartShoppersGuideAddon]
   );
-  
+
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
 
   // OPTIMIZATION #1: Preload Razorpay script immediately on page load
@@ -146,7 +157,7 @@ export default function CheckoutPage() {
   // Optimized input change handler with memoized validation
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     // Phone number validation - only allow 10 digits
     if (name === 'phone') {
       const phoneRegex = /^\d{0,10}$/;
@@ -154,7 +165,7 @@ export default function CheckoutPage() {
         return; // Don't update if invalid
       }
     }
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -185,14 +196,14 @@ export default function CheckoutPage() {
   // Optimized add-on change handler with Meta tracking only for additions
   const handleAddonChange = useCallback((addonType: 'divadiet' | 'smartshopper', checked: boolean) => {
     const addon = addonDetails[addonType];
-    
+
     // Track addon changes
     if (checked) {
-      trackAddToCart(addon.name, addon.price, addon.id);
+      trackAddToCart(addon.name, addon.price, addon.id, 'INR', 'India');
     } else {
-      trackRemoveFromCart(addon.name, addon.price, addon.id);
+      trackRemoveFromCart(addon.name, addon.price, addon.id, 'INR', 'India');
     }
-    
+
     // Update state
     if (addonType === 'divadiet') {
       setDivaDietPlanAddon(checked);
@@ -208,20 +219,20 @@ export default function CheckoutPage() {
       alert('Please enter a valid 10-digit phone number');
       return;
     }
-    
+
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       alert('Please enter a valid email address');
       return;
     }
-    
+
     setIsProcessing(true);
-    
+
     // Track InitiateCheckout event with correct item count
     const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0);
-    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation');
-    
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'INR', 'India');
+
     try {
       // Create order data
       const orderData = {
@@ -253,16 +264,16 @@ export default function CheckoutPage() {
       }
 
       const responseData = await response.json();
-      
+
       if (!responseData.success) {
         throw new Error(responseData.error || 'Payment initialization failed');
       }
-      
+
       // Debug: Log the API response
       console.log('Payment API Response:', responseData);
       console.log('Customer ID:', responseData.customer_id);
       console.log('DB Order ID:', responseData.db_order_id);
-      
+
       // OPTIMIZATION #1: Use preloaded Razorpay script (no more waiting for download)
       const initializeRazorpay = () => {
         // Initialize Razorpay payment
@@ -279,13 +290,13 @@ export default function CheckoutPage() {
             const purchasedItems = ['iconik_style_consultation'];
             if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
-            
+
             // Track SINGLE purchase event with all items (no duplicates)
-            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length);
-            
+            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'INR', 'India', response.razorpay_payment_id);
+
             // Store purchase amount and customer data for success page tracking
             localStorage.setItem('purchaseAmount', totalAmount.toString());
-            
+
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {
               localStorage.setItem('customerId', responseData.customer_id);
@@ -297,7 +308,7 @@ export default function CheckoutPage() {
               sessionStorage.setItem('orderId', responseData.db_order_id);
               console.log('Stored orderId in localStorage and sessionStorage:', responseData.db_order_id);
             }
-            
+
             // Redirect to success page with all necessary parameters including amount
             const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
             window.location.href = successUrl;
@@ -311,7 +322,7 @@ export default function CheckoutPage() {
             color: '#E91E63'
           }
         };
-        
+
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       };
@@ -327,7 +338,7 @@ export default function CheckoutPage() {
             initializeRazorpay();
           }
         }, 100);
-        
+
         // Timeout after 10 seconds
         setTimeout(() => {
           clearInterval(checkRazorpay);
@@ -337,7 +348,7 @@ export default function CheckoutPage() {
           }
         }, 10000);
       }
-      
+
     } catch (error) {
       console.error('Payment error:', error);
       setIsProcessing(false);
@@ -348,10 +359,10 @@ export default function CheckoutPage() {
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check if no add-ons are selected
     const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
-    
+
     // Only show popup if: no add-ons AND popup hasn't been dismissed
     if (!hasAddons && !popupDismissed) {
       setShowAddonPopup(true);
@@ -411,12 +422,12 @@ export default function CheckoutPage() {
           <h1 className="text-2xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
             Your Personal Style Transformation Starts Now
           </h1>
-          
+
           <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
             <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
             <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
           </div>
-          
+
           <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
             YOU SAVE ₹{savings} TODAY!
           </div>
@@ -439,9 +450,8 @@ export default function CheckoutPage() {
                 {testimonialImages.map((testimonial, index) => (
                   <div
                     key={index}
-                    className={`absolute inset-0 transition-opacity duration-500 ${
-                      index === currentTestimonial ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`absolute inset-0 transition-opacity duration-500 ${index === currentTestimonial ? 'opacity-100' : 'opacity-0'
+                      }`}
                   >
                     <Image
                       src={testimonial.src}
@@ -454,18 +464,17 @@ export default function CheckoutPage() {
                 ))}
               </div>
             </div>
-            
+
             {/* Carousel Dots */}
             <div className="flex justify-center gap-2 mt-3">
               {testimonialImages.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentTestimonial 
-                      ? 'bg-luxury-accent w-6' 
-                      : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentTestimonial
+                    ? 'bg-luxury-accent w-6'
+                    : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
+                    }`}
                   aria-label={`View testimonial ${index + 1}`}
                 />
               ))}
@@ -482,7 +491,7 @@ export default function CheckoutPage() {
             className="bg-white border-2 border-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl"
           >
             <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-6 text-center">Get Your Style Consultation</h2>
-            
+
             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
               {/* Email */}
               <div>
@@ -540,20 +549,20 @@ export default function CheckoutPage() {
               <div className="absolute top-2 md:top-4 right-[-30px] bg-luxury-gold text-luxury-charcoal px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
                 BEST SELLER
               </div>
-              
+
               <div className="mb-4">
                 <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Personal Style Consultation</h3>
-              
+
                 <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3">
                   Delivered 1-on-1 by Certified Fashion & Image Consultants
                 </p>
-                
+
                 <div className="text-2xl md:text-3xl mb-4">
                   <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
                   <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
                 </div>
               </div>
-              
+
               <div className="mb-4">
                 <h4 className="luxury-heading text-luxury-charcoal mb-3">Includes:</h4>
                 <ul className="space-y-2">
@@ -594,28 +603,26 @@ export default function CheckoutPage() {
               <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70 mb-4 text-center">
                 Most clients add these for best results
               </p>
-              
+
               <div className="space-y-3">
                 {/* Add-on 1: Diva Diet Plan */}
-                <div 
+                <div
                   onClick={() => handleAddonChange('divadiet', !divaDietPlanAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${
-                    divaDietPlanAddon
-                      ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                      : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
-                  }`}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
+                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
+                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
+                    }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                    }`}>
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                      }`}>
                       {divaDietPlanAddon && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="luxury-heading text-luxury-charcoal text-base">💪 Diva Diet Plan</h4>
@@ -633,25 +640,23 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Add-on 2: Smart Shopper's Guide */}
-                <div 
+                <div
                   onClick={() => handleAddonChange('smartshopper', !smartShoppersGuideAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${
-                    smartShoppersGuideAddon
-                      ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                      : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
-                  }`}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${smartShoppersGuideAddon
+                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
+                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
+                    }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                    }`}>
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                      }`}>
                       {smartShoppersGuideAddon && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper&apos;s Guide</h4>
@@ -679,14 +684,14 @@ export default function CheckoutPage() {
                   <span>Style Consultation</span>
                   <span>₹{discountedPrice}</span>
                 </div>
-                
+
                 {divaDietPlanAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
                     <span>+ Diet Plan</span>
                     <span>₹{divaDietPlanPrice}</span>
                   </div>
                 )}
-                
+
                 {smartShoppersGuideAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
                     <span>+ Smart Shopper&apos;s Guide</span>
@@ -723,7 +728,7 @@ export default function CheckoutPage() {
                   const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
-                    trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount);
+                    trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'INR', 'India');
                   } else {
                     await processPayment();
                   }
@@ -786,7 +791,7 @@ export default function CheckoutPage() {
                   onClick={() => {
                     setShowAddonPopup(false);
                     setPopupDismissed(true); // Mark as dismissed
-                    trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button');
+                    trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button', undefined, 'INR', 'India');
                   }}
                   className="text-luxury-charcoal/40 hover:text-luxury-charcoal p-1 -mr-1 -mt-1 flex-shrink-0"
                   aria-label="Close"
@@ -803,23 +808,21 @@ export default function CheckoutPage() {
               {/* Diva Diet Plan Add-on */}
               <div
                 onClick={() => setDivaDietPlanAddon(!divaDietPlanAddon)}
-                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${
-                  divaDietPlanAddon
-                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
-                    : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
-                }`}
+                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
+                  ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
+                  : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
+                  }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                    divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                  }`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                    }`}>
                     {divaDietPlanAddon && (
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
@@ -849,23 +852,21 @@ export default function CheckoutPage() {
               {/* Smart Shopper's Guide Add-on */}
               <div
                 onClick={() => setSmartShoppersGuideAddon(!smartShoppersGuideAddon)}
-                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${
-                  smartShoppersGuideAddon
-                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
-                    : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
-                }`}
+                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${smartShoppersGuideAddon
+                  ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
+                  : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
+                  }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                    smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                  }`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                    }`}>
                     {smartShoppersGuideAddon && (
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
@@ -906,7 +907,7 @@ export default function CheckoutPage() {
               <button
                 onClick={async () => {
                   setShowAddonPopup(false);
-                  trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount);
+                  trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount, 'INR', 'India');
                   await processPayment();
                 }}
                 disabled={isProcessing}
@@ -914,10 +915,10 @@ export default function CheckoutPage() {
               >
                 {isProcessing ? 'Processing...' : `Add & Pay ₹${totalAmount.toLocaleString()}`}
               </button>
-              
+
               <button
                 onClick={() => {
-                  trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount);
+                  trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount, 'INR', 'India');
                   continueWithoutAddons();
                 }}
                 disabled={isProcessing}

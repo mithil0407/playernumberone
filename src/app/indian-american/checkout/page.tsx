@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCartIA, trackInitiateCheckoutIA, trackPurchaseIA, updateUserData, trackCTAClickIA, trackRemoveFromCartIA } from '@/lib/metaPixel';
+import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent } from '@/lib/metaPixel';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -79,6 +79,17 @@ export default function CheckoutPage() {
   const originalPrice = 497;
   const discountedPrice = 99; // Indian-American pricing
   const savings = originalPrice - discountedPrice;
+
+  // Track ViewContent on checkout page load
+  useEffect(() => {
+    trackViewContent(
+      'ICONIK Style Consultation - Checkout',
+      discountedPrice,
+      ['iconik_style_consultation_ia'],
+      'USD',
+      'USA_IndianAmerican'
+    );
+  }, [discountedPrice]);
 
   // Add-ons
   const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
@@ -204,9 +215,9 @@ export default function CheckoutPage() {
 
     // Track addon changes
     if (checked) {
-      trackAddToCartIA(addon.name, addon.price, addon.id);
+      trackAddToCart(addon.name, addon.price, addon.id, 'USD', 'USA_IndianAmerican');
     } else {
-      trackRemoveFromCartIA(addon.name, addon.price, addon.id);
+      trackRemoveFromCart(addon.name, addon.price, addon.id, 'USD', 'USA_IndianAmerican');
     }
 
     // Update state
@@ -236,7 +247,7 @@ export default function CheckoutPage() {
 
     // Track InitiateCheckout event with correct item count
     const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0);
-    trackInitiateCheckoutIA(totalAmount, itemCount, 'ICONIK Style Consultation');
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'USD', 'USA_IndianAmerican');
 
     try {
       // Create order data
@@ -298,7 +309,7 @@ export default function CheckoutPage() {
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
 
             // Track SINGLE purchase event with all items (no duplicates)
-            trackPurchaseIA(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length);
+            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'USD', 'USA_IndianAmerican', response.razorpay_payment_id);
 
             // Store purchase amount and customer data for success page tracking
             localStorage.setItem('purchaseAmount', totalAmount.toString());
@@ -734,7 +745,7 @@ export default function CheckoutPage() {
                   const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
-                    trackCTAClickIA('Add-on Popup Shown', 'Checkout Main Button', totalAmount);
+                    trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'USD', 'USA_IndianAmerican');
                   } else {
                     await processPayment();
                   }
@@ -797,7 +808,7 @@ export default function CheckoutPage() {
                   onClick={() => {
                     setShowAddonPopup(false);
                     setPopupDismissed(true); // Mark as dismissed
-                    trackCTAClickIA('Add-on Popup Dismissed', 'Popup Close Button');
+                    trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button', undefined, 'USD', 'USA_IndianAmerican');
                   }}
                   className="text-luxury-charcoal/40 hover:text-luxury-charcoal p-1 -mr-1 -mt-1 flex-shrink-0"
                   aria-label="Close"
@@ -913,7 +924,7 @@ export default function CheckoutPage() {
               <button
                 onClick={async () => {
                   setShowAddonPopup(false);
-                  trackCTAClickIA('Proceed with Add-ons', 'Popup Continue Button', totalAmount);
+                  trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount, 'USD', 'USA_IndianAmerican');
                   await processPayment();
                 }}
                 disabled={isProcessing}
@@ -924,7 +935,7 @@ export default function CheckoutPage() {
 
               <button
                 onClick={() => {
-                  trackCTAClickIA('Continue without Add-ons', 'Popup Skip Button', totalAmount);
+                  trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount, 'USD', 'USA_IndianAmerican');
                   continueWithoutAddons();
                 }}
                 disabled={isProcessing}

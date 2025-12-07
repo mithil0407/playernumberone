@@ -72,64 +72,102 @@ const trackEvent = (eventName: string, data?: MetaPixelData) => {
 };
 
 // Page View
-export const trackPageView = () => {
-  trackEvent('PageView');
+export const trackPageView = (contentCategory?: string) => {
+  trackEvent('PageView', contentCategory ? { content_category: contentCategory } : undefined);
 };
 
 // View Content
-export const trackViewContent = (contentName: string, value?: number, contentIds?: string[]) => {
+export const trackViewContent = (
+  contentName: string,
+  value?: number,
+  contentIds?: string[],
+  currency: string = 'INR',
+  contentCategory?: string
+) => {
   trackEvent('ViewContent', {
     content_type: 'product',
     content_name: contentName,
     value: value,
-    currency: 'INR',
-    content_ids: contentIds
+    currency: currency,
+    content_ids: contentIds,
+    content_category: contentCategory
   });
 };
 
 // Add to Cart
-export const trackAddToCart = (productName: string, value: number, productId: string) => {
+export const trackAddToCart = (
+  productName: string,
+  value: number,
+  productId: string,
+  currency: string = 'INR',
+  contentCategory?: string
+) => {
   trackEvent('AddToCart', {
     content_name: productName,
     content_type: 'product',
     content_ids: [productId],
     value: value,
-    currency: 'INR'
+    currency: currency,
+    content_category: contentCategory
   });
 };
 
 // Remove from Cart
-export const trackRemoveFromCart = (productName: string, value: number, productId: string) => {
+export const trackRemoveFromCart = (
+  productName: string,
+  value: number,
+  productId: string,
+  currency: string = 'INR',
+  contentCategory?: string
+) => {
   trackEvent('RemoveFromCart', {
     content_name: productName,
     content_type: 'product',
     content_ids: [productId],
     value: value,
-    currency: 'INR'
+    currency: currency,
+    content_category: contentCategory
   });
 };
 
 // Initiate Checkout
-export const trackInitiateCheckout = (value: number, numItems: number, productName: string = 'ICONIK Style Consultation') => {
+export const trackInitiateCheckout = (
+  value: number,
+  numItems: number,
+  productName: string = 'ICONIK Style Consultation',
+  currency: string = 'INR',
+  contentCategory?: string
+) => {
   trackEvent('InitiateCheckout', {
     value: value,
-    currency: 'INR',
+    currency: currency,
     content_type: 'product',
     content_name: productName,
     content_ids: ['iconik_style_consultation'],
-    num_items: numItems
+    num_items: numItems,
+    content_category: contentCategory
   });
 };
 
 // Purchase (SINGLE EVENT with all items)
-export const trackPurchase = (value: number, productName: string, productIds: string[], numItems: number) => {
+export const trackPurchase = (
+  value: number,
+  productName: string,
+  productIds: string[],
+  numItems: number,
+  currency: string = 'INR',
+  contentCategory?: string,
+  transactionId?: string
+) => {
   trackEvent('Purchase', {
     value: value,
-    currency: 'INR',
+    currency: currency,
     content_type: 'product',
     content_name: productName,
     content_ids: productIds,
-    num_items: numItems
+    num_items: numItems,
+    content_category: contentCategory,
+    transaction_id: transactionId
   });
 };
 
@@ -153,12 +191,18 @@ export const trackCompleteRegistration = (value?: number, contentName?: string) 
 };
 
 // Custom event for CTA clicks
-export const trackCTAClick = (buttonName: string, location: string, value?: number) => {
+export const trackCTAClick = (
+  buttonName: string,
+  location: string,
+  value?: number,
+  currency: string = 'INR',
+  contentCategory?: string
+) => {
   trackEvent('Lead', {
     content_name: `${buttonName} - ${location}`,
     value: value,
-    currency: 'INR',
-    content_category: 'CTA Click'
+    currency: currency,
+    content_category: contentCategory || 'CTA Click'
   });
 };
 
@@ -182,101 +226,3 @@ export const trackEthnicLead = (value?: number) => {
     content_category: 'Ethnic Elegance Package'
   });
 };
-
-// ========================================
-// Indian-American Segment Tracking (USD)
-// ========================================
-
-// Page View - Indian American
-export const trackPageViewIA = () => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'PageView_USA_IndianAmerican');
-    console.log('Meta Pixel: PageView_USA_IndianAmerican tracked');
-  }
-};
-
-// View Content - Indian American
-export const trackViewContentIA = (contentName: string, value?: number, contentIds?: string[]) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'ViewContent_USA_IndianAmerican', {
-      content_type: 'product',
-      content_name: contentName,
-      value: value,
-      currency: 'USD',
-      content_ids: contentIds
-    });
-    console.log('Meta Pixel: ViewContent_USA_IndianAmerican tracked');
-  }
-};
-
-// Add to Cart - Indian American
-export const trackAddToCartIA = (productName: string, value: number, productId: string) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'AddToCart_USA_IndianAmerican', {
-      content_name: productName,
-      content_type: 'product',
-      content_ids: [productId],
-      value: value,
-      currency: 'USD'
-    });
-    console.log('Meta Pixel: AddToCart_USA_IndianAmerican tracked');
-  }
-};
-
-// Remove from Cart - Indian American
-export const trackRemoveFromCartIA = (productName: string, value: number, productId: string) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'RemoveFromCart_USA_IndianAmerican', {
-      content_name: productName,
-      content_type: 'product',
-      content_ids: [productId],
-      value: value,
-      currency: 'USD'
-    });
-    console.log('Meta Pixel: RemoveFromCart_USA_IndianAmerican tracked');
-  }
-};
-
-// Initiate Checkout - Indian American
-export const trackInitiateCheckoutIA = (value: number, numItems: number, productName: string = 'ICONIK Style Consultation') => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'InitiateCheckout_USA_IndianAmerican', {
-      value: value,
-      currency: 'USD',
-      content_type: 'product',
-      content_name: productName,
-      content_ids: ['iconik_style_consultation_ia'],
-      num_items: numItems
-    });
-    console.log('Meta Pixel: InitiateCheckout_USA_IndianAmerican tracked');
-  }
-};
-
-// Purchase - Indian American
-export const trackPurchaseIA = (value: number, productName: string, productIds: string[], numItems: number) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'Purchase_USA_IndianAmerican', {
-      value: value,
-      currency: 'USD',
-      content_type: 'product',
-      content_name: productName,
-      content_ids: productIds,
-      num_items: numItems
-    });
-    console.log('Meta Pixel: Purchase_USA_IndianAmerican tracked');
-  }
-};
-
-// CTA Click - Indian American
-export const trackCTAClickIA = (buttonName: string, location: string, value?: number) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('trackCustom', 'Lead_USA_IndianAmerican', {
-      content_name: `${buttonName} - ${location}`,
-      value: value,
-      currency: 'USD',
-      content_category: 'CTA Click'
-    });
-    console.log('Meta Pixel: Lead_USA_IndianAmerican tracked');
-  }
-};
-

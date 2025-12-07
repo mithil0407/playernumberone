@@ -1,7 +1,7 @@
 'use client';
 
 import Head from 'next/head';
-import { trackCTAClickIA, trackPageViewIA, trackViewContentIA } from '@/lib/metaPixel';
+import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -36,8 +36,8 @@ export default function Home() {
 
   // Track page view and product view on mount
   useEffect(() => {
-    trackPageViewIA();
-    trackViewContentIA('ICONIK Style Consultation - Indian American', 99, ['iconik_style_consultation_ia']);
+    trackPageView('USA_IndianAmerican');
+    trackViewContent('ICONIK Style Consultation - Indian American', 99, ['iconik_style_consultation_ia'], 'USD', 'USA_IndianAmerican');
   }, []);
 
   // Transformation images data
@@ -376,7 +376,7 @@ export default function Home() {
                   href="/indian-american/checkout"
                   onClick={() => {
                     // Track CTA click with Meta Pixel
-                    trackCTAClickIA('Begin Your Transformation', 'Hero Section');
+                    trackCTAClick('Begin Your Transformation', 'Hero Section', undefined, 'USD', 'USA_IndianAmerican');
                   }}
                   className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
                 >
@@ -638,7 +638,7 @@ export default function Home() {
                   <Link
                     href="/indian-american/checkout"
                     onClick={() => {
-                      trackCTAClickIA('Style Consultation', 'Pricing Section', 119);
+                      trackCTAClick('Style Consultation', 'Pricing Section', 99, 'USD', 'USA_IndianAmerican');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
@@ -693,7 +693,7 @@ export default function Home() {
                   <Link
                     href="/indian-american/checkout"
                     onClick={() => {
-                      trackCTAClickIA('Complete Package', 'Pricing Section', 177);
+                      trackCTAClick('Complete Package', 'Pricing Section', 177, 'USD', 'USA_IndianAmerican');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
@@ -905,7 +905,7 @@ export default function Home() {
                   href="/indian-american/checkout"
                   onClick={() => {
                     // Track final CTA click with Meta Pixel
-                    trackCTAClickIA('Final CTA', 'Bottom Section', 119);
+                    trackCTAClick('Final CTA', 'Bottom Section', 99, 'USD', 'USA_IndianAmerican');
                   }}
                   className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
                 >
@@ -1090,7 +1090,7 @@ export default function Home() {
               href="/indian-american/checkout"
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                trackCTAClickIA('Mobile Sticky CTA', 'Mobile Sticky', 119);
+                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 99, 'USD', 'USA_IndianAmerican');
               }}
               className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
             >
