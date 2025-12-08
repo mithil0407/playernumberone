@@ -59,11 +59,13 @@ export default function CheckoutPage() {
   const [popupDismissed, setPopupDismissed] = useState(false); // Track if user dismissed popup
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  // Testimonials carousel
+  // Testimonials carousel - 9:16 format (5 images)
   const testimonialImages = [
-    { src: '/ia-testimonial-priya.webp', alt: 'Priya M., 32, Product Manager, San Francisco', quote: 'I always felt underdressed at client meetings compared to my American colleagues, but showing too much skin felt uncomfortable. ICONIK helped me find that perfect balance.' },
-    { src: '/ia-testimonial-anjali.webp', alt: 'Anjali K., 28, Software Engineer, Seattle', quote: 'After moving from India 3 years ago, I was lost in American stores. Nothing fit right. Now I have a system that works with my body type and budget.' },
-    { src: '/ia-testimonial-riya.webp', alt: 'Riya P., 35, Marketing Director, NYC', quote: 'I used to default to all black because it felt safe for the office. Now I know exactly which colors pop on my skin tone.' }
+    { src: '/ia-checkout-testimonial-1.webp', alt: 'Indian-American client testimonial 1' },
+    { src: '/ia-checkout-testimonial-2.webp', alt: 'Indian-American client testimonial 2' },
+    { src: '/ia-checkout-testimonial-3.webp', alt: 'Indian-American client testimonial 3' },
+    { src: '/ia-checkout-testimonial-4.webp', alt: 'Indian-American client testimonial 4' },
+    { src: '/ia-checkout-testimonial-5.webp', alt: 'Indian-American client testimonial 5' }
   ];
 
   // Auto-rotate testimonials

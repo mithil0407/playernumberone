@@ -44,18 +44,18 @@ export default function Home() {
   const transformationImages = useMemo(() => [
     {
       src: '/ia-transformation-1.webp',
-      testimonial: "I finally stopped guessing what to wear to US client meetings. ICONIK made work outfits feel easy.",
-      name: 'Meera S., 31, Boston'
+      testimonial: "I didn't realise how off my outfits were for client meetings until I saw the suggestions. Now getting ready is just faster and way less stressful.",
+      name: 'Meenal R, 32, Chicago'
     },
     {
       src: '/ia-transformation-2.webp',
-      testimonial: "I used to return everything I bought here. Now I know my fits, and shopping doesn't feel like stressful.",
-      name: 'Devika R., 29, Austin'
+      testimonial: "I swear I used to return EVERY outfit I bought here 😭 After this consult I finally get what actually suits my body. Shopping feels fun again and not like a gamble 😂",
+      name: 'Rhea D, 27, Dallas'
     },
     {
       src: '/ia-transformation-3.webp',
-      testimonial: "I wanted something modest but still sharp. ICONIK showed me options I never even considered.",
-      name: 'Farah L., 28, Seattle'
+      testimonial: "I wanted modest looks that still felt polished for work. They gave me options I honestly never would have chosen but they looked really good on me.",
+      name: 'Sara F, 29, San Jose'
     }
   ], []);
 
