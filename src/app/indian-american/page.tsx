@@ -279,22 +279,12 @@ export default function Home() {
                   />
                 </div>
               </motion.div>
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
-              >
-                Discover Your                 <span className="text-luxury-accent">Your Perfect Style</span> in <span className="text-luxury-charcoal">24 hours</span>
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="text-xl md:text-2xl lg:text-3xl luxury-heading text-luxury-charcoal/90 max-w-4xl mx-auto mb-4 leading-relaxed"
-              >
+              <h1 className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight">
+                Discover Your <span className="text-luxury-accent">Your Perfect Style</span> in <span className="text-luxury-charcoal">24 hours</span>
+              </h1>
+              <p className="text-xl md:text-2xl lg:text-3xl luxury-heading text-luxury-charcoal/90 max-w-4xl mx-auto mb-4 leading-relaxed">
                 Style Consulting for Indian-American Women Who Feel Caught Between Two Worlds
-              </motion.p>
+              </p>
 
 
               {/* Testimonial Slideshow Above the Fold */}

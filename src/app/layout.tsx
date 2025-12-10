@@ -5,7 +5,12 @@ import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial']
+});
 
 export const metadata: Metadata = {
   title: "ICONIK - Discover Your Signature Style & Transform Your Confidence",
@@ -30,6 +35,13 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
+        {/* Preload LCP image for faster rendering */}
+        <link
+          rel="preload"
+          as="image"
+          href="/ia-transformation-1.webp"
+          fetchPriority="high"
+        />
       </head>
       <body className={inter.className}>
         {/* Google Analytics 4 */}
@@ -86,24 +98,24 @@ export default function RootLayout({
             }, 1000);
           `}
         </Script>
-        
+
         <noscript>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img 
-            height="1" 
-            width="1" 
+          <img
+            height="1"
+            width="1"
             style={{ display: 'none' }}
             src="https://www.facebook.com/tr?id=1373360484073939&ev=PageView&noscript=1"
             alt=""
           />
         </noscript>
-        
+
         {/* Meta Pixel Provider */}
         <MetaPixelProvider>
           {children}
         </MetaPixelProvider>
-        
-        
+
+
         {/* Vercel Analytics */}
         <Analytics />
       </body>
