@@ -79,7 +79,7 @@ export default function CheckoutPage() {
 
   // Price values
   const originalPrice = 497;
-  const discountedPrice = 99; // Indian-American pricing
+  const discountedPrice = 79; // Indian-American pricing
   const savings = originalPrice - discountedPrice;
 
   // Track ViewContent on checkout page load

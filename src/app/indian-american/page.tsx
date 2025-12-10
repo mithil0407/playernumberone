@@ -37,7 +37,7 @@ export default function Home() {
   // Track page view and product view on mount
   useEffect(() => {
     trackPageView('USA_IndianAmerican');
-    trackViewContent('ICONIK Style Consultation - Indian American', 99, ['iconik_style_consultation_ia'], 'USD', 'USA_IndianAmerican');
+    trackViewContent('ICONIK Style Consultation - Indian American', 79, ['iconik_style_consultation_ia'], 'USD', 'USA_IndianAmerican');
   }, []);
 
   // Transformation images data
@@ -572,7 +572,7 @@ export default function Home() {
                   <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                     ICONIK Style Consultation
                   </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">$99</div>
+                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">$79</div>
                   <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                     Complete personal style transformation
                   </p>
@@ -638,7 +638,7 @@ export default function Home() {
                   <Link
                     href="/indian-american/checkout"
                     onClick={() => {
-                      trackCTAClick('Style Consultation', 'Pricing Section', 99, 'USD', 'USA_IndianAmerican');
+                      trackCTAClick('Style Consultation', 'Pricing Section', 79, 'USD', 'USA_IndianAmerican');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
@@ -657,7 +657,7 @@ export default function Home() {
                   <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                     Complete ICONIK Package
                   </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">$177</div>
+                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">$157</div>
                   <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                     Style + Shopping + Wellness Bundle
                   </p>
@@ -693,7 +693,7 @@ export default function Home() {
                   <Link
                     href="/indian-american/checkout"
                     onClick={() => {
-                      trackCTAClick('Complete Package', 'Pricing Section', 177, 'USD', 'USA_IndianAmerican');
+                      trackCTAClick('Complete Package', 'Pricing Section', 157, 'USD', 'USA_IndianAmerican');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
@@ -905,7 +905,7 @@ export default function Home() {
                   href="/indian-american/checkout"
                   onClick={() => {
                     // Track final CTA click with Meta Pixel
-                    trackCTAClick('Final CTA', 'Bottom Section', 99, 'USD', 'USA_IndianAmerican');
+                    trackCTAClick('Final CTA', 'Bottom Section', 79, 'USD', 'USA_IndianAmerican');
                   }}
                   className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
                 >
@@ -1090,7 +1090,7 @@ export default function Home() {
               href="/indian-american/checkout"
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 99, 'USD', 'USA_IndianAmerican');
+                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 79, 'USD', 'USA_IndianAmerican');
               }}
               className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
             >
