@@ -923,7 +923,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <p className="luxury-body opacity-75 text-center">$99 • Limited slots available</p>
+                <p className="luxury-body opacity-75 text-center">$79 • Limited slots available</p>
               </div>
             </motion.div>
           </div>
@@ -1065,7 +1065,7 @@ export default function Home() {
               <div className="flex-1">
                 <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-base font-semibold text-luxury-green">$99</span>
+                  <span className="text-base font-semibold text-luxury-green">$79</span>
                   <span className="line-through text-luxury-charcoal/40 text-xs">$497</span>
                 </div>
               </div>
