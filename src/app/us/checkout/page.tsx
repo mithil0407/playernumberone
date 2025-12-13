@@ -296,8 +296,9 @@ export default function CheckoutPage() {
             // Track SINGLE purchase event with all items (no duplicates)
             trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length);
 
-            // Store purchase amount and customer data for success page tracking
+            // Store purchase amount and currency for success page tracking
             localStorage.setItem('purchaseAmount', totalAmount.toString());
+            localStorage.setItem('purchaseCurrency', 'USD');
 
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {
@@ -474,8 +475,8 @@ export default function CheckoutPage() {
                   key={index}
                   onClick={() => setCurrentTestimonial(index)}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentTestimonial
-                      ? 'bg-luxury-accent w-6'
-                      : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
+                    ? 'bg-luxury-accent w-6'
+                    : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
                     }`}
                   aria-label={`View testimonial ${index + 1}`}
                 />

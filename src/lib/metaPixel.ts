@@ -182,11 +182,11 @@ export const trackLead = (value?: number, contentName?: string) => {
 };
 
 // Complete Registration
-export const trackCompleteRegistration = (value?: number, contentName?: string) => {
+export const trackCompleteRegistration = (value?: number, contentName?: string, currency: string = 'INR') => {
   trackEvent('CompleteRegistration', {
     content_name: contentName || 'ICONIK Customer Registration',
     value: value,
-    currency: 'INR'
+    currency: currency
   });
 };
 
