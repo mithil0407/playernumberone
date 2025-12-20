@@ -329,8 +329,9 @@ export default function CheckoutPage() {
               console.log('Stored orderId in localStorage and sessionStorage:', responseData.db_order_id);
             }
 
-            // Redirect to success page with all necessary parameters including amount
-            const successUrl = `/us/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
+            // Redirect to Indian-American success page with all necessary parameters
+            const successUrl = `/indian-american/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
+            console.log('🚀 Redirecting to:', successUrl);
             window.location.href = successUrl;
           },
           prefill: {
