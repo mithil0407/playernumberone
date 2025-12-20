@@ -305,17 +305,15 @@ export default function CheckoutPage() {
           image: `${window.location.origin}/logopayment.webp`, // Logo displayed on Razorpay checkout
           order_id: responseData.razorpay_order_id,
           handler: function (response: RazorpayResponse) {
-            // Payment successful - Track detailed purchase with all items
+            // Payment successful
             const purchasedItems = ['iconik_style_consultation'];
             if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
 
-            // Track SINGLE purchase event with all items (no duplicates)
-            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'USD', 'USA_IndianAmerican', response.razorpay_payment_id);
-
-            // Store purchase amount and currency for success page tracking
+            // Store purchase details for success page tracking (prevents race condition)
             localStorage.setItem('purchaseAmount', totalAmount.toString());
             localStorage.setItem('purchaseCurrency', 'USD');
+            localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems));
 
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {

@@ -5,7 +5,7 @@ import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackPageView, trackPurchase } from '@/lib/metaPixel';
 
 function SuccessPageContent() {
     const searchParams = useSearchParams();
@@ -24,14 +24,43 @@ function SuccessPageContent() {
         const purchaseAmount = localStorage.getItem('purchaseAmount');
         const purchaseCurrency = localStorage.getItem('purchaseCurrency') || 'USD'; // Default to USD for Indian-American funnel
 
+        const purchasedItemsJson = localStorage.getItem('purchasedItems');
+
         if (purchaseAmount) {
+            const amount = parseFloat(purchaseAmount);
+
+            // Track Purchase (Primary for Ads Optimization) - moved from checkout page to prevent race conditions
+            if (purchasedItemsJson) {
+                try {
+                    const purchasedItems = JSON.parse(purchasedItemsJson);
+                    trackPurchase(
+                        amount,
+                        'ICONIK Complete Package',
+                        purchasedItems,
+                        purchasedItems.length, // numItems
+                        purchaseCurrency,
+                        'USA_IndianAmerican',
+                        paymentId || undefined
+                    );
+                    console.log('✅ Tracked Purchase:', {
+                        amount,
+                        currency: purchaseCurrency,
+                        items: purchasedItems,
+                        transactionId: paymentId
+                    });
+                } catch (e) {
+                    console.error('Error parsing purchasedItems for tracking:', e);
+                }
+            }
+
+            // Track CompleteRegistration (Secondary/Legacy)
             trackCompleteRegistration(
-                parseFloat(purchaseAmount),
+                amount,
                 'ICONIK Style Consultation Purchase - Indian American',
                 purchaseCurrency
             );
             console.log('✅ Tracked CompleteRegistration:', {
-                amount: parseFloat(purchaseAmount),
+                amount: amount,
                 currency: purchaseCurrency,
                 contentName: 'ICONIK Style Consultation Purchase - Indian American'
             });
