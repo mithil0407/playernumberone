@@ -40,7 +40,7 @@ export default function Home() {
   // Track page view and product view on mount
   useEffect(() => {
     trackPageView('India');
-    trackViewContent('ICONIK Style Consultation', 1299, ['iconik_style_consultation'], 'INR', 'India');
+    trackViewContent('ICONIK Style Consultation', 1699, ['iconik_style_consultation'], 'INR', 'India');
   }, []);
 
   // Transformation images data
@@ -570,7 +570,7 @@ export default function Home() {
                   <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                     ICONIK Style Consultation
                   </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,299</div>
+                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,699</div>
                   <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                     Complete personal style transformation
                   </p>
@@ -636,7 +636,7 @@ export default function Home() {
                   <Link
                     href="/checkout"
                     onClick={() => {
-                      trackCTAClick('Style Consultation', 'Pricing Section', 1299, 'INR', 'India');
+                      trackCTAClick('Style Consultation', 'Pricing Section', 1699, 'INR', 'India');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
@@ -647,60 +647,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Advanced Plan */}
-          <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-1">
-              <div className="p-6 md:p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
-                    Complete ICONIK Package
-                  </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹2,097</div>
-                  <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
-                    Style + Shopping + Wellness Bundle
-                  </p>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <h4 className="text-lg luxury-heading mb-4 text-luxury-charcoal">What&apos;s Included:</h4>
-                    <ul className="space-y-3">
-                      {features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                          <span className="luxury-body text-luxury-charcoal/80 text-sm">{feature.title}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
 
-                  <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-xl p-5 text-center">
-                    <div className="text-3xl mb-3">💰</div>
-                    <h4 className="text-lg luxury-heading text-luxury-charcoal mb-2">Complete Bundle</h4>
-                    <p className="luxury-body text-luxury-charcoal/70 mb-2 text-sm">All-in-one transformation package</p>
-                    <div className="text-xl font-semibold text-luxury-green mb-1">Best Value</div>
-                    <p className="luxury-body text-luxury-green text-xs">Limited time offer</p>
-                  </div>
-                </div>
-
-                <div className="bg-luxury-red/10 border border-luxury-red/20 rounded-xl p-4 mb-6 text-center">
-                  <p className="luxury-body text-luxury-red-700 text-sm">⚠️ Only 15 slots available this week</p>
-                </div>
-
-                <div className="text-center">
-                  <Link
-                    href="/checkout"
-                    onClick={() => {
-                      trackCTAClick('Complete Package', 'Pricing Section', 2097, 'INR', 'India');
-                    }}
-                    className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    ✨ Transform Now
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
 
@@ -845,10 +793,10 @@ export default function Home() {
                   </div>
 
                   <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${item.color === 'red' ? 'bg-red-100' :
-                      item.color === 'orange' ? 'bg-orange-100' : 'bg-rose-100'
+                    item.color === 'orange' ? 'bg-orange-100' : 'bg-rose-100'
                     }`}>
                     <item.icon className={`w-6 h-6 md:w-8 md:h-8 ${item.color === 'red' ? 'text-red-600' :
-                        item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
+                      item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
                       }`} />
                   </div>
                   <p className="text-xl md:text-2xl luxury-heading text-luxury-charcoal text-center leading-relaxed">{item.text}</p>
@@ -903,7 +851,7 @@ export default function Home() {
                   href="/checkout"
                   onClick={() => {
                     // Track final CTA click with Meta Pixel
-                    trackCTAClick('Final CTA', 'Bottom Section', 1299, 'INR', 'India');
+                    trackCTAClick('Final CTA', 'Bottom Section', 1699, 'INR', 'India');
                   }}
                   className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
                 >
@@ -931,7 +879,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <p className="luxury-body opacity-75 text-center">₹1,299 + GST • Limited slots available</p>
+                <p className="luxury-body opacity-75 text-center">₹1,699 + GST • Limited slots available</p>
               </div>
             </motion.div>
           </div>
@@ -1073,7 +1021,7 @@ export default function Home() {
               <div className="flex-1">
                 <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-base font-semibold text-luxury-green">₹1,299</span>
+                  <span className="text-base font-semibold text-luxury-green">₹1,699</span>
                   <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
                 </div>
               </div>
@@ -1088,7 +1036,7 @@ export default function Home() {
               href="/checkout"
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1299, 'INR', 'India');
+                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1699, 'INR', 'India');
                 setHasClickedCTA(true);
               }}
               className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
