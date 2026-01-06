@@ -93,24 +93,28 @@ export default function CheckoutPage() {
   // Add-ons
   const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
+  const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false); // Outfit Preview on You
 
   const divaDietPlanPrice = 299;
 
   const smartShoppersGuidePrice = 499;
+  const outfitPreviewPrice = 999;
 
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() =>
     discountedPrice +
     (divaDietPlanAddon ? divaDietPlanPrice : 0) +
-    (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
-    [divaDietPlanAddon, smartShoppersGuideAddon]
+    (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
+    (outfitPreviewAddon ? outfitPreviewPrice : 0),
+    [divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
   const totalValue = useMemo(() =>
     originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
     (divaDietPlanAddon ? divaDietPlanPrice : 0) +
-    (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
-    [divaDietPlanAddon, smartShoppersGuideAddon]
+    (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
+    (outfitPreviewAddon ? outfitPreviewPrice : 0),
+    [divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
@@ -190,11 +194,16 @@ export default function CheckoutPage() {
       name: 'Smart Shopper\'s Guide',
       price: 499,
       id: 'smart_shoppers_guide'
+    },
+    outfitpreview: {
+      name: 'Outfit Preview on You',
+      price: 999,
+      id: 'outfit_preview'
     }
   }), []);
 
   // Optimized add-on change handler with Meta tracking only for additions
-  const handleAddonChange = useCallback((addonType: 'divadiet' | 'smartshopper', checked: boolean) => {
+  const handleAddonChange = useCallback((addonType: 'divadiet' | 'smartshopper' | 'outfitpreview', checked: boolean) => {
     const addon = addonDetails[addonType];
 
     // Track addon changes
@@ -209,6 +218,8 @@ export default function CheckoutPage() {
       setDivaDietPlanAddon(checked);
     } else if (addonType === 'smartshopper') {
       setSmartShoppersGuideAddon(checked);
+    } else if (addonType === 'outfitpreview') {
+      setOutfitPreviewAddon(checked);
     }
   }, [addonDetails]);
 
@@ -230,7 +241,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     // Track InitiateCheckout event with correct item count
-    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0);
+    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0) + (outfitPreviewAddon ? 1 : 0);
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'INR', 'India');
 
     try {
@@ -243,11 +254,13 @@ export default function CheckoutPage() {
         base_product: 'Iconik Style Consultation',
         add_ons: {
           diva_diet_plan: divaDietPlanAddon,
-          smart_shoppers_guide: smartShoppersGuideAddon
+          smart_shoppers_guide: smartShoppersGuideAddon,
+          outfit_preview: outfitPreviewAddon
         },
         total_base_price: discountedPrice,
         diva_diet_plan_price: divaDietPlanAddon ? divaDietPlanPrice : 0,
-        smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0
+        smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0,
+        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
       };
 
       // Call payment API
@@ -290,6 +303,7 @@ export default function CheckoutPage() {
             const purchasedItems = ['iconik_style_consultation'];
             if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
+            if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
 
             // Track SINGLE purchase event with all items (no duplicates)
             trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'INR', 'India', response.razorpay_payment_id);
@@ -355,14 +369,16 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, divaDietPlanAddon, smartShoppersGuideAddon, razorpayLoaded]);
+  }, [formData, totalAmount, divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
+
     // Check if no add-ons are selected
-    const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
+    const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+
 
     // Only show popup if: no add-ons AND popup hasn't been dismissed
     if (!hasAddons && !popupDismissed) {
@@ -371,7 +387,7 @@ export default function CheckoutPage() {
       // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
-  }, [processPayment, divaDietPlanAddon, smartShoppersGuideAddon, popupDismissed]);
+  }, [processPayment, divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon, popupDismissed]);
 
   // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
@@ -606,6 +622,40 @@ export default function CheckoutPage() {
               </p>
 
               <div className="space-y-3">
+                {/* Add-on 0: Outfit Preview on You - NEW */}
+                <div
+                  onClick={() => handleAddonChange('outfitpreview', !outfitPreviewAddon)}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${outfitPreviewAddon
+                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
+                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${outfitPreviewAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                      }`}>
+                      {outfitPreviewAddon && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h4 className="luxury-heading text-luxury-charcoal text-base">👗 Outfit Preview on You</h4>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{outfitPreviewPrice}</span>
+                      </div>
+                      <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
+                        See how the outfits we recommend will actually look on YOUR body.
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">See yourself in the outfits</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">No more guessing</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Shop with confidence</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 {/* Add-on 1: Diva Diet Plan */}
                 <div
                   onClick={() => handleAddonChange('divadiet', !divaDietPlanAddon)}
@@ -699,6 +749,13 @@ export default function CheckoutPage() {
                     <span>₹{smartShoppersGuidePrice}</span>
                   </div>
                 )}
+
+                {outfitPreviewAddon && (
+                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
+                    <span>+ Outfit Preview</span>
+                    <span>₹{outfitPreviewPrice}</span>
+                  </div>
+                )}
               </div>
 
               {/* Big Bold Total */}
@@ -726,7 +783,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
+                  const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon || outfitPreviewAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'INR', 'India');

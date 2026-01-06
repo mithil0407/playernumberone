@@ -5,7 +5,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price } = body;
+    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price } = body;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
 
     // Generate unique order ID
     const orderId = `alpha1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
+
     // Convert amount to smallest currency unit (paise for INR, cents for USD)
     const amountInSmallestUnit = Math.round(amount * 100);
 
     // Save customer to database
     let customerId = 'mock-customer-id';
     let dbOrderId = 'mock-order-id';
-    
+
     try {
       // OPTIMIZATION #2: Single UPSERT query (was SELECT + INSERT)
       const customer = await saveCustomer({
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         email: customer_email,
         phone: customer_phone
       });
-      
+
       customerId = customer.id!;
 
       // Save order to database with temporary ID first
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         razorpay_order_id: orderId
       });
       dbOrderId = order.id!;
-      
+
       // Note: Google Sheets integration moved to webhook - only add data after payment completion
     } catch (error) {
       console.log('Supabase not configured, using mock IDs:', error);
@@ -78,9 +78,11 @@ export async function POST(request: NextRequest) {
           base_product: base_product,
           diva_diet_plan_addon: add_ons.diva_diet_plan ? 'true' : 'false',
           smart_shoppers_guide_addon: add_ons.smart_shoppers_guide ? 'true' : 'false',
+          outfit_preview_addon: add_ons.outfit_preview ? 'true' : 'false',
           total_base_price: total_base_price,
           diva_diet_plan_price: diva_diet_plan_price,
           smart_shoppers_guide_price: smart_shoppers_guide_price,
+          outfit_preview_price: outfit_preview_price,
           service: 'ICONIK Style Guide',
           db_order_id: dbOrderId,
           customer_id: customerId
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
       };
 
       const razorpayOrder = await razorpay.orders.create(orderRequest);
-      
+
       if (!razorpayOrder?.id) {
         throw new Error('Failed to create Razorpay order');
       }
@@ -117,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     } catch (razorpayError) {
       console.error('Razorpay integration error:', razorpayError);
-      
+
       return NextResponse.json({
         success: false,
         error: 'Payment processing failed. Please try again or contact support.'
