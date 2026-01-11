@@ -239,17 +239,17 @@ export default function MonthlyPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: index * 0.1 }}
         className={`relative rounded-2xl border-2 overflow-hidden transition-all duration-300 hover:-translate-y-2 ${isHighlighted
-            ? 'border-luxury-gold bg-luxury-cream/60 shadow-2xl scale-[1.02] md:scale-105'
-            : isBestValue
-              ? 'border-luxury-accent/50 bg-luxury-pink-bg/30 shadow-xl'
-              : 'border-luxury-cream bg-luxury-cream/40 hover:bg-luxury-cream/60'
+          ? 'border-luxury-gold bg-luxury-cream/60 shadow-2xl scale-[1.02] md:scale-105'
+          : isBestValue
+            ? 'border-luxury-accent/50 bg-luxury-pink-bg/30 shadow-xl'
+            : 'border-luxury-cream bg-luxury-cream/40 hover:bg-luxury-cream/60'
           }`}
       >
         {/* Badge */}
         {tier.badge && (
           <div className={`absolute top-0 left-0 right-0 py-2 text-center text-sm font-bold ${isHighlighted
-              ? 'bg-luxury-gold text-luxury-charcoal'
-              : 'bg-luxury-accent text-luxury-warm-white'
+            ? 'bg-luxury-gold text-luxury-charcoal'
+            : 'bg-luxury-accent text-luxury-warm-white'
             }`}>
             {tier.badgeIcon} {tier.badge}
           </div>
@@ -319,10 +319,10 @@ export default function MonthlyPage() {
               trackCTAClick(tier.ctaText, 'Pricing Section', tier.price, 'USD', 'USA_Monthly_Tiered');
             }}
             className={`block w-full text-center py-3 md:py-4 rounded-full transition-all duration-300 luxury-body font-semibold ${isHighlighted
-                ? 'bg-luxury-accent hover:bg-luxury-accent/90 text-luxury-warm-white shadow-lg hover:shadow-xl text-lg'
-                : isBestValue
-                  ? 'bg-luxury-charcoal hover:bg-luxury-charcoal/90 text-luxury-warm-white'
-                  : 'bg-luxury-green hover:bg-luxury-green/90 text-luxury-warm-white'
+              ? 'bg-luxury-accent hover:bg-luxury-accent/90 text-luxury-warm-white shadow-lg hover:shadow-xl text-lg'
+              : isBestValue
+                ? 'bg-luxury-charcoal hover:bg-luxury-charcoal/90 text-luxury-warm-white'
+                : 'bg-luxury-green hover:bg-luxury-green/90 text-luxury-warm-white'
               }`}
           >
             {tier.ctaText} - ${tier.price}
@@ -1112,10 +1112,10 @@ export default function MonthlyPage() {
           <div className="max-w-sm mx-auto">
             <div className="flex items-center justify-between mb-3">
               <div className="flex-1">
-                <div className="luxury-body text-luxury-charcoal/70 text-xs">Most Popular</div>
+                <div className="luxury-body text-luxury-charcoal/70 text-xs">Style Starter</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-base font-semibold text-luxury-green">$237</span>
-                  <span className="line-through text-luxury-charcoal/40 text-xs">$297</span>
+                  <span className="text-base font-semibold text-luxury-green">$99</span>
+                  <span className="text-luxury-charcoal/60 text-xs">one-time</span>
                 </div>
               </div>
               <div className="text-right ml-2">
@@ -1126,13 +1126,13 @@ export default function MonthlyPage() {
               </div>
             </div>
             <Link
-              href="/monthly/checkout?tier=seasonal"
+              href="/monthly/checkout?tier=starter"
               onClick={() => {
-                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 237, 'USD', 'USA_Monthly_Tiered');
+                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 99, 'USD', 'USA_Monthly_Tiered');
               }}
               className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
             >
-              Start My Transformation
+              Get Started - $99
             </Link>
           </div>
         </div>
