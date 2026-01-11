@@ -79,7 +79,7 @@ export default function CheckoutPage() {
 
   // Price values
   const originalPrice = 497;
-  const discountedPrice = 79; // Indian-American pricing
+  const discountedPrice = 99; // Indian-American pricing
   const savings = originalPrice - discountedPrice;
 
   // Track ViewContent on checkout page load
@@ -94,30 +94,30 @@ export default function CheckoutPage() {
   }, [discountedPrice]);
 
   // Add-ons
-  const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
+  const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false); // Virtual Outfit Preview
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
 
-  const divaDietPlanPrice = 29;
+  const outfitPreviewPrice = 39;
 
   const smartShoppersGuidePrice = 49;
 
   // Add-on names for Indian-American audience
-  const divaDietPlanName = 'Indian-Friendly Beauty & Wellness Guide';
+  const outfitPreviewName = 'Virtual Outfit Preview';
   const smartShoppersGuideName = 'American Brands for Indian Body Types';
 
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() =>
     discountedPrice +
-    (divaDietPlanAddon ? divaDietPlanPrice : 0) +
+    (outfitPreviewAddon ? outfitPreviewPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
-    [divaDietPlanAddon, smartShoppersGuideAddon]
+    [outfitPreviewAddon, smartShoppersGuideAddon]
   );
 
   const totalValue = useMemo(() =>
     originalPrice + 100 + // Base + Free bonuses ($100+ value)
-    (divaDietPlanAddon ? divaDietPlanPrice : 0) +
+    (outfitPreviewAddon ? outfitPreviewPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0),
-    [divaDietPlanAddon, smartShoppersGuideAddon]
+    [outfitPreviewAddon, smartShoppersGuideAddon]
   );
 
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
@@ -199,10 +199,10 @@ export default function CheckoutPage() {
 
   // Memoize addon details to prevent recreation on every render
   const addonDetails = useMemo(() => ({
-    divadiet: {
-      name: 'Diva Diet Plan',
-      price: 29,
-      id: 'diva_diet_plan'
+    outfitpreview: {
+      name: 'Virtual Outfit Preview',
+      price: 39,
+      id: 'outfit_preview'
     },
     smartshopper: {
       name: 'Smart Shopper\'s Guide',
@@ -212,7 +212,7 @@ export default function CheckoutPage() {
   }), []);
 
   // Optimized add-on change handler with Meta tracking only for additions
-  const handleAddonChange = useCallback((addonType: 'divadiet' | 'smartshopper', checked: boolean) => {
+  const handleAddonChange = useCallback((addonType: 'outfitpreview' | 'smartshopper', checked: boolean) => {
     const addon = addonDetails[addonType];
 
     // Track addon changes
@@ -223,8 +223,8 @@ export default function CheckoutPage() {
     }
 
     // Update state
-    if (addonType === 'divadiet') {
-      setDivaDietPlanAddon(checked);
+    if (addonType === 'outfitpreview') {
+      setOutfitPreviewAddon(checked);
     } else if (addonType === 'smartshopper') {
       setSmartShoppersGuideAddon(checked);
     }
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     // Track InitiateCheckout event with correct item count
-    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0);
+    const itemCount = 1 + (outfitPreviewAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0);
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'USD', 'USA_IndianAmerican');
 
     try {
@@ -261,11 +261,11 @@ export default function CheckoutPage() {
         currency: 'USD', // US checkout uses USD
         base_product: 'Iconik Style Consultation',
         add_ons: {
-          diva_diet_plan: divaDietPlanAddon,
+          outfit_preview: outfitPreviewAddon,
           smart_shoppers_guide: smartShoppersGuideAddon
         },
         total_base_price: discountedPrice,
-        diva_diet_plan_price: divaDietPlanAddon ? divaDietPlanPrice : 0,
+        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0,
         smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0
       };
 
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
           handler: function (response: RazorpayResponse) {
             // Payment successful
             const purchasedItems = ['iconik_style_consultation'];
-            if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
+            if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
 
             // Store purchase details for success page tracking (prevents race condition)
@@ -373,14 +373,14 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, divaDietPlanAddon, smartShoppersGuideAddon, razorpayLoaded]);
+  }, [formData, totalAmount, outfitPreviewAddon, smartShoppersGuideAddon, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check if no add-ons are selected
-    const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
+    const hasAddons = outfitPreviewAddon || smartShoppersGuideAddon;
 
     // Only show popup if: no add-ons AND popup hasn't been dismissed
     if (!hasAddons && !popupDismissed) {
@@ -389,7 +389,7 @@ export default function CheckoutPage() {
       // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
-  }, [processPayment, divaDietPlanAddon, smartShoppersGuideAddon, popupDismissed]);
+  }, [processPayment, outfitPreviewAddon, smartShoppersGuideAddon, popupDismissed]);
 
   // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
@@ -624,18 +624,18 @@ export default function CheckoutPage() {
               </p>
 
               <div className="space-y-3">
-                {/* Add-on 1: Diva Diet Plan */}
+                {/* Add-on 1: Virtual Outfit Preview */}
                 <div
-                  onClick={() => handleAddonChange('divadiet', !divaDietPlanAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
+                  onClick={() => handleAddonChange('outfitpreview', !outfitPreviewAddon)}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${outfitPreviewAddon
                     ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
                     : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
                     }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${outfitPreviewAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                       }`}>
-                      {divaDietPlanAddon && (
+                      {outfitPreviewAddon && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
@@ -644,15 +644,16 @@ export default function CheckoutPage() {
 
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-base">💪 {divaDietPlanName}</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">${divaDietPlanPrice}</span>
+                        <h4 className="luxury-heading text-luxury-charcoal text-base">👗 {outfitPreviewName}</h4>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">${outfitPreviewPrice}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Personalized nutrition for glowing results
+                        See how the outfits we recommend will actually look on YOUR body.
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Custom meals</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Indian recipes</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">See yourself in the outfits</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">No more guessing</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Shop with confidence</span>
                       </div>
                     </div>
                   </div>
@@ -704,10 +705,10 @@ export default function CheckoutPage() {
                   <span>${discountedPrice}</span>
                 </div>
 
-                {divaDietPlanAddon && (
+                {outfitPreviewAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                    <span>+ Diet Plan</span>
-                    <span>${divaDietPlanPrice}</span>
+                    <span>+ Outfit Preview</span>
+                    <span>${outfitPreviewPrice}</span>
                   </div>
                 )}
 
@@ -744,7 +745,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon;
+                  const hasAddons = outfitPreviewAddon || smartShoppersGuideAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'USD', 'USA_IndianAmerican');
@@ -824,18 +825,18 @@ export default function CheckoutPage() {
 
             {/* Add-ons Content */}
             <div className="p-3 md:p-4 space-y-3">
-              {/* Diva Diet Plan Add-on */}
+              {/* Virtual Outfit Preview Add-on */}
               <div
-                onClick={() => setDivaDietPlanAddon(!divaDietPlanAddon)}
-                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
+                onClick={() => setOutfitPreviewAddon(!outfitPreviewAddon)}
+                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${outfitPreviewAddon
                   ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
                   : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                   }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${outfitPreviewAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                     }`}>
-                    {divaDietPlanAddon && (
+                    {outfitPreviewAddon && (
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -845,23 +846,27 @@ export default function CheckoutPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                        💪 Diva Diet Plan
+                        👗 {outfitPreviewName}
                       </h4>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">${divaDietPlanPrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">${outfitPreviewPrice}</span>
                       </div>
                     </div>
                     <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                      Personalized nutrition for Indian women
+                      See how the outfits we recommend will actually look on YOUR body.
                     </p>
                     <div className="space-y-1">
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Custom meal plans</span>
+                        <span>See yourself in the outfits</span>
                       </div>
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Indian recipes</span>
+                        <span>No more guessing</span>
+                      </div>
+                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
+                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
+                        <span>Shop with confidence</span>
                       </div>
                     </div>
                   </div>
