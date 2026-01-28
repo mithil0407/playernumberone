@@ -242,7 +242,7 @@ export default function IconikClosetLanding() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"
               >
-                Never Waste <span className="text-luxury-green">Time Shopping</span> <span className="text-luxury-charcoal">Again</span>
+                Discover Your <span className="text-luxury-green">Signature Style</span> <span className="text-luxury-charcoal">in 24 hours</span>
               </motion.h1>
 
               {/* Hero Subtitle */}
@@ -252,7 +252,7 @@ export default function IconikClosetLanding() {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className="text-lg md:text-xl lg:text-2xl luxury-body text-luxury-charcoal/80 max-w-4xl mx-auto mb-8 leading-relaxed"
               >
-                Get <span className="font-semibold text-luxury-accent">6 complete outfit sets monthly</span>, with <span className="font-semibold text-luxury-green">direct shopping links</span> and <span className="font-semibold text-luxury-accent">personalized styling</span>
+                Get <span className="font-semibold text-luxury-accent">16 personalized outfits</span>, your <span className="font-semibold text-luxury-green">color palette</span>, and a <span className="font-semibold text-luxury-accent">1-on-1 stylist call</span> with shopping recommendations every month
               </motion.p>
 
 
@@ -382,32 +382,96 @@ export default function IconikClosetLanding() {
 
         {/* Features Section */}
         <section id="features" className="pt-8 pb-20 md:pt-12 md:pb-32 bg-luxury-warm-white relative">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You Get Every Month</h2>
-            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-              Complete outfit sets curated specifically for your body type, style DNA, and lifestyle.
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-4 text-luxury-charcoal">What You Get With Iconik Closet</h2>
+            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-base md:text-lg">
+              Complete style transformation in Month 1, then shopping done for you every month after.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
-            {[
-              { icon: <Sparkles className="h-6 w-6 text-luxury-green" />, title: "6 Complete Outfit Sets" },
-              { icon: <Gem className="h-6 w-6 text-luxury-green" />, title: "Direct Shopping Links" },
-              { icon: <Heart className="h-6 w-6 text-luxury-green" />, title: "Body Type Styling" },
-              { icon: <Shield className="h-6 w-6 text-luxury-green" />, title: "Mix & Match Guidance" },
-              { icon: <Award className="h-6 w-6 text-luxury-green" />, title: "WhatsApp Support" },
-              { icon: <Trophy className="h-6 w-6 text-luxury-green" />, title: "Seasonal Updates" }
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="p-5 md:p-6 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-xl hover:-translate-y-1 group"
-              >
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
-                  <h3 className="text-sm md:text-base luxury-heading text-center text-luxury-charcoal">{item.title}</h3>
-                </div>
+          <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+              {/* Month 1 */}
+              <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-luxury-cream">
+                <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-6 text-center">
+                  Month 1: Your Complete Transformation
+                </h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">16 Outfit Recommendations</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">All occasions</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">Hair & Makeup Styling Guide</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">For your features</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">Style DNA Blueprint</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">Body, colors, silhouettes</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">20-min Private Consultation Call</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">One-on-one with expert stylist</p>
+                    </div>
+                  </li>
+                </ul>
               </div>
-            ))}
+
+              {/* Every Month After */}
+              <div className="bg-luxury-accent/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border-2 border-luxury-accent">
+                <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal mb-6 text-center">
+                  Every Month After: Shopping Solved
+                </h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">6 Shoppable Outfit Sets</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">With direct buy links</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">Styled for YOUR Body Type</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">Based on blueprint</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">WhatsApp Styling Support</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">Quick answers</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">Seasonal Updates</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">Wardrobe refresh every 3 months</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="luxury-body text-luxury-charcoal font-semibold mb-1">Cancel Anytime</p>
+                      <p className="luxury-body text-luxury-charcoal/60 text-sm">No questions asked</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -484,9 +548,9 @@ export default function IconikClosetLanding() {
 
         {/* Pricing Section */}
         <section id="pricing" className="py-20 md:py-32 bg-luxury-warm-white">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">Choose Your Plan</h2>
-            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-12 md:mb-16">
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-4 text-luxury-charcoal">Choose Your Plan</h2>
+            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-base md:text-lg">
               Select a plan that works for you. Cancel anytime, no questions asked.
             </p>
           </div>
@@ -496,43 +560,66 @@ export default function IconikClosetLanding() {
             {/* Monthly Plan */}
             <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-1">
               <div className="p-6 md:p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
-                    Monthly Plan
+                <div className="mb-6">
+                  <h3 className="text-lg md:text-xl luxury-heading mb-3 text-luxury-charcoal text-center">
+                    Monthly Subscription
                   </h3>
-                  <div className="flex items-baseline justify-center gap-2 mb-2">
-                    <span className="text-2xl md:text-3xl font-semibold text-luxury-green">₹1,699</span>
-                    <span className="text-lg text-luxury-charcoal/50 line-through">₹2,199</span>
-                  </div>
-                  <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
-                    per month • Cancel anytime
-                  </p>
-                </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      6 complete outfit sets monthly
-                    </span>
+                  <div className="text-center mb-4">
+                    <div className="flex items-baseline justify-center gap-2 mb-1">
+                      <span className="text-2xl md:text-3xl font-bold text-luxury-green">₹1,699</span>
+                      <span className="text-base luxury-body text-luxury-charcoal/70">/month</span>
+                    </div>
+                    <p className="text-sm luxury-body text-luxury-charcoal/50 line-through">₹2,199 per month</p>
+                    <p className="text-sm luxury-body text-luxury-charcoal/70 mt-1">Cancel anytime</p>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      Direct shopping links (click & buy in 30 seconds)
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      Styled for your body type & lifestyle
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      WhatsApp styling support
-                    </span>
+
+                  <div className="bg-luxury-warm-white/60 rounded-xl p-4 mb-4">
+                    <p className="text-xs luxury-body text-luxury-charcoal/70 font-semibold mb-3">What's Included:</p>
+
+                    <div className="mb-3">
+                      <p className="text-xs luxury-body text-luxury-charcoal font-semibold mb-2">Month 1: Complete Transformation</p>
+                      <ul className="space-y-1.5">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">16 personalized outfit looks</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">Hair & makeup styling guide</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">Style DNA blueprint</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">20-min consultation call</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="text-xs luxury-body text-luxury-charcoal font-semibold mb-2">Every Month After:</p>
+                      <ul className="space-y-1.5">
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">6 outfit sets with shopping links</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">Styled for your body type</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">WhatsApp styling support</span>
+                        </li>
+                        <li className="flex items-start gap-1.5">
+                          <span className="text-luxury-green text-xs">•</span>
+                          <span className="luxury-body text-luxury-charcoal/80 text-xs">Seasonal wardrobe updates</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
@@ -542,9 +629,9 @@ export default function IconikClosetLanding() {
                     onClick={() => {
                       trackCTAClick('Monthly Plan', 'Pricing Section', 1699, 'INR', 'India');
                     }}
-                    className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-3 rounded-full text-sm luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    Start Monthly Plan
+                    ✨ Start Monthly Subscription
                   </Link>
                 </div>
               </div>
@@ -552,47 +639,45 @@ export default function IconikClosetLanding() {
 
             {/* Quarterly Plan */}
             <div className="bg-luxury-accent/10 backdrop-blur-sm rounded-2xl border-2 border-luxury-accent hover:bg-luxury-accent/20 transition-all duration-300 overflow-hidden hover:-translate-y-1 relative">
-              <div className="absolute top-4 right-4 bg-luxury-accent text-luxury-warm-white px-3 py-1 rounded-full text-xs luxury-body font-semibold">
-                BEST VALUE
+              <div className="absolute top-4 right-4 bg-luxury-accent text-luxury-warm-white px-3 py-1 rounded-full text-[10px] luxury-body font-medium shadow-sm">
+                Best Value
               </div>
               <div className="p-6 md:p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
-                    Quarterly Plan
+                <div className="mb-6">
+                  <h3 className="text-lg md:text-xl luxury-heading mb-3 text-luxury-charcoal text-center">
+                    Quarterly Subscription 🔥
                   </h3>
-                  <div className="flex items-baseline justify-center gap-2 mb-2">
-                    <span className="text-2xl md:text-3xl font-semibold text-luxury-green">₹4,599</span>
-                    <span className="text-lg text-luxury-charcoal/50 line-through">₹6,599</span>
-                  </div>
-                  <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
-                    for 3 months • Save ₹2,000
-                  </p>
-                </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      Everything in Monthly Plan
-                    </span>
+                  <div className="text-center mb-4">
+                    <div className="flex items-baseline justify-center gap-2 mb-1">
+                      <span className="text-2xl md:text-3xl font-bold text-luxury-green">₹4,599</span>
+                      <span className="text-base luxury-body text-luxury-charcoal/70">for 3 months</span>
+                    </div>
+                    <p className="text-sm luxury-body text-luxury-charcoal/50 line-through">₹6,599</p>
+                    <p className="text-sm luxury-body text-luxury-accent font-semibold mt-1">Save ₹2,000 • Just ₹1,533/month</p>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      Save ₹2,000 compared to monthly
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      Priority WhatsApp support
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                      Seasonal wardrobe refresh included
-                    </span>
+
+                  <div className="bg-luxury-warm-white/60 rounded-xl p-4 mb-4">
+                    <p className="text-xs luxury-body text-luxury-charcoal/70 font-semibold mb-3">Everything in Monthly Plan PLUS:</p>
+
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-luxury-green text-xs">•</span>
+                        <span className="luxury-body text-luxury-charcoal/80 text-xs">Save ₹2,000 vs monthly billing</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-luxury-green text-xs">•</span>
+                        <span className="luxury-body text-luxury-charcoal/80 text-xs">Priority WhatsApp support</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-luxury-green text-xs">•</span>
+                        <span className="luxury-body text-luxury-charcoal/80 text-xs">Seasonal wardrobe refresh</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-luxury-green text-xs">•</span>
+                        <span className="luxury-body text-luxury-charcoal/80 text-xs">Lock in this rate forever</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
 
@@ -602,9 +687,9 @@ export default function IconikClosetLanding() {
                     onClick={() => {
                       trackCTAClick('Quarterly Plan', 'Pricing Section', 4599, 'INR', 'India');
                     }}
-                    className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-3 rounded-full text-sm luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    Start Quarterly Plan
+                    ✨ Start Quarterly Subscription
                   </Link>
                 </div>
               </div>
@@ -1014,13 +1099,12 @@ export default function IconikClosetLanding() {
           onClick={() => {
             trackCTAClick('Floating WhatsApp', 'WhatsApp Button', undefined, 'INR', 'India');
           }}
-          className="fixed bottom-24 md:bottom-8 right-4 md:right-8 bg-[#25D366] hover:bg-[#20BA5A] text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 z-40 hover:scale-110 group"
+          className="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-[#25D366] hover:bg-[#20BA5A] text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 z-40 hover:scale-110"
           aria-label="Chat on WhatsApp"
         >
-          <svg className="w-7 h-7 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
           </svg>
-          <span className="absolute -top-1 -right-1 bg-luxury-accent text-white text-xs px-1.5 py-0.5 rounded-full animate-pulse">Chat</span>
         </a>
       </div>
     </>
