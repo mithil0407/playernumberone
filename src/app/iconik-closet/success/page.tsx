@@ -142,7 +142,7 @@ function SuccessPageContent() {
             Have questions? Reply to your confirmation email.
           </p>
           <p className="luxury-body text-luxury-charcoal/60 text-sm">
-            We're here to help you every step of the way!
+            We&apos;re here to help you every step of the way!
           </p>
         </motion.div>
 

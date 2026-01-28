@@ -12,9 +12,6 @@ import {
   Clock,
   Users,
   Heart,
-  Zap,
-  Target,
-  TrendingUp,
   Menu,
   X,
   Star,
@@ -128,44 +125,6 @@ export default function Home() {
     document.addEventListener('mouseleave', handleMouseLeave);
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, [showDoubtClearingPopup, hasClickedCTA]);
-
-  const features = [
-    {
-      icon: CheckCircle,
-      title: 'Personal Style Assessment',
-      description: 'Discover your unique style based on body shape, lifestyle & personality',
-      image: '/style-assessment.webp',
-      imageAlt: 'Style assessment'
-    },
-    {
-      icon: Target,
-      title: 'Personalized Color Palette',
-      description: 'Colors that make your skin glow and enhance your natural beauty',
-      image: '/color-palette.webp',
-      imageAlt: 'Color palette'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Wardrobe Blueprint',
-      description: 'Mix-and-match formulas for effortless, elegant looks',
-      image: '/wardrobe-blueprint.webp',
-      imageAlt: 'Wardrobe blueprint'
-    },
-    {
-      icon: Heart,
-      title: 'Beauty & Wellness Plan',
-      description: 'Confidence-building rituals for inner and outer radiance',
-      image: '/beauty-wellness.webp',
-      imageAlt: 'Wellness plan'
-    },
-    {
-      icon: Zap,
-      title: 'Expert Style Consultation',
-      description: '20-minute personalized call with our leading stylist',
-      image: '/expert-consultation.webp',
-      imageAlt: 'Style consultation'
-    }
-  ];
 
   const testimonials = [
     {

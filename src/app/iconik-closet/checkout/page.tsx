@@ -1,43 +1,17 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackViewContent } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, updateUserData, trackViewContent } from '@/lib/metaPixel';
 
 // Razorpay types for subscription
 interface RazorpaySubscriptionResponse {
   razorpay_payment_id: string;
   razorpay_subscription_id: string;
   razorpay_signature: string;
-}
-
-interface RazorpaySubscriptionOptions {
-  key: string;
-  subscription_id: string;
-  name: string;
-  description: string;
-  handler: (response: RazorpaySubscriptionResponse) => void;
-  prefill: {
-    name: string;
-    email: string;
-    contact: string;
-  };
-  theme: {
-    color: string;
-  };
-}
-
-interface RazorpayInstance {
-  open(): void;
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpaySubscriptionOptions) => RazorpayInstance;
-  }
 }
 
 interface FormData {
@@ -256,7 +230,7 @@ export default function IconikClosetCheckout() {
           }
         };
 
-        const razorpay = new window.Razorpay(options);
+        const razorpay = new (window.Razorpay as any)(options);
         razorpay.open();
       };
 

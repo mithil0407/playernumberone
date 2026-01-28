@@ -22,7 +22,6 @@ import {
     Gem,
     Shield,
     Trophy,
-    Award,
     Crown,
     Calendar,
     MessageCircle

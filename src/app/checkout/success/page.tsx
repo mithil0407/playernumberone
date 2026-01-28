@@ -31,10 +31,6 @@ interface RazorpaySubscriptionOptions {
   };
 }
 
-interface RazorpayInstance {
-  open(): void;
-}
-
 function SuccessPageContent() {
   const searchParams = useSearchParams();
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
