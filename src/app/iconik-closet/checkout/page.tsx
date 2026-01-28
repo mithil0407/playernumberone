@@ -230,7 +230,8 @@ export default function IconikClosetCheckout() {
           }
         };
 
-        const razorpay = new (window.Razorpay as any)(options);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const razorpay = new (window as any).Razorpay(options);
         razorpay.open();
       };
 
