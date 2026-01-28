@@ -1,4 +1,4 @@
-'use server';
+// API Route for Razorpay Subscription
 
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';

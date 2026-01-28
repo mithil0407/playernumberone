@@ -312,6 +312,10 @@ export default function CheckoutPage() {
             localStorage.setItem('purchaseAmount', totalAmount.toString());
             localStorage.setItem('purchaseCurrency', 'INR');
 
+            // Store customer email and phone for upsell subscription
+            localStorage.setItem('customerEmail', formData.email);
+            localStorage.setItem('customerPhone', formData.phone);
+
             // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {
               localStorage.setItem('customerId', responseData.customer_id);
