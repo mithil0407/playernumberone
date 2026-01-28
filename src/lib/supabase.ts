@@ -72,6 +72,28 @@ export interface Session {
   created_at?: string;
 }
 
+export interface Subscription {
+  id?: string;
+  customer_id?: string;
+  customer_email: string;
+  customer_phone?: string;
+  customer_name?: string;
+  plan_type: 'monthly' | 'quarterly' | 'yearly';
+  plan_id: string;
+  razorpay_subscription_id?: string;
+  amount: number; // Amount in paise
+  currency?: string;
+  status?: 'active' | 'paused' | 'cancelled' | 'expired' | 'pending';
+  start_date?: string;
+  end_date?: string;
+  next_billing_date?: string;
+  cancelled_at?: string;
+  notes?: string;
+  original_order_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Database operations
 export const saveCustomer = async (customer: Customer) => {
   // OPTIMIZATION #2: Use UPSERT (single query instead of SELECT + INSERT)
@@ -142,6 +164,64 @@ export const getCustomerByEmail = async (email: string) => {
     .from('customers')
     .select('*')
     .eq('email', email)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+};
+
+// Subscription operations
+export const saveSubscription = async (subscription: Subscription) => {
+  // If razorpay_subscription_id exists, try to update existing record first
+  if (subscription.razorpay_subscription_id) {
+    const { data: existingSubscription } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
+      .single();
+
+    if (existingSubscription) {
+      // Update existing subscription
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .update(subscription)
+        .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  }
+
+  // Insert new subscription
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .insert([subscription])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getSubscriptionByEmail = async (email: string) => {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('customer_email', email)
+    .order('created_at', { ascending: false });
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+};
+
+export const getActiveSubscriptionByEmail = async (email: string) => {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('customer_email', email)
+    .eq('status', 'active')
     .single();
 
   if (error && error.code !== 'PGRST116') throw error;

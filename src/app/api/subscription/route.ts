@@ -5,8 +5,10 @@ import Razorpay from 'razorpay';
 
 // Subscription plan IDs
 const SUBSCRIPTION_PLANS = {
-    monthly: 'plan_S8aBI9ZDFJZd9u',
-    yearly: 'plan_S8aDhd2Wtvl16A'
+    monthly: 'plan_S8aBI9ZDFJZd9u',        // Original monthly plan (consultation upsell)
+    yearly: 'plan_S8aDhd2Wtvl16A',          // Original yearly plan (consultation upsell)
+    'iconik-monthly': 'plan_S99gOCaBnHybc7',    // Iconik Closet monthly plan
+    quarterly: 'plan_S99mi4mzryqODa'        // Iconik Closet quarterly plan
 };
 
 interface RazorpaySubscription {
@@ -38,9 +40,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate plan type
-        if (!['monthly', 'yearly'].includes(plan_type)) {
+        if (!['monthly', 'yearly', 'quarterly'].includes(plan_type)) {
             return NextResponse.json(
-                { error: 'Invalid plan_type. Must be "monthly" or "yearly"' },
+                { error: 'Invalid plan_type. Must be "monthly", "yearly", or "quarterly"' },
                 { status: 400 }
             );
         }
@@ -61,7 +63,15 @@ export async function POST(request: NextRequest) {
         });
 
         // Get the plan ID based on type
-        const planId = SUBSCRIPTION_PLANS[plan_type as keyof typeof SUBSCRIPTION_PLANS];
+        // For Iconik Closet, use the new plan IDs
+        let planId: string;
+        if (plan_type === 'monthly') {
+            // Check if this is from Iconik Closet or consultation upsell
+            // If no customer_id/order_id, it's from Iconik Closet direct
+            planId = (!customer_id && !order_id) ? SUBSCRIPTION_PLANS['iconik-monthly'] : SUBSCRIPTION_PLANS.monthly;
+        } else {
+            planId = SUBSCRIPTION_PLANS[plan_type as keyof typeof SUBSCRIPTION_PLANS];
+        }
 
         // Create subscription
         const subscriptionRequest = {
@@ -88,13 +98,24 @@ export async function POST(request: NextRequest) {
 
         console.log('Subscription created:', subscription.id);
 
+        // Determine amount based on plan type
+        let amount: number;
+        if (plan_type === 'yearly') {
+            amount = 718800; // ₹7,188 in paise (yearly plan from consultation upsell)
+        } else if (plan_type === 'quarterly') {
+            amount = 459900; // ₹4,599 in paise (quarterly plan for Iconik Closet)
+        } else {
+            // Monthly plan - determine which one
+            amount = (!customer_id && !order_id) ? 169900 : 69900; // ₹1,699 or ₹699 in paise
+        }
+
         return NextResponse.json({
             success: true,
             key: process.env.RAZORPAY_KEY_ID,
             subscription_id: subscription.id,
             plan_id: planId,
             plan_type: plan_type,
-            amount: plan_type === 'yearly' ? 718800 : 69900, // Amount in paise
+            amount: amount,
             currency: 'INR'
         });
 
