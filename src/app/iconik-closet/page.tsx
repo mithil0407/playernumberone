@@ -14,12 +14,7 @@ import {
   Heart,
   Menu,
   X,
-  Star,
-  Sparkles,
-  Gem,
-  Shield,
-  Trophy,
-  Award
+  Star
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 
@@ -575,7 +570,7 @@ export default function IconikClosetLanding() {
                   </div>
 
                   <div className="bg-luxury-warm-white/60 rounded-xl p-4 mb-4">
-                    <p className="text-xs luxury-body text-luxury-charcoal/70 font-semibold mb-3">What's Included:</p>
+                    <p className="text-xs luxury-body text-luxury-charcoal/70 font-semibold mb-3">What&apos;s Included:</p>
 
                     <div className="mb-3">
                       <p className="text-xs luxury-body text-luxury-charcoal font-semibold mb-2">Month 1: Complete Transformation</p>
