@@ -91,11 +91,11 @@ export default function CheckoutPage() {
   }, [discountedPrice]);
 
   // Add-ons
-  const [divaDietPlanAddon, setDivaDietPlanAddon] = useState(false); // Diva Diet Plan
+  const [wardrobeDetoxAddon, setWardrobeDetoxAddon] = useState(false); // Wardrobe Detox
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
   const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false); // Outfit Preview on You
 
-  const divaDietPlanPrice = 299;
+  const wardrobeDetoxPrice = 1299;
 
   const smartShoppersGuidePrice = 499;
   const outfitPreviewPrice = 999;
@@ -103,18 +103,18 @@ export default function CheckoutPage() {
   // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() =>
     discountedPrice +
-    (divaDietPlanAddon ? divaDietPlanPrice : 0) +
+    (wardrobeDetoxAddon ? wardrobeDetoxPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
     (outfitPreviewAddon ? outfitPreviewPrice : 0),
-    [divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon]
+    [wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
   const totalValue = useMemo(() =>
     originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
-    (divaDietPlanAddon ? divaDietPlanPrice : 0) +
+    (wardrobeDetoxAddon ? wardrobeDetoxPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
     (outfitPreviewAddon ? outfitPreviewPrice : 0),
-    [divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon]
+    [wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
@@ -185,10 +185,10 @@ export default function CheckoutPage() {
 
   // Memoize addon details to prevent recreation on every render
   const addonDetails = useMemo(() => ({
-    divadiet: {
-      name: 'Diva Diet Plan',
-      price: 299,
-      id: 'diva_diet_plan'
+    wardrobedetox: {
+      name: 'Wardrobe Detox',
+      price: 1299,
+      id: 'wardrobe_detox'
     },
     smartshopper: {
       name: 'Smart Shopper\'s Guide',
@@ -203,7 +203,7 @@ export default function CheckoutPage() {
   }), []);
 
   // Optimized add-on change handler with Meta tracking only for additions
-  const handleAddonChange = useCallback((addonType: 'divadiet' | 'smartshopper' | 'outfitpreview', checked: boolean) => {
+  const handleAddonChange = useCallback((addonType: 'wardrobedetox' | 'smartshopper' | 'outfitpreview', checked: boolean) => {
     const addon = addonDetails[addonType];
 
     // Track addon changes
@@ -214,8 +214,8 @@ export default function CheckoutPage() {
     }
 
     // Update state
-    if (addonType === 'divadiet') {
-      setDivaDietPlanAddon(checked);
+    if (addonType === 'wardrobedetox') {
+      setWardrobeDetoxAddon(checked);
     } else if (addonType === 'smartshopper') {
       setSmartShoppersGuideAddon(checked);
     } else if (addonType === 'outfitpreview') {
@@ -241,7 +241,7 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     // Track InitiateCheckout event with correct item count
-    const itemCount = 1 + (divaDietPlanAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0) + (outfitPreviewAddon ? 1 : 0);
+    const itemCount = 1 + (wardrobeDetoxAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0) + (outfitPreviewAddon ? 1 : 0);
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'INR', 'India');
 
     try {
@@ -253,12 +253,12 @@ export default function CheckoutPage() {
         amount: totalAmount,
         base_product: 'Iconik Style Consultation',
         add_ons: {
-          diva_diet_plan: divaDietPlanAddon,
+          wardrobe_detox: wardrobeDetoxAddon,
           smart_shoppers_guide: smartShoppersGuideAddon,
           outfit_preview: outfitPreviewAddon
         },
         total_base_price: discountedPrice,
-        diva_diet_plan_price: divaDietPlanAddon ? divaDietPlanPrice : 0,
+        wardrobe_detox_price: wardrobeDetoxAddon ? wardrobeDetoxPrice : 0,
         smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0,
         outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
       };
@@ -301,7 +301,7 @@ export default function CheckoutPage() {
           handler: function (response: RazorpayResponse) {
             // Payment successful - Track detailed purchase with all items
             const purchasedItems = ['iconik_style_consultation'];
-            if (divaDietPlanAddon) purchasedItems.push('diva_diet_plan');
+            if (wardrobeDetoxAddon) purchasedItems.push('wardrobe_detox');
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
             if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
 
@@ -373,7 +373,7 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
+  }, [formData, totalAmount, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -381,7 +381,7 @@ export default function CheckoutPage() {
 
 
     // Check if no add-ons are selected
-    const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+    const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
 
 
     // Only show popup if: no add-ons AND popup hasn't been dismissed
@@ -391,7 +391,7 @@ export default function CheckoutPage() {
       // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
-  }, [processPayment, divaDietPlanAddon, smartShoppersGuideAddon, outfitPreviewAddon, popupDismissed]);
+  }, [processPayment, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, popupDismissed]);
 
   // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
@@ -660,18 +660,18 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-                {/* Add-on 1: Diva Diet Plan */}
+                {/* Add-on 1: Wardrobe Detox */}
                 <div
-                  onClick={() => handleAddonChange('divadiet', !divaDietPlanAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
+                  onClick={() => handleAddonChange('wardrobedetox', !wardrobeDetoxAddon)}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${wardrobeDetoxAddon
                     ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
                     : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
                     }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${wardrobeDetoxAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                       }`}>
-                      {divaDietPlanAddon && (
+                      {wardrobeDetoxAddon && (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
@@ -680,15 +680,15 @@ export default function CheckoutPage() {
 
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-base">💪 Diva Diet Plan</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{divaDietPlanPrice}</span>
+                        <h4 className="luxury-heading text-luxury-charcoal text-base">👗 Wardrobe Detox</h4>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{wardrobeDetoxPrice}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Personalized nutrition for glowing results
+                        Let us audit your closet and create a curated wardrobe for you
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Custom meals</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Indian recipes</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Closet audit</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Keep/donate guide</span>
                       </div>
                     </div>
                   </div>
@@ -740,10 +740,10 @@ export default function CheckoutPage() {
                   <span>₹{discountedPrice}</span>
                 </div>
 
-                {divaDietPlanAddon && (
+                {wardrobeDetoxAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                    <span>+ Diet Plan</span>
-                    <span>₹{divaDietPlanPrice}</span>
+                    <span>+ Wardrobe Detox</span>
+                    <span>₹{wardrobeDetoxPrice}</span>
                   </div>
                 )}
 
@@ -787,7 +787,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = divaDietPlanAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+                  const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'INR', 'India');
@@ -867,18 +867,18 @@ export default function CheckoutPage() {
 
             {/* Add-ons Content */}
             <div className="p-3 md:p-4 space-y-3">
-              {/* Diva Diet Plan Add-on */}
+              {/* Wardrobe Detox Add-on */}
               <div
-                onClick={() => setDivaDietPlanAddon(!divaDietPlanAddon)}
-                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${divaDietPlanAddon
+                onClick={() => setWardrobeDetoxAddon(!wardrobeDetoxAddon)}
+                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${wardrobeDetoxAddon
                   ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
                   : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
                   }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${divaDietPlanAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${wardrobeDetoxAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
                     }`}>
-                    {divaDietPlanAddon && (
+                    {wardrobeDetoxAddon && (
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -888,23 +888,23 @@ export default function CheckoutPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                        💪 Diva Diet Plan
+                        👗 Wardrobe Detox
                       </h4>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">₹{divaDietPlanPrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">₹{wardrobeDetoxPrice}</span>
                       </div>
                     </div>
                     <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                      Personalized nutrition for Indian women
+                      Let us audit your closet and create a curated wardrobe
                     </p>
                     <div className="space-y-1">
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Custom meal plans</span>
+                        <span>Closet audit</span>
                       </div>
                       <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
                         <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Indian recipes</span>
+                        <span>Keep/donate guide</span>
                       </div>
                     </div>
                   </div>
