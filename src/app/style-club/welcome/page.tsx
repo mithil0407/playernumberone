@@ -49,7 +49,7 @@ function SuccessContent() {
                         🎉 Welcome to the Style Club!
                     </h1>
                     <p className="text-xl luxury-body text-luxury-charcoal/70">
-                        Your subscription is active. You've just simplified your wardrobe forever.
+                        Your subscription is active. You&apos;ve just simplified your wardrobe forever.
                     </p>
                 </motion.div>
 
@@ -59,7 +59,7 @@ function SuccessContent() {
                     transition={{ delay: 0.2 }}
                     className="bg-white rounded-3xl p-8 border border-gray-200 shadow-xl mb-10"
                 >
-                    <h2 className="text-2xl font-bold mb-8 text-center bg-luxury-cream/30 py-2 rounded-lg">Here's what happens next:</h2>
+                    <h2 className="text-2xl font-bold mb-8 text-center bg-luxury-cream/30 py-2 rounded-lg">Here&apos;s what happens next:</h2>
 
                     <div className="space-y-8 relative">
                         {/* Connecting Line */}
@@ -72,7 +72,7 @@ function SuccessContent() {
                             <div>
                                 <h3 className="text-xl font-bold mb-2">Step 1: Check Your Email</h3>
                                 <p className="text-gray-600 leading-relaxed">
-                                    You'll receive a confirmation in the next 5 minutes with a short style profile form. This helps us personalize your first batch.
+                                    You&apos;ll receive a confirmation in the next 5 minutes with a short style profile form. This helps us personalize your first batch.
                                 </p>
                             </div>
                         </div>
@@ -84,7 +84,7 @@ function SuccessContent() {
                             <div>
                                 <h3 className="text-xl font-bold mb-2">Step 2: Your First Curation</h3>
                                 <p className="text-gray-600 leading-relaxed mb-3">
-                                    Arriving on the <span className="font-bold text-luxury-charcoal">1st of next month!</span> We'll send you:
+                                    Arriving on the <span className="font-bold text-luxury-charcoal">1st of next month!</span> We&apos;ll send you:
                                 </p>
                                 <ul className="space-y-2 text-sm text-gray-500 bg-gray-50 p-4 rounded-xl">
                                     <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" /> 5 curated outfits via WhatsApp</li>
@@ -99,10 +99,10 @@ function SuccessContent() {
                                 <MessageCircle className="w-7 h-7 text-blue-500" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold mb-2">Step 3: Save Your Stylist's Number</h3>
+                                <h3 className="text-xl font-bold mb-2">Step 3: Save Your Stylist&apos;s Number</h3>
                                 <div className="bg-luxury-charcoal text-white p-4 rounded-xl inline-block w-full md:w-auto">
                                     <p className="text-2xl font-mono font-bold tracking-wider text-center md:text-left">+91-9130048899</p>
-                                    <p className="text-xs text-white/60 mt-1 text-center md:text-left">Add to contacts as "ICONIK Stylist"</p>
+                                    <p className="text-xs text-white/60 mt-1 text-center md:text-left">Add to contacts as &quot;ICONIK Stylist&quot;</p>
                                 </div>
                                 <p className="text-gray-600 mt-3 text-sm">
                                     Ping us anytime for event styling, last-minute needs, or outfit advice. (48h response time)
@@ -159,7 +159,7 @@ function SuccessContent() {
                     <div className="flex justify-center gap-1 mb-3 text-luxury-gold">
                         {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
-                    "I haven't Googled 'what to wear' in 4 months. Total game-changer."
+                    &quot;I haven&apos;t Googled &apos;what to wear&apos; in 4 months. Total game-changer.&quot;
                     <div className="font-bold not-italic mt-2 text-sm opacity-70">— Sneha R., Marketing Manager</div>
                 </motion.div>
 

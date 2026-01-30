@@ -1,6 +1,5 @@
 'use client';
 
-import Head from 'next/head';
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -17,7 +16,6 @@ import {
     Shield,
     ShoppingBag,
     X,
-    Heart,
     Zap,
     Menu
 } from 'lucide-react';
@@ -26,7 +24,6 @@ import { useState, useEffect, useMemo } from 'react';
 export default function StyleClubPage() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-    const [timeLeft, setTimeLeft] = useState({ days: 4, hours: 12, minutes: 45 });
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     const transformationImages = useMemo(() => [
@@ -63,19 +60,6 @@ export default function StyleClubPage() {
     useEffect(() => {
         trackPageView('Style_Club_Landing');
         trackViewContent('Style Club Subscription', 1699, ['style_club_monthly'], 'INR', 'Style_Club');
-    }, []);
-
-    // Countdown timer simulation
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1 };
-                if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59 };
-                if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, minutes: 59 };
-                return prev;
-            });
-        }, 60000);
-        return () => clearInterval(timer);
     }, []);
 
     useEffect(() => {
@@ -318,12 +302,12 @@ export default function StyleClubPage() {
                             {
                                 icon: X,
                                 title: "The Fit Anxiety",
-                                desc: '"Will this fabric cling to my tummy? Is this neckline actually right for me?"'
+                                desc: '&quot;Will this fabric cling to my tummy? Is this neckline actually right for me?&quot;'
                             },
                             {
                                 icon: Users,
                                 title: "The Occasion Dilemma",
-                                desc: '"Is this too revealing for office? Too plain for the wedding?" Second-guessing every choice.'
+                                desc: '&quot;Is this too revealing for office? Too plain for the wedding?&quot; Second-guessing every choice.'
                             }
                         ].map((item, i) => (
                             <motion.div
@@ -481,11 +465,11 @@ export default function StyleClubPage() {
                             </li>
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-1" />
-                                <span>Start building your wardrobe immediately (instead of "I'll do it later")</span>
+                                <span>Start building your wardrobe immediately (instead of &quot;I&apos;ll do it later&quot;)</span>
                             </li>
                         </ul>
                         <p className="text-sm text-luxury-charcoal/60 italic">
-                            "Most clients tell us they wish they'd joined earlier. Don't let analysis paralysis waste your styling breakthrough."
+                            &quot;Most clients tell us they wish they&apos;d joined earlier. Don&apos;t let analysis paralysis waste your styling breakthrough.&quot;
                         </p>
                     </div>
                 </div>
@@ -501,7 +485,7 @@ export default function StyleClubPage() {
                                 {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-5 h-5 fill-current" />)}
                             </div>
                             <p className="text-lg md:text-xl luxury-body italic mb-6 leading-relaxed">
-                                "I got my blueprint and LOVED it. But then I spent 3 days trying to find the right kurtas. I finally subscribed to Style Club and within a week, I had 5 perfect outfits bookmarked. Game-changer."
+                                &quot;I got my blueprint and LOVED it. But then I spent 3 days trying to find the right kurtas. I finally subscribed to Style Club and within a week, I had 5 perfect outfits bookmarked. Game-changer.&quot;
                             </p>
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-luxury-charcoal/10 rounded-full"></div>
@@ -516,7 +500,7 @@ export default function StyleClubPage() {
                                 {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-5 h-5 fill-current" />)}
                             </div>
                             <p className="text-lg md:text-xl luxury-body italic mb-6 leading-relaxed">
-                                "My stylist just GETS me now. She knows I hate shopping, so she sends me links, I click, I buy. Done. I actually have a wardrobe I love for the first time in years."
+                                &quot;My stylist just GETS me now. She knows I hate shopping, so she sends me links, I click, I buy. Done. I actually have a wardrobe I love for the first time in years.&quot;
                             </p>
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-luxury-charcoal/10 rounded-full"></div>
@@ -607,7 +591,7 @@ export default function StyleClubPage() {
                     </div>
 
                     <div className="text-center mt-8 text-luxury-charcoal/60">
-                        <p>Join 200+ women who never Google "where to buy kurtas" again</p>
+                        <p>Join 200+ women who never Google &quot;where to buy kurtas&quot; again</p>
                     </div>
                 </div>
             </section>
@@ -631,10 +615,10 @@ export default function StyleClubPage() {
             <section className="py-20 bg-luxury-charcoal text-luxury-warm-white text-center px-4">
                 <div className="max-w-4xl mx-auto">
                     <h2 className="text-3xl md:text-5xl luxury-heading mb-6">
-                        Don't let your style knowledge gather dust.
+                        Don&apos;t let your style knowledge gather dust.
                     </h2>
                     <p className="text-xl luxury-body opacity-80 mb-10 max-w-2xl mx-auto">
-                        You focus on looking amazing. We'll handle the "where to buy" part.
+                        You focus on looking amazing. We&apos;ll handle the &quot;where to buy&quot; part.
                     </p>
                     <Link
                         href="/style-club/subscribe"

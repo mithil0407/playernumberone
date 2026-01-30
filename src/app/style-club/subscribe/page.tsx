@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Shield, CheckCircle, Clock, Lock, Star, ChevronRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Lock, Star, ChevronRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
@@ -43,7 +43,6 @@ function CheckoutContent() {
         phone: ''
     });
     const [isProcessing, setIsProcessing] = useState(false);
-    const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
@@ -55,13 +54,11 @@ function CheckoutContent() {
     // Preload Razorpay
     useEffect(() => {
         if (document.querySelector('script[src*="razorpay.com"]')) {
-            setRazorpayLoaded(true);
             return;
         }
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
-        script.onload = () => setRazorpayLoaded(true);
         document.body.appendChild(script);
     }, []);
 
@@ -169,7 +166,7 @@ function CheckoutContent() {
             };
 
             if (window.Razorpay) {
-                // @ts-ignore
+                // @ts-expect-error Razorpay is provided by checkout.js at runtime.
                 const rzp = new window.Razorpay(options);
                 rzp.open();
             } else {
