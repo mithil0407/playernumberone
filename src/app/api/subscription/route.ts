@@ -8,7 +8,8 @@ const SUBSCRIPTION_PLANS = {
     monthly: 'plan_S8aBI9ZDFJZd9u',        // Original monthly plan (consultation upsell)
     yearly: 'plan_S8aDhd2Wtvl16A',          // Original yearly plan (consultation upsell)
     'iconik-monthly': 'plan_S99gOCaBnHybc7',    // Iconik Closet monthly plan
-    quarterly: 'plan_S99mi4mzryqODa'        // Iconik Closet quarterly plan
+    quarterly: 'plan_S99mi4mzryqODa',        // Iconik Closet quarterly plan
+    'styleclub-annual': 'plan_S99mi4mzryqODa' // TODO: Replace with actual Annual Plan ID. Using Quarterly ID as placeholder to prevent 500.
 };
 
 interface RazorpaySubscription {
@@ -40,9 +41,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate plan type
-        if (!['monthly', 'yearly', 'quarterly'].includes(plan_type)) {
+        if (!['monthly', 'yearly', 'quarterly', 'styleclub-annual'].includes(plan_type)) {
             return NextResponse.json(
-                { error: 'Invalid plan_type. Must be "monthly", "yearly", or "quarterly"' },
+                { error: 'Invalid plan_type. Must be "monthly", "yearly", "quarterly", or "styleclub-annual"' },
                 { status: 400 }
             );
         }
@@ -104,6 +105,8 @@ export async function POST(request: NextRequest) {
             amount = 718800; // ₹7,188 in paise (yearly plan from consultation upsell)
         } else if (plan_type === 'quarterly') {
             amount = 459900; // ₹4,599 in paise (quarterly plan for Iconik Closet)
+        } else if (plan_type === 'styleclub-annual') {
+            amount = 1729900; // ₹17,299 in paise (Style Club Annual)
         } else {
             // Monthly plan - determine which one
             amount = (!customer_id && !order_id) ? 169900 : 69900; // ₹1,699 or ₹699 in paise
