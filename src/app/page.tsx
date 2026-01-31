@@ -37,7 +37,7 @@ export default function Home() {
   // Track page view and product view on mount
   useEffect(() => {
     trackPageView('India');
-    trackViewContent('ICONIK Style Consultation', 1699, ['iconik_style_consultation'], 'INR', 'India');
+    trackViewContent('ICONIK Style Consultation', 1999, ['iconik_style_consultation'], 'INR', 'India');
   }, []);
 
   // Transformation images data
@@ -529,7 +529,7 @@ export default function Home() {
                   <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                     ICONIK Style Consultation
                   </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,699</div>
+                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹1,999</div>
                   <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                     Complete personal style transformation
                   </p>
@@ -595,7 +595,7 @@ export default function Home() {
                   <Link
                     href="/checkout"
                     onClick={() => {
-                      trackCTAClick('Style Consultation', 'Pricing Section', 1699, 'INR', 'India');
+                      trackCTAClick('Style Consultation', 'Pricing Section', 1999, 'INR', 'India');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >

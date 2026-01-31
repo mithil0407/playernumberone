@@ -76,7 +76,7 @@ export default function CheckoutPage() {
 
   // Product pricing
   const originalPrice = 5999;
-  const discountedPrice = 1699;
+  const discountedPrice = 1999;
   const savings = originalPrice - discountedPrice;
 
   // Track ViewContent on checkout page load
