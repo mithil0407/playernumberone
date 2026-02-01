@@ -810,7 +810,7 @@ export default function Home() {
                   href="/checkout"
                   onClick={() => {
                     // Track final CTA click with Meta Pixel
-                    trackCTAClick('Final CTA', 'Bottom Section', 1699, 'INR', 'India');
+                    trackCTAClick('Final CTA', 'Bottom Section', 1999, 'INR', 'India');
                   }}
                   className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
                 >
@@ -838,7 +838,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <p className="luxury-body opacity-75 text-center">₹1,699 + GST • Limited slots available</p>
+                <p className="luxury-body opacity-75 text-center">₹1,999 + GST • Limited slots available</p>
               </div>
             </motion.div>
           </div>
@@ -980,7 +980,7 @@ export default function Home() {
               <div className="flex-1">
                 <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-base font-semibold text-luxury-green">₹1,699</span>
+                  <span className="text-base font-semibold text-luxury-green">₹1,999</span>
                   <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
                 </div>
               </div>
@@ -995,7 +995,7 @@ export default function Home() {
               href="/checkout"
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1699, 'INR', 'India');
+                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 1999, 'INR', 'India');
                 setHasClickedCTA(true);
               }}
               className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
