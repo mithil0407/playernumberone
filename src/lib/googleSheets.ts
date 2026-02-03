@@ -1,34 +1,76 @@
-import { google } from 'googleapis';
+import { google, sheets_v4 } from 'googleapis';
 
-// Initialize Google Sheets API
-const getPrivateKey = () => {
+// Initialize Google Sheets API with lazy loading
+// This ensures environment variables are available when auth is created
+
+const getPrivateKey = (): string | undefined => {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-  if (!privateKey) return undefined;
-  
-  // Handle different private key formats
-  const formattedKey = privateKey
-    .replace(/\\n/g, '\n')  // Replace escaped newlines
-    .replace(/"/g, '')       // Remove quotes
-    .trim();                // Remove whitespace
-  
+  if (!privateKey) {
+    console.log('GOOGLE_PRIVATE_KEY environment variable is not set');
+    return undefined;
+  }
+
+  // Handle different private key formats from Vercel
+  // Vercel can store multi-line values, but they may come through as:
+  // 1. Actual newlines (raw paste)
+  // 2. Escaped newlines (\n as literal characters)
+  // 3. JSON-escaped newlines (\\n)
+
+  let formattedKey = privateKey;
+
+  // If the key has literal \n strings (not actual newlines), replace them
+  if (privateKey.includes('\\n')) {
+    formattedKey = privateKey.replace(/\\n/g, '\n');
+  }
+
+  // Remove any surrounding quotes that might have been added
+  formattedKey = formattedKey.replace(/^["']|["']$/g, '');
+
+  // Trim whitespace
+  formattedKey = formattedKey.trim();
+
+  // Validate the key format
+  const hasBeginMarker = formattedKey.includes('-----BEGIN PRIVATE KEY-----');
+  const hasEndMarker = formattedKey.includes('-----END PRIVATE KEY-----');
+
   console.log('Private key processing:');
   console.log('- Original length:', privateKey.length);
   console.log('- Formatted length:', formattedKey.length);
-  console.log('- Starts with:', formattedKey.substring(0, 30));
-  console.log('- Ends with:', formattedKey.substring(formattedKey.length - 30));
-  
+  console.log('- Has BEGIN marker:', hasBeginMarker);
+  console.log('- Has END marker:', hasEndMarker);
+  console.log('- First 50 chars:', formattedKey.substring(0, 50));
+
+  if (!hasBeginMarker || !hasEndMarker) {
+    console.error('Invalid private key format - missing PEM markers');
+    return undefined;
+  }
+
   return formattedKey;
 };
 
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: getPrivateKey(),
-  },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
+// Create a new Google Sheets client for each request
+// This ensures environment variables are read fresh each time
+function getGoogleSheetsClient(): sheets_v4.Sheets {
+  const privateKey = getPrivateKey();
 
-const sheets = google.sheets({ version: 'v4', auth });
+  if (!privateKey) {
+    throw new Error('Failed to get private key - check GOOGLE_PRIVATE_KEY environment variable');
+  }
+
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is not set');
+  }
+
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      private_key: privateKey,
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+
+  return google.sheets({ version: 'v4', auth });
+}
 
 export interface CustomerData {
   customer_name: string;
@@ -81,7 +123,8 @@ export async function addCustomerToSheet(data: CustomerData) {
 
     console.log('Sending data to Google Sheets:', values[0]);
 
-    const response = await sheets.spreadsheets.values.append({
+    const sheetsClient = getGoogleSheetsClient();
+    const response = await sheetsClient.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: 'Sheet1!A:I', // Updated range for 9 columns (removed timestamp, scheduled_date, scheduled_time, session_status)
       valueInputOption: 'RAW',
@@ -106,8 +149,10 @@ export async function updateSessionInSheet(customerId: string, scheduledDate: st
       return { success: false, error: 'Google Sheet not configured' };
     }
 
+    const sheetsClient = getGoogleSheetsClient();
+
     // First, find the row with the customer ID
-    const response = await sheets.spreadsheets.values.get({
+    const response = await sheetsClient.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: 'Sheet1!A:M',
     });
@@ -129,7 +174,7 @@ export async function updateSessionInSheet(customerId: string, scheduledDate: st
     }
 
     // Update the session columns (I and J)
-    const updateResponse = await sheets.spreadsheets.values.update({
+    const updateResponse = await sheetsClient.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: `Sheet1!I${rowIndex}:J${rowIndex}`,
       valueInputOption: 'RAW',
@@ -153,8 +198,10 @@ export async function updatePaymentStatusInSheet(customerId: string, paymentStat
       return { success: false, error: 'Google Sheet not configured' };
     }
 
+    const sheetsClient = getGoogleSheetsClient();
+
     // First, find the row with the customer ID
-    const response = await sheets.spreadsheets.values.get({
+    const response = await sheetsClient.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: 'Sheet1!A:M',
     });
@@ -176,7 +223,7 @@ export async function updatePaymentStatusInSheet(customerId: string, paymentStat
     }
 
     // Update the payment status column (H)
-    const updateResponse = await sheets.spreadsheets.values.update({
+    const updateResponse = await sheetsClient.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: `Sheet1!H${rowIndex}`,
       valueInputOption: 'RAW',
@@ -200,8 +247,10 @@ export async function updateAddOnsInSheet(customerId: string, addOns: string) {
       return { success: false, error: 'Google Sheet not configured' };
     }
 
+    const sheetsClient = getGoogleSheetsClient();
+
     // First, find the row with the customer ID
-    const response = await sheets.spreadsheets.values.get({
+    const response = await sheetsClient.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: 'Sheet1!A:M',
     });
@@ -223,7 +272,7 @@ export async function updateAddOnsInSheet(customerId: string, addOns: string) {
     }
 
     // Update the add-ons column (L)
-    const updateResponse = await sheets.spreadsheets.values.update({
+    const updateResponse = await sheetsClient.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: `Sheet1!L${rowIndex}`,
       valueInputOption: 'RAW',
