@@ -21,12 +21,28 @@ async function getAddOnsFromRazorpayOrder(razorpayOrderId: string): Promise<stri
     const orderDetails = await razorpay.orders.fetch(razorpayOrderId);
     const notes = orderDetails.notes || {};
 
-    // Build add-ons string from actual selection
-    const addOns: string[] = [];
-    if (notes.outfit_preview_addon === 'true') addOns.push('Virtual Outfit Preview');
-    if (notes.smart_shoppers_guide_addon === 'true') addOns.push("Smart Shopper's Guide");
-    if (notes.diva_diet_plan_addon === 'true') addOns.push('Diva Diet Plan');
+    console.log('Razorpay order notes:', JSON.stringify(notes, null, 2));
 
+    // Build add-ons string from actual selection
+    // Check both current naming (wardrobe_detox_addon) and legacy naming patterns
+    const addOns: string[] = [];
+
+    // Wardrobe Detox (replaces old Diva Diet Plan)
+    if (notes.wardrobe_detox_addon === 'true' || notes.wardrobe_detox === 'true' || notes.diva_diet_plan_addon === 'true') {
+      addOns.push('Wardrobe Detox');
+    }
+
+    // Smart Shopper's Guide
+    if (notes.smart_shoppers_guide_addon === 'true' || notes.smart_shoppers_guide === 'true') {
+      addOns.push("Smart Shopper's Guide");
+    }
+
+    // Outfit Preview
+    if (notes.outfit_preview_addon === 'true' || notes.outfit_preview === 'true') {
+      addOns.push('Outfit Preview on You');
+    }
+
+    console.log('Extracted add-ons:', addOns);
     return addOns.length > 0 ? addOns.join(', ') : 'None';
   } catch (error) {
     console.error('Error fetching Razorpay order notes:', error);
@@ -293,21 +309,52 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
   try {
     console.log('Order paid:', order.id);
 
-    // Update order status in database
-    const { error: updateError } = await supabase
+    // First try to find the order by razorpay_order_id
+    const { data: existingOrder } = await supabase
       .from('orders')
-      .update({
-        status: 'paid',
-        razorpay_payment_id: payment.id,
-        payment_method: payment.method,
-        amount: Math.round(order.amount / 100) // Convert to integer as per your schema
-      })
-      .eq('razorpay_order_id', order.id);
+      .select('*, customers(*)')
+      .eq('razorpay_order_id', order.id)
+      .single();
 
-    if (updateError) {
-      console.error('Error updating paid order:', updateError);
+    if (existingOrder) {
+      // Update order status in database
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          status: 'paid',
+          razorpay_payment_id: payment.id,
+          payment_method: payment.method,
+          amount: Math.round(order.amount / 100) // Convert to integer as per your schema
+        })
+        .eq('razorpay_order_id', order.id);
+
+      if (updateError) {
+        console.error('Error updating paid order:', updateError);
+      } else {
+        console.log(`Order ${order.id} marked as paid`);
+
+        // Add customer data to Google Sheets
+        try {
+          const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
+
+          await addCustomerToSheet({
+            customer_name: existingOrder.customers.name,
+            customer_email: existingOrder.customers.email,
+            customer_phone: existingOrder.customers.phone,
+            order_amount: existingOrder.amount,
+            order_id: existingOrder.id,
+            customer_id: existingOrder.customer_id,
+            payment_status: 'paid',
+            add_ons: addOnsString,
+            service_type: 'ICONIK Style Consultation'
+          });
+          console.log('Customer data added to Google Sheets after order.paid event');
+        } catch (sheetError) {
+          console.log('Failed to add customer to Google Sheets:', sheetError);
+        }
+      }
     } else {
-      console.log(`Order ${order.id} marked as paid`);
+      console.log(`Order with razorpay_order_id ${order.id} not found in database`);
     }
 
   } catch (error) {
