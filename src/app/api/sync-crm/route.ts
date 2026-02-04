@@ -29,7 +29,6 @@ export async function GET(request: Request) {
             .from('orders')
             .select('*, customers(*)')
             .not('add_ons', 'is', null)
-            .in('status', ['completed', 'paid'])
             .order('created_at', { ascending: false });
 
         if (fetchError) {
