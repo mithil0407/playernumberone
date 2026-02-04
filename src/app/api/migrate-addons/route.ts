@@ -77,14 +77,21 @@ export async function GET(request: Request) {
         // Process each order
         for (const order of orders.items || []) {
             try {
-                const razorpayOrderId = order.id;
+                // The receipt field contains our custom alpha1_ ID that's stored in Supabase
+                const receiptId = order.receipt;
+                const razorpayOrderId = order.id; // The actual Razorpay ID like order_xxxx
                 const notes = order.notes as Record<string, string> | null;
 
-                // Check if order exists in Supabase
+                if (!receiptId) {
+                    results.errors.push(`Order ${razorpayOrderId} has no receipt`);
+                    continue;
+                }
+
+                // Check if order exists in Supabase by matching the receipt (alpha1_ ID)
                 const { data: existingOrder, error: fetchError } = await supabase
                     .from('orders')
                     .select('id, add_ons, razorpay_order_id')
-                    .eq('razorpay_order_id', razorpayOrderId)
+                    .eq('razorpay_order_id', receiptId)
                     .single();
 
                 if (fetchError || !existingOrder) {
@@ -108,14 +115,14 @@ export async function GET(request: Request) {
                         add_ons: addOnsString,
                         product_type: 'consultation'
                     })
-                    .eq('razorpay_order_id', razorpayOrderId);
+                    .eq('razorpay_order_id', receiptId);
 
                 if (updateError) {
-                    results.errors.push(`Failed to update order ${razorpayOrderId}: ${updateError.message}`);
+                    results.errors.push(`Failed to update order ${receiptId}: ${updateError.message}`);
                 } else {
                     results.updated++;
                     results.updated_orders.push({
-                        razorpay_order_id: razorpayOrderId,
+                        razorpay_order_id: receiptId,
                         add_ons: addOnsString
                     });
                 }
