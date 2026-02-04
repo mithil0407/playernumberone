@@ -87,22 +87,20 @@ export async function syncToCrm(data: {
         };
 
         if (existingConsultation) {
-            // Update existing consultation - merge addons
+            // Update existing consultation - ONLY merge addons, preserve all other data
             const existingAddons = existingConsultation.client_data?.addons || [];
             const mergedAddons = [...new Set([...existingAddons, ...addonsArray])];
 
+            // Preserve all existing client_data, only update the addons field
             const updatedClientData = {
                 ...existingConsultation.client_data,
-                ...clientData,
                 addons: mergedAddons
             };
 
             const { error: updateError } = await crmSupabase
                 .from('consultations')
                 .update({
-                    client_name: data.customer_name,
-                    client_data: updatedClientData,
-                    notes: data.notes || existingConsultation.notes
+                    client_data: updatedClientData
                 })
                 .eq('id', existingConsultation.id);
 
