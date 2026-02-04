@@ -79,13 +79,6 @@ export async function syncToCrm(data: {
             console.error('Error fetching existing consultation:', fetchError);
         }
 
-        const clientData = {
-            addons: addonsArray,
-            order_amount: data.order_amount || 0,
-            order_date: new Date().toISOString(),
-            source: 'payment_sync'
-        };
-
         if (existingConsultation) {
             // Update existing consultation - ONLY merge addons, preserve all other data
             const existingAddons = existingConsultation.client_data?.addons || [];
@@ -109,29 +102,12 @@ export async function syncToCrm(data: {
                 return { success: false, error: updateError.message };
             }
 
-            console.log('CRM consultation updated:', existingConsultation.id);
+            console.log('CRM consultation updated with addons:', existingConsultation.id);
             return { success: true, consultation_id: existingConsultation.id };
         } else {
-            // Create new consultation
-            const { data: newConsultation, error: insertError } = await crmSupabase
-                .from('consultations')
-                .insert([{
-                    client_name: data.customer_name,
-                    client_phone: data.customer_phone,
-                    client_data: clientData,
-                    notes: data.notes || '',
-                    status: 'waiting_images'
-                }])
-                .select()
-                .single();
-
-            if (insertError) {
-                console.error('Error creating CRM consultation:', insertError);
-                return { success: false, error: insertError.message };
-            }
-
-            console.log('CRM consultation created:', newConsultation?.id);
-            return { success: true, consultation_id: newConsultation?.id };
+            // No matching phone found - skip (don't create new records)
+            console.log('No matching consultation found for phone:', data.customer_phone);
+            return { success: false, error: 'No matching consultation found' };
         }
     } catch (error) {
         console.error('CRM sync error:', error);
