@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
+import { syncToCrm } from '@/lib/crmSupabase';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -213,6 +214,23 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
           });
           console.log('Add-ons saved to Supabase and Google Sheets:', addOnsString);
           console.log('Customer data added to Google Sheets after successful payment');
+
+          // Sync to CRM database
+          try {
+            const crmResult = await syncToCrm({
+              customer_name: existingOrder.customers.name,
+              customer_phone: existingOrder.customers.phone,
+              add_ons: addOnsString,
+              order_amount: existingOrder.amount,
+            });
+            if (crmResult.success) {
+              console.log('Customer synced to CRM:', crmResult.consultation_id);
+            } else {
+              console.log('CRM sync skipped or failed:', crmResult.error);
+            }
+          } catch (crmError) {
+            console.log('CRM sync error:', crmError);
+          }
         } catch (sheetError) {
           console.log('Failed to add customer to Google Sheets:', sheetError);
         }
@@ -302,6 +320,21 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
             service_type: 'ICONIK Style Consultation'
           });
           console.log('Test customer data added to Google Sheets');
+
+          // Sync to CRM database
+          try {
+            const crmResult = await syncToCrm({
+              customer_name: existingOrder.customers.name,
+              customer_phone: existingOrder.customers.phone,
+              add_ons: addOnsString,
+              order_amount: existingOrder.amount,
+            });
+            if (crmResult.success) {
+              console.log('Test customer synced to CRM:', crmResult.consultation_id);
+            }
+          } catch (crmError) {
+            console.log('CRM sync error:', crmError);
+          }
         }
       } catch (sheetError) {
         console.log('Failed to add test customer to Google Sheets:', sheetError);
@@ -360,6 +393,21 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
             service_type: 'ICONIK Style Consultation'
           });
           console.log('Customer data added to Google Sheets after order.paid event');
+
+          // Sync to CRM database
+          try {
+            const crmResult = await syncToCrm({
+              customer_name: existingOrder.customers.name,
+              customer_phone: existingOrder.customers.phone,
+              add_ons: addOnsString,
+              order_amount: existingOrder.amount,
+            });
+            if (crmResult.success) {
+              console.log('Customer synced to CRM:', crmResult.consultation_id);
+            }
+          } catch (crmError) {
+            console.log('CRM sync error:', crmError);
+          }
         } catch (sheetError) {
           console.log('Failed to add customer to Google Sheets:', sheetError);
         }
