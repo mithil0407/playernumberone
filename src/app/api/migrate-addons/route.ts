@@ -72,7 +72,14 @@ export async function GET(request: Request) {
             already_has_addons: 0,
             errors: [] as string[],
             updated_orders: [] as { razorpay_order_id: string; add_ons: string }[],
+            sample_receipts: [] as string[], // Debug: show first 5 receipt IDs from Razorpay
         };
+
+        // Debug: collect first 5 receipt IDs
+        for (let i = 0; i < Math.min(5, orders.items?.length || 0); i++) {
+            const order = orders.items![i];
+            results.sample_receipts.push(`${order.receipt || 'NO_RECEIPT'} (razorpay_id: ${order.id})`);
+        }
 
         // Process each order
         for (const order of orders.items || []) {
