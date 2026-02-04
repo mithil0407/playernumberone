@@ -174,6 +174,9 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
       .single();
 
     if (existingOrder) {
+      // Fetch actual add-ons from Razorpay order notes
+      const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
+
       // Update existing order - match your actual schema
       const { error: updateError } = await supabase
         .from('orders')
@@ -181,7 +184,9 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
           status: 'completed',
           razorpay_payment_id: payment.id,
           payment_method: method,
-          amount: Math.round(amount / 100) // Convert to integer as per your schema
+          amount: Math.round(amount / 100), // Convert to integer as per your schema
+          add_ons: addOnsString,
+          product_type: 'consultation'
         })
         .eq('razorpay_order_id', order_id);
 
@@ -206,6 +211,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
             add_ons: addOnsString,
             service_type: 'ICONIK Style Consultation'
           });
+          console.log('Add-ons saved to Supabase and Google Sheets:', addOnsString);
           console.log('Customer data added to Google Sheets after successful payment');
         } catch (sheetError) {
           console.log('Failed to add customer to Google Sheets:', sheetError);
@@ -254,6 +260,9 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
 
     const { order_id, amount, method } = payment;
 
+    // Fetch actual add-ons from Razorpay order notes
+    const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
+
     // Update order status in database for test mode
     const { error: updateError } = await supabase
       .from('orders')
@@ -261,7 +270,9 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
         status: 'completed',
         razorpay_payment_id: payment.id,
         payment_method: method,
-        amount: Math.round(amount / 100) // Convert to integer as per your schema
+        amount: Math.round(amount / 100), // Convert to integer as per your schema
+        add_ons: addOnsString,
+        product_type: 'consultation'
       })
       .eq('razorpay_order_id', order_id);
 
@@ -279,9 +290,6 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
           .single();
 
         if (existingOrder) {
-          // Fetch actual add-ons from Razorpay order notes
-          const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
-
           await addCustomerToSheet({
             customer_name: existingOrder.customers.name,
             customer_email: existingOrder.customers.email,
@@ -317,6 +325,9 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
       .single();
 
     if (existingOrder) {
+      // Fetch actual add-ons from Razorpay order notes
+      const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
+
       // Update order status in database
       const { error: updateError } = await supabase
         .from('orders')
@@ -324,7 +335,9 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           status: 'paid',
           razorpay_payment_id: payment.id,
           payment_method: payment.method,
-          amount: Math.round(order.amount / 100) // Convert to integer as per your schema
+          amount: Math.round(order.amount / 100), // Convert to integer as per your schema
+          add_ons: addOnsString,
+          product_type: 'consultation'
         })
         .eq('razorpay_order_id', order.id);
 
@@ -335,8 +348,6 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
 
         // Add customer data to Google Sheets
         try {
-          const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
-
           await addCustomerToSheet({
             customer_name: existingOrder.customers.name,
             customer_email: existingOrder.customers.email,

@@ -18,10 +18,10 @@ const mockSupabaseClient = {
 let supabase: SupabaseClient = mockSupabaseClient;
 
 // Check if we have valid env vars
-const hasValidEnvVars = process.env.NEXT_PUBLIC_SUPABASE_URL && 
-                       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-                       process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
-                       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder-key';
+const hasValidEnvVars = process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co' &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder-key';
 
 if (hasValidEnvVars) {
   try {
@@ -52,6 +52,8 @@ export interface Order {
   customer_email?: string;
   amount?: number;
   add_on?: boolean;
+  add_ons?: string; // Comma-separated list of purchased add-ons
+  product_type?: string; // Type of order: consultation, subscription, guide, ethnic, etc.
   status?: 'pending' | 'completed' | 'failed' | 'paid';
   payment_id?: string;
   razorpay_order_id?: string;
@@ -102,7 +104,7 @@ export const saveCustomer = async (customer: Customer) => {
     .from('customers')
     .upsert(
       [customer],
-      { 
+      {
         onConflict: 'email',  // Conflict on email column (must have unique constraint)
         ignoreDuplicates: false  // Update if exists
       }
