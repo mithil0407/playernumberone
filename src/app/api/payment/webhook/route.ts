@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabase';
+import { supabase, saveSubscription } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
 import Razorpay from 'razorpay';
@@ -129,6 +129,37 @@ export async function POST(request: NextRequest) {
       case 'payment.authorized':
         console.log('Handling payment.authorized event (test mode)');
         await handlePaymentAuthorized(payload.payment.entity);
+        break;
+
+      // Subscription Events
+      case 'subscription.activated':
+        console.log('Handling subscription.activated event');
+        await handleSubscriptionActivated(payload.subscription.entity);
+        break;
+
+      case 'subscription.charged':
+        console.log('Handling subscription.charged event');
+        await handleSubscriptionCharged(payload.subscription.entity, payload.payment?.entity);
+        break;
+
+      case 'subscription.cancelled':
+        console.log('Handling subscription.cancelled event');
+        await handleSubscriptionCancelled(payload.subscription.entity);
+        break;
+
+      case 'subscription.paused':
+        console.log('Handling subscription.paused event');
+        await handleSubscriptionPaused(payload.subscription.entity);
+        break;
+
+      case 'subscription.resumed':
+        console.log('Handling subscription.resumed event');
+        await handleSubscriptionResumed(payload.subscription.entity);
+        break;
+
+      case 'subscription.completed':
+        console.log('Handling subscription.completed event');
+        await handleSubscriptionCompleted(payload.subscription.entity);
         break;
 
       default:
@@ -421,6 +452,193 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
   }
 }
 
+// ============ SUBSCRIPTION WEBHOOK HANDLERS ============
+
+interface RazorpaySubscription {
+  id: string;
+  plan_id: string;
+  customer_id?: string;
+  status: string;
+  current_start?: number;
+  current_end?: number;
+  ended_at?: number;
+  charge_at?: number;
+  start_at?: number;
+  end_at?: number;
+  paid_count?: number;
+  customer_notify?: number;
+  quantity?: number;
+  notes?: {
+    customer_email?: string;
+    customer_phone?: string;
+    customer_name?: string;
+    plan_type?: string;
+    [key: string]: unknown;
+  };
+}
+
+async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
+  try {
+    console.log('Subscription activated:', subscription.id);
+
+    // Update subscription status to active
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        start_date: subscription.start_at
+          ? new Date(subscription.start_at * 1000).toISOString()
+          : new Date().toISOString(),
+        next_billing_date: subscription.charge_at
+          ? new Date(subscription.charge_at * 1000).toISOString()
+          : null
+      })
+      .eq('razorpay_subscription_id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating subscription to active:', updateError);
+    } else {
+      console.log(`Subscription ${subscription.id} marked as active`);
+    }
+
+  } catch (error) {
+    console.error('Error handling subscription activated:', error);
+  }
+}
+
+async function handleSubscriptionCharged(subscription: RazorpaySubscription, payment?: RazorpayPayment) {
+  try {
+    console.log('Subscription charged:', subscription.id);
+    console.log('Payment details:', payment?.id);
+
+    // Update subscription billing info and ensure status is active
+    const updateData: Record<string, unknown> = {
+      status: 'active',
+      next_billing_date: subscription.charge_at
+        ? new Date(subscription.charge_at * 1000).toISOString()
+        : null,
+      updated_at: new Date().toISOString()
+    };
+
+    // If this is the first charge, set start_date
+    if (subscription.paid_count === 1 && subscription.current_start) {
+      updateData.start_date = new Date(subscription.current_start * 1000).toISOString();
+    }
+
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update(updateData)
+      .eq('razorpay_subscription_id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating subscription after charge:', updateError);
+    } else {
+      console.log(`Subscription ${subscription.id} charged successfully, next billing: ${updateData.next_billing_date}`);
+    }
+
+  } catch (error) {
+    console.error('Error handling subscription charged:', error);
+  }
+}
+
+async function handleSubscriptionCancelled(subscription: RazorpaySubscription) {
+  try {
+    console.log('Subscription cancelled:', subscription.id);
+
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        end_date: subscription.ended_at
+          ? new Date(subscription.ended_at * 1000).toISOString()
+          : new Date().toISOString()
+      })
+      .eq('razorpay_subscription_id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating cancelled subscription:', updateError);
+    } else {
+      console.log(`Subscription ${subscription.id} marked as cancelled`);
+    }
+
+  } catch (error) {
+    console.error('Error handling subscription cancelled:', error);
+  }
+}
+
+async function handleSubscriptionPaused(subscription: RazorpaySubscription) {
+  try {
+    console.log('Subscription paused:', subscription.id);
+
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'paused'
+      })
+      .eq('razorpay_subscription_id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating paused subscription:', updateError);
+    } else {
+      console.log(`Subscription ${subscription.id} marked as paused`);
+    }
+
+  } catch (error) {
+    console.error('Error handling subscription paused:', error);
+  }
+}
+
+async function handleSubscriptionResumed(subscription: RazorpaySubscription) {
+  try {
+    console.log('Subscription resumed:', subscription.id);
+
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        next_billing_date: subscription.charge_at
+          ? new Date(subscription.charge_at * 1000).toISOString()
+          : null
+      })
+      .eq('razorpay_subscription_id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating resumed subscription:', updateError);
+    } else {
+      console.log(`Subscription ${subscription.id} resumed and marked as active`);
+    }
+
+  } catch (error) {
+    console.error('Error handling subscription resumed:', error);
+  }
+}
+
+async function handleSubscriptionCompleted(subscription: RazorpaySubscription) {
+  try {
+    console.log('Subscription completed:', subscription.id);
+
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'expired',
+        end_date: subscription.ended_at
+          ? new Date(subscription.ended_at * 1000).toISOString()
+          : new Date().toISOString()
+      })
+      .eq('razorpay_subscription_id', subscription.id);
+
+    if (updateError) {
+      console.error('Error updating completed subscription:', updateError);
+    } else {
+      console.log(`Subscription ${subscription.id} marked as expired (completed)`);
+    }
+
+  } catch (error) {
+    console.error('Error handling subscription completed:', error);
+  }
+}
+
 // GET endpoint for webhook verification/testing
 export async function GET() {
   return NextResponse.json({
@@ -432,9 +650,10 @@ export async function GET() {
     instructions: [
       '1. Configure webhook in Razorpay dashboard',
       '2. Set webhook URL to: https://yourdomain.com/api/payment/webhook',
-      '3. Select events: payment.captured, payment.failed, order.paid, payment.authorized',
-      '4. Test with test mode payments first',
-      '5. Check Vercel logs for webhook debugging'
+      '3. Select payment events: payment.captured, payment.failed, order.paid, payment.authorized',
+      '4. Select subscription events: subscription.activated, subscription.charged, subscription.cancelled, subscription.paused, subscription.resumed, subscription.completed',
+      '5. Test with test mode payments first',
+      '6. Check Vercel logs for webhook debugging'
     ]
   });
 }

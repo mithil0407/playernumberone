@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
+import { saveSubscription, saveCustomer, getCustomerByEmail } from '@/lib/supabase';
 
 // Subscription plan IDs
 const SUBSCRIPTION_PLANS = {
@@ -110,6 +111,51 @@ export async function POST(request: NextRequest) {
         } else {
             // Monthly plan - determine which one
             amount = (!customer_id && !order_id) ? 169900 : 69900; // ₹1,699 or ₹699 in paise
+        }
+
+        // Save subscription to database
+        try {
+            // First, ensure customer exists in database
+            let dbCustomerId = customer_id;
+
+            if (!dbCustomerId) {
+                // Try to find existing customer by email
+                const existingCustomer = await getCustomerByEmail(customer_email);
+
+                if (existingCustomer) {
+                    dbCustomerId = existingCustomer.id;
+                } else {
+                    // Create new customer
+                    const newCustomer = await saveCustomer({
+                        name: customer_name || customer_email.split('@')[0],
+                        email: customer_email,
+                        phone: customer_phone
+                    });
+                    dbCustomerId = newCustomer.id;
+                }
+            }
+
+            // Save subscription record
+            await saveSubscription({
+                customer_id: dbCustomerId,
+                customer_email: customer_email,
+                customer_phone: customer_phone,
+                customer_name: customer_name || customer_email.split('@')[0],
+                plan_type: plan_type as 'monthly' | 'quarterly' | 'yearly',
+                plan_id: planId,
+                razorpay_subscription_id: subscription.id,
+                amount: amount,
+                currency: 'INR',
+                status: 'pending', // Will be updated to 'active' via webhook
+                original_order_id: order_id || undefined,
+                notes: customer_id ? `Upsell from customer ${customer_id}` : 'Direct subscription purchase'
+            });
+
+            console.log('Subscription saved to database:', subscription.id);
+        } catch (dbError) {
+            console.error('Failed to save subscription to database:', dbError);
+            // Don't fail the entire request - Razorpay subscription is created
+            // This can be synced later via webhook or manual process
         }
 
         return NextResponse.json({
