@@ -32,79 +32,80 @@ const QUIZ_COMPLETED_KEY = 'uaeStyleQuizCompleted';
 const heightOptions = Array.from({ length: 42 }, (_, index) => 147 + index); // 147cm to 188cm
 
 const weightAreas = [
-  'Shoulders/Upper Body',
-  'Bust',
-  'Waist/Midsection',
-  'Hips/Thighs',
-  'Evenly Distributed',
-  "I'm not sure – let the stylists analyze"
+  '🧥 Shoulders/Upper Body',
+  '👗 Bust',
+  '⏳ Waist/Midsection',
+  '🍑 Hips/Thighs',
+  '⚖️ Evenly Distributed',
+  '🤔 I\'m not sure – let the stylists analyze'
 ];
 
 const bodyShapes = [
-  'Hourglass',
-  'Pear',
-  'Apple',
-  'Rectangle',
-  'Inverted Triangle',
-  "I'm not sure – let the stylists tell me! ✨"
+  '⏳ Hourglass',
+  '🍐 Pear',
+  '🍎 Apple',
+  '📦 Rectangle',
+  '🔻 Inverted Triangle',
+  '✨ I\'m not sure – let the stylists tell me!'
 ];
 
 const skinTones = [
-  'Fair (Light beige)',
-  'Medium (Warm tan)',
-  'Tan (Deep caramel)',
-  'Deep (Rich brown)'
+  '🧴 Fair (Light beige)',
+  '🌤️ Medium (Warm tan)',
+  '🌅 Tan (Deep caramel)',
+  '🌙 Deep (Rich brown)'
 ];
 
 const undertones = [
-  'Warm (Gold jewelry looks better on me)',
-  'Cool (Silver jewelry looks better on me)',
-  'Neutral (Both look good)',
-  "I'm not sure – analyze from my photo"
+  '🔥 Warm (Gold jewelry looks better on me)',
+  '❄️ Cool (Silver jewelry looks better on me)',
+  '⚖️ Neutral (Both look good)',
+  '🧠 I\'m not sure – analyze from my photo'
 ];
 
-const hairTextures = ['Straight', 'Wavy', 'Curly', 'Coily', 'Scanty/Thin'];
+const hairTextures = ['➖ Straight', '🌊 Wavy', '🌀 Curly', '🧬 Coily', '🌾 Scanty/Thin'];
 
 const routines = [
-  'Corporate Professional (Office 5 days/week)',
-  'Creative Professional (Flexible dress code)',
-  'Stay-at-Home/Casual Lifestyle',
-  'Mix of Professional & Casual'
+  '🏢 Corporate Professional (Office 5 days/week)',
+  '🎨 Creative Professional (Flexible dress code)',
+  '🏡 Stay-at-Home/Casual Lifestyle',
+  '🔁 Mix of Professional & Casual'
 ];
 
 const dressUpFrequencyOptions = [
-  'Daily (Work requires it)',
-  '2-3 times per week',
-  'Only for special occasions',
-  'Rarely – I prefer comfort'
+  '👔 Daily (Work requires it)',
+  '📆 2-3 times per week',
+  '💫 Only for special occasions',
+  '🧸 Rarely – I prefer comfort'
 ];
 
 const avoidStylesOptions = [
-  'Sleeveless Tops',
-  'Crop Tops',
-  'Short Skirts/Dresses (above knee)',
-  'Low Necklines',
-  'Backless Outfits',
-  'Sheer/Transparent Fabrics',
-  'Tight-Fitting Clothes',
-  "None – I'm open to everything"
+  '🚫 Sleeveless Tops',
+  '🧷 Crop Tops',
+  '👗 Short Skirts/Dresses (above knee)',
+  '🔻 Low Necklines',
+  '🔙 Backless Outfits',
+  '👀 Sheer/Transparent Fabrics',
+  '🧵 Tight-Fitting Clothes',
+  '✅ None – I\'m open to everything'
 ];
 
 const occasionOptions = [
-  'Work Meetings/Office',
-  'Family Functions/Weddings',
-  'Date Nights/Romantic Outings',
-  'Casual Outings (Brunch, Shopping)',
-  'Religious/Cultural Events',
-  'Formal Dinners/Galas',
-  'Gym/Athleisure'
+  '💼 Work Meetings/Office',
+  '💍 Family Functions/Weddings',
+  '❤️ Date Nights/Romantic Outings',
+  '🥂 Casual Outings (Brunch, Shopping)',
+  '🕌 Religious/Cultural Events',
+  '🎩 Formal Dinners/Galas',
+  '🏋️ Gym/Athleisure'
 ];
 
 export default function UaeQuizPage() {
   const [step, setStep] = useState<number | 'intro'>('intro');
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
   const [quizData, setQuizData] = useState<QuizData>({
     heightCm: 163,
-    bodyShape: "I'm not sure – let the stylists tell me! ✨",
+    bodyShape: '✨ I\'m not sure – let the stylists tell me!',
     weightAreas: [],
     avoidStyles: [],
     occasions: []
@@ -112,6 +113,19 @@ export default function UaeQuizPage() {
   const [error, setError] = useState<string | null>(null);
   const [fullBodyPreview, setFullBodyPreview] = useState<string | null>(null);
   const [headshotPreview, setHeadshotPreview] = useState<string | null>(null);
+
+  const heightFeetOptions = useMemo(() => {
+    const options: { label: string; cm: number }[] = [];
+    for (let feet = 4; feet <= 6; feet += 1) {
+      const startInches = feet === 4 ? 10 : 0;
+      const endInches = feet === 6 ? 2 : 11;
+      for (let inches = startInches; inches <= endInches; inches += 1) {
+        const cm = Math.round((feet * 12 + inches) * 2.54);
+        options.push({ label: `${feet}'${inches}\"`, cm });
+      }
+    }
+    return options;
+  }, []);
 
   useEffect(() => {
     trackPageView('UAE Quiz');
@@ -124,7 +138,7 @@ export default function UaeQuizPage() {
         const parsed = JSON.parse(stored) as QuizData;
         setQuizData({
           heightCm: parsed.heightCm || 163,
-          bodyShape: parsed.bodyShape || "I'm not sure – let the stylists tell me! ✨",
+          bodyShape: parsed.bodyShape || '✨ I\'m not sure – let the stylists tell me!',
           ...parsed,
           weightAreas: parsed.weightAreas || [],
           avoidStyles: parsed.avoidStyles || [],
@@ -352,7 +366,7 @@ export default function UaeQuizPage() {
         {step === 0 && (
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl luxury-heading">Upload Your Full-Body Photo</h2>
-            <p className="luxury-body text-luxury-charcoal/70">
+            <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70">
               Upload a recent full-body photo (front-facing, arms relaxed by your sides). Wear fitted clothing so our stylists can analyze your proportions accurately.
             </p>
             <div className="bg-white border border-luxury-cream rounded-3xl p-4 md:p-6 text-center">
@@ -378,13 +392,11 @@ export default function UaeQuizPage() {
                   }
                 />
               </label>
-              <div className="mt-6 grid gap-4 md:grid-cols-2 text-left">
-                <div className="relative h-40 md:h-48 rounded-2xl overflow-hidden bg-luxury-cream/40">
+              <div className="mt-6 flex flex-col md:flex-row items-start md:items-center gap-4 text-left">
+                <div className="relative w-24 md:w-28 aspect-[9/16] rounded-2xl overflow-hidden bg-luxury-cream/40">
                   <Image src="/style-before.webp" alt="Full body example" fill className="object-cover" />
                 </div>
-                <div className="flex items-center">
-                  <p className="luxury-body text-luxury-charcoal/60">Example full-body photo (front-facing, fitted clothing).</p>
-                </div>
+                <p className="text-sm md:text-base luxury-body text-luxury-charcoal/60">Example full-body photo (front-facing, fitted clothing).</p>
               </div>
               <div className="flex items-start gap-2 mt-4 text-xs text-luxury-charcoal/60">
                 <Info className="w-4 h-4" />
@@ -397,7 +409,7 @@ export default function UaeQuizPage() {
         {step === 1 && (
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl luxury-heading">Upload Your Headshot</h2>
-            <p className="luxury-body text-luxury-charcoal/70">
+            <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70">
               Upload a clear headshot (shoulders up, neutral expression, hair pulled back if possible).
             </p>
             <div className="bg-white border border-luxury-cream rounded-3xl p-4 md:p-6 text-center">
@@ -423,13 +435,11 @@ export default function UaeQuizPage() {
                   }
                 />
               </label>
-              <div className="mt-6 grid gap-4 md:grid-cols-2 text-left">
-                <div className="relative h-40 md:h-48 rounded-2xl overflow-hidden bg-luxury-cream/40">
+              <div className="mt-6 flex flex-col md:flex-row items-start md:items-center gap-4 text-left">
+                <div className="relative w-24 md:w-28 aspect-[9/16] rounded-2xl overflow-hidden bg-luxury-cream/40">
                   <Image src="/testimonial-priya.webp" alt="Headshot example" fill className="object-cover" />
                 </div>
-                <div className="flex items-center">
-                  <p className="luxury-body text-luxury-charcoal/60">Example headshot (shoulders up, neutral expression).</p>
-                </div>
+                <p className="text-sm md:text-base luxury-body text-luxury-charcoal/60">Example headshot (shoulders up, neutral expression).</p>
               </div>
               <div className="flex items-start gap-2 mt-4 text-xs text-luxury-charcoal/60">
                 <Info className="w-4 h-4" />
@@ -442,17 +452,44 @@ export default function UaeQuizPage() {
         {step === 2 && (
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl luxury-heading">What&apos;s Your Height?</h2>
-            <p className="luxury-body text-luxury-charcoal/70">Select your height in centimeters.</p>
-            <select
-              value={quizData.heightCm || ''}
-              onChange={(event) => setQuizData((prev) => ({ ...prev, heightCm: Number(event.target.value) }))}
-              className="w-full border border-luxury-cream rounded-2xl p-4 luxury-body"
-            >
-              <option value="" disabled>Select your height</option>
-              {heightOptions.map((height) => (
-                <option key={height} value={height}>{height} cm</option>
-              ))}
-            </select>
+            <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70">Choose the unit that feels easiest.</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setHeightUnit('cm')}
+                className={`px-4 py-2 rounded-full border text-sm luxury-body ${heightUnit === 'cm' ? 'border-luxury-accent bg-luxury-cream/50' : 'border-luxury-cream bg-white'}`}
+              >
+                cm
+              </button>
+              <button
+                onClick={() => setHeightUnit('ft')}
+                className={`px-4 py-2 rounded-full border text-sm luxury-body ${heightUnit === 'ft' ? 'border-luxury-accent bg-luxury-cream/50' : 'border-luxury-cream bg-white'}`}
+              >
+                ft/in
+              </button>
+            </div>
+            {heightUnit === 'cm' ? (
+              <select
+                value={quizData.heightCm || ''}
+                onChange={(event) => setQuizData((prev) => ({ ...prev, heightCm: Number(event.target.value) }))}
+                className="w-full border border-luxury-cream rounded-2xl p-4 luxury-body"
+              >
+                <option value="" disabled>Select your height</option>
+                {heightOptions.map((height) => (
+                  <option key={height} value={height}>{height} cm</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={quizData.heightCm || ''}
+                onChange={(event) => setQuizData((prev) => ({ ...prev, heightCm: Number(event.target.value) }))}
+                className="w-full border border-luxury-cream rounded-2xl p-4 luxury-body"
+              >
+                <option value="" disabled>Select your height</option>
+                {heightFeetOptions.map((option) => (
+                  <option key={option.label} value={option.cm}>{option.label}</option>
+                ))}
+              </select>
+            )}
           </div>
         )}
 
@@ -505,6 +542,17 @@ export default function UaeQuizPage() {
                 </button>
               ))}
             </div>
+            <div className="mt-4 bg-white border border-luxury-cream rounded-2xl p-4">
+              <div className="relative h-32 md:h-40 rounded-xl overflow-hidden bg-luxury-cream/40">
+                <Image src="/color-palette.webp" alt="Skin tone guide" fill className="object-cover" />
+              </div>
+              <div className="grid grid-cols-4 gap-2 mt-3 text-xs text-luxury-charcoal/60">
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#f4d6b0]" />Fair</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#d8a06f]" />Medium</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#b0734c]" />Tan</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#6a3d2a]" />Deep</div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -521,6 +569,16 @@ export default function UaeQuizPage() {
                   {option}
                 </button>
               ))}
+            </div>
+            <div className="mt-4 bg-white border border-luxury-cream rounded-2xl p-4">
+              <div className="relative h-32 md:h-40 rounded-xl overflow-hidden bg-luxury-cream/40">
+                <Image src="/color-palette.webp" alt="Undertone guide" fill className="object-cover" />
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-3 text-xs text-luxury-charcoal/60">
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#d2a679]" />Warm</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#c8d2e6]" />Cool</div>
+                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#d9c6b5]" />Neutral</div>
+              </div>
             </div>
           </div>
         )}
@@ -579,6 +637,23 @@ export default function UaeQuizPage() {
         {step === 10 && (
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl luxury-heading">What&apos;s Your Biggest Styling Frustration?</h2>
+            <div className="flex flex-wrap gap-2">
+              {[
+                'Nothing fits my arms properly',
+                'I look frumpy in Indian wear',
+                'I don’t know what colors suit me',
+                'My outfits look boring',
+                'I struggle to dress for work'
+              ].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setQuizData((prev) => ({ ...prev, stylingFrustration: option }))}
+                  className="px-3 py-2 rounded-full border border-luxury-cream text-xs md:text-sm luxury-body hover:border-luxury-accent"
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
             <textarea
               value={quizData.stylingFrustration || ''}
               onChange={(event) => setQuizData((prev) => ({ ...prev, stylingFrustration: event.target.value.slice(0, 200) }))}

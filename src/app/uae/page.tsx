@@ -4,15 +4,54 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Palette, Shapes, Ban } from 'lucide-react';
-import { useEffect } from 'react';
+import { ArrowRight, ArrowLeft, CheckCircle, Palette, Shapes, Ban } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 
 export default function UaeLandingPage() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   useEffect(() => {
     trackPageView('UAE');
     trackViewContent('UAE Style Blueprint', 179, ['uae_style_blueprint'], 'AED', 'UAE');
   }, []);
+
+  const transformationImages = useMemo(() => [
+    {
+      src: '/transformation-1.webp',
+      testimonial: 'Finally found my signature style! I feel confident every day.',
+      name: 'Shreya, Mumbai'
+    },
+    {
+      src: '/transformation-2.webp',
+      testimonial: 'The color palette changed everything. I get compliments daily!',
+      name: 'Kavya, Delhi'
+    },
+    {
+      src: '/transformation-3.webp',
+      testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.',
+      name: 'Priya, Bangalore'
+    }
+  ], []);
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
+
+  useEffect(() => {
+    transformationImages.forEach((image) => {
+      const img = new window.Image();
+      img.src = image.src;
+    });
+  }, [transformationImages]);
 
   return (
     <>
@@ -86,22 +125,60 @@ export default function UaeLandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white/80 border border-luxury-cream rounded-3xl p-5 md:p-6"
+                className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-luxury-cream"
               >
-                <p className="luxury-body text-luxury-charcoal/60 mb-4">Preview your blueprint</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
-                    <Image src="/wardrobe-blueprint.webp" alt="Blueprint preview" fill className="object-cover" />
+                <div className="text-center mb-4">
+                  <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal">
+                    ICONIK Transformations
+                  </h3>
+                </div>
+
+                <div className="flex items-center justify-center gap-4 md:gap-6">
+                  <button
+                    onClick={prevImage}
+                    className="p-2 md:p-3 bg-luxury-accent/10 hover:bg-luxury-accent/20 rounded-full transition-all duration-300 group"
+                  >
+                    <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
+                  </button>
+
+                  <div className="relative w-52 h-52 md:w-72 md:h-72 bg-luxury-cream/30 rounded-2xl overflow-hidden border-2 border-luxury-cream">
+                    <Image
+                      src={transformationImages[currentImageIndex].src}
+                      alt="Style Transformation"
+                      width={288}
+                      height={288}
+                      className="w-full h-full object-cover"
+                      priority
+                      loading="eager"
+                    />
                   </div>
-                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
-                    <Image src="/color-palette.webp" alt="Color palette preview" fill className="object-cover" />
-                  </div>
-                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
-                    <Image src="/style-before.webp" alt="Style example before" fill className="object-cover" />
-                  </div>
-                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
-                    <Image src="/style-after.webp" alt="Style example after" fill className="object-cover" />
-                  </div>
+
+                  <button
+                    onClick={nextImage}
+                    className="p-2 md:p-3 bg-luxury-accent/10 hover:bg-luxury-accent/20 rounded-full transition-all duration-300 group"
+                  >
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
+                  </button>
+                </div>
+
+                <div className="text-center mt-6 px-4">
+                  <p className="text-luxury-charcoal text-sm md:text-base luxury-body leading-relaxed mb-2">
+                    &quot;{transformationImages[currentImageIndex].testimonial}&quot;
+                  </p>
+                  <p className="text-luxury-green text-xs md:text-sm luxury-body font-medium">
+                    - {transformationImages[currentImageIndex].name}
+                  </p>
+                </div>
+
+                <div className="flex justify-center gap-2 mt-6">
+                  {transformationImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToImage(index)}
+                      className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${index === currentImageIndex ? 'bg-luxury-accent' : 'bg-luxury-accent/30'
+                        }`}
+                    />
+                  ))}
                 </div>
               </motion.div>
             </div>
