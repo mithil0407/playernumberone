@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -11,7 +11,7 @@ import { clearQuizPhotos, getQuizPhoto } from '@/lib/uaeQuizStorage';
 
 const QUIZ_STORAGE_KEY = 'uaeStyleQuizData';
 
-export default function UaeCheckoutSuccessPage() {
+function UaeCheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
@@ -307,5 +307,13 @@ export default function UaeCheckoutSuccessPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function UaeCheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-luxury-warm-white" />}>
+      <UaeCheckoutSuccessContent />
+    </Suspense>
   );
 }

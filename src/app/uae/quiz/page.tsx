@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ArrowLeft, CheckCircle, Upload, Info } from 'lucide-react';
 import { trackCTAClick, trackPageView } from '@/lib/metaPixel';
@@ -355,7 +356,9 @@ export default function UaeQuizPage() {
             </p>
             <div className="bg-white border border-luxury-cream rounded-3xl p-6 text-center">
               {fullBodyPreview ? (
-                <img src={fullBodyPreview} alt="Full body preview" className="w-full max-h-80 object-contain rounded-2xl" />
+                <div className="relative w-full h-80">
+                  <Image src={fullBodyPreview} alt="Full body preview" fill className="object-contain rounded-2xl" unoptimized />
+                </div>
               ) : (
                 <div className="flex flex-col items-center gap-3">
                   <Upload className="w-10 h-10 text-luxury-accent" />
@@ -387,7 +390,9 @@ export default function UaeQuizPage() {
             </p>
             <div className="bg-white border border-luxury-cream rounded-3xl p-6 text-center">
               {headshotPreview ? (
-                <img src={headshotPreview} alt="Headshot preview" className="w-full max-h-80 object-contain rounded-2xl" />
+                <div className="relative w-full h-80">
+                  <Image src={headshotPreview} alt="Headshot preview" fill className="object-contain rounded-2xl" unoptimized />
+                </div>
               ) : (
                 <div className="flex flex-col items-center gap-3">
                   <Upload className="w-10 h-10 text-luxury-accent" />
