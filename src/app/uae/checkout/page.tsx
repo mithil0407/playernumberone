@@ -280,21 +280,22 @@ export default function UaeCheckoutPage() {
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
       <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/uae" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
-            <ArrowLeft className="w-5 h-5" /> Back to UAE Offer
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <span className="text-xl md:text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+          <Link href="/uae" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body text-sm md:text-base">
+            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" /> Back to UAE Offer
           </Link>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 md:py-10 grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-white/80 border border-luxury-cream rounded-3xl p-6 mb-6"
           >
-            <h1 className="text-3xl md:text-4xl luxury-heading mb-2">Your Personal Style Blueprint</h1>
+            <h1 className="text-2xl md:text-4xl luxury-heading mb-2">Your Personal Style Blueprint</h1>
             <p className="luxury-body text-luxury-charcoal/70 mb-4">Delivered via email within 48 hours</p>
             <div className="flex items-center gap-3">
               <span className="text-xl text-luxury-charcoal/60 line-through">AED {originalPrice}</span>
@@ -330,21 +331,21 @@ export default function UaeCheckoutPage() {
                 placeholder="First Name"
                 value={formData.name}
                 onChange={(event) => handleInputChange('name', event.target.value)}
-                className="border border-luxury-cream rounded-2xl p-3 luxury-body"
+                className="border border-luxury-cream rounded-2xl p-3 luxury-body text-base"
               />
               <input
                 type="email"
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={(event) => handleInputChange('email', event.target.value)}
-                className="border border-luxury-cream rounded-2xl p-3 luxury-body"
+                className="border border-luxury-cream rounded-2xl p-3 luxury-body text-base"
               />
               <input
                 type="tel"
                 placeholder="WhatsApp Number"
                 value={formData.phone}
                 onChange={(event) => handleInputChange('phone', event.target.value)}
-                className="border border-luxury-cream rounded-2xl p-3 luxury-body"
+                className="border border-luxury-cream rounded-2xl p-3 luxury-body text-base"
               />
               <p className="text-xs text-luxury-charcoal/60">We&apos;ll never spam you. We&apos;ll only contact you to deliver your report.</p>
             </div>

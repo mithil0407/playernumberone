@@ -337,24 +337,25 @@ export default function UaeQuizPage() {
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
       <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
           <button onClick={handleBack} className="flex items-center gap-2 text-luxury-charcoal/70">
             <ArrowLeft className="w-5 h-5" /> Back
           </button>
-          <div className="text-sm luxury-body text-luxury-charcoal/70">Step {step + 1} of {TOTAL_STEPS}</div>
+          <div className="text-xs md:text-sm luxury-body text-luxury-charcoal/70">Step {step + 1} of {TOTAL_STEPS}</div>
         </div>
         <div className="h-1 bg-luxury-cream">
           <div className="h-1 bg-luxury-accent" style={{ width: `${progress}%` }} />
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="max-w-3xl mx-auto px-4 py-6 md:py-8">
         {step === 0 && (
           <div className="space-y-6">
             <h2 className="text-2xl md:text-3xl luxury-heading">Upload Your Full-Body Photo</h2>
             <p className="luxury-body text-luxury-charcoal/70">
               Upload a recent full-body photo (front-facing, arms relaxed by your sides). Wear fitted clothing so our stylists can analyze your proportions accurately.
             </p>
-            <div className="bg-white border border-luxury-cream rounded-3xl p-6 text-center">
+            <div className="bg-white border border-luxury-cream rounded-3xl p-4 md:p-6 text-center">
               {fullBodyPreview ? (
                 <div className="relative w-full h-80">
                   <Image src={fullBodyPreview} alt="Full body preview" fill className="object-contain rounded-2xl" unoptimized />
@@ -362,18 +363,29 @@ export default function UaeQuizPage() {
               ) : (
                 <div className="flex flex-col items-center gap-3">
                   <Upload className="w-10 h-10 text-luxury-accent" />
-                  <p className="luxury-body text-luxury-charcoal/60">Drag & drop or click to upload</p>
+                  <p className="luxury-body text-luxury-charcoal/60">Drag &amp; drop or click to upload</p>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="mt-4 w-full luxury-body"
-                onChange={(event) =>
-                  handlePhotoUpload('fullBody', event.target.files?.[0] || null, setFullBodyPreview, 'fullBodyUploaded')
-                }
-              />
+              <label className="mt-4 inline-flex items-center justify-center w-full border border-luxury-cream rounded-2xl py-3 px-4 luxury-body text-luxury-charcoal/70 cursor-pointer hover:border-luxury-accent">
+                Click to upload
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  onChange={(event) =>
+                    handlePhotoUpload('fullBody', event.target.files?.[0] || null, setFullBodyPreview, 'fullBodyUploaded')
+                  }
+                />
+              </label>
+              <div className="mt-6 grid gap-4 md:grid-cols-2 text-left">
+                <div className="relative h-40 md:h-48 rounded-2xl overflow-hidden bg-luxury-cream/40">
+                  <Image src="/style-before.webp" alt="Full body example" fill className="object-cover" />
+                </div>
+                <div className="flex items-center">
+                  <p className="luxury-body text-luxury-charcoal/60">Example full-body photo (front-facing, fitted clothing).</p>
+                </div>
+              </div>
               <div className="flex items-start gap-2 mt-4 text-xs text-luxury-charcoal/60">
                 <Info className="w-4 h-4" />
                 <p>This helps us identify your body shape so we can recommend silhouettes that flatter YOUR proportions.</p>
@@ -388,7 +400,7 @@ export default function UaeQuizPage() {
             <p className="luxury-body text-luxury-charcoal/70">
               Upload a clear headshot (shoulders up, neutral expression, hair pulled back if possible).
             </p>
-            <div className="bg-white border border-luxury-cream rounded-3xl p-6 text-center">
+            <div className="bg-white border border-luxury-cream rounded-3xl p-4 md:p-6 text-center">
               {headshotPreview ? (
                 <div className="relative w-full h-80">
                   <Image src={headshotPreview} alt="Headshot preview" fill className="object-contain rounded-2xl" unoptimized />
@@ -396,18 +408,29 @@ export default function UaeQuizPage() {
               ) : (
                 <div className="flex flex-col items-center gap-3">
                   <Upload className="w-10 h-10 text-luxury-accent" />
-                  <p className="luxury-body text-luxury-charcoal/60">Drag & drop or click to upload</p>
+                  <p className="luxury-body text-luxury-charcoal/60">Drag &amp; drop or click to upload</p>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                capture="user"
-                className="mt-4 w-full luxury-body"
-                onChange={(event) =>
-                  handlePhotoUpload('headshot', event.target.files?.[0] || null, setHeadshotPreview, 'headshotUploaded')
-                }
-              />
+              <label className="mt-4 inline-flex items-center justify-center w-full border border-luxury-cream rounded-2xl py-3 px-4 luxury-body text-luxury-charcoal/70 cursor-pointer hover:border-luxury-accent">
+                Click to upload
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  className="sr-only"
+                  onChange={(event) =>
+                    handlePhotoUpload('headshot', event.target.files?.[0] || null, setHeadshotPreview, 'headshotUploaded')
+                  }
+                />
+              </label>
+              <div className="mt-6 grid gap-4 md:grid-cols-2 text-left">
+                <div className="relative h-40 md:h-48 rounded-2xl overflow-hidden bg-luxury-cream/40">
+                  <Image src="/testimonial-priya.webp" alt="Headshot example" fill className="object-cover" />
+                </div>
+                <div className="flex items-center">
+                  <p className="luxury-body text-luxury-charcoal/60">Example headshot (shoulders up, neutral expression).</p>
+                </div>
+              </div>
               <div className="flex items-start gap-2 mt-4 text-xs text-luxury-charcoal/60">
                 <Info className="w-4 h-4" />
                 <p>This helps us analyze your face shape and recommend hairstyles, necklines, and eyewear that complement your features.</p>

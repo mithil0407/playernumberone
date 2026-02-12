@@ -32,50 +32,79 @@ export default function UaeLandingPage() {
       </Head>
 
       <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
-        <section className="pt-24 md:pt-32 pb-16 px-4 md:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto text-center">
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="luxury-body text-luxury-charcoal/60 mb-4"
-            >
-              Trusted by 2,000+ women across 12 countries
-            </motion.p>
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-6xl lg:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95]"
-            >
-              Your Personal Style Blueprint – Curated by Professional Stylists in 48 Hours
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-lg md:text-2xl luxury-body text-luxury-charcoal/80 max-w-4xl mx-auto mb-8"
-            >
-              Finally understand what flatters YOUR body, not just &quot;what&apos;s trending.&quot;
-            </motion.p>
+        <section className="pt-20 md:pt-28 pb-12 md:pb-16 px-4 md:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-8 md:mb-10">
+              <span className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+            </div>
+            <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] items-center text-center md:text-left">
+              <div>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="luxury-body text-luxury-charcoal/60 mb-4"
+                >
+                  Trusted by 2,000+ women across 12 countries
+                </motion.p>
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-4xl md:text-6xl lg:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95]"
+                >
+                  Your Personal Style Blueprint – Curated by Professional Stylists in 48 Hours
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-lg md:text-2xl luxury-body text-luxury-charcoal/80 max-w-2xl md:mx-0 mb-8"
+                >
+                  Finally understand what flatters YOUR body, not just &quot;what&apos;s trending.&quot;
+                </motion.p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-col items-center gap-4"
-            >
-              <Link
-                href="/uae/quiz"
-                onClick={() => trackCTAClick('Start Your Style Quiz', 'Hero', 179, 'AED', 'UAE')}
-                className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 md:px-14 py-4 md:py-5 rounded-full transition-all duration-300 luxury-body text-lg md:text-xl"
-              >
-                START YOUR STYLE QUIZ <ArrowRight className="ml-3 h-5 w-5" />
-              </Link>
-              <div className="flex flex-wrap justify-center gap-3 text-xs md:text-sm luxury-body text-luxury-charcoal/70">
-                <span>⭐ 4.9/5 from 2,000+ clients</span>
-                <span>🔒 Stylist-Reviewed</span>
-                <span>⚡ 48-Hour Delivery</span>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex flex-col md:items-start items-center gap-4"
+                >
+                  <Link
+                    href="/uae/quiz"
+                    onClick={() => trackCTAClick('Start Your Style Quiz', 'Hero', 179, 'AED', 'UAE')}
+                    className="inline-flex items-center justify-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 md:px-12 py-4 rounded-full transition-all duration-300 luxury-body text-lg md:text-xl w-full md:w-auto"
+                  >
+                    START YOUR STYLE QUIZ <ArrowRight className="ml-3 h-5 w-5" />
+                  </Link>
+                  <div className="flex flex-wrap justify-center md:justify-start gap-3 text-xs md:text-sm luxury-body text-luxury-charcoal/70">
+                    <span>⭐ 4.9/5 from 2,000+ clients</span>
+                    <span>🔒 Stylist-Reviewed</span>
+                    <span>⚡ 48-Hour Delivery</span>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/80 border border-luxury-cream rounded-3xl p-5 md:p-6"
+              >
+                <p className="luxury-body text-luxury-charcoal/60 mb-4">Preview your blueprint</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
+                    <Image src="/wardrobe-blueprint.webp" alt="Blueprint preview" fill className="object-cover" />
+                  </div>
+                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
+                    <Image src="/color-palette.webp" alt="Color palette preview" fill className="object-cover" />
+                  </div>
+                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
+                    <Image src="/style-before.webp" alt="Style example before" fill className="object-cover" />
+                  </div>
+                  <div className="relative h-32 md:h-40 rounded-2xl overflow-hidden bg-luxury-cream/60">
+                    <Image src="/style-after.webp" alt="Style example after" fill className="object-cover" />
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
 

@@ -154,8 +154,12 @@ function UaeCheckoutSuccessContent() {
   };
 
   return (
-    <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal px-4 py-10">
+    <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal px-4 py-8 md:py-10">
       <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <span className="text-xl md:text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+          <Link href="/uae" className="text-sm md:text-base text-luxury-accent luxury-body">Back to UAE</Link>
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -14,6 +14,9 @@ export default function UaeOtoSuccessPage() {
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal flex items-center justify-center px-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl text-center">
+        <div className="flex items-center justify-center mb-6">
+          <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+        </div>
         <div className="bg-luxury-cream/60 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-10 h-10 text-luxury-accent" />
         </div>
