@@ -371,7 +371,7 @@ export default function UaeQuizPage() {
             </p>
             <div className="bg-white border border-luxury-cream rounded-3xl p-4 md:p-6 text-center">
               {fullBodyPreview ? (
-                <div className="relative w-full h-80">
+                <div className="relative w-full h-80 flex items-center justify-center">
                   <Image src={fullBodyPreview} alt="Full body preview" fill className="object-contain rounded-2xl" unoptimized />
                 </div>
               ) : (
@@ -392,9 +392,9 @@ export default function UaeQuizPage() {
                   }
                 />
               </label>
-              <div className="mt-6 flex flex-col md:flex-row items-start md:items-center gap-4 text-left">
+              <div className="mt-6 flex flex-col items-center gap-4 text-center">
                 <div className="relative w-24 md:w-28 aspect-[9/16] rounded-2xl overflow-hidden bg-luxury-cream/40">
-                  <Image src="/style-before.webp" alt="Full body example" fill className="object-cover" />
+                  <Image src="/fullbody.webp" alt="Full body example" fill className="object-cover" />
                 </div>
                 <p className="text-sm md:text-base luxury-body text-luxury-charcoal/60">Example full-body photo (front-facing, fitted clothing).</p>
               </div>
@@ -414,7 +414,7 @@ export default function UaeQuizPage() {
             </p>
             <div className="bg-white border border-luxury-cream rounded-3xl p-4 md:p-6 text-center">
               {headshotPreview ? (
-                <div className="relative w-full h-80">
+                <div className="relative w-full h-80 flex items-center justify-center">
                   <Image src={headshotPreview} alt="Headshot preview" fill className="object-contain rounded-2xl" unoptimized />
                 </div>
               ) : (
@@ -435,9 +435,9 @@ export default function UaeQuizPage() {
                   }
                 />
               </label>
-              <div className="mt-6 flex flex-col md:flex-row items-start md:items-center gap-4 text-left">
+              <div className="mt-6 flex flex-col items-center gap-4 text-center">
                 <div className="relative w-24 md:w-28 aspect-[9/16] rounded-2xl overflow-hidden bg-luxury-cream/40">
-                  <Image src="/testimonial-priya.webp" alt="Headshot example" fill className="object-cover" />
+                  <Image src="/headshot.webp" alt="Headshot example" fill className="object-cover" />
                 </div>
                 <p className="text-sm md:text-base luxury-body text-luxury-charcoal/60">Example headshot (shoulders up, neutral expression).</p>
               </div>
@@ -544,7 +544,7 @@ export default function UaeQuizPage() {
             </div>
             <div className="mt-4 bg-white border border-luxury-cream rounded-2xl p-4">
               <div className="relative h-32 md:h-40 rounded-xl overflow-hidden bg-luxury-cream/40">
-                <Image src="/color-palette.webp" alt="Skin tone guide" fill className="object-cover" />
+                <Image src="/skintone.webp" alt="Skin tone guide" fill className="object-cover" />
               </div>
               <div className="grid grid-cols-4 gap-2 mt-3 text-xs text-luxury-charcoal/60">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#f4d6b0]" />Fair</div>
@@ -572,7 +572,7 @@ export default function UaeQuizPage() {
             </div>
             <div className="mt-4 bg-white border border-luxury-cream rounded-2xl p-4">
               <div className="relative h-32 md:h-40 rounded-xl overflow-hidden bg-luxury-cream/40">
-                <Image src="/color-palette.webp" alt="Undertone guide" fill className="object-cover" />
+                <Image src="/skintone.webp" alt="Undertone guide" fill className="object-cover" />
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3 text-xs text-luxury-charcoal/60">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#d2a679]" />Warm</div>

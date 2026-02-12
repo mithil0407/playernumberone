@@ -20,17 +20,17 @@ export default function UaeLandingPage() {
     {
       src: '/transformation-1.webp',
       testimonial: 'Finally found my signature style! I feel confident every day.',
-      name: 'Shreya, Mumbai'
+      name: 'Aisha, Dubai'
     },
     {
       src: '/transformation-2.webp',
       testimonial: 'The color palette changed everything. I get compliments daily!',
-      name: 'Kavya, Delhi'
+      name: 'Noor, Abu Dhabi'
     },
     {
       src: '/transformation-3.webp',
       testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.',
-      name: 'Priya, Bangalore'
+      name: 'Mariam, Sharjah'
     }
   ], []);
 
