@@ -127,7 +127,7 @@ export default function RefundPolicyPage() {
                 <ol className="space-y-3">
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
-                    <p className="text-gray-700">Email us at <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a> with subject "Cancel Subscription"</p>
+                    <p className="text-gray-700">Email us at <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a> with subject &quot;Cancel Subscription&quot;</p>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>

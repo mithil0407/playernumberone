@@ -190,7 +190,7 @@ export default function UaeCheckoutSuccessPage() {
         >
           <h2 className="text-3xl md:text-4xl luxury-heading mb-3">Wait! Before You Go... Never Run Out of Outfit Ideas Again</h2>
           <p className="luxury-body text-luxury-warm-white/80 mb-6">
-            You've unlocked your Style Blueprint – but what about next month when you're staring at your closet saying "I have nothing to wear"?
+            You&apos;ve unlocked your Style Blueprint – but what about next month when you&apos;re staring at your closet saying &quot;I have nothing to wear&quot;?
           </p>
 
           <div className="bg-luxury-warm-white text-luxury-charcoal rounded-3xl p-6 md:p-8">
@@ -238,11 +238,11 @@ export default function UaeCheckoutSuccessPage() {
                 onClick={() => setShowExitPopup(true)}
                 className="flex-1 border border-luxury-cream text-luxury-charcoal py-4 rounded-full luxury-body"
               >
-                No Thanks, I'll Pass
+                No Thanks, I&apos;ll Pass
               </button>
             </div>
             <p className="mt-4 text-sm text-luxury-charcoal/60">
-              Join 300+ women who've said goodbye to "I have nothing to wear." – Sarah, Dubai
+              Join 300+ women who&apos;ve said goodbye to &quot;I have nothing to wear.&quot; – Sarah, Dubai
             </p>
           </div>
         </motion.div>
@@ -255,7 +255,7 @@ export default function UaeCheckoutSuccessPage() {
           >
             <h3 className="text-2xl luxury-heading mb-4">All Set! Check Your Email.</h3>
             <ul className="space-y-2 text-luxury-charcoal/70 luxury-body">
-              <li>You'll receive an email receipt in 2 minutes.</li>
+              <li>You&apos;ll receive an email receipt in 2 minutes.</li>
               <li>Your Style Blueprint will be delivered within 48 hours.</li>
               <li>
                 Questions? Reply to our email or WhatsApp us here:{' '}

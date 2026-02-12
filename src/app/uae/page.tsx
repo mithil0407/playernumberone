@@ -54,7 +54,7 @@ export default function UaeLandingPage() {
               transition={{ delay: 0.1 }}
               className="text-lg md:text-2xl luxury-body text-luxury-charcoal/80 max-w-4xl mx-auto mb-8"
             >
-              Finally understand what flatters YOUR body, not just "what's trending."
+              Finally understand what flatters YOUR body, not just &quot;what&apos;s trending.&quot;
             </motion.p>
 
             <motion.div
@@ -87,13 +87,13 @@ export default function UaeLandingPage() {
               viewport={{ once: true }}
               className="text-3xl md:text-4xl luxury-heading text-center mb-10"
             >
-              Why Your Clothes Never Feel "Right" – Even When They're the Right Size
+              Why Your Clothes Never Feel &quot;Right&quot; – Even When They&apos;re the Right Size
             </motion.h2>
             <div className="grid gap-6 md:grid-cols-3">
               <div className="bg-white/90 border border-luxury-cream rounded-3xl p-6 text-center">
                 <Shapes className="w-10 h-10 text-luxury-accent mx-auto mb-4" />
                 <h3 className="luxury-heading text-xl mb-2">Wrong body shape rules</h3>
-                <p className="luxury-body text-luxury-charcoal/70">You're shopping for silhouettes that fight your proportions.</p>
+                <p className="luxury-body text-luxury-charcoal/70">You&apos;re shopping for silhouettes that fight your proportions.</p>
               </div>
               <div className="bg-white/90 border border-luxury-cream rounded-3xl p-6 text-center">
                 <Palette className="w-10 h-10 text-luxury-green mx-auto mb-4" />

@@ -346,7 +346,7 @@ export default function UaeCheckoutPage() {
                 onChange={(event) => handleInputChange('phone', event.target.value)}
                 className="border border-luxury-cream rounded-2xl p-3 luxury-body"
               />
-              <p className="text-xs text-luxury-charcoal/60">We'll never spam you. We'll only contact you to deliver your report.</p>
+              <p className="text-xs text-luxury-charcoal/60">We&apos;ll never spam you. We&apos;ll only contact you to deliver your report.</p>
             </div>
           </motion.div>
 

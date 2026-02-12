@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase, saveSubscription } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
 import Razorpay from 'razorpay';

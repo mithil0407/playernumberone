@@ -297,7 +297,7 @@ export default function UaeQuizPage() {
     return (
       <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal flex items-center justify-center px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl text-center">
-          <h1 className="text-3xl md:text-4xl luxury-heading mb-4">Let's build your Style Blueprint</h1>
+          <h1 className="text-3xl md:text-4xl luxury-heading mb-4">Let&apos;s build your Style Blueprint</h1>
           <p className="luxury-body text-luxury-charcoal/70 mb-6">
             This will take 3 minutes. Our stylist team will review your answers to create a personalized report.
           </p>
@@ -305,7 +305,7 @@ export default function UaeQuizPage() {
             onClick={handleNext}
             className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full luxury-body text-lg transition-all"
           >
-            Let's Start <ArrowRight className="ml-3 h-5 w-5" />
+            Let&apos;s Start <ArrowRight className="ml-3 h-5 w-5" />
           </button>
         </motion.div>
       </div>
@@ -413,7 +413,7 @@ export default function UaeQuizPage() {
 
         {step === 2 && (
           <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl luxury-heading">What's Your Height?</h2>
+            <h2 className="text-2xl md:text-3xl luxury-heading">What&apos;s Your Height?</h2>
             <p className="luxury-body text-luxury-charcoal/70">Select your height in centimeters.</p>
             <select
               value={quizData.heightCm || ''}
@@ -482,7 +482,7 @@ export default function UaeQuizPage() {
 
         {step === 6 && (
           <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl luxury-heading">What's Your Undertone?</h2>
+            <h2 className="text-2xl md:text-3xl luxury-heading">What&apos;s Your Undertone?</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {undertones.map((option) => (
                 <button
@@ -499,7 +499,7 @@ export default function UaeQuizPage() {
 
         {step === 7 && (
           <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl luxury-heading">What's Your Natural Hair Texture?</h2>
+            <h2 className="text-2xl md:text-3xl luxury-heading">What&apos;s Your Natural Hair Texture?</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {hairTextures.map((option) => (
                 <button
@@ -550,7 +550,7 @@ export default function UaeQuizPage() {
 
         {step === 10 && (
           <div className="space-y-6">
-            <h2 className="text-2xl md:text-3xl luxury-heading">What's Your Biggest Styling Frustration?</h2>
+            <h2 className="text-2xl md:text-3xl luxury-heading">What&apos;s Your Biggest Styling Frustration?</h2>
             <textarea
               value={quizData.stylingFrustration || ''}
               onChange={(event) => setQuizData((prev) => ({ ...prev, stylingFrustration: event.target.value.slice(0, 200) }))}

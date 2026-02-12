@@ -19,7 +19,7 @@ export default function UaeOtoSuccessPage() {
         </div>
         <h1 className="text-3xl md:text-4xl luxury-heading mb-4">Welcome to Style Refresh Club!</h1>
         <p className="luxury-body text-luxury-charcoal/70 mb-6">
-          You're in. We'll send your first set of outfit ideas on the 1st of next month along with your WhatsApp community access.
+          You&apos;re in. We&apos;ll send your first set of outfit ideas on the 1st of next month along with your WhatsApp community access.
         </p>
         <Link
           href="/uae"
