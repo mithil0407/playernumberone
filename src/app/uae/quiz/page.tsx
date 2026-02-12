@@ -123,7 +123,7 @@ export default function UaeQuizPage() {
         const parsed = JSON.parse(stored) as QuizData;
         setQuizData({
           heightCm: parsed.heightCm || 163,
-          bodyShape: parsed.bodyShape || \"I'm not sure – let the stylists tell me! ✨\",
+          bodyShape: parsed.bodyShape || "I'm not sure – let the stylists tell me! ✨",
           ...parsed,
           weightAreas: parsed.weightAreas || [],
           avoidStyles: parsed.avoidStyles || [],
