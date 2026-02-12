@@ -572,7 +572,7 @@ export default function UaeQuizPage() {
             </div>
             <div className="mt-4 bg-white border border-luxury-cream rounded-2xl p-4">
               <div className="relative h-32 md:h-40 rounded-xl overflow-hidden bg-luxury-cream/40">
-                <Image src="/skintone.webp" alt="Undertone guide" fill className="object-cover" />
+                <Image src="/undertone 2.webp" alt="Undertone guide" fill className="object-cover" />
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3 text-xs text-luxury-charcoal/60">
                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#d2a679]" />Warm</div>

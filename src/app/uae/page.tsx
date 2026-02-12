@@ -71,9 +71,9 @@ export default function UaeLandingPage() {
       </Head>
 
       <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
-        <section className="pt-20 md:pt-28 pb-12 md:pb-16 px-4 md:px-6 lg:px-8">
+        <section className="pt-14 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-8 md:mb-10">
+            <div className="flex items-center justify-between mb-6 md:mb-8">
               <span className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
             </div>
             <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] items-center text-center md:text-left">
