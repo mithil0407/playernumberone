@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
-const BUCKET_NAME = 'uae-style-quiz';
+const BUCKET_NAME = process.env.NEXT_PUBLIC_UAE_QUIZ_BUCKET || 'uae-style-quiz';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,9 +22,11 @@ export async function POST(request: NextRequest) {
 
     const quizData = JSON.parse(quizDataRaw.toString());
 
-    if (!supabase || !(supabase as { storage?: { from?: unknown } }).storage?.from) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
       return NextResponse.json({ success: false, error: 'Supabase not configured' }, { status: 500 });
     }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     const timestamp = Date.now();
     const safeEmail = customerEmail.replace(/[^a-z0-9@._-]/gi, '-');
@@ -55,6 +59,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Failed to upload headshot' }, { status: 500 });
     }
 
+    const fullBodyUrl = supabase.storage.from(BUCKET_NAME).getPublicUrl(fullBodyPath).data.publicUrl;
+    const headshotUrl = supabase.storage.from(BUCKET_NAME).getPublicUrl(headshotPath).data.publicUrl;
+
     const { error: insertError } = await supabase
       .from('uae_quiz_submissions')
       .insert([
@@ -64,8 +71,8 @@ export async function POST(request: NextRequest) {
           customer_phone: customerPhone,
           order_id: orderId,
           quiz_data: quizData,
-          full_body_path: fullBodyPath,
-          headshot_path: headshotPath
+          full_body_path: fullBodyUrl || fullBodyPath,
+          headshot_path: headshotUrl || headshotPath
         }
       ]);
 
