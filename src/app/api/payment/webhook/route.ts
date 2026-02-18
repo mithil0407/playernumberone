@@ -247,24 +247,8 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
           console.log('Add-ons saved to Supabase and Google Sheets:', addOnsString);
           console.log('Customer data added to Google Sheets after successful payment');
 
-          // Send confirmation email to customer
-          try {
-            const emailResult = await sendConfirmationEmail({
-              customer_name: existingOrder.customers.name,
-              customer_email: existingOrder.customers.email,
-              customer_phone: existingOrder.customers.phone,
-              order_amount: existingOrder.amount,
-              add_ons: addOnsString,
-              payment_id: payment.id,
-            });
-            if (emailResult.success) {
-              console.log('Confirmation email sent to:', existingOrder.customers.email);
-            } else {
-              console.log('Confirmation email failed:', emailResult.error);
-            }
-          } catch (emailError) {
-            console.log('Error sending confirmation email:', emailError);
-          }
+          // NOTE: Confirmation email is sent by handleOrderPaid (order.paid event)
+          // to avoid duplicates — both payment.captured and order.paid fire for every payment.
 
           // Sync to CRM database
           try {
