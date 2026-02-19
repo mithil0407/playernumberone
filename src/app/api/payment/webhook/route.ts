@@ -383,91 +383,95 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
 
 async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
   try {
-    console.log('Order paid:', order.id);
+    console.log('Order paid event received:', order.id);
 
-    // First try to find the order by razorpay_order_id
-    const { data: existingOrder } = await supabase
+    // IDEMPOTENCY GUARD: Only update (and email) if the order is NOT already marked paid.
+    // Razorpay retries webhooks on slow responses, which would trigger duplicate emails.
+    // The .neq filter means: if a previous call already set status='paid', this update
+    // matches 0 rows → data is null → we skip everything below. Atomic and safe.
+    const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
-      .select('*, customers(*)')
+      .update({
+        status: 'paid',
+        razorpay_payment_id: payment.id,
+        payment_method: payment.method,
+        amount: Math.round(order.amount / 100),
+        product_type: 'consultation'
+      })
       .eq('razorpay_order_id', order.id)
+      .neq('status', 'paid')          // ← idempotency: skip if already processed
+      .neq('status', 'completed')     // ← also skip if payment.captured already ran
+      .select('*, customers(*)')
       .single();
 
-    if (existingOrder) {
-      // Fetch actual add-ons from Razorpay order notes
-      const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
-
-      // Update order status in database
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          status: 'paid',
-          razorpay_payment_id: payment.id,
-          payment_method: payment.method,
-          amount: Math.round(order.amount / 100), // Convert to integer as per your schema
-          add_ons: addOnsString,
-          product_type: 'consultation'
-        })
-        .eq('razorpay_order_id', order.id);
-
+    if (updateError || !updatedOrder) {
+      // Either a real error OR the order was already paid (duplicate webhook). Either way, stop.
       if (updateError) {
-        console.error('Error updating paid order:', updateError);
+        console.error('Error updating paid order (or already processed):', updateError.message);
       } else {
-        console.log(`Order ${order.id} marked as paid`);
-
-        // Add customer data to Google Sheets
-        try {
-          await addCustomerToSheet({
-            customer_name: existingOrder.customers.name,
-            customer_email: existingOrder.customers.email,
-            customer_phone: existingOrder.customers.phone,
-            order_amount: existingOrder.amount,
-            order_id: existingOrder.id,
-            customer_id: existingOrder.customer_id,
-            payment_status: 'paid',
-            add_ons: addOnsString,
-            service_type: 'ICONIK Style Consultation'
-          });
-          console.log('Customer data added to Google Sheets after order.paid event');
-
-          // Send confirmation email to customer
-          try {
-            const emailResult = await sendConfirmationEmail({
-              customer_name: existingOrder.customers.name,
-              customer_email: existingOrder.customers.email,
-              customer_phone: existingOrder.customers.phone,
-              order_amount: existingOrder.amount,
-              add_ons: addOnsString,
-              payment_id: payment.id,
-            });
-            if (emailResult.success) {
-              console.log('Confirmation email sent to:', existingOrder.customers.email);
-            } else {
-              console.log('Confirmation email failed:', emailResult.error);
-            }
-          } catch (emailError) {
-            console.log('Error sending confirmation email:', emailError);
-          }
-
-          // Sync to CRM database
-          try {
-            const crmResult = await syncToCrm({
-              customer_name: existingOrder.customers.name,
-              customer_phone: existingOrder.customers.phone,
-              add_ons: addOnsString,
-              order_amount: existingOrder.amount,
-            });
-            if (crmResult.success) {
-              console.log('Customer synced to CRM:', crmResult.consultation_id);
-            }
-          } catch (crmError) {
-            console.log('CRM sync error:', crmError);
-          }
-        } catch (sheetError) {
-          console.log('Failed to add customer to Google Sheets:', sheetError);
-        }
+        console.log(`Order ${order.id} already processed — skipping email (duplicate webhook).`);
       }
-    } else {
-      console.log(`Order with razorpay_order_id ${order.id} not found in database`);
+      return;
+    }
+
+    console.log(`Order ${order.id} marked as paid — sending confirmation email.`);
+
+    // Fetch actual add-ons from Razorpay order notes
+    const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
+
+    // Update add_ons separately (couldn't include in the idempotent update above cleanly)
+    await supabase.from('orders').update({ add_ons: addOnsString }).eq('razorpay_order_id', order.id);
+
+    // Send confirmation email to customer (exactly once, guaranteed by guard above)
+    try {
+      const emailResult = await sendConfirmationEmail({
+        customer_name: updatedOrder.customers.name,
+        customer_email: updatedOrder.customers.email,
+        customer_phone: updatedOrder.customers.phone,
+        order_amount: updatedOrder.amount,
+        add_ons: addOnsString,
+        payment_id: payment.id,
+      });
+      if (emailResult.success) {
+        console.log('Confirmation email sent to:', updatedOrder.customers.email);
+      } else {
+        console.log('Confirmation email failed:', emailResult.error);
+      }
+    } catch (emailError) {
+      console.log('Error sending confirmation email:', emailError);
+    }
+
+    // Add customer data to Google Sheets
+    try {
+      await addCustomerToSheet({
+        customer_name: updatedOrder.customers.name,
+        customer_email: updatedOrder.customers.email,
+        customer_phone: updatedOrder.customers.phone,
+        order_amount: updatedOrder.amount,
+        order_id: updatedOrder.id,
+        customer_id: updatedOrder.customer_id,
+        payment_status: 'paid',
+        add_ons: addOnsString,
+        service_type: 'ICONIK Style Consultation'
+      });
+      console.log('Customer data added to Google Sheets after order.paid event');
+    } catch (sheetError) {
+      console.log('Failed to add customer to Google Sheets:', sheetError);
+    }
+
+    // Sync to CRM database
+    try {
+      const crmResult = await syncToCrm({
+        customer_name: updatedOrder.customers.name,
+        customer_phone: updatedOrder.customers.phone,
+        add_ons: addOnsString,
+        order_amount: updatedOrder.amount,
+      });
+      if (crmResult.success) {
+        console.log('Customer synced to CRM:', crmResult.consultation_id);
+      }
+    } catch (crmError) {
+      console.log('CRM sync error:', crmError);
     }
 
   } catch (error) {
