@@ -414,7 +414,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
       } else {
         console.log(`Order ${order.id} marked as paid`);
 
-        // Add customer data to Google Sheets
+        // 1. Add customer data to Google Sheets (independent — failure does NOT block email)
         try {
           await addCustomerToSheet({
             customer_name: existingOrder.customers.name,
@@ -428,42 +428,42 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
             service_type: 'ICONIK Style Consultation'
           });
           console.log('Customer data added to Google Sheets after order.paid event');
-
-          // Send confirmation email to customer
-          try {
-            const emailResult = await sendConfirmationEmail({
-              customer_name: existingOrder.customers.name,
-              customer_email: existingOrder.customers.email,
-              customer_phone: existingOrder.customers.phone,
-              order_amount: existingOrder.amount,
-              add_ons: addOnsString,
-              payment_id: payment.id,
-            });
-            if (emailResult.success) {
-              console.log('Confirmation email sent to:', existingOrder.customers.email);
-            } else {
-              console.log('Confirmation email failed:', emailResult.error);
-            }
-          } catch (emailError) {
-            console.log('Error sending confirmation email:', emailError);
-          }
-
-          // Sync to CRM database
-          try {
-            const crmResult = await syncToCrm({
-              customer_name: existingOrder.customers.name,
-              customer_phone: existingOrder.customers.phone,
-              add_ons: addOnsString,
-              order_amount: existingOrder.amount,
-            });
-            if (crmResult.success) {
-              console.log('Customer synced to CRM:', crmResult.consultation_id);
-            }
-          } catch (crmError) {
-            console.log('CRM sync error:', crmError);
-          }
         } catch (sheetError) {
-          console.log('Failed to add customer to Google Sheets:', sheetError);
+          console.log('Failed to add customer to Google Sheets (email will still be sent):', sheetError);
+        }
+
+        // 2. Send confirmation email (independent — always runs regardless of Sheets result)
+        try {
+          const emailResult = await sendConfirmationEmail({
+            customer_name: existingOrder.customers.name,
+            customer_email: existingOrder.customers.email,
+            customer_phone: existingOrder.customers.phone,
+            order_amount: existingOrder.amount,
+            add_ons: addOnsString,
+            payment_id: payment.id,
+          });
+          if (emailResult.success) {
+            console.log('Confirmation email sent to:', existingOrder.customers.email);
+          } else {
+            console.log('Confirmation email failed:', emailResult.error);
+          }
+        } catch (emailError) {
+          console.log('Error sending confirmation email:', emailError);
+        }
+
+        // 3. Sync to CRM database (independent)
+        try {
+          const crmResult = await syncToCrm({
+            customer_name: existingOrder.customers.name,
+            customer_phone: existingOrder.customers.phone,
+            add_ons: addOnsString,
+            order_amount: existingOrder.amount,
+          });
+          if (crmResult.success) {
+            console.log('Customer synced to CRM:', crmResult.consultation_id);
+          }
+        } catch (crmError) {
+          console.log('CRM sync error:', crmError);
         }
       }
     } else {
