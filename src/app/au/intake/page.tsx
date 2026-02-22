@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
 import { saveAUIntakeSubmission, uploadAUIntakePhoto } from '@/lib/supabaseAU';
@@ -211,11 +213,13 @@ function PhotoUploadField({
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function AUIntakePage() {
+function AUIntakePageInner() {
+    const searchParams = useSearchParams();
     const [step, setStep] = useState(0); // 0 = opening, 1-10 = questions, 11 = confirmation
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+    const [contactPrefilled, setContactPrefilled] = useState(false);
 
     const [form, setForm] = useState<FormState>({
         email: '',
@@ -232,15 +236,40 @@ export default function AUIntakePage() {
         extraNotes: '',
     });
 
+    // Pre-fill email/phone from URL params (set by checkout redirect) or localStorage
+    useEffect(() => {
+        const urlEmail = searchParams.get('email') || '';
+        const urlPhone = searchParams.get('phone') || '';
+        const lsEmail = typeof window !== 'undefined' ? localStorage.getItem('au_customerEmail') || '' : '';
+        const lsPhone = typeof window !== 'undefined' ? localStorage.getItem('au_customerPhone') || '' : '';
+
+        const resolvedEmail = urlEmail || lsEmail;
+        const resolvedPhone = urlPhone || lsPhone;
+
+        if (resolvedEmail || resolvedPhone) {
+            setForm(prev => ({ ...prev, email: resolvedEmail, phone: resolvedPhone }));
+            if (resolvedEmail && resolvedPhone) {
+                setContactPrefilled(true); // Both known — we'll skip step 1
+            }
+        }
+    }, [searchParams]);
+
     const goNext = useCallback(() => {
         setDirection(1);
-        setStep((s) => s + 1);
-    }, []);
+        // Skip step 1 (email/phone) if already pre-filled from checkout
+        setStep((s) => {
+            if (s === 0 && contactPrefilled) return 2;
+            return s + 1;
+        });
+    }, [contactPrefilled]);
 
     const goBack = useCallback(() => {
         setDirection(-1);
-        setStep((s) => Math.max(0, s - 1));
-    }, []);
+        setStep((s) => {
+            if (s === 2 && contactPrefilled) return 0; // skip back over step 1
+            return Math.max(0, s - 1);
+        });
+    }, [contactPrefilled]);
 
     const toggleHairType = (value: string) => {
         setForm((prev) => {
@@ -385,9 +414,16 @@ export default function AUIntakePage() {
                                     <h1 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-6 leading-tight">
                                         Let&apos;s build your Blueprint.
                                     </h1>
-                                    <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-10 max-w-lg mx-auto">
-                                        We need a few details and two photos so our stylists can personalise your profile. This takes exactly <strong className="text-luxury-charcoal font-semibold">4 minutes</strong>.
+                                    <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-6 max-w-lg mx-auto">
+                                        We need two photos so our stylists can personalise your profile. This takes exactly <strong className="text-luxury-charcoal font-semibold">4 minutes</strong>.
                                     </p>
+                                    {contactPrefilled && form.email && (
+                                        <div className="bg-luxury-cream/50 border border-luxury-cream rounded-xl px-5 py-3 mb-8 inline-block">
+                                            <p className="luxury-body text-luxury-charcoal/70 text-sm">
+                                                Continuing as <strong className="text-luxury-charcoal">{form.email}</strong>
+                                            </p>
+                                        </div>
+                                    )}
                                     <button
                                         onClick={goNext}
                                         className="inline-flex items-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 text-base font-semibold luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
@@ -403,28 +439,48 @@ export default function AUIntakePage() {
                                 <div>
                                     <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Your contact details</h2>
                                     <p className="luxury-body text-luxury-charcoal/60 mb-8">So we can send your Blueprint to you.</p>
-                                    <div className="space-y-5">
-                                        <div>
-                                            <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Email Address *</label>
-                                            <input
-                                                type="email"
-                                                value={form.email}
-                                                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                                                className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
-                                                placeholder="your@email.com"
-                                            />
+                                    {contactPrefilled ? (
+                                        <div className="space-y-4">
+                                            <div className="bg-luxury-cream/40 border border-luxury-cream rounded-xl px-5 py-4 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-semibold luxury-body text-luxury-charcoal/50 uppercase tracking-wider mb-1">Email</p>
+                                                    <p className="luxury-body text-luxury-charcoal font-medium">{form.email}</p>
+                                                </div>
+                                                <CheckCircle className="w-5 h-5 text-luxury-accent flex-shrink-0" />
+                                            </div>
+                                            <div className="bg-luxury-cream/40 border border-luxury-cream rounded-xl px-5 py-4 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-semibold luxury-body text-luxury-charcoal/50 uppercase tracking-wider mb-1">Phone</p>
+                                                    <p className="luxury-body text-luxury-charcoal font-medium">{form.phone}</p>
+                                                </div>
+                                                <CheckCircle className="w-5 h-5 text-luxury-accent flex-shrink-0" />
+                                            </div>
+                                            <p className="text-xs text-center luxury-body text-luxury-charcoal/40 mt-3">These were saved from your purchase. <button onClick={() => setContactPrefilled(false)} className="underline hover:text-luxury-accent transition-colors">Edit</button></p>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Phone Number *</label>
-                                            <input
-                                                type="tel"
-                                                value={form.phone}
-                                                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value.replace(/[^\d\s+()-]/g, '') }))}
-                                                className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
-                                                placeholder="04XX XXX XXX"
-                                            />
+                                    ) : (
+                                        <div className="space-y-5">
+                                            <div>
+                                                <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Email Address *</label>
+                                                <input
+                                                    type="email"
+                                                    value={form.email}
+                                                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                                                    className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
+                                                    placeholder="your@email.com"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Phone Number *</label>
+                                                <input
+                                                    type="tel"
+                                                    value={form.phone}
+                                                    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value.replace(/[^\d\s+()-]/g, '') }))}
+                                                    className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
+                                                    placeholder="04XX XXX XXX"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             )}
 
@@ -672,5 +728,13 @@ export default function AUIntakePage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function AUIntakePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-luxury-warm-white flex items-center justify-center"><div className="luxury-body text-luxury-charcoal/50">Loading...</div></div>}>
+            <AUIntakePageInner />
+        </Suspense>
     );
 }

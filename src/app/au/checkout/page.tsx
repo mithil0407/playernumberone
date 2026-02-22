@@ -114,12 +114,31 @@ export default function AUCheckoutPage() {
                     name: 'ICONIK Style Intelligence',
                     description: 'ICONIK Blueprint — Australia',
                     order_id: data.razorpay_order_id,
-                    handler: (rzpResponse: RazorpayResponse) => {
+                    handler: async (rzpResponse: RazorpayResponse) => {
+                        // ── Persist payment confirmation to Supabase ───────────
+                        try {
+                            await fetch('/api/au-confirm-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    db_order_id: data.db_order_id,
+                                    razorpay_payment_id: rzpResponse.razorpay_payment_id,
+                                    razorpay_order_id: rzpResponse.razorpay_order_id,
+                                }),
+                            });
+                        } catch (err) {
+                            console.warn('Could not confirm payment in DB:', err);
+                        }
+
+                        // ── Persist to localStorage for intake form ────────────
                         localStorage.setItem('au_purchaseAmount', totalAmount.toString());
                         localStorage.setItem('au_customerEmail', email);
+                        localStorage.setItem('au_customerPhone', phone);
                         if (data.customer_id) localStorage.setItem('au_customerId', data.customer_id);
                         if (data.db_order_id) localStorage.setItem('au_orderId', data.db_order_id);
-                        window.location.href = `/au/thankyou?payment_id=${rzpResponse.razorpay_payment_id}&order_id=${data.razorpay_order_id}&amount=${totalAmount}`;
+
+                        // ── Redirect (email/phone also in URL for safety) ──────
+                        window.location.href = `/au/thankyou?payment_id=${rzpResponse.razorpay_payment_id}&order_id=${data.razorpay_order_id}&amount=${totalAmount}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
                     },
                     prefill: { name: email.split('@')[0], email, contact: phone },
                     theme: { color: '#ff6b9d' },
@@ -261,8 +280,8 @@ export default function AUCheckoutPage() {
                             <div
                                 onClick={() => setIkonikEditAddon(!iconikEditAddon)}
                                 className={`border-2 rounded-xl p-5 cursor-pointer transition-all duration-200 ${iconikEditAddon
-                                        ? 'border-luxury-accent bg-luxury-pink-bg'
-                                        : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40'
+                                    ? 'border-luxury-accent bg-luxury-pink-bg'
+                                    : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40'
                                     }`}
                             >
                                 <div className="flex items-start gap-3">

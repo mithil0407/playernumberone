@@ -140,9 +140,12 @@ export const uploadAUIntakePhoto = async (
     file: File,
     fileName: string
 ): Promise<string> => {
+    // Bucket policy requires files to be under public/ folder
+    const storagePath = `public/${fileName}`;
+
     const { data, error } = await supabaseAU.storage
         .from('au-intake-photos')
-        .upload(fileName, file, { upsert: true });
+        .upload(storagePath, file, { upsert: true });
 
     if (error) throw error;
 
