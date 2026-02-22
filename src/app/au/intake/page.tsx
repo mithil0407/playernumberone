@@ -301,22 +301,25 @@ function AUIntakePageInner() {
             let photoFullBodyUrl = '';
             let photoHeadshotUrl = '';
 
-            // Upload photos if present (will fail gracefully if storage not set up)
+            // Upload photos — filename must always end in .jpg to match bucket policy
             if (form.photoFullBody) {
                 try {
-                    const fn = `${Date.now()}_fullbody_${form.photoFullBody.name}`;
+                    // Strip original extension, force .jpg
+                    const baseName = form.photoFullBody.name.replace(/\.[^.]+$/, '');
+                    const fn = `${Date.now()}_fullbody_${baseName}.jpg`;
                     photoFullBodyUrl = await uploadAUIntakePhoto(form.photoFullBody, fn);
                 } catch (err) {
-                    console.warn('Full body photo upload failed (storage may not be configured):', err);
+                    console.warn('Full body photo upload failed:', err);
                 }
             }
 
             if (form.photoHeadshot) {
                 try {
-                    const fn = `${Date.now()}_headshot_${form.photoHeadshot.name}`;
+                    const baseName = form.photoHeadshot.name.replace(/\.[^.]+$/, '');
+                    const fn = `${Date.now()}_headshot_${baseName}.jpg`;
                     photoHeadshotUrl = await uploadAUIntakePhoto(form.photoHeadshot, fn);
                 } catch (err) {
-                    console.warn('Headshot upload failed (storage may not be configured):', err);
+                    console.warn('Headshot upload failed:', err);
                 }
             }
 
