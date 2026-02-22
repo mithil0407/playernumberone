@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
 import { saveAUIntakeSubmission, uploadAUIntakePhoto } from '@/lib/supabaseAU';
@@ -488,9 +489,21 @@ function AUIntakePageInner() {
                             {step === 2 && (
                                 <div>
                                     <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Upload a full-length photo.</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-6">
                                         Stand facing the camera. Natural light. Wear form-fitting clothes so we can see your proportions — leggings and a fitted top work well. No shapewear. Hair up or down — either is fine.
                                     </p>
+                                    {/* Reference image */}
+                                    <div className="relative mx-auto w-40 mb-6" style={{ aspectRatio: '3/4' }}>
+                                        <Image
+                                            src="/fullbody.webp"
+                                            alt="Example full-body photo"
+                                            fill
+                                            className="object-cover rounded-2xl border-2 border-luxury-cream"
+                                        />
+                                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                                            <span className="bg-luxury-charcoal/70 text-luxury-warm-white text-xs luxury-body px-2 py-0.5 rounded-full">Example</span>
+                                        </div>
+                                    </div>
                                     <PhotoUploadField
                                         label="Full body photo"
                                         instruction="Stand facing camera · Natural light · Form-fitting clothes · No shapewear"
@@ -508,9 +521,21 @@ function AUIntakePageInner() {
                             {step === 3 && (
                                 <div>
                                     <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Upload a clear headshot.</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-6">
                                         Face the camera directly. Natural or indoor light. No sunglasses. Hair can be up or down. A simple selfie is fine — no need for a professional photo.
                                     </p>
+                                    {/* Reference image */}
+                                    <div className="relative mx-auto w-40 mb-6" style={{ aspectRatio: '3/4' }}>
+                                        <Image
+                                            src="/headshot.webp"
+                                            alt="Example headshot photo"
+                                            fill
+                                            className="object-cover rounded-2xl border-2 border-luxury-cream"
+                                        />
+                                        <div className="absolute bottom-2 left-0 right-0 text-center">
+                                            <span className="bg-luxury-charcoal/70 text-luxury-warm-white text-xs luxury-body px-2 py-0.5 rounded-full">Example</span>
+                                        </div>
+                                    </div>
                                     <PhotoUploadField
                                         label="Headshot / selfie"
                                         instruction="Face the camera · No sunglasses · Natural or indoor light · Selfie is fine"
@@ -702,13 +727,14 @@ function AUIntakePageInner() {
                                 <div />
                             )}
 
-                            {step < 10 && (
+                            {/* Only show Continue/Begin in nav for steps 1+ (step 0 has its own inline Begin button) */}
+                            {step > 0 && step < 10 && (
                                 <button
                                     onClick={goNext}
                                     disabled={!stepValid()}
                                     className="flex items-center gap-2 bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3.5 rounded-full text-sm font-semibold uppercase tracking-wider transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed hover:-translate-y-0.5 transform luxury-body"
                                 >
-                                    {step === 0 ? 'Begin' : 'Continue'}
+                                    Continue
                                     <ArrowRight className="w-4 h-4" />
                                 </button>
                             )}

@@ -144,31 +144,13 @@ export default function AULandingPage() {
                         </h1>
 
                         {/* Subheadline */}
-                        <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-10 leading-relaxed">
+                        <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
                             ICONIK analyses your facial architecture, body geometry, and colour harmony using a proprietary methodology used by professional stylists.{' '}
                             <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. AUD $97.</span>
                         </p>
 
-                        <CTAButton className="text-base px-12 py-5 mb-8" />
-
-                        {/* Social proof strip — single star row */}
-                        <div className="flex items-center justify-center gap-3 text-sm luxury-body text-luxury-charcoal/60 flex-wrap mt-2 mb-10">
-                            <div className="flex gap-0.5">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className="h-4 w-4 text-luxury-gold fill-current" />
-                                ))}
-                            </div>
-                            <span className="text-luxury-charcoal/80 font-medium">Trusted by 500+ women</span>
-                            <span className="hidden md:inline">·</span>
-                            <span className="hidden md:inline">24-Hour Delivery</span>
-                            <span className="hidden md:inline">·</span>
-                            <span className="hidden md:inline">30-Day Guarantee</span>
-                        </div>
-
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
-                        <div
-                            className="max-w-sm mx-auto"
-                        >
+                        <div className="max-w-sm mx-auto mb-8">
                             <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-luxury-cream">
                                 {/* 3:4 image frame */}
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
@@ -222,6 +204,22 @@ export default function AULandingPage() {
                                     ))}
                                 </div>
                             </div>
+                        </div>
+
+                        <CTAButton className="text-base px-12 py-5 mb-8" />
+
+                        {/* Social proof strip — single star row */}
+                        <div className="flex items-center justify-center gap-3 text-sm luxury-body text-luxury-charcoal/60 flex-wrap mt-2">
+                            <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="h-4 w-4 text-luxury-gold fill-current" />
+                                ))}
+                            </div>
+                            <span className="text-luxury-charcoal/80 font-medium">Trusted by 500+ women</span>
+                            <span className="hidden md:inline">·</span>
+                            <span className="hidden md:inline">24-Hour Delivery</span>
+                            <span className="hidden md:inline">·</span>
+                            <span className="hidden md:inline">30-Day Guarantee</span>
                         </div>
 
                     </div>
@@ -495,6 +493,31 @@ export default function AULandingPage() {
                     <Link href="/refund-policy" className="hover:text-luxury-charcoal transition-colors">Refund Policy</Link>
                 </p>
             </footer>
+
+            {/* ── Sticky Mobile CTA ─────────────────────────────────────── */}
+            <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
+                <div className="max-w-sm mx-auto">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1">
+                            <div className="luxury-body text-luxury-charcoal/60 text-xs">ICONIK Blueprint</div>
+                            <div className="luxury-heading text-luxury-accent text-base font-semibold">AUD $97 · 24hr delivery</div>
+                        </div>
+                        <div className="flex items-center gap-0.5 ml-2">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className="h-3 w-3 text-luxury-gold fill-current" />
+                            ))}
+                        </div>
+                    </div>
+                    <Link
+                        href="/au/checkout"
+                        className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
+                    >
+                        GET MY BLUEPRINT — AUD $97
+                    </Link>
+                </div>
+            </div>
+
         </div>
     );
 }
+
