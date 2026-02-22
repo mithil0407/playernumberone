@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
 
 // ── Data ────────────────────────────────────────────────────────────────────
@@ -109,7 +108,6 @@ function CTAButton({ className = '' }: { className?: string }) {
 
 export default function AULandingPage() {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
-    const [isVisible, setIsVisible] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
 
     const heroImages = useMemo(() => [
@@ -120,10 +118,6 @@ export default function AULandingPage() {
 
     const nextSlide = useCallback(() => setCarouselIndex(i => (i + 1) % heroImages.length), [heroImages.length]);
     const prevSlide = useCallback(() => setCarouselIndex(i => (i - 1 + heroImages.length) % heroImages.length), [heroImages.length]);
-
-    useEffect(() => {
-        setIsVisible(true);
-    }, []);
 
     // Auto-advance carousel every 4 seconds
     useEffect(() => {
@@ -137,11 +131,7 @@ export default function AULandingPage() {
             {/* ── SECTION 1: Above the Fold ─────────────────────────────── */}
             <section className="pt-20 pb-16 px-4 md:px-6 lg:px-8 bg-luxury-warm-white">
                 <div className="max-w-5xl mx-auto text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 24 }}
-                        animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 24 }}
-                        transition={{ duration: 0.7 }}
-                    >
+                    <div>
                         {/* Eyebrow */}
                         <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">
                             ICONIK Style Intelligence · Australia
@@ -176,10 +166,7 @@ export default function AULandingPage() {
                         </div>
 
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
-                            transition={{ duration: 0.7, delay: 0.3 }}
+                        <div
                             className="max-w-sm mx-auto"
                         >
                             <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-luxury-cream">
@@ -235,9 +222,9 @@ export default function AULandingPage() {
                                     ))}
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
 
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 
@@ -272,17 +259,13 @@ export default function AULandingPage() {
                             { icon: '✨', text: 'You\'ve tried trends. Nothing feels like YOU — it just feels expensive.' },
                             { icon: '💭', text: 'You know something is off. You just don\'t know what — or how to fix it.' },
                         ].map((card, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1, duration: 0.6 }}
                                 className="p-8 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-2xl hover:-translate-y-1"
                             >
                                 <div className="text-3xl mb-4">{card.icon}</div>
                                 <p className="luxury-body text-luxury-charcoal/80 leading-relaxed">{card.text}</p>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                     <p className="text-center luxury-body text-luxury-charcoal/60 text-lg max-w-3xl mx-auto leading-relaxed">
@@ -304,19 +287,15 @@ export default function AULandingPage() {
 
                     <div className="grid md:grid-cols-3 gap-6 md:gap-8">
                         {pillars.map((p, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1, duration: 0.6 }}
                                 className="p-8 bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl hover:-translate-y-2 group"
                             >
                                 <div className="group-hover:scale-110 transition-transform duration-300 mb-5">{p.icon}</div>
                                 <div className="luxury-body text-luxury-charcoal/40 text-xs tracking-widest uppercase mb-3">PILLAR {p.number}</div>
                                 <h3 className="luxury-heading text-luxury-charcoal text-xl mb-3 leading-snug">{p.title}</h3>
                                 <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed">{p.body}</p>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -337,12 +316,8 @@ export default function AULandingPage() {
 
                     <div className="grid md:grid-cols-2 gap-4">
                         {blueprintItems.map((item, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, x: -10 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.07, duration: 0.5 }}
                                 className="flex gap-4 p-5 md:p-6 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-xl hover:-translate-y-1"
                             >
                                 <div className="mt-0.5">{item.icon}</div>
@@ -350,7 +325,7 @@ export default function AULandingPage() {
                                     <div className="luxury-heading text-luxury-charcoal text-base mb-1">{item.title}</div>
                                     <div className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed">{item.desc}</div>
                                 </div>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
 
@@ -373,12 +348,8 @@ export default function AULandingPage() {
                             { ...testimonials[1], img: '/au-testimonial-jess.webp' },
                             { ...testimonials[2], img: '/au-testimonial-claire.webp' },
                         ].map((t, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1, duration: 0.6 }}
                                 className="p-8 md:p-10 bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl hover:-translate-y-2"
                             >
                                 <div className="space-y-6">
@@ -405,7 +376,7 @@ export default function AULandingPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -446,18 +417,14 @@ export default function AULandingPage() {
                             { step: '02', title: 'We Analyse', desc: 'Our proprietary ICONIK methodology analyses your geometry, colour profile, and facial architecture.' },
                             { step: '03', title: 'You Receive', desc: 'Your personalised 12–18 page Blueprint arrives in your inbox within 24 hours. Yours to keep forever.' },
                         ].map((s, i) => (
-                            <motion.div
+                            <div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.12, duration: 0.6 }}
                                 className="p-8 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-2xl hover:-translate-y-1 text-center"
                             >
                                 <div className="text-5xl luxury-heading text-luxury-accent/20 mb-4">{s.step}</div>
                                 <h3 className="luxury-heading text-luxury-charcoal text-xl mb-3">{s.title}</h3>
                                 <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed">{s.desc}</p>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -499,12 +466,7 @@ export default function AULandingPage() {
             {/* ── SECTION 9: Final CTA ──────────────────────────────────── */}
             <section className="py-24 px-4 md:px-6 bg-luxury-warm-white text-center">
                 <div className="max-w-3xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                    >
+                    <div>
                         <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal mb-6 leading-tight">
                             Most women spend years buying clothes that{' '}
                             <span className="text-luxury-accent">almost</span> work.
@@ -520,7 +482,7 @@ export default function AULandingPage() {
                             <span>·</span>
                             <span>30-Day Guarantee</span>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 
