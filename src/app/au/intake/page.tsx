@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
 import { saveAUIntakeSubmission, uploadAUIntakePhoto } from '@/lib/supabaseAU';
+import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -239,6 +240,9 @@ function AUIntakePageInner() {
 
     // Pre-fill email/phone from URL params (set by checkout redirect) or localStorage
     useEffect(() => {
+        // Track page view on mount
+        trackPageView('AU Intake');
+
         const urlEmail = searchParams.get('email') || '';
         const urlPhone = searchParams.get('phone') || '';
         const lsEmail = typeof window !== 'undefined' ? localStorage.getItem('au_customerEmail') || '' : '';
@@ -337,6 +341,9 @@ function AUIntakePageInner() {
                 outfit_mix: form.outfitMix,
                 extra_notes: form.extraNotes,
             });
+
+            // Track successful intake submission
+            trackCompleteRegistration(97, 'ICONIK Blueprint AU — Intake Submitted', 'AUD');
 
             // Move to confirmation (step 11)
             setDirection(1);

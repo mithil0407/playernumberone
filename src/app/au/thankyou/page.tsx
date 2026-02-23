@@ -5,11 +5,28 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Clock } from 'lucide-react';
 import { Suspense } from 'react';
+import { useEffect } from 'react';
+import { trackPageView, trackPurchase } from '@/lib/metaPixel';
 
 function ThankYouContent() {
     const params = useSearchParams();
     const paymentId = params.get('payment_id') || '';
     const amount = params.get('amount') || '97';
+
+    // Track purchase on mount
+    useEffect(() => {
+        trackPageView('AU Thank You');
+        trackPurchase(
+            parseFloat(amount) || 97,
+            'ICONIK Blueprint AU',
+            ['iconik_blueprint_au'],
+            1,
+            'AUD',
+            'AU Funnel',
+            paymentId || undefined
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden flex flex-col">

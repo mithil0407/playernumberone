@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
+import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -49,6 +50,12 @@ export default function AUCheckoutPage() {
         [iconikEditAddon]
     );
 
+    // Track page view + initiate checkout on mount
+    useEffect(() => {
+        trackPageView('AU Checkout');
+        trackInitiateCheckout(97, 1, 'ICONIK Blueprint AU', 'AUD', 'AU Funnel');
+    }, []);
+
     // Preload Razorpay
     useEffect(() => {
         if (document.querySelector('script[src*="razorpay.com"]')) {
@@ -87,6 +94,9 @@ export default function AUCheckoutPage() {
             setFormError('Please enter a valid phone number.');
             return;
         }
+
+        // Advanced matching: pass user data to Meta Pixel
+        updateUserData(email, phone);
 
         setIsProcessing(true);
 

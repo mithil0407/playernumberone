@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
+import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
 
 // ── Data ────────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,7 @@ function CTAButton({ className = '' }: { className?: string }) {
     return (
         <Link
             href="/au/checkout"
+            onClick={() => trackCTAClick('Get My Blueprint', 'AU Landing', 97, 'AUD', 'AU Funnel')}
             className={`inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
         >
             GET MY BLUEPRINT — AUD $97 <ArrowRight className="ml-3 h-4 w-4" />
@@ -118,6 +120,12 @@ export default function AULandingPage() {
 
     const nextSlide = useCallback(() => setCarouselIndex(i => (i + 1) % heroImages.length), [heroImages.length]);
     const prevSlide = useCallback(() => setCarouselIndex(i => (i - 1 + heroImages.length) % heroImages.length), [heroImages.length]);
+
+    // Track page view on mount
+    useEffect(() => {
+        trackPageView('AU Landing');
+        trackViewContent('ICONIK Blueprint AU', 97, ['iconik_blueprint_au'], 'AUD', 'AU Funnel');
+    }, []);
 
     // Auto-advance carousel every 4 seconds
     useEffect(() => {
@@ -395,6 +403,7 @@ export default function AULandingPage() {
                     </div>
                     <Link
                         href="/au/checkout"
+                        onClick={() => trackCTAClick('Get My Blueprint', 'AU Price Section', 97, 'AUD', 'AU Funnel')}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
                     >
                         GET MY BLUEPRINT — AUD $97 <ArrowRight className="ml-3 h-4 w-4" />
@@ -510,6 +519,7 @@ export default function AULandingPage() {
                     </div>
                     <Link
                         href="/au/checkout"
+                        onClick={() => trackCTAClick('Get My Blueprint', 'AU Sticky CTA', 97, 'AUD', 'AU Funnel')}
                         className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
                     >
                         GET MY BLUEPRINT — AUD $97
