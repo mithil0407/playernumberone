@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight, Calendar, Users, Clock, Shield, Sparkles, ShoppingBag } from 'lucide-react';
+import { CheckCircle, ArrowRight, Clock, Shield, Sparkles, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -332,7 +332,7 @@ function SuccessPageContent() {
           {/* Credibility Proof */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="bg-white rounded-xl p-3 text-center border border-gray-200">
-              <Users className="w-6 h-6 text-luxury-accent mx-auto mb-1" />
+              <Sparkles className="w-6 h-6 text-luxury-accent mx-auto mb-1" />
               <p className="text-xl md:text-2xl font-bold text-gray-900">268</p>
               <p className="text-xs text-gray-600">women subscribed</p>
             </div>
@@ -513,34 +513,15 @@ function SuccessPageContent() {
         transition={{ delay: 0.5 }}
         className="max-w-2xl mx-auto px-4 py-8"
       >
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8 border border-white/30">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">What&apos;s Next?</h2>
-
-          <div className="space-y-5 text-left">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Order Confirmation Sent</h3>
-                <p className="text-gray-600 text-sm">You&apos;ll receive a message confirming your order with all the details</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Calendar className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Booking Link Coming Soon</h3>
-                <p className="text-gray-600 text-sm">We&apos;ll send you a link to schedule your 1-on-1 style consultation with our expert stylist</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Users className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Personalized Style Assessment</h3>
-                <p className="text-gray-600 text-sm">Get ready for your custom style transformation roadmap</p>
-              </div>
-            </div>
-          </div>
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8 border border-white/30 text-center">
+          <CheckCircle className="w-12 h-12 text-luxury-accent mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-3 text-gray-900">You&apos;re all set! 🎉</h2>
+          <p className="text-gray-700 mb-2">
+            We&apos;ve sent a confirmation email with all your order details and next steps.
+          </p>
+          <p className="text-gray-500 text-sm">
+            Can&apos;t find it? Please check your <span className="font-semibold text-gray-700">spam or junk folder</span> — it may have landed there.
+          </p>
         </div>
 
         <Link
