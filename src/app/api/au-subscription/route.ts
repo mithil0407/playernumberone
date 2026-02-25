@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
+import { saveAUSubscription, saveAUCustomer, supabaseAU } from '@/lib/supabaseAU';
 
 // AU Style Feed plan IDs (Razorpay)
 const AU_STYLE_FEED_PLANS = {
@@ -9,7 +10,7 @@ const AU_STYLE_FEED_PLANS = {
     annual: 'plan_SKSRwRMROQgjSO',  // AUD $168/year
 };
 
-// Amounts in smallest currency unit (paise not applicable for AUD — Razorpay uses cents)
+// Amounts in AUD cents (Razorpay uses smallest unit)
 const AU_PLAN_AMOUNTS = {
     monthly: 1900,   // AUD $19.00
     annual: 16800,  // AUD $168.00
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
 
         const planId = AU_STYLE_FEED_PLANS[plan_type as keyof typeof AU_STYLE_FEED_PLANS];
         const amount = AU_PLAN_AMOUNTS[plan_type as keyof typeof AU_PLAN_AMOUNTS];
+        const name = customer_name || customer_email.split('@')[0];
 
         const subscriptionRequest = {
             plan_id: planId,
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
             quantity: 1,
             customer_notify: 1 as const,
             notes: {
-                customer_name: customer_name || customer_email.split('@')[0],
+                customer_name: name,
                 customer_email,
                 customer_phone: customer_phone || '',
                 plan_type,
@@ -88,6 +90,50 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('AU Style Feed subscription created:', subscription.id);
+
+        // ── Persist to AU Supabase ────────────────────────────────────────
+
+        try {
+            // Upsert customer in au_customers
+            const customer = await saveAUCustomer({
+                name,
+                email: customer_email,
+                phone: customer_phone || '',
+            });
+
+            const customerId: string | undefined = customer?.id;
+
+            // Check if an active subscription already exists for this email+plan
+            const { data: existingSub } = await supabaseAU
+                .from('au_subscriptions')
+                .select('id')
+                .eq('customer_email', customer_email)
+                .eq('plan_type', plan_type)
+                .eq('status', 'active')
+                .single();
+
+            if (!existingSub) {
+                await saveAUSubscription({
+                    customer_id: customerId,
+                    customer_email,
+                    customer_phone: customer_phone || '',
+                    customer_name: name,
+                    plan_type: plan_type as 'monthly' | 'annual',
+                    plan_id: planId,
+                    razorpay_subscription_id: subscription.id,
+                    amount,
+                    currency: 'AUD',
+                    status: 'pending', // Updated to 'active' via Razorpay webhook on first payment
+                    source: 'au_oto',
+                    notes: `AU OTO — ${plan_type} plan created at ${new Date().toISOString()}`,
+                });
+            }
+
+            console.log('AU subscription saved to Supabase:', subscription.id);
+        } catch (dbError) {
+            // Log but don't fail — Razorpay subscription is created, can be reconciled later
+            console.error('Failed to save AU subscription to Supabase:', dbError);
+        }
 
         return NextResponse.json({
             success: true,

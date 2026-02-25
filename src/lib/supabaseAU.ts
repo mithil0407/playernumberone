@@ -65,6 +65,25 @@ export interface AUOrder {
     created_at?: string;
 }
 
+export interface AUSubscription {
+    id?: string;
+    customer_id?: string;
+    customer_email: string;
+    customer_phone?: string;
+    customer_name?: string;
+    plan_type: 'monthly' | 'annual';
+    plan_id: string;
+    razorpay_subscription_id?: string;
+    razorpay_payment_id?: string;
+    amount: number;
+    currency?: string;
+    status?: 'pending' | 'active' | 'cancelled' | 'completed' | 'expired';
+    source?: string;
+    notes?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface AUIntakeSubmission {
     id?: string;
     customer_email?: string;
@@ -118,6 +137,37 @@ export const saveAUOrder = async (order: AUOrder) => {
     const { data, error } = await supabaseAU
         .from('au_orders')
         .insert([order])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+};
+
+export const saveAUSubscription = async (subscription: AUSubscription) => {
+    // Upsert on razorpay_subscription_id if provided (avoids duplicates on retry)
+    if (subscription.razorpay_subscription_id) {
+        const { data: existing } = await supabaseAU
+            .from('au_subscriptions')
+            .select('id')
+            .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
+            .single();
+
+        if (existing) {
+            const { data, error } = await supabaseAU
+                .from('au_subscriptions')
+                .update({ ...subscription, updated_at: new Date().toISOString() })
+                .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
+    }
+
+    const { data, error } = await supabaseAU
+        .from('au_subscriptions')
+        .insert([subscription])
         .select()
         .single();
 

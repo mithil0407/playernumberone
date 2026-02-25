@@ -183,6 +183,16 @@ function ThankYouContent() {
                 description: `ICONIK Style Feed — ${plan.label}`,
                 image: `${window.location.origin}/logopayment.webp`,
                 handler: (rzpResponse: RazorpaySubscriptionResponse) => {
+                    // Track purchase with Meta Pixel
+                    trackPurchase(
+                        plan.amount / 100,
+                        `ICONIK Style Feed AU — ${plan.label}`,
+                        ['iconik_style_feed_au'],
+                        1,
+                        'AUD',
+                        'AU OTO',
+                        rzpResponse.razorpay_payment_id
+                    );
                     localStorage.setItem('au_styleFeedSubscriptionId', rzpResponse.razorpay_subscription_id);
                     localStorage.setItem('au_styleFeedPlan', planType);
                     setCompletedPlan(planType);
