@@ -17,14 +17,18 @@ CREATE TABLE IF NOT EXISTS au_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID REFERENCES au_customers(id),
   customer_email TEXT,
+  customer_name TEXT,           -- persisted on payment confirmation
+  customer_phone TEXT,          -- persisted on payment confirmation
   amount NUMERIC NOT NULL,
   currency TEXT DEFAULT 'AUD',
   iconik_edit_addon BOOLEAN DEFAULT FALSE,
   status TEXT DEFAULT 'pending',  -- pending | completed | failed | paid
   razorpay_order_id TEXT UNIQUE,
   razorpay_payment_id TEXT,
+  quiz_reminder_sent BOOLEAN DEFAULT FALSE, -- set true after reminder email is sent
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- AU Intake Submissions (from the native intake form)
 CREATE TABLE IF NOT EXISTS au_intake_submissions (
@@ -81,3 +85,12 @@ CREATE INDEX IF NOT EXISTS idx_au_subscriptions_razorpay_id ON au_subscriptions(
 -- 3. Set it to PUBLIC (so files can be read without auth)
 -- 4. Add policy: allow authenticated and anon inserts
 -- ============================================================
+
+-- ============================================================
+-- MIGRATION: Run this if the au_orders table already exists
+-- (adds columns introduced for email automation flows)
+-- ============================================================
+ALTER TABLE au_orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE au_orders ADD COLUMN IF NOT EXISTS customer_phone TEXT;
+ALTER TABLE au_orders ADD COLUMN IF NOT EXISTS quiz_reminder_sent BOOLEAN DEFAULT FALSE;
+

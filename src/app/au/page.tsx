@@ -506,17 +506,6 @@ export default function AULandingPage() {
             {/* ── Sticky Mobile CTA ─────────────────────────────────────── */}
             <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
                 <div className="max-w-sm mx-auto">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex-1">
-                            <div className="luxury-body text-luxury-charcoal/60 text-xs">ICONIK Blueprint</div>
-                            <div className="luxury-heading text-luxury-accent text-base font-semibold">AUD $97 · 24hr delivery</div>
-                        </div>
-                        <div className="flex items-center gap-0.5 ml-2">
-                            {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="h-3 w-3 text-luxury-gold fill-current" />
-                            ))}
-                        </div>
-                    </div>
                     <Link
                         href="/au/checkout"
                         onClick={() => trackCTAClick('Get My Blueprint', 'AU Sticky CTA', 97, 'AUD', 'AU Funnel')}

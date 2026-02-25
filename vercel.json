@@ -1,0 +1,8 @@
+{
+    "crons": [
+        {
+            "path": "/api/au-quiz-reminder",
+            "schedule": "*/10 * * * *"
+        }
+    ]
+}
