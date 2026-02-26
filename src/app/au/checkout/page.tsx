@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
-import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
+import { trackPageView, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -125,6 +125,19 @@ export default function AUCheckoutPage() {
                     description: 'ICONIK Blueprint — Australia',
                     order_id: data.razorpay_order_id,
                     handler: async (rzpResponse: RazorpayResponse) => {
+                        // ── Fire Purchase pixel immediately (most reliable point) ─
+                        trackPurchase(
+                            totalAmount,
+                            'ICONIK Blueprint AU',
+                            ['iconik_blueprint_au'],
+                            1,
+                            'AUD',
+                            'AU Funnel',
+                            rzpResponse.razorpay_payment_id
+                        );
+                        // Mark as tracked so thankyou page skips duplicate
+                        sessionStorage.setItem('au_purchaseTracked', rzpResponse.razorpay_payment_id);
+
                         // ── Persist payment confirmation to Supabase ───────────
                         try {
                             await fetch('/api/au-confirm-payment', {

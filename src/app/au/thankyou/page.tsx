@@ -111,15 +111,23 @@ function ThankYouContent() {
     // Track purchase + upsell view on mount
     useEffect(() => {
         trackPageView('AU Thank You');
-        trackPurchase(
-            parseFloat(amount) || 97,
-            'ICONIK Blueprint AU',
-            ['iconik_blueprint_au'],
-            1,
-            'AUD',
-            'AU Funnel',
-            paymentId || undefined
-        );
+
+        // Only fire Purchase if the checkout page didn't already fire it
+        // (guards against duplicate events on page refresh)
+        const alreadyTracked = paymentId && sessionStorage.getItem('au_purchaseTracked') === paymentId;
+        if (!alreadyTracked) {
+            trackPurchase(
+                parseFloat(amount) || 97,
+                'ICONIK Blueprint AU',
+                ['iconik_blueprint_au'],
+                1,
+                'AUD',
+                'AU Funnel',
+                paymentId || undefined
+            );
+            if (paymentId) sessionStorage.setItem('au_purchaseTracked', paymentId);
+        }
+
         trackViewContent(
             'ICONIK Style Feed — AU OTO',
             19,
