@@ -37,16 +37,35 @@ CREATE TABLE IF NOT EXISTS au_intake_submissions (
   customer_phone TEXT,
   photo_fullbody_url TEXT,
   photo_headshot_url TEXT,
+  -- Step 4: Biggest frustration
+  frustrations TEXT,         -- comma-separated selected options
+  frustrations_custom TEXT,  -- free-text field
+  -- Step 5: Situations to dress for
+  situations TEXT,           -- comma-separated
+  -- Step 6: Body areas least confident about
+  body_insecurities TEXT,    -- comma-separated, max 2
+  -- Step 7: Current wardrobe description
+  wardrobe_type TEXT,
+  -- Step 8: Colour preference
+  colour_preference TEXT,
+  -- Step 9: Style aesthetics
+  style_aesthetics TEXT,     -- comma-separated, max 3
+  -- Step 10: Style outcome
+  style_outcome TEXT,
+  -- Step 11: Coverage preferences (reuses concept of old style_restrictions)
+  style_restrictions TEXT,   -- comma-separated
+  -- Step 12: Hair type
+  hair_type TEXT,            -- comma-separated, max 2
+  -- Legacy columns (kept for old submissions, not populated by new form)
   skin_undertone TEXT,
   body_shape TEXT,
   face_shape TEXT,
-  hair_type TEXT,           -- comma-separated, e.g. "Wavy,Fine"
   lifestyle TEXT,
-  style_restrictions TEXT,  -- comma-separated, optional
   outfit_mix TEXT,
   extra_notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- Indexes for fast lookup
 CREATE INDEX IF NOT EXISTS idx_au_orders_customer_id ON au_orders(customer_id);
@@ -94,3 +113,15 @@ ALTER TABLE au_orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
 ALTER TABLE au_orders ADD COLUMN IF NOT EXISTS customer_phone TEXT;
 ALTER TABLE au_orders ADD COLUMN IF NOT EXISTS quiz_reminder_sent BOOLEAN DEFAULT FALSE;
 
+-- ============================================================
+-- MIGRATION: Run this if au_intake_submissions table already exists
+-- (adds columns for redesigned intake form questions)
+-- ============================================================
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS frustrations TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS frustrations_custom TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS situations TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS body_insecurities TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS wardrobe_type TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS colour_preference TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS style_aesthetics TEXT;
+ALTER TABLE au_intake_submissions ADD COLUMN IF NOT EXISTS style_outcome TEXT;

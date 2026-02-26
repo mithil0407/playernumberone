@@ -90,16 +90,27 @@ export interface AUIntakeSubmission {
     customer_phone?: string;
     photo_fullbody_url?: string;
     photo_headshot_url?: string;
+    // New question fields (Steps 4–12)
+    frustrations?: string;        // comma-separated
+    frustrations_custom?: string; // free text
+    situations?: string;          // comma-separated
+    body_insecurities?: string;   // comma-separated, max 2
+    wardrobe_type?: string;
+    colour_preference?: string;
+    style_aesthetics?: string;    // comma-separated, max 3
+    style_outcome?: string;
+    style_restrictions?: string;  // coverage prefs, comma-separated
+    hair_type?: string;           // comma-separated, max 2
+    // Legacy fields (old submissions only)
     skin_undertone?: string;
     body_shape?: string;
     face_shape?: string;
-    hair_type?: string; // comma-separated
     lifestyle?: string;
-    style_restrictions?: string; // comma-separated
     outfit_mix?: string;
     extra_notes?: string;
     created_at?: string;
 }
+
 
 // ── Database operations ────────────────────────────────────────────────────
 
