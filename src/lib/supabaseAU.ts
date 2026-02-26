@@ -194,6 +194,20 @@ export const saveAUIntakeSubmission = async (submission: AUIntakeSubmission) => 
         .single();
 
     if (error) throw error;
+
+    // ── Mark quiz reminder as no longer needed for this customer ──────────
+    // This prevents the cron from sending a reminder to customers who have
+    // already submitted the intake form.
+    if (submission.customer_email) {
+        await supabaseAU
+            .from('au_orders')
+            .update({ quiz_reminder_sent: true })
+            .eq('customer_email', submission.customer_email)
+            .eq('status', 'paid')
+            .eq('quiz_reminder_sent', false);
+        // Fire-and-forget: don't throw if this update fails
+    }
+
     return data;
 };
 

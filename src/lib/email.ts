@@ -256,7 +256,7 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
 function buildAUOrderConfirmationHtml(data: AUOrderConfirmationEmailData): string {
   const { customer_name, customer_email, customer_phone, order_amount, payment_id, has_edit_addon } = data;
   const firstName = customer_name.split(' ')[0] || 'there';
-  const intakeLink = `https://playernumberone.com/au/intake?email=${encodeURIComponent(customer_email)}&phone=${encodeURIComponent(customer_phone)}`;
+  const intakeLink = `https://www.iconik.pro/au/intake?email=${encodeURIComponent(customer_email)}&phone=${encodeURIComponent(customer_phone)}`;
 
   return `
 <!DOCTYPE html>
@@ -418,7 +418,7 @@ export async function sendAUOrderConfirmationEmail(
   try {
     const transporter = getTransporter();
     const firstName = data.customer_name.split(' ')[0] || 'there';
-    const intakeLink = `https://playernumberone.com/au/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
+    const intakeLink = `https://www.iconik.pro/au/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
 
     const info = await transporter.sendMail({
       from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,

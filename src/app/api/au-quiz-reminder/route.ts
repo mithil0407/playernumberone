@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
             // ── Send the reminder ────────────────────────────────────────────
             const name = order.customer_name || email.split('@')[0];
             const phone = order.customer_phone || '';
-            const intakeLink = `https://playernumberone.com/au/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+            const intakeLink = `https://www.iconik.pro/au/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
             const result = await sendAUQuizReminderEmail({
                 customer_name: name,
