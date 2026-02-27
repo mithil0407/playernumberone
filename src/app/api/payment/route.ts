@@ -95,15 +95,16 @@ export async function POST(request: NextRequest) {
         throw new Error('Failed to create Razorpay order');
       }
 
-      // OPTIMIZATION #3: Defer non-critical database update (don't block response)
-      // Update order with Razorpay ID asynchronously - don't await
-      supabase
+      // Update order with real Razorpay ID — MUST complete before webhook arrives
+      // (was fire-and-forget which caused a race condition: webhook couldn't find the order)
+      const { error: updateIdError } = await supabase
         .from('orders')
         .update({ razorpay_order_id: razorpayOrder.id })
-        .eq('id', dbOrderId)
-        .then(({ error }) => {
-          if (error) console.log('Failed to update order with Razorpay ID:', error);
-        });
+        .eq('id', dbOrderId);
+
+      if (updateIdError) {
+        console.error('Failed to update order with Razorpay ID:', updateIdError);
+      }
 
       // OPTIMIZATION #3: Return minimal payload - only what frontend needs
       return NextResponse.json({

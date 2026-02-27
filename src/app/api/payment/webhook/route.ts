@@ -432,23 +432,32 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           console.log('Failed to add customer to Google Sheets (email will still be sent):', sheetError);
         }
 
-        // 2. Send confirmation email (independent — always runs regardless of Sheets result)
-        try {
-          const emailResult = await sendConfirmationEmail({
-            customer_name: existingOrder.customers.name,
-            customer_email: existingOrder.customers.email,
-            customer_phone: existingOrder.customers.phone,
-            order_amount: existingOrder.amount,
-            add_ons: addOnsString,
-            payment_id: payment.id,
-          });
-          if (emailResult.success) {
-            console.log('Confirmation email sent to:', existingOrder.customers.email);
-          } else {
-            console.log('Confirmation email failed:', emailResult.error);
+        // 2. Send confirmation email (with deduplication guard)
+        if (existingOrder.email_sent) {
+          console.log('Confirmation email already sent for order:', order.id, '— skipping duplicate');
+        } else {
+          try {
+            const emailResult = await sendConfirmationEmail({
+              customer_name: existingOrder.customers.name,
+              customer_email: existingOrder.customers.email,
+              customer_phone: existingOrder.customers.phone,
+              order_amount: existingOrder.amount,
+              add_ons: addOnsString,
+              payment_id: payment.id,
+            });
+            if (emailResult.success) {
+              console.log('Confirmation email sent to:', existingOrder.customers.email);
+              // Mark email as sent to prevent duplicates on webhook retries
+              await supabase
+                .from('orders')
+                .update({ email_sent: true })
+                .eq('razorpay_order_id', order.id);
+            } else {
+              console.log('Confirmation email failed:', emailResult.error);
+            }
+          } catch (emailError) {
+            console.log('Error sending confirmation email:', emailError);
           }
-        } catch (emailError) {
-          console.log('Error sending confirmation email:', emailError);
         }
 
         // 3. Sync to CRM database (independent)

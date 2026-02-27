@@ -61,6 +61,7 @@ export interface Order {
   payment_method?: string;
   error_code?: string;
   error_description?: string;
+  email_sent?: boolean; // Prevents duplicate confirmation emails on webhook retries
   created_at?: string;
 }
 
