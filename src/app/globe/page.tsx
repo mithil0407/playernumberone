@@ -42,17 +42,17 @@ const blueprintItems = [
 const testimonials = [
     {
         quote: 'I have been dressing for the wrong body shape my entire life. The Blueprint told me things I had never been told by any stylist. I now walk into a store, go straight to what works, and leave.',
-        name: 'Emma, London',
+        name: 'Sara, Dubai',
         tag: 'Blueprint: Inverted Triangle · Cool Autumn',
     },
     {
         quote: 'I was sceptical. I have done colour analysis before and it felt too general. This was different — the face architecture section alone was worth three times the price.',
-        name: 'Jess, New York',
+        name: 'Layla, Abu Dhabi',
         tag: 'Blueprint: Oval · Warm Spring',
     },
     {
         quote: 'The outfit formulas changed everything. I finally have a system, not just a wardrobe full of things that almost work.',
-        name: 'Claire, Toronto',
+        name: 'Nour, Sharjah',
         tag: 'Blueprint: Hourglass · Neutral Autumn',
     },
 ];
@@ -79,8 +79,8 @@ const faqs = [
         answer: 'Yes. That\'s exactly who this is for. You don\'t need to know anything. That\'s what we figure out.',
     },
     {
-        question: 'Which countries do you serve?',
-        answer: 'We serve clients across the USA, Canada, UK, Australia, New Zealand, and most Western countries. Your Blueprint is delivered digitally — no shipping required.',
+        question: 'Is this suitable for modest dressing?',
+        answer: 'Absolutely. Your Blueprint takes your coverage and modesty preferences into account — necklines, sleeve lengths, and silhouettes are all tailored to how you actually dress.',
     },
 ];
 
@@ -90,10 +90,10 @@ function CTAButton({ className = '' }: { className?: string }) {
     return (
         <Link
             href="/globe/checkout"
-            onClick={() => trackCTAClick('Get My Blueprint', 'Globe Landing', 199, 'USD', 'Globe Funnel')}
+            onClick={() => trackCTAClick('Get My Blueprint', 'Globe Landing', 349, 'AED', 'Globe Funnel')}
             className={`inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
         >
-            GET MY BLUEPRINT — USD $199 <ArrowRight className="ml-3 h-4 w-4" />
+            GET MY BLUEPRINT — AED 349 <ArrowRight className="ml-3 h-4 w-4" />
         </Link>
     );
 }
@@ -105,9 +105,9 @@ export default function GlobeLandingPage() {
     const [carouselIndex, setCarouselIndex] = useState(0);
 
     const heroImages = useMemo(() => [
-        { src: '/au-hero-1.webp', caption: 'Blueprint transformation · Emma, London' },
-        { src: '/au-hero-2.webp', caption: 'Blueprint transformation · Jess, New York' },
-        { src: '/au-hero-3.webp', caption: 'Blueprint transformation · Claire, Toronto' },
+        { src: '/transformation-1.webp', caption: 'Blueprint transformation · Sara, Dubai' },
+        { src: '/au-hero-2.webp', caption: 'Blueprint transformation · Layla, Abu Dhabi' },
+        { src: '/transformation-2.webp', caption: 'Blueprint transformation · Nour, Sharjah' },
     ], []);
 
     const nextSlide = useCallback(() => setCarouselIndex(i => (i + 1) % heroImages.length), [heroImages.length]);
@@ -115,7 +115,7 @@ export default function GlobeLandingPage() {
 
     useEffect(() => {
         trackPageView('Globe Landing');
-        trackViewContent('ICONIK Blueprint Globe', 199, ['iconik_blueprint_globe'], 'USD', 'Globe Funnel');
+        trackViewContent('ICONIK Blueprint Globe', 349, ['iconik_blueprint_globe'], 'AED', 'Globe Funnel');
     }, []);
 
     useEffect(() => {
@@ -132,7 +132,7 @@ export default function GlobeLandingPage() {
                     <div>
                         {/* Eyebrow */}
                         <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">
-                            ICONIK Style Intelligence · Worldwide
+                            ICONIK Style Intelligence · UAE
                         </p>
 
                         {/* Headline */}
@@ -144,7 +144,7 @@ export default function GlobeLandingPage() {
                         {/* Subheadline */}
                         <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
                             ICONIK analyses your facial architecture, body geometry, and colour harmony using a proprietary methodology used by professional stylists.{' '}
-                            <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. USD $199.</span>
+                            <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. AED 349.</span>
                         </p>
 
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
@@ -329,13 +329,13 @@ export default function GlobeLandingPage() {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
                         <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">Client Stories</h2>
-                        <p className="luxury-body text-luxury-charcoal/60 text-lg">What women across the US, UK, and Canada are saying.</p>
+                        <p className="luxury-body text-luxury-charcoal/60 text-lg">What women across the UAE are saying.</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8 md:gap-10">
                         {[
-                            { ...testimonials[0], img: '/au-testimonial-emma.webp' },
+                            { ...testimonials[0], img: '/transformation-1.webp' },
                             { ...testimonials[1], img: '/au-testimonial-jess.webp' },
-                            { ...testimonials[2], img: '/au-testimonial-claire.webp' },
+                            { ...testimonials[2], img: '/transformation-2.webp' },
                         ].map((t, i) => (
                             <div
                                 key={i}
@@ -374,21 +374,21 @@ export default function GlobeLandingPage() {
             <section className="py-24 px-4 md:px-6 bg-luxury-accent">
                 <div className="max-w-3xl mx-auto text-center text-luxury-warm-white">
                     <p className="luxury-body text-luxury-warm-white/70 text-lg leading-relaxed mb-8">
-                        An in-person styling session in New York, London, or Toronto costs $300–$600+. They give you one day. You forget half of it. You still don&apos;t know your colours.
+                        An in-person personal styling session in Dubai or Abu Dhabi costs AED 800–2,000+. They give you one day. You forget half of it. You still don&apos;t know your colours.
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
                         <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Blueprint</div>
-                        <div className="text-6xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">USD $199</div>
+                        <div className="text-6xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">AED 349</div>
                         <p className="luxury-body text-luxury-warm-white/70 text-lg">
                             Yours forever. Built on your specific body, face, and colour profile.
                         </p>
                     </div>
                     <Link
                         href="/globe/checkout"
-                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Price Section', 199, 'USD', 'Globe Funnel')}
+                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Price Section', 349, 'AED', 'Globe Funnel')}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
                     >
-                        GET MY BLUEPRINT — USD $199 <ArrowRight className="ml-3 h-4 w-4" />
+                        GET MY BLUEPRINT — AED 349 <ArrowRight className="ml-3 h-4 w-4" />
                     </Link>
                 </div>
             </section>
@@ -478,7 +478,7 @@ export default function GlobeLandingPage() {
             {/* ── Minimal Footer ────────────────────────────────────────── */}
             <footer className="py-8 px-6 bg-luxury-cream/20 text-center border-t border-luxury-cream">
                 <p className="luxury-body text-luxury-charcoal/40 text-xs">
-                    © {new Date().getFullYear()} ICONIK Style Intelligence · Worldwide ·{' '}
+                    © {new Date().getFullYear()} ICONIK Style Intelligence · UAE ·{' '}
                     <Link href="/privacy-policy" className="hover:text-luxury-charcoal transition-colors">Privacy</Link>
                     {' · '}
                     <Link href="/refund-policy" className="hover:text-luxury-charcoal transition-colors">Refund Policy</Link>
@@ -490,10 +490,10 @@ export default function GlobeLandingPage() {
                 <div className="max-w-sm mx-auto">
                     <Link
                         href="/globe/checkout"
-                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Sticky CTA', 199, 'USD', 'Globe Funnel')}
+                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Sticky CTA', 349, 'AED', 'Globe Funnel')}
                         className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
                     >
-                        GET MY BLUEPRINT — USD $199
+                        GET MY BLUEPRINT — AED 349
                     </Link>
                 </div>
             </div>

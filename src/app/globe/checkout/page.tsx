@@ -31,8 +31,8 @@ interface RazorpayInstance { open(): void; }
 
 // ── Prices ───────────────────────────────────────────────────────────────────
 
-const BASE_PRICE = 199;   // USD $199
-const ADDON_PRICE = 47;   // USD $47 — The ICONIK Edit
+const BASE_PRICE = 349;   // AED 349
+const ADDON_PRICE = 119;  // AED 119 — The ICONIK Edit
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export default function GlobeCheckoutPage() {
 
     useEffect(() => {
         trackPageView('Globe Checkout');
-        trackInitiateCheckout(199, 1, 'ICONIK Blueprint Globe', 'USD', 'Globe Funnel');
+        trackInitiateCheckout(349, 1, 'ICONIK Blueprint Globe', 'AED', 'Globe Funnel');
     }, []);
 
     useEffect(() => {
@@ -115,9 +115,9 @@ export default function GlobeCheckoutPage() {
                 const options: RazorpayOptions = {
                     key: data.key,
                     amount: data.amount,
-                    currency: 'USD',
+                    currency: 'AED',
                     name: 'ICONIK Style Intelligence',
-                    description: 'ICONIK Blueprint — Worldwide',
+                    description: 'ICONIK Blueprint — UAE',
                     order_id: data.razorpay_order_id,
                     handler: async (rzpResponse: RazorpayResponse) => {
                         trackPurchase(
@@ -125,7 +125,7 @@ export default function GlobeCheckoutPage() {
                             'ICONIK Blueprint Globe',
                             ['iconik_blueprint_globe'],
                             1,
-                            'USD',
+                            'AED',
                             'Globe Funnel',
                             rzpResponse.razorpay_payment_id
                         );
@@ -238,7 +238,7 @@ export default function GlobeCheckoutPage() {
                         Your ICONIK Blueprint
                     </h1>
                     <div className="flex items-baseline justify-center gap-3">
-                        <span className="text-4xl md:text-5xl luxury-heading text-luxury-accent">USD ${BASE_PRICE}</span>
+                        <span className="text-4xl md:text-5xl luxury-heading text-luxury-accent">AED {BASE_PRICE}</span>
                     </div>
 
                     <div className="flex items-center justify-center gap-1.5 mt-3 luxury-body text-luxury-charcoal/50 text-sm">
@@ -290,7 +290,7 @@ export default function GlobeCheckoutPage() {
                                     }}
                                     required
                                     className="w-full px-4 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-luxury-warm-white luxury-body"
-                                    placeholder="+1 (555) 000-0000"
+                                    placeholder="+971 50 000 0000"
                                 />
                             </div>
 
@@ -313,7 +313,7 @@ export default function GlobeCheckoutPage() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="luxury-heading text-luxury-charcoal text-sm mb-1">
-                                            YES — Add The ICONIK Edit (+USD ${ADDON_PRICE})
+                                            YES — Add The ICONIK Edit (+AED {ADDON_PRICE})
                                         </div>
                                         <p className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed">
                                             10 complete outfit formulas built specifically for your Blueprint. This is the implementation tool for your Blueprint. Add it now and you&apos;ll receive it alongside your report.
@@ -377,12 +377,12 @@ export default function GlobeCheckoutPage() {
                             <div className="space-y-2 mb-5">
                                 <div className="flex justify-between luxury-body text-luxury-charcoal/60 text-sm">
                                     <span>ICONIK Blueprint</span>
-                                    <span>USD ${BASE_PRICE}</span>
+                                    <span>AED {BASE_PRICE}</span>
                                 </div>
                                 {iconikEditAddon && (
                                     <div className="flex justify-between luxury-body text-luxury-charcoal/60 text-sm">
                                         <span>+ The ICONIK Edit</span>
-                                        <span>USD ${ADDON_PRICE}</span>
+                                        <span>AED {ADDON_PRICE}</span>
                                     </div>
                                 )}
                             </div>
@@ -390,7 +390,7 @@ export default function GlobeCheckoutPage() {
                             <div className="border-t border-luxury-cream pt-4 mb-5">
                                 <div className="flex justify-between items-baseline">
                                     <span className="luxury-heading text-luxury-charcoal text-xl">You Pay:</span>
-                                    <span className="text-3xl luxury-heading text-luxury-accent">USD ${totalAmount}</span>
+                                    <span className="text-3xl luxury-heading text-luxury-accent">AED {totalAmount}</span>
                                 </div>
                             </div>
 
@@ -402,7 +402,7 @@ export default function GlobeCheckoutPage() {
                             >
                                 {isProcessing ? 'Processing...' : (
                                     <>
-                                        GET MY BLUEPRINT — USD ${totalAmount}
+                                        GET MY BLUEPRINT — AED {totalAmount}
                                         <ArrowRight className="w-4 h-4" />
                                     </>
                                 )}
@@ -416,7 +416,7 @@ export default function GlobeCheckoutPage() {
                                     ))}
                                 </div>
                                 <p className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed italic">
-                                    &quot;The face architecture section alone was worth three times the price.&quot; — Jess, New York
+                                    &quot;The face architecture section alone was worth three times the price.&quot; — Layla, Abu Dhabi
                                 </p>
                             </div>
                         </div>

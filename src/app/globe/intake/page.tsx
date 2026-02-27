@@ -313,7 +313,7 @@ function GlobeIntakePageInner() {
                 hair_type: form.hairType.join(','),
             });
 
-            trackCompleteRegistration(199, 'ICONIK Blueprint Globe — Intake Submitted', 'USD');
+            trackCompleteRegistration(349, 'ICONIK Blueprint Globe — Intake Submitted', 'AED');
             setDirection(1);
             setStep(CONFIRMATION_STEP);
         } catch (err) {
