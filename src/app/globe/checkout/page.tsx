@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
 import { trackPageView, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
@@ -44,6 +45,24 @@ export default function GlobeCheckoutPage() {
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
     const [formError, setFormError] = useState('');
+    const [currentTestimonial, setCurrentTestimonial] = useState(0);
+
+    // Testimonial images
+    const testimonialImages = [
+        { src: '/text1.webp', alt: 'Client testimonial 1' },
+        { src: '/text2.webp', alt: 'Client testimonial 2' },
+        { src: '/text3.webp', alt: 'Client testimonial 3' },
+        { src: '/text4.webp', alt: 'Client testimonial 4' },
+        { src: '/text5.webp', alt: 'Client testimonial 5' },
+    ];
+
+    // Auto-rotate testimonials
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTestimonial((prev) => (prev + 1) % testimonialImages.length);
+        }, 4000);
+        return () => clearInterval(interval);
+    }, [testimonialImages.length]);
 
     const totalAmount = useMemo(
         () => BASE_PRICE + (iconikEditAddon ? ADDON_PRICE : 0),
@@ -244,6 +263,54 @@ export default function GlobeCheckoutPage() {
                     <div className="flex items-center justify-center gap-1.5 mt-3 luxury-body text-luxury-charcoal/50 text-sm">
                         <Clock className="w-4 h-4 text-luxury-accent" />
                         <span>Offer expires in {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}</span>
+                    </div>
+                </motion.div>
+
+                {/* WhatsApp Testimonial Carousel */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="mb-8 max-w-[203px] mx-auto"
+                >
+                    <h2 className="text-lg md:text-xl luxury-heading text-center mb-3 text-luxury-charcoal">
+                        Real Results from Real Women
+                    </h2>
+
+                    <div className="relative">
+                        <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream overflow-hidden">
+                            <div className="relative" style={{ aspectRatio: '9/16' }}>
+                                {testimonialImages.map((testimonial, index) => (
+                                    <div
+                                        key={index}
+                                        className={`absolute inset-0 transition-opacity duration-500 ${index === currentTestimonial ? 'opacity-100' : 'opacity-0'}`}
+                                    >
+                                        <Image
+                                            src={testimonial.src}
+                                            alt={testimonial.alt}
+                                            width={135}
+                                            height={240}
+                                            className="w-full h-full object-cover rounded-xl"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Carousel Dots */}
+                        <div className="flex justify-center gap-2 mt-3">
+                            {testimonialImages.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentTestimonial(index)}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentTestimonial
+                                            ? 'bg-luxury-accent w-6'
+                                            : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
+                                        }`}
+                                    aria-label={`View testimonial ${index + 1}`}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </motion.div>
 

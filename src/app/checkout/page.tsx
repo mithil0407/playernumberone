@@ -62,7 +62,10 @@ export default function CheckoutPage() {
   // Testimonial images
   const testimonialImages = [
     { src: '/text1.webp', alt: 'Client testimonial 1' },
-    { src: '/text2.webp', alt: 'Client testimonial 2' }
+    { src: '/text2.webp', alt: 'Client testimonial 2' },
+    { src: '/text3.webp', alt: 'Client testimonial 3' },
+    { src: '/text4.webp', alt: 'Client testimonial 4' },
+    { src: '/text5.webp', alt: 'Client testimonial 5' }
   ];
 
   // Auto-rotate testimonials
