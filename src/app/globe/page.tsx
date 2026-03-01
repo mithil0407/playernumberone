@@ -130,11 +130,6 @@ export default function GlobeLandingPage() {
             <section className="pt-20 pb-16 px-4 md:px-6 lg:px-8 bg-luxury-warm-white">
                 <div className="max-w-5xl mx-auto text-center">
                     <div>
-                        {/* Eyebrow */}
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">
-                            ICONIK Style Intelligence · UAE
-                        </p>
-
                         {/* Featured in */}
                         <div className="mb-6">
                             <p className="luxury-body text-luxury-charcoal/60 mb-3 text-sm">Featured in</p>
