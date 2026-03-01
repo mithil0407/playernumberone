@@ -313,9 +313,32 @@ function GlobeIntakePageInner() {
                 hair_type: form.hairType.join(','),
             });
 
+            // Notify the ICONIK team (fire-and-forget — doesn't block customer UX)
+            fetch('/api/globe-intake-notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_email: form.email,
+                    customer_phone: form.phone,
+                    photo_fullbody_url: photoFullBodyUrl,
+                    photo_headshot_url: photoHeadshotUrl,
+                    frustrations: form.frustrations.join(','),
+                    frustrations_custom: form.frustrationsCustom,
+                    situations: form.situations.join(','),
+                    body_insecurities: form.bodyInsecurities.join(','),
+                    wardrobe_type: form.wardrobeType,
+                    colour_preference: form.colourPreference,
+                    style_aesthetics: form.styleAesthetics.join(','),
+                    style_outcome: form.styleOutcome,
+                    style_restrictions: form.coveragePrefs.join(','),
+                    hair_type: form.hairType.join(','),
+                }),
+            }).catch(err => console.warn('Globe intake notify failed:', err));
+
             trackCompleteRegistration(349, 'ICONIK Blueprint Globe — Intake Submitted', 'AED');
             setDirection(1);
             setStep(CONFIRMATION_STEP);
+
         } catch (err) {
             console.error('Globe intake submit error:', err);
             setSubmitError('Something went wrong. Please try again or email hello@iconik.pro');
