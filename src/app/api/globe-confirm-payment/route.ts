@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
             updatedOrder = data;
         }
 
-        // Send confirmation email (fire-and-forget)
+        // Send confirmation email — awaited so Vercel doesn't kill it before it completes
         const emailTo = customer_email || updatedOrder?.customer_email;
         if (emailTo) {
             const name = customer_name || updatedOrder?.customer_name || emailTo.split('@')[0];
@@ -65,21 +65,27 @@ export async function POST(request: NextRequest) {
             const orderAmount = amount ?? updatedOrder?.amount ?? 0;
             const editAddon = has_edit_addon ?? updatedOrder?.iconik_edit_addon ?? false;
 
-            sendGlobeOrderConfirmationEmail({
-                customer_name: name,
-                customer_email: emailTo,
-                customer_phone: phone,
-                order_amount: orderAmount,
-                payment_id: razorpay_payment_id,
-                has_edit_addon: editAddon,
-            }).then((result) => {
-                if (!result.success) console.error('Globe confirmation email failed:', result.error);
-            }).catch((err) => {
-                console.error('Globe confirmation email threw:', err);
-            });
+            try {
+                const result = await sendGlobeOrderConfirmationEmail({
+                    customer_name: name,
+                    customer_email: emailTo,
+                    customer_phone: phone,
+                    order_amount: orderAmount,
+                    payment_id: razorpay_payment_id,
+                    has_edit_addon: editAddon,
+                });
+                if (!result.success) {
+                    console.error('Globe confirmation email failed:', result.error);
+                } else {
+                    console.log(`Globe confirmation email sent to ${emailTo}`);
+                }
+            } catch (emailErr) {
+                console.error('Globe confirmation email threw:', emailErr);
+            }
         }
 
         return NextResponse.json({ success: true });
+
 
     } catch (error) {
         console.error('Globe confirm payment API error:', error);

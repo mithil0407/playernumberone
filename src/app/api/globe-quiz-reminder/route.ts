@@ -1,14 +1,13 @@
-// AU Quiz Reminder Cron
-// Called by a cron job every ~10 minutes.
-// Finds paid orders with no intake submission (30–90 min window) and sends a reminder.
-// Supports both GET and POST so free cron services (cron-job.org etc.) work regardless of method.
+// Globe Quiz Reminder Cron
+// Called by a cron job (e.g. cron-job.org) via GET request.
+// Finds paid globe_orders with no intake submission (30–90 min window) and sends a reminder.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAU } from '@/lib/supabaseAU';
+import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendAUQuizReminderEmail } from '@/lib/email';
 
 async function handleReminder(request: NextRequest) {
-    // ── Auth: verify Vercel Cron secret ─────────────────────────────────────
+    // ── Auth: verify cron secret (optional — skip if not set) ──────────────
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
@@ -21,9 +20,9 @@ async function handleReminder(request: NextRequest) {
         const windowStart = new Date(now.getTime() - 90 * 60 * 1000); // 90 min ago
         const windowEnd = new Date(now.getTime() - 30 * 60 * 1000);   // 30 min ago
 
-        // ── Find paid orders in the 30–90 min window ────────────────────────
-        const { data: orders, error: ordersError } = await supabaseAU
-            .from('au_orders')
+        // ── Find paid globe orders in the 30–90 min window ──────────────────
+        const { data: orders, error: ordersError } = await supabaseGlobe
+            .from('globe_orders')
             .select('id, customer_email, customer_name, customer_phone, amount, created_at')
             .eq('status', 'paid')
             .or('quiz_reminder_sent.is.null,quiz_reminder_sent.eq.false')
@@ -31,7 +30,7 @@ async function handleReminder(request: NextRequest) {
             .lte('created_at', windowEnd.toISOString());
 
         if (ordersError) {
-            console.error('AU quiz reminder — orders query error:', ordersError);
+            console.error('Globe quiz reminder — orders query error:', ordersError);
             return NextResponse.json({ error: 'Failed to query orders' }, { status: 500 });
         }
 
@@ -39,7 +38,7 @@ async function handleReminder(request: NextRequest) {
             return NextResponse.json({ success: true, processed: 0, message: 'No eligible orders found' });
         }
 
-        console.log(`AU quiz reminder: found ${orders.length} eligible order(s)`);
+        console.log(`Globe quiz reminder: found ${orders.length} eligible order(s)`);
 
         let reminded = 0;
         let skipped = 0;
@@ -51,27 +50,27 @@ async function handleReminder(request: NextRequest) {
                 continue;
             }
 
-            // ── Check if this customer has submitted intake ──────────────────
-            const { data: intake } = await supabaseAU
-                .from('au_intake_submissions')
+            // ── Check if this customer has already submitted intake ──────────
+            const { data: intake } = await supabaseGlobe
+                .from('globe_intake_submissions')
                 .select('id')
                 .eq('customer_email', email)
                 .maybeSingle();
 
             if (intake) {
-                // Intake already submitted — mark reminder sent to stop future checks
-                await supabaseAU
-                    .from('au_orders')
+                // Intake submitted — mark reminder sent to stop future checks
+                await supabaseGlobe
+                    .from('globe_orders')
                     .update({ quiz_reminder_sent: true })
                     .eq('id', order.id);
                 skipped++;
                 continue;
             }
 
-            // ── Send the reminder ────────────────────────────────────────────
+            // ── Send the reminder email ────────────────────────────────────
             const name = order.customer_name || email.split('@')[0];
             const phone = order.customer_phone || '';
-            const intakeLink = `https://www.iconik.pro/au/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+            const intakeLink = `https://www.iconik.pro/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
             const result = await sendAUQuizReminderEmail({
                 customer_name: name,
@@ -79,17 +78,17 @@ async function handleReminder(request: NextRequest) {
                 intake_link: intakeLink,
             });
 
-            // Mark reminder sent regardless of email success (avoid repeat sends)
-            await supabaseAU
-                .from('au_orders')
+            // Mark reminder sent regardless of email outcome (avoid duplicate sends)
+            await supabaseGlobe
+                .from('globe_orders')
                 .update({ quiz_reminder_sent: true })
                 .eq('id', order.id);
 
             if (result.success) {
                 reminded++;
-                console.log(`AU quiz reminder sent to ${email}`);
+                console.log(`Globe quiz reminder sent to ${email}`);
             } else {
-                console.error(`AU quiz reminder failed for ${email}:`, result.error);
+                console.error(`Globe quiz reminder failed for ${email}:`, result.error);
             }
         }
 
@@ -101,11 +100,12 @@ async function handleReminder(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('AU quiz reminder cron error:', error);
+        console.error('Globe quiz reminder cron error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
 
+// Support both GET and POST so free cron services work regardless of method
 export async function GET(request: NextRequest) {
     return handleReminder(request);
 }

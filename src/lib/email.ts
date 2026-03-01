@@ -554,7 +554,7 @@ export async function sendGlobeOrderConfirmationEmail(
     const intakeLink = `https://www.iconik.pro/globe/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
 
     const subject = `✅ Your ICONIK Blueprint is confirmed — complete your intake to unlock it`;
-    const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (USD $${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nOnce submitted, your Blueprint arrives within 24 hours.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
+    const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (AED ${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nOnce submitted, your Blueprint arrives within 24 hours.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -578,7 +578,7 @@ export async function sendGlobeOrderConfirmationEmail(
 <tr><td style="padding:6px 0;border-bottom:1px solid #f0e8e8;color:#555;font-size:14px;"><strong style="color:#333;">Product:</strong> ICONIK Blueprint — Worldwide</td></tr>
 ${data.has_edit_addon ? `<tr><td style="padding:6px 0;border-bottom:1px solid #f0e8e8;color:#555;font-size:14px;"><strong style="color:#333;">Add-on:</strong> The ICONIK Edit (10 outfit formulas)</td></tr>` : ''}
 <tr><td style="padding:6px 0;border-bottom:1px solid #f0e8e8;color:#555;font-size:14px;"><strong style="color:#333;">Email:</strong> ${data.customer_email}</td></tr>
-<tr><td style="padding:10px 0 0;color:#16a34a;font-size:16px;font-weight:700;">Total Paid: USD $${data.order_amount}</td></tr>
+<tr><td style="padding:10px 0 0;color:#16a34a;font-size:16px;font-weight:700;">Total Paid: AED ${data.order_amount}</td></tr>
 </table>
 ${data.payment_id ? `<p style="margin:10px 0 0;color:#bbb;font-size:11px;">Payment Ref: ${data.payment_id}</p>` : ''}
 </div></td></tr>
