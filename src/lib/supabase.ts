@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // Use a valid placeholder URL to avoid build errors
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Create a mock client for build time that matches SupabaseClient interface
 const mockSupabaseClient = {
@@ -35,7 +36,25 @@ if (hasValidEnvVars) {
   console.warn('Supabase environment variables not properly configured, using mock client');
 }
 
-export { supabase };
+// Server-side admin client — bypasses RLS entirely
+// ONLY use in server-side API routes, NEVER expose to the client
+let supabaseAdmin: SupabaseClient = mockSupabaseClient;
+
+const hasAdminEnvVars = process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  supabaseServiceKey &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+
+if (hasAdminEnvVars) {
+  try {
+    supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey!);
+    console.log('Supabase admin client created successfully');
+  } catch (error) {
+    console.error('Failed to create Supabase admin client:', error);
+    supabaseAdmin = mockSupabaseClient;
+  }
+}
+
+export { supabase, supabaseAdmin };
 
 // Types for our database
 export interface Customer {
@@ -97,11 +116,12 @@ export interface Subscription {
   updated_at?: string;
 }
 
-// Database operations
+// Database operations — use supabaseAdmin to bypass RLS on server-side routes
 export const saveCustomer = async (customer: Customer) => {
   // OPTIMIZATION #2: Use UPSERT (single query instead of SELECT + INSERT)
   // This uses PostgreSQL's ON CONFLICT clause for atomic upsert
-  const { data, error } = await supabase
+  // Uses admin client to bypass RLS policies on the customers table
+  const { data, error } = await supabaseAdmin
     .from('customers')
     .upsert(
       [customer],
@@ -120,7 +140,7 @@ export const saveCustomer = async (customer: Customer) => {
 export const saveOrder = async (order: Order) => {
   // If razorpay_order_id exists, try to update existing record first
   if (order.razorpay_order_id) {
-    const { data: existingOrder } = await supabase
+    const { data: existingOrder } = await supabaseAdmin
       .from('orders')
       .select('id')
       .eq('razorpay_order_id', order.razorpay_order_id)
@@ -128,7 +148,7 @@ export const saveOrder = async (order: Order) => {
 
     if (existingOrder) {
       // Update existing order
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('orders')
         .update(order)
         .eq('razorpay_order_id', order.razorpay_order_id)
@@ -141,7 +161,7 @@ export const saveOrder = async (order: Order) => {
   }
 
   // Insert new order
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('orders')
     .insert([order])
     .select()

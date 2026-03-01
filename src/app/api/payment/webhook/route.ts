@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
 import { sendConfirmationEmail } from '@/lib/email';
@@ -200,18 +200,45 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
     const { order_id, amount, method } = payment;
 
     // First try to find the order by razorpay_order_id
-    const { data: existingOrder } = await supabase
+    let { data: existingOrder } = await supabaseAdmin
       .from('orders')
       .select('*, customers(*)')
       .eq('razorpay_order_id', order_id)
       .single();
+
+    if (!existingOrder) {
+      console.log(`Order with razorpay_order_id ${order_id} not found. Trying fallback via order notes...`);
+      // Fallback: Get db_order_id from Razorpay notes
+      try {
+        const razorpay = new Razorpay({
+          key_id: process.env.RAZORPAY_KEY_ID!,
+          key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        });
+
+        const orderDetails = await razorpay.orders.fetch(order_id);
+        const dbOrderId = orderDetails.notes?.db_order_id;
+
+        if (dbOrderId && dbOrderId !== 'mock-order-id') {
+          console.log(`Found db_order_id ${dbOrderId} in notes. Looking up order...`);
+          const { data: fallbackOrder } = await supabaseAdmin
+            .from('orders')
+            .select('*, customers(*)')
+            .eq('id', dbOrderId)
+            .single();
+
+          existingOrder = fallbackOrder;
+        }
+      } catch (fallbackErr) {
+        console.error('Error during fallback order lookup:', fallbackErr);
+      }
+    }
 
     if (existingOrder) {
       // Fetch actual add-ons from Razorpay order notes
       const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
 
       // Update existing order - match your actual schema
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('orders')
         .update({
           status: 'completed',
@@ -286,7 +313,7 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
     const { order_id, error_code, error_description } = payment;
 
     // Update order status in database
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
         status: 'failed',
@@ -317,7 +344,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
     const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
 
     // Update order status in database for test mode
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
         status: 'completed',
@@ -336,7 +363,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
 
       // Add customer data to Google Sheets for test payments too
       try {
-        const { data: existingOrder } = await supabase
+        const { data: existingOrder } = await supabaseAdmin
           .from('orders')
           .select('*, customers(*)')
           .eq('razorpay_order_id', order_id)
@@ -386,18 +413,45 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
     console.log('Order paid:', order.id);
 
     // First try to find the order by razorpay_order_id
-    const { data: existingOrder } = await supabase
+    let { data: existingOrder } = await supabaseAdmin
       .from('orders')
       .select('*, customers(*)')
       .eq('razorpay_order_id', order.id)
       .single();
+
+    if (!existingOrder) {
+      console.log(`Order with razorpay_order_id ${order.id} not found. Trying fallback via order notes...`);
+      // Fallback: Get db_order_id from Razorpay notes
+      try {
+        const razorpay = new Razorpay({
+          key_id: process.env.RAZORPAY_KEY_ID!,
+          key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        });
+
+        const orderDetails = await razorpay.orders.fetch(order.id);
+        const dbOrderId = orderDetails.notes?.db_order_id;
+
+        if (dbOrderId && dbOrderId !== 'mock-order-id') {
+          console.log(`Found db_order_id ${dbOrderId} in notes. Looking up order...`);
+          const { data: fallbackOrder } = await supabaseAdmin
+            .from('orders')
+            .select('*, customers(*)')
+            .eq('id', dbOrderId)
+            .single();
+
+          existingOrder = fallbackOrder;
+        }
+      } catch (fallbackErr) {
+        console.error('Error during fallback order lookup:', fallbackErr);
+      }
+    }
 
     if (existingOrder) {
       // Fetch actual add-ons from Razorpay order notes
       const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
 
       // Update order status in database
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('orders')
         .update({
           status: 'paid',
@@ -448,7 +502,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
             if (emailResult.success) {
               console.log('Confirmation email sent to:', existingOrder.customers.email);
               // Mark email as sent to prevent duplicates on webhook retries
-              await supabase
+              await supabaseAdmin
                 .from('orders')
                 .update({ email_sent: true })
                 .eq('razorpay_order_id', order.id);
@@ -514,7 +568,7 @@ async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
     console.log('Subscription activated:', subscription.id);
 
     // Update subscription status to active
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'active',
@@ -557,7 +611,7 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
       updateData.start_date = new Date(subscription.current_start * 1000).toISOString();
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update(updateData)
       .eq('razorpay_subscription_id', subscription.id);
@@ -577,7 +631,7 @@ async function handleSubscriptionCancelled(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription cancelled:', subscription.id);
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'cancelled',
@@ -603,7 +657,7 @@ async function handleSubscriptionPaused(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription paused:', subscription.id);
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'paused'
@@ -625,7 +679,7 @@ async function handleSubscriptionResumed(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription resumed:', subscription.id);
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'active',
@@ -650,7 +704,7 @@ async function handleSubscriptionCompleted(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription completed:', subscription.id);
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'expired',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCustomer, saveOrder, supabase } from '@/lib/supabase';
+import { saveCustomer, saveOrder, supabaseAdmin } from '@/lib/supabase';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
       // Update order with real Razorpay ID — MUST complete before webhook arrives
       // (was fire-and-forget which caused a race condition: webhook couldn't find the order)
-      const { error: updateIdError } = await supabase
+      const { error: updateIdError } = await supabaseAdmin
         .from('orders')
         .update({ razorpay_order_id: razorpayOrder.id })
         .eq('id', dbOrderId);
