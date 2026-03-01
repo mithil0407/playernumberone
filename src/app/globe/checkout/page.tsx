@@ -253,11 +253,11 @@ export default function GlobeCheckoutPage() {
                     transition={{ delay: 0.1 }}
                     className="text-center mb-10"
                 >
-                    <h1 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-3">
+                    <h1 className="text-xl md:text-5xl luxury-heading text-luxury-charcoal mb-3">
                         Your ICONIK Blueprint
                     </h1>
                     <div className="flex items-baseline justify-center gap-3">
-                        <span className="text-4xl md:text-5xl luxury-heading text-luxury-accent">AED {BASE_PRICE}</span>
+                        <span className="text-2xl md:text-5xl luxury-heading text-luxury-accent">AED {BASE_PRICE}</span>
                     </div>
 
                     <div className="flex items-center justify-center gap-1.5 mt-3 luxury-body text-luxury-charcoal/50 text-sm">
@@ -304,8 +304,8 @@ export default function GlobeCheckoutPage() {
                                     key={index}
                                     onClick={() => setCurrentTestimonial(index)}
                                     className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentTestimonial
-                                            ? 'bg-luxury-accent w-6'
-                                            : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
+                                        ? 'bg-luxury-accent w-6'
+                                        : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
                                         }`}
                                     aria-label={`View testimonial ${index + 1}`}
                                 />
@@ -456,8 +456,8 @@ export default function GlobeCheckoutPage() {
 
                             <div className="border-t border-luxury-cream pt-4 mb-5">
                                 <div className="flex justify-between items-baseline">
-                                    <span className="luxury-heading text-luxury-charcoal text-xl">You Pay:</span>
-                                    <span className="text-3xl luxury-heading text-luxury-accent">AED {totalAmount}</span>
+                                    <span className="luxury-heading text-luxury-charcoal text-lg md:text-xl">You Pay:</span>
+                                    <span className="text-2xl md:text-3xl luxury-heading text-luxury-accent">AED {totalAmount}</span>
                                 </div>
                             </div>
 

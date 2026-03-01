@@ -145,13 +145,13 @@ export default function GlobeLandingPage() {
                         </div>
 
                         {/* Headline */}
-                        <h1 className="text-5xl md:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95] tracking-tight">
+                        <h1 className="text-3xl md:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95] tracking-tight">
                             Discover your exact colours, silhouettes,{' '}
                             <span className="text-luxury-accent">and cuts.</span>
                         </h1>
 
                         {/* Subheadline */}
-                        <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
+                        <p className="text-sm md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
                             ICONIK analyses your facial architecture, body geometry, and colour harmony using a proprietary methodology used by professional stylists.{' '}
                             <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. AED 349.</span>
                         </p>
@@ -237,7 +237,7 @@ export default function GlobeLandingPage() {
                             { num: '30-day', label: 'Money-Back Guarantee' },
                         ].map((s, i) => (
                             <div key={i} className="group">
-                                <div className="text-4xl md:text-5xl luxury-heading text-luxury-accent mb-2 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-1">
+                                <div className="text-2xl md:text-5xl luxury-heading text-luxury-accent mb-2 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-1">
                                     {s.num}
                                     {s.star && <Star className="h-6 w-6 text-luxury-gold fill-current" />}
                                 </div>
@@ -278,7 +278,7 @@ export default function GlobeLandingPage() {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-16">
                         <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Methodology</p>
-                        <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal leading-tight">
+                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal leading-tight">
                             A system, not an opinion.
                         </h2>
                     </div>
@@ -304,10 +304,10 @@ export default function GlobeLandingPage() {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
                         <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">Your Deliverable</p>
-                        <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">
+                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">
                             What&apos;s Inside Your Blueprint
                         </h2>
-                        <p className="luxury-body text-luxury-charcoal/60 text-lg">
+                        <p className="luxury-body text-luxury-charcoal/60 text-sm md:text-lg">
                             A 12–18 page personalised report. Built on your body, face, and colour profile.
                         </p>
                     </div>
@@ -337,8 +337,8 @@ export default function GlobeLandingPage() {
             <section id="testimonials" className="py-24 px-4 md:px-6 bg-luxury-cream/20">
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">Client Stories</h2>
-                        <p className="luxury-body text-luxury-charcoal/60 text-lg">What women across the UAE are saying.</p>
+                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">Client Stories</h2>
+                        <p className="luxury-body text-luxury-charcoal/60 text-sm md:text-lg">What women across the UAE are saying.</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8 md:gap-10">
                         {[
@@ -387,7 +387,7 @@ export default function GlobeLandingPage() {
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
                         <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Blueprint</div>
-                        <div className="text-6xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">AED 349</div>
+                        <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">AED 349</div>
                         <p className="luxury-body text-luxury-warm-white/70 text-lg">
                             Yours forever. Built on your specific body, face, and colour profile.
                         </p>
@@ -407,7 +407,7 @@ export default function GlobeLandingPage() {
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
                         <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Process</p>
-                        <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal">How It Works</h2>
+                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal">How It Works</h2>
                     </div>
                     <div className="grid md:grid-cols-3 gap-6">
                         {[
@@ -432,10 +432,10 @@ export default function GlobeLandingPage() {
             <section id="faq" className="py-24 px-4 md:px-6 bg-luxury-cream/20">
                 <div className="max-w-3xl mx-auto">
                     <div className="text-center mb-14">
-                        <h2 className="text-4xl md:text-5xl luxury-heading text-luxury-charcoal mb-4">
+                        <h2 className="text-2xl md:text-5xl luxury-heading text-luxury-charcoal mb-4">
                             Frequently Asked Questions
                         </h2>
-                        <p className="luxury-body text-luxury-charcoal/60 max-w-xl mx-auto">
+                        <p className="luxury-body text-luxury-charcoal/60 max-w-xl mx-auto text-sm md:text-base">
                             Everything you need to know about your Blueprint.
                         </p>
                     </div>
@@ -465,11 +465,11 @@ export default function GlobeLandingPage() {
             <section className="py-24 px-4 md:px-6 bg-luxury-warm-white text-center">
                 <div className="max-w-3xl mx-auto">
                     <div>
-                        <h2 className="text-4xl md:text-6xl luxury-heading text-luxury-charcoal mb-6 leading-tight">
+                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-6 leading-tight">
                             Most women spend years buying clothes that{' '}
                             <span className="text-luxury-accent">almost</span> work.
                         </h2>
-                        <p className="text-xl luxury-body text-luxury-charcoal/60 mb-10 leading-relaxed">
+                        <p className="text-base md:text-xl luxury-body text-luxury-charcoal/60 mb-10 leading-relaxed">
                             Your Blueprint tells you exactly what does.
                         </p>
                         <CTAButton className="text-base px-12 py-5 mb-6" />
