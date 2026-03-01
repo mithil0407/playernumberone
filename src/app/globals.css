@@ -82,9 +82,9 @@
 }
 
 @theme inline {
-  /* Premium typography with Playfair Display for headings */
+  /* Premium typography with Playfair Display for headings - loaded via next/font */
   --font-sans: var(--font-inter);
-  --font-serif: "Playfair Display", serif;
+  --font-serif: var(--font-playfair, "Playfair Display", serif);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -144,7 +144,7 @@
 
   /* Custom luxury typography styles */
   .luxury-heading {
-    font-family: "Playfair Display", serif;
+    font-family: var(--font-playfair, "Playfair Display", serif);
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.1;

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
@@ -9,7 +9,15 @@ const inter = Inter({
   subsets: ["latin"],
   display: 'swap',
   preload: true,
-  fallback: ['system-ui', 'arial']
+  fallback: ['system-ui', 'arial'],
+  variable: '--font-inter',
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-playfair',
+  fallback: ['Georgia', 'serif'],
 });
 
 export const metadata: Metadata = {
@@ -35,16 +43,16 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
-        {/* Preload LCP image for faster rendering */}
+        {/* Preload LCP image: the hero carousel image shown above the fold */}
         <link
           rel="preload"
           as="image"
-          href="/ia-transformation-1.webp"
+          href="/transformation-1.webp"
           fetchPriority="high"
         />
       </head>
-      <body className={inter.className}>
-        {/* Google Analytics 4 */}
+      <body className={`${inter.variable} ${playfair.variable} ${inter.className}`}>
+        {/* Google Analytics — single gtag init shared across both properties */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-V4126JH4EJ"
           strategy="afterInteractive"
@@ -58,19 +66,6 @@ export default function RootLayout({
               page_title: 'ICONIK',
               page_location: 'https://playernumberone.com'
             });
-          `}
-        </Script>
-
-        {/* Google Tag (gtag.js) - G-94CVS6PDTF */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-94CVS6PDTF"
-          strategy="afterInteractive"
-        />
-        <Script id="google-tag-old" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
             gtag('config', 'G-94CVS6PDTF');
           `}
         </Script>
@@ -78,7 +73,6 @@ export default function RootLayout({
         {/* Meta Pixel */}
         <Script id="meta-pixel-base" strategy="afterInteractive">
           {`
-            console.log('Loading Meta Pixel script...');
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
             n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -87,15 +81,6 @@ export default function RootLayout({
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            
-            // Debug: Check if fbq is available
-            setTimeout(function() {
-              if (typeof fbq !== 'undefined') {
-                console.log('Meta Pixel script loaded successfully!');
-              } else {
-                console.error('Meta Pixel script failed to load!');
-              }
-            }, 1000);
           `}
         </Script>
 

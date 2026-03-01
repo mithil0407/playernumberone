@@ -72,13 +72,8 @@ export default function Home() {
     setCurrentImageIndex(index);
   };
 
-  // Preload all images for faster transitions
-  useEffect(() => {
-    transformationImages.forEach((image) => {
-      const img = new window.Image();
-      img.src = image.src;
-    });
-  }, [transformationImages]);
+  // next/image with priority={true} on the visible image handles preloading;
+  // no manual preload loop needed (it caused extra network requests).
 
   // 5-minute countdown timer
   useEffect(() => {
@@ -316,9 +311,9 @@ export default function Home() {
                         alt="Style Transformation"
                         width={320}
                         height={320}
+                        sizes="(max-width: 768px) 256px, 320px"
                         className="w-full h-full object-cover"
                         priority
-                        loading="eager"
                       />
                     </div>
 
@@ -457,6 +452,8 @@ export default function Home() {
                     alt="ICONIK Style Guide Preview"
                     width={400}
                     height={400}
+                    sizes="(max-width: 768px) 256px, (max-width: 1024px) 320px, 384px"
+                    loading="lazy"
                     className="object-contain drop-shadow-2xl"
                   />
                 </div>
@@ -492,6 +489,8 @@ export default function Home() {
                       alt={testimonial.name}
                       width={300}
                       height={300}
+                      sizes="(max-width: 768px) 90vw, 300px"
+                      loading="lazy"
                       className="w-full h-full object-cover rounded-xl"
                     />
                   </div>
@@ -618,6 +617,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
+              style={{ willChange: 'transform' }}
               className="text-center mb-12 md:mb-16"
             >
               <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-charcoal">
@@ -648,6 +648,7 @@ export default function Home() {
                   initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
+                  style={{ willChange: 'transform' }}
                   className="group relative"
                 >
                   <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-2">
@@ -662,6 +663,8 @@ export default function Home() {
                             alt={`Before ${comparison.title}`}
                             width={250}
                             height={250}
+                            sizes="(max-width: 768px) 45vw, 250px"
+                            loading="lazy"
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
@@ -676,6 +679,8 @@ export default function Home() {
                             alt={`After ${comparison.title}`}
                             width={250}
                             height={250}
+                            sizes="(max-width: 768px) 45vw, 250px"
+                            loading="lazy"
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent"></div>
@@ -746,6 +751,8 @@ export default function Home() {
                       alt={item.imageAlt}
                       width={300}
                       height={300}
+                      sizes="(max-width: 640px) 90vw, (max-width: 768px) 45vw, 300px"
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
