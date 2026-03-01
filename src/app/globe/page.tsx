@@ -135,6 +135,20 @@ export default function GlobeLandingPage() {
                             ICONIK Style Intelligence · UAE
                         </p>
 
+                        {/* Featured in */}
+                        <div className="mb-6">
+                            <p className="luxury-body text-luxury-charcoal/60 mb-3 text-sm">Featured in</p>
+                            <div className="flex items-center justify-center">
+                                <Image
+                                    src="/vogue-india-logo.png"
+                                    alt="Vogue India"
+                                    width={120}
+                                    height={40}
+                                    className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
+                                />
+                            </div>
+                        </div>
+
                         {/* Headline */}
                         <h1 className="text-5xl md:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95] tracking-tight">
                             Discover your exact colours, silhouettes,{' '}
