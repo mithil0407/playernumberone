@@ -126,20 +126,27 @@ export default function GlobeLandingPage() {
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
 
+            {/* ── Navbar ─────────────────────────────────────────────────── */}
+            <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
+                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-center">
+                    <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+                </div>
+            </nav>
+
             {/* ── SECTION 1: Above the Fold ─────────────────────────────── */}
-            <section className="pt-20 pb-16 px-4 md:px-6 lg:px-8 bg-luxury-warm-white">
+            <section className="pt-24 pb-16 px-4 md:px-6 lg:px-8 bg-luxury-warm-white">
                 <div className="max-w-5xl mx-auto text-center">
                     <div>
                         {/* Featured in */}
-                        <div className="mb-6">
-                            <p className="luxury-body text-luxury-charcoal/60 mb-3 text-sm">Featured in</p>
+                        <div className="mb-5">
+                            <p className="luxury-body text-luxury-charcoal/60 mb-2 text-sm">Featured in</p>
                             <div className="flex items-center justify-center">
                                 <Image
                                     src="/vogue-india-logo.png"
                                     alt="Vogue India"
-                                    width={120}
-                                    height={40}
-                                    className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
+                                    width={60}
+                                    height={20}
+                                    className="opacity-40 hover:opacity-70 transition-opacity h-[20px] w-auto md:h-[25px]"
                                 />
                             </div>
                         </div>
