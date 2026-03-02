@@ -1,0 +1,183 @@
+import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
+import { supabaseAdmin } from '@/lib/supabase';
+import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
+
+interface RazorpayPayment {
+  id: string;
+  order_id: string;
+  amount: number;
+  status: string;
+  method?: string;
+}
+
+interface RazorpayOrder {
+  id: string;
+  amount: number;
+  notes?: Record<string, string | undefined>;
+}
+
+async function fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null> {
+  try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.log('Razorpay credentials not configured for fetching order');
+      return null;
+    }
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+    return await razorpay.orders.fetch(orderId);
+  } catch (error) {
+    console.error('Error fetching Razorpay order:', error);
+    return null;
+  }
+}
+
+async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
+  const orderDetails = await fetchRazorpayOrder(orderId);
+  const notes = orderDetails?.notes || {};
+  const dbOrderId = notes.db_order_id;
+
+  let existingOrder = null as null | {
+    id: string;
+    customer_email: string | null;
+    customer_name: string | null;
+    customer_phone: string | null;
+    amount: number | null;
+    iconik_edit_addon: boolean | null;
+    status: string | null;
+    razorpay_payment_id: string | null;
+  };
+
+  if (dbOrderId && dbOrderId !== 'mock-order-id') {
+    const { data } = await supabaseAdmin
+      .from('globe_orders')
+      .select('id, customer_email, customer_name, customer_phone, amount, iconik_edit_addon, status, razorpay_payment_id')
+      .eq('id', dbOrderId)
+      .single();
+    existingOrder = data;
+  }
+
+  if (!existingOrder) {
+    const { data } = await supabaseAdmin
+      .from('globe_orders')
+      .select('id, customer_email, customer_name, customer_phone, amount, iconik_edit_addon, status, razorpay_payment_id')
+      .eq('razorpay_order_id', orderId)
+      .single();
+    existingOrder = data;
+  }
+
+  if (!existingOrder) {
+    console.log(`Globe order not found for razorpay_order_id ${orderId}`);
+    return;
+  }
+
+  const customerEmail = existingOrder.customer_email || notes.customer_email || '';
+  const customerName = existingOrder.customer_name || notes.customer_name || (customerEmail ? customerEmail.split('@')[0] : 'there');
+  const customerPhone = existingOrder.customer_phone || notes.customer_phone || '';
+  const orderAmount = existingOrder.amount ?? (orderDetails?.amount ? Math.round(orderDetails.amount / 100) : 0);
+  const editAddon =
+    existingOrder.iconik_edit_addon ??
+    (notes.iconik_edit_addon === 'true' ? true : notes.iconik_edit_addon === 'false' ? false : false);
+
+  const alreadyPaid = existingOrder.status === 'paid' && !!existingOrder.razorpay_payment_id;
+
+  const updatePayload: Record<string, unknown> = {
+    status: 'paid',
+    ...(payment?.id && { razorpay_payment_id: payment.id }),
+    ...(existingOrder.customer_name ? {} : { customer_name: customerName }),
+    ...(existingOrder.customer_phone ? {} : { customer_phone: customerPhone }),
+    ...(existingOrder.customer_email ? {} : { customer_email: customerEmail }),
+    ...(existingOrder.amount != null ? {} : { amount: orderAmount }),
+    ...(existingOrder.iconik_edit_addon != null ? {} : { iconik_edit_addon: editAddon }),
+  };
+
+  const { error: updateError } = await supabaseAdmin
+    .from('globe_orders')
+    .update(updatePayload)
+    .eq('id', existingOrder.id);
+
+  if (updateError) {
+    console.error('Globe order update failed:', updateError);
+    return;
+  }
+
+  if (!alreadyPaid && customerEmail) {
+    try {
+      const result = await sendGlobeOrderConfirmationEmail({
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+        order_amount: orderAmount,
+        payment_id: payment?.id || '',
+        has_edit_addon: editAddon,
+      });
+      if (!result.success) {
+        console.error('Globe confirmation email failed:', result.error);
+      } else {
+        console.log(`Globe confirmation email sent to ${customerEmail}`);
+      }
+    } catch (emailErr) {
+      console.error('Globe confirmation email threw:', emailErr);
+    }
+  } else {
+    console.log('Globe confirmation email skipped (already paid or missing email)');
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.text();
+    const signature = request.headers.get('x-razorpay-signature');
+
+    if (!signature) {
+      return NextResponse.json({ status: 'error', message: 'No signature' }, { status: 400 });
+    }
+
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      return NextResponse.json({ status: 'error', message: 'Webhook not configured' }, { status: 500 });
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(body)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 400 });
+    }
+
+    let webhookData: { event?: string; payload?: Record<string, unknown> } = {};
+    try {
+      webhookData = JSON.parse(body);
+    } catch (error) {
+      return NextResponse.json({ status: 'error', message: 'Invalid JSON' }, { status: 400 });
+    }
+
+    const event = webhookData.event || '';
+    const payload = webhookData.payload || {};
+
+    if (event === 'payment.captured' || event === 'payment.authorized') {
+      const payment = (payload as { payment?: { entity?: RazorpayPayment } }).payment?.entity;
+      if (payment?.order_id) {
+        await handleGlobePaid(payment.order_id, payment);
+      }
+    } else if (event === 'order.paid') {
+      const order = (payload as { order?: { entity?: RazorpayOrder } }).order?.entity;
+      const payment = (payload as { payment?: { entity?: RazorpayPayment } }).payment?.entity;
+      if (order?.id) {
+        await handleGlobePaid(order.id, payment);
+      }
+    } else {
+      console.log(`Unhandled globe webhook event: ${event}`);
+    }
+
+    return NextResponse.json({ status: 'success' }, { status: 200 });
+  } catch (error) {
+    console.error('Globe webhook error:', error);
+    return NextResponse.json({ status: 'error', message: 'Internal error' }, { status: 200 });
+  }
+}

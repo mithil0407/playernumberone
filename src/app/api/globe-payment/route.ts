@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
             const order = await saveGlobeOrder({
                 customer_id: customer.id!,
                 customer_email,
+                customer_name,
+                customer_phone,
                 amount,
                 currency: 'AED',
                 iconik_edit_addon,
