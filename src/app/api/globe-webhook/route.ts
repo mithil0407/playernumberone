@@ -12,10 +12,12 @@ interface RazorpayPayment {
   method?: string;
 }
 
+type RazorpayNotes = Record<string, string | number | null | undefined>;
+
 interface RazorpayOrder {
   id: string;
   amount: number | string;
-  notes?: Record<string, string | undefined>;
+  notes?: RazorpayNotes;
 }
 
 async function fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null> {
@@ -28,7 +30,13 @@ async function fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
-    return await razorpay.orders.fetch(orderId);
+    const order = await razorpay.orders.fetch(orderId);
+    const normalized: RazorpayOrder = {
+      id: order.id,
+      amount: order.amount,
+      notes: (order.notes || {}) as RazorpayNotes,
+    };
+    return normalized;
   } catch (err) {
     console.error('Error fetching Razorpay order:', err);
     return null;
@@ -74,9 +82,9 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
     return;
   }
 
-  const customerEmail = existingOrder.customer_email || notes.customer_email || '';
-  const customerName = existingOrder.customer_name || notes.customer_name || (customerEmail ? customerEmail.split('@')[0] : 'there');
-  const customerPhone = existingOrder.customer_phone || notes.customer_phone || '';
+  const customerEmail = existingOrder.customer_email || String(notes.customer_email || '');
+  const customerName = existingOrder.customer_name || String(notes.customer_name || (customerEmail ? customerEmail.split('@')[0] : 'there'));
+  const customerPhone = existingOrder.customer_phone || String(notes.customer_phone || '');
   const rawAmount = orderDetails?.amount;
   const normalizedAmount =
     typeof rawAmount === 'string'
@@ -87,7 +95,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
   const orderAmount = existingOrder.amount ?? normalizedAmount;
   const editAddon =
     existingOrder.iconik_edit_addon ??
-    (notes.iconik_edit_addon === 'true' ? true : notes.iconik_edit_addon === 'false' ? false : false);
+    (String(notes.iconik_edit_addon || '') === 'true' ? true : String(notes.iconik_edit_addon || '') === 'false' ? false : false);
 
   const alreadyPaid = existingOrder.status === 'paid' && !!existingOrder.razorpay_payment_id;
 
