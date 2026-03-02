@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseGlobe } from '@/lib/supabaseGlobe';
-import { sendAUQuizReminderEmail } from '@/lib/email';
+import { sendGlobeQuizReminderEmail } from '@/lib/email';
 
 async function handleReminder(request: NextRequest) {
     // ── Auth: verify cron secret (optional — skip if not set) ──────────────
@@ -72,7 +72,7 @@ async function handleReminder(request: NextRequest) {
             const phone = order.customer_phone || '';
             const intakeLink = `https://www.iconik.pro/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
-            const result = await sendAUQuizReminderEmail({
+            const result = await sendGlobeQuizReminderEmail({
                 customer_name: name,
                 customer_email: email,
                 intake_link: intakeLink,

@@ -175,6 +175,36 @@ function GlobeThankyouInner() {
                     )}
                 </div>
 
+                {/* ── Next Steps Banner ─────────────────────────────────── */}
+                <div className="bg-luxury-cream/30 border border-luxury-cream rounded-2xl p-6 md:p-8 mb-8">
+                    <h3 className="luxury-heading text-luxury-charcoal text-xl mb-4 text-center">
+                        One Step Left to Unlock Your Blueprint
+                    </h3>
+                    <div className="space-y-3 mb-6">
+                        {[
+                            { num: '1', text: 'Complete your intake form (4 minutes, 9 questions + 2 photos)' },
+                            { num: '2', text: 'Our stylists analyse your geometry, colour, and facial profile' },
+                            { num: '3', text: 'Your 12–18 page personalised Blueprint lands in your inbox within 24 hours' },
+                        ].map((s) => (
+                            <div key={s.num} className="flex items-start gap-3">
+                                <div className="w-7 h-7 rounded-full bg-luxury-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span className="luxury-body text-luxury-accent text-xs font-bold">{s.num}</span>
+                                </div>
+                                <span className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed">{s.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <Link
+                        href={intakeUrl}
+                        className="w-full block text-center bg-luxury-charcoal hover:bg-luxury-charcoal/80 text-luxury-warm-white py-4 px-6 rounded-full luxury-body font-semibold transition-all duration-300 hover:-translate-y-0.5 transform"
+                    >
+                        Complete My Intake Form →
+                    </Link>
+                    <p className="luxury-body text-luxury-charcoal/40 text-xs text-center mt-3">
+                        Takes 4 minutes · Blueprint delivered within 24 hours of completion
+                    </p>
+                </div>
+
                 {/* ── OTO: Style Feed ───────────────────────────────────── */}
                 <div className="bg-luxury-cream/40 border-2 border-luxury-accent/20 rounded-3xl p-6 md:p-10 mb-8">
 
@@ -297,50 +327,10 @@ function GlobeThankyouInner() {
                         {isSubscribing ? 'Processing...' : `YES — ADD STYLE FEED (AED ${selectedPlan === 'monthly' ? '69/month' : '588/year'})`}
                     </button>
 
-                    <div className="flex items-center justify-center gap-2 luxury-body text-luxury-charcoal/50 text-xs mb-4">
+                    <div className="flex items-center justify-center gap-2 luxury-body text-luxury-charcoal/50 text-xs">
                         <Shield className="w-3.5 h-3.5" />
                         <span>Cancel anytime · No lock-in</span>
                     </div>
-
-                    {/* Skip */}
-                    <div className="text-center">
-                        <Link
-                            href={intakeUrl}
-                            className="luxury-body text-luxury-charcoal/40 text-sm hover:text-luxury-charcoal transition-colors underline decoration-dotted"
-                        >
-                            No thanks — take me to my intake form
-                        </Link>
-                    </div>
-                </div>
-
-                {/* ── Next Steps Banner ─────────────────────────────────── */}
-                <div className="bg-luxury-cream/30 border border-luxury-cream rounded-2xl p-6 md:p-8">
-                    <h3 className="luxury-heading text-luxury-charcoal text-xl mb-4 text-center">
-                        One Step Left to Unlock Your Blueprint
-                    </h3>
-                    <div className="space-y-3 mb-6">
-                        {[
-                            { num: '1', text: 'Complete your intake form (4 minutes, 9 questions + 2 photos)' },
-                            { num: '2', text: 'Our stylists analyse your geometry, colour, and facial profile' },
-                            { num: '3', text: 'Your 12–18 page personalised Blueprint lands in your inbox within 24 hours' },
-                        ].map((s) => (
-                            <div key={s.num} className="flex items-start gap-3">
-                                <div className="w-7 h-7 rounded-full bg-luxury-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <span className="luxury-body text-luxury-accent text-xs font-bold">{s.num}</span>
-                                </div>
-                                <span className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed">{s.text}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <Link
-                        href={intakeUrl}
-                        className="w-full block text-center bg-luxury-charcoal hover:bg-luxury-charcoal/80 text-luxury-warm-white py-4 px-6 rounded-full luxury-body font-semibold transition-all duration-300 hover:-translate-y-0.5 transform"
-                    >
-                        Complete My Intake Form →
-                    </Link>
-                    <p className="luxury-body text-luxury-charcoal/40 text-xs text-center mt-3">
-                        Takes 4 minutes · Blueprint delivered within 24 hours of completion
-                    </p>
                 </div>
 
             </div>

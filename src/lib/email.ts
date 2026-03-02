@@ -24,6 +24,12 @@ export interface AUQuizReminderEmailData {
   intake_link: string;
 }
 
+export interface GlobeQuizReminderEmailData {
+  customer_name: string;
+  customer_email: string;
+  intake_link: string;
+}
+
 export interface GlobeIntakeNotificationData {
   customer_email: string;
   customer_phone: string;
@@ -653,6 +659,136 @@ export async function sendAUQuizReminderEmail(
     return { success: true };
   } catch (error) {
     console.error('Error sending AU quiz reminder email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+// ── Globe Quiz Reminder Email ─────────────────────────────────────────────────
+
+function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
+  const { customer_name, intake_link } = data;
+  const firstName = customer_name.split(' ')[0] || 'there';
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complete Your Intake to Unlock Your Blueprint</title>
+</head>
+<body style="margin:0; padding:0; background-color:#fdf8f5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fdf8f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #c2185b 0%, #880e4f 100%); padding: 40px 40px 32px; text-align:center;">
+              <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:700; letter-spacing:2px;">ICONIK</h1>
+              <p style="margin:8px 0 0; color:rgba(255,255,255,0.8); font-size:12px; letter-spacing:3px; text-transform:uppercase;">Style Intelligence System · Worldwide</p>
+            </td>
+          </tr>
+
+          <!-- Status Badge -->
+          <tr>
+            <td style="padding: 32px 40px 0; text-align:center;">
+              <div style="display:inline-block; background:#fffbeb; border:2px solid #f59e0b; border-radius:50px; padding:10px 24px;">
+                <span style="color:#b45309; font-size:15px; font-weight:600;">⏳ Intake Not Yet Received</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 28px 40px 0;">
+              <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">Hi ${firstName},</p>
+              <p style="margin:0 0 16px; color:#333; font-size:16px; line-height:1.7;">
+                We received your payment and your Blueprint slot is reserved — but we haven't received your intake form answers yet.
+              </p>
+              <p style="margin:0 0 16px; color:#555; font-size:15px; line-height:1.7;">
+                <strong style="color:#c2185b;">Without your intake answers, we cannot prepare your Blueprint.</strong> Our stylists need your photos and profile information to personalise:
+              </p>
+              <ul style="margin:0 0 20px; padding-left:20px; color:#555; font-size:14px; line-height:2;">
+                <li>Your body geometry analysis</li>
+                <li>Your chromatic harmony map (your exact 10 colours)</li>
+                <li>Your facial architecture profile</li>
+                <li>Your 6 personalised outfit formulas</li>
+              </ul>
+              <p style="margin:0 0 16px; color:#555; font-size:15px; line-height:1.7;">
+                It only takes <strong>4 minutes</strong>. Complete it now and your Blueprint will be ready within 24 hours.
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding: 8px 40px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0;">
+                <tr>
+                  <td align="center">
+                    <a href="${intake_link}"
+                       style="display:inline-block; background:#c2185b; color:#ffffff; text-decoration:none; font-size:16px; font-weight:700; padding:18px 40px; border-radius:50px; letter-spacing:0.3px;">
+                      Complete My Intake Now →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:12px 0 0; color:#999; font-size:12px; text-align:center;">Takes 4 minutes · Blueprint delivered within 24 hours of completion</p>
+            </td>
+          </tr>
+
+          <!-- Closing -->
+          <tr>
+            <td style="padding: 0 40px 24px;">
+              <p style="margin:0 0 8px; color:#333; font-size:15px; line-height:1.7;">
+                If you've already submitted your form, please ignore this email — we may have sent this before it processed.
+              </p>
+              <p style="margin:0; color:#333; font-size:15px; line-height:1.7;">
+                Questions? Reply to this email.<br />
+                <strong>The ICONIK Team</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 40px 40px; text-align:center; border-top:1px solid #f0e8e8;">
+              <p style="margin:0 0 4px; color:#c2185b; font-weight:700; font-size:15px;">ICONIK Style Intelligence</p>
+              <p style="margin:0; color:#999; font-size:13px;">help.iconikfashion@gmail.com</p>
+              <p style="margin:16px 0 0; color:#bbb; font-size:12px;">© 2026 ICONIK. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+export async function sendGlobeQuizReminderEmail(
+  data: GlobeQuizReminderEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const firstName = data.customer_name.split(' ')[0] || 'there';
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
+      to: data.customer_email,
+      subject: `⏳ Your Blueprint is waiting — we need your intake answers to begin`,
+      text: `Hi ${firstName},\n\nWe received your payment but haven't received your intake form answers yet.\n\nWithout them, we cannot prepare your personal Blueprint. It takes 4 minutes:\n${data.intake_link}\n\nOnce submitted, your Blueprint arrives within 24 hours.\n\nIf you've already submitted, please ignore this email.\n\nBest,\nThe ICONIK Team`,
+      html: buildGlobeQuizReminderHtml(data),
+    });
+
+    console.log(`Globe quiz reminder sent to ${data.customer_email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Globe quiz reminder email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
