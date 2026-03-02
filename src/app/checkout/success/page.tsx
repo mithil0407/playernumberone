@@ -235,6 +235,37 @@ function SuccessPageContent() {
         </p>
       </motion.div>
 
+      {/* What's Next Section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="max-w-2xl mx-auto px-4 py-8"
+      >
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8 border border-white/30 text-center">
+          <CheckCircle className="w-12 h-12 text-luxury-accent mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-3 text-gray-900">You&apos;re all set! 🎉</h2>
+          <p className="text-gray-700 mb-2">
+            We&apos;ve sent a confirmation email with all your order details and next steps.
+          </p>
+          <p className="text-gray-500 text-sm">
+            Can&apos;t find it? Please check your <span className="font-semibold text-gray-700">spam or junk folder</span> — it may have landed there.
+          </p>
+        </div>
+
+        <Link
+          href="/"
+          className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
+        >
+          Back to Home <ArrowRight className="w-6 h-6" />
+        </Link>
+
+        <div className="mt-8 text-sm text-gray-500 text-center">
+          <p>Check your email/WhatsApp for your order confirmation and booking link.</p>
+          <p>Questions? Contact us at support@playernumberone.com</p>
+        </div>
+      </motion.div>
+
       {/* ==================== UPSELL SECTION ==================== */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -506,36 +537,7 @@ function SuccessPageContent() {
       </motion.section>
       {/* ==================== END UPSELL SECTION ==================== */}
 
-      {/* What's Next Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="max-w-2xl mx-auto px-4 py-8"
-      >
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 mb-8 border border-white/30 text-center">
-          <CheckCircle className="w-12 h-12 text-luxury-accent mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-3 text-gray-900">You&apos;re all set! 🎉</h2>
-          <p className="text-gray-700 mb-2">
-            We&apos;ve sent a confirmation email with all your order details and next steps.
-          </p>
-          <p className="text-gray-500 text-sm">
-            Can&apos;t find it? Please check your <span className="font-semibold text-gray-700">spam or junk folder</span> — it may have landed there.
-          </p>
-        </div>
 
-        <Link
-          href="/"
-          className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
-        >
-          Back to Home <ArrowRight className="w-6 h-6" />
-        </Link>
-
-        <div className="mt-8 text-sm text-gray-500 text-center">
-          <p>Check your email/WhatsApp for your order confirmation and booking link.</p>
-          <p>Questions? Contact us at support@playernumberone.com</p>
-        </div>
-      </motion.div>
     </div>
   );
 }

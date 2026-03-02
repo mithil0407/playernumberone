@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
 
 interface RazorpayPayment {
@@ -60,7 +60,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
   };
 
   if (dbOrderId && dbOrderId !== 'mock-order-id') {
-    const { data } = await supabaseAdmin
+    const { data } = await supabaseGlobe
       .from('globe_orders')
       .select('id, customer_email, customer_name, customer_phone, amount, iconik_edit_addon, status, razorpay_payment_id')
       .eq('id', dbOrderId)
@@ -69,7 +69,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
   }
 
   if (!existingOrder) {
-    const { data } = await supabaseAdmin
+    const { data } = await supabaseGlobe
       .from('globe_orders')
       .select('id, customer_email, customer_name, customer_phone, amount, iconik_edit_addon, status, razorpay_payment_id')
       .eq('razorpay_order_id', orderId)
@@ -109,7 +109,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
     ...(existingOrder.iconik_edit_addon != null ? {} : { iconik_edit_addon: editAddon }),
   };
 
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await supabaseGlobe
     .from('globe_orders')
     .update(updatePayload)
     .eq('id', existingOrder.id);

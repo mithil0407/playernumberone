@@ -87,14 +87,16 @@ export async function POST(request: NextRequest) {
                 throw new Error('Failed to create Razorpay order');
             }
 
-            // Defer Supabase update
-            supabaseGlobe
+            // Update order with real Razorpay ID — MUST complete before webhook arrives
+            // (was fire-and-forget which caused a race condition: webhook couldn't find the order)
+            const { error: updateIdError } = await supabaseGlobe
                 .from('globe_orders')
                 .update({ razorpay_order_id: razorpayOrder.id })
-                .eq('id', dbOrderId)
-                .then(({ error }) => {
-                    if (error) console.log('Failed to update globe order with Razorpay ID:', error);
-                });
+                .eq('id', dbOrderId);
+
+            if (updateIdError) {
+                console.error('Failed to update globe order with Razorpay ID:', updateIdError);
+            }
 
             return NextResponse.json({
                 success: true,
