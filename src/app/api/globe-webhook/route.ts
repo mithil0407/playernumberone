@@ -14,7 +14,7 @@ interface RazorpayPayment {
 
 interface RazorpayOrder {
   id: string;
-  amount: number;
+  amount: number | string;
   notes?: Record<string, string | undefined>;
 }
 
@@ -29,8 +29,8 @@ async function fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
     return await razorpay.orders.fetch(orderId);
-  } catch (error) {
-    console.error('Error fetching Razorpay order:', error);
+  } catch (err) {
+    console.error('Error fetching Razorpay order:', err);
     return null;
   }
 }
@@ -77,7 +77,14 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
   const customerEmail = existingOrder.customer_email || notes.customer_email || '';
   const customerName = existingOrder.customer_name || notes.customer_name || (customerEmail ? customerEmail.split('@')[0] : 'there');
   const customerPhone = existingOrder.customer_phone || notes.customer_phone || '';
-  const orderAmount = existingOrder.amount ?? (orderDetails?.amount ? Math.round(orderDetails.amount / 100) : 0);
+  const rawAmount = orderDetails?.amount;
+  const normalizedAmount =
+    typeof rawAmount === 'string'
+      ? Math.round(Number(rawAmount) / 100)
+      : rawAmount
+        ? Math.round(rawAmount / 100)
+        : 0;
+  const orderAmount = existingOrder.amount ?? normalizedAmount;
   const editAddon =
     existingOrder.iconik_edit_addon ??
     (notes.iconik_edit_addon === 'true' ? true : notes.iconik_edit_addon === 'false' ? false : false);
