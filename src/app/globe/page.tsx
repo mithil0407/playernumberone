@@ -106,7 +106,7 @@ export default function GlobeLandingPage() {
 
     const heroImages = useMemo(() => [
         { src: '/transformation-1.webp', caption: 'Blueprint transformation · Sara, Dubai' },
-        { src: '/au-hero-2.webp', caption: 'Blueprint transformation · Layla, Abu Dhabi' },
+        { src: '/testimonial-priya.webp', caption: 'Blueprint transformation · Layla, Abu Dhabi' },
         { src: '/transformation-2.webp', caption: 'Blueprint transformation · Nour, Sharjah' },
     ], []);
 
@@ -153,8 +153,8 @@ export default function GlobeLandingPage() {
 
                         {/* Headline */}
                         <h1 className="text-3xl md:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95] tracking-tight">
-                            Discover your exact colours, silhouettes,{' '}
-                            <span className="text-luxury-accent">and cuts.</span>
+                            Discover Your Signature Style{' '}
+                            <span className="text-luxury-accent">in 24 Hours.</span>
                         </h1>
 
                         {/* Subheadline */}
@@ -280,6 +280,31 @@ export default function GlobeLandingPage() {
                 </div>
             </section>
 
+            {/* ── SECTION 2b: Who This Is For ─────────────────────────────── */}
+            <section className="py-20 px-4 md:px-6 bg-luxury-accent">
+                <div className="max-w-3xl mx-auto text-center">
+                    <p className="luxury-body text-luxury-warm-white/60 mb-4 tracking-widest text-xs uppercase">Who This Is For</p>
+                    <h2 className="text-2xl md:text-5xl luxury-heading text-luxury-warm-white mb-12 leading-tight">
+                        This is for you if…
+                    </h2>
+                    <div className="grid md:grid-cols-3 gap-6 text-left">
+                        {[
+                            { icon: '🏙️', text: 'You\'ve lived in Dubai for 2+ years and your wardrobe still doesn\'t feel right.' },
+                            { icon: '🧕', text: 'You dress modestly but want to look put-together, not invisible.' },
+                            { icon: '🛍️', text: 'You\'ve spent on clothes and still feel like nothing fits your life here.' },
+                        ].map((item, i) => (
+                            <div
+                                key={i}
+                                className="p-7 bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl hover:bg-luxury-warm-white/15 transition-all duration-300 hover:-translate-y-1"
+                            >
+                                <div className="text-3xl mb-4">{item.icon}</div>
+                                <p className="luxury-body text-luxury-warm-white/90 leading-relaxed">{item.text}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* ── SECTION 3: ICONIK Method ───────────────────────────────── */}
             <section className="py-24 px-4 md:px-6 bg-luxury-cream/20">
                 <div className="max-w-5xl mx-auto">
@@ -350,7 +375,7 @@ export default function GlobeLandingPage() {
                     <div className="grid md:grid-cols-3 gap-8 md:gap-10">
                         {[
                             { ...testimonials[0], img: '/transformation-1.webp' },
-                            { ...testimonials[1], img: '/au-testimonial-jess.webp' },
+                            { ...testimonials[1], img: '/ia-transformation-3.webp' },
                             { ...testimonials[2], img: '/transformation-2.webp' },
                         ].map((t, i) => (
                             <div
