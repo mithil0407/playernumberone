@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
 import { saveGlobeIntakeSubmission, uploadGlobeIntakePhoto } from '@/lib/supabaseGlobe';
-import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
+import { trackPageView, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -249,6 +249,14 @@ function GlobeIntakePageInner() {
             if (resolvedEmail && resolvedPhone) setContactPrefilled(true);
         }
     }, [searchParams]);
+
+    // Advanced matching: send email/phone to Meta as soon as they're confirmed
+    // Fires when user passes step 1 (contact step) or arrives with prefilled details
+    useEffect(() => {
+        if (step >= 2 && form.email && form.phone) {
+            updateUserData(form.email, form.phone);
+        }
+    }, [step, form.email, form.phone]);
 
     const goNext = useCallback(() => {
         setDirection(1);

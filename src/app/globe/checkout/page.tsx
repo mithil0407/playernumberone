@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
-import { trackPageView, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -139,15 +139,7 @@ export default function GlobeCheckoutPage() {
                     description: 'ICONIK Blueprint — UAE',
                     order_id: data.razorpay_order_id,
                     handler: async (rzpResponse: RazorpayResponse) => {
-                        trackPurchase(
-                            totalAmount,
-                            'ICONIK Blueprint Globe',
-                            ['iconik_blueprint_globe'],
-                            1,
-                            'AED',
-                            'Globe Funnel',
-                            rzpResponse.razorpay_payment_id
-                        );
+                        // Purchase is tracked on the thankyou page to avoid racing the redirect
                         sessionStorage.setItem('globe_purchaseTracked', rzpResponse.razorpay_payment_id);
 
                         try {

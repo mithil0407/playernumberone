@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Star, Sparkles, Shield, Clock } from 'lucide-react';
-import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
+import { trackPageView, trackCompleteRegistration, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -67,9 +67,16 @@ function GlobeThankyouInner() {
 
     useEffect(() => {
         trackPageView('Globe Thankyou');
-        const tracked = sessionStorage.getItem('globe_purchaseTracked');
-        if (!tracked) trackCompleteRegistration(orderAmount, 'ICONIK Blueprint Globe', 'AED');
-    }, [orderAmount]);
+        if (email && phone) updateUserData(email, phone);
+        const paymentId = sessionStorage.getItem('globe_purchaseTracked');
+        if (paymentId) {
+            trackPurchase(orderAmount, 'ICONIK Blueprint Globe', ['iconik_blueprint_globe'], 1, 'AED', 'Globe Funnel', paymentId);
+            sessionStorage.removeItem('globe_purchaseTracked');
+        } else {
+            // Page refresh or direct visit — fire CompleteRegistration as fallback
+            trackCompleteRegistration(orderAmount, 'ICONIK Blueprint Globe', 'AED');
+        }
+    }, [orderAmount, email, phone]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -118,7 +125,8 @@ function GlobeThankyouInner() {
                     name: 'ICONIK Style Intelligence',
                     description: `ICONIK Style Feed — ${selectedPlan === 'monthly' ? 'AED 69/month' : 'AED 588/year'}`,
                     handler: async (rzpRes: RazorpaySubResponse) => {
-                        console.log('Globe Style Feed subscription activated:', rzpRes);
+                        const subscriptionAmount = selectedPlan === 'monthly' ? 69 : 588;
+                        trackPurchase(subscriptionAmount, 'ICONIK Style Feed', ['iconik_style_feed'], 1, 'AED', 'Globe Funnel', rzpRes.razorpay_payment_id);
                         window.location.href = `/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&subscribed=true`;
                     },
                     prefill: { email, contact: phone },
