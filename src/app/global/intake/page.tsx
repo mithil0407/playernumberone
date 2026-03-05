@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
-import { saveGlobeIntakeSubmission, uploadGlobeIntakePhoto } from '@/lib/supabaseGlobe';
+import { uploadGlobeIntakePhoto } from '@/lib/supabaseGlobe';
 import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -296,7 +296,7 @@ function GlobalIntakePageInner() {
                 } catch (err) { console.warn('Headshot upload failed:', err); }
             }
 
-            await saveGlobeIntakeSubmission({
+            const intakePayload = {
                 customer_email: form.email,
                 customer_phone: form.phone,
                 photo_fullbody_url: photoFullBodyUrl,
@@ -311,28 +311,25 @@ function GlobalIntakePageInner() {
                 style_outcome: form.styleOutcome,
                 style_restrictions: form.coveragePrefs.join(','),
                 hair_type: form.hairType.join(','),
+            };
+
+            // Submit via server-side API (uses admin client, bypasses RLS)
+            const submitRes = await fetch('/api/globe-intake-submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(intakePayload),
             });
+
+            if (!submitRes.ok) {
+                const errBody = await submitRes.json().catch(() => ({}));
+                throw new Error(errBody.error || `Submission failed (${submitRes.status})`);
+            }
 
             // Notify the ICONIK team (fire-and-forget — doesn't block customer UX)
             fetch('/api/global-intake-notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customer_email: form.email,
-                    customer_phone: form.phone,
-                    photo_fullbody_url: photoFullBodyUrl,
-                    photo_headshot_url: photoHeadshotUrl,
-                    frustrations: form.frustrations.join(','),
-                    frustrations_custom: form.frustrationsCustom,
-                    situations: form.situations.join(','),
-                    body_insecurities: form.bodyInsecurities.join(','),
-                    wardrobe_type: form.wardrobeType,
-                    colour_preference: form.colourPreference,
-                    style_aesthetics: form.styleAesthetics.join(','),
-                    style_outcome: form.styleOutcome,
-                    style_restrictions: form.coveragePrefs.join(','),
-                    hair_type: form.hairType.join(','),
-                }),
+                body: JSON.stringify(intakePayload),
             }).catch(err => console.warn('Global intake notify failed:', err));
 
             trackCompleteRegistration(119, 'ICONIK Blueprint Global — Intake Submitted', 'USD');
