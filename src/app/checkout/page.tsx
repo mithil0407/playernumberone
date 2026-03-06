@@ -79,7 +79,7 @@ export default function CheckoutPage() {
 
   // Product pricing
   const originalPrice = 5999;
-  const discountedPrice = 1999;
+  const discountedPrice = 2499;
   const savings = originalPrice - discountedPrice;
 
   // Track PageView and ViewContent on checkout page load
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
   const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false); // Outfit Preview on You
 
-  const wardrobeDetoxPrice = 1299;
+  const wardrobeDetoxPrice = 1499;
 
   const smartShoppersGuidePrice = 499;
   const outfitPreviewPrice = 999;
@@ -191,7 +191,7 @@ export default function CheckoutPage() {
   const addonDetails = useMemo(() => ({
     wardrobedetox: {
       name: 'Wardrobe Detox',
-      price: 1299,
+      price: 1499,
       id: 'wardrobe_detox'
     },
     smartshopper: {
