@@ -393,26 +393,341 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
+          {/* Report Preview — Interactive Lookbook Mockup */}
+          <div className="mb-20 md:mb-32 max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Your Deliverable</p>
+              <h3 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">What Your Blueprint Actually Looks Like</h3>
+            </div>
+
+            {/* Browser Frame */}
+            <div className="relative rounded-2xl overflow-hidden border border-luxury-cream shadow-2xl">
+              {/* macOS-style title bar */}
+              <div className="bg-[#f0ede8] px-5 py-3 flex items-center gap-3 border-b border-[#e8e4de]">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                  <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                </div>
+                <div className="flex-1 flex justify-center">
+                  <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 luxury-body tracking-wide">
+                    iconik.playernumberone.com/your-blueprint
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable Report Content */}
+              <div className="h-[640px] overflow-y-auto overflow-x-hidden bg-[#faf9f6]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#e8e4de transparent' }}>
+
+                {/* Report Nav */}
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8] px-6 md:px-10 h-14 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 bg-black flex items-center justify-center">
+                      <Sparkles className="text-[#b58e4d]" size={14} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">Iconik <span className="text-[#b58e4d]">Blueprint</span></span>
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2025</span>
+                </div>
+
+                {/* Report Header */}
+                <div className="px-6 md:px-10 py-10 border-b border-[#f0ede8] bg-white">
+                  <div className="flex items-center gap-3 text-[#b58e4d] text-[9px] font-black uppercase tracking-[0.4em] mb-3">
+                    <CheckCircle className="w-4 h-4" /> Analysis Verified
+                  </div>
+                  <h2 className="text-4xl md:text-6xl luxury-heading text-black italic tracking-tighter leading-none">The Lookbook</h2>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <span className="px-4 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Hourglass Profile</span>
+                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">Oval Face</span>
+                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">14 Ensembles</span>
+                  </div>
+                </div>
+
+                {/* ── Slide 1: Body Shape Analysis ── */}
+                <div className="bg-white border-b border-[#f0ede8]">
+                  <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#f0ede8]" />
+                    <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 01 — Geometric Silhouette Profile™</span>
+                    <div className="h-px flex-1 bg-[#f0ede8]" />
+                  </div>
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto bg-[#f5f3ef] flex-shrink-0 border-r border-[#f0ede8]">
+                      <Image src="/report-body-shape.webp" alt="Body Shape Analysis" width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="flex-1 p-6 md:p-10">
+                      <div className="flex items-center gap-4 mb-6">
+                        <span className="px-5 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Hourglass</span>
+                        <span className="text-xs text-gray-400 font-light">Your dominant body geometry</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        {[
+                          { label: 'Shoulder–Hip Balance', value: 'Symmetrical — balanced frame' },
+                          { label: 'Waist Definition', value: 'Naturally defined — visible curve' },
+                          { label: 'Torso Length', value: 'Average — standard proportions' },
+                          { label: 'Vertical Line', value: 'Elongated — good height ratio' },
+                        ].map((row, idx) => (
+                          <div key={idx}>
+                            <span className="text-[#b58e4d] font-black uppercase text-[8px] tracking-[0.2em] block mb-0.5">{row.label}</span>
+                            <span className="text-xs text-black font-light">{row.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-l-2 border-[#b58e4d]/20 pl-5 py-1">
+                        <p className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.3em] mb-2 italic">Styling Directive</p>
+                        <p className="text-xs text-gray-500 font-light italic leading-relaxed">&ldquo;Celebrate the natural waist. Avoid boxy, shapeless silhouettes. Always define the middle — belted, wrap, or fitted waistbands are your friend.&rdquo;</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Slide 2: Face Shape Analysis ── */}
+                <div className="bg-[#faf9f6] border-b border-[#f0ede8]">
+                  <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#e8e4de]" />
+                    <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 02 — Facial Architecture Analysis™</span>
+                    <div className="h-px flex-1 bg-[#e8e4de]" />
+                  </div>
+                  <div className="flex flex-col md:flex-row bg-white">
+                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto bg-[#f5f3ef] flex-shrink-0 border-r border-[#f0ede8]">
+                      <Image src="/report-face-shape.webp" alt="Face Shape Analysis" width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="flex-1 p-6 md:p-10">
+                      <div className="flex items-center gap-4 mb-6">
+                        <span className="px-5 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Oval Face</span>
+                        <span className="text-xs text-gray-400 font-light">Your facial geometry</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Recommended For You</p>
+                          <div className="space-y-3">
+                            {[
+                              { label: 'Necklines', value: 'V-neck, scoop, off-shoulder — all work' },
+                              { label: 'Earrings', value: 'Any shape — studs to chandeliers' },
+                              { label: 'Collar', value: 'Open collars, notch lapels, boat neck' },
+                              { label: 'Eyewear', value: 'Square, cat-eye, aviator frames' },
+                            ].map((item, idx) => (
+                              <div key={idx}>
+                                <span className="text-[#b58e4d] font-black uppercase text-[8px] tracking-[0.2em] block mb-0.5">{item.label}</span>
+                                <span className="text-xs text-black font-light">{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Avoid</p>
+                          <div className="space-y-2">
+                            {['Overly round or circular earrings', 'Heavy turtlenecks that shorten neck', 'Round wire-frame glasses'].map((item, idx) => (
+                              <div key={idx} className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-300 mt-1.5 flex-shrink-0" />
+                                <span className="text-xs text-gray-500 font-light">{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Slide 3: Chromatic Harmony Map ── */}
+                <div className="bg-white border-b border-[#f0ede8]">
+                  <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#f0ede8]" />
+                    <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 03 — Chromatic Harmony Map™</span>
+                    <div className="h-px flex-1 bg-[#f0ede8]" />
+                  </div>
+                  <div className="p-6 md:p-10">
+                    <div className="flex items-center gap-4 mb-8">
+                      <span className="px-5 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Warm Undertone · Medium Depth</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                      {/* Your Palette */}
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Your 10 Colours</p>
+                        <div className="grid grid-cols-5 gap-2 mb-4">
+                          {['#C4956A','#8B6914','#D4A853','#7C4A1E','#E8C99A','#5C3D2E','#F0E0C8','#9E6B3F','#3D2B1F','#B8860B'].map((hex, idx) => (
+                            <div key={idx} className="flex flex-col items-center gap-1.5">
+                              <div className="w-full aspect-square rounded-lg border border-[#f0ede8] shadow-sm" style={{ backgroundColor: hex }} />
+                              <span className="text-[7px] font-bold text-gray-400 uppercase tracking-wide">{hex}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[9px] text-gray-400 font-light italic">Warm earth tones, golden ochres, rich browns — all enhance your natural depth</p>
+                      </div>
+                      {/* Eliminate */}
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Eliminate These 4</p>
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                          {['#E8E8F0','#C8D8E8','#F0E8F8','#D0E8D0'].map((hex, idx) => (
+                            <div key={idx} className="flex flex-col items-center gap-1.5">
+                              <div className="w-full aspect-square rounded-lg border-2 border-red-200 relative shadow-sm" style={{ backgroundColor: hex }}>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-full h-px bg-red-300 rotate-45 absolute" />
+                                  <div className="w-full h-px bg-red-300 -rotate-45 absolute" />
+                                </div>
+                              </div>
+                              <span className="text-[7px] font-bold text-red-300 uppercase tracking-wide">{hex}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[9px] text-gray-400 font-light italic">Cool pastels and icy tones wash out your warm depth and create contrast imbalance</p>
+                        <div className="mt-6 border-l-2 border-[#b58e4d]/20 pl-4">
+                          <p className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.3em] mb-1 italic">Shopping Note</p>
+                          <p className="text-xs text-gray-500 font-light italic">Real examples from Myntra &amp; Ajio included in your full Blueprint</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Slide 4: Outfit Cards ── */}
+                <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] bg-[#faf9f6] flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[#e8e4de]" />
+                  <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 04 — Your 14 Outfit Formulas</span>
+                  <div className="h-px flex-1 bg-[#e8e4de]" />
+                </div>
+
+                {[
+                  {
+                    category: 'Corporate',
+                    title: 'The Power Silhouette',
+                    img: '/report-preview-1.webp',
+                    items: [
+                      { label: 'Top', value: 'Structured blazer in ivory — strong shoulders, nipped waist' },
+                      { label: 'Bottom', value: 'Straight-cut trousers in slate grey, ankle-length' },
+                      { label: 'Footwear', value: 'Block heel mules in nude — elongates the leg line' },
+                      { label: 'Handbag', value: 'Structured tote in cognac leather' },
+                      { label: 'Jewelry', value: 'Gold bar earrings + thin watch — clean authority' },
+                    ],
+                    rationale: 'The vertical line created by the blazer lapel draws the eye upward and visually lengthens the torso. Straight trousers maintain the hourglass definition without adding bulk at the hip.',
+                    tags: ['Cotton Poplin', 'Ponte Knit', 'Structured Lining'],
+                  },
+                  {
+                    category: 'Occasion',
+                    title: 'The Festive Edit',
+                    img: '/report-preview-2.webp',
+                    items: [
+                      { label: 'Top', value: 'Draped kurta in deep teal silk — V-neck to elongate' },
+                      { label: 'Bottom', value: 'Flared palazzo in matching teal — continuous vertical line' },
+                      { label: 'Footwear', value: 'Heeled kolhapuris in antique gold' },
+                      { label: 'Handbag', value: 'Embroidered clutch in bronze' },
+                      { label: 'Jewelry', value: 'Statement jhumkas + minimal neckpiece' },
+                    ],
+                    rationale: 'A monochromatic head-to-toe in a deep tone creates a clean, unbroken vertical that flatters the hourglass by not interrupting the waist definition.',
+                    tags: ['Raw Silk', 'Chiffon Layer', 'Zari Embroidery'],
+                  },
+                ].map((look, i) => (
+                  <div key={i} className="flex flex-col md:flex-row bg-white border-b border-[#f0ede8]">
+                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto bg-[#f5f3ef] flex-shrink-0 overflow-hidden border-r border-[#f0ede8]">
+                      <Image src={look.img} alt={look.title} width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="flex-1 p-6 md:p-10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-[#b58e4d] text-[9px] font-black uppercase tracking-[0.4em]">{look.category} Ensemble</span>
+                        <div className="h-px w-8 bg-[#b58e4d]/30" />
+                      </div>
+                      <h3 className="text-2xl md:text-3xl luxury-heading text-black italic mb-6 leading-tight">{look.title}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Composition</p>
+                          <div className="space-y-3">
+                            {look.items.map((item, idx) => (
+                              <div key={idx}>
+                                <span className="text-[#b58e4d] font-black uppercase text-[8px] tracking-[0.2em] block mb-0.5">{item.label}</span>
+                                <span className="text-xs text-black font-light leading-relaxed">{item.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-6">
+                          <div className="border-l-2 border-[#b58e4d]/20 pl-5 py-1">
+                            <p className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.3em] mb-2 italic">Stylist Rationale</p>
+                            <p className="text-xs text-gray-500 font-light italic leading-relaxed">&ldquo;{look.rationale}&rdquo;</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Fabric & Texture</p>
+                            <div className="flex flex-wrap gap-2">
+                              {look.tags.map((tag, idx) => (
+                                <span key={idx} className="px-3 py-1.5 border border-[#f0ede8] text-gray-400 text-[8px] font-black uppercase tracking-widest rounded-full bg-[#faf9f6]">{tag}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* More outfits teaser */}
+                <div className="bg-white px-6 md:px-10 py-10 text-center">
+                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.5em]">+ 12 More Ensembles in Your Blueprint</p>
+                </div>
+
+              </div>
+
+              {/* Bottom fade + scroll cue */}
+              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#faf9f6] to-transparent pointer-events-none rounded-b-2xl" />
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/30">
+                <span>Scroll to explore</span>
+                <ArrowRight size={10} className="rotate-90" />
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Cards */}
+          <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-10 md:mb-16">
+            <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Everything Inside</p>
+            <h3 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">The 6 Sections of Your Blueprint</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto px-4 md:px-6 lg:px-8">
             {[
-              { icon: <Sparkles className="h-6 w-6 text-luxury-green" />, title: "Personal Style Assessment" },
-              { icon: <Gem className="h-6 w-6 text-luxury-green" />, title: "Curated Outfit Planning" },
-              { icon: <Heart className="h-6 w-6 text-luxury-green" />, title: "Makeup & Grooming Guidance" },
-              { icon: <Shield className="h-6 w-6 text-luxury-green" />, title: "Wardrobe Strategy" },
-              { icon: <Award className="h-6 w-6 text-luxury-green" />, title: "Confidence Coaching" },
-              { icon: <Trophy className="h-6 w-6 text-luxury-green" />, title: "Event-Specific Styling" }
+              {
+                icon: '/icon1.webp',
+                title: "Geometric Silhouette Profile™",
+                description: "Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame"
+              },
+              {
+                icon: '/icon2.webp',
+                title: "16 Outfit Formulas",
+                description: "Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions"
+              },
+              {
+                icon: '/icon3.webp',
+                title: "Facial Architecture Analysis™",
+                description: "Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance"
+              },
+              {
+                icon: '/icon4.webp',
+                title: "Chromatic Harmony Map™",
+                description: "10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio"
+              },
+              {
+                icon: '/icon5.webp',
+                title: "Concern Zone Solutions",
+                description: "Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it — with the science behind why"
+              },
+              {
+                icon: '/icon6.webp',
+                title: "30-Minute Stylist Consultation",
+                description: "A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first"
+              }
             ].map((item, i) => (
               <div
                 key={i}
                 className="p-5 md:p-6 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-xl hover:-translate-y-1 group"
               >
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
-                  <h3 className="text-sm md:text-base luxury-heading text-center text-luxury-charcoal">{item.title}</h3>
+                <div className="flex flex-col items-start space-y-3">
+                  <div className="group-hover:scale-110 transition-transform duration-300">
+                    <Image src={item.icon} alt={item.title} width={40} height={40} className="w-10 h-10 object-contain" />
+                  </div>
+                  <h3 className="text-sm md:text-base luxury-heading text-luxury-charcoal">{item.title}</h3>
+                  <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70 leading-relaxed">{item.description}</p>
                 </div>
               </div>
             ))}
           </div>
+
         </section>
 
         {/* Book Image Card - Moved Lower */}
@@ -447,40 +762,111 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
           </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Micro Case Studies Section */}
         <section id="testimonials" className="py-20 md:py-32 bg-luxury-cream/20">
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">Client Stories</h2>
+            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What the Blueprint actually found</h2>
             <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-              Hear from women who transformed their confidence and presence with ICONIK.
+              Three women. Three different geometries. Three specific solutions.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            {testimonials.map((testimonial, index) => (
+            {[
+              {
+                name: 'Priya',
+                age: '28',
+                city: 'Mumbai',
+                image: '/testimonial-priya.webp',
+                concern: ['Post-partum tummy, avoided', 'fitted anything for 2 years'],
+                finding: ['Rectangle frame', 'Deep warm autumn undertone'],
+                changed: ['Straight kurtas replaced flowy tops', 'Dark autumn palette introduced', 'Peplum added for occasions'],
+                quote: 'I stopped hiding. I started showing up.',
+                stars: 5,
+              },
+              {
+                name: 'Ananya',
+                age: '32',
+                city: 'Delhi',
+                image: '/testimonial-ananya.webp',
+                concern: ['Heavy arms, wore full', 'sleeves in 35° heat'],
+                finding: ['Inverted triangle frame', 'Cool neutral undertone'],
+                changed: ['Cap sleeves + flutter sleeves introduced', 'Raglan cuts for shoulder balance', 'Eliminated black-only dressing'],
+                quote: 'Everyone keeps asking if I lost weight',
+                stars: 5,
+              },
+              {
+                name: 'Shreya',
+                age: '26',
+                city: 'Bangalore',
+                image: '/testimonial-shreya.webp',
+                concern: ['Petite frame, felt', 'overwhelmed by fabric'],
+                finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'],
+                changed: ['Monochromatic dressing introduced', 'Hem lengths calibrated precisely', 'Accessories scaled to frame'],
+                quote: 'Shopping is no longer overwhelming.',
+                stars: 4,
+              },
+            ].map((c, index) => (
               <div
                 key={index}
-                className="p-8 md:p-10 bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl hover:-translate-y-2 group"
+                className="bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl overflow-hidden hover:-translate-y-2 group"
               >
-                <div className="space-y-6">
-                  <div className="aspect-square bg-luxury-cream/50 flex items-center justify-center rounded-xl overflow-hidden">
-                    <Image
-                      src={testimonial.image || "/placeholder.svg"}
-                      alt={testimonial.name}
-                      width={300}
-                      height={300}
-                      sizes="(max-width: 768px) 90vw, 300px"
-                      loading="lazy"
-                      className="w-full h-full object-cover rounded-xl"
-                    />
+                {/* Photo */}
+                <div className="aspect-square bg-luxury-cream/50 overflow-hidden">
+                  <Image
+                    src={c.image}
+                    alt={c.name}
+                    width={300}
+                    height={300}
+                    sizes="(max-width: 768px) 90vw, 300px"
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="p-6 md:p-8 space-y-5">
+                  {/* Name */}
+                  <div>
+                    <p className="luxury-heading text-luxury-charcoal text-lg leading-none">{c.name} · {c.age} · {c.city}</p>
+                    <div className="mt-3 h-px bg-luxury-cream" />
                   </div>
-                  <p className="luxury-body text-luxury-charcoal/80 text-center text-lg leading-relaxed">
-                    &ldquo;{testimonial.story}&rdquo;
-                  </p>
-                  <div className="text-center">
-                    <p className="luxury-body text-luxury-charcoal/60 mb-3">{testimonial.name}</p>
-                    <div className="flex justify-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-luxury-gold fill-current" />
+
+                  {/* Concern */}
+                  <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Concern</span>
+                    <span className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{c.concern.join(' ')}</span>
+                  </div>
+
+                  {/* Finding */}
+                  <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Finding</span>
+                    <div className="space-y-0.5">
+                      {c.finding.map((f, i) => (
+                        <p key={i} className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{f}</p>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Changed */}
+                  <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Changed</span>
+                    <div className="space-y-1">
+                      {c.changed.map((ch, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <div className="w-1 h-1 rounded-full bg-luxury-green mt-1.5 flex-shrink-0" />
+                          <p className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{ch}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-luxury-cream" />
+
+                  {/* Quote + Stars */}
+                  <div>
+                    <p className="luxury-body text-luxury-charcoal italic text-sm leading-relaxed mb-3">&ldquo;{c.quote}&rdquo;</p>
+                    <div className="flex gap-1">
+                      {[...Array(c.stars)].map((_, i) => (
+                        <Star key={i} className="h-3.5 w-3.5 text-luxury-gold fill-current" />
                       ))}
                     </div>
                   </div>
@@ -513,60 +899,52 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <h4 className="text-lg luxury-heading mb-4 text-luxury-charcoal">What&apos;s Included:</h4>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          Complete style assessment tailored to your features
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          Personalized color palette that makes your skin glow
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          Body-flattering silhouettes that work with your shape
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          Hair & beauty advice for your unique features
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          20-minute one-on-one call with expert stylist
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          16 Styled Looks for every occasion
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                        <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                          Beauty and Makeup Plan personalized for you
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-luxury-pink-bg border border-luxury-accent/20 rounded-xl p-5 text-center">
-                    <div className="text-3xl mb-3">✨</div>
-                    <h4 className="text-lg luxury-heading text-luxury-charcoal mb-2">Personal Touch</h4>
-                    <p className="luxury-body text-luxury-charcoal/70 text-sm">Tailored specifically for you</p>
-                  </div>
+                <div className="mb-6">
+                  <h4 className="text-lg luxury-heading mb-6 text-luxury-charcoal text-center">What&apos;s Included:</h4>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 max-w-2xl mx-auto">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        Complete style assessment tailored to your features
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        Personalized color palette that makes your skin glow
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        Body-flattering silhouettes that work with your shape
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        Hair & beauty advice for your unique features
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        20-minute one-on-one call with expert stylist
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        16 Styled Looks for every occasion
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
+                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
+                        Beauty and Makeup Plan personalized for you
+                      </span>
+                    </li>
+                  </ul>
                 </div>
 
                 <div className="text-center">
@@ -599,11 +977,11 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
               style={{ willChange: 'transform' }}
               className="text-center mb-12 md:mb-16"
             >
-              <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-charcoal">
-                See the Transformation
+              <h2 className="text-4xl md:text-6xl luxury-heading mb-4 text-luxury-charcoal">
+                The Blueprint in practice
               </h2>
               <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 max-w-3xl mx-auto">
-                Real results from real women who transformed their style with ICONIK
+                Real clients. Specific findings. Measurable change.
               </p>
             </motion.div>
 
@@ -612,14 +990,16 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                 {
                   before: '/style-before.webp',
                   after: '/style-after.webp',
-                  title: 'Style Confidence',
-                  description: 'From feeling invisible to radiating elegance'
+                  beforeLabel: 'Before — avoiding structure entirely',
+                  afterLabel: 'After — Geometric Silhouette Profile™ applied',
+                  caption: 'Rekha, 34, Bangalore · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, cap sleeves, dark palette'
                 },
                 {
                   before: '/wardrobe-before.webp',
                   after: '/wardrobe-after.webp',
-                  title: 'Wardrobe Mastery',
-                  description: 'From style confusion to effortless chic'
+                  beforeLabel: 'Before — dressing to hide',
+                  afterLabel: 'After — Concern Zone Solutions applied',
+                  caption: 'Ananya, 29, Mumbai · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line kurtas, deep cool palette'
                 }
               ].map((comparison, index) => (
                 <motion.div
@@ -630,44 +1010,42 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                   style={{ willChange: 'transform' }}
                   className="group relative"
                 >
-                  <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-2">
-                    <h3 className="text-3xl md:text-4xl luxury-heading text-luxury-charcoal mb-8 text-center">{comparison.title}</h3>
-
-                    <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-                      <div className="text-center">
-                        <div className="luxury-body text-luxury-charcoal/60 mb-4">Before</div>
+                  <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-6 md:p-10 border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-2">
+                    <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6">
+                      <div>
+                        <p className="text-[10px] font-semibold text-luxury-charcoal/50 uppercase tracking-widest mb-3 leading-tight">{comparison.beforeLabel}</p>
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                           <Image
                             src={comparison.before}
-                            alt={`Before ${comparison.title}`}
+                            alt={comparison.beforeLabel}
                             width={250}
                             height={250}
                             sizes="(max-width: 768px) 45vw, 250px"
                             loading="lazy"
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                         </div>
                       </div>
 
-                      <div className="text-center">
-                        <div className="luxury-body text-luxury-charcoal/60 mb-4">After</div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-luxury-green uppercase tracking-widest mb-3 leading-tight">{comparison.afterLabel}</p>
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
                           <Image
                             src={comparison.after}
-                            alt={`After ${comparison.title}`}
+                            alt={comparison.afterLabel}
                             width={250}
                             height={250}
                             sizes="(max-width: 768px) 45vw, 250px"
                             loading="lazy"
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent" />
                         </div>
                       </div>
                     </div>
 
-                    <p className="text-lg md:text-xl luxury-body text-luxury-charcoal/70 text-center leading-relaxed">{comparison.description}</p>
+                    <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/60 leading-relaxed border-t border-luxury-cream pt-4">{comparison.caption}</p>
                   </div>
                 </motion.div>
               ))}
@@ -687,33 +1065,27 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
               <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-charcoal">
                 Sound Familiar?
               </h2>
-              <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 max-w-3xl mx-auto">
-                Many women feel the same way. You&apos;re not alone in this journey.
-              </p>
             </motion.div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
               {[
                 {
-                  icon: Users,
-                  text: 'Feel overlooked or invisible in social settings?',
-                  color: 'red',
-                  image: '/feeling-overlooked.webp',
-                  imageAlt: 'Woman feeling overlooked'
+                  num: '01',
+                  text: 'You get dressed every morning and something still feels off. Not wrong exactly. Just never quite right.',
+                  image: '/feeling-overlooked1.webp',
+                  imageAlt: 'Woman at mirror'
                 },
                 {
-                  icon: Clock,
-                  text: 'Confused about what styles actually suit you?',
-                  color: 'orange',
-                  image: '/style-confusion.webp',
-                  imageAlt: 'Style confusion'
+                  num: '02',
+                  text: "You've tried the body type guides. The Pinterest boards. The 'flattering for pears' articles. Nothing has stuck.",
+                  image: '/style-confusion1.webp',
+                  imageAlt: 'Woman with clothes'
                 },
                 {
-                  icon: Heart,
-                  text: 'Lost confidence in your appearance?',
-                  color: 'rose',
-                  image: '/confidence-issues.webp',
-                  imageAlt: 'Confidence building'
+                  num: '03',
+                  text: "The weight hasn't changed. The budget hasn't changed. But every outfit still feels like a compromise.",
+                  image: '/confidence-issues1.webp',
+                  imageAlt: 'Woman looking at mirror side-on'
                 }
               ].map((item, index) => (
                 <motion.div
@@ -723,8 +1095,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                   transition={{ duration: 0.8, delay: index * 0.2 }}
                   className="group relative bg-luxury-cream/40 backdrop-blur-sm rounded-3xl p-6 md:p-8 lg:p-10 border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 hover:-translate-y-2"
                 >
-                  {/* Problem Image */}
-                  <div className="relative w-full aspect-square mb-4 md:mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+                  <div className="relative w-full aspect-square mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
                     <Image
                       src={item.image}
                       alt={item.imageAlt}
@@ -734,20 +1105,13 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                       loading="lazy"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                   </div>
 
-                  <div className={`w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full flex items-center justify-center ${item.color === 'red' ? 'bg-red-100' :
-                    item.color === 'orange' ? 'bg-orange-100' : 'bg-rose-100'
-                    }`}>
-                    <item.icon className={`w-6 h-6 md:w-8 md:h-8 ${item.color === 'red' ? 'text-red-600' :
-                      item.color === 'orange' ? 'text-orange-600' : 'text-rose-600'
-                      }`} />
-                  </div>
-                  <p className="text-xl md:text-2xl luxury-heading text-luxury-charcoal text-center leading-relaxed">{item.text}</p>
+                  <span className="block luxury-heading text-2xl mb-4 leading-none" style={{ color: '#b58e4d' }}>{item.num}</span>
+                  <p className="luxury-body text-luxury-charcoal/80 text-base md:text-lg leading-relaxed">{item.text}</p>
 
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </motion.div>
               ))}
             </div>
