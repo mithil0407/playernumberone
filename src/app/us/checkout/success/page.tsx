@@ -12,7 +12,7 @@ function SuccessPageContent() {
 
     useEffect(() => {
         // Track page view
-        trackPageView('USA_IndianAmerican');
+        trackPageView('USA');
 
         // Extract customer ID and order ID from URL parameters
         const customerId = searchParams.get('customer_id');
@@ -114,7 +114,7 @@ function SuccessPageContent() {
                 </div>
 
                 <Link
-                    href="/indian-american"
+                    href="/us"
                     className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-12 py-4 rounded-full text-xl font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto w-fit"
                 >
                     Back to Home <ArrowRight className="w-6 h-6" />

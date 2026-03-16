@@ -206,23 +206,3 @@ export const trackCTAClick = (
   });
 };
 
-// Ethnic package specific tracking
-export const trackEthnicPurchase = (value: number) => {
-  trackEvent('Purchase', {
-    value: value,
-    currency: 'INR',
-    content_type: 'product',
-    content_name: 'Ethnic Elegance Package',
-    content_ids: ['ethnic_elegance_package'],
-    num_items: 1
-  });
-};
-
-export const trackEthnicLead = (value?: number) => {
-  trackEvent('Lead', {
-    content_name: 'Ethnic Elegance Package',
-    value: value || 1999,
-    currency: 'INR',
-    content_category: 'Ethnic Elegance Package'
-  });
-};

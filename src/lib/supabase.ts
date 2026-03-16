@@ -72,7 +72,7 @@ export interface Order {
   amount?: number;
   add_on?: boolean;
   add_ons?: string; // Comma-separated list of purchased add-ons
-  product_type?: string; // Type of order: consultation, subscription, guide, ethnic, etc.
+  product_type?: string; // Type of order: consultation, subscription, etc.
   status?: 'pending' | 'completed' | 'failed' | 'paid';
   payment_id?: string;
   razorpay_order_id?: string;
