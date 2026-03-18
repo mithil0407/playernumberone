@@ -8,6 +8,14 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Cache optimized images for 1 year
     minimumCacheTTL: 31536000,
+    // Allow Next.js Image to optimise Supabase Storage URLs
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/**',
+      },
+    ],
   },
   // Enable gzip/brotli compression
   compress: true,

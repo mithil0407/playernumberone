@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { OutfitSetWithItems } from '@/lib/supabase';
+
+// Warm-cream 1×1 JPEG — shown while the real image loads
+const BLUR_PLACEHOLDER = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AJQAB/9k=';
 
 function OutfitSkeleton() {
   return (
@@ -152,12 +156,19 @@ export default function OutfitsPage() {
             >
               {/* Image */}
               {outfit.outfit_card_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={outfit.outfit_card_url}
-                  alt={outfit.occasion ?? 'Outfit'}
-                  className="w-full aspect-[2/3] object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-[0.97]"
-                />
+                <div className="relative w-full aspect-[2/3] overflow-hidden">
+                  <Image
+                    src={outfit.outfit_card_url}
+                    alt={outfit.occasion ?? 'Outfit'}
+                    fill
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                    quality={80}
+                    priority={idx < 2}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                    className="object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-[0.97]"
+                  />
+                </div>
               ) : (
                 <div className="w-full aspect-[2/3] bg-[#f5f4f3] flex items-center justify-center">
                   <span className="luxury-heading text-5xl text-black/10 select-none">
