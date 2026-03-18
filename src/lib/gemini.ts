@@ -111,6 +111,6 @@ export function aiResultToFashionItem(
     ai_confidence: result.confidence,
     ai_raw_response: result as unknown as Record<string, unknown>,
     status: 'draft',
-    uploaded_by: uploadedBy,
+    uploaded_by: uploadedBy ?? undefined,
   };
 }
