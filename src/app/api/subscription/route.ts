@@ -50,11 +50,17 @@ export async function POST(request: NextRequest) {
         const plan = ICONIK_CLUB_PLANS[plan_type as keyof typeof ICONIK_CLUB_PLANS];
         const resolvedName = customer_name || customer_email.split('@')[0];
 
-        const subscription = await razorpay.subscriptions.create({
+        const proto = request.headers.get('x-forwarded-proto') || 'https';
+        const host  = request.headers.get('host') || 'playernumberone.com';
+        const appBaseUrl = `${proto}://${host}`;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subscription = await (razorpay.subscriptions.create as any)({
             plan_id: plan.id,
             total_count: TOTAL_COUNTS[plan_type as keyof typeof TOTAL_COUNTS],
             quantity: 1,
-            customer_notify: 1 as const,
+            customer_notify: 1,
+            callback_url: `${appBaseUrl}/iconik-club/join/success`,
             notes: {
                 customer_name:     resolvedName,
                 customer_email:    customer_email,
@@ -63,8 +69,7 @@ export async function POST(request: NextRequest) {
                 product:           'Iconik Club',
                 original_order_id: original_order_id || '',
             },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        }) as any;
+        });
 
         if (!subscription?.id) {
             throw new Error('Failed to create Razorpay subscription');
