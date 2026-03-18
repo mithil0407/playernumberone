@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
             short_url:       subscription.short_url,
             plan_type,
             amount:          plan.amount,
+            key:             process.env.RAZORPAY_KEY_ID,
         });
 
     } catch (error) {

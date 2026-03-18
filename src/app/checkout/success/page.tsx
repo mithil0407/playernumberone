@@ -40,12 +40,23 @@ const ICONIK_CLUB_PLANS = [
 function SuccessPageContent() {
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [orderId, setOrderId] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly');
   const [upsellTracked, setUpsellTracked] = useState(false);
+
+  useEffect(() => {
+    if (document.querySelector('script[src*="razorpay.com"]')) { setRazorpayLoaded(true); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+    return () => { if (script.parentNode) script.parentNode.removeChild(script); };
+  }, []);
 
   useEffect(() => {
     // Track page view
@@ -140,18 +151,51 @@ function SuccessPageContent() {
 
       const data = await response.json();
 
-      if (!data.success || !data.short_url) {
+      if (!data.success || !data.subscription_id) {
         throw new Error(data.error || 'Failed to create subscription');
       }
 
-      window.location.href = data.short_url;
+      type RazorpaySubOptions = {
+        key: string;
+        subscription_id: string;
+        name: string;
+        description: string;
+        handler: () => void;
+        prefill: { name: string; email: string; contact: string };
+        theme: { color: string };
+      };
+      type RazorpayInstance = { open(): void };
+
+      const openRazorpay = () => {
+        const options: RazorpaySubOptions = {
+          key:             data.key,
+          subscription_id: data.subscription_id,
+          name:            'Iconik Club',
+          description:     `Iconik Club ${planLabels[selectedPlan]}`,
+          handler:         () => { window.location.href = '/iconik-club/join/success'; },
+          prefill:         { name, email, contact: phone },
+          theme:           { color: '#ff6b9d' },
+        };
+        const rzp = new (window as unknown as { Razorpay: new (opts: RazorpaySubOptions) => RazorpayInstance }).Razorpay(options);
+        rzp.open();
+        setIsProcessing(false);
+      };
+
+      if ((window as unknown as { Razorpay?: unknown }).Razorpay) {
+        openRazorpay();
+      } else {
+        const check = setInterval(() => {
+          if ((window as unknown as { Razorpay?: unknown }).Razorpay) { clearInterval(check); openRazorpay(); }
+        }, 100);
+        setTimeout(() => { clearInterval(check); setIsProcessing(false); }, 10000);
+      }
 
     } catch (error) {
       console.error('Subscription error:', error);
       alert(error instanceof Error ? error.message : 'Failed to start subscription. Please try again.');
       setIsProcessing(false);
     }
-  }, [customerEmail, customerPhone, customerName, orderId, selectedPlan]);
+  }, [customerEmail, customerPhone, customerName, orderId, selectedPlan, razorpayLoaded]);
 
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
