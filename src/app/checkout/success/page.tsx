@@ -1,44 +1,50 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight, Clock, Shield, Sparkles, ShoppingBag } from 'lucide-react';
+import { CheckCircle, ArrowRight, Shield, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView, trackViewContent, trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackPageView, trackViewContent, trackInitiateCheckout } from '@/lib/metaPixel';
 
-// Razorpay types for subscription
-interface RazorpaySubscriptionResponse {
-  razorpay_payment_id: string;
-  razorpay_subscription_id: string;
-  razorpay_signature: string;
-}
-
-interface RazorpaySubscriptionOptions {
-  key: string;
-  subscription_id: string;
-  name: string;
-  description: string;
-  image?: string;
-  handler: (response: RazorpaySubscriptionResponse) => void;
-  prefill: {
-    name: string;
-    email: string;
-    contact: string;
-  };
-  theme: {
-    color: string;
-  };
-}
+const ICONIK_CLUB_PLANS = [
+  {
+    id:          'monthly'   as const,
+    label:       'Monthly',
+    price:       '₹899',
+    period:      '/month',
+    subtext:     'Cancel anytime',
+    badge:       null,
+    highlighted: false,
+  },
+  {
+    id:          'quarterly' as const,
+    label:       'Quarterly',
+    price:       '₹2,399',
+    period:      '/quarter',
+    subtext:     'Save ₹298',
+    badge:       'POPULAR',
+    highlighted: true,
+  },
+  {
+    id:          'yearly'    as const,
+    label:       'Annual',
+    price:       '₹8,399',
+    period:      '/year',
+    subtext:     'Save ₹2,389',
+    badge:       'BEST VALUE',
+    highlighted: false,
+  },
+];
 
 function SuccessPageContent() {
   const searchParams = useSearchParams();
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [orderId, setOrderId] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly');
   const [upsellTracked, setUpsellTracked] = useState(false);
 
   useEffect(() => {
@@ -66,7 +72,6 @@ function SuccessPageContent() {
     // Store in localStorage for the schedule page to access
     if (urlCustomerId) {
       localStorage.setItem('customerId', urlCustomerId);
-      setCustomerId(urlCustomerId);
     }
 
     if (dbOrderId) {
@@ -81,18 +86,20 @@ function SuccessPageContent() {
       localStorage.setItem('paymentId', paymentId);
     }
 
-    // Try to get customer email/phone from localStorage (stored during checkout)
+    // Try to get customer details from localStorage (stored during checkout)
     const storedEmail = localStorage.getItem('customerEmail') || '';
     const storedPhone = localStorage.getItem('customerPhone') || '';
+    const storedName  = localStorage.getItem('customerName')  || '';
     setCustomerEmail(storedEmail);
     setCustomerPhone(storedPhone);
+    setCustomerName(storedName);
 
-    // Track upsell view once
+    // Track Iconik Club upsell view once
     if (!upsellTracked) {
       trackViewContent(
-        'Iconik Closet Upsell',
-        7188,
-        ['iconik_closet_subscription'],
+        'Iconik Club Upsell',
+        8399,
+        ['iconik_club_subscription'],
         'INR',
         'Upsell'
       );
@@ -100,121 +107,51 @@ function SuccessPageContent() {
     }
   }, [searchParams, upsellTracked]);
 
-  // Preload Razorpay script
-  useEffect(() => {
-    if (document.querySelector('script[src*="razorpay.com"]')) {
-      setRazorpayLoaded(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => console.error('Failed to preload Razorpay');
-    document.body.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, []);
-
-  const handleSubscription = useCallback(async (planType: 'monthly' | 'yearly') => {
+  const handleSubscription = useCallback(async () => {
     setIsProcessing(true);
 
-    const amount = planType === 'yearly' ? 7188 : 699;
-    const description = planType === 'yearly'
-      ? 'Iconik Closet - Yearly (₹599/mo)'
-      : 'Iconik Closet - Monthly (₹699/mo)';
+    const planLabels = { monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Annual' };
+    const planAmounts = { monthly: 899, quarterly: 2399, yearly: 8399 };
 
-    // Track InitiateCheckout
     trackInitiateCheckout(
-      amount,
+      planAmounts[selectedPlan],
       1,
-      `Iconik Closet ${planType === 'yearly' ? 'Yearly' : 'Monthly'}`,
+      `Iconik Club ${planLabels[selectedPlan]}`,
       'INR',
       'Upsell'
     );
 
     try {
-      // Get email from input or localStorage
       const email = customerEmail || localStorage.getItem('customerEmail') || '';
       const phone = customerPhone || localStorage.getItem('customerPhone') || '';
+      const name  = customerName  || localStorage.getItem('customerName')  || email.split('@')[0];
 
-      // Create subscription via API
       const response = await fetch('/api/subscription', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan_type: planType,
-          customer_email: email,
-          customer_phone: phone,
-          customer_name: email.split('@')[0],
-          customer_id: customerId,
-          order_id: orderId
-        })
+          plan_type:         selectedPlan,
+          customer_email:    email,
+          customer_phone:    phone,
+          customer_name:     name,
+          original_order_id: orderId,
+        }),
       });
 
       const data = await response.json();
 
-      if (!data.success) {
+      if (!data.success || !data.short_url) {
         throw new Error(data.error || 'Failed to create subscription');
       }
 
-      // Initialize Razorpay subscription checkout
-      const options: RazorpaySubscriptionOptions = {
-        key: data.key,
-        subscription_id: data.subscription_id,
-        name: 'Iconik Closet',
-        description: description,
-        image: `${window.location.origin}/logopayment.webp`,
-        handler: function (response: RazorpaySubscriptionResponse) {
-          // Track purchase
-          trackPurchase(
-            amount,
-            `Iconik Closet ${planType === 'yearly' ? 'Yearly' : 'Monthly'}`,
-            ['iconik_closet_subscription'],
-            1,
-            'INR',
-            'Subscription',
-            response.razorpay_payment_id
-          );
-
-          // Store subscription data
-          localStorage.setItem('closetSubscriptionId', response.razorpay_subscription_id);
-          localStorage.setItem('closetPlanType', planType);
-          localStorage.setItem('closetAmount', amount.toString());
-
-          // Redirect to closet success page
-          window.location.href = `/closet/success?subscription_id=${response.razorpay_subscription_id}&plan_type=${planType}&amount=${amount}`;
-        },
-        prefill: {
-          name: email.split('@')[0],
-          email: email,
-          contact: phone
-        },
-        theme: {
-          color: '#E91E63'
-        }
-      };
-
-      if (razorpayLoaded && window.Razorpay) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rzp = new (window.Razorpay as any)(options);
-        rzp.open();
-      } else {
-        throw new Error('Payment system not loaded');
-      }
+      window.location.href = data.short_url;
 
     } catch (error) {
       console.error('Subscription error:', error);
       alert(error instanceof Error ? error.message : 'Failed to start subscription. Please try again.');
-    } finally {
       setIsProcessing(false);
     }
-  }, [customerEmail, customerPhone, customerId, orderId, razorpayLoaded]);
+  }, [customerEmail, customerPhone, customerName, orderId, selectedPlan]);
 
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
@@ -266,276 +203,151 @@ function SuccessPageContent() {
         </div>
       </motion.div>
 
-      {/* ==================== UPSELL SECTION ==================== */}
+      {/* ==================== ICONIK CLUB UPSELL ==================== */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-gradient-to-b from-amber-50 to-orange-50 border-y-2 border-amber-200 py-8 md:py-12 px-4"
+        className="py-10 md:py-14 px-4"
+        style={{ background: 'linear-gradient(180deg, #fff9f5 0%, #fde8f2 100%)', borderTop: '2px solid #ffb3d1' }}
       >
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-2xl mx-auto">
+
+          {/* Brand tag */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Sparkles className="w-4 h-4" style={{ color: '#ff6b9d' }} />
+            <span className="text-xs font-bold tracking-widest uppercase" style={{ color: '#ff6b9d' }}>
+              Exclusive offer — consultation clients only
+            </span>
+          </div>
+
           {/* Headline */}
           <div className="text-center mb-6">
-            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
-              Wait — Don&apos;t Close This Page Yet
+            <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: '#4a2c3e' }}>
+              Take your blueprint further with <span style={{ color: '#ff6b9d' }}>Iconik Club</span>
             </h2>
-            <p className="text-lg md:text-xl text-gray-700">
-              You just booked your style blueprint. <span className="font-semibold">Smart.</span>
-            </p>
-            <p className="text-base text-gray-600 mt-2">
-              But here&apos;s what 67% of our clients tell us 2 weeks later:
+            <p className="text-base" style={{ color: '#6b4057' }}>
+              Your consultation gives you the formula. Iconik Club gives you the outfits — curated by AI, personalised to your body and style, delivered every month to your private portal.
             </p>
           </div>
 
-          {/* Problem Agitation */}
-          <div className="bg-white/70 backdrop-blur rounded-2xl p-5 md:p-6 mb-6 border border-amber-200">
-            <div className="space-y-4 text-gray-700">
-              <p className="italic border-l-4 border-amber-400 pl-4">
-                &quot;I love my blueprint... but I spent 6 hours scrolling Myntra and still couldn&apos;t find the structured boat-neck kurta you recommended.&quot;
-              </p>
-              <p className="italic border-l-4 border-amber-400 pl-4">
-                &quot;I know my undertone now, but which brands actually carry mustard in that exact shade?&quot;
-              </p>
-              <p className="italic border-l-4 border-amber-400 pl-4">
-                &quot;I have 16 outfit formulas... and zero time to hunt down each piece.&quot;
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-amber-200">
-              <p className="font-bold text-gray-900 text-lg mb-2">The brutal truth?</p>
-              <p className="text-gray-700">
-                Your blueprint is your <span className="font-semibold">formula</span>. But shopping is where <span className="font-bold text-red-600">80% of women get stuck.</span>
-              </p>
-              <p className="text-gray-600 mt-2">
-                Wrong fit. Wrong color. Wrong neckline.<br />
-                One bad purchase = ₹2,000 wasted + back to feeling &quot;nothing looks good on me.&quot;
-              </p>
+          {/* Feature list */}
+          <div className="rounded-2xl p-5 mb-6" style={{ background: '#ffffff', border: '1px solid #ffb3d1' }}>
+            <div className="space-y-2">
+              {[
+                'AI-generated outfit sets every month — shoppable, ready to wear',
+                'Personalised to your body shape, colouring, and style blueprint',
+                'Links to exact pieces from premium brands',
+                'Your own private client portal',
+                'Custom look requests anytime',
+                'Priority WhatsApp support',
+              ].map(f => (
+                <div key={f} className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#ff6b9d' }} />
+                  <span className="text-sm" style={{ color: '#4a2c3e' }}>{f}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Solution */}
-          <div className="text-center mb-6">
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
-              That&apos;s why we created <span className="text-luxury-accent">Iconik Closet</span>
-            </h3>
-            <p className="text-gray-700 text-lg">Your personal shopping assistant.</p>
-          </div>
-
-          {/* How It Works */}
-          <div className="bg-white rounded-2xl p-5 md:p-6 mb-6 border-2 border-luxury-accent/20">
-            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-luxury-accent" />
-              How it works:
-            </h4>
-            <p className="text-gray-700 mb-4">
-              Every month, you get <span className="font-bold">6 complete outfit sets</span> delivered to your inbox.
-            </p>
-            <p className="text-gray-600 mb-3">Not just &quot;buy a kurta.&quot; We&apos;re talking:</p>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700">Exact links to the kurta (correct neckline, sleeve, undertone)</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700">Matching bottoms (palazzo/jeans/trousers — based on your body shape)</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700">Jewelry (statement or minimal, per your style)</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700">Footwear (heels/flats/juttis)</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-gray-700">Bag/accessories</span>
-              </div>
-            </div>
-
-            <p className="text-gray-900 font-semibold">
-              Based on YOUR blueprint. Ready to buy. Ready to wear. <span className="text-luxury-accent">Zero guesswork.</span>
-            </p>
-          </div>
-
-          {/* Credibility Proof */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="bg-white rounded-xl p-3 text-center border border-gray-200">
-              <Sparkles className="w-6 h-6 text-luxury-accent mx-auto mb-1" />
-              <p className="text-xl md:text-2xl font-bold text-gray-900">268</p>
-              <p className="text-xs text-gray-600">women subscribed</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 text-center border border-gray-200">
-              <Clock className="w-6 h-6 text-luxury-accent mx-auto mb-1" />
-              <p className="text-xl md:text-2xl font-bold text-gray-900">12+</p>
-              <p className="text-xs text-gray-600">hours saved/mo</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 text-center border border-gray-200">
-              <Sparkles className="w-6 h-6 text-luxury-accent mx-auto mb-1" />
-              <p className="text-xl md:text-2xl font-bold text-gray-900">₹8,400</p>
-              <p className="text-xs text-gray-600">saved/year</p>
-            </div>
-          </div>
-
-          {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            {/* Yearly Plan - Featured */}
-            <div className="relative bg-white rounded-2xl p-5 border-2 border-luxury-accent shadow-lg">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-luxury-accent text-white px-4 py-1 rounded-full text-sm font-bold">
-                BEST VALUE
-              </div>
-              <h4 className="text-lg font-bold text-gray-900 mt-2 mb-1">Yearly Plan</h4>
-              <div className="mb-3">
-                <span className="text-3xl font-bold text-luxury-accent">₹599</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Billed yearly: ₹7,188 <span className="text-green-600 font-semibold">(Save ₹1,200)</span>
-              </p>
-              <ul className="text-sm text-gray-700 space-y-2 mb-4">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  6 complete outfit sets every month
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  Seasonal updates (wedding, festive, work)
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  Custom look requests
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  Priority chat support
-                </li>
-              </ul>
+          {/* Plan selector */}
+          <h3 className="text-base font-bold mb-3" style={{ color: '#4a2c3e' }}>Choose your plan:</h3>
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            {ICONIK_CLUB_PLANS.map(plan => (
               <button
-                onClick={() => handleSubscription('yearly')}
-                disabled={isProcessing}
-                className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-white py-3 px-4 rounded-full font-bold transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                key={plan.id}
+                type="button"
+                onClick={() => setSelectedPlan(plan.id)}
+                className="relative rounded-xl p-3 text-left transition-all duration-200 focus:outline-none"
+                style={{
+                  border:     selectedPlan === plan.id ? '2px solid #ff6b9d' : '2px solid #ffb3d1',
+                  background: selectedPlan === plan.id ? '#fdf0f6' : '#ffffff',
+                }}
               >
-                {isProcessing ? 'Processing...' : (
-                  <>
-                    YES — Lock In ₹599/Month <ArrowRight className="w-4 h-4" />
-                  </>
+                {plan.badge && (
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: '#ff6b9d' }}>
+                    {plan.badge}
+                  </span>
                 )}
-              </button>
-            </div>
-
-            {/* Monthly Plan */}
-            <div className="bg-white rounded-2xl p-5 border border-gray-200">
-              <h4 className="text-lg font-bold text-gray-900 mb-1">Monthly Plan</h4>
-              <div className="mb-3">
-                <span className="text-3xl font-bold text-gray-900">₹699</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Cancel anytime. No lock-in.
-              </p>
-              <ul className="text-sm text-gray-700 space-y-2 mb-4">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  6 complete outfit sets every month
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  Seasonal updates
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  Custom look requests
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  Chat support
-                </li>
-              </ul>
-              <button
-                onClick={() => handleSubscription('monthly')}
-                disabled={isProcessing}
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-full font-bold transition-all duration-300 disabled:opacity-50"
-              >
-                {isProcessing ? 'Processing...' : 'Start Monthly at ₹699'}
-              </button>
-            </div>
-          </div>
-
-          {/* Guarantee Box */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6">
-            <div className="flex items-start gap-3">
-              <Shield className="w-8 h-8 text-green-600 flex-shrink-0" />
-              <div>
-                <h4 className="font-bold text-gray-900 mb-1">🔒 Try it for 30 days.</h4>
-                <p className="text-gray-700 text-sm">
-                  If you don&apos;t save at least 3 hours or find even 2 outfits you love — reply to any email and we&apos;ll refund your first month. No questions.
+                <p className="font-bold text-xs mb-1" style={{ color: '#4a2c3e' }}>{plan.label}</p>
+                <p className="font-bold text-base" style={{ color: '#ff6b9d' }}>
+                  {plan.price}
+                  <span className="text-xs font-normal" style={{ color: '#9b7090' }}>{plan.period}</span>
                 </p>
-              </div>
-            </div>
+                <p className="text-[10px] mt-0.5" style={{ color: '#9b7090' }}>{plan.subtext}</p>
+              </button>
+            ))}
           </div>
 
-          {/* Urgency */}
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-center">
-            <p className="text-red-700 font-semibold">
-              ⚠️ Only available to consultation clients. We manually curate these — can&apos;t scale beyond 500 subscribers.
-            </p>
-            <p className="text-red-600 text-lg font-bold mt-1">
-              Current capacity: 232 slots left
-            </p>
-          </div>
-
-          {/* FAQ / Objection Handlers */}
-          <div className="space-y-4 mb-6">
-            <details className="bg-white rounded-xl p-4 border border-gray-200 group">
-              <summary className="font-semibold text-gray-900 cursor-pointer list-none flex items-center justify-between">
-                &quot;I&apos;ll think about it and sign up later.&quot;
-                <span className="text-gray-400 group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-3 text-sm">
-                Fair. But here&apos;s the thing: This offer is only on this page. Once you close it, it&apos;s ₹999/month if you come back.
-              </p>
-            </details>
-
-            <details className="bg-white rounded-xl p-4 border border-gray-200 group">
-              <summary className="font-semibold text-gray-900 cursor-pointer list-none flex items-center justify-between">
-                &quot;I don&apos;t shop every month.&quot;
-                <span className="text-gray-400 group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-3 text-sm">
-                You don&apos;t have to buy every outfit. Think of this as a styled lookbook that&apos;s shoppable when you need it. Wedding invite? Office promotion? Date night? It&apos;s already curated.
-              </p>
-            </details>
-
-            <details className="bg-white rounded-xl p-4 border border-gray-200 group">
-              <summary className="font-semibold text-gray-900 cursor-pointer list-none flex items-center justify-between">
-                &quot;What if my style changes?&quot;
-                <span className="text-gray-400 group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              <p className="text-gray-600 mt-3 text-sm">
-                Your blueprint evolves with you. After 6 months, we&apos;ll do a FREE micro-refresh (10-min call) to update your palette/silhouettes if needed.
-              </p>
-            </details>
-          </div>
-
-          {/* Final Nudge */}
-          <p className="text-center text-sm text-gray-500 mb-4">
-            Most clients who skip this end up spending ₹12,000+ on wrong pieces in the next 90 days. Don&apos;t let your blueprint collect digital dust.
+          {/* CTA */}
+          <button
+            onClick={handleSubscription}
+            disabled={isProcessing}
+            className="w-full py-4 rounded-full text-white font-bold text-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-60 flex items-center justify-center gap-2 mb-3"
+            style={{ background: 'linear-gradient(135deg, #ff6b9d, #c9457a)', boxShadow: '0 8px 24px rgba(255,107,157,0.3)' }}
+          >
+            {isProcessing ? 'Redirecting to payment…' : (
+              <>Join Iconik Club <ArrowRight className="w-5 h-5" /></>
+            )}
+          </button>
+          <p className="text-xs text-center mb-6" style={{ color: '#9b7090' }}>
+            You&apos;ll be taken to Razorpay to set up autopay securely.
           </p>
 
-          {/* Skip Link */}
+          {/* Guarantee */}
+          <div className="rounded-2xl p-4 mb-6 flex items-start gap-3"
+               style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
+            <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <p className="text-sm text-green-800">
+              <strong>30-day guarantee.</strong> If you don&apos;t love your first outfit set — reply to any email and we&apos;ll refund your first month. No questions.
+            </p>
+          </div>
+
+          {/* FAQ */}
+          <div className="space-y-3 mb-6">
+            <details className="rounded-xl p-4 group" style={{ background: '#ffffff', border: '1px solid #ffb3d1' }}>
+              <summary className="font-semibold cursor-pointer list-none flex items-center justify-between text-sm"
+                       style={{ color: '#4a2c3e' }}>
+                &quot;I&apos;ll sign up later.&quot;
+                <span className="group-open:rotate-45 transition-transform" style={{ color: '#9b7090' }}>+</span>
+              </summary>
+              <p className="mt-3 text-sm" style={{ color: '#6b4057' }}>
+                This offer is exclusive to this page. The price goes up once you leave. It takes 60 seconds to set up autopay — your outfits start arriving after your style profile is complete.
+              </p>
+            </details>
+            <details className="rounded-xl p-4 group" style={{ background: '#ffffff', border: '1px solid #ffb3d1' }}>
+              <summary className="font-semibold cursor-pointer list-none flex items-center justify-between text-sm"
+                       style={{ color: '#4a2c3e' }}>
+                &quot;How is this different from my consultation?&quot;
+                <span className="group-open:rotate-45 transition-transform" style={{ color: '#9b7090' }}>+</span>
+              </summary>
+              <p className="mt-3 text-sm" style={{ color: '#6b4057' }}>
+                Your consultation gives you the style blueprint — your colours, silhouettes, formulas. Iconik Club executes that blueprint every month with ready-to-buy outfit sets. No more scrolling, no more guessing.
+              </p>
+            </details>
+            <details className="rounded-xl p-4 group" style={{ background: '#ffffff', border: '1px solid #ffb3d1' }}>
+              <summary className="font-semibold cursor-pointer list-none flex items-center justify-between text-sm"
+                       style={{ color: '#4a2c3e' }}>
+                &quot;What if I don&apos;t shop every month?&quot;
+                <span className="group-open:rotate-45 transition-transform" style={{ color: '#9b7090' }}>+</span>
+              </summary>
+              <p className="mt-3 text-sm" style={{ color: '#6b4057' }}>
+                Your portal keeps all your outfit sets. Think of it as a curated lookbook you dip into whenever you need — for a wedding, a promotion, a date night. It&apos;s already done.
+              </p>
+            </details>
+          </div>
+
+          {/* Skip */}
           <div className="text-center">
-            <Link
-              href="/"
-              className="text-gray-500 hover:text-gray-700 text-sm underline transition-colors"
-            >
-              I&apos;ll do this later
+            <Link href="/" className="text-sm underline transition-colors" style={{ color: '#9b7090' }}>
+              No thanks, I&apos;ll pass for now
             </Link>
           </div>
+
         </div>
       </motion.section>
-      {/* ==================== END UPSELL SECTION ==================== */}
+      {/* ==================== END ICONIK CLUB UPSELL ==================== */}
 
 
     </div>

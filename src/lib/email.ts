@@ -884,3 +884,168 @@ export async function sendGlobeIntakeNotificationEmail(
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Iconik Club — Welcome email with temp credentials
+// ─────────────────────────────────────────────────────────────────────────────
+export async function sendIconikClubWelcomeEmail(
+  name: string,
+  email: string,
+  tempPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://playernumberone.com';
+    const loginUrl = `${siteUrl}/iconik-club/client/login`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Iconik Club</title>
+</head>
+<body style="margin:0; padding:0; background-color:#fff9f5; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fff9f5; padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#ff6b9d 0%,#c9457a 100%); padding:40px 40px 32px; text-align:center;">
+              <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:700; letter-spacing:-0.5px;">ICONIK CLUB</h1>
+              <p style="margin:8px 0 0; color:rgba(255,255,255,0.85); font-size:14px; letter-spacing:2px; text-transform:uppercase;">Your Personal Style Edit</p>
+            </td>
+          </tr>
+
+          <!-- Welcome Badge -->
+          <tr>
+            <td style="padding:32px 40px 0; text-align:center;">
+              <div style="display:inline-block; background:#fdf0f6; border:2px solid #ff6b9d; border-radius:50px; padding:10px 24px;">
+                <span style="color:#c9457a; font-size:15px; font-weight:600;">✨ Welcome to the club</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding:28px 40px 0;">
+              <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">Hi ${name},</p>
+              <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">
+                Your <strong>Iconik Club</strong> subscription is now active. We're excited to start curating outfits personalised to your body, colouring, and style.
+              </p>
+              <p style="margin:0 0 0; color:#333; font-size:16px; line-height:1.7;">
+                Your client portal is ready — here are your login credentials:
+              </p>
+            </td>
+          </tr>
+
+          <!-- Credentials Box -->
+          <tr>
+            <td style="padding:24px 40px 0;">
+              <div style="background:#fff9f5; border-radius:12px; padding:24px 28px; border:2px solid #ffb3d1;">
+                <p style="margin:0 0 6px; color:#888; font-size:12px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase;">Your Login Details</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:10px 0; border-bottom:1px solid #fde8f2; color:#555; font-size:14px;">
+                      <strong style="color:#333;">Email:</strong>&nbsp; ${email}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0; color:#555; font-size:14px;">
+                      <strong style="color:#333;">Temporary Password:</strong>&nbsp;
+                      <span style="font-family:monospace; font-size:16px; font-weight:700; color:#c9457a; letter-spacing:0.05em;">${tempPassword}</span>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:14px 0 0; color:#999; font-size:12px;">
+                  ⚠️ Please change your password after your first login.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:28px 40px 0; text-align:center;">
+              <a href="${loginUrl}"
+                 style="display:inline-block; background:#ff6b9d; color:#ffffff; text-decoration:none; font-size:16px; font-weight:700; padding:16px 40px; border-radius:50px; letter-spacing:0.3px;">
+                Sign In to Your Portal →
+              </a>
+            </td>
+          </tr>
+
+          <!-- What happens next -->
+          <tr>
+            <td style="padding:28px 40px 0;">
+              <p style="margin:0 0 16px; color:#333; font-size:16px; font-weight:700;">What happens next:</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:10px 0; border-bottom:1px solid #fde8f2; color:#555; font-size:14px; vertical-align:top;">
+                    <strong style="color:#333;">1. Complete your style profile</strong><br/>
+                    <span style="color:#777;">Log in and fill in your measurements and style preferences so we can curate precisely for you.</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0; border-bottom:1px solid #fde8f2; color:#555; font-size:14px; vertical-align:top;">
+                    <strong style="color:#333;">2. We'll be in touch</strong><br/>
+                    <span style="color:#777;">Our team will reach out on WhatsApp to schedule your onboarding and collect any additional details.</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0; color:#555; font-size:14px; vertical-align:top;">
+                    <strong style="color:#333;">3. Your first outfit set</strong><br/>
+                    <span style="color:#777;">Once your profile is complete, your personalised outfits will appear in your portal.</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:28px 40px 32px; text-align:center; border-top:1px solid #fde8f2; margin-top:28px;">
+              <p style="margin:0; color:#c9457a; font-weight:700; font-size:14px;">ICONIK Club</p>
+              <p style="margin:4px 0 0; color:#999; font-size:12px;">Questions? Reply to this email or WhatsApp us.</p>
+              <p style="margin:4px 0 0; color:#bbb; font-size:11px;">support@playernumberone.com</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const text =
+      `Welcome to Iconik Club, ${name}!\n\n` +
+      `Your subscription is active. Here are your login credentials:\n\n` +
+      `Email: ${email}\n` +
+      `Temporary Password: ${tempPassword}\n\n` +
+      `Sign in at: ${loginUrl}\n\n` +
+      `Please change your password after first login.\n\n` +
+      `What's next:\n` +
+      `1. Complete your style profile in the portal\n` +
+      `2. Our team will reach out on WhatsApp for onboarding\n` +
+      `3. Your personalised outfits will appear in your portal once your profile is set up\n\n` +
+      `Questions? Reply to this email or WhatsApp us.\n` +
+      `support@playernumberone.com`;
+
+    const info = await transporter.sendMail({
+      from: `"Iconik Club" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: `Welcome to Iconik Club — Your Login Details`,
+      text,
+      html,
+    });
+
+    console.log(`Iconik Club welcome email sent to ${email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Iconik Club welcome email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

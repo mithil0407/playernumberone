@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
-import { sendConfirmationEmail } from '@/lib/email';
+import { sendConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -563,11 +563,20 @@ interface RazorpaySubscription {
   };
 }
 
+function generateTempPassword(length = 10): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription activated:', subscription.id);
 
-    // Update subscription status to active
+    // 1. Update subscription status to active
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -586,6 +595,73 @@ async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
     } else {
       console.log(`Subscription ${subscription.id} marked as active`);
     }
+
+    // 2. Fetch the subscription row to get customer details + DB id
+    const { data: dbSub } = await supabaseAdmin
+      .from('subscriptions')
+      .select('id, customer_email, customer_name, customer_phone')
+      .eq('razorpay_subscription_id', subscription.id)
+      .single();
+
+    // Fallback to Razorpay notes if DB row not found
+    const customerEmail = dbSub?.customer_email ?? subscription.notes?.customer_email as string;
+    const customerName  = dbSub?.customer_name  ?? subscription.notes?.customer_name  as string ?? customerEmail?.split('@')[0];
+    const customerPhone = dbSub?.customer_phone ?? subscription.notes?.customer_phone as string ?? '';
+    const subscriptionDbId = dbSub?.id;
+
+    if (!customerEmail) {
+      console.error('No customer email found for subscription:', subscription.id);
+      return;
+    }
+
+    // 3. Idempotency guard — skip if client_profile already exists for this email
+    const { data: existingProfile } = await supabaseAdmin
+      .from('client_profiles')
+      .select('id')
+      .eq('email', customerEmail)
+      .maybeSingle();
+
+    if (existingProfile) {
+      console.log(`Client profile already exists for ${customerEmail}, skipping account creation`);
+      return;
+    }
+
+    // 4. Create Supabase auth user with a temp password
+    const tempPassword = generateTempPassword();
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email:         customerEmail,
+      password:      tempPassword,
+      email_confirm: true,
+    });
+
+    if (authError || !authData?.user) {
+      console.error('Error creating auth user for Iconik Club:', authError);
+      return;
+    }
+
+    const userId = authData.user.id;
+    console.log(`Auth user created for ${customerEmail}: ${userId}`);
+
+    // 5. Create client_profile row
+    const { error: profileError } = await supabaseAdmin
+      .from('client_profiles')
+      .insert({
+        user_id:             userId,
+        name:                customerName,
+        email:               customerEmail,
+        phone:               customerPhone,
+        subscription_id:     subscriptionDbId ?? null,
+        onboarding_complete: false,
+      });
+
+    if (profileError) {
+      console.error('Error creating client_profile:', profileError);
+    } else {
+      console.log(`Client profile created for ${customerEmail}`);
+    }
+
+    // 6. Send welcome email with credentials
+    await sendIconikClubWelcomeEmail(customerName, customerEmail, tempPassword);
 
   } catch (error) {
     console.error('Error handling subscription activated:', error);

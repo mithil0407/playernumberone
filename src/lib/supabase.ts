@@ -250,3 +250,92 @@ export const getActiveSubscriptionByEmail = async (email: string) => {
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 };
+
+// ─────────────────────────────────────────────────────────────
+// Iconik Club types
+// ─────────────────────────────────────────────────────────────
+
+export type ItemCategory =
+  | 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes'
+  | 'bag' | 'accessory' | 'jumpsuit' | 'skirt' | 'other';
+
+export type ItemStatus = 'active' | 'archived' | 'draft';
+
+export type OutfitOccasion = 'casual' | 'work' | 'evening' | 'weekend' | 'formal' | 'party';
+
+export type OutfitSeason = 'summer' | 'winter' | 'monsoon' | 'all-season';
+
+export type OutfitStatus = 'pending' | 'generating' | 'ready' | 'failed';
+
+export type BodyShape =
+  | 'hourglass' | 'pear' | 'apple' | 'rectangle' | 'inverted-triangle';
+
+export interface FashionItem {
+  id?: string;
+  raw_description?: string;
+  raw_image_url?: string;
+  brand?: string;
+  item_name: string;
+  category?: ItemCategory;
+  color?: string[];
+  material?: string[];
+  price?: number;
+  currency?: string;
+  size_availability?: string[];
+  purchase_link?: string;
+  image_url: string;
+  ai_confidence?: number;
+  ai_raw_response?: Record<string, unknown>;
+  status?: ItemStatus;
+  uploaded_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ClientProfile {
+  id?: string;
+  user_id?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  headshot_url?: string;
+  body_photo_url?: string;
+  height_cm?: number;
+  weight_kg?: number;
+  bust_cm?: number;
+  waist_cm?: number;
+  hips_cm?: number;
+  body_shape?: BodyShape;
+  size_estimate?: string;
+  style_notes?: string;
+  subscription_id?: string;
+  onboarding_complete?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OutfitSet {
+  id?: string;
+  client_id: string;
+  outfit_card_url?: string;
+  ai_style_note?: string;
+  occasion?: OutfitOccasion;
+  season?: OutfitSeason;
+  status?: OutfitStatus;
+  generation_batch?: number;
+  error_message?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface OutfitItem {
+  id?: string;
+  outfit_set_id: string;
+  fashion_item_id: string;
+  position?: number;
+}
+
+// OutfitSet with its items and full item details — used for client outfit gallery
+export interface OutfitSetWithItems extends OutfitSet {
+  items: FashionItem[];
+}
