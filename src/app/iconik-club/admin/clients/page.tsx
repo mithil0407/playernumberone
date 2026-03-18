@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ClientProfile } from '@/lib/supabase';
 
-export default function AdminClientsPage() {
+function AdminClientsContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
@@ -200,5 +200,17 @@ export default function AdminClientsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminClientsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={22} className="animate-spin text-[#ff6b9d]" />
+      </div>
+    }>
+      <AdminClientsContent />
+    </Suspense>
   );
 }
