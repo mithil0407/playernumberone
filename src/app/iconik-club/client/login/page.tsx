@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
 
 type Mode = 'login' | 'signup';
 
-export default function ClientLoginPage() {
+function ClientLoginContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get('redirectTo') ?? '/iconik-club/client/outfits';
@@ -176,5 +176,13 @@ export default function ClientLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ClientLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#fff9f5]"><Loader2 size={22} className="animate-spin text-[#ff6b9d]" /></div>}>
+      <ClientLoginContent />
+    </Suspense>
   );
 }

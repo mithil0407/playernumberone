@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search, Pencil, Trash2, ExternalLink, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -14,7 +14,7 @@ const STATUS_COLORS: Record<ItemStatus, string> = {
 
 const CATEGORIES = ['all','top','bottom','dress','outerwear','shoes','bag','accessory','jumpsuit','skirt','other'];
 
-export default function AdminItemsPage() {
+function AdminItemsContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
@@ -259,5 +259,13 @@ export default function AdminItemsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminItemsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 size={22} className="animate-spin text-[#ff6b9d]" /></div>}>
+      <AdminItemsContent />
+    </Suspense>
   );
 }
