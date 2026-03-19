@@ -2,27 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, CheckCircle, FileEdit, Archive, Plus, ArrowRight } from 'lucide-react';
+import { ShoppingBag, CheckCircle, FileEdit, Archive, Plus, ArrowRight, Users, UserCheck, Clock } from 'lucide-react';
 
-interface Stats {
-  total: number;
-  active: number;
-  draft: number;
-  archived: number;
-}
+interface ItemStats   { total: number; active: number; draft: number; archived: number; }
+interface ClientStats { total: number; active: number; pending: number; }
 
 function StatCard({
-  label,
-  value,
-  icon: Icon,
-  gradient,
-  loading,
+  label, value, icon: Icon, gradient, loading,
 }: {
-  label: string;
-  value: number;
-  icon: React.ElementType;
-  gradient: string;
-  loading: boolean;
+  label: string; value: number; icon: React.ElementType; gradient: string; loading: boolean;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
@@ -41,7 +29,8 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({ total: 0, active: 0, draft: 0, archived: 0 });
+  const [itemStats,   setItemStats]   = useState<ItemStats>({ total: 0, active: 0, draft: 0, archived: 0 });
+  const [clientStats, setClientStats] = useState<ClientStats>({ total: 0, active: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,13 +39,21 @@ export default function AdminDashboard() {
       fetch('/api/iconik-club/items/list?status=active&limit=1').then(r => r.json()),
       fetch('/api/iconik-club/items/list?status=draft&limit=1').then(r => r.json()),
       fetch('/api/iconik-club/items/list?status=archived&limit=1').then(r => r.json()),
+      fetch('/api/iconik-club/admin/clients?limit=1').then(r => r.json()),
+      fetch('/api/iconik-club/admin/clients?limit=1&onboarding_complete=true').then(r => r.json()),
+      fetch('/api/iconik-club/admin/clients?limit=1&onboarding_complete=false').then(r => r.json()),
     ])
-      .then(([all, active, draft, archived]) => {
-        setStats({
+      .then(([all, active, draft, archived, allClients, activeClients, pendingClients]) => {
+        setItemStats({
           total:    all.total      ?? 0,
           active:   active.total   ?? 0,
           draft:    draft.total    ?? 0,
           archived: archived.total ?? 0,
+        });
+        setClientStats({
+          total:   allClients.total     ?? 0,
+          active:  activeClients.total  ?? 0,
+          pending: pendingClients.total ?? 0,
         });
       })
       .finally(() => setLoading(false));
@@ -79,12 +76,21 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* Stats */}
+      {/* Client stats */}
+      <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-3">Members</p>
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <StatCard label="Total members"     value={clientStats.total}   icon={Users}       gradient="bg-gradient-to-br from-violet-400 to-violet-600"  loading={loading} />
+        <StatCard label="Onboarded"         value={clientStats.active}  icon={UserCheck}   gradient="bg-gradient-to-br from-emerald-400 to-emerald-600"  loading={loading} />
+        <StatCard label="Pending onboarding" value={clientStats.pending} icon={Clock}       gradient="bg-gradient-to-br from-amber-400 to-amber-500"      loading={loading} />
+      </div>
+
+      {/* Item stats */}
+      <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-3">Catalogue items</p>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total items" value={stats.total}    icon={ShoppingBag} gradient="bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a]"    loading={loading} />
-        <StatCard label="Active"      value={stats.active}   icon={CheckCircle} gradient="bg-gradient-to-br from-emerald-400 to-emerald-600"   loading={loading} />
-        <StatCard label="Drafts"      value={stats.draft}    icon={FileEdit}    gradient="bg-gradient-to-br from-amber-400 to-amber-500"        loading={loading} />
-        <StatCard label="Archived"    value={stats.archived} icon={Archive}     gradient="bg-gradient-to-br from-slate-400 to-slate-500"        loading={loading} />
+        <StatCard label="Total items" value={itemStats.total}    icon={ShoppingBag} gradient="bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a]"    loading={loading} />
+        <StatCard label="Active"      value={itemStats.active}   icon={CheckCircle} gradient="bg-gradient-to-br from-emerald-400 to-emerald-600"   loading={loading} />
+        <StatCard label="Drafts"      value={itemStats.draft}    icon={FileEdit}    gradient="bg-gradient-to-br from-amber-400 to-amber-500"        loading={loading} />
+        <StatCard label="Archived"    value={itemStats.archived} icon={Archive}     gradient="bg-gradient-to-br from-slate-400 to-slate-500"        loading={loading} />
       </div>
 
       {/* Quick actions */}
@@ -92,9 +98,11 @@ export default function AdminDashboard() {
         <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-4">Quick actions</p>
         <div className="flex flex-wrap gap-3">
           {[
-            { label: 'Upload new item',  href: '/iconik-club/admin/items/upload' },
-            { label: 'Review drafts',    href: '/iconik-club/admin/items?status=draft' },
-            { label: 'Browse all items', href: '/iconik-club/admin/items' },
+            { label: 'View all clients',  href: '/iconik-club/admin/clients' },
+            { label: 'Pending onboarding', href: '/iconik-club/admin/clients?onboarding=false' },
+            { label: 'Upload new item',   href: '/iconik-club/admin/items/upload' },
+            { label: 'Review drafts',     href: '/iconik-club/admin/items?status=draft' },
+            { label: 'Browse all items',  href: '/iconik-club/admin/items' },
           ].map(({ label, href }) => (
             <Link
               key={href}

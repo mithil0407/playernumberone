@@ -13,12 +13,16 @@ export async function GET(request: NextRequest) {
     const limit  = Math.min(50, parseInt(searchParams.get('limit') ?? '20'));
     const search = searchParams.get('search') ?? '';
 
+    const onboarding = searchParams.get('onboarding_complete');
+
     const supabaseAdmin = createSupabaseAdminServerClient();
     let query = supabaseAdmin.from('client_profiles').select('*', { count: 'exact' });
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
     }
+    if (onboarding === 'true')  query = query.eq('onboarding_complete', true);
+    if (onboarding === 'false') query = query.eq('onboarding_complete', false);
 
     const from = (page - 1) * limit;
 

@@ -32,6 +32,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.refresh();
   };
 
+  const isLoginPage = pathname === '/iconik-club/admin/login';
+
+  if (isLoginPage) return <>{children}</>;
+
   return (
     <div className="min-h-screen flex bg-[#f8f5f7]" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Mobile overlay */}
