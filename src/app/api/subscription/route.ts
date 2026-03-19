@@ -50,17 +50,11 @@ export async function POST(request: NextRequest) {
         const plan = ICONIK_CLUB_PLANS[plan_type as keyof typeof ICONIK_CLUB_PLANS];
         const resolvedName = customer_name || customer_email.split('@')[0];
 
-        const proto = request.headers.get('x-forwarded-proto') || 'https';
-        const host  = request.headers.get('host') || 'playernumberone.com';
-        const appBaseUrl = `${proto}://${host}`;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const subscription = await (razorpay.subscriptions.create as any)({
+        const subscription = await razorpay.subscriptions.create({
             plan_id: plan.id,
             total_count: TOTAL_COUNTS[plan_type as keyof typeof TOTAL_COUNTS],
             quantity: 1,
-            customer_notify: 1,
-            callback_url: `${appBaseUrl}/iconik-club/join/success`,
+            customer_notify: 1 as const,
             notes: {
                 customer_name:     resolvedName,
                 customer_email:    customer_email,
