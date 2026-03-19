@@ -64,7 +64,7 @@ function SuccessPageContent() {
     fetch('/api/iconik-club/items/sample')
       .then(r => r.json())
       .then(d => setSampleItems((d.items ?? []).slice(0, 3)))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setSampleLoading(false));
   }, []);
 
@@ -174,7 +174,7 @@ function SuccessPageContent() {
           transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-xl mx-auto"
         >
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-luxury-gold/5 border border-luxury-cream/60 relative overflow-hidden">
+          <div className="bg-white rounded-3xl p-6 md:p-12 shadow-2xl shadow-luxury-gold/5 border border-luxury-cream/60 relative overflow-hidden">
             {/* Top accent line */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-luxury-accent via-luxury-gold to-luxury-accent opacity-80" />
 
@@ -239,7 +239,7 @@ function SuccessPageContent() {
 
                   {/* Items grid — skeleton while loading */}
                   {sampleLoading ? (
-                    <div className="grid grid-cols-3 divide-x divide-luxury-cream bg-white">
+                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-luxury-cream bg-white">
                       {[0, 1, 2].map(i => (
                         <div key={i} className="flex flex-col animate-pulse">
                           <div className="aspect-[3/4] bg-luxury-cream/60" />
@@ -254,7 +254,7 @@ function SuccessPageContent() {
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 divide-x divide-luxury-cream bg-white">
+                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-luxury-cream bg-white">
                       {sampleItems.map(item => (
                         <div key={item.id} className="flex flex-col group overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -328,7 +328,7 @@ function SuccessPageContent() {
             </div>
 
             {/* Pricing cards */}
-            <div className="grid grid-cols-3 gap-3 md:gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {ICONIK_CLUB_PLANS.map(plan => {
                 const active = selectedPlan === plan.id;
                 return (
