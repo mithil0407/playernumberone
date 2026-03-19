@@ -895,7 +895,7 @@ export async function sendIconikClubWelcomeEmail(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const transporter = getTransporter();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://playernumberone.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro';
     const loginUrl = `${siteUrl}/iconik-club/client/login`;
 
     const html = `

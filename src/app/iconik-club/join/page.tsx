@@ -54,9 +54,20 @@ function JoinPageContent() {
   const [phone, setPhone] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [error,   setError]   = useState('');
   const [sampleItems, setSampleItems]   = useState<SampleItem[]>([]);
   const [sampleLoading, setSampleLoading] = useState(true);
+
+  useEffect(() => {
+    if (document.querySelector('script[src*="razorpay.com"]')) { setRazorpayLoaded(true); return; }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+    return () => { if (script.parentNode) script.parentNode.removeChild(script); };
+  }, []);
 
   useEffect(() => {
     const pName  = searchParams.get('name');
@@ -94,11 +105,40 @@ function JoinPageContent() {
 
       const data = await res.json();
 
-      if (!data.success || !data.short_url) {
+      if (!data.success || !data.subscription_id) {
         throw new Error(data.error || 'Failed to create subscription. Please try again.');
       }
 
-      window.location.href = data.short_url;
+      type RazorpaySubOptions = {
+        key: string; subscription_id: string; name: string; description: string;
+        handler: () => void; prefill: { name: string; email: string; contact: string };
+        theme: { color: string };
+      };
+      type RazorpayInstance = { open(): void };
+
+      const openRazorpay = () => {
+        const options: RazorpaySubOptions = {
+          key:             data.key,
+          subscription_id: data.subscription_id,
+          name:            'Iconik Club',
+          description:     `Iconik Club — ${selectedPlan}`,
+          handler:         () => { window.location.href = '/iconik-club/join/success'; },
+          prefill:         { name: name.trim(), email: email.trim(), contact: phone.trim() },
+          theme:           { color: '#C9A96E' },
+        };
+        const rzp = new (window as unknown as { Razorpay: new (opts: RazorpaySubOptions) => RazorpayInstance }).Razorpay(options);
+        rzp.open();
+        setLoading(false);
+      };
+
+      if ((window as unknown as { Razorpay?: unknown }).Razorpay) {
+        openRazorpay();
+      } else {
+        const check = setInterval(() => {
+          if ((window as unknown as { Razorpay?: unknown }).Razorpay) { clearInterval(check); openRazorpay(); }
+        }, 100);
+        setTimeout(() => { clearInterval(check); setLoading(false); }, 10000);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
       setLoading(false);
