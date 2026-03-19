@@ -1,11 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { LogOut, Sparkles } from 'lucide-react';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const router   = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
@@ -14,9 +15,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     router.refresh();
   };
 
+  const isLoginPage = pathname === '/iconik-club/client/login' || pathname === '/iconik-club/client/auth/callback';
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'var(--font-inter)' }}>
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 sm:px-8 py-3.5 border-b border-[#ffb3d1]/60 bg-white/90 backdrop-blur-sm">
+      {!isLoginPage && <header className="sticky top-0 z-10 flex items-center justify-between px-5 sm:px-8 py-3.5 border-b border-[#ffb3d1]/60 bg-white/90 backdrop-blur-sm">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a] rounded-xl flex items-center justify-center shadow-sm shadow-[#ff6b9d]/30">
             <Sparkles size={15} className="text-white" />
@@ -34,7 +37,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <LogOut size={13} />
           Sign out
         </button>
-      </header>
+      </header>}
 
       <main>{children}</main>
     </div>
