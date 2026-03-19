@@ -195,6 +195,19 @@ function SuccessPageContent() {
               </h1>
             </div>
 
+            {/* VSL */}
+            <div className="rounded-2xl overflow-hidden mb-10 shadow-lg" style={{ border: '1px solid #ffb3d1' }}>
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  src="https://www.youtube.com/embed/vVdlzFKSsmA?rel=0&modestbranding=1&playsinline=1"
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ border: 'none' }}
+                />
+              </div>
+            </div>
+
             {/* Subheadline */}
             <p className="luxury-body text-base text-luxury-charcoal/70 leading-relaxed text-center mb-10">
               Most women finish their Blueprint and still freeze when they open Myntra. You know your science — but finding pieces that actually match it takes hours. Iconik Club does that for you, every single month.

@@ -21,15 +21,59 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "ICONIK - Discover Your Signature Style & Transform Your Confidence",
-  description: "ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives.",
-  keywords: "style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover",
+  metadataBase: new URL("https://www.iconik.pro"),
+  title: {
+    default: "Iconik — Scientific Personal Styling for Indian Women",
+    template: "%s | Iconik",
+  },
+  description: "India's scientific personal styling service. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — delivered in your personalised Style Blueprint in 48 hours.",
+  keywords: "personal stylist India, online personal styling India, body type styling India, colour analysis Indian skin tone, style blueprint India, personal stylist online, Indian women fashion",
+  authors: [{ name: "Iconik Styling Team", url: "https://www.iconik.pro" }],
+  creator: "Iconik LLP",
+  publisher: "Iconik LLP",
+  alternates: {
+    canonical: "https://www.iconik.pro",
+    languages: {
+      "en-IN": "https://www.iconik.pro",
+      "en-AE": "https://www.iconik.pro/uae",
+      "en-AU": "https://www.iconik.pro/au",
+    },
+  },
   openGraph: {
-    title: "ICONIK - Discover Your Signature Style & Transform Your Confidence",
-    description: "ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence.",
+    title: "Iconik — Scientific Personal Styling for Indian Women",
+    description: "India's scientific personal styling service. Get your personalised Style Blueprint in 48 hours — body analysis, colour palette, and 16+ outfit recommendations.",
     type: "website",
-    url: "https://playernumberone.com",
-    siteName: "ICONIK",
+    url: "https://www.iconik.pro",
+    siteName: "Iconik",
+    locale: "en_IN",
+    images: [
+      {
+        url: "/og-image.webp",
+        width: 1200,
+        height: 630,
+        alt: "Iconik — Scientific Personal Styling for Indian Women",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Iconik — Scientific Personal Styling for Indian Women",
+    description: "India's scientific personal styling service. Get your personalised Style Blueprint in 48 hours.",
+    images: ["/og-image.webp"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "",
   },
 };
 
@@ -95,6 +139,62 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+
+        {/* Organization + WebSite JSON-LD — AEO entity signal */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://www.iconik.pro/#organization",
+                  "name": "Iconik",
+                  "legalName": "ICONIK LLP",
+                  "url": "https://www.iconik.pro",
+                  "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://www.iconik.pro/og-image.webp",
+                  },
+                  "description": "India's scientific personal styling service for women. Using proprietary methodologies — Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — Iconik creates personalised Style Blueprints that translate body science into actionable outfit recommendations. Founded in 2024 by Mithil Navalakha, Iconik serves clients across India and the UAE.",
+                  "foundingDate": "2024",
+                  "founder": {
+                    "@type": "Person",
+                    "name": "Mithil Navalakha",
+                  },
+                  "areaServed": ["IN", "AE", "AU"],
+                  "serviceType": "Personal Styling",
+                  "contactPoint": {
+                    "@type": "ContactPoint",
+                    "email": "support@iconik.pro",
+                    "contactType": "customer service",
+                    "availableLanguage": ["English", "Hindi"],
+                  },
+                  "sameAs": [
+                    "https://www.instagram.com/iconik.pro",
+                    "https://www.linkedin.com/company/iconik-llp",
+                  ],
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://www.iconik.pro/#website",
+                  "url": "https://www.iconik.pro",
+                  "name": "Iconik",
+                  "publisher": { "@id": "https://www.iconik.pro/#organization" },
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                      "@type": "EntryPoint",
+                      "urlTemplate": "https://www.iconik.pro/search?q={search_term_string}",
+                    },
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
 
         {/* Meta Pixel Provider */}
         <MetaPixelProvider>

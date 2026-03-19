@@ -1,0 +1,1117 @@
+# ICONIK — SEO & AEO Master Implementation Plan
+**Brand:** Iconik LLP | Scientific Personal Styling for Indian Women  
+**Markets:** India (Primary) · UAE (Scaling) · Australia (Early Stage)  
+**Objective:** Rank #1 on Google Search AND dominate AI answer surfaces (ChatGPT, Perplexity, Gemini, Claude, SGE)  
+**Agent Instructions:** Implement each phase sequentially. Each task has a clear INPUT → ACTION → OUTPUT structure.
+
+---
+
+## STRATEGIC NORTH STAR
+
+> Iconik must own two search surfaces: **traditional SERP** (Google rank #1) and **AI answer boxes** (when someone asks ChatGPT or Perplexity "how to dress for my body type in India," Iconik is the cited source). These are different games with overlapping tactics. This plan executes both simultaneously.
+
+---
+
+## PHASE 0 — AUDIT & FOUNDATION SETUP
+**Timeline:** Week 1  
+**Owner:** Claude Code Agent (Automated)
+
+### 0.1 — Technical SEO Baseline Audit
+
+**ACTION:** Run a full crawl of `iconik.pro` (and UAE subdomain/domain if applicable) and produce a JSON report covering:
+
+```json
+{
+  "crawl_targets": [
+    "https://iconik.pro",
+    "https://iconik.ae (or UAE landing domain)"
+  ],
+  "audit_checklist": [
+    "HTTP status codes (flag all 3xx, 4xx, 5xx)",
+    "Canonical tags — present, correct, no self-referencing loops",
+    "Meta titles — length 50-60 chars, keyword-present",
+    "Meta descriptions — length 150-160 chars, CTA-present",
+    "H1 presence — exactly one per page",
+    "H2/H3 hierarchy — logical nesting",
+    "Image alt text — all <img> tags covered",
+    "Page speed — Core Web Vitals (LCP < 2.5s, CLS < 0.1, INP < 200ms)",
+    "Mobile responsiveness — viewport meta, touch targets",
+    "Schema markup — present or absent",
+    "Internal linking — orphan pages flagged",
+    "XML sitemap — present and submitted",
+    "robots.txt — no accidental blocks",
+    "HTTPS — full SSL, no mixed content",
+    "Duplicate content — near-duplicate page clusters"
+  ]
+}
+```
+
+**OUTPUT:** `audit_report.json` + `audit_fixes_priority.csv` (P0/P1/P2 tagged)
+
+---
+
+### 0.2 — Keyword Universe Research
+
+**ACTION:** Build the master keyword database using the following seed clusters. Use a keyword research API (Ahrefs API, DataForSEO, or SEMrush API) to pull volume, KD (keyword difficulty), and CPC for each.
+
+#### Seed Clusters
+
+```yaml
+cluster_1_body_type_styling:
+  seeds:
+    - "how to dress for apple body shape India"
+    - "what to wear if you have a tummy"
+    - "clothes for heavy arms indian women"
+    - "plus size styling tips India"
+    - "how to look slim in Indian clothes"
+    - "pear body shape outfits India"
+    - "rectangle body type fashion India"
+
+cluster_2_colour_analysis:
+  seeds:
+    - "colour analysis for Indian skin tone"
+    - "warm undertone vs cool undertone India"
+    - "best colours for dusky skin Indian women"
+    - "what colours suit olive skin tone"
+    - "seasonal colour analysis India"
+
+cluster_3_professional_modest:
+  seeds:
+    - "office wear for Indian women 2025"
+    - "modest professional outfits India"
+    - "corporate Indian women fashion"
+    - "what to wear to work India"
+    - "salwar kameez for office India"
+
+cluster_4_life_transitions:
+  seeds:
+    - "what to wear after weight gain India"
+    - "postpartum fashion India"
+    - "40s fashion India women"
+    - "how to dress in your 30s India"
+    - "capsule wardrobe Indian women"
+
+cluster_5_personal_styling_service:
+  seeds:
+    - "personal stylist India online"
+    - "online personal styling India"
+    - "personal styling service Mumbai"
+    - "wardrobe consultation India"
+    - "body type analysis India"
+    - "style blueprint India"
+
+cluster_6_uae_specific:
+  seeds:
+    - "personal stylist Dubai Indian women"
+    - "online styling service UAE"
+    - "modest fashion Dubai"
+    - "body type styling Dubai"
+    - "colour analysis Dubai"
+
+cluster_7_aeo_question_format:
+  # These are "answer engine" queries — conversational, question-based
+  seeds:
+    - "how do I know my body type"
+    - "what is geometric silhouette profiling"
+    - "how to find my colour undertone at home"
+    - "what is a style blueprint"
+    - "how to dress for my body type"
+    - "is personal styling worth it India"
+    - "how does online styling work"
+```
+
+**OUTPUT:** `keyword_universe.csv` with columns:
+`keyword | cluster | monthly_volume | KD_score | CPC_INR | intent (informational/commercial/transactional) | priority_tier (T1/T2/T3)`
+
+**Priority tiers:**
+- T1: Volume > 500/mo + KD < 35 + Commercial intent → Target immediately
+- T2: Volume > 200/mo + KD < 50 → Target in Phase 2
+- T3: Low volume, high intent question-format → AEO priority regardless of volume
+
+---
+
+### 0.3 — Competitor Content Gap Analysis
+
+**ACTION:** Crawl top 10 ranking pages for each T1 keyword. Extract:
+- Word count
+- H2/H3 headers used
+- Schema types present
+- Internal link patterns
+- Backlink count (via API)
+
+**Competitors to benchmark:**
+```
+- Styledotme.com
+- Looksgood.in  
+- Vogue India blog
+- Femina.in
+- Any direct competitor identified in brand intel
+```
+
+**OUTPUT:** `content_gap_report.csv` — keywords where competitors rank but Iconik has zero presence
+
+---
+
+## PHASE 1 — TECHNICAL SEO IMPLEMENTATION
+**Timeline:** Weeks 2–3  
+**Priority:** P0 fixes from audit report
+
+### 1.1 — Site Architecture & URL Structure
+
+**Implement this exact URL hierarchy:**
+
+```
+iconik.pro/                              → Homepage
+iconik.pro/body-type-styling/            → Pillar Page: Body Type Styling Hub
+  iconik.pro/body-type-styling/apple/   → Apple Body Type Guide
+  iconik.pro/body-type-styling/pear/    → Pear Body Type Guide
+  iconik.pro/body-type-styling/rectangle/ → Rectangle Body Type Guide
+  iconik.pro/body-type-styling/plus-size/ → Plus Size Styling Guide
+  iconik.pro/body-type-styling/hourglass/ → Hourglass Styling Guide
+
+iconik.pro/colour-analysis/             → Pillar Page: Colour Analysis Hub
+  iconik.pro/colour-analysis/warm-undertone/
+  iconik.pro/colour-analysis/cool-undertone/
+  iconik.pro/colour-analysis/indian-skin-tones/
+
+iconik.pro/style-guides/                → Pillar Page: Style Guides Hub
+  iconik.pro/style-guides/office-wear-india/
+  iconik.pro/style-guides/modest-fashion/
+  iconik.pro/style-guides/postpartum-style/
+  iconik.pro/style-guides/capsule-wardrobe-india/
+
+iconik.pro/how-it-works/               → Service Page
+iconik.pro/pricing/                    → Pricing Page
+iconik.pro/blueprint/                  → Product Page: Style Blueprint
+iconik.pro/testimonials/               → Social Proof Page
+iconik.pro/blog/                       → Blog Hub
+iconik.pro/faq/                        → FAQ Page (critical for AEO)
+
+# UAE
+iconik.ae/ (or iconik.pro/uae/)        → UAE Market Hub
+  iconik.pro/uae/personal-styling-dubai/
+  iconik.pro/uae/colour-analysis-dubai/
+```
+
+**ACTION:** Implement 301 redirects for any existing URLs that conflict. Update sitemap. Resubmit to Google Search Console.
+
+---
+
+### 1.2 — Schema Markup Implementation
+
+**ACTION:** Add the following JSON-LD schema blocks to each page type. This is the single most important AEO lever.
+
+#### Homepage Schema
+```json
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://iconik.pro/#organization",
+      "name": "Iconik",
+      "legalName": "ICONIK LLP",
+      "url": "https://iconik.pro",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://iconik.pro/assets/logo.png"
+      },
+      "description": "India's scientific personal styling service. We use Geometric Silhouette Profiling™, Chromatic Harmony Mapping™ and Facial Architecture Analysis™ to create a personalised Style Blueprint for Indian women.",
+      "foundingDate": "2024",
+      "areaServed": ["IN", "AE", "AU"],
+      "serviceType": "Personal Styling",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": ["English", "Hindi"]
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://iconik.pro/#website",
+      "url": "https://iconik.pro",
+      "name": "Iconik",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://iconik.pro/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+```
+
+#### Service Page Schema
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Iconik Style Blueprint",
+  "provider": {
+    "@type": "Organization",
+    "name": "Iconik"
+  },
+  "description": "A personalised styling report covering Geometric Silhouette Profiling™ (body shape analysis), Chromatic Harmony Mapping™ (colour analysis for Indian skin tones), and Facial Architecture Analysis™. Delivered with 16+ outfit recommendations tailored to your lifestyle.",
+  "offers": {
+    "@type": "Offer",
+    "price": "1999",
+    "priceCurrency": "INR",
+    "availability": "https://schema.org/InStock"
+  },
+  "areaServed": {
+    "@type": "Country",
+    "name": "India"
+  },
+  "serviceType": "Personal Styling",
+  "review": [
+    {
+      "@type": "Review",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Kavita M., Hyderabad"
+      },
+      "reviewBody": "I finally understand why certain shapes work for my body type. The Blueprint changed how I shop completely."
+    }
+  ],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "reviewCount": "87"
+  }
+}
+```
+
+#### Blog/Article Schema (apply to every blog post)
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{PAGE_TITLE}}",
+  "description": "{{META_DESCRIPTION}}",
+  "author": {
+    "@type": "Organization",
+    "name": "Iconik Styling Team"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Iconik",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://iconik.pro/assets/logo.png"
+    }
+  },
+  "datePublished": "{{DATE}}",
+  "dateModified": "{{MODIFIED_DATE}}",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{PAGE_URL}}"
+  }
+}
+```
+
+#### FAQ Schema (CRITICAL for AEO — implement on every FAQ block)
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I know my body type?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your body type is determined by the proportional relationship between your shoulders, waist, and hips. Iconik uses Geometric Silhouette Profiling™ — a scientific method that maps your skeletal frame and soft tissue distribution to one of five primary silhouette categories: Apple, Pear, Rectangle, Hourglass, or Inverted Triangle. Each has distinct styling logic."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is a Style Blueprint?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An Iconik Style Blueprint is a personalised styling report covering three analyses: Geometric Silhouette Profiling™ (body shape), Chromatic Harmony Mapping™ (your ideal colour palette based on skin undertone), and Facial Architecture Analysis™ (face shape and the necklines, accessories, and hairstyles that complement it). The report includes 16+ outfit recommendations specific to your lifestyle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is Iconik different from other styling apps?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Iconik uses a proprietary three-pillar scientific methodology reviewed by a human stylist — not an algorithm. Unlike automated styling tools, every Blueprint is reviewed and approved by a certified Iconik stylist before delivery. The methodology vocabulary — Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — is owned exclusively by Iconik."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does an Iconik Style Blueprint cost in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Iconik Style Blueprint is priced at ₹2,499 in India. This includes a 20-minute video consultation with a stylist, a full personalised report, and 16+ outfit recommendations. Optional add-ons include a Shopping Guide (₹499), Wardrobe Detox (₹1,299), and AI Virtual Preview (₹999)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is Chromatic Harmony Mapping?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Chromatic Harmony Mapping™ is Iconik's proprietary colour analysis method. It identifies whether your skin has a warm, cool, or neutral undertone and maps those findings to a curated palette of colours that create harmony with your complexion — making you look energised and well-rested rather than washed out or sallow. It accounts specifically for the diversity of Indian skin tones."
+      }
+    }
+  ]
+}
+```
+
+#### HowTo Schema (for tutorial content — high AEO value)
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Dress for an Apple Body Shape",
+  "description": "A step-by-step guide to identifying and dressing an apple body shape using Geometric Silhouette Profiling™",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Identify your silhouette",
+      "text": "If your midsection carries the most weight, your bust and hips are similar in width, and you have slimmer legs, you likely have an apple silhouette."
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Choose the right cut",
+      "text": "Empire waist cuts and A-line silhouettes skim the stomach and create the appearance of a defined waist without adding volume."
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Apply chromatic intelligence",
+      "text": "Use your undertone-matched darker shades in the midsection zone. Avoid loud prints at the waist."
+    }
+  ]
+}
+```
+
+---
+
+### 1.3 — Core Web Vitals & Speed
+
+**ACTION:** Execute the following performance fixes:
+
+```bash
+# Image optimisation
+- Convert all JPG/PNG hero images to WebP format
+- Add width and height attributes to all <img> tags (prevents CLS)
+- Implement lazy loading: loading="lazy" on below-fold images
+- Compress all images to < 100KB without quality loss
+
+# CSS/JS
+- Inline critical CSS (above-fold styles)
+- Defer non-critical JS
+- Remove unused CSS (purge Tailwind/Bootstrap if used)
+- Minify all CSS and JS bundles
+
+# Fonts
+- Self-host Google Fonts (eliminate render-blocking external font calls)
+- Use font-display: swap
+
+# Server
+- Enable gzip/brotli compression
+- Set Cache-Control headers: static assets = 1 year, HTML = 1 hour
+- Use a CDN (Cloudflare free tier minimum)
+
+# Hosting target: LCP < 2.5s on mobile 4G
+```
+
+---
+
+### 1.4 — XML Sitemap & robots.txt
+
+**ACTION:** Generate and deploy:
+
+**sitemap.xml** (auto-generated, include all canonical pages, exclude /thank-you, /cart, /checkout):
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://iconik.pro/</loc>
+    <lastmod>{{TODAY}}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- All pillar pages: priority 0.9 -->
+  <!-- All blog posts: priority 0.8 -->
+  <!-- All sub-pages: priority 0.7 -->
+</urlset>
+```
+
+**robots.txt:**
+```
+User-agent: *
+Allow: /
+Disallow: /thank-you
+Disallow: /cart
+Disallow: /checkout
+Disallow: /admin
+Sitemap: https://iconik.pro/sitemap.xml
+```
+
+---
+
+## PHASE 2 — ON-PAGE SEO & CONTENT ARCHITECTURE
+**Timeline:** Weeks 3–8  
+**This is the highest-leverage phase for both traditional SEO and AEO**
+
+### 2.1 — The Hub & Spoke Content Model
+
+**ARCHITECTURE:** Each Pillar Page is a comprehensive hub (2,500–4,000 words). Spoke articles feed into it (800–1,500 words each). Internal links flow from spokes → pillar → service page.
+
+```
+PILLAR: "How to Dress for Your Body Type in India"
+  SPOKE 1: "Apple Body Shape: Complete Styling Guide for Indian Women"
+  SPOKE 2: "Pear Body Shape Outfits: What Works for Indian Women"
+  SPOKE 3: "Rectangle Body Shape Fashion Guide India"
+  SPOKE 4: "Plus Size Indian Women's Style Guide"
+  SPOKE 5: "How to Hide Tummy Fat with Clothing: The Science"
+  SPOKE 6: "How to Dress Heavy Arms: Indian Context"
+  SPOKE 7: "Empire Cuts vs A-Line: Which Works for Your Body"
+
+PILLAR: "Colour Analysis for Indian Skin Tones"
+  SPOKE 1: "Warm Undertone: Best Colours for Indian Women"
+  SPOKE 2: "Cool Undertone Colour Guide: Indian Women"
+  SPOKE 3: "Colour Analysis at Home: 3 DIY Tests"
+  SPOKE 4: "Best Saree Colours for Your Skin Tone"
+  SPOKE 5: "Undertone vs Skin Tone: What's the Difference"
+
+PILLAR: "Personal Styling in India: Complete Guide"
+  SPOKE 1: "Online Personal Styling vs In-Person: Honest Comparison"
+  SPOKE 2: "Is a Personal Stylist Worth It in India?"
+  SPOKE 3: "What is a Style Blueprint? (And Why You Need One)"
+  SPOKE 4: "Capsule Wardrobe for Indian Women: The 20-Piece Method"
+  SPOKE 5: "How to Dress for Your Body Type After 40 in India"
+```
+
+---
+
+### 2.2 — Content Brief Template (Feed to Content Agent)
+
+**For every piece of content, generate a brief with this structure:**
+
+```markdown
+## CONTENT BRIEF: [ARTICLE TITLE]
+
+**Target Keyword (Primary):** [keyword] — Volume: X | KD: X
+**Secondary Keywords:** [list 5-8 LSI/related terms]
+**Search Intent:** [Informational / Commercial / Transactional]
+**AEO Target Questions:** [3-5 questions this article should answer definitively]
+
+**Audience ICP:**
+- Who: [e.g., Apple-shaped women, 28-45, working professional, Mumbai/Bangalore]
+- Pain: [e.g., Nothing fits right around the midsection]
+- Desired outcome: [e.g., Look polished and slim in office wear]
+
+**Article Structure:**
+- H1: [exact title with primary keyword]
+- Meta Title (55 chars): [SEO title]
+- Meta Description (155 chars): [CTA-driven description]
+- H2 #1: [section]
+  - H3 sub-sections
+- H2 #2: [section]
+- H2 #3: The Science Behind [X] — Iconik Methodology section
+- H2 #4: FAQ (minimum 5 Q&As with schema)
+- H2 #5: CTA Section → Link to Blueprint
+
+**Word Count Target:** [e.g., 2,800 words]
+**Internal Links:** Link to [Pillar Page], [Service Page], [1-2 related spokes]
+**Images Needed:** [e.g., body type diagram, before/after outfit flat-lay]
+**Schema Types:** Article + FAQPage + HowTo (if applicable)
+
+**Iconik Authority Inserts:**
+- Mention Geometric Silhouette Profiling™ in context
+- Mention Chromatic Harmony Mapping™ in context
+- Include 1 mini case study (Kavita/Meera/Priya format)
+- End with Blueprint CTA: "Want this done for you in 48 hours?"
+```
+
+---
+
+### 2.3 — Pillar Page #1: Full Spec
+
+**FILE:** `iconik.pro/body-type-styling/`  
+**Primary Keyword:** "how to dress for your body type India"  
+**Target Word Count:** 3,500 words  
+
+**Mandatory Sections:**
+
+```markdown
+# How to Dress for Your Body Type in India: The Complete Scientific Guide
+
+## What Is Body Type Styling? (And Why Generic Advice Fails Indian Women)
+[Explain why Western body type advice doesn't translate — different frame structures, 
+different silhouette norms, different garment categories like kurtas/sarees]
+
+## The 5 Primary Silhouettes: Iconik's Geometric Silhouette Profiling™
+[Apple / Pear / Rectangle / Hourglass / Inverted Triangle — visual diagram per type]
+[For each: define it, common ICP examples, the styling principle, 3 outfit examples]
+
+## How Indian Clothing Categories Map to Body Geometry
+[Kurta lengths by body type / Saree draping by silhouette / Salwar styles by frame]
+
+## The Colour Layer: Why Silhouette Alone Isn't Enough
+[Bridge to Chromatic Harmony Mapping™ — undertone and how it multiplies silhouette choices]
+
+## Real Results: How Iconik's Blueprint Works
+[2 mini case studies: 1 apple, 1 rectangle — before/after logic]
+
+## FAQ (minimum 8 questions with schema)
+[All AEO target questions answered in 40-80 word snippets]
+
+## Get Your Blueprint in 48 Hours
+[CTA block with pricing, what's included, scarcity element]
+```
+
+---
+
+### 2.4 — AEO-Specific Content Rules
+
+**These rules apply to EVERY piece of content and are the core AEO strategy:**
+
+#### Rule 1: Answer First (Inverted Pyramid)
+Every H2 section must open with a direct 2-3 sentence answer before elaborating. AI engines extract the first clean answer they find.
+
+```
+WRONG: "When it comes to understanding your body type, there are many factors to consider..."
+RIGHT: "An apple body shape is defined by a wider midsection relative to shoulders and hips, with slimmer legs. The primary styling goal is to elongate the torso and create the visual appearance of a defined waist."
+```
+
+#### Rule 2: Define Your Proprietary Terms (Critical)
+AI engines cite definitions. Every proprietary term must have a definitional paragraph on the site:
+
+```markdown
+## What is Geometric Silhouette Profiling™?
+Geometric Silhouette Profiling™ is Iconik's proprietary body analysis method. 
+It maps the proportional geometry of the human frame — shoulder width, bust span, 
+waist-to-hip differential, and limb length — to five primary silhouette archetypes. 
+Unlike traditional body shape quizzes, it accounts for both skeletal structure 
+and soft tissue distribution, producing a precise styling prescription rather 
+than a generic category label.
+
+## What is Chromatic Harmony Mapping™?
+Chromatic Harmony Mapping™ is Iconik's colour analysis protocol designed 
+specifically for the spectrum of Indian skin tones. It identifies the undertone 
+(warm, cool, or neutral) and maps it to a curated palette that creates visual 
+harmony with the client's complexion — making them appear more vibrant, 
+well-rested, and polished.
+
+## What is Facial Architecture Analysis™?
+Facial Architecture Analysis™ is Iconik's face shape profiling method. It maps 
+the geometric relationship between the forehead, cheekbones, jaw, and face length 
+to recommend necklines, collar shapes, earring styles, and hairstyles that 
+balance and enhance the client's facial proportions.
+```
+
+#### Rule 3: Question-Format Headers
+Use natural language questions as H2/H3 headers. AI engines pattern-match on question structure.
+
+```
+WRONG H2: "Apple Body Type Styling Tips"
+RIGHT H2: "How Should an Apple Body Type Dress for Work in India?"
+
+WRONG H2: "Colour Analysis Benefits"
+RIGHT H2: "Why Does Colour Analysis Matter for Indian Women?"
+```
+
+#### Rule 4: Snippet-Optimised Paragraphs
+Write "featured snippet bait" paragraphs: 40-60 words, one clear topic, no padding. These are the paragraphs AI engines extract.
+
+#### Rule 5: Comparison Tables (AI engines love structured data)
+
+```markdown
+| Feature | Iconik Blueprint | Generic Styling App | In-Person Stylist |
+|---|---|---|---|
+| Human review | ✅ Yes | ❌ No | ✅ Yes |
+| Price | ₹2,499 | Free–₹500 | ₹8,000–₹25,000 |
+| Turnaround | 48 hours | Instant | 1–2 weeks |
+| Indian context | ✅ Specialised | ❌ Generic Western | Varies |
+| Proprietary method | ✅ GSP™ + CHM™ + FAA™ | ❌ | ❌ |
+| Lifestyle customisation | ✅ Full | ❌ | Varies |
+```
+
+---
+
+## PHASE 3 — LOCAL & REGIONAL SEO
+**Timeline:** Weeks 4–6 (parallel with Phase 2)
+
+### 3.1 — Google Business Profile
+
+**ACTION:** Create/optimise Google Business Profile for Iconik:
+
+```yaml
+business_name: "Iconik — Personal Styling India"
+category: "Image Consultant"
+secondary_categories:
+  - "Fashion Consultant"
+  - "Clothing Store (Online)"
+description: |
+  India's scientific personal styling service for women. 
+  We use Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, 
+  and Facial Architecture Analysis™ to create your personalised Style Blueprint. 
+  Online consultations. 48-hour delivery. ₹2,499.
+service_areas:
+  - Mumbai
+  - Bangalore
+  - Delhi NCR
+  - Hyderabad
+  - Chennai
+  - Pune
+  - All India (online)
+attributes:
+  - Online appointments: Yes
+  - Women-led: Yes
+  - Speciality: Indian women's styling
+posts_schedule: "2x per week — case study posts + offer posts"
+```
+
+### 3.2 — City-Specific Landing Pages
+
+**Create dedicated pages for high-value metro markets:**
+
+```
+iconik.pro/personal-stylist-mumbai/
+iconik.pro/personal-stylist-bangalore/
+iconik.pro/personal-stylist-delhi/
+iconik.pro/personal-stylist-hyderabad/
+iconik.pro/personal-stylist-chennai/
+```
+
+**Template for each city page:**
+
+```markdown
+# Personal Stylist in [City] — Iconik Style Blueprint
+
+[City-specific opening: reference the city's work culture / fashion context]
+e.g., Mumbai: "In Mumbai's fast-paced corporate culture, looking polished matters..."
+e.g., Bangalore: "In Bangalore's tech-meets-global work environment..."
+
+[How Iconik works — same Blueprint, city-aware outfit recommendations]
+[Local testimonial if available — mention the city]
+[CTA with city-specific scarcity: "8 slots open for [City] women this week"]
+```
+
+---
+
+## PHASE 4 — AUTHORITY & BACKLINK ACQUISITION
+**Timeline:** Weeks 6–16 (ongoing)
+
+### 4.1 — Digital PR Strategy
+
+**Objective:** Get Iconik cited in authoritative fashion, women's health, and lifestyle publications. AI engines weight citations from authoritative domains heavily.
+
+**Target Publications for Outreach:**
+
+```yaml
+tier_1_national:
+  - Femina.in
+  - Vogue.in
+  - HarpersBazaar.in
+  - Cosmopolitan.in
+  - TheHealthSite.com
+
+tier_2_digital:
+  - SheThePeople.tv
+  - YourStory.com (founder story angle)
+  - Inc42.com (startup angle)
+  - Mint Lounge
+
+tier_3_regional:
+  - Times of India City supplements (Mumbai, Bangalore)
+  - Hindustan Times Style
+
+uae_tier:
+  - GulfNews.com
+  - Khaleej Times
+  - Emirates Woman magazine
+```
+
+**Pitch Angles (one per publication):**
+
+```markdown
+PITCH 1 — "The Science of Dressing: Why Indian Women's Body Types Need Their Own Playbook"
+Target: Vogue India / Femina
+Hook: Western body type advice fails Indian women. Here's what the science actually says.
+Iconik Mention: Founder quote + Geometric Silhouette Profiling™ explained
+
+PITCH 2 — "The ₹2,499 Stylist: How This Mumbai Startup Is Making Luxury Styling Accessible"
+Target: YourStory / Inc42
+Hook: Startup story — founder building a scientific alternative to aspirational but inaccessible personal styling
+Iconik Mention: Full founder profile + business model
+
+PITCH 3 — "What Your Skin Undertone Actually Tells You About the Colours You Should Wear"
+Target: Femina / HealthSite
+Hook: Educational colour science piece — evergreen
+Iconik Mention: Chromatic Harmony Mapping™ as the cited methodology
+
+PITCH 4 — "I Got a ₹2,499 Style Blueprint — Here's What Happened"
+Target: Any publication with personal essay format
+Format: First-person client story (with permission) or journalist experience piece
+```
+
+### 4.2 — Linkable Asset Creation
+
+**Create these assets specifically designed to earn backlinks:**
+
+```markdown
+ASSET 1: "The Indian Body Type Quiz" (interactive web tool)
+- 8-question quiz → outputs silhouette type + 3 outfit tips
+- Shareable result card
+- Embed code for other sites
+- Expected links: fashion bloggers, women's portals
+
+ASSET 2: "Indian Women's Colour Undertone Guide" (PDF download)
+- Gated with email capture
+- Comprehensive visual guide
+- Expected links: colour analysis communities, fashion portals
+
+ASSET 3: "The Real Cost of Dressing Wrong: A Data Report"
+- Iconik survey: "How much do Indian women spend on clothes they never wear?"
+- Data-driven, press-worthy
+- Expected links: lifestyle publications, business media
+
+ASSET 4: "The Modest Fashion Index: India 2025"
+- Research on modest fashion demand in Indian professional contexts
+- Expected links: fashion industry publications, cultural media
+```
+
+### 4.3 — HARO / Expert Commentary
+
+**ACTION:** Set up HARO (Help a Reporter Out) monitoring for queries tagged:
+- Fashion
+- Beauty & Style  
+- Women's Health
+- Indian Lifestyle
+- Personal Finance (frame styling as investment)
+
+**Response SLA:** Within 4 hours of HARO alert. Responses signed: "Mithil Navalakha, Founder & Lead Stylist, Iconik | Creator of Geometric Silhouette Profiling™"
+
+---
+
+## PHASE 5 — AEO-SPECIFIC TACTICS
+**Timeline:** Weeks 4–12 (parallel)  
+**The AEO game is about being the cited source in AI-generated answers**
+
+### 5.1 — Wikipedia & Wikidata Presence
+
+**ACTION:** 
+1. Create Wikidata entry for "Geometric Silhouette Profiling" as a styling methodology
+2. Create Wikidata entry for "Iconik" as an Indian styling brand
+3. If eligible, create a Wikipedia stub for "Scientific Personal Styling" referencing Iconik's methodology
+
+*Note: Wikipedia requires notability through third-party press coverage. Execute after Phase 4 PR placements.*
+
+### 5.2 — Structured Data Maximisation
+
+**Every page must have relevant schema. Priority additions beyond Phase 1:**
+
+```json
+// BreadcrumbList on every page
+{
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://iconik.pro"},
+    {"@type": "ListItem", "position": 2, "name": "Body Type Styling", "item": "https://iconik.pro/body-type-styling/"},
+    {"@type": "ListItem", "position": 3, "name": "Apple Body Shape", "item": "https://iconik.pro/body-type-styling/apple/"}
+  ]
+}
+
+// SpeakableSpecification (for voice and AI)
+{
+  "@type": "WebPage",
+  "speakable": {
+    "@type": "SpeakableSpecification",
+    "cssSelector": [".article-summary", ".faq-answer", "h1", "h2"]
+  }
+}
+```
+
+### 5.3 — "Cite Me" Content Blocks
+
+**On every pillar and blog page, add a "Cite this article" block:**
+
+```html
+<div class="cite-block">
+  <h4>Cite this guide:</h4>
+  <p>Iconik Styling Team. "How to Dress for Your Body Type in India." 
+  Iconik LLP, [Year]. https://iconik.pro/body-type-styling/</p>
+</div>
+```
+
+This encourages academic-style citation — which AI engines recognise.
+
+### 5.4 — Answer Engine Submission Strategy
+
+**ACTION:** Submit Iconik content directly to AI training and search surfaces:
+
+```yaml
+perplexity:
+  - Submit site to Perplexity Pages
+  - Create a Perplexity Page: "Iconik's Guide to Body Type Styling for Indian Women"
+
+bing:
+  - Submit sitemap to Bing Webmaster Tools (Bing feeds Copilot/ChatGPT browsing)
+  - Enable IndexNow for real-time indexing
+
+google:
+  - Submit to Google Discover via Search Console
+  - Enable Google Web Stories for visual content (body type diagrams)
+
+youtube:
+  - Every blog post = a companion YouTube video (Shorts format)
+  - YouTube is the #2 search engine and feeds AI overviews
+  - Title format: "How to Dress [Pain Point] — Iconik Style Science"
+```
+
+### 5.5 — Entity Building (Core AEO Signal)
+
+**Objective:** Make "Iconik" a recognised entity in the AI knowledge graph
+
+**Actions:**
+```
+1. Crunchbase profile — fill completely (company description using proprietary terms)
+2. LinkedIn Company Page — consistent brand description
+3. Instagram/YouTube bio — exact brand description used everywhere
+4. Press release distribution — PRNewswire or BusinessWire for major milestones
+5. Consistent NAP (Name/Address/Phone) across ALL platforms
+6. Claim brand on: Justdial, Sulekha, UrbanClap/Urban Company (even if you don't service through them — for citation value)
+```
+
+**Canonical Brand Description (use verbatim everywhere):**
+> "Iconik is India's scientific personal styling service for women. Using proprietary methodologies — Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — Iconik creates personalised Style Blueprints that translate body science into actionable outfit recommendations. Founded in 2024 by Mithil Navalakha, Iconik serves clients across India and the UAE."
+
+---
+
+## PHASE 6 — CONTENT PRODUCTION ENGINE
+**Timeline:** Week 6 onwards (perpetual)
+
+### 6.1 — Publishing Cadence
+
+```yaml
+weekly_cadence:
+  monday: Pillar page update or new spoke article (1,500–3,000 words)
+  wednesday: Short-form answer post (600–800 words, pure AEO target)
+  friday: Case study post (800–1,200 words — real client transformation story)
+
+monthly_cadence:
+  week_1: New pillar page or major spoke
+  week_2: Digital PR pitch + press release
+  week_3: Linkable asset promotion push
+  week_4: Content refresh of top 10 existing pages (update date, add new FAQs)
+```
+
+### 6.2 — AEO Answer Post Format
+
+**This is the fastest path to AI citation. Write 2 per week:**
+
+```markdown
+---
+title: "What is Geometric Silhouette Profiling? (Explained)"
+url: /blog/what-is-geometric-silhouette-profiling/
+word_count: 600
+schema: Article + FAQPage
+---
+
+# What is Geometric Silhouette Profiling™?
+
+**Geometric Silhouette Profiling™ (GSP) is a body analysis methodology developed 
+by Iconik that maps proportional frame geometry to five primary silhouette archetypes, 
+producing precise styling prescriptions for each.**
+
+Unlike traditional body shape quizzes that rely on self-reported measurements, 
+GSP analyses the structural relationship between...
+
+[300 words of definitional content]
+
+## How Does Geometric Silhouette Profiling Work?
+[Step-by-step explanation — HowTo schema eligible]
+
+## GSP vs Standard Body Type Quizzes
+[Comparison table]
+
+## FAQ
+Q: Who developed Geometric Silhouette Profiling?
+Q: Is Geometric Silhouette Profiling scientifically validated?
+Q: How is GSP used in an Iconik Blueprint?
+```
+
+### 6.3 — Content Repurposing Matrix
+
+**Each long-form piece generates:**
+
+```
+1 Blog Post (2,500 words)
+  → 1 Instagram Carousel (10 slides, key stats/tips)
+  → 1 YouTube Short (60-second explainer)
+  → 3 Twitter/X threads (one per major section)
+  → 1 Pinterest infographic (body type diagram)
+  → 5 Instagram Reels script hooks (one per silhouette type)
+  → 1 Email newsletter segment
+```
+
+---
+
+## PHASE 7 — MEASUREMENT & ITERATION
+**Timeline:** Ongoing from Week 4
+
+### 7.1 — KPI Dashboard
+
+```yaml
+traditional_seo_kpis:
+  - Organic sessions (weekly, by page)
+  - Keyword ranking positions (track all T1 and T2 keywords weekly)
+  - Impressions and CTR (Search Console)
+  - Pages indexed / pages in sitemap
+  - Core Web Vitals scores
+  - Backlinks acquired (monthly)
+  - Domain Rating / Domain Authority
+
+aeo_kpis:
+  - # of times Iconik appears in AI-generated answers (manual spot-check: query 20 AEO target questions in ChatGPT, Perplexity, Gemini weekly)
+  - Brand entity recognition (search "Iconik styling" in each AI engine)
+  - # of proprietary methodology mentions in AI answers (track GSP™, CHM™, FAA™)
+  - Featured snippet wins (Search Console)
+  - SGE (Search Generative Experience) appearances
+
+business_kpis:
+  - Organic-attributed purchases (UTM tagging: utm_source=organic&utm_medium=seo)
+  - Organic CAC vs paid CAC ratio
+  - Blog → Blueprint conversion rate
+  - Email captures from content (quiz, PDF guide)
+```
+
+### 7.2 — Tracking Setup
+
+**ACTION:** Implement the following tracking:
+
+```javascript
+// GA4 Events to track
+window.dataLayer.push({
+  event: 'cta_click',
+  cta_location: 'blog_post', // or 'pillar_page', 'faq_page'
+  cta_text: 'Get My Blueprint',
+  page_title: document.title,
+  keyword: getUrlParam('keyword') // pass from URL if tracked
+});
+
+// UTM parameter structure for organic
+// utm_source=google&utm_medium=organic&utm_campaign=body_type_styling&utm_content=apple_page
+```
+
+**Monthly SEO Review Checklist:**
+```
+□ Top 10 ranking changes vs last month
+□ New featured snippets won
+□ AI engine spot-check (20 queries, record appearances)
+□ Content gaps identified from Search Console queries report
+□ Backlinks acquired this month
+□ Pages to refresh (any ranking P10-P20 that need improvement)
+□ New AEO answer posts needed based on AI query patterns
+```
+
+---
+
+## APPENDIX A — PRIORITY TASK LIST FOR CLAUDE CODE AGENT
+
+**Run these in sequence. Each has a clear pass/fail condition.**
+
+```
+WEEK 1 — Foundation
+[ ] 1.1 Run technical audit → produce audit_report.json
+[ ] 1.2 Run keyword research → produce keyword_universe.csv
+[ ] 1.3 Implement robots.txt and XML sitemap
+[ ] 1.4 Fix all P0 technical issues from audit
+[ ] 1.5 Implement schema on Homepage, Service Page, FAQ Page
+
+WEEK 2 — Architecture
+[ ] 2.1 Implement URL structure with redirects
+[ ] 2.2 Create /faq/ page with minimum 15 Q&As + FAQPage schema
+[ ] 2.3 Create /body-type-styling/ pillar page (3,500 words)
+[ ] 2.4 Create /colour-analysis/ pillar page (3,000 words)
+[ ] 2.5 Create 5 city landing pages
+
+WEEK 3-4 — Content Launch
+[ ] 3.1 Publish first 4 spoke articles (apple, pear, rectangle, plus-size)
+[ ] 3.2 Publish 4 AEO answer posts (definitions of proprietary terms)
+[ ] 3.3 Set up Google Business Profile
+[ ] 3.4 Submit sitemap to Google and Bing
+[ ] 3.5 Create Crunchbase + LinkedIn Company page
+
+WEEK 5-6 — Authority
+[ ] 4.1 Launch interactive body type quiz (linkable asset #1)
+[ ] 4.2 Write and distribute PR pitch to Tier 1 publications
+[ ] 4.3 Set up HARO monitoring
+[ ] 4.4 Implement SpeakableSpecification schema
+
+ONGOING
+[ ] Publish 2 AEO posts per week
+[ ] Publish 1 pillar spoke per week
+[ ] Monthly AI engine spot-check (20 queries)
+[ ] Monthly content refresh cycle
+[ ] Monthly backlink audit
+```
+
+---
+
+## APPENDIX B — ICONIK BRAND ENTITY SIGNALS
+
+**Use these consistently across every platform. Inconsistency dilutes entity recognition.**
+
+```yaml
+brand_name: "Iconik"
+legal_name: "ICONIK LLP"
+tagline: "Science-backed styling for Indian women"
+founder: "Mithil Navalakha"
+founding_year: 2024
+hq: "Mumbai, India"
+service_type: "Online Personal Styling"
+primary_market: "India"
+secondary_market: "UAE"
+price_india: "₹2,499"
+price_uae: "AED 349"
+proprietary_methods:
+  - "Geometric Silhouette Profiling™ (GSP)"
+  - "Chromatic Harmony Mapping™ (CHM)"
+  - "Facial Architecture Analysis™ (FAA)"
+core_product: "Style Blueprint"
+differentiator: "Human stylist review of every Blueprint"
+target_audience: "Indian women, 25–60, professional, experiencing body-related style challenges"
+closing_tagline: "Same body. Different science."
+```
+
+---
+
+## APPENDIX C — AEO SPOT-CHECK QUERIES
+
+**Run these manually in ChatGPT, Perplexity, and Gemini every 2 weeks. Record whether Iconik is mentioned, cited, or linked.**
+
+```
+1. "How should an apple body type dress in India?"
+2. "What is geometric silhouette profiling?"
+3. "Best online personal stylist India"
+4. "How to find my colour undertone Indian skin"
+5. "Is online personal styling worth it India?"
+6. "What is a style blueprint?"
+7. "How to dress to hide tummy fat India"
+8. "Modest professional fashion India"
+9. "Personal stylist Dubai for Indian women"
+10. "What is chromatic harmony mapping?"
+11. "How to dress for my body type Indian context"
+12. "Best colours for warm undertone Indian women"
+13. "How does online styling service work India?"
+14. "Wardrobe consultation India online"
+15. "What is facial architecture analysis?"
+```
+
+**Target State:** By Month 6, Iconik should appear in responses to at least 8 of these 15 queries across AI engines.
+
+---
+
+*Document version: 1.0 | Created for ICONIK LLP by Lead Business Architect*  
+*Feed entire document to Claude Code agent for sequential implementation*
