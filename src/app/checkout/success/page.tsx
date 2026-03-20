@@ -9,8 +9,7 @@ import { trackCompleteRegistration, trackPageView, trackViewContent, trackInitia
 
 const ICONIK_CLUB_PLANS = [
   { id: 'monthly' as const, label: 'Monthly', price: '₹899', period: '/month', subtext: 'Cancel anytime', badge: null },
-  { id: 'quarterly' as const, label: 'Quarterly', price: '₹2,399', period: '/quarter', subtext: 'Save ₹298', badge: 'POPULAR' },
-  { id: 'yearly' as const, label: 'Annual', price: '₹8,399', period: '/year', subtext: 'Save ₹2,389', badge: 'BEST VALUE' },
+  { id: 'yearly' as const, label: 'Annual', price: '₹699', period: '/month', subtext: 'Billed ₹8,399/year', badge: 'BEST VALUE' },
 ];
 
 const BENEFITS = [
@@ -55,7 +54,7 @@ function SuccessPageContent() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [orderId, setOrderId] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [upsellTracked, setUpsellTracked] = useState(false);
   const [sampleItems, setSampleItems] = useState<SampleItem[]>([]);
   const [sampleLoading, setSampleLoading] = useState(true);
@@ -63,7 +62,7 @@ function SuccessPageContent() {
   useEffect(() => {
     fetch('/api/iconik-club/items/sample')
       .then(r => r.json())
-      .then(d => setSampleItems((d.items ?? []).slice(0, 3)))
+      .then(d => setSampleItems(d.items ?? []))
       .catch(() => { })
       .finally(() => setSampleLoading(false));
   }, []);
@@ -104,8 +103,8 @@ function SuccessPageContent() {
 
   const handleSubscription = useCallback(async () => {
     setIsProcessing(true);
-    const planLabels = { monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Annual' };
-    const planAmounts = { monthly: 899, quarterly: 2399, yearly: 8399 };
+    const planLabels = { monthly: 'Monthly', yearly: 'Annual' };
+    const planAmounts = { monthly: 899, yearly: 8399 };
     trackInitiateCheckout(planAmounts[selectedPlan], 1, `Iconik Club ${planLabels[selectedPlan]}`, 'INR', 'Upsell');
     try {
       const email = customerEmail || localStorage.getItem('customerEmail') || '';
@@ -150,21 +149,33 @@ function SuccessPageContent() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto mb-10"
+          className="max-w-sm mx-auto mb-4"
         >
-          <div className="bg-green-50 border border-green-200 flex items-start gap-4 p-4 md:p-5 rounded-2xl shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 border border-green-200">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+          <div className="bg-green-50 border border-green-200 flex items-center gap-3 p-3 rounded-xl shadow-sm">
+            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 border border-green-200">
+              <CheckCircle className="w-4 h-4 text-green-600" />
             </div>
             <div>
-              <p className="luxury-body font-semibold text-sm md:text-base text-green-900 m-0">
-                Payment confirmed — your consultation is booked.
+              <p className="luxury-body font-semibold text-xs text-green-900 m-0">
+                Payment Confirmed
               </p>
-              <p className="luxury-body text-xs md:text-sm text-green-800/80 mt-1 m-0">
-                Confirmation email is on its way. If you don&apos;t see it in 5 minutes, check your spam or junk folder.
+              <p className="luxury-body text-[11px] text-green-800/70 mt-0.5 m-0">
+                Please check your spam folder for further instructions.
               </p>
             </div>
           </div>
+        </motion.div>
+
+        {/* ── Attention hook ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="text-center mb-8"
+        >
+          <p className="luxury-heading text-xl md:text-2xl text-luxury-charcoal font-semibold">
+            Wait — Don&apos;t Close This Page Yet
+          </p>
         </motion.div>
 
         {/* ── Main OTO ── */}
@@ -252,8 +263,8 @@ function SuccessPageContent() {
 
                   {/* Items grid — skeleton while loading */}
                   {sampleLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-luxury-cream bg-white">
-                      {[0, 1, 2].map(i => (
+                    <div className="grid grid-cols-2 divide-x divide-luxury-cream bg-white [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-luxury-cream">
+                      {[0, 1, 2, 3].map(i => (
                         <div key={i} className="flex flex-col animate-pulse">
                           <div className="aspect-[3/4] bg-luxury-cream/60" />
                           <div className="px-3 py-3 space-y-2">
@@ -267,7 +278,7 @@ function SuccessPageContent() {
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-luxury-cream bg-white">
+                    <div className="grid grid-cols-2 divide-x divide-luxury-cream bg-white [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-luxury-cream">
                       {sampleItems.map(item => (
                         <div key={item.id} className="flex flex-col group overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -341,7 +352,7 @@ function SuccessPageContent() {
             </div>
 
             {/* Pricing cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-4 mb-8">
               {ICONIK_CLUB_PLANS.map(plan => {
                 const active = selectedPlan === plan.id;
                 return (

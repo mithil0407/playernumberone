@@ -32,8 +32,8 @@ interface RazorpayInstance { open(): void; }
 
 // ── Prices ───────────────────────────────────────────────────────────────────
 
-const BASE_PRICE = 349;   // AED 349
-const ADDON_PRICE = 119;  // AED 119 — The ICONIK Edit
+const BASE_PRICE = 79;   // £79
+const ADDON_PRICE = 29;  // £29 — The ICONIK Edit
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ export default function GlobeCheckoutPage() {
 
     useEffect(() => {
         trackPageView('Globe Checkout');
-        trackInitiateCheckout(349, 1, 'ICONIK Blueprint Globe', 'AED', 'Globe Funnel');
+        trackInitiateCheckout(79, 1, 'ICONIK Blueprint Globe', 'GBP', 'Globe Funnel');
     }, []);
 
     useEffect(() => {
@@ -134,9 +134,9 @@ export default function GlobeCheckoutPage() {
                 const options: RazorpayOptions = {
                     key: data.key,
                     amount: data.amount,
-                    currency: 'AED',
+                    currency: 'GBP',
                     name: 'ICONIK Style Intelligence',
-                    description: 'ICONIK Blueprint — UAE',
+                    description: 'ICONIK Blueprint',
                     order_id: data.razorpay_order_id,
                     handler: async (rzpResponse: RazorpayResponse) => {
                         // Purchase is tracked on the thankyou page to avoid racing the redirect
@@ -248,11 +248,15 @@ export default function GlobeCheckoutPage() {
                     <h1 className="text-xl md:text-5xl luxury-heading text-luxury-charcoal mb-3">
                         Your ICONIK Blueprint
                     </h1>
-                    <div className="flex items-baseline justify-center gap-3">
-                        <span className="text-2xl md:text-5xl luxury-heading text-luxury-accent">AED {BASE_PRICE}</span>
+                    <div className="flex items-baseline justify-center gap-3 mb-3">
+                        <span className="text-xl md:text-3xl luxury-heading text-luxury-charcoal/40 line-through">£149</span>
+                        <span className="text-2xl md:text-5xl luxury-heading text-luxury-accent">£{BASE_PRICE}</span>
+                    </div>
+                    <div className="inline-block bg-luxury-accent text-luxury-warm-white px-5 py-1.5 rounded-full luxury-body text-sm font-semibold mb-3">
+                        YOU SAVE £70 TODAY
                     </div>
 
-                    <div className="flex items-center justify-center gap-1.5 mt-3 luxury-body text-luxury-charcoal/50 text-sm">
+                    <div className="flex items-center justify-center gap-1.5 mt-1 luxury-body text-luxury-charcoal/50 text-sm">
                         <Clock className="w-4 h-4 text-luxury-accent" />
                         <span>Offer expires in {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}</span>
                     </div>
@@ -349,7 +353,7 @@ export default function GlobeCheckoutPage() {
                                     }}
                                     required
                                     className="w-full px-4 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-luxury-warm-white luxury-body"
-                                    placeholder="+971 50 000 0000"
+                                    placeholder="+44 7700 000000"
                                 />
                             </div>
 
@@ -372,7 +376,7 @@ export default function GlobeCheckoutPage() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="luxury-heading text-luxury-charcoal text-sm mb-1">
-                                            YES — Add The ICONIK Edit (+AED {ADDON_PRICE})
+                                            YES — Add The ICONIK Edit (+£{ADDON_PRICE})
                                         </div>
                                         <p className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed">
                                             10 complete outfit formulas built specifically for your Blueprint. This is the implementation tool for your Blueprint. Add it now and you&apos;ll receive it alongside your report.
@@ -412,7 +416,7 @@ export default function GlobeCheckoutPage() {
                                     'Body Geometry Analysis',
                                     'Face Architecture Profile',
                                     'Chromatic Harmony Map (10 exact colours)',
-                                    '6 Complete Outfit Formulas',
+                                    '20 Complete Outfit Formulas',
                                     'Hair Direction (4 styles)',
                                     'Eyewear Guide (4 frames)',
                                     'What to Avoid — and Why',
@@ -436,12 +440,12 @@ export default function GlobeCheckoutPage() {
                             <div className="space-y-2 mb-5">
                                 <div className="flex justify-between luxury-body text-luxury-charcoal/60 text-sm">
                                     <span>ICONIK Blueprint</span>
-                                    <span>AED {BASE_PRICE}</span>
+                                    <span>£{BASE_PRICE}</span>
                                 </div>
                                 {iconikEditAddon && (
                                     <div className="flex justify-between luxury-body text-luxury-charcoal/60 text-sm">
                                         <span>+ The ICONIK Edit</span>
-                                        <span>AED {ADDON_PRICE}</span>
+                                        <span>£{ADDON_PRICE}</span>
                                     </div>
                                 )}
                             </div>
@@ -449,7 +453,10 @@ export default function GlobeCheckoutPage() {
                             <div className="border-t border-luxury-cream pt-4 mb-5">
                                 <div className="flex justify-between items-baseline">
                                     <span className="luxury-heading text-luxury-charcoal text-lg md:text-xl">You Pay:</span>
-                                    <span className="text-2xl md:text-3xl luxury-heading text-luxury-accent">AED {totalAmount}</span>
+                                    <div className="text-right">
+                                        <div className="text-xs luxury-body text-luxury-charcoal/40 line-through">£{149 + (iconikEditAddon ? ADDON_PRICE : 0)}</div>
+                                        <span className="text-2xl md:text-3xl luxury-heading text-luxury-accent">£{totalAmount}</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -461,7 +468,7 @@ export default function GlobeCheckoutPage() {
                             >
                                 {isProcessing ? 'Processing...' : (
                                     <>
-                                        GET MY BLUEPRINT — AED {totalAmount}
+                                        GET MY BLUEPRINT — £{totalAmount}
                                         <ArrowRight className="w-4 h-4" />
                                     </>
                                 )}
@@ -475,7 +482,7 @@ export default function GlobeCheckoutPage() {
                                     ))}
                                 </div>
                                 <p className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed italic">
-                                    &quot;The face architecture section alone was worth three times the price.&quot; — Layla, Abu Dhabi
+                                    &quot;The face architecture section alone was worth three times the price.&quot; — Layla, Manchester
                                 </p>
                             </div>
                         </div>

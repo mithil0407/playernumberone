@@ -31,7 +31,7 @@ interface RazorpayInstance { open(): void; }
 const PLANS = {
     monthly: {
         label: 'Monthly',
-        price: 69,
+        price: 19,
         period: '/month',
         total: null as null | number,
         savings: null as null | string,
@@ -39,9 +39,9 @@ const PLANS = {
     },
     annual: {
         label: 'Annual',
-        price: 49,
+        price: 14,
         period: '/month',
-        total: 588,
+        total: 168,
         savings: '2 months free',
         highlight: true,
     },
@@ -70,11 +70,11 @@ function GlobeThankyouInner() {
         if (email && phone) updateUserData(email, phone);
         const paymentId = sessionStorage.getItem('globe_purchaseTracked');
         if (paymentId) {
-            trackPurchase(orderAmount, 'ICONIK Blueprint Globe', ['iconik_blueprint_globe'], 1, 'AED', 'Globe Funnel', paymentId);
+            trackPurchase(orderAmount, 'ICONIK Blueprint Globe', ['iconik_blueprint_globe'], 1, 'GBP', 'Globe Funnel', paymentId);
             sessionStorage.removeItem('globe_purchaseTracked');
         } else {
             // Page refresh or direct visit — fire CompleteRegistration as fallback
-            trackCompleteRegistration(orderAmount, 'ICONIK Blueprint Globe', 'AED');
+            trackCompleteRegistration(orderAmount, 'ICONIK Blueprint Globe', 'GBP');
         }
     }, [orderAmount, email, phone]);
 
@@ -123,10 +123,10 @@ function GlobeThankyouInner() {
                     key: data.key,
                     subscription_id: data.subscription_id,
                     name: 'ICONIK Style Intelligence',
-                    description: `ICONIK Style Feed — ${selectedPlan === 'monthly' ? 'AED 69/month' : 'AED 588/year'}`,
+                    description: `ICONIK Style Feed — ${selectedPlan === 'monthly' ? '£19/month' : '£168/year'}`,
                     handler: async (rzpRes: RazorpaySubResponse) => {
-                        const subscriptionAmount = selectedPlan === 'monthly' ? 69 : 588;
-                        trackPurchase(subscriptionAmount, 'ICONIK Style Feed', ['iconik_style_feed'], 1, 'AED', 'Globe Funnel', rzpRes.razorpay_payment_id);
+                        const subscriptionAmount = selectedPlan === 'monthly' ? 19 : 168;
+                        trackPurchase(subscriptionAmount, 'ICONIK Style Feed', ['iconik_style_feed'], 1, 'GBP', 'Globe Funnel', rzpRes.razorpay_payment_id);
                         window.location.href = `/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&subscribed=true`;
                     },
                     prefill: { email, contact: phone },
@@ -278,10 +278,10 @@ function GlobeThankyouInner() {
                     {/* Price anchor */}
                     <div className="text-center mb-6">
                         <p className="luxury-body text-luxury-charcoal/60 text-sm mb-2">
-                            Personal stylists in Dubai or Abu Dhabi charge AED 800–2,000/month for this level of ongoing guidance.
+                            Personal stylists charge £300–800/month for this level of ongoing guidance.
                         </p>
                         <p className="luxury-body text-luxury-charcoal font-semibold text-sm">
-                            ICONIK Style Feed: from AED 49/month.
+                            ICONIK Style Feed: from £14/month.
                         </p>
                     </div>
 
@@ -305,8 +305,8 @@ function GlobeThankyouInner() {
                                     )}
                                     <div className="text-center">
                                         <div className="luxury-heading text-luxury-charcoal text-sm mb-1">{p.label}</div>
-                                        <div className="text-2xl luxury-heading text-luxury-accent">AED {p.price}<span className="text-sm luxury-body text-luxury-charcoal/50">/mo</span></div>
-                                        {p.total && <div className="luxury-body text-luxury-charcoal/50 text-xs mt-1">AED {p.total}/year</div>}
+                                        <div className="text-2xl luxury-heading text-luxury-accent">£{p.price}<span className="text-sm luxury-body text-luxury-charcoal/50">/mo</span></div>
+                                        {p.total && <div className="luxury-body text-luxury-charcoal/50 text-xs mt-1">£{p.total}/year</div>}
                                         {p.savings && <div className="luxury-body text-luxury-accent text-xs font-semibold mt-1">{p.savings}</div>}
                                     </div>
                                 </div>
@@ -332,7 +332,7 @@ function GlobeThankyouInner() {
                         disabled={isSubscribing}
                         className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white py-4 px-6 rounded-full luxury-body font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 hover:-translate-y-0.5 transform flex items-center justify-center gap-2 text-base mb-3"
                     >
-                        {isSubscribing ? 'Processing...' : `YES — ADD STYLE FEED (AED ${selectedPlan === 'monthly' ? '69/month' : '588/year'})`}
+                        {isSubscribing ? 'Processing...' : `YES — ADD STYLE FEED (£${selectedPlan === 'monthly' ? '19/month' : '168/year'})`}
                     </button>
 
                     <div className="flex items-center justify-center gap-2 luxury-body text-luxury-charcoal/50 text-xs">

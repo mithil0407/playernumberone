@@ -343,7 +343,7 @@ function GlobeIntakePageInner() {
                 }),
             }).catch(err => console.warn('Globe intake notify failed:', err));
 
-            trackCompleteRegistration(349, 'ICONIK Blueprint Globe — Intake Submitted', 'AED');
+            trackCompleteRegistration(79, 'ICONIK Blueprint Globe — Intake Submitted', 'GBP');
             setDirection(1);
             setStep(CONFIRMATION_STEP);
 
