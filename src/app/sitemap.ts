@@ -31,9 +31,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ─── Colour analysis pillar + spokes ─────────────────────────
     { url: `${BASE}/colour-analysis`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/colour-analysis/how-to-find-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/warm-cool-neutral-undertone-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/warm-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/cool-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/neutral-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/indian-skin-tones`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/best-colours-dusky-skin`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/best-colours-wheatish-skin-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/best-colours-fair-skin-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── City landing pages ──────────────────────────────────────
     { url: `${BASE}/personal-stylist-mumbai`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
