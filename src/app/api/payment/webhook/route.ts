@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
-import { sendConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
+import { sendConfirmationEmail, sendMenConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -49,6 +49,20 @@ async function getAddOnsFromRazorpayOrder(razorpayOrderId: string): Promise<stri
   } catch (error) {
     console.error('Error fetching Razorpay order notes:', error);
     return 'Error fetching add-ons';
+  }
+}
+
+async function getBaseProductFromRazorpayOrder(razorpayOrderId: string): Promise<string> {
+  try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return '';
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+    const orderDetails = await razorpay.orders.fetch(razorpayOrderId);
+    return (orderDetails.notes as Record<string, string>)?.base_product || '';
+  } catch {
+    return '';
   }
 }
 
@@ -491,7 +505,10 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           console.log('Confirmation email already sent for order:', order.id, '— skipping duplicate');
         } else {
           try {
-            const emailResult = await sendConfirmationEmail({
+            const baseProduct = await getBaseProductFromRazorpayOrder(order.id);
+            const isMenOrder = baseProduct === 'Iconik Men Style Blueprint';
+            const emailFn = isMenOrder ? sendMenConfirmationEmail : sendConfirmationEmail;
+            const emailResult = await emailFn({
               customer_name: existingOrder.customers.name,
               customer_email: existingOrder.customers.email,
               customer_phone: existingOrder.customers.phone,

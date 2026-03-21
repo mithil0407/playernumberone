@@ -274,6 +274,217 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
   }
 }
 
+// ── Men's Order Confirmation Email ─────────────────────────────────────────
+
+function buildMenEmailHtml(data: ConfirmationEmailData): string {
+  const { customer_email, customer_phone, order_amount, add_ons, payment_id } = data;
+
+  const addOnsList = add_ons && add_ons !== 'None' && add_ons !== ''
+    ? add_ons.split(',').map(a => a.trim()).filter(Boolean)
+    : [];
+
+  const addOnsHtml = addOnsList.length > 0
+    ? `
+      <tr>
+        <td style="padding: 6px 0; border-bottom: 1px solid #f0e8e8; color:#555; font-size:14px;">
+          <strong style="color:#333;">Add-ons:</strong> ${addOnsList.join(', ')}
+        </td>
+      </tr>`
+    : '';
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Iconik Men's Blueprint is Confirmed!</title>
+</head>
+<body style="margin:0; padding:0; background-color:#fdf8f5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fdf8f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 40px 32px; text-align:center;">
+              <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:700; letter-spacing:-0.5px;">ICONIK</h1>
+              <p style="margin:8px 0 0; color:rgba(255,255,255,0.75); font-size:14px; letter-spacing:2px; text-transform:uppercase;">Men&apos;s Style &amp; Image Consulting</p>
+            </td>
+          </tr>
+
+          <!-- Confirmation Badge -->
+          <tr>
+            <td style="padding: 32px 40px 0; text-align:center;">
+              <div style="display:inline-block; background:#f0fdf4; border:2px solid #22c55e; border-radius:50px; padding:10px 24px;">
+                <span style="color:#16a34a; font-size:15px; font-weight:600;">✓ Blueprint Confirmed</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding: 28px 40px 0;">
+              <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">Hi there,</p>
+              <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">
+                Thank you for purchasing your <strong>Iconik Men&apos;s Style Blueprint</strong>. Your order is confirmed — and your journey to dressing with intention officially begins now.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Order Summary -->
+          <tr>
+            <td style="padding: 20px 40px 0;">
+              <div style="background:#fdf8f5; border-radius:12px; padding:20px 24px; border:1px solid #f0e8e8;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding: 6px 0; border-bottom: 1px solid #f0e8e8; color:#555; font-size:14px;">
+                      <strong style="color:#333;">Service:</strong> Iconik Men&apos;s Style Blueprint
+                    </td>
+                  </tr>
+                  ${addOnsHtml}
+                  <tr>
+                    <td style="padding: 6px 0; border-bottom: 1px solid #f0e8e8; color:#555; font-size:14px;">
+                      <strong style="color:#333;">Email:</strong> ${customer_email}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; border-bottom: 1px solid #f0e8e8; color:#555; font-size:14px;">
+                      <strong style="color:#333;">Phone:</strong> +91 ${customer_phone}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0 0; color:#16a34a; font-size:16px; font-weight:700;">
+                      Total Paid: ₹${order_amount.toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                </table>
+                ${payment_id ? `<p style="margin:10px 0 0; color:#bbb; font-size:11px;">Payment ID: ${payment_id}</p>` : ''}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Book Session CTA -->
+          <tr>
+            <td style="padding: 28px 40px 0;">
+              <p style="margin:0 0 16px; color:#333; font-size:16px; line-height:1.7;">
+                To get started, book your 1-on-1 stylist call using the link below:
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="https://cal.com/iconone-wpnx1q/30min-copy"
+                       style="display:inline-block; background:#1a1a2e; color:#ffffff; text-decoration:none; font-size:16px; font-weight:700; padding:16px 36px; border-radius:50px; letter-spacing:0.3px;">
+                      👉 Schedule Your Stylist Call Here
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Session Policies -->
+          <tr>
+            <td style="padding: 28px 40px 0;">
+              <p style="margin:0 0 16px; color:#333; font-size:16px; font-weight:700;">Please note our session policies:</p>
+
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f5eded; vertical-align:top;">
+                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">⏰ 24-Hour Rescheduling Rule</p>
+                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
+                      You can reschedule your session for free as long as you do so at least 24 hours before your scheduled time.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f5eded; vertical-align:top;">
+                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">💳 Late Rescheduling</p>
+                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
+                      Changes made within 24 hours of the meeting will incur a <strong>₹399 convenience fee</strong> to book a new slot.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f5eded; vertical-align:top;">
+                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">🚫 No-Show Policy</p>
+                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
+                      We value our consultants&apos; time. If you miss your scheduled session without prior notice (No-Show), no refunds will be issued, and a <strong>₹399 fee</strong> will apply if you wish to re-book.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; vertical-align:top;">
+                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">📋 Preparation</p>
+                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
+                      Be in a quiet space with a stable internet connection. Have a rough sense of your style goals and daily contexts ready — it makes the call sharper.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:16px 0 0; color:#555; font-size:14px; line-height:1.6;">
+                Choose a time when you&apos;re fully available. The more focused the call, the better your Blueprint.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Closing -->
+          <tr>
+            <td style="padding: 24px 40px 0;">
+              <p style="margin:0 0 8px; color:#333; font-size:15px; line-height:1.7;">
+                If you have any questions, just reply to this email — we&apos;re here to help you build a style that actually works for you.
+              </p>
+              <p style="margin:0; color:#333; font-size:15px; line-height:1.7;">
+                Best regards,<br />
+                <strong>Team Iconik</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 32px 40px 40px; text-align:center; border-top:1px solid #f0e8e8; margin-top:28px;">
+              <p style="margin:0 0 4px; color:#1a1a2e; font-weight:700; font-size:15px;">ICONIK Men&apos;s Style &amp; Image Consulting</p>
+              <p style="margin:0; color:#999; font-size:13px;">help.iconikfashion@gmail.com</p>
+              <p style="margin:16px 0 0; color:#bbb; font-size:12px;">© 2025 ICONIK. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+export async function sendMenConfirmationEmail(data: ConfirmationEmailData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+
+    const addOnsSuffix = data.add_ons && data.add_ons !== 'None' && data.add_ons !== ''
+      ? ` + ${data.add_ons}`
+      : '';
+
+    const info = await transporter.sendMail({
+      from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
+      to: data.customer_email,
+      subject: `Your Iconik Men's Blueprint is Confirmed ✅`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Men's Style Blueprint${addOnsSuffix}. Your order is confirmed — and your journey to dressing with intention officially begins now.\n\nTo get started, book your 1-on-1 stylist call using the link below:\n👉 Schedule Your Stylist Call Here: https://cal.com/iconone-wpnx1q/30min-copy\n\nPlease note our session policies:\n\n24-Hour Rescheduling Rule: You can reschedule your session for free as long as you do so at least 24 hours before your scheduled time.\n\nLate Rescheduling: Changes made within 24 hours of the meeting will incur a ₹399 convenience fee to book a new slot.\n\nNo-Show Policy: We value our consultants' time. If you miss your scheduled session without prior notice (No-Show), no refunds will be issued, and a ₹399 fee will apply if you wish to re-book.\n\nPreparation: Be in a quiet space with a stable internet connection. Have a rough sense of your style goals and daily contexts ready — it makes the call sharper.\n\nChoose a time when you're fully available. The more focused the call, the better your Blueprint.\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
+      html: buildMenEmailHtml(data),
+    });
+
+    console.log(`Men's confirmation email sent to ${data.customer_email}. Message ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending men\'s confirmation email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 // ── AU Order Confirmation Email ────────────────────────────────────────────
 
 function buildAUOrderConfirmationHtml(data: AUOrderConfirmationEmailData): string {
