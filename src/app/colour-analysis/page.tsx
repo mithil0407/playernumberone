@@ -13,6 +13,12 @@ export const metadata: Metadata = {
     url: "https://www.iconik.pro/colour-analysis",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour analysis for Indian skin tones — Iconik" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Colour Analysis for Indian Skin Tones — Complete Guide",
+    description: "How to identify your skin undertone and build a colour palette that works for Indian skin.",
+    images: ["/og-image.webp"],
+  },
 };
 
 const faqs = [
@@ -40,6 +46,14 @@ const faqs = [
     q: "Why does standard colour advice fail Indian women?",
     a: "Most Western colour analysis systems (such as Seasonal Colour Analysis) were calibrated on lighter, less melanin-rich skin. They often misclassify Indian women or give prescriptions that do not translate to Indian context. Chromatic Harmony Mapping™ was designed specifically around the full range of Indian skin tones — from fair to deep, across warm, cool, and neutral undertones.",
   },
+  {
+    q: "I look washed out in colours that are supposedly good for Indian skin — why?",
+    a: "Generic Indian colour advice defaults to warm undertones because they are the most common in India. But a significant percentage of Indian women have cool or neutral undertones. If warm-toned advice consistently makes you look tired, sallow, or flat, you almost certainly have a cool or neutral undertone. The fix is undertone identification — not more trial and error with the wrong palette.",
+  },
+  {
+    q: "Can dark-skinned Indian women have a cool undertone?",
+    a: "Yes. Undertone and surface skin depth are completely independent. A deep-skinned Indian woman can have a cool undertone — and will look her best in jewel tones (cobalt, emerald, fuchsia, burgundy) rather than earthy warm tones. Chromatic Harmony Mapping™ is designed for this full spectrum, including cool-undertone darker skin.",
+  },
 ];
 
 export default function ColourAnalysisPage() {
@@ -48,11 +62,15 @@ export default function ColourAnalysisPage() {
     "@graph": [
       {
         "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/#article",
+        "@id": "https://www.iconik.pro/colour-analysis#article",
         "headline": "Colour Analysis for Indian Skin Tones — The Complete Guide",
         "description": "How Chromatic Harmony Mapping™ identifies undertone and builds colour palettes for Indian women.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Iconik",
+          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
+        },
         "datePublished": "2025-01-01",
         "dateModified": new Date().toISOString().split("T")[0],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis" },
@@ -86,7 +104,7 @@ export default function ColourAnalysisPage() {
             </ol>
           </nav>
 
-          <header className="mb-12">
+          <header className="mb-10">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
               Colour Analysis for Indian Skin Tones: The Complete Guide
             </h1>
@@ -95,17 +113,54 @@ export default function ColourAnalysisPage() {
             </p>
           </header>
 
-          {/* Undertone definition */}
-          <section className="mb-12 rounded-xl bg-gray-50 border border-gray-200 p-7">
+          {/* Iconik entity block — for LLM clarity and E-E-A-T */}
+          <div className="mb-10 rounded-xl border border-gray-100 bg-gray-50 p-5 text-sm text-gray-600 leading-relaxed">
+            <p><strong className="text-gray-800">About Iconik:</strong> Iconik is a personal styling service for Indian women. The Style Blueprint — Iconik&apos;s core product — combines Chromatic Harmony Mapping™ (colour analysis), body type and silhouette analysis, and 16+ personalised outfit recommendations, delivered digitally within 48 hours at ₹2,499.</p>
+          </div>
+
+          {/* CHM definition */}
+          <section className="mb-10 rounded-xl bg-gray-50 border border-gray-200 p-7">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
               What Is Chromatic Harmony Mapping™?
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Chromatic Harmony Mapping™ is Iconik&apos;s colour analysis protocol designed specifically for the full spectrum of Indian skin tones. It identifies whether your skin has a warm, cool, or neutral undertone and maps those findings to a curated palette of colours that create visual harmony with your complexion — making you look energised and well-rested rather than washed out or sallow. It accounts specifically for the diversity of Indian skin tones across the fair-to-deep spectrum.
+              Chromatic Harmony Mapping™ is Iconik&apos;s colour analysis protocol designed specifically for the full spectrum of Indian skin tones. It identifies whether your skin has a warm, cool, or neutral undertone and maps those findings to a curated palette of colours that create visual harmony with your complexion — making you look energised and well-rested rather than washed out or sallow. Unlike standard Western colour systems (Seasonal Colour Analysis, Kibbe), CHM™ was built for Indian skin diversity — from fair to deep — and includes guidance for sarees, kurtas, and ethnic occasion wear.
             </p>
           </section>
 
-          {/* Skin tone vs undertone */}
+          {/* How CHM works — 3 steps, process transparency for LLMs */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-5">How Chromatic Harmony Mapping™ Works</h2>
+            <ol className="space-y-4">
+              {[
+                {
+                  step: "1",
+                  title: "Submit",
+                  desc: "You share photos of your face in natural light and your inner wrist, plus a short intake form covering your skin history and styling context.",
+                },
+                {
+                  step: "2",
+                  title: "Analyse",
+                  desc: "An Iconik stylist identifies your undertone (warm, cool, or neutral) and your melanin depth — the two variables that together determine your exact colour palette.",
+                },
+                {
+                  step: "3",
+                  title: "Receive",
+                  desc: "Your personalised 10-colour palette is delivered within 48 hours as part of your Style Blueprint — with your best neutrals, accent colours, and specific shades within each colour family.",
+                },
+              ].map((item) => (
+                <li key={item.step} className="flex gap-4 items-start border border-gray-200 rounded-xl p-5">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-black text-white text-sm font-bold flex items-center justify-center">{item.step}</span>
+                  <div>
+                    <p className="font-semibold text-gray-900 mb-1">{item.title}</p>
+                    <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* Why it matters */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               Why Does Colour Analysis Matter for Indian Women?
@@ -118,7 +173,7 @@ export default function ColourAnalysisPage() {
             </p>
           </section>
 
-          {/* Undertone visual */}
+          {/* Images */}
           <div className="mb-12">
             <Image
               src="/undertone-comparison.webp"
@@ -129,7 +184,6 @@ export default function ColourAnalysisPage() {
             />
           </div>
 
-          {/* Colour palette swatches */}
           <div className="mb-12">
             <Image
               src="/colour-palette-swatches.webp"
@@ -159,8 +213,8 @@ export default function ColourAnalysisPage() {
                 },
                 {
                   type: "Neutral Undertone",
-                  slug: "indian-skin-tones",
-                  desc: "A mix of warm and cool — the most versatile undertone. Both gold and silver jewellery work. Both warm and cool palettes can be worn, though the exact balance varies per individual.",
+                  slug: "neutral-undertone",
+                  desc: "A mix of warm and cool — the most versatile undertone. Both gold and silver jewellery work. Both warm and cool palettes can be worn, though muted versions of each tend to be most flattering.",
                 },
               ].map((item) => (
                 <div key={item.slug} className="border border-gray-200 rounded-xl p-5">
@@ -178,9 +232,12 @@ export default function ColourAnalysisPage() {
 
           {/* Comparison table */}
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-5">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
               Chromatic Harmony Mapping™ vs Standard Colour Analysis
             </h2>
+            <p className="text-gray-600 mb-5 leading-relaxed">
+              Unlike Seasonal Colour Analysis — calibrated on Northern European skin — Chromatic Harmony Mapping™ was built specifically for Indian skin tone diversity. It includes saree and ethnic garment colour guidance, accounts for olive and wheatish complexions, and combines colour analysis with silhouette analysis in one Style Blueprint.
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
@@ -229,6 +286,22 @@ export default function ColourAnalysisPage() {
             </div>
           </section>
 
+          {/* Content hub */}
+          <section className="mb-12">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">All Colour Analysis Guides</h2>
+            <ul className="space-y-2 text-gray-600">
+              <li>→ <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">How to Find Your Undertone: 3 At-Home Tests</Link></li>
+              <li>→ <Link href="/colour-analysis/warm-cool-neutral-undertone-india" className="underline hover:opacity-70">Warm vs Cool vs Neutral Undertone — Complete Comparison</Link></li>
+              <li>→ <Link href="/colour-analysis/warm-undertone" className="underline hover:opacity-70">Warm Undertone: Complete Colour Guide</Link></li>
+              <li>→ <Link href="/colour-analysis/cool-undertone" className="underline hover:opacity-70">Cool Undertone: Complete Colour Guide</Link></li>
+              <li>→ <Link href="/colour-analysis/neutral-undertone" className="underline hover:opacity-70">Neutral Undertone: Complete Colour Guide</Link></li>
+              <li>→ <Link href="/colour-analysis/indian-skin-tones" className="underline hover:opacity-70">Why Western Colour Systems Fail Indian Women</Link></li>
+              <li>→ <Link href="/colour-analysis/best-colours-dusky-skin" className="underline hover:opacity-70">Best Colours for Dusky Skin</Link></li>
+              <li>→ <Link href="/colour-analysis/best-colours-wheatish-skin-india" className="underline hover:opacity-70">Best Colours for Wheatish Skin</Link></li>
+              <li>→ <Link href="/colour-analysis/best-colours-fair-skin-india" className="underline hover:opacity-70">Best Colours for Fair Skin</Link></li>
+            </ul>
+          </section>
+
           {/* CTA */}
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your personal colour palette in 48 hours?</h2>
@@ -240,7 +313,7 @@ export default function ColourAnalysisPage() {
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Colour Analysis for Indian Skin Tones: The Complete Guide.&quot; Iconik LLP, 2025. https://www.iconik.pro/colour-analysis</p>
+            <p>Iconik Styling Team. &quot;Colour Analysis for Indian Skin Tones: The Complete Guide.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis</p>
           </div>
         </div>
       </main>

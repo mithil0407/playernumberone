@@ -13,6 +13,12 @@ export const metadata: Metadata = {
     url: "https://www.iconik.pro/colour-analysis/indian-skin-tones",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour analysis for Indian skin tones — Iconik" }],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Colour Analysis for Indian Skin Tones — Iconik",
+    description: "How Chromatic Harmony Mapping™ was built for the full spectrum of Indian skin tones — from fair to deep.",
+    images: ["/og-image.webp"],
+  },
 };
 
 const faqs = [
@@ -40,10 +46,17 @@ export default function IndianSkinTonesPage() {
     "@graph": [
       {
         "@type": "Article",
+        "@id": "https://www.iconik.pro/colour-analysis/indian-skin-tones#article",
         "headline": "Colour Analysis for Indian Skin Tones — Why Western Systems Fail and What Works Instead",
+        "description": "Why standard colour analysis fails Indian women and how Chromatic Harmony Mapping™ was built for the full spectrum of Indian skin tones.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Iconik",
+          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
+        },
         "datePublished": "2025-01-01",
+        "dateModified": new Date().toISOString().split("T")[0],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/indian-skin-tones" },
       },
       {
@@ -132,6 +145,17 @@ export default function IndianSkinTonesPage() {
             </div>
           </section>
 
+          <section className="mb-12">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
+            <ul className="space-y-2 text-gray-600">
+              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones — Full Guide</Link></li>
+              <li>→ <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">How to Find Your Undertone: 3 At-Home Tests</Link></li>
+              <li>→ <Link href="/colour-analysis/warm-cool-neutral-undertone-india" className="underline hover:opacity-70">Warm vs Cool vs Neutral Undertone: Complete Comparison</Link></li>
+              <li>→ <Link href="/colour-analysis/best-colours-dusky-skin" className="underline hover:opacity-70">Best Colours for Dusky Skin</Link></li>
+              <li>→ <Link href="/colour-analysis/best-colours-wheatish-skin-india" className="underline hover:opacity-70">Best Colours for Wheatish Skin</Link></li>
+            </ul>
+          </section>
+
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your personalised colour palette in 48 hours</h2>
             <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ — included in every Iconik Style Blueprint.</p>
@@ -142,7 +166,7 @@ export default function IndianSkinTonesPage() {
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Colour Analysis for Indian Skin Tones: Why Western Systems Fail.&quot; Iconik LLP, 2025. https://www.iconik.pro/colour-analysis/indian-skin-tones</p>
+            <p>Iconik Styling Team. &quot;Colour Analysis for Indian Skin Tones: Why Western Systems Fail.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/indian-skin-tones</p>
           </div>
         </div>
       </main>
