@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Best Necklines for Every Face Shape — Indian Women's Guide",
@@ -101,7 +102,7 @@ export default function NecklineGuideFaceShapePage() {
       <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
-          <a href="/" className="hover:underline">Home</a> › <a href="/faq" className="hover:underline">FAQ</a> › Neckline Guide — Face Shape
+          <Link href="/" className="hover:underline">Home</Link> › <Link href="/faq" className="hover:underline">FAQ</Link> › Neckline Guide — Face Shape
         </nav>
 
         <h1 className="text-3xl font-bold mb-4">Best Necklines for Every Face Shape — Indian Women</h1>
@@ -357,12 +358,12 @@ export default function NecklineGuideFaceShapePage() {
           <p className="mb-4">
             Iconik&rsquo;s Facial Architecture Analysis™ goes beyond face shape to analyse your specific facial proportions — forehead width, jaw angle, face length, and facial features — and identifies which necklines, collar styles, and accessories will specifically flatter your face. Part of your full Style Blueprint, delivered in 48 hours.
           </p>
-          <a
+          <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
             Get Your Style Blueprint — ₹2,499
-          </a>
+          </Link>
         </section>
 
         {/* Cite */}

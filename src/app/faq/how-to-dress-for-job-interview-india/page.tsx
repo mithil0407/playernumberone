@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "How to Dress for a Job Interview in India — Complete Guide",
@@ -101,7 +102,7 @@ export default function JobInterviewDressGuidePage() {
       <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
-          <a href="/" className="hover:underline">Home</a> › <a href="/faq" className="hover:underline">FAQ</a> › How to Dress for a Job Interview — India
+          <Link href="/" className="hover:underline">Home</Link> › <Link href="/faq" className="hover:underline">FAQ</Link> › How to Dress for a Job Interview — India
         </nav>
 
         <h1 className="text-3xl font-bold mb-4">How to Dress for a Job Interview in India</h1>
@@ -313,12 +314,12 @@ export default function JobInterviewDressGuidePage() {
           <p className="mb-4">
             Iconik&rsquo;s Style Blueprint gives you your exact colour palette, your best silhouettes, and 16+ outfit recommendations calibrated to your body and colouring — including your professional context. Stop guessing before every important occasion. Know exactly what to wear. Delivered in 48 hours.
           </p>
-          <a
+          <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
             Get Your Style Blueprint — ₹2,499
-          </a>
+          </Link>
         </section>
 
         {/* Cite */}

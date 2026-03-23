@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Best Colours for Dark Skin Indian Women — Colour Guide",
@@ -101,7 +102,7 @@ export default function DarkSkinColourGuidePage() {
       <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
-          <a href="/" className="hover:underline">Home</a> › <a href="/colour-analysis" className="hover:underline">Colour Analysis</a> › Dark Skin Colour Guide — India
+          <Link href="/" className="hover:underline">Home</Link> › <Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link> › Dark Skin Colour Guide — India
         </nav>
 
         <h1 className="text-3xl font-bold mb-4">Best Colours for Dark Skin Indian Women</h1>
@@ -284,12 +285,12 @@ export default function DarkSkinColourGuidePage() {
           <p className="mb-4">
             Knowing your undertone is the foundation of a flattering wardrobe. Iconik&rsquo;s Chromatic Harmony Mapping™ analyses your specific skin depth, undertone, and contrast level to give you a personalised colour palette — not a generic skin-tone category, but the exact shades of every colour that will work for you. Delivered in 48 hours.
           </p>
-          <a
+          <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
             Get Your Colour Palette — ₹2,499
-          </a>
+          </Link>
         </section>
 
         {/* Cite */}

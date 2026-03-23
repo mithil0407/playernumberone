@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "What Colours Make You Look Slimmer? — India Guide",
@@ -101,7 +102,7 @@ export default function ColoursLookSlimmerPage() {
       <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
-          <a href="/" className="hover:underline">Home</a> › <a href="/faq" className="hover:underline">FAQ</a> › What Colours Make You Look Slimmer — India
+          <Link href="/" className="hover:underline">Home</Link> › <Link href="/faq" className="hover:underline">FAQ</Link> › What Colours Make You Look Slimmer — India
         </nav>
 
         <h1 className="text-3xl font-bold mb-4">What Colours Make You Look Slimmer? — India Guide</h1>
@@ -272,12 +273,12 @@ export default function ColoursLookSlimmerPage() {
           <p className="mb-4">
             Iconik&rsquo;s Style Blueprint combines your personal colour analysis (the specific shades that flatter your skin) with your body type silhouette analysis (the cuts and proportions that work for your frame) — delivered together in 48 hours. It is the complete picture, not just one dimension.
           </p>
-          <a
+          <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
             Get Your Style Blueprint — ₹2,499
-          </a>
+          </Link>
         </section>
 
         {/* Cite */}

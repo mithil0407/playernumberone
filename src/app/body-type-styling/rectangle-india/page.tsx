@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Rectangle Body Shape Styling for Indian Women — Iconik",
@@ -101,7 +102,7 @@ export default function RectangleIndiaPage() {
       <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
-          <a href="/" className="hover:underline">Home</a> › <a href="/body-type-styling" className="hover:underline">Body Type Styling</a> › Rectangle Body Shape — India
+          <Link href="/" className="hover:underline">Home</Link> › <Link href="/body-type-styling" className="hover:underline">Body Type Styling</Link> › Rectangle Body Shape — India
         </nav>
 
         <h1 className="text-3xl font-bold mb-4">Rectangle Body Shape Styling for Indian Women</h1>
@@ -278,12 +279,12 @@ export default function RectangleIndiaPage() {
           <p className="mb-4">
             General rectangle guidance tells you what works for the shape category. Iconik&rsquo;s Geometric Silhouette Profiling™ analyses your specific measurements — shoulder width, waist definition, hip curve, torso length — and delivers outfit recommendations calibrated to your exact proportions, not an average.
           </p>
-          <a
+          <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
             Get Your Style Blueprint — ₹2,499
-          </a>
+          </Link>
         </section>
 
         {/* Cite this */}
