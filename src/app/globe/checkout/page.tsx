@@ -32,8 +32,8 @@ interface RazorpayInstance { open(): void; }
 
 // ── Prices ───────────────────────────────────────────────────────────────────
 
-const BASE_PRICE = 79;   // £79
-const ADDON_PRICE = 29;  // £29 — The ICONIK Edit
+const BASE_PRICE = 97;   // $97
+const ADDON_PRICE = 37;  // $37 — The ICONIK Edit
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ export default function GlobeCheckoutPage() {
 
     useEffect(() => {
         trackPageView('Globe Checkout');
-        trackInitiateCheckout(79, 1, 'ICONIK Blueprint Globe', 'GBP', 'Globe Funnel');
+        trackInitiateCheckout(97, 1, 'ICONIK Blueprint Globe', 'USD', 'Globe Funnel');
     }, []);
 
     useEffect(() => {
@@ -134,7 +134,7 @@ export default function GlobeCheckoutPage() {
                 const options: RazorpayOptions = {
                     key: data.key,
                     amount: data.amount,
-                    currency: 'GBP',
+                    currency: 'USD',
                     name: 'ICONIK Style Intelligence',
                     description: 'ICONIK Blueprint',
                     order_id: data.razorpay_order_id,
@@ -249,11 +249,11 @@ export default function GlobeCheckoutPage() {
                         Your ICONIK Blueprint
                     </h1>
                     <div className="flex items-baseline justify-center gap-3 mb-3">
-                        <span className="text-xl md:text-3xl luxury-heading text-luxury-charcoal/40 line-through">£149</span>
-                        <span className="text-2xl md:text-5xl luxury-heading text-luxury-accent">£{BASE_PRICE}</span>
+                        <span className="text-xl md:text-3xl luxury-heading text-luxury-charcoal/40 line-through">$197</span>
+                        <span className="text-2xl md:text-5xl luxury-heading text-luxury-accent">${BASE_PRICE}</span>
                     </div>
                     <div className="inline-block bg-luxury-accent text-luxury-warm-white px-5 py-1.5 rounded-full luxury-body text-sm font-semibold mb-3">
-                        YOU SAVE £70 TODAY
+                        YOU SAVE $100 TODAY
                     </div>
 
                     <div className="flex items-center justify-center gap-1.5 mt-1 luxury-body text-luxury-charcoal/50 text-sm">
@@ -376,7 +376,7 @@ export default function GlobeCheckoutPage() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="luxury-heading text-luxury-charcoal text-sm mb-1">
-                                            YES — Add The ICONIK Edit (+£{ADDON_PRICE})
+                                            YES — Add The ICONIK Edit (+${ADDON_PRICE})
                                         </div>
                                         <p className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed">
                                             10 complete outfit formulas built specifically for your Blueprint. This is the implementation tool for your Blueprint. Add it now and you&apos;ll receive it alongside your report.
@@ -440,12 +440,12 @@ export default function GlobeCheckoutPage() {
                             <div className="space-y-2 mb-5">
                                 <div className="flex justify-between luxury-body text-luxury-charcoal/60 text-sm">
                                     <span>ICONIK Blueprint</span>
-                                    <span>£{BASE_PRICE}</span>
+                                    <span>${BASE_PRICE}</span>
                                 </div>
                                 {iconikEditAddon && (
                                     <div className="flex justify-between luxury-body text-luxury-charcoal/60 text-sm">
                                         <span>+ The ICONIK Edit</span>
-                                        <span>£{ADDON_PRICE}</span>
+                                        <span>${ADDON_PRICE}</span>
                                     </div>
                                 )}
                             </div>
@@ -454,8 +454,8 @@ export default function GlobeCheckoutPage() {
                                 <div className="flex justify-between items-baseline">
                                     <span className="luxury-heading text-luxury-charcoal text-lg md:text-xl">You Pay:</span>
                                     <div className="text-right">
-                                        <div className="text-xs luxury-body text-luxury-charcoal/40 line-through">£{149 + (iconikEditAddon ? ADDON_PRICE : 0)}</div>
-                                        <span className="text-2xl md:text-3xl luxury-heading text-luxury-accent">£{totalAmount}</span>
+                                        <div className="text-xs luxury-body text-luxury-charcoal/40 line-through">${197 + (iconikEditAddon ? ADDON_PRICE : 0)}</div>
+                                        <span className="text-2xl md:text-3xl luxury-heading text-luxury-accent">${totalAmount}</span>
                                     </div>
                                 </div>
                             </div>
@@ -468,7 +468,7 @@ export default function GlobeCheckoutPage() {
                             >
                                 {isProcessing ? 'Processing...' : (
                                     <>
-                                        GET MY BLUEPRINT — £{totalAmount}
+                                        GET MY BLUEPRINT — ${totalAmount}
                                         <ArrowRight className="w-4 h-4" />
                                     </>
                                 )}
@@ -482,7 +482,7 @@ export default function GlobeCheckoutPage() {
                                     ))}
                                 </div>
                                 <p className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed italic">
-                                    &quot;The face architecture section alone was worth three times the price.&quot; — Layla, Manchester
+                                    &quot;The face architecture section alone was worth three times the price.&quot; — Layla, Dubai
                                 </p>
                             </div>
                         </div>

@@ -42,17 +42,17 @@ const blueprintItems = [
 const testimonials = [
     {
         quote: 'I have been dressing for the wrong body shape my entire life. The Blueprint told me things I had never been told by any stylist. I now walk into a store, go straight to what works, and leave.',
-        name: 'Sara, London',
+        name: 'Sara, New York',
         tag: 'Blueprint: Inverted Triangle · Cool Autumn',
     },
     {
         quote: 'I was sceptical. I have done colour analysis before and it felt too general. This was different — the face architecture section alone was worth three times the price.',
-        name: 'Layla, Manchester',
+        name: 'Layla, Dubai',
         tag: 'Blueprint: Oval · Warm Spring',
     },
     {
         quote: 'The outfit formulas changed everything. I finally have a system, not just a wardrobe full of things that almost work.',
-        name: 'Nour, Birmingham',
+        name: 'Nour, Toronto',
         tag: 'Blueprint: Hourglass · Neutral Autumn',
     },
 ];
@@ -90,10 +90,10 @@ function CTAButton({ className = '' }: { className?: string }) {
     return (
         <Link
             href="/globe/checkout"
-            onClick={() => trackCTAClick('Get My Blueprint', 'Globe Landing', 79, 'GBP', 'Globe Funnel')}
+            onClick={() => trackCTAClick('Get My Blueprint', 'Globe Landing', 97, 'USD', 'Globe Funnel')}
             className={`inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
         >
-            GET MY BLUEPRINT — £79 <ArrowRight className="ml-3 h-4 w-4" />
+            GET MY BLUEPRINT — $97 <ArrowRight className="ml-3 h-4 w-4" />
         </Link>
     );
 }
@@ -105,9 +105,9 @@ export default function GlobeLandingPage() {
     const [carouselIndex, setCarouselIndex] = useState(0);
 
     const heroImages = useMemo(() => [
-        { src: '/transformation-1.webp', caption: 'Blueprint transformation · Sara, London' },
-        { src: '/testimonial-priya.webp', caption: 'Blueprint transformation · Layla, Manchester' },
-        { src: '/transformation-2.webp', caption: 'Blueprint transformation · Nour, Birmingham' },
+        { src: '/transformation-1.webp', caption: 'Blueprint transformation · Sara, New York' },
+        { src: '/testimonial-priya.webp', caption: 'Blueprint transformation · Layla, Dubai' },
+        { src: '/transformation-2.webp', caption: 'Blueprint transformation · Nour, Toronto' },
     ], []);
 
     const nextSlide = useCallback(() => setCarouselIndex(i => (i + 1) % heroImages.length), [heroImages.length]);
@@ -115,7 +115,7 @@ export default function GlobeLandingPage() {
 
     useEffect(() => {
         trackPageView('Globe Landing');
-        trackViewContent('ICONIK Blueprint Globe', 79, ['iconik_blueprint_globe'], 'GBP', 'Globe Funnel');
+        trackViewContent('ICONIK Blueprint Globe', 97, ['iconik_blueprint_globe'], 'USD', 'Globe Funnel');
     }, []);
 
     useEffect(() => {
@@ -162,7 +162,7 @@ export default function GlobeLandingPage() {
                         {/* Subheadline */}
                         <p className="text-sm md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
                             ICONIK analyses your facial architecture, body geometry, and colour harmony using a proprietary methodology used by professional stylists.{' '}
-                            <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. £79.</span>
+                            <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. $97.</span>
                         </p>
 
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
@@ -605,7 +605,7 @@ export default function GlobeLandingPage() {
                             {
                                 name: 'Sara',
                                 age: '29',
-                                city: 'London',
+                                city: 'New York',
                                 image: '/testimonial-priya.webp',
                                 concern: ['Body confidence issues after', 'years of dressing to hide'],
                                 finding: ['Rectangle frame', 'Cool neutral undertone'],
@@ -616,7 +616,7 @@ export default function GlobeLandingPage() {
                             {
                                 name: 'Layla',
                                 age: '34',
-                                city: 'Manchester',
+                                city: 'Dubai',
                                 image: '/transformation-1.webp',
                                 concern: ['Felt invisible — colours always', 'washing her out'],
                                 finding: ['Inverted triangle frame', 'Warm autumn undertone'],
@@ -627,7 +627,7 @@ export default function GlobeLandingPage() {
                             {
                                 name: 'Nour',
                                 age: '27',
-                                city: 'Birmingham',
+                                city: 'Toronto',
                                 image: '/transformation-2.webp',
                                 concern: ['Modest dresser who felt', 'frumpy despite spending on clothes'],
                                 finding: ['Hourglass frame, short vertical line', 'Warm neutral undertone'],
@@ -691,21 +691,21 @@ export default function GlobeLandingPage() {
             <section className="py-24 px-4 md:px-6 bg-luxury-accent">
                 <div className="max-w-3xl mx-auto text-center text-luxury-warm-white">
                     <p className="luxury-body text-luxury-warm-white/70 text-lg leading-relaxed mb-8">
-                        An in-person personal styling session with a professional stylist costs £300–800+. They give you one day. You forget half of it. You still don&apos;t know your colours.
+                        An in-person personal styling session with a professional stylist costs $500–1,500+. They give you one day. You forget half of it. You still don&apos;t know your colours.
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
                         <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Blueprint</div>
-                        <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">£79</div>
+                        <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">$97</div>
                         <p className="luxury-body text-luxury-warm-white/70 text-lg">
                             Yours forever. Built on your specific body, face, and colour profile.
                         </p>
                     </div>
                     <Link
                         href="/globe/checkout"
-                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Price Section', 79, 'GBP', 'Globe Funnel')}
+                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Price Section', 97, 'USD', 'Globe Funnel')}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
                     >
-                        GET MY BLUEPRINT — £79 <ArrowRight className="ml-3 h-4 w-4" />
+                        GET MY BLUEPRINT — $97 <ArrowRight className="ml-3 h-4 w-4" />
                     </Link>
                 </div>
             </section>
@@ -724,14 +724,14 @@ export default function GlobeLandingPage() {
                                 after: '/style-after.webp',
                                 beforeLabel: 'Before — avoiding structure entirely',
                                 afterLabel: 'After — Geometric Silhouette Profile™ applied',
-                                caption: 'Sara, 34, London · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, structured shoulders, dark palette',
+                                caption: 'Sara, 34, New York · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, structured shoulders, dark palette',
                             },
                             {
                                 before: '/wardrobe-before.webp',
                                 after: '/wardrobe-after.webp',
                                 beforeLabel: 'Before — dressing to hide',
                                 afterLabel: 'After — Concern Zone Solutions applied',
-                                caption: 'Layla, 29, Manchester · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line silhouettes, deep cool palette',
+                                caption: 'Layla, 29, Dubai · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line silhouettes, deep cool palette',
                             },
                         ].map((comparison, index) => (
                             <div
@@ -971,10 +971,10 @@ export default function GlobeLandingPage() {
                 <div className="max-w-sm mx-auto">
                     <Link
                         href="/globe/checkout"
-                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Sticky CTA', 79, 'GBP', 'Globe Funnel')}
+                        onClick={() => trackCTAClick('Get My Blueprint', 'Globe Sticky CTA', 97, 'USD', 'Globe Funnel')}
                         className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
                     >
-                        GET MY BLUEPRINT — £79
+                        GET MY BLUEPRINT — $97
                     </Link>
                 </div>
             </div>

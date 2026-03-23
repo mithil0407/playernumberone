@@ -343,7 +343,7 @@ function GlobeIntakePageInner() {
                 }),
             }).catch(err => console.warn('Globe intake notify failed:', err));
 
-            trackCompleteRegistration(79, 'ICONIK Blueprint Globe — Intake Submitted', 'GBP');
+            trackCompleteRegistration(97, 'ICONIK Blueprint Globe — Intake Submitted', 'USD');
             setDirection(1);
             setStep(CONFIRMATION_STEP);
 

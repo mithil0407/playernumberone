@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         }
 
         const orderId = `globe_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        // Razorpay uses smallest currency unit: pence for GBP
+        // Razorpay uses smallest currency unit: cents for USD
         const amountInCents = Math.round(amount * 100);
 
         let customerId = 'mock-customer-id';
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
                 customer_name,
                 customer_phone,
                 amount,
-                currency: 'GBP',
+                currency: 'USD',
                 iconik_edit_addon,
                 status: 'pending',
                 razorpay_order_id: orderId,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
             const orderRequest = {
                 amount: amountInCents,
-                currency: 'GBP',
+                currency: 'USD',
                 receipt: orderId,
                 notes: {
                     customer_name,
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
                 key: process.env.RAZORPAY_KEY_ID,
                 razorpay_order_id: razorpayOrder.id,
                 amount: amountInCents,
-                currency: 'GBP',
+                currency: 'USD',
                 customer_id: customerId,
                 db_order_id: dbOrderId,
             });

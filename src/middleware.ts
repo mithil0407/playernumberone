@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 // Pages that belong to the India-only root funnel
-const INDIA_ONLY_PATHS = ['/', '/checkout', '/thankyou', '/intake', '/au'];
+const INDIA_ONLY_PATHS = ['/', '/checkout', '/checkout-monthly', '/monthly'];
 
 // Client paths that don't need auth
 const CLIENT_PUBLIC = [
@@ -63,13 +63,17 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 3. Geo-routing: India-only root funnel ───────────────────────────────
-  const country = request.headers.get('x-vercel-ip-country');
+  // In local dev, use ?country=XX to simulate a geo (e.g. /?country=US to test redirect)
+  const country =
+    process.env.NODE_ENV === 'development'
+      ? (request.nextUrl.searchParams.get('country') ??
+         request.headers.get('x-vercel-ip-country'))
+      : request.headers.get('x-vercel-ip-country');
+
   if (!country) return NextResponse.next();
 
   if (country !== 'IN') {
-    const isOnRootFunnel =
-      INDIA_ONLY_PATHS.includes(pathname) || pathname.startsWith('/au/');
-    if (isOnRootFunnel) {
+    if (INDIA_ONLY_PATHS.includes(pathname)) {
       return NextResponse.redirect(new URL('/globe', request.url), { status: 307 });
     }
   }
