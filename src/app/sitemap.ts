@@ -32,6 +32,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/faq/does-black-make-you-look-slimmer`, lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/faq/neckline-round-face`, lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/faq/capsule-wardrobe-how-many-outfits`, lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/faq/how-much-does-personal-stylist-cost-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/faq/how-to-build-capsule-wardrobe-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/faq/what-colours-make-you-look-slimmer-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/faq/neckline-guide-face-shape-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/faq/how-to-dress-for-job-interview-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── Body type styling pillar + spokes ───────────────────────
     { url: `${BASE}/body-type-styling`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
@@ -48,6 +53,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/body-type-styling/how-to-dress-tummy`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/body-type-styling/short-torso-styling`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/body-type-styling/how-to-look-taller-clothing`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/body-type-styling/inverted-triangle`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/body-type-styling/hourglass-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/body-type-styling/petite-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/body-type-styling/rectangle-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── Colour analysis pillar + spokes ─────────────────────────
     { url: `${BASE}/colour-analysis`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
@@ -60,6 +69,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/colour-analysis/best-colours-dusky-skin`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/best-colours-wheatish-skin-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/best-colours-fair-skin-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/saree-colours-by-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/seasonal-colour-analysis-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/olive-skin-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/colour-analysis-for-indian-weddings`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/colour-analysis/dark-skin-colour-guide-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── Methodology (AEO entity pages) ──────────────────────────
     { url: `${BASE}/methodology/chromatic-harmony-mapping`, lastModified: NOW, changeFrequency: "yearly", priority: 0.9 },
@@ -83,6 +97,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/vs/online-vs-inperson-styling`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/vs/iconik-vs-styling-apps`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/vs/style-blueprint-vs-quiz`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
 
     // ─── City landing pages ──────────────────────────────────────
     { url: `${BASE}/personal-stylist-mumbai`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
@@ -90,6 +105,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/personal-stylist-delhi`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/personal-stylist-hyderabad`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/personal-stylist-chennai`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-pune`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-kolkata`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-ahmedabad`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-kochi`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-jaipur`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-surat`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-nagpur`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-indore`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-lucknow`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-chandigarh`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-visakhapatnam`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-coimbatore`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-bhopal`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-patna`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-thiruvananthapuram`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-vadodara`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/personal-stylist-mysuru`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── Blog / AEO definition posts ─────────────────────────────
     { url: `${BASE}/blog`, lastModified: NOW, changeFrequency: "weekly", priority: 0.7 },

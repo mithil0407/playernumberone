@@ -7,9 +7,8 @@ import { CheckCircle, Shield, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const PLANS = [
-  { id: 'monthly'   as const, label: 'Monthly',   price: '₹899',   period: '/month',   subtext: 'Cancel anytime',  badge: null },
-  { id: 'quarterly' as const, label: 'Quarterly', price: '₹2,399', period: '/quarter', subtext: 'Save ₹298',       badge: 'POPULAR' },
-  { id: 'yearly'    as const, label: 'Annual',    price: '₹8,399', period: '/year',    subtext: 'Save ₹2,389',     badge: 'BEST VALUE' },
+  { id: 'monthly' as const, label: 'Monthly', price: '₹699',   period: '/month', subtext: 'Cancel anytime',    badge: null },
+  { id: 'yearly'  as const, label: 'Annual',  price: '₹7,188', period: '/year',  subtext: '₹599/month · Save ₹1,200', badge: 'BEST VALUE' },
 ];
 
 const BENEFITS = [
@@ -52,7 +51,7 @@ function JoinPageContent() {
   const [name,  setName]  = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [error,   setError]   = useState('');
@@ -315,7 +314,7 @@ function JoinPageContent() {
                 A single in-person styling session in Mumbai costs ₹3,000–8,000. Iconik Club gives you a full month of personalised outfit curation for less.
               </p>
 
-              <div className="grid grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {PLANS.map(plan => {
                   const active = selectedPlan === plan.id;
                   return (
