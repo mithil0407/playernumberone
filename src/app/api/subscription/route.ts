@@ -5,9 +5,9 @@ import Razorpay from 'razorpay';
 import { saveSubscription, saveCustomer, getCustomerByEmail } from '@/lib/supabase';
 
 const ICONIK_CLUB_PLANS = {
-    monthly:   { id: process.env.ICONIK_CLUB_PLAN_MONTHLY!,   amount: 89900  }, // ₹899
+    monthly:   { id: process.env.ICONIK_CLUB_PLAN_MONTHLY!,   amount: 69900  }, // ₹699
     quarterly: { id: process.env.ICONIK_CLUB_PLAN_QUARTERLY!, amount: 239900 }, // ₹2,399
-    yearly:    { id: process.env.ICONIK_CLUB_PLAN_YEARLY!,    amount: 839900 }, // ₹8,399
+    yearly:    { id: process.env.ICONIK_CLUB_PLAN_YEARLY!,    amount: 718800 }, // ₹7,188
 };
 
 const TOTAL_COUNTS = {

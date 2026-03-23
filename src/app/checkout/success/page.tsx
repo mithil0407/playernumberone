@@ -8,8 +8,8 @@ import { useSearchParams } from 'next/navigation';
 import { trackCompleteRegistration, trackPageView, trackViewContent, trackInitiateCheckout } from '@/lib/metaPixel';
 
 const ICONIK_CLUB_PLANS = [
-  { id: 'monthly' as const, label: 'Monthly', price: '₹899', period: '/month', subtext: 'Cancel anytime', badge: null },
-  { id: 'yearly' as const, label: 'Annual', price: '₹699', period: '/month', subtext: 'Billed ₹8,399/year', badge: 'BEST VALUE' },
+  { id: 'monthly' as const, label: 'Monthly', price: '₹699', period: '/month', subtext: 'Cancel anytime', badge: null },
+  { id: 'yearly' as const, label: 'Annual', price: '₹599', period: '/month', subtext: 'Billed ₹7,188/year', badge: 'BEST VALUE' },
 ];
 
 const BENEFITS = [
@@ -96,7 +96,7 @@ function SuccessPageContent() {
     setCustomerPhone(localStorage.getItem('customerPhone') || '');
     setCustomerName(localStorage.getItem('customerName') || '');
     if (!upsellTracked) {
-      trackViewContent('Iconik Club Upsell', 8399, ['iconik_club_subscription'], 'INR', 'Upsell');
+      trackViewContent('Iconik Club Upsell', 7188, ['iconik_club_subscription'], 'INR', 'Upsell');
       setUpsellTracked(true);
     }
   }, [searchParams, upsellTracked]);
@@ -104,7 +104,7 @@ function SuccessPageContent() {
   const handleSubscription = useCallback(async () => {
     setIsProcessing(true);
     const planLabels = { monthly: 'Monthly', yearly: 'Annual' };
-    const planAmounts = { monthly: 899, yearly: 8399 };
+    const planAmounts = { monthly: 699, yearly: 7188 };
     trackInitiateCheckout(planAmounts[selectedPlan], 1, `Iconik Club ${planLabels[selectedPlan]}`, 'INR', 'Upsell');
     try {
       const email = customerEmail || localStorage.getItem('customerEmail') || '';
