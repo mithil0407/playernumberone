@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink } from 'lucide-react';
+import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink, MessageCircle } from 'lucide-react';
 import type { ClientProfile } from '@/lib/supabase';
 
 function AdminClientsContent() {
@@ -42,6 +42,18 @@ function AdminClientsContent() {
   };
 
   const totalPages = Math.ceil(total / limit);
+
+  const openWhatsApp = (client: ClientProfile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!client.preview_token || !client.phone) return;
+    const baseUrl    = window.location.origin;
+    const previewUrl = `${baseUrl}/iconik-club/preview/${client.preview_token}`;
+    const firstName  = client.name.split(' ')[0];
+    const rawPhone   = client.phone.replace(/\D/g, '');
+    const waPhone    = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
+    const message    = `Hi ${firstName}! Your personal style edit from Iconik Club is ready 🎉\n\nView your 6 curated outfits here:\n${previewUrl}\n\nEvery piece has a direct shopping link. This preview is valid for 30 days.`;
+    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   const sendPreview = async (clientId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -163,6 +175,16 @@ function AdminClientsContent() {
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {client.onboarding_complete && client.phone && client.preview_token && (
+                        <button
+                          onClick={e => openWhatsApp(client, e)}
+                          title="Open WhatsApp with pre-filled message"
+                          className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-[#e7f9ef] text-[#25D366] border border-[#25D366]/20 hover:bg-[#d0f5e2] transition-colors"
+                        >
+                          <MessageCircle size={11} />
+                          WhatsApp
+                        </button>
+                      )}
                       {client.onboarding_complete && (
                         <button
                           onClick={e => sendPreview(client.id!, e)}
@@ -179,7 +201,7 @@ function AdminClientsContent() {
                           ) : sentIds.has(client.id!) ? (
                             <><ExternalLink size={11} /> Sent</>
                           ) : (
-                            <><Send size={11} /> Send preview</>
+                            <><Send size={11} /> Email</>
                           )}
                         </button>
                       )}

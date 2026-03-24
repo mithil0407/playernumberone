@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Upload, Loader2, CheckCircle, X, Send } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, CheckCircle, X, Send, MessageCircle } from 'lucide-react';
 
 type Step = 'form' | 'generating' | 'done';
 
@@ -130,6 +130,14 @@ export default function NewClientPage() {
     }
   };
 
+  const openWhatsApp = () => {
+    const firstName = name.trim().split(' ')[0];
+    const rawPhone  = phone.replace(/\D/g, '');
+    const waPhone   = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
+    const message   = `Hi ${firstName}! Your personal style edit from Iconik Club is ready 🎉\n\nView your 6 curated outfits here:\n${previewUrl}\n\nEvery piece has a direct shopping link. This preview is valid for 30 days.`;
+    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const sendPreview = async () => {
     if (!profile) return;
     setSendingEmail(true);
@@ -157,7 +165,7 @@ export default function NewClientPage() {
         <div className="bg-[#fff9f5] rounded-2xl border border-[#ffb3d1]/60 p-5 mb-6">
           <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-2">Preview link</p>
           <p className="text-xs text-[#4a2c3e] break-all font-mono mb-4">{previewUrl}</p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
             <button
               onClick={() => { navigator.clipboard.writeText(previewUrl); }}
               className="flex-1 text-xs font-semibold border border-[#ffb3d1] text-[#4a2c3e] rounded-xl py-2.5 hover:bg-[#fff0f5] transition-colors"
@@ -174,10 +182,20 @@ export default function NewClientPage() {
               ) : emailSent ? (
                 <><CheckCircle size={13} /> Sent</>
               ) : (
-                <><Send size={13} /> Email to client</>
+                <><Send size={13} /> Email</>
               )}
             </button>
           </div>
+          {/* WhatsApp button — only shown if phone was provided */}
+          {phone.trim() && (
+            <button
+              onClick={openWhatsApp}
+              className="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-[#25D366] text-white rounded-xl py-2.5 hover:bg-[#1ebe5d] transition-colors"
+            >
+              <MessageCircle size={13} />
+              Send via WhatsApp
+            </button>
+          )}
         </div>
 
         <div className="flex gap-3">
