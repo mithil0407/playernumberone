@@ -105,7 +105,7 @@ export async function createOutfitCard(
   const loadedImgs = itemImgs.filter(Boolean) as { data: string; mimeType: string }[];
 
   console.log(
-    `Outfit card — headshot:${!!headshot} body:${!!bodyPhoto} ` +
+    `Outfit card — body:${!!bodyPhoto} ` +
     `items:${loadedItems.length}/${items.length} [${loadedItems.map(i => i.name).join(', ')}]`
   );
 
@@ -119,18 +119,12 @@ export async function createOutfitCard(
   // This ensures Gemini links each image to its label.
   const parts: Part[] = [];
 
-  // Client reference photos — placed first with strong identity-preservation instructions
-  if (headshot) {
-    parts.push({ text: `IDENTITY REFERENCE — CLIENT FACE (CRITICAL):
-Study this photo carefully. This is the REAL client. The generated image MUST depict THIS EXACT PERSON.
-Preserve with high fidelity: her exact facial structure, skin tone, complexion, eye shape, eye color, nose shape, lip shape, jawline, hairline, hair color, hair texture, and ethnicity.
-The face in the output must be recognisable as the same individual — treat this as a virtual try-on, NOT a generic model.` });
-    parts.push({ inlineData: { mimeType: headshot.mimeType, data: headshot.data } });
-  }
+  // Client reference photo — full body only
   if (bodyPhoto) {
-    parts.push({ text: `IDENTITY REFERENCE — CLIENT BODY (CRITICAL):
-This is the same client's full body. Preserve her exact body shape, proportions, height, build, and skin tone.
-The generated image must reflect THIS person's physique — do not idealise or change her body type.` });
+    parts.push({ text: `IDENTITY REFERENCE — CLIENT FULL BODY (CRITICAL):
+This is the client. The generated image MUST depict THIS EXACT PERSON.
+Preserve her exact face, body shape, proportions, skin tone, hair color/style, and ethnicity.
+The output must look like a photo OF HER — do not idealise, slim, lighten skin, or alter her appearance in any way.` });
     parts.push({ inlineData: { mimeType: bodyPhoto.mimeType, data: bodyPhoto.data } });
   }
 
@@ -153,9 +147,8 @@ ${pieceList}
 ${styleNote ? `\nOutfit concept: ${styleNote}` : ''}
 
 IDENTITY (HIGHEST PRIORITY):
-- The person in the generated image MUST be the same person as in the reference photos
-- Copy her face exactly: facial structure, skin tone, eye shape, nose, lips, jawline, hair color/style
-- Copy her body exactly: same build, proportions, and skin tone as the full-body reference
+- The person in the generated image MUST be the same person as in the reference photo
+- Copy her exactly: facial structure, skin tone, body shape, proportions, hair color/style, ethnicity
 - This must look like a photo OF HER, not a different model or generic person
 - Do NOT beautify, slim, lighten skin, or alter her appearance in any way
 

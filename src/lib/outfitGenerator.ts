@@ -19,14 +19,17 @@ export async function generateOutfitRecommendations(
   },
   items: FashionItem[]
 ): Promise<OutfitRecommendation[]> {
-  const itemList = items.map(item => ({
-    id: item.id,
-    name: item.item_name,
-    category: item.category,
-    color: item.color,
-    brand: item.brand ?? null,
-    price: item.price ?? null,
-  }));
+  const itemList = items.map(item => {
+    const entry: Record<string, unknown> = {
+      id: item.id,
+      name: item.item_name,
+      category: item.category,
+    };
+    if (item.color?.length) entry.color = item.color;
+    if (item.brand) entry.brand = item.brand;
+    if (item.price != null) entry.price = item.price;
+    return entry;
+  });
 
   const prompt = `You are a professional fashion stylist for an Indian luxury clothing brand called Iconik Club.
 
@@ -38,7 +41,7 @@ Client measurements:
 - Hips: ${profile.hips_cm ?? 'unknown'} cm
 
 Available catalog items:
-${JSON.stringify(itemList, null, 2)}
+${JSON.stringify(itemList)}
 
 Create EXACTLY 6 outfit combinations — no more, no less. Rules:
 - Each outfit must contain 3–5 items from the catalog (use their exact IDs)
@@ -58,7 +61,7 @@ Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
 Return ONLY the JSON array, no markdown, no explanation.`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.5-flash-lite',
     contents: [{ parts: [{ text: prompt }] }],
   });
 
