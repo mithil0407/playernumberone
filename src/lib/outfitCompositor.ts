@@ -148,9 +148,14 @@ ${styleNote ? `\nOutfit concept: ${styleNote}` : ''}
 
 IDENTITY (HIGHEST PRIORITY):
 - The person in the generated image MUST be the same person as in the reference photo
-- Copy her exactly: facial structure, skin tone, body shape, proportions, hair color/style, ethnicity
+- Copy her exactly: facial structure, skin tone, body shape, proportions, ethnicity
 - This must look like a photo OF HER, not a different model or generic person
 - Do NOT beautify, slim, lighten skin, or alter her appearance in any way
+
+HAIR & MAKEUP:
+- Style her hair in face-framing layers
+- Keep her natural hair color and texture from the reference photo
+- Apply natural, editorial makeup: soft glowing skin, subtle brow definition, light mascara, and a neutral lip
 
 CLOTHING RULES:
 - ALL ${loadedItems.length} clothing pieces must be clearly visible and worn on her body simultaneously

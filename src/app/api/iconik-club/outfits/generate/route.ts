@@ -120,9 +120,12 @@ export async function POST() {
     return NextResponse.json({ error: 'AI generation failed' }, { status: 500 });
   }
 
-  // 6. Create outfit sets (in parallel)
-  const results = await Promise.allSettled(
-    recommendations.map(async (rec) => {
+  // 6. Create outfit sets sequentially — Gemini image generation must not run in parallel.
+  // Concurrent requests referencing the same person trigger safety overrides and rate limits,
+  // causing all but the first image to lose identity fidelity.
+  let succeeded = 0;
+  for (const rec of recommendations) {
+    try {
       // Insert outfit_set row
       const { data: outfitSet, error: insertErr } = await admin
         .from('outfit_sets')
@@ -194,10 +197,10 @@ export async function POST() {
         );
       }
 
-      return outfitSet.id;
-    })
-  );
-
-  const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      succeeded++;
+    } catch (err) {
+      console.error('Outfit generation failed for rec:', rec.occasion, err);
+    }
+  }
   return NextResponse.json({ message: `Generated ${succeeded} of ${recommendations.length} outfits` });
 }
