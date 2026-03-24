@@ -310,6 +310,8 @@ export interface ClientProfile {
   style_notes?: string;
   subscription_id?: string;
   onboarding_complete?: boolean;
+  preview_token?: string;
+  token_expires_at?: string;
   created_at?: string;
   updated_at?: string;
 }

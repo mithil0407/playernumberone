@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink } from 'lucide-react';
 import type { ClientProfile } from '@/lib/supabase';
 
 function AdminClientsContent() {
@@ -12,6 +13,8 @@ function AdminClientsContent() {
   const [clients, setClients]   = useState<ClientProfile[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
+  const [sendingId, setSendingId]   = useState<string | null>(null);
+  const [sentIds, setSentIds]       = useState<Set<string>>(new Set());
 
   const search = searchParams.get('search') ?? '';
   const page   = parseInt(searchParams.get('page') ?? '1');
@@ -40,6 +43,22 @@ function AdminClientsContent() {
 
   const totalPages = Math.ceil(total / limit);
 
+  const sendPreview = async (clientId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSendingId(clientId);
+    try {
+      const res  = await fetch(`/api/iconik-club/admin/clients/${clientId}/send-preview`, { method: 'POST' });
+      const data = await res.json();
+      if (data.preview_url) {
+        setSentIds(prev => new Set(prev).add(clientId));
+        // Copy link to clipboard as a fallback
+        navigator.clipboard.writeText(data.preview_url).catch(() => {});
+      }
+    } finally {
+      setSendingId(null);
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -48,6 +67,13 @@ function AdminClientsContent() {
           <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-1">Manage</p>
           <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Clients</h2>
         </div>
+        <Link
+          href="/iconik-club/admin/clients/new"
+          className="flex items-center gap-2 bg-[#ff6b9d] text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-[#ff4d8d] transition-colors shadow-sm shadow-[#ff6b9d]/20"
+        >
+          <Plus size={13} />
+          Add Client
+        </Link>
       </div>
 
       {/* Search */}
@@ -87,6 +113,7 @@ function AdminClientsContent() {
                 <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden md:table-cell">Phone</th>
                 <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden lg:table-cell">Measurements</th>
                 <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Status</th>
+                <th className="text-right px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#ffb3d1]/30">
@@ -133,6 +160,30 @@ function AdminClientsContent() {
                     }`}>
                       {client.onboarding_complete ? 'Active' : 'Pending'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {client.onboarding_complete && (
+                        <button
+                          onClick={e => sendPreview(client.id!, e)}
+                          disabled={sendingId === client.id}
+                          title={sentIds.has(client.id!) ? 'Email sent — link also copied' : 'Send preview email + copy link'}
+                          className={`flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                            sentIds.has(client.id!)
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                              : 'bg-[#fff0f5] text-[#ff6b9d] border border-[#ffb3d1] hover:bg-[#ffe0ec]'
+                          }`}
+                        >
+                          {sendingId === client.id ? (
+                            <Loader2 size={11} className="animate-spin" />
+                          ) : sentIds.has(client.id!) ? (
+                            <><ExternalLink size={11} /> Sent</>
+                          ) : (
+                            <><Send size={11} /> Send preview</>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
