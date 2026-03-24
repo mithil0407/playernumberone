@@ -1,7 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
 import type { FashionItem, OutfitOccasion } from './supabase';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+function getAI() {
+  const key = process.env.GOOGLE_AI_API_KEY;
+  if (!key) throw new Error('GOOGLE_AI_API_KEY is not set in environment variables');
+  return new GoogleGenAI({ apiKey: key });
+}
 
 export interface OutfitRecommendation {
   itemIds: string[];
@@ -60,7 +64,7 @@ Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
 
 Return ONLY the JSON array, no markdown, no explanation.`;
 
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: 'gemini-2.5-flash-lite',
     contents: [{ parts: [{ text: prompt }] }],
   });

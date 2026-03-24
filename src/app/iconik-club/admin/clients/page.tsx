@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink, MessageCircle } from 'lucide-react';
+import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink, MessageCircle, RefreshCw } from 'lucide-react';
 import type { ClientProfile } from '@/lib/supabase';
 
 function AdminClientsContent() {
@@ -13,8 +13,9 @@ function AdminClientsContent() {
   const [clients, setClients]   = useState<ClientProfile[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
-  const [sendingId, setSendingId]   = useState<string | null>(null);
-  const [sentIds, setSentIds]       = useState<Set<string>>(new Set());
+  const [sendingId, setSendingId]       = useState<string | null>(null);
+  const [sentIds, setSentIds]           = useState<Set<string>>(new Set());
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   const search = searchParams.get('search') ?? '';
   const page   = parseInt(searchParams.get('page') ?? '1');
@@ -53,6 +54,28 @@ function AdminClientsContent() {
     const waPhone    = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
     const message    = `Hi ${firstName}! Your personal style edit from Iconik Club is ready 🎉\n\nView your 6 curated outfits here:\n${previewUrl}\n\nEvery piece has a direct shopping link. This preview is valid for 30 days.`;
     window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const regenerateOutfits = async (client: ClientProfile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const hasExisting = await fetch(`/api/iconik-club/admin/outfits?client_id=${client.id}`).then(r => r.json()).then(d => (d.total ?? 0) > 0).catch(() => false);
+    if (hasExisting && !confirm(`${client.name} already has outfits. Delete them and regenerate fresh?`)) return;
+    setRegeneratingId(client.id!);
+    try {
+      const url = hasExisting
+        ? `/api/iconik-club/admin/clients/${client.id}/generate?force=true`
+        : `/api/iconik-club/admin/clients/${client.id}/generate`;
+      const res  = await fetch(url, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Generation failed: ${data.error ?? 'Unknown error'}`);
+      } else {
+        alert(`Done — ${data.message}`);
+        fetchClients();
+      }
+    } finally {
+      setRegeneratingId(null);
+    }
   };
 
   const sendPreview = async (clientId: string, e: React.MouseEvent) => {
@@ -175,6 +198,20 @@ function AdminClientsContent() {
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {client.onboarding_complete && (
+                        <button
+                          onClick={e => regenerateOutfits(client, e)}
+                          disabled={regeneratingId === client.id}
+                          title="Regenerate outfits (use if generation failed or to refresh)"
+                          className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-[#f0f4ff] text-[#4a6cf7] border border-[#4a6cf7]/20 hover:bg-[#e0e8ff] disabled:opacity-50 transition-colors"
+                        >
+                          {regeneratingId === client.id ? (
+                            <Loader2 size={11} className="animate-spin" />
+                          ) : (
+                            <><RefreshCw size={11} /> Regenerate</>
+                          )}
+                        </button>
+                      )}
                       {client.onboarding_complete && client.phone && client.preview_token && (
                         <button
                           onClick={e => openWhatsApp(client, e)}

@@ -20,6 +20,7 @@ export async function POST(
   }
 
   const { id: profileId } = await params;
+  const force = request.nextUrl.searchParams.get('force') === 'true';
   const admin = createSupabaseAdminServerClient();
 
   // 1. Load profile
@@ -31,6 +32,21 @@ export async function POST(
 
   if (profileErr || !profile) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+  }
+
+  // 1b. If force=true, wipe existing outfit_sets so we regenerate fresh
+  if (force) {
+    const { data: existingSets } = await admin
+      .from('outfit_sets')
+      .select('id')
+      .eq('client_id', profileId);
+
+    if (existingSets && existingSets.length > 0) {
+      const ids = existingSets.map(s => s.id);
+      await admin.from('outfit_items').delete().in('outfit_set_id', ids);
+      await admin.from('outfit_sets').delete().in('id', ids);
+      console.log(`Admin generate (force) — deleted ${ids.length} existing outfit sets for ${profileId}`);
+    }
   }
 
   // 2. Download client photos from admin-clients storage path
