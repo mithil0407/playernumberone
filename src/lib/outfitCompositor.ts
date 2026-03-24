@@ -105,7 +105,7 @@ export async function createOutfitCard(
   const loadedImgs = itemImgs.filter(Boolean) as { data: string; mimeType: string }[];
 
   console.log(
-    `Outfit card — body:${!!bodyPhoto} ` +
+    `Outfit card — headshot:${!!headshot} body:${!!bodyPhoto} ` +
     `items:${loadedItems.length}/${items.length} [${loadedItems.map(i => i.name).join(', ')}]`
   );
 
@@ -119,12 +119,20 @@ export async function createOutfitCard(
   // This ensures Gemini links each image to its label.
   const parts: Part[] = [];
 
-  // Client reference photo — full body only
+  // Client reference photos — headshot first (primary face reference), then full body for proportions.
+  // Both are required: the headshot gives Gemini enough face detail to copy; the body photo
+  // gives body shape and proportions. Without the headshot the face is too small to identify.
+  if (headshot) {
+    parts.push({ text: `IDENTITY REFERENCE 1 — CLIENT FACE (HIGHEST PRIORITY):
+This close-up shows the client's face. The generated image MUST depict THIS EXACT PERSON.
+Copy with absolute fidelity: facial structure, skin tone, complexion, eye shape, eye colour, nose, lips, jawline, hairline, hair colour, hair texture, and ethnicity.
+The face in the output must be immediately recognisable as the same individual.` });
+    parts.push({ inlineData: { mimeType: headshot.mimeType, data: headshot.data } });
+  }
   if (bodyPhoto) {
-    parts.push({ text: `IDENTITY REFERENCE — CLIENT FULL BODY (CRITICAL):
-This is the client. The generated image MUST depict THIS EXACT PERSON.
-Preserve her exact face, body shape, proportions, skin tone, hair color/style, and ethnicity.
-The output must look like a photo OF HER — do not idealise, slim, lighten skin, or alter her appearance in any way.` });
+    parts.push({ text: `IDENTITY REFERENCE 2 — CLIENT FULL BODY:
+This is the same person's full body. Use it to copy her exact body shape, proportions, height, and build.
+Do NOT idealise, slim, or alter her physique in any way.` });
     parts.push({ inlineData: { mimeType: bodyPhoto.mimeType, data: bodyPhoto.data } });
   }
 
@@ -147,8 +155,9 @@ ${pieceList}
 ${styleNote ? `\nOutfit concept: ${styleNote}` : ''}
 
 IDENTITY (HIGHEST PRIORITY):
-- The person in the generated image MUST be the same person as in the reference photo
-- Copy her exactly: facial structure, skin tone, body shape, proportions, ethnicity
+- The person in the generated image MUST be the same person as in the reference photos
+- Use REFERENCE 1 (face close-up) to copy her face exactly: structure, skin tone, eyes, nose, lips, jawline
+- Use REFERENCE 2 (full body) to copy her exact body shape, proportions, and build
 - This must look like a photo OF HER, not a different model or generic person
 - Do NOT beautify, slim, lighten skin, or alter her appearance in any way
 
@@ -175,7 +184,7 @@ VISUAL STYLE:
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       contents: [{ parts }],
       config: { responseModalities: ['IMAGE'] },
     });
