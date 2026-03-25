@@ -308,6 +308,7 @@ export interface ClientProfile {
   body_shape?: BodyShape;
   size_estimate?: string;
   style_notes?: string;
+  style_restrictions?: string[];
   subscription_id?: string;
   onboarding_complete?: boolean;
   preview_token?: string;

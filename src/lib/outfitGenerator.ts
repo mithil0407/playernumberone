@@ -13,6 +13,29 @@ export interface OutfitRecommendation {
   styleNote: string;
 }
 
+// Returns the current Indian climate season based on month.
+function getIndianSeason(date: Date): { season: string; description: string } {
+  const month = date.getMonth() + 1; // 1–12
+  if (month >= 3 && month <= 5) {
+    return { season: 'Summer', description: 'Hot Indian summer (March–May). Prioritise light, breathable fabrics like cotton and linen. Minimal layering. Light colours work well.' };
+  }
+  if (month >= 6 && month <= 9) {
+    return { season: 'Monsoon', description: 'Monsoon season (June–September). Avoid delicate or dry-clean-only fabrics. Prefer quick-dry materials. Closed or water-resistant footwear is better than open sandals.' };
+  }
+  if (month >= 10 && month <= 11) {
+    return { season: 'Post-Monsoon / Early Winter', description: 'Pleasant transitional weather (October–November). Light layers work well. A mix of breathable and slightly warmer pieces is ideal.' };
+  }
+  return { season: 'Winter', description: 'Cool Indian winter (December–February). Light woolens, full sleeves, and layering are appropriate. Fabrics like georgette, crepe, and light knits work well.' };
+}
+
+// Human-readable descriptions for each restriction key.
+const RESTRICTION_RULES: Record<string, string> = {
+  no_sleeveless:
+    'NO SLEEVELESS — Never include tops, dresses, jumpsuits, or any upper-body piece without sleeves. Every upper-body item must have sleeves (short sleeves are acceptable as a minimum).',
+  cover_tummy:
+    'COVER TUMMY — The client prefers to keep her midsection covered and not emphasised. Never include crop tops, short tops, or bodycon / form-fitting silhouettes that cling to the stomach. Always prefer A-line, empire-waist, wrap, or flowy/structured styles that drape away from the midsection.',
+};
+
 export async function generateOutfitRecommendations(
   profile: {
     height_cm?: number;
@@ -20,6 +43,7 @@ export async function generateOutfitRecommendations(
     bust_cm?: number;
     waist_cm?: number;
     hips_cm?: number;
+    style_restrictions?: string[] | null;
   },
   items: FashionItem[]
 ): Promise<OutfitRecommendation[]> {
@@ -35,6 +59,14 @@ export async function generateOutfitRecommendations(
     return entry;
   });
 
+  const { season, description: seasonDescription } = getIndianSeason(new Date());
+
+  // Build the restrictions block — only include active restrictions.
+  const activeRestrictions = (profile.style_restrictions ?? []).filter(r => RESTRICTION_RULES[r]);
+  const restrictionsBlock = activeRestrictions.length > 0
+    ? `\nStyle restrictions — STRICTLY enforce every rule below. Violating any restriction is not allowed:\n${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}\n`
+    : '';
+
   const prompt = `You are a professional fashion stylist for an Indian luxury clothing brand called Iconik Club.
 
 Client measurements:
@@ -44,6 +76,9 @@ Client measurements:
 - Waist: ${profile.waist_cm ?? 'unknown'} cm
 - Hips: ${profile.hips_cm ?? 'unknown'} cm
 
+Current season: ${season}
+${seasonDescription}
+${restrictionsBlock}
 Available catalog items:
 ${JSON.stringify(itemList)}
 
@@ -53,7 +88,7 @@ Create EXACTLY 6 outfit combinations — no more, no less. Rules:
 - Cover 6 different occasions spread across: casual, work, evening, weekend, formal, party
 - Each occasion must appear exactly once
 - Match colors and styles harmoniously
-- Be appropriate for Indian climate and culture
+- Be appropriate for the current season and Indian culture
 - Only use item IDs that exist in the catalog above
 - Do NOT create more than 6 outfits
 

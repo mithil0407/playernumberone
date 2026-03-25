@@ -31,6 +31,7 @@ export default function NewClientPage() {
   const [bustCm, setBustCm]     = useState('');
   const [waistCm, setWaistCm]   = useState('');
   const [hipsCm, setHipsCm]     = useState('');
+  const [styleRestrictions, setStyleRestrictions] = useState<string[]>([]);
 
   // Photos
   const [headshot, setHeadshot]         = useState<File | null>(null);
@@ -99,6 +100,7 @@ export default function NewClientPage() {
       if (bustCm)   fd.append('bust_cm',   bustCm);
       if (waistCm)  fd.append('waist_cm',  waistCm);
       if (hipsCm)   fd.append('hips_cm',   hipsCm);
+      fd.append('style_restrictions', JSON.stringify(styleRestrictions));
 
       const res  = await fetch('/api/iconik-club/admin/clients/create', { method: 'POST', body: fd });
       const data = await res.json();
@@ -212,6 +214,7 @@ export default function NewClientPage() {
               setHeadshot(null); setHeadshotPreview('');
               setBodyPhoto(null); setBodyPreview('');
               setHeightCm(''); setBustCm(''); setWaistCm(''); setHipsCm('');
+              setStyleRestrictions([]);
               setEmailSent(false);
             }}
             className="flex-1 text-xs font-semibold bg-[#4a2c3e] text-white rounded-xl py-3 hover:bg-[#3a1c2e] transition-colors"
@@ -375,6 +378,37 @@ export default function NewClientPage() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#4a2c3e]/30">{unit}</span>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Style Preferences */}
+        <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
+          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Style Preferences <span className="font-normal normal-case text-[#4a2c3e]/30">(optional)</span></p>
+          <p className="text-xs text-[#4a2c3e]/30 mb-4">Select any boundaries the AI should respect when building outfits.</p>
+          <div className="space-y-3">
+            {[
+              { key: 'no_sleeveless', label: 'No sleeveless', description: 'Avoid tops, dresses, or jumpsuits without sleeves' },
+              { key: 'cover_tummy',   label: 'Cover tummy',   description: 'Avoid crop tops and styles that emphasise the midsection' },
+            ].map(({ key, label, description }) => (
+              <label key={key} className="flex items-start gap-3 cursor-pointer group">
+                <div className="mt-0.5 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={styleRestrictions.includes(key)}
+                    onChange={e =>
+                      setStyleRestrictions(prev =>
+                        e.target.checked ? [...prev, key] : prev.filter(r => r !== key)
+                      )
+                    }
+                    className="w-4 h-4 accent-[#ff6b9d] cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#4a2c3e] group-hover:text-[#ff6b9d] transition-colors">{label}</p>
+                  <p className="text-xs text-[#4a2c3e]/40">{description}</p>
+                </div>
+              </label>
             ))}
           </div>
         </div>

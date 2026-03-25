@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
     const bust_cm      = parseFloat(formData.get('bust_cm')    as string) || null;
     const waist_cm     = parseFloat(formData.get('waist_cm')   as string) || null;
     const hips_cm      = parseFloat(formData.get('hips_cm')    as string) || null;
+    const styleRestrictionsRaw = formData.get('style_restrictions') as string | null;
+    const style_restrictions: string[] = styleRestrictionsRaw
+      ? JSON.parse(styleRestrictionsRaw)
+      : [];
 
     if (!headshot || !bodyPhoto) {
       return NextResponse.json({ error: 'Both headshot and body photo are required' }, { status: 400 });
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
         bust_cm,
         waist_cm,
         hips_cm,
+        style_restrictions,
         onboarding_complete: true,
       }, { onConflict: 'user_id' })
       .select()

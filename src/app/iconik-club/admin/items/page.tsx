@@ -71,13 +71,22 @@ function AdminItemsContent() {
           <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-1">Catalog</p>
           <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Items</h2>
         </div>
-        <Link
-          href="/iconik-club/admin/items/upload"
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#ff6b9d] hover:bg-[#e85a8a] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#ff6b9d]/20"
-        >
-          <Plus size={15} />
-          Upload item
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/iconik-club/admin/items/bulk"
+            className="flex items-center gap-2 px-4 py-2.5 border border-[#ffb3d1] text-[#4a2c3e] text-sm font-semibold rounded-xl hover:bg-[#fff0f5] transition-colors"
+          >
+            <Plus size={15} />
+            Bulk upload
+          </Link>
+          <Link
+            href="/iconik-club/admin/items/upload"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#ff6b9d] hover:bg-[#e85a8a] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#ff6b9d]/20"
+          >
+            <Plus size={15} />
+            Upload item
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
