@@ -81,6 +81,108 @@ function describeItem(item: OutfitItem, index: number): string {
   return parts.join('\n');
 }
 
+const HEADSHOT_ENHANCEMENT_PROMPT = `
+You are enhancing a reference photo for a luxury fashion brand's virtual try-on system.
+
+This is the original client headshot. Generate a clean, professional close-up portrait of THIS EXACT SAME PERSON.
+
+IDENTITY — copy with absolute fidelity, change NOTHING about their appearance:
+- Exact facial structure and bone structure
+- Exact skin tone and complexion
+- Exact eye shape, eye colour, eyebrows
+- Exact nose and lip shape
+- Exact jawline and chin
+- Exact hair colour, texture, and style
+- Exact ethnicity and age
+
+ENHANCE ONLY (no appearance changes):
+- Replace background with a clean, soft light neutral-grey studio backdrop
+- Professional three-point studio lighting — soft, even, flattering
+- Frame so the face fills roughly 65–75% of the image height, shoulders visible at the bottom
+- Sharp focus on the face
+- Natural, relaxed expression
+
+The output MUST be photorealistic and studio-quality. Do NOT illustrate, paint, or apply any artistic filter. Pure photographic enhancement only.
+`.trim();
+
+const BODY_ENHANCEMENT_PROMPT = `
+You are enhancing a reference photo for a luxury fashion brand's virtual try-on system.
+
+This is the original client full-body photo. Generate a clean, professional full-body portrait of THIS EXACT SAME PERSON.
+
+IDENTITY — copy with absolute fidelity, change NOTHING about their appearance:
+- Exact facial features and skin tone
+- Exact body shape, proportions, and build — do NOT slim, reshape, or idealise the figure in any way
+- Exact height and silhouette relative to the frame
+- Exact ethnicity and age
+
+ENHANCE ONLY (no appearance changes):
+- Replace background with a clean, soft light neutral-grey studio backdrop
+- Professional studio lighting — soft, even illumination from head to toe
+- Full body visible from top of head to feet, standing in a natural, confident pose
+- Sharp focus throughout
+
+The output MUST be photorealistic and studio-quality. Do NOT illustrate, paint, or apply any artistic filter. Pure photographic enhancement only.
+`.trim();
+
+/**
+ * Runs the client's raw headshot and body photo through Gemini image generation
+ * to produce cleaner, better-lit studio-quality versions. These enhanced images
+ * are then used as identity references in outfit card generation.
+ *
+ * Both enhancements run in parallel. If either fails, the original is returned as-is.
+ */
+export async function enhanceClientPhotos(
+  headshot: ImageData | null,
+  bodyPhoto: ImageData | null,
+): Promise<{ headshot: ImageData | null; bodyPhoto: ImageData | null }> {
+  const enhance = async (
+    image: ImageData,
+    prompt: string,
+    label: string,
+  ): Promise<ImageData | null> => {
+    try {
+      const response = await ai.models.generateContent({
+        model:  'gemini-3.1-flash-image-preview',
+        contents: [{
+          parts: [
+            { text: 'Here is the original client photo to enhance:' },
+            { inlineData: { mimeType: image.mimeType, data: image.data } },
+            { text: prompt },
+          ],
+        }],
+        config: { responseModalities: ['IMAGE'] },
+      });
+
+      const candidate = response.candidates?.[0];
+      if (candidate?.content?.parts) {
+        for (const part of candidate.content.parts) {
+          const inlineData = (part as { inlineData?: { data: string; mimeType: string } }).inlineData;
+          if (inlineData?.data) {
+            console.log(`Photo enhancement (${label}) succeeded`);
+            return { data: inlineData.data, mimeType: inlineData.mimeType ?? 'image/jpeg' };
+          }
+        }
+      }
+      console.warn(`Photo enhancement (${label}): no image returned — keeping original`);
+      return null;
+    } catch (err) {
+      console.warn(`Photo enhancement (${label}) failed — keeping original:`, err);
+      return null;
+    }
+  };
+
+  const [enhancedHeadshot, enhancedBody] = await Promise.all([
+    headshot   ? enhance(headshot,   HEADSHOT_ENHANCEMENT_PROMPT, 'headshot') : Promise.resolve(null),
+    bodyPhoto  ? enhance(bodyPhoto,  BODY_ENHANCEMENT_PROMPT,     'body')     : Promise.resolve(null),
+  ]);
+
+  return {
+    headshot:  enhancedHeadshot  ?? headshot,
+    bodyPhoto: enhancedBody      ?? bodyPhoto,
+  };
+}
+
 /**
  * Generates an AI editorial portrait of the client wearing ALL outfit pieces.
  * Uses an interleaved parts approach: each image is immediately preceded by
