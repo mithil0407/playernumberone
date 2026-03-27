@@ -199,14 +199,14 @@ export default function ManCheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
+  }, [formData, totalAmount, outfitPreviewAddon, razorpayLoaded]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+    const hasAddons = outfitPreviewAddon;
     if (!hasAddons && !popupDismissed) setShowAddonPopup(true);
     else await processPayment();
-  }, [processPayment, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, popupDismissed]);
+  }, [processPayment, outfitPreviewAddon, popupDismissed]);
 
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
