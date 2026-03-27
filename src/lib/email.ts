@@ -1097,6 +1097,114 @@ export async function sendGlobeIntakeNotificationEmail(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Man Intake — Internal notification email
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ManIntakeNotificationData {
+  customer_email: string;
+  customer_phone: string;
+  photo_fullbody_url?: string;
+  photo_headshot_url?: string;
+  frustrations?: string;
+  frustrations_custom?: string;
+  situations?: string;
+  body_concerns?: string;
+  wardrobe_type?: string;
+  colour_preference?: string;
+  style_aesthetics?: string;
+  style_outcome?: string;
+  hair_type?: string;
+}
+
+export async function sendManIntakeNotificationEmail(
+  data: ManIntakeNotificationData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+
+    const row = (label: string, value: string | undefined) =>
+      value ? `<tr><td style="padding:6px 12px;font-size:13px;color:#555;border-bottom:1px solid #f0e8e8;"><strong style="color:#333;">${label}:</strong></td><td style="padding:6px 12px;font-size:13px;color:#333;border-bottom:1px solid #f0e8e8;">${value}</td></tr>` : '';
+
+    const photoLink = (label: string, url: string | undefined) =>
+      url ? `<tr><td style="padding:6px 12px;font-size:13px;color:#555;border-bottom:1px solid #f0e8e8;"><strong style="color:#333;">${label}:</strong></td><td style="padding:6px 12px;font-size:13px;border-bottom:1px solid #f0e8e8;"><a href="${url}" style="color:#1b5e20;text-decoration:none;">View Photo →</a></td></tr>` : '';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><title>New Man Intake Submission</title></head>
+<body style="margin:0;padding:0;background:#fdf8f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fdf8f5;padding:32px 20px;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+<tr><td style="background:linear-gradient(135deg,#2e7d32 0%,#1b5e20 100%);padding:28px 40px;text-align:center;">
+  <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;letter-spacing:2px;">ICONIK MEN</h1>
+  <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:11px;letter-spacing:3px;text-transform:uppercase;">New Man Intake Submission</p>
+</td></tr>
+
+<tr><td style="padding:28px 40px 8px;">
+  <p style="margin:0 0 4px;font-size:15px;color:#333;">A client has completed their Man intake form.</p>
+  <p style="margin:0;font-size:13px;color:#888;">Submitted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'short' })} IST</p>
+</td></tr>
+
+<tr><td style="padding:16px 40px 28px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0e8e8;border-radius:10px;overflow:hidden;">
+    ${row('Email', data.customer_email)}
+    ${row('Phone', data.customer_phone)}
+    ${photoLink('Full Body Photo', data.photo_fullbody_url)}
+    ${photoLink('Headshot', data.photo_headshot_url)}
+    ${row('Frustrations', data.frustrations?.replace(/,/g, ', '))}
+    ${row('Custom frustration', data.frustrations_custom)}
+    ${row('Situations', data.situations?.replace(/,/g, ', '))}
+    ${row('Body concerns', data.body_concerns?.replace(/,/g, ', '))}
+    ${row('Wardrobe type', data.wardrobe_type)}
+    ${row('Colour preference', data.colour_preference)}
+    ${row('Style aesthetics', data.style_aesthetics?.replace(/,/g, ', '))}
+    ${row('Style outcome', data.style_outcome)}
+    ${row('Hair type', data.hair_type?.replace(/,/g, ', '))}
+  </table>
+</td></tr>
+
+<tr><td style="padding:20px 40px 32px;text-align:center;border-top:1px solid #f0e8e8;">
+  <p style="margin:0;color:#2e7d32;font-weight:700;font-size:14px;">ICONIK Style Intelligence — Internal</p>
+  <p style="margin:4px 0 0;color:#999;font-size:12px;">help.iconikfashion@gmail.com</p>
+</td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+
+    const text =
+      `New Man intake submission\n` +
+      `Email: ${data.customer_email}\n` +
+      `Phone: ${data.customer_phone}\n` +
+      (data.photo_fullbody_url ? `Full body photo: ${data.photo_fullbody_url}\n` : '') +
+      (data.photo_headshot_url ? `Headshot: ${data.photo_headshot_url}\n` : '') +
+      (data.frustrations ? `Frustrations: ${data.frustrations}\n` : '') +
+      (data.frustrations_custom ? `Custom frustration: ${data.frustrations_custom}\n` : '') +
+      (data.situations ? `Situations: ${data.situations}\n` : '') +
+      (data.body_concerns ? `Body concerns: ${data.body_concerns}\n` : '') +
+      (data.wardrobe_type ? `Wardrobe type: ${data.wardrobe_type}\n` : '') +
+      (data.colour_preference ? `Colour preference: ${data.colour_preference}\n` : '') +
+      (data.style_aesthetics ? `Style aesthetics: ${data.style_aesthetics}\n` : '') +
+      (data.style_outcome ? `Style outcome: ${data.style_outcome}\n` : '') +
+      (data.hair_type ? `Hair type: ${data.hair_type}\n` : '');
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Intake Bot" <${process.env.GMAIL_USER}>`,
+      to: 'help.iconikfashion@gmail.com',
+      subject: `📋 New Man Intake — ${data.customer_email}`,
+      text,
+      html,
+    });
+
+    console.log(`Man intake notification sent. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Man intake notification:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Iconik Club — Welcome email with temp credentials
 // ─────────────────────────────────────────────────────────────────────────────
 export async function sendIconikClubWelcomeEmail(
