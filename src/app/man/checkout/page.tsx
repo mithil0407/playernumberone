@@ -398,7 +398,7 @@ export default function ManCheckoutPage() {
                 disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+                  const hasAddons = outfitPreviewAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, 'INR', 'Man Funnel');
