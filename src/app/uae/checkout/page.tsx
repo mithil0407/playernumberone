@@ -43,12 +43,6 @@ interface RazorpayInstance {
   open(): void;
 }
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay: new (options: any) => RazorpayInstance;
-  }
-}
 
 interface FormData {
   name: string;
@@ -249,7 +243,7 @@ export default function UaeCheckoutPage() {
           }
         };
 
-        const razorpay = new window.Razorpay(options);
+        const razorpay = new (window as unknown as { Razorpay: new (o: RazorpayOptions) => RazorpayInstance }).Razorpay(options);
         razorpay.open();
       };
 

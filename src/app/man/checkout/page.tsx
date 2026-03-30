@@ -26,12 +26,6 @@ interface RazorpayOptions {
 
 interface RazorpayInstance { open(): void; }
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay: new (options: any) => RazorpayInstance;
-  }
-}
 
 interface FormData {
   email: string;
@@ -174,7 +168,7 @@ export default function ManCheckoutPage() {
           theme: { color: '#E91E63' }
         };
 
-        const razorpay = new window.Razorpay(options);
+        const razorpay = new (window as unknown as { Razorpay: new (o: RazorpayOptions) => RazorpayInstance }).Razorpay(options);
         razorpay.open();
       };
 
