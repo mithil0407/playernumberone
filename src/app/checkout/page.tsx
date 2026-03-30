@@ -36,9 +36,20 @@ interface RazorpayInstance {
   open(): void;
 }
 
+interface RazorpaySubOptions {
+  key: string;
+  subscription_id: string;
+  name: string;
+  description: string;
+  handler: () => void;
+  modal?: { ondismiss?: () => void };
+  prefill: { name: string; email: string; contact: string };
+  theme: { color: string };
+}
+
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+    Razorpay: new (options: RazorpayOptions | RazorpaySubOptions) => RazorpayInstance;
   }
 }
 
@@ -98,6 +109,8 @@ export default function CheckoutPage() {
   const [wardrobeDetoxAddon, setWardrobeDetoxAddon] = useState(false); // Wardrobe Detox
   const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
   const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false); // Outfit Preview on You
+  const [iconikClubAddon, setIconikClubAddon] = useState(false); // ICONIK Club subscription
+  const [iconikClubPlan, setIconikClubPlan] = useState<'monthly' | 'yearly'>('monthly');
 
   const wardrobeDetoxPrice = 1499;
 
@@ -302,7 +315,7 @@ export default function CheckoutPage() {
           description: 'Iconik Style Consultation',
           image: `${window.location.origin}/logopayment.webp`, // Logo displayed on Razorpay checkout
           order_id: responseData.razorpay_order_id,
-          handler: function (response: RazorpayResponse) {
+          handler: async function (response: RazorpayResponse) {
             // Payment successful - Track detailed purchase with all items
             const purchasedItems = ['iconik_style_consultation'];
             if (wardrobeDetoxAddon) purchasedItems.push('wardrobe_detox');
@@ -324,16 +337,52 @@ export default function CheckoutPage() {
             if (responseData.customer_id) {
               localStorage.setItem('customerId', responseData.customer_id);
               sessionStorage.setItem('customerId', responseData.customer_id);
-              console.log('Stored customerId in localStorage and sessionStorage:', responseData.customer_id);
             }
             if (responseData.db_order_id) {
               localStorage.setItem('orderId', responseData.db_order_id);
               sessionStorage.setItem('orderId', responseData.db_order_id);
-              console.log('Stored orderId in localStorage and sessionStorage:', responseData.db_order_id);
             }
 
-            // Redirect to success page with all necessary parameters including amount
             const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
+
+            // If ICONIK Club was selected, launch subscription modal next
+            if (iconikClubAddon) {
+              try {
+                const subResp = await fetch('/api/subscription', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    plan_type: iconikClubPlan,
+                    customer_email: formData.email,
+                    customer_phone: formData.phone,
+                    customer_name: formData.email.split('@')[0],
+                    original_order_id: responseData.db_order_id,
+                  }),
+                });
+                const subData = await subResp.json();
+                if (subData.success && subData.subscription_id) {
+                  const subOptions: RazorpaySubOptions = {
+                    key: subData.key,
+                    subscription_id: subData.subscription_id,
+                    name: 'Iconik Club',
+                    description: `Iconik Club ${iconikClubPlan === 'yearly' ? 'Annual' : 'Monthly'}`,
+                    handler: () => {
+                      localStorage.setItem('iconikClubPurchased', 'true');
+                      window.location.href = successUrl;
+                    },
+                    modal: { ondismiss: () => { window.location.href = successUrl; } },
+                    prefill: { name: formData.email.split('@')[0], email: formData.email, contact: formData.phone },
+                    theme: { color: '#ff6b9d' },
+                  };
+                  const rzpSub = new window.Razorpay(subOptions);
+                  rzpSub.open();
+                  return;
+                }
+              } catch (subError) {
+                console.error('Subscription modal error:', subError);
+              }
+            }
+
             window.location.href = successUrl;
           },
           prefill: {
@@ -377,7 +426,7 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
+  }, [formData, totalAmount, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, iconikClubAddon, iconikClubPlan, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -385,7 +434,7 @@ export default function CheckoutPage() {
 
 
     // Check if no add-ons are selected
-    const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+    const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon || iconikClubAddon;
 
 
     // Only show popup if: no add-ons AND popup hasn't been dismissed
@@ -733,6 +782,64 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Add-on 3: ICONIK Club */}
+                <div
+                  onClick={() => setIconikClubAddon(!iconikClubAddon)}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${iconikClubAddon
+                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
+                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${iconikClubAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
+                      }`}>
+                      {iconikClubAddon && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div>
+                          <h4 className="luxury-heading text-luxury-charcoal text-base">✨ ICONIK Club</h4>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-accent bg-luxury-cream px-2 py-0.5 rounded-full">Subscription</span>
+                        </div>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">
+                          {iconikClubPlan === 'yearly' ? '₹599' : '₹699'}<span className="text-xs font-normal text-luxury-charcoal/50">/mo</span>
+                        </span>
+                      </div>
+                      <p className="text-xs luxury-body text-luxury-charcoal/70 mb-3">
+                        6 complete outfit sets every month — shoppable links from Myntra, Ajio & Amazon, built on your Blueprint.
+                      </p>
+                      {/* Plan selector — only visible when toggled on */}
+                      {iconikClubAddon && (
+                        <div className="grid grid-cols-2 gap-2 mb-2" onClick={e => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => setIconikClubPlan('monthly')}
+                            className={`text-xs py-2 px-3 rounded-lg border-2 transition-all ${iconikClubPlan === 'monthly' ? 'border-luxury-accent bg-luxury-accent/10 text-luxury-accent font-semibold' : 'border-luxury-cream text-luxury-charcoal/60'}`}
+                          >
+                            Monthly<br /><span className="font-bold">₹699/mo</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIconikClubPlan('yearly')}
+                            className={`text-xs py-2 px-3 rounded-lg border-2 transition-all relative ${iconikClubPlan === 'yearly' ? 'border-luxury-accent bg-luxury-accent/10 text-luxury-accent font-semibold' : 'border-luxury-cream text-luxury-charcoal/60'}`}
+                          >
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-luxury-accent text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">BEST VALUE</span>
+                            Annual<br /><span className="font-bold">₹599/mo</span>
+                          </button>
+                        </div>
+                      )}
+                      <p className="text-[10px] luxury-body text-luxury-charcoal/40 italic">
+                        Billed separately after Blueprint payment. Cancel anytime.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -764,6 +871,14 @@ export default function CheckoutPage() {
                     <span>₹{outfitPreviewPrice}</span>
                   </div>
                 )}
+                {iconikClubAddon && (
+                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70 pt-1 border-t border-luxury-cream mt-1">
+                    <span>+ ICONIK Club <span className="text-[10px] text-luxury-charcoal/40">(recurring)</span></span>
+                    <span className="text-luxury-accent font-medium">
+                      {iconikClubPlan === 'yearly' ? '₹599/mo' : '₹699/mo'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Big Bold Total */}
@@ -791,7 +906,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
+                  const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon || iconikClubAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'INR', 'India');

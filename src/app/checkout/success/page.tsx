@@ -58,6 +58,7 @@ function SuccessPageContent() {
   const [upsellTracked, setUpsellTracked] = useState(false);
   const [sampleItems, setSampleItems] = useState<SampleItem[]>([]);
   const [sampleLoading, setSampleLoading] = useState(true);
+  const [hasClub, setHasClub] = useState(false);
 
   useEffect(() => {
     fetch('/api/iconik-club/items/sample')
@@ -95,6 +96,7 @@ function SuccessPageContent() {
     setCustomerEmail(localStorage.getItem('customerEmail') || '');
     setCustomerPhone(localStorage.getItem('customerPhone') || '');
     setCustomerName(localStorage.getItem('customerName') || '');
+    setHasClub(localStorage.getItem('iconikClubPurchased') === 'true');
     if (!upsellTracked) {
       trackViewContent('Iconik Club Upsell', 7188, ['iconik_club_subscription'], 'INR', 'Upsell');
       setUpsellTracked(true);
@@ -160,7 +162,9 @@ function SuccessPageContent() {
                 Payment Confirmed
               </p>
               <p className="luxury-body text-[11px] text-green-800/70 mt-0.5 m-0">
-                Please check your spam folder for further instructions.
+                {hasClub
+                  ? 'Your Blueprint is being prepared. Your first ICONIK Club drop will arrive once your Blueprint is ready.'
+                  : 'Your Blueprint is being prepared. Expect it within 4–5 days.'}
               </p>
             </div>
           </div>
