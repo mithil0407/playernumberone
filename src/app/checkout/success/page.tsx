@@ -49,7 +49,7 @@ const FAQS = [
 function SuccessPageContent() {
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -69,11 +69,10 @@ function SuccessPageContent() {
   }, []);
 
   useEffect(() => {
-    if (document.querySelector('script[src*="razorpay.com"]')) { setRazorpayLoaded(true); return; }
+    if (document.querySelector('script[src*="razorpay.com"]')) { return; }
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
     document.body.appendChild(script);
     return () => { if (script.parentNode) script.parentNode.removeChild(script); };
   }, []);
@@ -142,7 +141,7 @@ function SuccessPageContent() {
       alert(error instanceof Error ? error.message : 'Failed to start subscription. Please try again.');
       setIsProcessing(false);
     }
-  }, [customerEmail, customerPhone, customerName, orderId, selectedPlan, razorpayLoaded]);
+  }, [customerEmail, customerPhone, customerName, orderId, selectedPlan]);
 
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal font-sans pb-20">

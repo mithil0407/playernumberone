@@ -28,7 +28,8 @@ interface RazorpayInstance { open(): void; }
 
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: new (options: any) => RazorpayInstance;
   }
 }
 

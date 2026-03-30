@@ -444,7 +444,7 @@ export default function CheckoutPage() {
       // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
-  }, [processPayment, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, popupDismissed]);
+  }, [processPayment, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, iconikClubAddon, popupDismissed]);
 
   // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
