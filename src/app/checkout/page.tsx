@@ -366,9 +366,24 @@ export default function CheckoutPage() {
                     subscription_id: subData.subscription_id,
                     name: 'Iconik Club',
                     description: `Iconik Club ${iconikClubPlan === 'yearly' ? 'Annual' : 'Monthly'}`,
-                    handler: () => {
+                    handler: async () => {
                       localStorage.setItem('iconikClubPurchased', 'true');
-                      window.location.href = successUrl;
+                      // Create account + send welcome email immediately after payment
+                      try {
+                        await fetch('/api/subscription/activate', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            subscription_id: subData.subscription_id,
+                            customer_email: formData.email,
+                            customer_name: formData.email.split('@')[0],
+                            customer_phone: formData.phone,
+                          }),
+                        });
+                      } catch (e) {
+                        console.error('Activate error:', e);
+                      }
+                      window.location.href = '/iconik-club/join/success';
                     },
                     modal: { ondismiss: () => { window.location.href = successUrl; } },
                     prefill: { name: formData.email.split('@')[0], email: formData.email, contact: formData.phone },
