@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { generateOutfitRecommendations } from '@/lib/outfitGenerator';
-import { createOutfitCard, enhanceClientPhotos, type ImageData } from '@/lib/outfitCompositor';
+import { createOutfitCard, type ImageData } from '@/lib/outfitCompositor';
 
 const MIME_FOR_EXT: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg',
@@ -51,10 +51,6 @@ export async function POST() {
   }
 
   console.log(`Client photos loaded — headshot:${!!clientHeadshot} body:${!!clientBodyPhoto}`);
-
-  // 2c. Enhance client photos — produces cleaner studio-quality versions for better outfit card identity fidelity
-  console.log(`Enhancing client photos for ${user.id}…`);
-  ({ headshot: clientHeadshot, bodyPhoto: clientBodyPhoto } = await enhanceClientPhotos(clientHeadshot, clientBodyPhoto));
 
   // 3. Skip if outfits already exist for this batch
   const { data: existing } = await admin

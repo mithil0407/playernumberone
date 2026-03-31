@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { generateOutfitRecommendations } from '@/lib/outfitGenerator';
-import { createOutfitCard, enhanceClientPhotos, type ImageData } from '@/lib/outfitCompositor';
+import { createOutfitCard, type ImageData } from '@/lib/outfitCompositor';
 
 const MIME_FOR_EXT: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg',
@@ -108,10 +108,6 @@ export async function POST(
       error: `Only ${usableItems.length} item(s) have valid images, need at least ${MIN_ITEMS}.`
     }, { status: 422 });
   }
-
-  // 4c. Enhance client photos — produces cleaner studio-quality versions for better outfit card identity fidelity
-  console.log(`Enhancing client photos for ${profileId}…`);
-  ({ headshot: clientHeadshot, bodyPhoto: clientBodyPhoto } = await enhanceClientPhotos(clientHeadshot, clientBodyPhoto));
 
   // 5. Generate recommendations via Gemini
   let recommendations;

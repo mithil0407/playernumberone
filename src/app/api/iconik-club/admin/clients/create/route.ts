@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { enhanceClientPhotos } from '@/lib/outfitCompositor';
 
 /*
   Run this SQL migration in Supabase before using this route:
@@ -65,24 +66,37 @@ export async function POST(request: NextRequest) {
       return 'image/jpeg';
     }
 
-    // Upload headshot
+    // Read raw buffers
     const headshotBuf = Buffer.from(await headshot.arrayBuffer());
+    const bodyBuf     = Buffer.from(await bodyPhoto.arrayBuffer());
+
+    // Enhance to studio quality before storing — better source images = better outfit cards
+    console.log(`Enhancing client photos for new profile ${profileId}…`);
+    const { headshot: enhancedHeadshot, bodyPhoto: enhancedBody } = await enhanceClientPhotos(
+      { data: headshotBuf.toString('base64'), mimeType: resolveType(headshot) },
+      { data: bodyBuf.toString('base64'),     mimeType: resolveType(bodyPhoto) },
+    );
+    const finalHeadshotBuf  = enhancedHeadshot ? Buffer.from(enhancedHeadshot.data, 'base64') : headshotBuf;
+    const finalHeadshotMime = enhancedHeadshot ? enhancedHeadshot.mimeType : resolveType(headshot);
+    const finalBodyBuf      = enhancedBody     ? Buffer.from(enhancedBody.data, 'base64')     : bodyBuf;
+    const finalBodyMime     = enhancedBody     ? enhancedBody.mimeType     : resolveType(bodyPhoto);
+
+    // Upload (enhanced) headshot
     const headshotKey = `admin-clients/${profileId}/headshot.jpg`;
     const { error: hsErr } = await admin.storage
       .from('client-photos')
-      .upload(headshotKey, headshotBuf, { contentType: resolveType(headshot), upsert: true });
+      .upload(headshotKey, finalHeadshotBuf, { contentType: finalHeadshotMime, upsert: true });
 
     if (hsErr) {
       await admin.from('client_profiles').delete().eq('id', profileId);
       return NextResponse.json({ error: 'Headshot upload failed', detail: hsErr.message }, { status: 500 });
     }
 
-    // Upload body photo
-    const bodyBuf = Buffer.from(await bodyPhoto.arrayBuffer());
+    // Upload (enhanced) body photo
     const bodyKey = `admin-clients/${profileId}/body.jpg`;
     const { error: bpErr } = await admin.storage
       .from('client-photos')
-      .upload(bodyKey, bodyBuf, { contentType: resolveType(bodyPhoto), upsert: true });
+      .upload(bodyKey, finalBodyBuf, { contentType: finalBodyMime, upsert: true });
 
     if (bpErr) {
       await admin.from('client_profiles').delete().eq('id', profileId);
