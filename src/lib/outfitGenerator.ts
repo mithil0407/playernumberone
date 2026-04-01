@@ -67,7 +67,7 @@ export async function generateOutfitRecommendations(
     ? `\nStyle restrictions — STRICTLY enforce every rule below. Violating any restriction is not allowed:\n${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}\n`
     : '';
 
-  const prompt = `You are a professional fashion stylist for an Indian luxury clothing brand called Iconik Club.
+  const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern, minimal, and editorial — think quiet luxury, not maximalist. Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
 
 Client measurements:
 - Height: ${profile.height_cm ?? 'unknown'} cm
@@ -79,18 +79,58 @@ Client measurements:
 Current season: ${season}
 ${seasonDescription}
 ${restrictionsBlock}
-Available catalog items:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTFIT STRUCTURE RULES (non-negotiable)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Every outfit MUST have:
+1. Exactly ONE bottom layer — either: a single-piece (dress, jumpsuit) OR a top + one bottom (skirt, bottom). NEVER combine two bottoms (e.g. no skirt + bottom, no two trousers). NEVER use a dress/jumpsuit alongside a separate bottom.
+2. Exactly ONE pair of shoes — always include footwear, never omit it.
+3. Maximum ONE bag — optional, not required.
+4. Maximum ONE accessory — optional, not required.
+5. Total items per outfit: 2–4 items (shoes always count, bag/accessory are extras).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COLOUR RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Maximum 3 distinct colours per outfit — fewer is better (2 is ideal for a minimal look).
+- Build each outfit around one neutral anchor (white, ivory, black, beige, camel, grey, navy) plus at most one accent colour.
+- Tonal dressing (different shades of the same colour) is strongly preferred over clashing contrasts.
+- Avoid combining more than one bold/printed piece in the same outfit — let one statement piece lead, keep everything else simple.
+- Metallics (gold, silver) count as a neutral for evening/formal outfits only.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ITEM REUSE LIMITS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- The same item ID must NOT appear in more than 2 outfits across the full set of 6.
+- Prioritise variety — spread items across outfits so the wardrobe feels diverse, not repetitive.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OCCASION BRIEFS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+casual   — Relaxed but put-together. Think effortless daywear: a clean top with well-fitted trousers or a simple midi dress. Comfortable fabrics (cotton, linen, jersey). No eveningwear fabrics.
+work     — Polished and professional for an Indian metro office. Structured silhouettes: tailored trousers, blazers, midi skirts, shirts. Smart fabrics (crepe, cotton-blend). Nothing bodycon, nothing sheer.
+evening  — Elevated and refined for a dinner out or cocktail event. Silk, georgette, or satin pieces. One statement element (a draped top, a midi skirt in a rich tone). Understated glamour — not party-loud.
+weekend  — Stylish but laid-back. Relaxed-fit pieces the client would genuinely wear to brunch or shopping: wide-leg trousers, a breezy top, loafers or clean sneakers. Comfortable yet visually coherent.
+formal   — Occasion-ready for a wedding guest, gala, or formal Indian event. Full-length or midi silhouettes in luxurious fabrics (chiffon, satin, embroidered). Coordinated and complete-looking.
+party    — Fun and confident for a night out or celebration. Bolder colour or texture than evening — a metallic, a rich jewel tone, or a statement silhouette. Still minimal in layering; avoid over-accessorising.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STYLING PHILOSOPHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Modern and minimal: cleaner is better. If an item does not add to the outfit, leave it out.
+- Each outfit should have one focal piece (the "hero") — everything else supports it quietly.
+- Avoid over-layering; 2–3 pieces (plus shoes) is the ideal modern outfit formula.
+- Fit and proportion matter: pair oversized/relaxed tops with fitted bottoms, or fitted tops with wider-leg bottoms — never loose + loose.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AVAILABLE CATALOG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${JSON.stringify(itemList)}
 
-Create EXACTLY 6 outfit combinations — no more, no less. Rules:
-- Each outfit must contain 3–5 items from the catalog (use their exact IDs)
-- EVERY outfit MUST include exactly one pair of shoes (category "shoes") — never omit footwear
-- Cover 6 different occasions spread across: casual, work, evening, weekend, formal, party
-- Each occasion must appear exactly once
-- Match colors and styles harmoniously
-- Be appropriate for the current season and Indian culture
-- Only use item IDs that exist in the catalog above
-- Do NOT create more than 6 outfits
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TASK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Create EXACTLY 6 outfits — one per occasion (casual, work, evening, weekend, formal, party). Each occasion must appear exactly once. Only use item IDs that exist in the catalog above.
 
 Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
 - itemIds: array of item ID strings from the catalog
@@ -125,10 +165,34 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   const validIds = new Set(items.map(i => i.id));
   const itemById = new Map(items.map(i => [i.id, i]));
 
-  const validated = recs.slice(0, 6).map(rec => ({
-    ...rec,
-    itemIds: (rec.itemIds ?? []).filter(id => validIds.has(id)),
-  }));
+  // Single-piece categories — a dress/jumpsuit is its own bottom layer
+  const SINGLE_PIECE_CATS = new Set(['dress', 'jumpsuit']);
+  // Separate bottom categories — only one allowed per outfit
+  const BOTTOM_CATS = new Set(['bottom', 'skirt']);
+
+  const validated = recs.slice(0, 6).map(rec => {
+    let ids: string[] = (rec.itemIds ?? []).filter(id => validIds.has(id));
+
+    // Guard: remove duplicate bottoms — keep only the first bottom/skirt found,
+    // and drop any separate bottom if a single-piece (dress/jumpsuit) is present.
+    const hasSinglePiece = ids.some(id => SINGLE_PIECE_CATS.has(itemById.get(id)?.category ?? ''));
+    if (hasSinglePiece) {
+      // Drop all separate bottoms — dress/jumpsuit is the bottom layer
+      ids = ids.filter(id => !BOTTOM_CATS.has(itemById.get(id)?.category ?? ''));
+    } else {
+      // Keep only the first bottom/skirt, remove subsequent ones
+      let bottomSeen = false;
+      ids = ids.filter(id => {
+        if (BOTTOM_CATS.has(itemById.get(id)?.category ?? '')) {
+          if (bottomSeen) return false;
+          bottomSeen = true;
+        }
+        return true;
+      });
+    }
+
+    return { ...rec, itemIds: ids };
+  });
 
   // Ensure every outfit has footwear — inject a shoe if the AI forgot
   const shoeItems = items.filter(i => i.category === 'shoes');

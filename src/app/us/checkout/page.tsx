@@ -661,13 +661,13 @@ export default function CheckoutPage() {
                         <span className="text-luxury-green font-semibold text-lg flex-shrink-0">${smartShoppersGuidePrice}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Get our curated brand guide for YOUR body type + budget
+                        A ready-to-wear capsule wardrobe curated for your body type, lifestyle & budget — pieces that work together effortlessly.
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Best brands for you</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Budget breakdowns</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Sizing by brand</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Color-matched tips</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Capsule wardrobe plan</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Mix & match outfits</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Budget-smart picks</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Built for your body</span>
                       </div>
                     </div>
                   </div>

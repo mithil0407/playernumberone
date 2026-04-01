@@ -6,11 +6,28 @@ import Link from 'next/link';
 import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink, MessageCircle, RefreshCw } from 'lucide-react';
 import type { ClientProfile } from '@/lib/supabase';
 
+type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired' | 'pending';
+
+type ClientWithSubscription = ClientProfile & {
+  subscriptions?: {
+    created_at?: string;
+    start_date?: string;
+    plan_type?: string;
+    status?: SubscriptionStatus;
+    cancelled_at?: string;
+  } | null;
+};
+
+function formatMemberSince(dateStr?: string): string {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function AdminClientsContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
-  const [clients, setClients]   = useState<ClientProfile[]>([]);
+  const [clients, setClients]   = useState<ClientWithSubscription[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
   const [sendingId, setSendingId]       = useState<string | null>(null);
@@ -171,6 +188,31 @@ function AdminClientsContent() {
                       <div>
                         <p className="font-semibold text-[#4a2c3e]">{client.name}</p>
                         <p className="text-xs text-[#4a2c3e]/40 font-medium">{client.email}</p>
+                        {client.subscriptions && (
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            {(client.subscriptions.created_at || client.subscriptions.start_date) && (
+                              <p className="text-[10px] text-[#ff6b9d]/70">
+                                Member since {formatMemberSince(client.subscriptions.created_at ?? client.subscriptions.start_date)}
+                              </p>
+                            )}
+                            {client.subscriptions.status && client.subscriptions.status !== 'active' && (
+                              <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
+                                client.subscriptions.status === 'cancelled'
+                                  ? 'bg-red-50 text-red-500 border border-red-100'
+                                  : client.subscriptions.status === 'paused'
+                                  ? 'bg-amber-50 text-amber-500 border border-amber-100'
+                                  : client.subscriptions.status === 'expired'
+                                  ? 'bg-gray-100 text-gray-400 border border-gray-200'
+                                  : 'bg-gray-100 text-gray-400 border border-gray-200'
+                              }`}>
+                                {client.subscriptions.status}
+                                {client.subscriptions.status === 'cancelled' && client.subscriptions.cancelled_at
+                                  ? ` · ${formatMemberSince(client.subscriptions.cancelled_at)}`
+                                  : ''}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>

@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
     const onboarding = searchParams.get('onboarding_complete');
 
     const supabaseAdmin = createSupabaseAdminServerClient();
-    let query = supabaseAdmin.from('client_profiles').select('*', { count: 'exact' });
+    let query = supabaseAdmin
+      .from('client_profiles')
+      .select('*, subscriptions(created_at, start_date, plan_type, status, cancelled_at)', { count: 'exact' });
 
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);

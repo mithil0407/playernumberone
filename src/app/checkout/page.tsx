@@ -786,13 +786,13 @@ export default function CheckoutPage() {
                         <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{smartShoppersGuidePrice}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Get our curated brand guide for YOUR body type + budget
+                        A ready-to-wear capsule wardrobe curated for your body type, lifestyle & budget — pieces that work together effortlessly.
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Best brands for you</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Budget breakdowns</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Sizing by brand</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Color-matched tips</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Capsule wardrobe plan</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Mix & match outfits</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Budget-smart picks</span>
+                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Built for your body</span>
                       </div>
                     </div>
                   </div>
@@ -820,7 +820,10 @@ export default function CheckoutPage() {
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div>
                           <h4 className="luxury-heading text-luxury-charcoal text-base">✨ ICONIK Club</h4>
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-accent bg-luxury-cream px-2 py-0.5 rounded-full">Subscription</span>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-accent bg-luxury-cream px-2 py-0.5 rounded-full whitespace-nowrap">Subscription</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">88% of buyers add this</span>
+                          </div>
                         </div>
                         <span className="text-luxury-green font-semibold text-lg flex-shrink-0">
                           {iconikClubPlan === 'yearly' ? '₹599' : '₹699'}<span className="text-xs font-normal text-luxury-charcoal/50">/mo</span>
@@ -850,7 +853,10 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       <p className="text-[10px] luxury-body text-luxury-charcoal/40 italic">
-                        Billed separately after Blueprint payment. Cancel anytime.
+                        Billed separately after Blueprint payment.
+                      </p>
+                      <p className="text-[10px] luxury-body text-luxury-charcoal/55 mt-1">
+                        🔓 No lock-in — cancel anytime, no questions asked.
                       </p>
                     </div>
                   </div>

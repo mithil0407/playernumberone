@@ -88,16 +88,16 @@ This is the original client headshot. Generate a clean, professional close-up po
 
 IDENTITY — copy with absolute fidelity, change NOTHING about their appearance:
 - Exact facial structure and bone structure
-- Exact skin tone and complexion
+- Skin tone and complexion: reproduce her natural skin tone ACCURATELY — do NOT darken it; studio lighting should render it true-to-life or very slightly brighter, never darker than the original photo
 - Exact eye shape, eye colour, eyebrows
 - Exact nose and lip shape
 - Exact jawline and chin
-- Exact hair colour, texture, and style
+- Exact hair colour and texture; keep the same overall hairstyle but present it neatly styled and polished — as if professionally blow-dried or set for a studio shoot
 - Exact ethnicity and age
 
 ENHANCE ONLY (no appearance changes):
 - Replace background with a clean, soft light neutral-grey studio backdrop
-- Professional three-point studio lighting — soft, even, flattering
+- Professional three-point studio lighting — soft, even, flattering; ensure lighting does NOT cast shadows that darken or alter skin tone
 - Frame so the face fills roughly 65–75% of the image height, shoulders visible at the bottom
 - Sharp focus on the face
 - Natural, relaxed expression
@@ -111,14 +111,15 @@ You are enhancing a reference photo for a luxury fashion brand's virtual try-on 
 This is the original client full-body photo. Generate a clean, professional full-body portrait of THIS EXACT SAME PERSON.
 
 IDENTITY — copy with absolute fidelity, change NOTHING about their appearance:
-- Exact facial features and skin tone
+- Exact facial features; skin tone and complexion: reproduce her natural skin tone ACCURATELY — do NOT darken it; studio lighting should render it true-to-life or very slightly brighter, never darker than the original photo
 - Exact body shape, proportions, and build — do NOT slim, reshape, or idealise the figure in any way
+- Exact hair colour and texture; keep the same overall hairstyle but present it neatly styled and polished — as if professionally blow-dried or set for a studio shoot
 - Exact height and silhouette relative to the frame
 - Exact ethnicity and age
 
 ENHANCE ONLY (no appearance changes):
 - Replace background with a clean, soft light neutral-grey studio backdrop
-- Professional studio lighting — soft, even illumination from head to toe
+- Professional studio lighting — soft, even illumination from head to toe; ensure lighting does NOT cast shadows that darken or alter skin tone
 - Full body visible from top of head to feet, standing in a natural, confident pose
 - Sharp focus throughout
 

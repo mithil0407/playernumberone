@@ -5,28 +5,36 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { OutfitSetWithItems } from '@/lib/supabase';
 
-// Warm-cream 1×1 JPEG — shown while the real image loads
-const BLUR_PLACEHOLDER = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AJQAB/9k=';
-
-function OutfitSkeleton() {
+function PendingOutfitsState() {
   return (
-    <div className="bg-white border border-black/[0.07] overflow-hidden animate-pulse">
-      <div className="bg-[#f0efee] aspect-[2/3] w-full" />
-      <div className="px-4 py-4 space-y-2.5">
-        <div className="h-2 bg-black/8 rounded-full w-1/4" />
-        <div className="h-3 bg-black/5 rounded-full w-3/4" />
+    <div className="bg-white min-h-screen">
+      <div className="max-w-5xl mx-auto px-6 sm:px-10 pt-16 pb-10">
+        <div className="mb-14">
+          <p className="text-[10px] tracking-[0.3em] uppercase text-black/30 mb-5">Your style edit</p>
+          <h2 className="luxury-heading text-6xl sm:text-7xl text-black leading-none mb-6">
+            Your<br /><em>Outfits</em>
+          </h2>
+          <div className="w-10 h-px bg-black/20" />
+        </div>
+        <div className="border border-black/[0.07] p-10 max-w-sm">
+          <p className="text-[9px] tracking-[0.3em] uppercase text-black/30 mb-3">Coming soon</p>
+          <p className="luxury-heading text-2xl text-black mb-3">Your edit is being curated</p>
+          <p className="text-sm text-black/40 leading-relaxed">Your personal stylist is selecting pieces tailored to your profile. Your outfits will appear here shortly.</p>
+        </div>
       </div>
     </div>
   );
 }
 
+// Warm-cream 1×1 JPEG — shown while the real image loads
+const BLUR_PLACEHOLDER = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AJQAB/9k=';
+
+
 export default function OutfitsPage() {
   const router = useRouter();
   const [outfits, setOutfits] = useState<OutfitSetWithItems[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const generateFiredRef = useRef(false);
 
   useEffect(() => {
     fetch('/api/iconik-club/clients/profile')
@@ -44,7 +52,6 @@ export default function OutfitsPage() {
       const data = await res.json();
       if (data.outfits?.length) {
         setOutfits(data.outfits);
-        setGenerating(false);
         return true;
       }
       return false;
@@ -55,11 +62,7 @@ export default function OutfitsPage() {
       setLoading(false);
 
       if (!hasOutfits) {
-        setGenerating(true);
-        if (!generateFiredRef.current) {
-          generateFiredRef.current = true;
-          fetch('/api/iconik-club/outfits/generate', { method: 'POST' }).catch(console.error);
-        }
+        // Poll quietly — outfits will appear once the admin generates them
         pollRef.current = setInterval(async () => {
           const done = await fetchOutfits();
           if (done && pollRef.current) clearInterval(pollRef.current);
@@ -105,28 +108,8 @@ export default function OutfitsPage() {
     );
   }
 
-  if (generating) {
-    return (
-      <div className="bg-white min-h-screen">
-        <div className="max-w-5xl mx-auto px-6 sm:px-10 pt-16 pb-10">
-          {/* Header */}
-          <div className="mb-14">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-black/30 mb-5">Your style edit</p>
-            <h2 className="luxury-heading text-6xl sm:text-7xl text-black leading-none mb-6">
-              Your<br /><em>Outfits</em>
-            </h2>
-            <div className="w-10 h-px bg-black/20" />
-          </div>
-
-          <p className="text-xs tracking-[0.15em] uppercase text-black/35 mb-10">
-            Curating your edit — this takes a moment
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-black/[0.06]">
-            {Array.from({ length: 6 }).map((_, i) => <OutfitSkeleton key={i} />)}
-          </div>
-        </div>
-      </div>
-    );
+  if (outfits.length === 0) {
+    return <PendingOutfitsState />;
   }
 
   return (

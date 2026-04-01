@@ -305,7 +305,7 @@ export default function OnboardingPage() {
               <button onClick={handleSubmit} disabled={submitting} className={continueBtnCls}>
                 {submitting
                   ? <><Loader2 size={15} className="animate-spin" /> Saving…</>
-                  : <>Build my outfits <ArrowRight size={16} /></>
+                  : <>Finish setup <ArrowRight size={16} /></>
                 }
               </button>
             </div>
@@ -319,7 +319,7 @@ export default function OnboardingPage() {
               <CheckCircle size={28} className="text-white" />
             </div>
             <h2 className="luxury-heading text-3xl text-[#4a2c3e] mb-2">You&apos;re all set!</h2>
-            <p className="text-sm text-[#4a2c3e]/55 mb-5">Taking you to your outfits…</p>
+            <p className="text-sm text-[#4a2c3e]/55 mb-5">Your stylist will curate your edit shortly…</p>
             <Loader2 size={18} className="animate-spin text-[#ff6b9d] mx-auto" />
           </div>
         )}
