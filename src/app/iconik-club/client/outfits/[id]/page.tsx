@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import type { OutfitSetWithItems, FashionItem } from '@/lib/supabase';
+
+const BLUR_PLACEHOLDER = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AJQAB/9k=';
 
 export default function OutfitDetailPage() {
   const params = useParams();
@@ -68,14 +71,21 @@ export default function OutfitDetailPage() {
 
         {/* Outfit card image */}
         {outfit.outfit_card_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={outfit.outfit_card_url}
-            alt={outfit.occasion ?? 'Outfit'}
-            className="w-full object-cover mb-16"
-          />
+          <div className="relative w-full aspect-[2/3] mb-16">
+            <Image
+              src={outfit.outfit_card_url}
+              alt={outfit.occasion ?? 'Outfit'}
+              fill
+              sizes="(max-width: 896px) 100vw, 896px"
+              quality={85}
+              priority
+              placeholder="blur"
+              blurDataURL={BLUR_PLACEHOLDER}
+              className="object-cover"
+            />
+          </div>
         ) : (
-          <div className="w-full aspect-video bg-[#f5f4f3] flex items-center justify-center mb-16">
+          <div className="w-full aspect-[2/3] bg-[#f5f4f3] flex items-center justify-center mb-16">
             <span className="luxury-heading text-7xl text-black/10">01</span>
           </div>
         )}
@@ -90,12 +100,18 @@ export default function OutfitDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-black/[0.06]">
             {outfit.items.map((item: FashionItem) => (
               <div key={item.id} className="bg-white overflow-hidden flex flex-col group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.image_url}
-                  alt={item.item_name}
-                  className="w-full aspect-[3/4] object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-[0.97]"
-                />
+                <div className="relative w-full aspect-[3/4] overflow-hidden">
+                  <Image
+                    src={item.image_url}
+                    alt={item.item_name}
+                    fill
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                    quality={80}
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                    className="object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-[0.97]"
+                  />
+                </div>
                 <div className="px-4 pt-3.5 pb-5 flex flex-col flex-1 border-t border-black/[0.06]">
                   {item.brand && (
                     <p className="text-[9px] tracking-[0.25em] uppercase text-black/35 mb-1.5 font-medium">

@@ -3,6 +3,7 @@ import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { generateOutfitRecommendations } from '@/lib/outfitGenerator';
 import { createOutfitCard, type ImageData } from '@/lib/outfitCompositor';
+import { sendOutfitsReadyEmail } from '@/lib/email';
 
 const MIME_FOR_EXT: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg',
@@ -202,9 +203,23 @@ export async function POST(
 
   const { data: refreshed } = await admin
     .from('client_profiles')
-    .select('preview_token')
+    .select('preview_token, name, email, user_id')
     .eq('id', profileId)
     .single();
+
+  // 8. Email the client — link to portal if they have an account, preview otherwise
+  if (succeeded > 0 && refreshed?.email) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';
+    const outfitsUrl = refreshed.user_id
+      ? `${siteUrl}/iconik-club/client/outfits`
+      : `${siteUrl}/iconik-club/preview/${refreshed.preview_token}`;
+
+    await sendOutfitsReadyEmail(
+      refreshed.name ?? refreshed.email,
+      refreshed.email,
+      outfitsUrl,
+    );
+  }
 
   return NextResponse.json({
     message:       `Generated ${succeeded} of ${recommendations.length} outfits`,

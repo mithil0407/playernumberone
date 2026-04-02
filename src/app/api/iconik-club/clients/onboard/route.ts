@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { enhanceClientPhotos } from '@/lib/outfitCompositor';
@@ -45,36 +46,58 @@ export async function POST(request: NextRequest) {
     const headshotBuf = Buffer.from(await headshot.arrayBuffer());
     const bodyBuf     = Buffer.from(await bodyPhoto.arrayBuffer());
 
-    // Enhance to studio quality before storing — better source images = better outfit cards
-    console.log(`Enhancing client photos for ${user.id}…`);
-    const { headshot: enhancedHeadshot, bodyPhoto: enhancedBody } = await enhanceClientPhotos(
-      { data: headshotBuf.toString('base64'), mimeType: resolveType(headshot) },
-      { data: bodyBuf.toString('base64'),     mimeType: resolveType(bodyPhoto) },
-    );
-    const finalHeadshotBuf  = enhancedHeadshot ? Buffer.from(enhancedHeadshot.data, 'base64') : headshotBuf;
-    const finalHeadshotMime = enhancedHeadshot ? enhancedHeadshot.mimeType : resolveType(headshot);
-    const finalBodyBuf      = enhancedBody     ? Buffer.from(enhancedBody.data, 'base64')     : bodyBuf;
-    const finalBodyMime     = enhancedBody     ? enhancedBody.mimeType     : resolveType(bodyPhoto);
-
-    // Upload (enhanced) headshot
+    // Upload raw photos immediately so the response isn't blocked
     const headshotKey = `${user.id}/headshot.jpg`;
     const { error: hsErr } = await supabaseAdmin.storage
       .from('client-photos')
-      .upload(headshotKey, finalHeadshotBuf, { contentType: finalHeadshotMime, upsert: true });
+      .upload(headshotKey, headshotBuf, { contentType: resolveType(headshot), upsert: true });
     if (hsErr) {
       console.error('Headshot upload error:', hsErr);
       return NextResponse.json({ error: 'Headshot upload failed', detail: hsErr.message }, { status: 500 });
     }
 
-    // Upload (enhanced) body photo
     const bodyKey = `${user.id}/body.jpg`;
     const { error: bpErr } = await supabaseAdmin.storage
       .from('client-photos')
-      .upload(bodyKey, finalBodyBuf, { contentType: finalBodyMime, upsert: true });
+      .upload(bodyKey, bodyBuf, { contentType: resolveType(bodyPhoto), upsert: true });
     if (bpErr) {
       console.error('Body photo upload error:', bpErr);
       return NextResponse.json({ error: 'Body photo upload failed', detail: bpErr.message }, { status: 500 });
     }
+
+    // Enhance photos to studio quality in the background after the response is sent.
+    // The enhanced versions overwrite the raw uploads at the same storage paths,
+    // so by the time outfits are generated the better images are already in place.
+    const headshotMime = resolveType(headshot);
+    const bodyMime     = resolveType(bodyPhoto);
+    after(async () => {
+      try {
+        console.log(`[bg] Enhancing client photos for ${user.id}…`);
+        const { headshot: enhancedHeadshot, bodyPhoto: enhancedBody } = await enhanceClientPhotos(
+          { data: headshotBuf.toString('base64'), mimeType: headshotMime },
+          { data: bodyBuf.toString('base64'),     mimeType: bodyMime },
+        );
+        const bgAdmin = createSupabaseAdminServerClient();
+        if (enhancedHeadshot) {
+          await bgAdmin.storage.from('client-photos').upload(
+            headshotKey,
+            Buffer.from(enhancedHeadshot.data, 'base64'),
+            { contentType: enhancedHeadshot.mimeType, upsert: true },
+          );
+          console.log(`[bg] Headshot enhanced for ${user.id}`);
+        }
+        if (enhancedBody) {
+          await bgAdmin.storage.from('client-photos').upload(
+            bodyKey,
+            Buffer.from(enhancedBody.data, 'base64'),
+            { contentType: enhancedBody.mimeType, upsert: true },
+          );
+          console.log(`[bg] Body photo enhanced for ${user.id}`);
+        }
+      } catch (err) {
+        console.error(`[bg] Photo enhancement failed for ${user.id}:`, err);
+      }
+    });
 
     // Get signed URLs (private bucket — 1-year expiry for internal use)
     const { data: hsUrl } = await supabaseAdmin.storage

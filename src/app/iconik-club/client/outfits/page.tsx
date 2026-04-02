@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { OutfitSetWithItems } from '@/lib/supabase';
@@ -18,8 +18,8 @@ function PendingOutfitsState() {
         </div>
         <div className="border border-black/[0.07] p-10 max-w-sm">
           <p className="text-[9px] tracking-[0.3em] uppercase text-black/30 mb-3">Coming soon</p>
-          <p className="luxury-heading text-2xl text-black mb-3">Your edit is being curated</p>
-          <p className="text-sm text-black/40 leading-relaxed">Your personal stylist is selecting pieces tailored to your profile. Your outfits will appear here shortly.</p>
+          <p className="luxury-heading text-2xl text-black mb-4">Your outfits will arrive after your Blueprint</p>
+          <p className="text-sm text-black/40 leading-relaxed">Once your consultation is complete, your stylist will curate a personalised outfit set for you. You&apos;ll receive an email the moment it&apos;s ready.</p>
         </div>
       </div>
     </div>
@@ -34,7 +34,6 @@ export default function OutfitsPage() {
   const router = useRouter();
   const [outfits, setOutfits] = useState<OutfitSetWithItems[]>([]);
   const [loading, setLoading] = useState(true);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetch('/api/iconik-club/clients/profile')
@@ -47,31 +46,10 @@ export default function OutfitsPage() {
   }, [router]);
 
   useEffect(() => {
-    async function fetchOutfits(): Promise<boolean> {
-      const res = await fetch('/api/iconik-club/outfits/list');
-      const data = await res.json();
-      if (data.outfits?.length) {
-        setOutfits(data.outfits);
-        return true;
-      }
-      return false;
-    }
-
-    async function init() {
-      const hasOutfits = await fetchOutfits();
-      setLoading(false);
-
-      if (!hasOutfits) {
-        // Poll quietly — outfits will appear once the admin generates them
-        pollRef.current = setInterval(async () => {
-          const done = await fetchOutfits();
-          if (done && pollRef.current) clearInterval(pollRef.current);
-        }, 4000);
-      }
-    }
-
-    init();
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    fetch('/api/iconik-club/outfits/list')
+      .then(r => r.json())
+      .then(data => { if (data.outfits?.length) setOutfits(data.outfits); })
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {

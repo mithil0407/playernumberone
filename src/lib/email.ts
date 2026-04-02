@@ -1368,3 +1368,99 @@ export async function sendIconikClubWelcomeEmail(
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Iconik Club — Outfits ready email (sent by admin after generation)
+// ─────────────────────────────────────────────────────────────────────────────
+export async function sendOutfitsReadyEmail(
+  name: string,
+  email: string,
+  outfitsUrl: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const firstName = name.split(' ')[0];
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your outfits are ready</title>
+</head>
+<body style="margin:0; padding:0; background-color:#fdf9f6; font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fdf9f6; padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px; width:100%; background:#ffffff; border:1px solid #f0e6e0;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#2a1a24; padding:32px 40px; text-align:center;">
+              <p style="margin:0; font-size:11px; letter-spacing:0.3em; color:#c9a882; text-transform:uppercase;">Iconik Club</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 32px;">
+              <p style="margin:0 0 8px; font-size:11px; letter-spacing:0.2em; color:#c9a882; text-transform:uppercase;">Your style edit is ready</p>
+              <h1 style="margin:0 0 24px; font-size:32px; font-weight:400; color:#2a1a24; line-height:1.2;">
+                Hi ${firstName},<br /><em>your outfits are here.</em>
+              </h1>
+              <p style="margin:0 0 28px; font-size:15px; color:#4a2c3e; line-height:1.7;">
+                Your stylist has curated a personalised outfit set built around your body, colouring, and lifestyle — every piece is shoppable with direct links.
+              </p>
+
+              <!-- CTA -->
+              <div style="text-align:center; margin:0 0 32px;">
+                <a href="${outfitsUrl}"
+                   style="display:inline-block; background:#2a1a24; color:#ffffff; text-decoration:none;
+                          padding:16px 36px; font-size:12px; letter-spacing:0.15em; text-transform:uppercase;">
+                  View Your Outfits →
+                </a>
+              </div>
+
+              <p style="margin:0; font-size:13px; color:#9a7a8a; line-height:1.6;">
+                Questions? Reply to this email or WhatsApp us.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="border-top:1px solid #f0e6e0; padding:20px 40px; text-align:center;">
+              <p style="margin:0; font-size:11px; color:#9a7a8a; letter-spacing:0.1em;">Iconik Club · playernumberone.in</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const text =
+      `Hi ${firstName},\n\n` +
+      `Your Iconik Club outfit set is ready!\n\n` +
+      `View your outfits here: ${outfitsUrl}\n\n` +
+      `Questions? Reply to this email or WhatsApp us.\n` +
+      `support@playernumberone.com`;
+
+    const info = await transporter.sendMail({
+      from: `"Iconik Club" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: `${firstName}, your outfits are ready`,
+      text,
+      html,
+    });
+
+    console.log(`Iconik Club outfits-ready email sent to ${email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending outfits-ready email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 
 type OutfitStatus = 'pending' | 'generating' | 'ready' | 'failed';
 
@@ -35,7 +36,7 @@ function AdminOutfitsContent() {
 
   const status = searchParams.get('status') ?? 'all';
   const page   = parseInt(searchParams.get('page') ?? '1');
-  const limit  = 20;
+  const limit  = 24;
 
   const fetchOutfits = useCallback(async () => {
     setLoading(true);
@@ -84,82 +85,80 @@ function AdminOutfitsContent() {
 
       {/* Count */}
       {!loading && (
-        <p className="text-xs text-[#4a2c3e]/40 mb-3 font-medium">{total} outfit{total !== 1 ? 's' : ''}</p>
+        <p className="text-xs text-[#4a2c3e]/40 mb-4 font-medium">{total} outfit{total !== 1 ? 's' : ''}</p>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={22} className="animate-spin text-[#ff6b9d]" />
-          </div>
-        ) : outfits.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-[#4a2c3e]/40 text-sm">No outfits found.</p>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#ffb3d1]/50 bg-[#fff9f5]">
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Outfit</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden md:table-cell">Client</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden lg:table-cell">Occasion</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden lg:table-cell">Season</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Status</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden md:table-cell">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#ffb3d1]/30">
-              {outfits.map(outfit => (
-                <tr key={outfit.id} className="hover:bg-[#fff9f5] transition-colors group">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      {outfit.outfit_card_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={outfit.outfit_card_url}
-                          alt="Outfit"
-                          className="w-11 h-11 object-cover rounded-xl border border-[#ffb3d1]/60 flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-11 h-11 bg-[#fff0f5] rounded-xl border border-[#ffb3d1]/60 flex-shrink-0" />
-                      )}
-                      <div>
-                        <p className="font-semibold text-[#4a2c3e] text-xs truncate max-w-[200px]">
-                          {outfit.ai_style_note || `Outfit #${outfit.id.slice(0, 8)}`}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-[#4a2c3e]/60 text-sm hidden md:table-cell">
-                    {outfit.client_name ?? '—'}
-                  </td>
-                  <td className="px-5 py-3.5 text-[#4a2c3e]/60 text-sm capitalize hidden lg:table-cell">
-                    {outfit.occasion ?? '—'}
-                  </td>
-                  <td className="px-5 py-3.5 text-[#4a2c3e]/60 text-sm capitalize hidden lg:table-cell">
-                    {outfit.season ?? '—'}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${STATUS_COLORS[outfit.status ?? ''] ?? ''}`}>
-                      {outfit.status ?? '—'}
+      {/* Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-32">
+          <Loader2 size={28} className="animate-spin text-[#ff6b9d]" />
+        </div>
+      ) : outfits.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 text-center py-24 shadow-sm">
+          <p className="text-[#4a2c3e]/40 text-sm">No outfits found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {outfits.map(outfit => (
+            <div
+              key={outfit.id}
+              className="bg-white rounded-2xl border border-[#ffb3d1]/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
+            >
+              {/* Image */}
+              <div className="relative w-full aspect-[2/3] bg-[#fff0f5]">
+                {outfit.outfit_card_url ? (
+                  <Image
+                    src={outfit.outfit_card_url}
+                    alt={outfit.ai_style_note ?? 'Outfit'}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-[#ffb3d1] text-xs font-medium uppercase tracking-widest">
+                      {outfit.status === 'generating' ? 'Generating…' : 'No image'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Status badge — top right */}
+                {outfit.status && (
+                  <div className="absolute top-2.5 right-2.5">
+                    <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${STATUS_COLORS[outfit.status] ?? ''}`}>
+                      {outfit.status}
                     </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-[#4a2c3e]/40 text-xs hidden md:table-cell">
-                    {outfit.created_at
-                      ? new Date(outfit.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Caption */}
+              <div className="p-3 border-t border-[#ffb3d1]/30">
+                {outfit.occasion && (
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-[#ff6b9d]/60 mb-0.5">
+                    {outfit.occasion}
+                  </p>
+                )}
+                <p className="text-xs font-semibold text-[#4a2c3e] leading-snug line-clamp-2 mb-1.5">
+                  {outfit.ai_style_note || `Outfit #${outfit.id.slice(0, 8)}`}
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-[#4a2c3e]/40 truncate">{outfit.client_name ?? '—'}</p>
+                  {outfit.created_at && (
+                    <p className="text-[10px] text-[#4a2c3e]/30 flex-shrink-0">
+                      {new Date(outfit.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1.5 mt-6">
+        <div className="flex items-center justify-center gap-1.5 mt-8">
           <button
             onClick={() => {
               const p = new URLSearchParams(searchParams.toString());
@@ -221,7 +220,7 @@ function AdminOutfitsContent() {
 
 export default function AdminOutfitsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 size={22} className="animate-spin text-[#ff6b9d]" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-32"><Loader2 size={28} className="animate-spin text-[#ff6b9d]" /></div>}>
       <AdminOutfitsContent />
     </Suspense>
   );

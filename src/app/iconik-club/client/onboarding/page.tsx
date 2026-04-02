@@ -135,7 +135,6 @@ export default function OnboardingPage() {
       if (!res.ok) { setError(data.error ?? 'Something went wrong.'); setSubmitting(false); return; }
 
       setStep(4);
-      setTimeout(() => router.push('/iconik-club/client/outfits'), 2000);
     } catch {
       setError('Network error. Please try again.');
       setSubmitting(false);
@@ -318,9 +317,13 @@ export default function OnboardingPage() {
             <div className="w-16 h-16 bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-[#ff6b9d]/25">
               <CheckCircle size={28} className="text-white" />
             </div>
-            <h2 className="luxury-heading text-3xl text-[#4a2c3e] mb-2">You&apos;re all set!</h2>
-            <p className="text-sm text-[#4a2c3e]/55 mb-5">Your stylist will curate your edit shortly…</p>
-            <Loader2 size={18} className="animate-spin text-[#ff6b9d] mx-auto" />
+            <h2 className="luxury-heading text-3xl text-[#4a2c3e] mb-3">Profile complete!</h2>
+            <p className="text-sm text-[#4a2c3e]/60 leading-relaxed mb-4">
+              Your stylist will review your profile and curate your first outfit set after your Blueprint consultation.
+            </p>
+            <p className="text-xs text-[#4a2c3e]/40 leading-relaxed">
+              You&apos;ll receive an email with a link to your outfits once they&apos;re ready.
+            </p>
           </div>
         )}
 

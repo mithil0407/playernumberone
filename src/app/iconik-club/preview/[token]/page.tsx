@@ -87,11 +87,6 @@ export default function PreviewPage() {
           </button>
 
           <div className="mb-10">
-            {selected.occasion && (
-              <p className="text-[10px] tracking-[0.3em] uppercase text-black/35 mb-4 font-medium">
-                {selected.occasion}
-              </p>
-            )}
             {selected.ai_style_note && (
               <h1 className="luxury-heading text-4xl sm:text-5xl text-black leading-tight max-w-2xl">
                 {selected.ai_style_note}
@@ -234,9 +229,6 @@ export default function PreviewPage() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none" />
                 <div className="px-4 pt-3.5 pb-4 bg-white border-t border-black/[0.06]">
-                  {outfit.occasion && (
-                    <p className="text-[9px] tracking-[0.25em] uppercase text-black/35 mb-1.5 font-medium">{outfit.occasion}</p>
-                  )}
                   {outfit.ai_style_note ? (
                     <p className="luxury-heading text-[15px] text-black leading-snug line-clamp-1">{outfit.ai_style_note}</p>
                   ) : (

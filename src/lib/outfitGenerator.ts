@@ -67,7 +67,7 @@ export async function generateOutfitRecommendations(
     ? `\nStyle restrictions — STRICTLY enforce every rule below. Violating any restriction is not allowed:\n${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}\n`
     : '';
 
-  const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern, minimal, and editorial — think quiet luxury, not maximalist. Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
+  const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern trendy but minimal . Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
 
 Client measurements:
 - Height: ${profile.height_cm ?? 'unknown'} cm
