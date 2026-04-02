@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     const style_restrictions: string[] = styleRestrictionsRaw
       ? JSON.parse(styleRestrictionsRaw)
       : [];
+    const style_notes = (formData.get('style_notes') as string | null)?.trim() || null;
 
     if (!headshot || !bodyPhoto) {
       return NextResponse.json({ error: 'Both headshot and body photo are required' }, { status: 400 });
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
         waist_cm,
         hips_cm,
         style_restrictions,
+        style_notes,
         onboarding_complete: true,
       }, { onConflict: 'user_id' })
       .select()

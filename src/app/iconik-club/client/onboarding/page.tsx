@@ -92,6 +92,7 @@ export default function OnboardingPage() {
   const [bust,   setBust]   = useState('');
   const [waist,  setWaist]  = useState('');
   const [hips,   setHips]   = useState('');
+  const [styleNotes, setStyleNotes] = useState('');
 
   useEffect(() => {
     fetch('/api/iconik-club/clients/profile')
@@ -123,11 +124,12 @@ export default function OnboardingPage() {
       fd.append('headshot',   headshot);
       fd.append('body_photo', bodyPhoto);
       fd.append('name',       '');
-      if (height) fd.append('height_cm', height);
-      if (weight) fd.append('weight_kg', weight);
-      if (bust)   fd.append('bust_cm',   bust);
-      if (waist)  fd.append('waist_cm',  waist);
-      if (hips)   fd.append('hips_cm',   hips);
+      if (height)     fd.append('height_cm',    height);
+      if (weight)     fd.append('weight_kg',    weight);
+      if (bust)       fd.append('bust_cm',      bust);
+      if (waist)      fd.append('waist_cm',     waist);
+      if (hips)       fd.append('hips_cm',      hips);
+      if (styleNotes) fd.append('style_notes',  styleNotes);
 
       const res  = await fetch('/api/iconik-club/clients/onboard', { method: 'POST', body: fd });
       const data = await res.json();
@@ -292,6 +294,20 @@ export default function OnboardingPage() {
                   <label className="block text-[10px] font-bold text-[#4a2c3e]/50 uppercase tracking-widest mb-1.5">Hips (cm)</label>
                   <input type="number" value={hips} onChange={e => setHips(e.target.value)} placeholder="96" className={inputCls} />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-[#4a2c3e]/50 uppercase tracking-widest mb-1.5">Your style — optional</label>
+                <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">
+                  Describe outfits you already love, brands you wear, or the vibe you&apos;re going for. The more specific, the better.
+                </p>
+                <textarea
+                  value={styleNotes}
+                  onChange={e => setStyleNotes(e.target.value)}
+                  placeholder="e.g. I love minimal neutral tones — lots of beige, white, black. I usually wear wide-leg trousers with simple tucked-in tops. Brands I love: Zara, Mango, H&M. I avoid anything too loud or heavily printed."
+                  rows={4}
+                  className={`${inputCls} resize-none leading-relaxed`}
+                />
               </div>
             </div>
 
