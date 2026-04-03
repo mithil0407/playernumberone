@@ -32,6 +32,7 @@ export default function NewClientPage() {
   const [waistCm, setWaistCm]   = useState('');
   const [hipsCm, setHipsCm]     = useState('');
   const [styleRestrictions, setStyleRestrictions] = useState<string[]>([]);
+  const [styleNotes, setStyleNotes] = useState('');
 
   // Photos
   const [headshot, setHeadshot]         = useState<File | null>(null);
@@ -101,6 +102,7 @@ export default function NewClientPage() {
       if (waistCm)  fd.append('waist_cm',  waistCm);
       if (hipsCm)   fd.append('hips_cm',   hipsCm);
       fd.append('style_restrictions', JSON.stringify(styleRestrictions));
+      if (styleNotes.trim()) fd.append('style_notes', styleNotes.trim());
 
       const res  = await fetch('/api/iconik-club/admin/clients/create', { method: 'POST', body: fd });
       const data = await res.json();
@@ -214,7 +216,7 @@ export default function NewClientPage() {
               setHeadshot(null); setHeadshotPreview('');
               setBodyPhoto(null); setBodyPreview('');
               setHeightCm(''); setBustCm(''); setWaistCm(''); setHipsCm('');
-              setStyleRestrictions([]);
+              setStyleNotes(''); setStyleRestrictions([]);
               setEmailSent(false);
             }}
             className="flex-1 text-xs font-semibold bg-[#4a2c3e] text-white rounded-xl py-3 hover:bg-[#3a1c2e] transition-colors"
@@ -385,7 +387,20 @@ export default function NewClientPage() {
         {/* Style Preferences */}
         <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
           <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Style Preferences <span className="font-normal normal-case text-[#4a2c3e]/30">(optional)</span></p>
-          <p className="text-xs text-[#4a2c3e]/30 mb-4">Select any boundaries the AI should respect when building outfits.</p>
+
+          <div className="mt-4 mb-5">
+            <label className="block text-xs font-semibold text-[#4a2c3e]/60 mb-1.5">Style notes</label>
+            <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">Brands, aesthetics, outfit vibes the client loves. Fed directly into the AI stylist prompt.</p>
+            <textarea
+              value={styleNotes}
+              onChange={e => setStyleNotes(e.target.value)}
+              placeholder="e.g. Loves neutral minimal looks — beige, white, black. Wide-leg trousers with simple tops. Brands: Zara, Mango. Avoids loud prints."
+              rows={3}
+              className="w-full px-3 py-2.5 text-sm border border-[#ffb3d1] rounded-xl bg-[#fff9f5] text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition placeholder:text-[#4a2c3e]/30 resize-none leading-relaxed"
+            />
+          </div>
+
+          <p className="text-xs text-[#4a2c3e]/30 mb-3">Style restrictions — boundaries the AI must respect.</p>
           <div className="space-y-3">
             {[
               { key: 'no_sleeveless', label: 'No sleeveless', description: 'Avoid tops, dresses, or jumpsuits without sleeves' },

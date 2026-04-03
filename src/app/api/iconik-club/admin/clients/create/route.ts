@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const style_restrictions: string[] = styleRestrictionsRaw
       ? JSON.parse(styleRestrictionsRaw)
       : [];
+    const style_notes = (formData.get('style_notes') as string | null)?.trim() || null;
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Create the profile row first to get the ID we'll use as the storage path
     const { data: profile, error: profileErr } = await admin
       .from('client_profiles')
-      .insert({ name, email, phone, height_cm, bust_cm, waist_cm, hips_cm, style_restrictions, onboarding_complete: false })
+      .insert({ name, email, phone, height_cm, bust_cm, waist_cm, hips_cm, style_notes, style_restrictions, onboarding_complete: false })
       .select()
       .single();
 
