@@ -170,7 +170,11 @@ function AdminClientsContent() {
             </thead>
             <tbody className="divide-y divide-[#ffb3d1]/30">
               {clients.map(client => (
-                <tr key={client.id} className="hover:bg-[#fff9f5] transition-colors group">
+                <tr
+                  key={client.id}
+                  onClick={() => router.push(`/iconik-club/admin/clients/${client.id}`)}
+                  className="hover:bg-[#fff9f5] transition-colors group cursor-pointer"
+                >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       {client.headshot_url ? (

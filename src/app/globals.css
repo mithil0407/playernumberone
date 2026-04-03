@@ -134,6 +134,17 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ── Man funnel theme — scoped to .man-theme wrapper, overrides luxury tokens ── */
+.man-theme {
+  --luxury-warm-white: #f5f3ef;   /* warm ivory — main background */
+  --luxury-charcoal: #141414;     /* near-black — primary text */
+  --luxury-accent: #1c1917;       /* jet — CTAs, borders, active states */
+  --luxury-cream: #e8e4dc;        /* warm linen — panels, dividers */
+  --luxury-gold: #9a7d4a;         /* antique gold — stars, badges */
+  --luxury-green: #b45309;        /* warm amber — prices, checkmarks */
+  --luxury-pink-bg: #edebe5;      /* warm stone — subtle panel fills */
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

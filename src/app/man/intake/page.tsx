@@ -362,7 +362,7 @@ function ManIntakePageInner() {
     void TOTAL_STEPS;
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden flex flex-col">
+        <div className="man-theme min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden flex flex-col">
 
             {/* Header */}
             <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream py-4 px-6 sticky top-0 z-20">

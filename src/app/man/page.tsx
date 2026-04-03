@@ -124,7 +124,7 @@ export default function ManLandingPage() {
     }, [nextSlide]);
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
+        <div className="man-theme min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
 
             {/* ── Navbar ─────────────────────────────────────────────────── */}
             <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">

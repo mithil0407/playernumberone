@@ -165,7 +165,7 @@ export default function ManCheckoutPage() {
             email: formData.email,
             contact: formData.phone
           },
-          theme: { color: '#E91E63' }
+          theme: { color: '#1c1917' }
         };
 
         const razorpay = new (window as unknown as { Razorpay: new (o: RazorpayOptions) => RazorpayInstance }).Razorpay(options);
@@ -204,7 +204,7 @@ export default function ManCheckoutPage() {
   }, [processPayment, outfitPreviewAddon, popupDismissed]);
 
   return (
-    <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
+    <div className="man-theme min-h-screen bg-luxury-warm-white text-luxury-charcoal">
       {/* Header */}
       <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
