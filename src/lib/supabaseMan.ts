@@ -1,8 +1,8 @@
-// supabaseMan.ts — uses the same Supabase project, man_* tables
+// supabaseMan.ts — uses the main Supabase project, man_* tables
 
-import { supabaseAU } from '@/lib/supabaseAU';
+import { supabase as supabaseMain } from '@/lib/supabase';
 
-export { supabaseAU as supabaseMan };
+export { supabaseMain as supabaseMan };
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ export interface ManIntakeSubmission {
 // ── Database operations ────────────────────────────────────────────────────
 
 export const saveManIntakeSubmission = async (submission: ManIntakeSubmission) => {
-    const { data, error } = await supabaseAU
+    const { data, error } = await supabaseMain
         .from('man_intake_submissions')
         .insert([submission])
         .select()
@@ -43,7 +43,7 @@ export const uploadManIntakePhoto = async (
 ): Promise<string> => {
     const storagePath = `public/${fileName}`;
 
-    const { data, error } = await supabaseAU.storage
+    const { data, error } = await supabaseMain.storage
         .from('man-intake-photos')
         .upload(storagePath, file, {
             upsert: true,
@@ -52,7 +52,7 @@ export const uploadManIntakePhoto = async (
 
     if (error) throw error;
 
-    const { data: publicData } = supabaseAU.storage
+    const { data: publicData } = supabaseMain.storage
         .from('man-intake-photos')
         .getPublicUrl(data.path);
 
