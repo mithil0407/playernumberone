@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
 import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { useManRegion } from '@/hooks/useManRegion';
+import { getManPricing, type ManPricing } from '@/lib/manPricing';
 
 // ── Data ────────────────────────────────────────────────────────────────────
 
@@ -86,14 +88,14 @@ const faqs = [
 
 // ── CTA Button ───────────────────────────────────────────────────────────────
 
-function CTAButton({ className = '' }: { className?: string }) {
+function CTAButton({ className = '', pricing }: { className?: string; pricing: ManPricing }) {
     return (
         <Link
             href="/man/checkout"
-            onClick={() => trackCTAClick('Get My Blueprint', 'Man Landing', 2499, 'INR', 'Man Funnel')}
+            onClick={() => trackCTAClick('Get My Blueprint', 'Man Landing', pricing.basePrice, pricing.currency, 'Man Funnel')}
             className={`inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
         >
-            GET MY BLUEPRINT — ₹2,499 <ArrowRight className="ml-3 h-4 w-4" />
+            GET MY BLUEPRINT — {pricing.displayBase} <ArrowRight className="ml-3 h-4 w-4" />
         </Link>
     );
 }
@@ -103,6 +105,8 @@ function CTAButton({ className = '' }: { className?: string }) {
 export default function ManLandingPage() {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [carouselIndex, setCarouselIndex] = useState(0);
+    const { country, isIndia, isLoading } = useManRegion();
+    const pricing = getManPricing(country);
 
     const heroImages = useMemo(() => [
         { src: '/men-transformation-1.webp', caption: 'Blueprint transformation · Karan, Mumbai' },
@@ -115,8 +119,12 @@ export default function ManLandingPage() {
 
     useEffect(() => {
         trackPageView('Man Landing');
-        trackViewContent('ICONIK Blueprint Man', 2499, ['iconik_blueprint_man'], 'INR', 'Man Funnel');
     }, []);
+
+    useEffect(() => {
+        if (isLoading) return;
+        trackViewContent('ICONIK Blueprint Man', pricing.basePrice, ['iconik_blueprint_man'], pricing.currency, 'Man Funnel');
+    }, [isLoading, pricing.basePrice, pricing.currency]);
 
     useEffect(() => {
         const timer = setInterval(nextSlide, 4000);
@@ -170,7 +178,7 @@ export default function ManLandingPage() {
                             Get <span className="font-semibold text-luxury-accent">16 personalised outfits</span>, your{' '}
                             <span className="font-semibold text-luxury-green">colour palette</span>, and a{' '}
                             <span className="font-semibold text-luxury-accent">created by an ICONIK stylist</span> — built for how men actually dress.{' '}
-                            <span className="font-semibold text-luxury-accent">₹2,499.</span>
+                            <span className="font-semibold text-luxury-accent">{isLoading ? '...' : pricing.displayBase}.</span>
                         </p>
 
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
@@ -223,7 +231,7 @@ export default function ManLandingPage() {
                             </div>
                         </div>
 
-                        <CTAButton className="text-base px-12 py-5 mb-8" />
+                        <CTAButton className="text-base px-12 py-5 mb-8" pricing={pricing} />
 
                         <div className="flex items-center justify-center gap-3 text-sm luxury-body text-luxury-charcoal/60 flex-wrap mt-2">
                             <div className="flex gap-0.5">
@@ -543,7 +551,7 @@ export default function ManLandingPage() {
                     </div>
 
                     <div className="text-center mt-10">
-                        <CTAButton />
+                        <CTAButton pricing={pricing} />
                     </div>
                 </div>
             </section>
@@ -590,7 +598,7 @@ export default function ManLandingPage() {
                         ))}
                     </div>
                     <div className="text-center mt-10">
-                        <CTAButton />
+                        <CTAButton pricing={pricing} />
                     </div>
                 </div>
             </section>
@@ -700,17 +708,17 @@ export default function ManLandingPage() {
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
                         <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Men&apos;s Blueprint</div>
-                        <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">₹2,499</div>
+                        <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">{isLoading ? '...' : pricing.displayBase}</div>
                         <p className="luxury-body text-luxury-warm-white/70 text-lg">
                             Yours forever. Built on your specific frame, face, and colour profile.
                         </p>
                     </div>
                     <Link
                         href="/man/checkout"
-                        onClick={() => trackCTAClick('Get My Blueprint', 'Man Price Section', 2499, 'INR', 'Man Funnel')}
+                        onClick={() => trackCTAClick('Get My Blueprint', 'Man Price Section', pricing.basePrice, pricing.currency, 'Man Funnel')}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
                     >
-                        GET MY BLUEPRINT — ₹2,499 <ArrowRight className="ml-3 h-4 w-4" />
+                        GET MY BLUEPRINT — {isLoading ? '...' : pricing.displayBase} <ArrowRight className="ml-3 h-4 w-4" />
                     </Link>
                 </div>
             </section>
@@ -829,7 +837,7 @@ export default function ManLandingPage() {
                         ))}
                     </div>
                     <div className="text-center mt-10">
-                        <CTAButton />
+                        <CTAButton pricing={pricing} />
                     </div>
                 </div>
             </section>
@@ -950,13 +958,13 @@ export default function ManLandingPage() {
                     </p>
                     <Link
                         href="/man/checkout"
-                        onClick={() => trackCTAClick('Final CTA Man', 'Bottom Section', 2499, 'INR', 'Man Funnel')}
+                        onClick={() => trackCTAClick('Final CTA Man', 'Bottom Section', pricing.basePrice, pricing.currency, 'Man Funnel')}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-12 py-5 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold text-base mb-6"
                     >
-                        GET MY BLUEPRINT — ₹2,499 <ArrowRight className="ml-3 h-4 w-4" />
+                        GET MY BLUEPRINT — {isLoading ? '...' : pricing.displayBase} <ArrowRight className="ml-3 h-4 w-4" />
                     </Link>
                     <div className="flex items-center justify-center gap-3 text-sm luxury-body text-luxury-warm-white/60 flex-wrap mt-4">
-                        <span>★★★★★ Trusted by 200+ men across India</span>
+                        <span>★★★★★ Trusted by 200+ men {isIndia ? 'across India' : 'worldwide'}</span>
                         <span className="hidden md:inline">·</span>
                         <span className="hidden md:inline">24-Hour Delivery</span>
                         <span className="hidden md:inline">·</span>

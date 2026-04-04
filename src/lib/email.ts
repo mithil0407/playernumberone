@@ -7,6 +7,8 @@ export interface ConfirmationEmailData {
   order_amount: number;
   add_ons?: string;
   payment_id?: string;
+  // Optional: override currency symbol for international orders (default '₹')
+  currency_symbol?: string;
 }
 
 export interface AUOrderConfirmationEmailData {
@@ -277,7 +279,7 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
 // ── Men's Order Confirmation Email ─────────────────────────────────────────
 
 function buildMenEmailHtml(data: ConfirmationEmailData): string {
-  const { customer_email, customer_phone, order_amount, add_ons, payment_id } = data;
+  const { customer_email, customer_phone, order_amount, add_ons, payment_id, currency_symbol = '₹' } = data;
 
   const addOnsList = add_ons && add_ons !== 'None' && add_ons !== ''
     ? add_ons.split(',').map(a => a.trim()).filter(Boolean)
@@ -356,7 +358,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
                   </tr>
                   <tr>
                     <td style="padding: 10px 0 0; color:#16a34a; font-size:16px; font-weight:700;">
-                      Total Paid: ₹${order_amount.toLocaleString('en-IN')}
+                      Total Paid: ${currency_symbol}${order_amount.toLocaleString('en-IN')}
                     </td>
                   </tr>
                 </table>

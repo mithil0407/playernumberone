@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
+import { useManRegion } from '@/hooks/useManRegion';
+import { getManPricing } from '@/lib/manPricing';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -40,27 +42,33 @@ export default function ManCheckoutPage() {
   const [showAddonPopup, setShowAddonPopup] = useState(false);
   const [popupDismissed, setPopupDismissed] = useState(false);
 
-  const originalPrice = 5999;
-  const discountedPrice = 2499;
-  const savings = originalPrice - discountedPrice;
+  const { country, isIndia, isLoading: regionLoading } = useManRegion();
+  const pricing = getManPricing(country);
+
+  const originalPrice = pricing.originalPrice;
+  const discountedPrice = pricing.basePrice;
+  const outfitPreviewPrice = pricing.addonPrice;
+  const savings = pricing.savings;
 
   useEffect(() => {
     trackPageView('Man Checkout');
-    trackViewContent('ICONIK Man Style Blueprint - Checkout', discountedPrice, ['iconik_man_style_blueprint'], 'INR', 'Man Funnel');
-  }, [discountedPrice]);
+  }, []);
+
+  useEffect(() => {
+    if (regionLoading) return;
+    trackViewContent('ICONIK Man Style Blueprint - Checkout', discountedPrice, ['iconik_man_style_blueprint'], pricing.currency, 'Man Funnel');
+  }, [regionLoading, discountedPrice, pricing.currency]);
 
   const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false);
 
-  const outfitPreviewPrice = 999;
-
   const totalAmount = useMemo(() =>
     discountedPrice + (outfitPreviewAddon ? outfitPreviewPrice : 0),
-    [outfitPreviewAddon]
+    [discountedPrice, outfitPreviewAddon, outfitPreviewPrice]
   );
 
   const totalValue = useMemo(() =>
-    originalPrice + 1000 + (outfitPreviewAddon ? outfitPreviewPrice : 0),
-    [outfitPreviewAddon]
+    originalPrice + (isIndia ? 1000 : 100) + (outfitPreviewAddon ? outfitPreviewPrice : 0),
+    [originalPrice, isIndia, outfitPreviewAddon, outfitPreviewPrice]
   );
 
   useEffect(() => {
@@ -91,51 +99,94 @@ export default function ManCheckoutPage() {
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      if (!/^\d{0,10}$/.test(value)) return;
+      // India: digits only, max 10. International: digits/spaces/dashes/+, max 15.
+      if (isIndia) {
+        if (!/^\d{0,10}$/.test(value)) return;
+      } else {
+        if (!/^[\d\s\-+]{0,15}$/.test(value)) return;
+      }
     }
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (name === 'email' && value.includes('@') && formData.phone.length === 10) updateUserData(value, formData.phone);
-    else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) updateUserData(formData.email, value);
-  }, [formData.phone, formData.email]);
+    if (name === 'email' && value.includes('@') && formData.phone.length >= 7) updateUserData(value, formData.phone);
+    else if (name === 'phone' && value.length >= 7 && formData.email.includes('@')) updateUserData(formData.email, value);
+  }, [formData.phone, formData.email, isIndia]);
 
   const handleAddonChange = useCallback((checked: boolean) => {
-    if (checked) trackAddToCart('Outfit Preview on You', outfitPreviewPrice, 'outfit_preview', 'INR', 'Man Funnel');
-    else trackRemoveFromCart('Outfit Preview on You', outfitPreviewPrice, 'outfit_preview', 'INR', 'Man Funnel');
+    if (checked) trackAddToCart('Outfit Preview on You', outfitPreviewPrice, 'outfit_preview', pricing.currency, 'Man Funnel');
+    else trackRemoveFromCart('Outfit Preview on You', outfitPreviewPrice, 'outfit_preview', pricing.currency, 'Man Funnel');
     setOutfitPreviewAddon(checked);
-  }, []);
+  }, [outfitPreviewPrice, pricing.currency]);
 
   const processPayment = useCallback(async () => {
-    if (formData.phone.length !== 10) { alert('Please enter a valid 10-digit phone number'); return; }
+    // Phone validation: 10 digits for India, 7+ for international
+    const phoneValid = isIndia ? formData.phone.length === 10 : formData.phone.replace(/[\s\-+]/g, '').length >= 7;
+    if (!phoneValid) {
+      alert(isIndia ? 'Please enter a valid 10-digit phone number' : 'Please enter a valid phone number');
+      return;
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) { alert('Please enter a valid email address'); return; }
 
     setIsProcessing(true);
     const itemCount = 1 + (outfitPreviewAddon ? 1 : 0);
-    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Man Style Blueprint', 'INR', 'Man Funnel');
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Man Style Blueprint', pricing.currency, 'Man Funnel');
 
     try {
-      const orderData = {
-        customer_name: formData.email.split('@')[0],
-        customer_email: formData.email,
-        customer_phone: formData.phone,
-        amount: totalAmount,
-        base_product: 'Iconik Man Style Blueprint',
-        add_ons: {
-          outfit_preview: outfitPreviewAddon
-        },
-        total_base_price: discountedPrice,
-        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
+      let responseData: {
+        success: boolean;
+        key: string;
+        razorpay_order_id: string;
+        amount: number;
+        currency: string;
+        customer_id?: string;
+        db_order_id?: string;
+        error?: string;
       };
 
-      const response = await fetch('/api/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
+      if (isIndia) {
+        // ── India: existing INR flow ──────────────────────────────────────────
+        const orderData = {
+          customer_name: formData.email.split('@')[0],
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          amount: totalAmount,
+          base_product: 'Iconik Man Style Blueprint',
+          add_ons: {
+            outfit_preview: outfitPreviewAddon
+          },
+          total_base_price: discountedPrice,
+          outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
+        };
 
-      if (!response.ok) throw new Error('Payment initialization failed');
-      const responseData = await response.json();
-      if (!responseData.success) throw new Error(responseData.error || 'Payment initialization failed');
+        const response = await fetch('/api/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+
+        if (!response.ok) throw new Error('Payment initialization failed');
+        responseData = await response.json();
+        if (!responseData.success) throw new Error(responseData.error || 'Payment initialization failed');
+
+      } else {
+        // ── International: USD flow ───────────────────────────────────────────
+        const orderData = {
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          amount: totalAmount,
+          outfit_preview_addon: outfitPreviewAddon,
+        };
+
+        const response = await fetch('/api/man-payment-intl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+
+        if (!response.ok) throw new Error('Payment initialization failed');
+        responseData = await response.json();
+        if (!responseData.success) throw new Error(responseData.error || 'Payment initialization failed');
+      }
 
       const initializeRazorpay = () => {
         const options = {
@@ -146,11 +197,32 @@ export default function ManCheckoutPage() {
           description: 'ICONIK Men Style Blueprint',
           image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
-          handler: function (response: RazorpayResponse) {
+          handler: async function (response: RazorpayResponse) {
             const purchasedItems = ['iconik_man_style_blueprint'];
             if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
 
-            trackPurchase(totalAmount, 'ICONIK Man Complete Package', purchasedItems, purchasedItems.length, 'INR', 'Man Funnel', response.razorpay_payment_id);
+            trackPurchase(totalAmount, 'ICONIK Man Complete Package', purchasedItems, purchasedItems.length, pricing.currency, 'Man Funnel', response.razorpay_payment_id);
+
+            // International: confirm payment server-side and send email
+            if (!isIndia) {
+              try {
+                await fetch('/api/man-confirm-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    db_order_id: responseData.db_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    customer_email: formData.email,
+                    customer_phone: formData.phone,
+                    amount: totalAmount,
+                    has_outfit_preview: outfitPreviewAddon,
+                  }),
+                });
+              } catch (err) {
+                console.error('Man INTL confirm payment error:', err);
+              }
+            }
 
             // Store in localStorage so intake form can prefill contact details
             localStorage.setItem('man_customerEmail', formData.email);
@@ -194,7 +266,7 @@ export default function ManCheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, outfitPreviewAddon, razorpayLoaded]);
+  }, [formData, totalAmount, outfitPreviewAddon, razorpayLoaded, isIndia, discountedPrice, outfitPreviewPrice, pricing.currency]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,11 +320,11 @@ export default function ManCheckoutPage() {
             Your Men&apos;s Style Blueprint Starts Now
           </h1>
           <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
-            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-            <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
+            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{pricing.displayOriginal}</span>
+            <span className="text-luxury-green font-semibold">{pricing.displayBase}</span>
           </div>
           <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
-            YOU SAVE ₹{savings} TODAY!
+            YOU SAVE {pricing.displaySavings} TODAY!
           </div>
         </motion.div>
 
@@ -279,11 +351,11 @@ export default function ManCheckoutPage() {
                 <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">Phone Number *</label>
                 <input
                   type="tel" id="phone" name="phone" value={formData.phone}
-                  onChange={handleInputChange} required maxLength={10}
+                  onChange={handleInputChange} required maxLength={isIndia ? 10 : 15}
                   className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
-                  placeholder="Enter 10-digit phone number"
+                  placeholder={isIndia ? 'Enter 10-digit phone number' : 'Enter your phone number'}
                 />
-                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>
+                {isIndia && <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>}
               </div>
               <div className="text-center text-sm luxury-body text-luxury-charcoal/60 bg-luxury-cream/30 rounded-xl p-4">
                 <p>🔒 Your payment is secure and encrypted</p>
@@ -308,8 +380,8 @@ export default function ManCheckoutPage() {
                 <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Men&apos;s Style Blueprint</h3>
                 <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3">Delivered 1-on-1 by Certified Style &amp; Image Consultants</p>
                 <div className="text-2xl md:text-3xl mb-4">
-                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-                  <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
+                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{pricing.displayOriginal}</span>
+                  <span className="text-luxury-green font-semibold">{pricing.displayBase}</span>
                 </div>
               </div>
               <div className="mb-4">
@@ -338,8 +410,8 @@ export default function ManCheckoutPage() {
               <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70 mb-4 text-center">Most clients add these for best results</p>
               <div className="space-y-3">
                 {[
-                  { label: '👔 Outfit Preview on You', price: outfitPreviewPrice, checked: outfitPreviewAddon, desc: 'See how the outfits we recommend will actually look on your body.', tags: ['See yourself in the outfits', 'No more guessing', 'Shop with confidence'] },
-                ].map(({ label, price, checked, desc, tags }) => (
+                  { label: '👔 Outfit Preview on You', price: outfitPreviewPrice, displayPrice: pricing.displayAddon, checked: outfitPreviewAddon, desc: 'See how the outfits we recommend will actually look on your body.', tags: ['See yourself in the outfits', 'No more guessing', 'Shop with confidence'] },
+                ].map(({ label, displayPrice, checked, desc, tags }) => (
                   <div
                     key={label}
                     onClick={() => handleAddonChange(!checked)}
@@ -352,7 +424,7 @@ export default function ManCheckoutPage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <h4 className="luxury-heading text-luxury-charcoal text-base">{label}</h4>
-                          <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{price}</span>
+                          <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{displayPrice}</span>
                         </div>
                         <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">{desc}</p>
                         <div className="flex flex-wrap gap-1.5">
@@ -369,17 +441,17 @@ export default function ManCheckoutPage() {
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-5 md:p-6 border border-luxury-cream">
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                  <span>Men&apos;s Style Blueprint</span><span>₹{discountedPrice}</span>
+                  <span>Men&apos;s Style Blueprint</span><span>{pricing.displayBase}</span>
                 </div>
-                {outfitPreviewAddon && <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70"><span>+ Outfit Preview</span><span>₹{outfitPreviewPrice}</span></div>}
+                {outfitPreviewAddon && <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70"><span>+ Outfit Preview</span><span>{pricing.displayAddon}</span></div>}
               </div>
               <div className="border-t-2 border-luxury-charcoal/10 pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">You Pay:</span>
-                  <span className="text-3xl md:text-4xl text-luxury-green font-bold">₹{totalAmount.toLocaleString()}</span>
+                  <span className="text-3xl md:text-4xl text-luxury-green font-bold">{pricing.symbol}{totalAmount.toLocaleString()}</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs luxury-body text-luxury-charcoal/60">Total value: <span className="line-through">₹{totalValue.toLocaleString()}</span></p>
+                  <p className="text-xs luxury-body text-luxury-charcoal/60">Total value: <span className="line-through">{pricing.symbol}{totalValue.toLocaleString()}</span></p>
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <Clock className="w-3 h-3 text-luxury-accent" />
                     <span className="text-xs luxury-body text-luxury-accent font-semibold">
@@ -396,7 +468,7 @@ export default function ManCheckoutPage() {
                   const hasAddons = outfitPreviewAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
-                    trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, 'INR', 'Man Funnel');
+                    trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, pricing.currency, 'Man Funnel');
                   } else {
                     await processPayment();
                   }
