@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Save, CheckCircle } from 'lucide-react';
-import type { ClientProfile } from '@/lib/supabase';
+import type { ClientProfile, BudgetLevel } from '@/lib/supabase';
 
 const RESTRICTION_OPTIONS = [
   { value: 'no_sleeveless', label: 'No sleeveless' },
@@ -30,7 +30,9 @@ export default function AdminClientEditPage() {
   const [waist,      setWaist]      = useState('');
   const [hips,       setHips]       = useState('');
   const [styleNotes, setStyleNotes] = useState('');
+  const [visualProfile, setVisualProfile] = useState('');
   const [restrictions, setRestrictions] = useState<string[]>([]);
+  const [budgetLevel, setBudgetLevel] = useState<BudgetLevel | ''>('');
   const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   const populate = useCallback((c: ClientProfile) => {
@@ -44,7 +46,9 @@ export default function AdminClientEditPage() {
     setWaist(c.waist_cm != null ? String(c.waist_cm) : '');
     setHips(c.hips_cm != null ? String(c.hips_cm) : '');
     setStyleNotes(c.style_notes ?? '');
+    setVisualProfile(c.visual_profile ?? '');
     setRestrictions(c.style_restrictions ?? []);
+    setBudgetLevel(c.budget_level ?? '');
     setOnboardingComplete(c.onboarding_complete ?? false);
   }, []);
 
@@ -76,7 +80,9 @@ export default function AdminClientEditPage() {
       waist_cm:            waist  ? parseFloat(waist)  : null,
       hips_cm:             hips   ? parseFloat(hips)   : null,
       style_notes:         styleNotes.trim() || null,
+      visual_profile:      visualProfile.trim() || null,
       style_restrictions:  restrictions,
+      budget_level:        budgetLevel || null,
       onboarding_complete: onboardingComplete,
     };
 
@@ -239,7 +245,45 @@ export default function AdminClientEditPage() {
               </div>
             </div>
 
+            <div>
+              <label className={labelCls}>Budget level</label>
+              <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">
+                Controls which price tier of items the AI prioritises when building outfits.
+              </p>
+              <div className="flex gap-2">
+                {(['low', 'mid', 'high'] as BudgetLevel[]).map(level => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setBudgetLevel(prev => prev === level ? '' : level)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border capitalize transition-colors ${
+                      budgetLevel === level
+                        ? 'bg-[#ff6b9d] text-white border-[#ff6b9d]'
+                        : 'bg-white text-[#4a2c3e]/60 border-[#ffb3d1] hover:border-[#ff6b9d] hover:text-[#4a2c3e]'
+                    }`}
+                  >
+                    {level === 'low' ? 'Low' : level === 'mid' ? 'Mid' : 'High'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
           </div>
+        </div>
+
+        {/* ── Visual profile ──────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
+          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Visual profile</p>
+          <p className="text-[11px] text-[#4a2c3e]/40 mb-4 leading-relaxed">
+            AI-generated appearance description from client photos (age range, skin tone, body shape, build, hair). Used by the stylist AI to personalise colour and silhouette choices. Auto-populated on onboarding — edit to correct or refine.
+          </p>
+          <textarea
+            value={visualProfile}
+            onChange={e => setVisualProfile(e.target.value)}
+            placeholder="e.g. Late 20s. Medium warm-toned skin, Indian wheatish complexion. Pear shape — hips wider than shoulders, defined waist. Average height, medium build. Dark brown straight hair, long past shoulders."
+            rows={4}
+            className={`${inputCls} resize-none leading-relaxed`}
+          />
         </div>
 
         {/* ── Account status ──────────────────────────── */}

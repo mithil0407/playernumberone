@@ -46,6 +46,7 @@ export async function generateOutfitRecommendations(
     style_restrictions?: string[] | null;
     style_notes?: string | null;
     visual_profile?: string | null;
+    budget_level?: 'high' | 'mid' | 'low' | null;
   },
   items: FashionItem[]
 ): Promise<OutfitRecommendation[]> {
@@ -110,6 +111,22 @@ Use this to:
 `
     : '';
 
+  // Budget block — controls which price tier of items to prioritise
+  const BUDGET_GUIDANCE: Record<string, string> = {
+    high: 'BUDGET: High — No price constraint. Select the best item for each slot in the outfit regardless of cost. Prioritise quality, craftsmanship, and luxury. Price is not a filtering criterion.',
+    mid:  'BUDGET: Mid — The client is value-conscious but willing to invest in key pieces. Prefer mid-range items. Avoid the most expensive option in the catalog unless it is clearly the best fit with no suitable alternative. Strike a balance between quality and cost.',
+    low:  'BUDGET: Low — Budget-conscious. Always prefer the most affordable item that still works well for the outfit. When two items are equally suitable, choose the lower-priced one. Avoid premium-priced items unless no other option fits the occasion or outfit structure.',
+  };
+  const budgetBlock = profile.budget_level && BUDGET_GUIDANCE[profile.budget_level]
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUDGET LEVEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${BUDGET_GUIDANCE[profile.budget_level]}
+The catalog includes a price field for each item — use it to make budget-aligned decisions across all 6 outfits.
+
+`
+    : '';
+
   // Restriction reminder used in the final verification step
   const restrictionReminder = activeRestrictions.length > 0
     ? `\n⛔ RE-CHECK RESTRICTIONS on every outfit before returning:\n${activeRestrictions.map(r => `   - ${RESTRICTION_RULES[r]}`).join('\n')}\n`
@@ -117,7 +134,7 @@ Use this to:
 
   const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern trendy but minimal. Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
 
-${restrictionsBlock}${styleNotesBlock}${visualProfileBlock}Client measurements:
+${restrictionsBlock}${styleNotesBlock}${visualProfileBlock}${budgetBlock}Client measurements:
 - Height: ${profile.height_cm ?? 'unknown'} cm
 - Weight: ${profile.weight_kg ?? 'unknown'} kg
 - Bust: ${profile.bust_cm ?? 'unknown'} cm

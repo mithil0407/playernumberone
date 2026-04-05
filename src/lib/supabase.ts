@@ -270,6 +270,8 @@ export type OutfitStatus = 'pending' | 'generating' | 'ready' | 'failed';
 export type BodyShape =
   | 'hourglass' | 'pear' | 'apple' | 'rectangle' | 'inverted-triangle';
 
+export type BudgetLevel = 'high' | 'mid' | 'low';
+
 export interface FashionItem {
   id?: string;
   raw_description?: string;
@@ -306,6 +308,7 @@ export interface ClientProfile {
   waist_cm?: number;
   hips_cm?: number;
   body_shape?: BodyShape;
+  budget_level?: BudgetLevel;
   size_estimate?: string;
   visual_profile?: string;
   style_notes?: string;

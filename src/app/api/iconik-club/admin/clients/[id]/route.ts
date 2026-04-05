@@ -42,6 +42,7 @@ export async function PATCH(
     'name', 'email', 'phone',
     'height_cm', 'weight_kg', 'bust_cm', 'waist_cm', 'hips_cm',
     'style_notes', 'style_restrictions', 'onboarding_complete',
+    'budget_level', 'visual_profile',
   ] as const;
 
   const updates: Record<string, unknown> = {};
