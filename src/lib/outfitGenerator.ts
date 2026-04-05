@@ -145,6 +145,7 @@ COLOUR RULES
 - Tonal dressing (different shades of the same colour) is strongly preferred over clashing contrasts.
 - Avoid combining more than one bold/printed piece in the same outfit — let one statement piece lead, keep everything else simple.
 - Metallics (gold, silver) count as a neutral for evening/formal outfits only.
+- When choosing an accent colour, pick the considered version over the default: powder blue over navy, burgundy over maroon, rust over orange, olive over generic green. See STYLING PRINCIPLES #4 below.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ITEM REUSE LIMITS
@@ -163,12 +164,32 @@ formal   — Occasion-ready for a wedding guest, gala, or formal Indian event. F
 party    — Fun and confident for a night out or celebration. Bolder colour or texture than evening — a metallic, a rich jewel tone, or a statement silhouette. Still minimal in layering; avoid over-accessorising.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STYLING PHILOSOPHY
+STYLING PRINCIPLES — apply all six to every outfit
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Modern and minimal: cleaner is better. If an item does not add to the outfit, leave it out.
-- Each outfit should have one focal piece (the "hero") — everything else supports it quietly.
-- Avoid over-layering; 2–3 pieces (plus shoes) is the ideal modern outfit formula.
-- Fit and proportion matter: pair oversized/relaxed tops with fitted bottoms, or fitted tops with wider-leg bottoms — never loose + loose.
+These are what separate a styled outfit from a dressed one. Each principle is mandatory — not optional flourish.
+
+FOUNDATION (always apply)
+- Modern and minimal: if an item does not add to the outfit, leave it out.
+- One focal "hero" piece per outfit — everything else supports it quietly.
+- Fit and proportion: pair oversized/relaxed tops with fitted bottoms, or fitted tops with wider-leg bottoms — never loose + loose.
+
+1. PRINT AGAINST PLAIN
+   If the hero piece is solid, at least one supporting piece must introduce pattern or texture. A stripe shirt against a white skirt. A floral blouse against camel trousers. An abstract print scarf against a plain blazer. Two flat solids together with no texture break makes an outfit die — never allow this combination.
+
+2. BELT AS ARCHITECTURE
+   Belting is silhouette engineering, not decoration. A belt signals that the waist was considered — not that pieces were just thrown together. Apply it across all occasion types where a belt exists in the catalog: belted over a blazer, wide belt over a tucked knit, chain belt over a flowy skirt. When in doubt, belt it.
+
+3. LAYERING WITH OPINION
+   When adding an outer layer, it must have its own strong silhouette — not just a cardigan. A biker jacket, oversized blazer, structured vest, or longline coat. The layer should feel like it has a point of view and could stand alone. This principle applies to office, casual, and occasion wear equally — not just casual looks.
+
+4. CONSIDERED COLOUR LOGIC
+   The accent or disruptor colour must feel chosen, not defaulted to. Always pick the more considered version: powder blue over navy, burgundy over maroon, rust over orange, olive over standard green. For this client's Indian skin tone specifically, jewel tones (emerald, sapphire, deep burgundy, amber) and earthy saturated shades (terracotta, rust, deep olive, saffron) will always outperform safe muted ones — prioritise these whenever the catalog allows.
+
+5. THE CHARACTER ACCESSORY
+   Every outfit should include one accessory that gives the look personality — not just completion. A printed neck scarf. A wide statement belt. A woven or textured bag. A chunky chain. Stacked rings. This is the difference between "dressed" and "styled." When the catalog contains such a piece and the occasion allows it, always include it.
+
+6. UNEXPECTED FOOTWEAR
+   The shoe should create a small, deliberate surprise that signals the aesthetic. Woven mary janes with a formal skirt. Ankle boots with a flowy hem. Chunky loafers with something delicate and feminine. Never default to the obvious safe shoe — choose the one that makes the outfit feel considered and complete.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AVAILABLE CATALOG
