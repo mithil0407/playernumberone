@@ -13,6 +13,70 @@ export interface OutfitRecommendation {
   styleNote: string;
 }
 
+interface StyleDNA {
+  aesthetic: string;         // The overarching style identity in 3–5 words
+  silhouette: string;        // Shapes, fits, proportions she gravitates toward
+  colourStory: string;       // Her palette logic — neutrals, accents, how she uses colour
+  fabricTexture: string;     // Materials and textures implied by her references
+  stylingSignals: string;    // How she layers, accessorises, what her hero pieces tend to be
+  avoid: string;             // The inverse — what her taste clearly rejects
+  occasionTranslation: string; // How this DNA maps across the 6 occasions in her wardrobe
+}
+
+/**
+ * Pass 1 — Analyse the client's raw style notes to extract the underlying style DNA.
+ * Rather than treating notes as literal instructions, this call asks Gemini to act as
+ * a style analyst: understand WHY she likes the outfits she mentions, what the common
+ * thread is, and articulate principles that can be applied across new outfit builds.
+ *
+ * Returns null if notes are empty or the call fails — the outfit generator falls back
+ * to using the raw notes directly in that case.
+ */
+async function analyzeStyleDNA(styleNotes: string): Promise<StyleDNA | null> {
+  if (!styleNotes.trim()) return null;
+
+  const prompt = `You are a senior fashion analyst. A styling client has provided notes about her taste — she may have described outfits she loves, brands she wears, aesthetics she gravitates toward, or outfit examples she wants replicated.
+
+Your job is NOT to take these notes literally. Your job is to read between the lines: understand what these references have in common, why she is drawn to them, and extract the underlying style principles that make them work for her.
+
+Client's style notes:
+"${styleNotes.trim()}"
+
+Analyse these notes and return a JSON object with exactly these keys:
+
+{
+  "aesthetic": "3–5 word label for her overall style identity — e.g. 'Clean Minimal Parisian', 'Relaxed Luxe Bohemian', 'Sharp Contemporary Indian', 'Soft Romantic Feminine'",
+  "silhouette": "The shapes and proportions she consistently gravitates toward. Be specific: does she prefer fluid and relaxed, or structured and tailored? Wide-leg, slim, or flared? Midi length or short? Oversized on top with fitted below, or the reverse? What silhouette signals appear across her references?",
+  "colourStory": "Her colour logic. What is her neutral base? Does she use colour at all or stay tonal? When she uses an accent, what kind — muted/earthy/saturated/bold? Does she mix or keep it clean? Name specific shades that capture her palette if you can infer them.",
+  "fabricTexture": "The materials and textures her preferred outfits imply — even if she didn't name them. Linen and cotton for ease? Silk and satin for polish? Structured crepe? Flowy georgette? Textured knits? What fabric story runs through her taste?",
+  "stylingSignals": "How she assembles an outfit. Does she tuck in tops or leave them out? Does she layer? Does she accessorise heavily or barely? What are her hero pieces — tops, bottoms, dresses? Does she belt things? What finishing moves appear repeatedly?",
+  "avoid": "What her taste clearly rejects — even if she didn't say it explicitly. If she loves minimal, she avoids maximalist. If she loves fluid drape, she likely avoids stiff structured boxy shapes. Infer what would feel wrong for her.",
+  "occasionTranslation": "A concise brief on how this style DNA should translate across her 6 wardrobe occasions: casual, work, evening, weekend, formal, party. For each, name the one key ingredient that keeps it true to her aesthetic. Keep it compact — one sentence per occasion."
+}
+
+Return ONLY the JSON object. No markdown, no explanation.`;
+
+  try {
+    const response = await getAI().models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ parts: [{ text: prompt }] }],
+    });
+
+    const text = response.text ?? '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) {
+      console.warn('analyzeStyleDNA: no JSON object found in response');
+      return null;
+    }
+    const dna = JSON.parse(match[0]) as StyleDNA;
+    console.log(`Style DNA analyzed — aesthetic: ${dna.aesthetic}`);
+    return dna;
+  } catch (err) {
+    console.warn('analyzeStyleDNA failed, will use raw notes:', err);
+    return null;
+  }
+}
+
 // Returns the current Indian climate season based on month.
 function getIndianSeason(date: Date): { season: string; description: string } {
   const month = date.getMonth() + 1; // 1–12
@@ -79,9 +143,41 @@ ${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}
 `
     : '';
 
-  // Style notes block — structured so the model understands it can override occasion briefs
+  // Pass 1 — analyse style notes into structured DNA (runs in parallel with nothing else yet)
+  const styleDNA = profile.style_notes?.trim()
+    ? await analyzeStyleDNA(profile.style_notes.trim())
+    : null;
+
+  // Style DNA block — uses the analysed DNA when available, falls back to raw notes
   const styleNotesBlock = profile.style_notes?.trim()
-    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    ? styleDNA
+      ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT STYLE DNA (analysed from her references — this is who she is as a dresser)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AESTHETIC IDENTITY: ${styleDNA.aesthetic}
+
+SILHOUETTE LANGUAGE: ${styleDNA.silhouette}
+
+COLOUR STORY: ${styleDNA.colourStory}
+
+FABRIC & TEXTURE: ${styleDNA.fabricTexture}
+
+HOW SHE STYLES: ${styleDNA.stylingSignals}
+
+WHAT TO AVOID: ${styleDNA.avoid}
+
+HOW THIS TRANSLATES ACROSS OCCASIONS:
+${styleDNA.occasionTranslation}
+
+Original client notes (for reference):
+"${profile.style_notes.trim()}"
+
+CRITICAL INSTRUCTION: Every outfit must feel like it belongs to THIS client's aesthetic identity — not a generic version of the occasion. Use the DNA above as the creative brief. The occasion brief below defines the context; the DNA defines the character.
+If the notes reference specific outfits or looks, study why she likes them — the silhouette logic, the colour balance, the proportion play — and reproduce that reasoning with the available catalog items, not just the surface details.
+Per-occasion direction in the DNA takes absolute priority over the default occasion briefs.
+
+`
+      : `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CLIENT STYLE NOTES (primary signal — read carefully)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 The client's own words:
@@ -89,9 +185,9 @@ The client's own words:
 
 How to apply these notes:
 1. Extract the client's overall aesthetic and apply it as the baseline across all 6 outfits.
-2. If the notes mention a specific occasion by name (casual, work, evening, weekend, formal, party), the stated preference for that occasion OVERRIDES the default occasion brief below — use the client's intent, not the generic description.
-3. If the notes suggest a completely different style direction for an occasion (e.g. "I want Indian ethnic for formal", "make party more bohemian", "casual should be sporty"), adapt that occasion's outfit to match the client's preference even if it departs from the default brief.
-4. Per-occasion instructions in the style notes take absolute priority over the OCCASION BRIEFS section.
+2. If the notes mention specific outfits or looks, understand WHY she likes them — the silhouette, the colour balance, the proportion — and reproduce that logic with the available catalog items.
+3. If the notes mention a specific occasion by name, that preference OVERRIDES the default occasion brief below.
+4. Per-occasion instructions take absolute priority over the OCCASION BRIEFS section.
 
 `
     : '';
