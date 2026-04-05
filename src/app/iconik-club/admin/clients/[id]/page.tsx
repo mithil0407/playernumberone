@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Save, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, CheckCircle, Sparkles } from 'lucide-react';
 import type { ClientProfile, BudgetLevel } from '@/lib/supabase';
 
 const RESTRICTION_OPTIONS = [
@@ -19,6 +19,8 @@ export default function AdminClientEditPage() {
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
   const [error, setError]     = useState('');
+  const [generatingProfile, setGeneratingProfile] = useState(false);
+  const [profileGenError, setProfileGenError]     = useState('');
 
   // Form fields
   const [name,       setName]       = useState('');
@@ -63,6 +65,21 @@ export default function AdminClientEditPage() {
     setRestrictions(prev =>
       prev.includes(val) ? prev.filter(r => r !== val) : [...prev, val]
     );
+  };
+
+  const handleGenerateProfile = async () => {
+    setProfileGenError('');
+    setGeneratingProfile(true);
+    try {
+      const res  = await fetch(`/api/iconik-club/admin/clients/${id}/visual-profile`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setProfileGenError(data.error ?? 'Generation failed'); return; }
+      setVisualProfile(data.visual_profile ?? '');
+    } catch {
+      setProfileGenError('Network error. Please try again.');
+    } finally {
+      setGeneratingProfile(false);
+    }
   };
 
   const handleSave = async () => {
@@ -273,14 +290,28 @@ export default function AdminClientEditPage() {
 
         {/* ── Visual profile ──────────────────────────── */}
         <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
-          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Visual profile</p>
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Visual profile</p>
+            <button
+              type="button"
+              onClick={handleGenerateProfile}
+              disabled={generatingProfile}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fff0f5] border border-[#ffb3d1] text-[#ff6b9d] text-[11px] font-semibold hover:bg-[#ffe0ee] disabled:opacity-50 transition-colors shrink-0"
+            >
+              {generatingProfile
+                ? <><Loader2 size={11} className="animate-spin" /> Analysing…</>
+                : <><Sparkles size={11} /> {visualProfile ? 'Regenerate' : 'Generate from photos'}</>
+              }
+            </button>
+          </div>
           <p className="text-[11px] text-[#4a2c3e]/40 mb-4 leading-relaxed">
-            AI-generated appearance description from client photos (age range, skin tone, body shape, build, hair). Used by the stylist AI to personalise colour and silhouette choices. Auto-populated on onboarding — edit to correct or refine.
+            AI-generated appearance description from client photos — age range, skin tone &amp; undertone, body shape, build, hair. Drives colour palette and silhouette choices in outfit generation. Auto-populated on onboarding; use the button to generate or regenerate for existing clients.
           </p>
+          {profileGenError && <p className="text-xs text-red-500 mb-3">{profileGenError}</p>}
           <textarea
             value={visualProfile}
             onChange={e => setVisualProfile(e.target.value)}
-            placeholder="e.g. Late 20s. Medium warm-toned skin, Indian wheatish complexion. Pear shape — hips wider than shoulders, defined waist. Average height, medium build. Dark brown straight hair, long past shoulders."
+            placeholder="e.g. Late 20s. Medium warm-toned skin, Indian wheatish complexion, warm undertone. Pear shape — hips wider than shoulders, defined waist. Average height, medium build. Dark brown straight hair, long past shoulders."
             rows={4}
             className={`${inputCls} resize-none leading-relaxed`}
           />

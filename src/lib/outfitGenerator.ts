@@ -100,6 +100,111 @@ const RESTRICTION_RULES: Record<string, string> = {
     'COVER TUMMY — The client prefers to keep her midsection covered and not emphasised. Never include crop tops, short tops, or bodycon / form-fitting silhouettes that cling to the stomach. Always prefer A-line, empire-waist, wrap, or flowy/structured styles that drape away from the midsection. This applies to every single outfit — no exceptions.',
 };
 
+type Undertone = 'warm' | 'cool' | 'neutral';
+
+// Extract the skin undertone from the visual profile paragraph.
+// The generateVisualProfile prompt explicitly asks for "(warm / cool / neutral)"
+// so these keywords reliably appear in the skin tone sentence.
+function extractUndertone(visualProfile: string): Undertone {
+  const text = visualProfile.toLowerCase();
+  // Look for explicit undertone markers first, then broader warm/cool signals
+  if (/\bcool[\s-]toned\b|\bcool undertone\b|\b\(cool\)\b/.test(text)) return 'cool';
+  if (/\bwarm[\s-]toned\b|\bwarm undertone\b|\b\(warm\)\b/.test(text)) return 'warm';
+  if (/\bneutral undertone\b|\b\(neutral\)\b/.test(text)) return 'neutral';
+  // Fallback: single keyword presence in skin description
+  if (/\bcool\b/.test(text)) return 'cool';
+  if (/\bwarm\b/.test(text)) return 'warm';
+  return 'neutral';
+}
+
+// Returns the COLOUR RULES section tailored to the client's undertone.
+// When no visual profile is available, falls back to generic guidance.
+function buildColourRules(undertone: Undertone | null): string {
+  const base = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COLOUR RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRUCTURE (applies always):
+- Maximum 3 distinct colours per outfit — 2 is ideal for a clean minimal look.
+- Build each outfit around ONE dominant neutral on the largest piece, ONE secondary tone on the mid piece, and let the shoe either echo the neutral or introduce a controlled third tone.
+- Never combine two bold or printed pieces — one statement item, everything else quiet.
+- Tonal dressing (different shades of the same colour family) is strongly preferred over high-contrast mixing. Example: ivory blouse + cream wide-leg trouser + tan loafer reads richer than white + black + brown.
+- Metallics (gold, silver) count as a neutral for evening and formal outfits only.`;
+
+  if (undertone === 'warm') {
+    return `${base}
+
+UNDERTONE: WARM — this client has warm undertones (golden, olive, or yellow-based). The following is mandatory colour guidance:
+
+Neutrals to anchor outfits (use these as the dominant piece):
+  Ivory, cream, camel, warm beige, warm taupe, chocolate brown, off-white, warm stone.
+  AVOID: stark white, cool grey, icy silver — these fight warm skin and look ashy.
+
+Accent colours that will flatter (use on the secondary or statement piece):
+  Terracotta, rust, saffron, mustard, warm olive, burnt sienna, brick red, cognac, warm burgundy.
+  These are the colours that glow against warm skin — always prioritise them when available in the catalog.
+
+Jewel tones that work for evening/formal:
+  Amber, warm emerald (yellow-green undertone), deep teal, rich gold, deep coral.
+
+What to avoid as accent colours:
+  Icy pastels (ice blue, lavender, mint), cobalt blue, neon pink, silver metallics — all cool-toned and unflattering on warm skin.
+
+Occasion colour logic:
+  Casual/weekend: cream or camel base + rust or olive accent.
+  Work: warm beige or ivory base + warm burgundy or chocolate as the second tone.
+  Evening/formal: rich amber, terracotta, or deep warm olive — or a full tonal warm-neutral build.
+  Party: bold jewel with warm bias — amber, deep coral, burnt orange-red.`;
+  }
+
+  if (undertone === 'cool') {
+    return `${base}
+
+UNDERTONE: COOL — this client has cool undertones (pink, red, or blue-based). The following is mandatory colour guidance:
+
+Neutrals to anchor outfits (use these as the dominant piece):
+  Pure white, black, cool grey, slate, navy, charcoal, cool stone.
+  AVOID: cream, camel, warm beige, warm brown — these clash with cool skin and look muddy.
+
+Accent colours that will flatter (use on the secondary or statement piece):
+  Sapphire blue, emerald (blue-green undertone), ruby red, cool burgundy, amethyst, cobalt, rose, cool mauve.
+  These are the colours that sharpen and elevate cool skin — always prioritise when available.
+
+Jewel tones that work for evening/formal:
+  Deep sapphire, emerald, plum, cool ruby, midnight navy, icy silver.
+
+What to avoid as accent colours:
+  Orange-based tones (rust, terracotta, mustard, saffron), warm brown, coral — all warm-toned and unflattering on cool skin.
+
+Occasion colour logic:
+  Casual/weekend: white or cool grey base + sapphire or navy accent.
+  Work: charcoal or navy base + cool burgundy or slate as the second tone.
+  Evening/formal: deep sapphire, emerald, or plum — or full monochromatic cool-neutral build.
+  Party: bold cool jewel — cobalt, ruby, deep amethyst.`;
+  }
+
+  // Neutral undertone or unknown
+  return `${base}
+
+UNDERTONE: NEUTRAL — this client has balanced undertones and can wear both warm and cool palettes. The following is mandatory colour guidance:
+
+Neutrals to anchor outfits (use these as the dominant piece):
+  Both warm and cool neutrals work — ivory, cream, white, warm beige, cool grey, navy, camel, slate.
+  This is a rare flexibility — use it deliberately, not randomly. Pick one temperature and build the outfit within it.
+
+Accent colours that will flatter (use on the secondary or statement piece):
+  Rose, mauve, jade, teal, soft coral, dusty pink, warm olive, muted cobalt.
+  Neutral undertones are flattered by colours that are themselves balanced — neither aggressively warm nor icy cool.
+
+Jewel tones that work for evening/formal:
+  Teal, emerald, rose gold, deep mauve, burgundy, warm navy.
+
+Occasion colour logic:
+  Casual/weekend: pick a temperature (either ivory + olive OR white + slate) and stay within it.
+  Work: neutral-temperature anchor (warm beige or cool grey) + one considered accent.
+  Evening/formal: jewel tone that sits in the middle — teal, deep mauve, warm emerald.
+  Party: go bolder — rich teal, deep rose, or a statement jewel tone.`;
+}
+
 export async function generateOutfitRecommendations(
   profile: {
     height_cm?: number;
@@ -207,6 +312,12 @@ Use this to:
 `
     : '';
 
+  // Derive undertone from visual profile and build dynamic colour rules
+  const undertone: Undertone | null = profile.visual_profile?.trim()
+    ? extractUndertone(profile.visual_profile)
+    : null;
+  const colourRules = buildColourRules(undertone);
+
   // Budget block — controls which price tier of items to prioritise
   const BUDGET_GUIDANCE: Record<string, string> = {
     high: 'BUDGET: High — No price constraint. Select the best item for each slot in the outfit regardless of cost. Prioritise quality, craftsmanship, and luxury. Price is not a filtering criterion.',
@@ -243,22 +354,32 @@ ${seasonDescription}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTFIT STRUCTURE RULES (non-negotiable)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Every outfit MUST have:
-1. Exactly ONE bottom layer — either: a single-piece (dress, jumpsuit) OR a top + one bottom (skirt, bottom). NEVER combine two bottoms (e.g. no skirt + bottom, no two trousers). NEVER use a dress/jumpsuit alongside a separate bottom.
-2. Exactly ONE pair of shoes — always include footwear, never omit it.
-3. Maximum ONE bag — optional, not required.
-4. Maximum ONE accessory — optional, not required.
-5. Total items per outfit: 2–4 items (shoes always count, bag/accessory are extras).
+Every outfit is built from these slots:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-COLOUR RULES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Maximum 3 distinct colours per outfit — fewer is better (2 is ideal for a minimal look).
-- Build each outfit around one neutral anchor (white, ivory, black, beige, camel, grey, navy) plus at most one accent colour.
-- Tonal dressing (different shades of the same colour) is strongly preferred over clashing contrasts.
-- Avoid combining more than one bold/printed piece in the same outfit — let one statement piece lead, keep everything else simple.
-- Metallics (gold, silver) count as a neutral for evening/formal outfits only.
-- When choosing an accent colour, pick the considered version over the default: powder blue over navy, burgundy over maroon, rust over orange, olive over generic green. See STYLING PRINCIPLES #4 below.
+BASE (required — exactly one of these combinations):
+  Option A — Single piece: one dress or jumpsuit worn alone as the full base
+  Option B — Two-piece base: one top + one bottom (skirt or trousers). NEVER two bottoms together.
+  A single piece and a separate bottom must NEVER be combined.
+
+LAYER (optional — maximum one):
+  Any item from the catalog can serve as a layer, regardless of its category label. Category is just a filing system — it does not define whether a piece can be worn over something else. Use your judgment as a stylist:
+  - A blazer layered over a slip dress
+  - A shirt worn open over a fitted top
+  - A structured vest over a knit
+  - A longline coat over wide-leg trousers
+  - A printed scarf tied as a top layer
+  - A denim jacket over a flowy skirt
+  If an item in the catalog could realistically be worn over the base outfit and adds to the look, it is a valid layer. Do not restrict layering to items tagged "outerwear".
+
+SHOES (required — exactly one pair): Always include footwear.
+
+BAG (optional — maximum one): Include only if it genuinely completes the look.
+
+ACCESSORY (optional — maximum one): Include only if it adds the character the outfit needs.
+
+Total items per outfit: 2–6. The layer, bag, and accessory slots are optional additions — use them when they improve the outfit, not as obligation.
+
+${colourRules}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ITEM REUSE LIMITS
@@ -315,10 +436,11 @@ TASK
 Create EXACTLY 6 outfits — one per occasion (casual, work, evening, weekend, formal, party). Each occasion must appear exactly once. Only use item IDs that exist in the catalog above.
 
 Before returning, verify every outfit against ALL of the following:
-- Each outfit has exactly one bottom layer (or single-piece dress/jumpsuit)
+- Each outfit has a valid base (single-piece OR top + one bottom — never two bottoms, never single-piece + separate bottom)
 - Each outfit includes footwear
 - No item ID appears in more than 2 outfits
-- Client style notes have been applied — especially any per-occasion preferences${restrictionReminder}
+- Any layering piece is something that could realistically be worn over the base — category label is irrelevant, wearability is the test
+- Client style notes and DNA have been applied — especially any per-occasion preferences${restrictionReminder}
 Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
 - itemIds: array of item ID strings from the catalog
 - occasion: exactly one of "casual", "work", "evening", "weekend", "formal", "party"
