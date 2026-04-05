@@ -307,6 +307,7 @@ export interface ClientProfile {
   hips_cm?: number;
   body_shape?: BodyShape;
   size_estimate?: string;
+  visual_profile?: string;
   style_notes?: string;
   style_restrictions?: string[];
   subscription_id?: string;

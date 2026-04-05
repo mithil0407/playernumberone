@@ -127,6 +127,57 @@ The output MUST be photorealistic and studio-quality. Do NOT illustrate, paint, 
 `.trim();
 
 /**
+ * Analyses the client's photos using Gemini vision and returns a structured
+ * appearance description: estimated age range, skin tone, body shape, build,
+ * and hair. This is stored on the profile and injected into the outfit prompt
+ * so the stylist AI has a clear picture of who it is dressing.
+ */
+export async function generateVisualProfile(
+  headshot: ImageData | null,
+  bodyPhoto: ImageData | null,
+): Promise<string | null> {
+  if (!headshot && !bodyPhoto) return null;
+
+  const parts: Part[] = [];
+
+  if (headshot) {
+    parts.push({ text: 'CLIENT HEADSHOT (use this for face, skin tone, and hair analysis):' });
+    parts.push({ inlineData: { mimeType: headshot.mimeType, data: headshot.data } });
+  }
+  if (bodyPhoto) {
+    parts.push({ text: 'CLIENT FULL BODY PHOTO (use this for body shape, build, and proportions analysis):' });
+    parts.push({ inlineData: { mimeType: bodyPhoto.mimeType, data: bodyPhoto.data } });
+  }
+
+  parts.push({ text: `Analyse these photos and return a concise, factual appearance description for a fashion stylist. Cover each of these points in order:
+
+1. Estimated age range (e.g. "mid-20s", "late 30s to early 40s") — do not guess an exact age
+2. Skin tone — use a descriptive scale (fair / light / medium / medium-dark / deep) and note the undertone (warm / cool / neutral) and any relevant characteristic (e.g. "warm golden-brown, typical Indian wheatish complexion", "cool-toned deep skin")
+3. Body shape — classify as one of: hourglass / pear / apple / rectangle / inverted-triangle, and describe what you observe (e.g. "Pear — hips visibly wider than shoulders, defined waist, fuller lower body")
+4. Build and frame — height impression (petite / average / tall) and frame weight (fine / medium / full), e.g. "Petite fine frame" or "Average height, medium-full build"
+5. Hair — colour, texture, and approximate length (e.g. "Dark brown, straight, long past shoulders")
+
+Return ONLY the description as a single plain-text paragraph. No headings, no bullet points, no markdown. Write it as a stylist's notes, factual and neutral.` });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ parts }],
+    });
+    const text = response.text?.trim();
+    if (!text) {
+      console.warn('generateVisualProfile: no text returned from Gemini');
+      return null;
+    }
+    console.log('Visual profile generated successfully');
+    return text;
+  } catch (err) {
+    console.warn('generateVisualProfile failed:', err);
+    return null;
+  }
+}
+
+/**
  * Runs the client's raw headshot and body photo through Gemini image generation
  * to produce cleaner, better-lit studio-quality versions. These enhanced images
  * are then used as identity references in outfit card generation.

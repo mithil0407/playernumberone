@@ -2,7 +2,7 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
-import { enhanceClientPhotos } from '@/lib/outfitCompositor';
+import { enhanceClientPhotos, generateVisualProfile } from '@/lib/outfitCompositor';
 
 /*
   Run this SQL migration in Supabase before using this route:
@@ -98,12 +98,19 @@ export async function POST(request: NextRequest) {
     // so by the time outfits are generated the better images are already in place.
     after(async () => {
       try {
-        console.log(`[bg] Enhancing client photos for ${profileId}…`);
-        const { headshot: enhancedHeadshot, bodyPhoto: enhancedBody } = await enhanceClientPhotos(
-          { data: headshotBuf.toString('base64'), mimeType: resolveType(headshot) },
-          { data: bodyBuf.toString('base64'),     mimeType: resolveType(bodyPhoto) },
-        );
+        console.log(`[bg] Enhancing client photos and generating visual profile for ${profileId}…`);
+        const headshotData = { data: headshotBuf.toString('base64'), mimeType: resolveType(headshot) };
+        const bodyData     = { data: bodyBuf.toString('base64'),     mimeType: resolveType(bodyPhoto) };
+
+        // Run photo enhancement and visual profile generation in parallel
+        const [{ headshot: enhancedHeadshot, bodyPhoto: enhancedBody }, visualProfile] = await Promise.all([
+          enhanceClientPhotos(headshotData, bodyData),
+          generateVisualProfile(headshotData, bodyData),
+        ]);
+
         const bgAdmin = createSupabaseAdminServerClient();
+
+        // Upload enhanced photos
         if (enhancedHeadshot) {
           await bgAdmin.storage.from('client-photos').upload(
             headshotKey,
@@ -120,8 +127,17 @@ export async function POST(request: NextRequest) {
           );
           console.log(`[bg] Body photo enhanced for ${profileId}`);
         }
+
+        // Save visual profile to DB
+        if (visualProfile) {
+          await bgAdmin
+            .from('client_profiles')
+            .update({ visual_profile: visualProfile })
+            .eq('id', profileId);
+          console.log(`[bg] Visual profile saved for ${profileId}`);
+        }
       } catch (err) {
-        console.error(`[bg] Photo enhancement failed for ${profileId}:`, err);
+        console.error(`[bg] Background processing failed for ${profileId}:`, err);
       }
     });
 

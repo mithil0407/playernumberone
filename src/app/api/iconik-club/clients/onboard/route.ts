@@ -1,7 +1,7 @@
 import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminServerClient } from '@/lib/supabaseServer';
-import { enhanceClientPhotos } from '@/lib/outfitCompositor';
+import { enhanceClientPhotos, generateVisualProfile } from '@/lib/outfitCompositor';
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,12 +73,19 @@ export async function POST(request: NextRequest) {
     const bodyMime     = resolveType(bodyPhoto);
     after(async () => {
       try {
-        console.log(`[bg] Enhancing client photos for ${user.id}…`);
-        const { headshot: enhancedHeadshot, bodyPhoto: enhancedBody } = await enhanceClientPhotos(
-          { data: headshotBuf.toString('base64'), mimeType: headshotMime },
-          { data: bodyBuf.toString('base64'),     mimeType: bodyMime },
-        );
+        console.log(`[bg] Enhancing client photos and generating visual profile for ${user.id}…`);
+        const headshotData = { data: headshotBuf.toString('base64'), mimeType: headshotMime };
+        const bodyData     = { data: bodyBuf.toString('base64'),     mimeType: bodyMime };
+
+        // Run photo enhancement and visual profile generation in parallel
+        const [{ headshot: enhancedHeadshot, bodyPhoto: enhancedBody }, visualProfile] = await Promise.all([
+          enhanceClientPhotos(headshotData, bodyData),
+          generateVisualProfile(headshotData, bodyData),
+        ]);
+
         const bgAdmin = createSupabaseAdminServerClient();
+
+        // Upload enhanced photos
         if (enhancedHeadshot) {
           await bgAdmin.storage.from('client-photos').upload(
             headshotKey,
@@ -95,8 +102,17 @@ export async function POST(request: NextRequest) {
           );
           console.log(`[bg] Body photo enhanced for ${user.id}`);
         }
+
+        // Save visual profile to DB
+        if (visualProfile) {
+          await bgAdmin
+            .from('client_profiles')
+            .update({ visual_profile: visualProfile })
+            .eq('user_id', user.id);
+          console.log(`[bg] Visual profile saved for ${user.id}`);
+        }
       } catch (err) {
-        console.error(`[bg] Photo enhancement failed for ${user.id}:`, err);
+        console.error(`[bg] Background processing failed for ${user.id}:`, err);
       }
     });
 

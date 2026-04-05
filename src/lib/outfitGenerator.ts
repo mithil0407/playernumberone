@@ -31,9 +31,9 @@ function getIndianSeason(date: Date): { season: string; description: string } {
 // Human-readable descriptions for each restriction key.
 const RESTRICTION_RULES: Record<string, string> = {
   no_sleeveless:
-    'NO SLEEVELESS — Never include tops, dresses, jumpsuits, or any upper-body piece without sleeves. Every upper-body item must have sleeves (short sleeves are acceptable as a minimum).',
+    'NO SLEEVELESS — Never include tops, dresses, jumpsuits, or any upper-body piece without sleeves. Every upper-body item must have sleeves (short sleeves are acceptable as a minimum). This applies to every single outfit — no exceptions.',
   cover_tummy:
-    'COVER TUMMY — The client prefers to keep her midsection covered and not emphasised. Never include crop tops, short tops, or bodycon / form-fitting silhouettes that cling to the stomach. Always prefer A-line, empire-waist, wrap, or flowy/structured styles that drape away from the midsection.',
+    'COVER TUMMY — The client prefers to keep her midsection covered and not emphasised. Never include crop tops, short tops, or bodycon / form-fitting silhouettes that cling to the stomach. Always prefer A-line, empire-waist, wrap, or flowy/structured styles that drape away from the midsection. This applies to every single outfit — no exceptions.',
 };
 
 export async function generateOutfitRecommendations(
@@ -45,6 +45,7 @@ export async function generateOutfitRecommendations(
     hips_cm?: number;
     style_restrictions?: string[] | null;
     style_notes?: string | null;
+    visual_profile?: string | null;
   },
   items: FashionItem[]
 ): Promise<OutfitRecommendation[]> {
@@ -57,24 +58,66 @@ export async function generateOutfitRecommendations(
     if (item.color?.length) entry.color = item.color;
     if (item.brand) entry.brand = item.brand;
     if (item.price != null) entry.price = item.price;
+    if (item.material?.length) entry.material = item.material;
     return entry;
   });
 
   const { season, description: seasonDescription } = getIndianSeason(new Date());
 
-  // Build the restrictions block — only include active restrictions.
   const activeRestrictions = (profile.style_restrictions ?? []).filter(r => RESTRICTION_RULES[r]);
+
+  // Restrictions block — placed at the very top of the prompt so the model sees them first
+  // and they are not displaced by later context.
   const restrictionsBlock = activeRestrictions.length > 0
-    ? `\nStyle restrictions — STRICTLY enforce every rule below. Violating any restriction is not allowed:\n${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}\n`
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⛔ ABSOLUTE RESTRICTIONS — APPLY TO EVERY OUTFIT, NO EXCEPTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+These rules override every other styling decision. Violating any restriction is not acceptable under any circumstance:
+${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}
+
+`
     : '';
 
+  // Style notes block — structured so the model understands it can override occasion briefs
   const styleNotesBlock = profile.style_notes?.trim()
-    ? `\nClient style preferences (her own words — treat this as the single strongest signal for the overall aesthetic, colour palette, and brands to prioritise):\n"${profile.style_notes.trim()}"\n`
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT STYLE NOTES (primary signal — read carefully)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The client's own words:
+"${profile.style_notes.trim()}"
+
+How to apply these notes:
+1. Extract the client's overall aesthetic and apply it as the baseline across all 6 outfits.
+2. If the notes mention a specific occasion by name (casual, work, evening, weekend, formal, party), the stated preference for that occasion OVERRIDES the default occasion brief below — use the client's intent, not the generic description.
+3. If the notes suggest a completely different style direction for an occasion (e.g. "I want Indian ethnic for formal", "make party more bohemian", "casual should be sporty"), adapt that occasion's outfit to match the client's preference even if it departs from the default brief.
+4. Per-occasion instructions in the style notes take absolute priority over the OCCASION BRIEFS section.
+
+`
     : '';
 
-  const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern trendy but minimal . Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
+  // Visual profile block — AI-generated appearance description from client photos
+  const visualProfileBlock = profile.visual_profile?.trim()
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT APPEARANCE PROFILE (generated from client photos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${profile.visual_profile.trim()}
 
-Client measurements:
+Use this to:
+- Recommend colours that flatter this specific skin tone and undertone
+- Select silhouettes and proportions suited to this body shape and build
+- Ensure fit language matches the client's frame (e.g. avoid overwhelming a petite frame with oversized volumes)
+
+`
+    : '';
+
+  // Restriction reminder used in the final verification step
+  const restrictionReminder = activeRestrictions.length > 0
+    ? `\n⛔ RE-CHECK RESTRICTIONS on every outfit before returning:\n${activeRestrictions.map(r => `   - ${RESTRICTION_RULES[r]}`).join('\n')}\n`
+    : '';
+
+  const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern trendy but minimal. Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
+
+${restrictionsBlock}${styleNotesBlock}${visualProfileBlock}Client measurements:
 - Height: ${profile.height_cm ?? 'unknown'} cm
 - Weight: ${profile.weight_kg ?? 'unknown'} kg
 - Bust: ${profile.bust_cm ?? 'unknown'} cm
@@ -83,7 +126,7 @@ Client measurements:
 
 Current season: ${season}
 ${seasonDescription}
-${styleNotesBlock}${restrictionsBlock}
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTFIT STRUCTURE RULES (non-negotiable)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -110,7 +153,7 @@ ITEM REUSE LIMITS
 - Prioritise variety — spread items across outfits so the wardrobe feels diverse, not repetitive.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OCCASION BRIEFS
+OCCASION BRIEFS (defaults — overridden by client style notes above if applicable)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 casual   — Relaxed but put-together. Think effortless daywear: a clean top with well-fitted trousers or a simple midi dress. Comfortable fabrics (cotton, linen, jersey). No eveningwear fabrics.
 work     — Polished and professional for an Indian metro office. Structured silhouettes: tailored trousers, blazers, midi skirts, shirts. Smart fabrics (crepe, cotton-blend). Nothing bodycon, nothing sheer.
@@ -137,6 +180,11 @@ TASK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Create EXACTLY 6 outfits — one per occasion (casual, work, evening, weekend, formal, party). Each occasion must appear exactly once. Only use item IDs that exist in the catalog above.
 
+Before returning, verify every outfit against ALL of the following:
+- Each outfit has exactly one bottom layer (or single-piece dress/jumpsuit)
+- Each outfit includes footwear
+- No item ID appears in more than 2 outfits
+- Client style notes have been applied — especially any per-occasion preferences${restrictionReminder}
 Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
 - itemIds: array of item ID strings from the catalog
 - occasion: exactly one of "casual", "work", "evening", "weekend", "formal", "party"
@@ -145,7 +193,7 @@ Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
 Return ONLY the JSON array, no markdown, no explanation.`;
 
   const response = await getAI().models.generateContent({
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-2.5-flash',
     contents: [{ parts: [{ text: prompt }] }],
   });
 
