@@ -13,73 +13,43 @@ export interface OutfitRecommendation {
   styleNote: string;
 }
 
-interface StyleDNA {
-  aesthetic: string;         // The overarching style identity in 3–5 words
-  silhouette: string;        // Shapes, fits, proportions she gravitates toward
-  colourStory: string;       // Her palette logic — neutrals, accents, how she uses colour
-  fabricTexture: string;     // Materials and textures implied by her references
-  stylingSignals: string;    // How she layers, accessorises, what her hero pieces tend to be
-  avoid: string;             // The inverse — what her taste clearly rejects
-  occasionTranslation: string; // How this DNA maps across the 6 occasions in her wardrobe
+// ─── Internal Types ───────────────────────────────────────────────────────────
+
+interface StyleDiagnosis {
+  chromaticHarmony: {
+    undertone: 'warm' | 'cool' | 'neutral' | 'deep-warm' | 'olive';
+    explanation: string;
+  };
+  silhouetteProfile: {
+    bodyShape: 'apple' | 'pear' | 'hourglass' | 'rectangle' | 'inverted-triangle' | 'petite' | 'plus';
+    explanation: string;
+  };
+  disruptorStyle: {
+    type: 'chromatic' | 'structural' | 'accessory' | 'footwear';
+    explanation: string;
+  };
+  signatureCodes: string[];
 }
 
-/**
- * Pass 1 — Analyse the client's raw style notes to extract the underlying style DNA.
- * Rather than treating notes as literal instructions, this call asks Gemini to act as
- * a style analyst: understand WHY she likes the outfits she mentions, what the common
- * thread is, and articulate principles that can be applied across new outfit builds.
- *
- * Returns null if notes are empty or the call fails — the outfit generator falls back
- * to using the raw notes directly in that case.
- */
-async function analyzeStyleDNA(styleNotes: string): Promise<StyleDNA | null> {
-  if (!styleNotes.trim()) return null;
-
-  const prompt = `You are a senior fashion analyst. A styling client has provided notes about her taste — she may have described outfits she loves, brands she wears, aesthetics she gravitates toward, or outfit examples she wants replicated.
-
-Your job is NOT to take these notes literally. Your job is to read between the lines: understand what these references have in common, why she is drawn to them, and extract the underlying style principles that make them work for her.
-
-Client's style notes:
-"${styleNotes.trim()}"
-
-Analyse these notes and return a JSON object with exactly these keys:
-
-{
-  "aesthetic": "3–5 word label for her overall style identity — e.g. 'Clean Minimal Parisian', 'Relaxed Luxe Bohemian', 'Sharp Contemporary Indian', 'Soft Romantic Feminine'",
-  "silhouette": "The shapes and proportions she consistently gravitates toward. Be specific: does she prefer fluid and relaxed, or structured and tailored? Wide-leg, slim, or flared? Midi length or short? Oversized on top with fitted below, or the reverse? What silhouette signals appear across her references?",
-  "colourStory": "Her colour logic. What is her neutral base? Does she use colour at all or stay tonal? When she uses an accent, what kind — muted/earthy/saturated/bold? Does she mix or keep it clean? Name specific shades that capture her palette if you can infer them.",
-  "fabricTexture": "The materials and textures her preferred outfits imply — even if she didn't name them. Linen and cotton for ease? Silk and satin for polish? Structured crepe? Flowy georgette? Textured knits? What fabric story runs through her taste?",
-  "stylingSignals": "How she assembles an outfit. Does she tuck in tops or leave them out? Does she layer? Does she accessorise heavily or barely? What are her hero pieces — tops, bottoms, dresses? Does she belt things? What finishing moves appear repeatedly?",
-  "avoid": "What her taste clearly rejects — even if she didn't say it explicitly. If she loves minimal, she avoids maximalist. If she loves fluid drape, she likely avoids stiff structured boxy shapes. Infer what would feel wrong for her.",
-  "occasionTranslation": "A concise brief on how this style DNA should translate across her 6 wardrobe occasions: casual, work, evening, weekend, formal, party. For each, name the one key ingredient that keeps it true to her aesthetic. Keep it compact — one sentence per occasion."
+interface OutfitBlueprint {
+  occasion: OutfitOccasion;
+  title: string;
+  singlePiece: string | null;  // dress or jumpsuit — when set, top+bottom are null
+  top: string | null;
+  layer: string | null;
+  bottom: string | null;
+  shoes: string;
+  bag: string | null;
+  accessory: string | null;
+  disruptor: string;
+  colourHierarchy: string;
+  structurePiece: string;
 }
 
-Return ONLY the JSON object. No markdown, no explanation.`;
+// ─── Season ───────────────────────────────────────────────────────────────────
 
-  try {
-    const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [{ parts: [{ text: prompt }] }],
-    });
-
-    const text = response.text ?? '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) {
-      console.warn('analyzeStyleDNA: no JSON object found in response');
-      return null;
-    }
-    const dna = JSON.parse(match[0]) as StyleDNA;
-    console.log(`Style DNA analyzed — aesthetic: ${dna.aesthetic}`);
-    return dna;
-  } catch (err) {
-    console.warn('analyzeStyleDNA failed, will use raw notes:', err);
-    return null;
-  }
-}
-
-// Returns the current Indian climate season based on month.
 function getIndianSeason(date: Date): { season: string; description: string } {
-  const month = date.getMonth() + 1; // 1–12
+  const month = date.getMonth() + 1;
   if (month >= 3 && month <= 5) {
     return { season: 'Summer', description: 'Hot Indian summer (March–May). Prioritise light, breathable fabrics like cotton and linen. Minimal layering. Light colours work well.' };
   }
@@ -92,7 +62,8 @@ function getIndianSeason(date: Date): { season: string; description: string } {
   return { season: 'Winter', description: 'Cool Indian winter (December–February). Light woolens, full sleeves, and layering are appropriate. Fabrics like georgette, crepe, and light knits work well.' };
 }
 
-// Human-readable descriptions for each restriction key.
+// ─── Restrictions ─────────────────────────────────────────────────────────────
+
 const RESTRICTION_RULES: Record<string, string> = {
   no_sleeveless:
     'NO SLEEVELESS — Never include tops, dresses, jumpsuits, or any upper-body piece without sleeves. Every upper-body item must have sleeves (short sleeves are acceptable as a minimum). This applies to every single outfit — no exceptions.',
@@ -100,25 +71,27 @@ const RESTRICTION_RULES: Record<string, string> = {
     'COVER TUMMY — The client prefers to keep her midsection covered and not emphasised. Never include crop tops, short tops, or bodycon / form-fitting silhouettes that cling to the stomach. Always prefer A-line, empire-waist, wrap, or flowy/structured styles that drape away from the midsection. This applies to every single outfit — no exceptions.',
 };
 
+// ─── Colour Rules ─────────────────────────────────────────────────────────────
+
 type Undertone = 'warm' | 'cool' | 'neutral';
 
-// Extract the skin undertone from the visual profile paragraph.
-// The generateVisualProfile prompt explicitly asks for "(warm / cool / neutral)"
-// so these keywords reliably appear in the skin tone sentence.
 function extractUndertone(visualProfile: string): Undertone {
   const text = visualProfile.toLowerCase();
-  // Look for explicit undertone markers first, then broader warm/cool signals
   if (/\bcool[\s-]toned\b|\bcool undertone\b|\b\(cool\)\b/.test(text)) return 'cool';
   if (/\bwarm[\s-]toned\b|\bwarm undertone\b|\b\(warm\)\b/.test(text)) return 'warm';
   if (/\bneutral undertone\b|\b\(neutral\)\b/.test(text)) return 'neutral';
-  // Fallback: single keyword presence in skin description
   if (/\bcool\b/.test(text)) return 'cool';
   if (/\bwarm\b/.test(text)) return 'warm';
   return 'neutral';
 }
 
-// Returns the COLOUR RULES section tailored to the client's undertone.
-// When no visual profile is available, falls back to generic guidance.
+// deep-warm and olive both benefit from warm colour pairings
+function mapDiagnosisToUndertone(undertone: StyleDiagnosis['chromaticHarmony']['undertone']): Undertone {
+  if (undertone === 'cool') return 'cool';
+  if (undertone === 'neutral') return 'neutral';
+  return 'warm';
+}
+
 function buildColourRules(undertone: Undertone | null): string {
   const structure = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COLOUR RULES
@@ -139,7 +112,7 @@ COLOUR HIERARCHY — every outfit must fill all three roles:
     return `${structure}
 
 UNDERTONE: WARM (golden, peachy, yellow-based skin)
-The following combinations make warm-toned skin glow. Match catalog items to these target palettes as closely as possible — use the colour field on each item to guide selection.
+The following combinations make warm-toned skin glow. Build blueprints and match catalog items to these target palettes as closely as possible.
 
   Approved LEAD + SUPPORT combinations (grounding accent goes in accessories):
   - Burgundy + Toffee             → cognac or camel grounding
@@ -165,7 +138,7 @@ The following combinations make warm-toned skin glow. Match catalog items to the
     return `${structure}
 
 UNDERTONE: COOL (pink, blue, or red-based skin)
-The following combinations work with the cool clarity in the skin. Match catalog items to these target palettes as closely as possible.
+The following combinations work with the cool clarity in the skin.
 
   Approved LEAD + SUPPORT combinations (grounding accent goes in accessories):
   - Ivory + Navy                  → grey or nude grounding
@@ -187,7 +160,6 @@ The following combinations work with the cool clarity in the skin. Match catalog
   AVOID: cream, camel, warm beige, rust, terracotta, mustard, saffron — all warm-toned and unflattering on cool skin.`;
   }
 
-  // Neutral undertone or unknown
   return `${structure}
 
 UNDERTONE: NEUTRAL (balanced undertones — can move between warm and cool palettes)
@@ -204,6 +176,350 @@ These combinations sit in the middle ground. Pick one temperature per outfit and
   Anchor neutrals: ivory, cream, white, warm beige, cool grey, navy, camel, slate — all work. Pick a temperature and commit.`;
 }
 
+// ─── Pass 0: Style Diagnosis ──────────────────────────────────────────────────
+
+async function diagnoseStyleProfile(
+  styleNotes: string | null,
+  visualProfile: string | null,
+  measurements: { height_cm?: number; weight_kg?: number; bust_cm?: number; waist_cm?: number; hips_cm?: number }
+): Promise<StyleDiagnosis | null> {
+  if (!styleNotes?.trim() && !visualProfile?.trim()) return null;
+
+  const prompt = `You are a senior fashion analyst at ICONIK Club. Diagnose this client's personal style across exactly three dimensions.
+
+${styleNotes?.trim() ? `CLIENT STYLE NOTES (primary signal for chromatic and disruptor diagnosis):\n"${styleNotes.trim()}"` : ''}
+${visualProfile?.trim() ? `\nCLIENT APPEARANCE PROFILE (primary signal for silhouette diagnosis):\n${visualProfile.trim()}` : ''}
+${measurements.height_cm ? `\nMEASUREMENTS:\n- Height: ${measurements.height_cm} cm\n- Weight: ${measurements.weight_kg ?? 'unknown'} kg\n- Bust: ${measurements.bust_cm ?? 'unknown'} cm\n- Waist: ${measurements.waist_cm ?? 'unknown'} cm\n- Hips: ${measurements.hips_cm ?? 'unknown'} cm` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIMENSION 1 — CHROMATIC HARMONY (undertone read)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Map her colour patterns to one undertone profile:
+
+warm        — Consistently reaches for earthy, golden tones: camel, terracotta, rust, olive, warm ivory, peach, chocolate, warm mustard. Avoids icy or blue-cool tones. Gold hardware dominates.
+cool        — Consistently reaches for crisp, jewel-toned, or blue-based colours: royal blue, burgundy, navy, cool grey, lavender, emerald, plum, icy pink, rose. Avoids yellow-heavy tones. Silver or mixed-metal hardware.
+neutral     — Moves comfortably between warm and cool. Dusty rose, sage green, warm taupe, earthy nudes, soft terracotta, slate blue all appear. Tonal, sophisticated dressing.
+deep-warm   — Dark skin with golden or red undertones. Rich saturated tones: cobalt, emerald, fuchsia, royal purple, warm golds, bright white. Pastels and nude tones wash her out.
+olive       — Yellow-green undertone, medium-deep skin. Earthy richness: burnt orange, forest green, chocolate brown, warm cream, cognac, rust, burgundy. Avoids yellow-greens.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIMENSION 2 — SILHOUETTE PROFILE (body shape read)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Map her body and silhouette choices to one profile:
+
+apple              — Empire cuts, A-line, dark unbroken tones at midsection, structure from shoulder. Avoids natural waist cinching. Fluid fabrics at midsection.
+pear               — Structure above waist (blazers, statement tops, interesting necklines). Bottoms always wide-leg, A-line, or straight. High-waisted. Pointed-toe shoes elongate.
+hourglass          — Wrap styles, belted pieces, follows natural curve. Honours the waist — never hides it. Silk and satin fabrics appear.
+rectangle          — Two-tone dressing that breaks at the waist. Peplum hems, high-waisted wide-leg with tucked top, ruffles or volume at bust or hip. Belts as waist-creators.
+inverted-triangle  — Volume and weight lives below the waist. Full skirts, wide-leg trousers, flared or tiered hems. Avoids detail and structure at the shoulder. Darker tones on top.
+petite             — Monochrome or tonal head-to-toe. High-waisted bottoms always. Cropped blazers, never longline. Pointed-toe shoes always. Avoids heavy layering.
+plus               — Wrap dresses, A-line midi skirts, wide-leg trousers with fitted top. Structured blazer as backbone. Fluid fabrics that drape rather than cling. Monochrome or tonal.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIMENSION 3 — DISRUPTOR STYLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Identify which disruptor category her style naturally uses:
+
+chromatic   — Her unexpected element is always a colour tension: two colours that shouldn't work but do.
+structural  — Her unexpected element is a layer or proportion: a waistcoat instead of a blazer, a longline vest over a dress.
+accessory   — Her unexpected element is always in the finishing detail: a bold bag against a quiet outfit, a statement earring.
+footwear    — Her unexpected element lives specifically in the shoes: trainers with tailored trousers, unexpected heel height or colour.
+
+Return ONLY a valid JSON object with exactly this structure:
+{
+  "chromaticHarmony": {
+    "undertone": "warm" | "cool" | "neutral" | "deep-warm" | "olive",
+    "explanation": "1-2 sentences on which colour patterns led to this read"
+  },
+  "silhouetteProfile": {
+    "bodyShape": "apple" | "pear" | "hourglass" | "rectangle" | "inverted-triangle" | "petite" | "plus",
+    "explanation": "1-2 sentences on which silhouette and proportion choices led to this read"
+  },
+  "disruptorStyle": {
+    "type": "chromatic" | "structural" | "accessory" | "footwear",
+    "explanation": "1-2 sentences on how she creates intentional tension in her looks"
+  },
+  "signatureCodes": ["3-5 short strings — recurring rules that define her personal style, e.g. 'Always pointed-toe heels', 'Structured bag in every outfit', 'Never a belt at natural waist', 'Layer in every outfit'"]
+}
+
+Return ONLY the JSON. No markdown, no explanation.`;
+
+  try {
+    const response = await getAI().models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ parts: [{ text: prompt }] }],
+    });
+    const text = response.text ?? '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) { console.warn('diagnoseStyleProfile: no JSON found'); return null; }
+    const diagnosis = JSON.parse(match[0]) as StyleDiagnosis;
+    console.log(`Style diagnosis — undertone: ${diagnosis.chromaticHarmony.undertone} | body: ${diagnosis.silhouetteProfile.bodyShape} | disruptor: ${diagnosis.disruptorStyle.type}`);
+    return diagnosis;
+  } catch (err) {
+    console.warn('diagnoseStyleProfile failed, proceeding without diagnosis:', err);
+    return null;
+  }
+}
+
+// ─── Pass 1: Ideal Blueprint Generation ───────────────────────────────────────
+
+const SILHOUETTE_BRIEFS: Record<string, string> = {
+  apple:
+    'APPLE — Place structure at the shoulder or upper body. Empire cuts, A-line, wrap, or flowy silhouettes. Avoid anything that cinches or emphasises the natural waist. Dark unbroken tones through the midsection.',
+  pear:
+    'PEAR — Visual interest must live above the waist: structured tops, interesting necklines, blazers. Bottoms are always wide-leg, A-line, or straight-leg — never slim or fitted. High-waisted always. Pointed-toe shoes to elongate.',
+  hourglass:
+    'HOURGLASS — Honour the waist. Wrap styles, belted pieces, fitted or semi-fitted silhouettes. Never hide the waist under volume. Silk and satin appear frequently.',
+  rectangle:
+    'RECTANGLE — Create the illusion of a waist. Two-tone dressing that breaks at the waist. Peplum hems, high-waisted wide-leg with tucked top, belts as waist-creators. Volume at bust or hip.',
+  'inverted-triangle':
+    'INVERTED TRIANGLE — All volume lives below the waist. Full skirts, wide-leg trousers, flared or tiered hems. Avoid structure or detail at the shoulder. Darker, quieter tones on top.',
+  petite:
+    'PETITE — Monochrome or tonal head-to-toe to create vertical length. High-waisted bottoms always. Cropped blazers only — no longline. Pointed-toe shoes always. No heavy layering.',
+  plus:
+    'PLUS — Wrap dresses, A-line midi skirts, wide-leg trousers with fitted tops. Structured blazer as backbone. Fluid fabrics that drape rather than cling. Monochrome or tonal dressing for a clean, elongated read.',
+};
+
+async function generateIdealBlueprints(
+  diagnosis: StyleDiagnosis | null,
+  colourRules: string,
+  activeRestrictions: string[],
+  season: { season: string; description: string },
+  budgetLevel: string | null,
+  styleNotes: string | null
+): Promise<OutfitBlueprint[]> {
+  const restrictionsBlock = activeRestrictions.length > 0
+    ? `⛔ ABSOLUTE RESTRICTIONS — apply to every single blueprint, no exceptions:\n${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}\n\n`
+    : '';
+
+  const BUDGET_FABRIC: Record<string, string> = {
+    high: 'Premium fabrics freely: silk, cashmere, fine wool-blend, high-grade georgette, luxury crepe.',
+    mid:  'Quality but accessible: crepe, ponte, good cotton, georgette, linen-blend. Avoid purely luxury-only materials.',
+    low:  'Accessible fabrics: cotton, linen, cotton-blend, jersey, polyester-blend. Avoid silk or cashmere.',
+  };
+  const budgetNote = budgetLevel ? `Budget — fabric guidance: ${BUDGET_FABRIC[budgetLevel] ?? ''}\n\n` : '';
+
+  const diagnosisBlock = diagnosis
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT STYLE DIAGNOSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHROMATIC HARMONY: ${diagnosis.chromaticHarmony.undertone.toUpperCase()} UNDERTONE
+${diagnosis.chromaticHarmony.explanation}
+
+SILHOUETTE PROFILE: ${diagnosis.silhouetteProfile.bodyShape.toUpperCase()}
+${diagnosis.silhouetteProfile.explanation}
+
+DISRUPTOR STYLE: ${diagnosis.disruptorStyle.type.toUpperCase()} DISRUPTOR
+${diagnosis.disruptorStyle.explanation}
+
+SIGNATURE CODES (honour in every outfit):
+${diagnosis.signatureCodes.map(c => `- ${c}`).join('\n')}
+
+`
+    : styleNotes?.trim()
+      ? `CLIENT STYLE NOTES:\n"${styleNotes.trim()}"\n\n`
+      : '';
+
+  const silhouetteBlock = diagnosis?.silhouetteProfile.bodyShape
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILHOUETTE RULES FOR THIS CLIENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${SILHOUETTE_BRIEFS[diagnosis.silhouetteProfile.bodyShape] ?? ''}
+
+`
+    : '';
+
+  const prompt = `You are a senior fashion stylist at ICONIK Club. Design 6 ideal outfit blueprints for this client — one per occasion. Design freely, as if shopping at any store. Do NOT constrain yourself to any existing catalog.
+
+${restrictionsBlock}${diagnosisBlock}${silhouetteBlock}${colourRules}
+
+Current season: ${season.season}
+${season.description}
+
+${budgetNote}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FOUR MANDATORY PRINCIPLES (every blueprint must satisfy all four)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. SILHOUETTE BALANCE
+   Create visual balance using the body shape logic above. Where the eye travels and what it skips must be intentional.
+
+2. COLOUR CLARITY
+   One colour leads. One colour supports. One colour grounds. There is a clear hierarchy. Maximum 3 colours per outfit. Tonal dressing is preferred — do not mix warm and cool tones in the same look.
+
+3. ONE STRUCTURE PIECE
+   Every outfit has exactly one piece that gives it shape and intention: a blazer, belt, waistcoat, structured bag, tucked hem, or wrap tie. Without it, the outfit reads as an afterthought.
+
+4. FABRIC SPEAKS THE OCCASION
+   Name the fabric for every garment. Use this as a guide:
+   - casual/weekend: linen, cotton, soft jersey, denim
+   - work: crepe, ponte, cotton-blend, tailored fabric, structured twill
+   - evening: satin, silk, lightweight georgette, velvet
+   - formal: chiffon, embroidered fabric, silk-blend, heavy satin
+   - party: metallic, sequin, rich velvet, bold texture
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DISRUPTOR RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Every outfit must include one disruptor element that matches the client's diagnosed disruptor style. It must feel intentional, not accidental. For clients with refined taste, keep it subtle — a colour tension or a footwear break, not a maximalist statement.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WARDROBE COHERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+All 6 blueprints must feel like a coherent wardrobe — not 6 disconnected looks. They must share:
+- A consistent colour story (same palette temperature throughout)
+- A recurring accessory language (e.g. always pointed-toe shoes, always a structured bag)
+- A consistent silhouette logic (proportions stay true to the client's body shape across all occasions)
+Do not introduce colours, silhouettes, or styling codes she has not signalled she likes. Build within her taste.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADDITIONAL RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Hemlines at or below the knee for all skirts and dresses
+- Moderately conservative: no bare shoulders, no backless, no sheer without underlayer
+- If using a dress or jumpsuit as the base, set top and bottom to null
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OCCASIONS (exactly one blueprint per occasion)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+casual   — Relaxed but put-together daywear
+work     — Polished and professional for an Indian metro office
+evening  — Elevated and refined for dinner out or a cocktail event
+weekend  — Stylish but laid-back for brunch or errands
+formal   — Occasion-ready for a wedding guest, gala, or formal Indian event
+party    — Fun and confident for a night out or celebration
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TASK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Create exactly 6 ideal outfit blueprints. Each occasion must appear exactly once.
+
+For every garment description, include: specific colour name, fabric, silhouette/cut, and any defining detail.
+Good example: "High-waist wide-leg trousers, warm camel, ponte fabric, clean unpleated front, floor-grazing length"
+Bad example: "Trousers"
+
+Return ONLY a valid JSON array of exactly 6 objects:
+[
+  {
+    "occasion": "casual",
+    "title": "3-5 word evocative title",
+    "singlePiece": "Full description of dress or jumpsuit OR null if using top+bottom",
+    "top": "Full description OR null if using singlePiece",
+    "layer": "Full description of optional layer OR null",
+    "bottom": "Full description OR null if using singlePiece",
+    "shoes": "Full description — always required",
+    "bag": "Full description OR null",
+    "accessory": "Full description OR null",
+    "disruptor": "Name the disruptor element and one sentence explaining why it works",
+    "colourHierarchy": "LEAD = [colour — piece]. SUPPORT = [colour — piece]. GROUNDING ACCENT = [colour — piece in accessories]",
+    "structurePiece": "Name the structure piece and briefly how it creates shape"
+  }
+]
+
+Return ONLY the JSON array. No markdown, no explanation.`;
+
+  const response = await getAI().models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [{ parts: [{ text: prompt }] }],
+  });
+
+  const text = response.text ?? '';
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error(`No JSON array in blueprint response: ${text.slice(0, 300)}`);
+  const blueprints = JSON.parse(match[0]) as OutfitBlueprint[];
+  if (!Array.isArray(blueprints) || blueprints.length === 0) throw new Error('Invalid blueprints from Gemini');
+  console.log(`Generated ${blueprints.length} ideal blueprints — occasions: ${blueprints.map(b => b.occasion).join(', ')}`);
+  return blueprints;
+}
+
+// ─── Pass 2: Catalog Matching ──────────────────────────────────────────────────
+
+async function matchBlueprintsToItems(
+  blueprints: OutfitBlueprint[],
+  items: FashionItem[],
+  activeRestrictions: string[]
+): Promise<OutfitRecommendation[]> {
+  const catalog = items.map(item => {
+    const entry: Record<string, unknown> = {
+      id: item.id,
+      name: item.item_name,
+      category: item.category,
+    };
+    if (item.color?.length) entry.color = item.color;
+    if (item.material?.length) entry.material = item.material;
+    if (item.price != null) entry.price = item.price;
+    if (item.style_description) entry.description = item.style_description;
+    return entry;
+  });
+
+  const restrictionReminder = activeRestrictions.length > 0
+    ? `⛔ RESTRICTIONS — enforce when matching (reject any catalog item that violates these):\n${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}\n\n`
+    : '';
+
+  const blueprintText = blueprints.map((bp, i) => {
+    const slots = [
+      bp.singlePiece ? `  singlePiece (dress/jumpsuit): "${bp.singlePiece}"` : null,
+      bp.top ? `  top: "${bp.top}"` : null,
+      bp.layer ? `  layer (optional): "${bp.layer}"` : null,
+      bp.bottom ? `  bottom: "${bp.bottom}"` : null,
+      `  shoes (required): "${bp.shoes}"`,
+      bp.bag ? `  bag (optional): "${bp.bag}"` : null,
+      bp.accessory ? `  accessory (optional): "${bp.accessory}"` : null,
+    ].filter(Boolean).join('\n');
+    return `BLUEPRINT ${i + 1} — ${bp.title} [${bp.occasion}]\n${slots}\nColour hierarchy: ${bp.colourHierarchy}\nDisruptor: ${bp.disruptor}\nStructure piece: ${bp.structurePiece}`;
+  }).join('\n\n');
+
+  const prompt = `You are a fashion buyer for ICONIK Club. You have 6 ideal outfit blueprints and a catalog of available inventory. Your job is to shop the catalog — find the closest match for each blueprint slot.
+
+${restrictionReminder}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IDEAL BLUEPRINTS (what we are shopping for)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${blueprintText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AVAILABLE CATALOG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${JSON.stringify(catalog)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MATCHING RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Match by silhouette first, then colour proximity, then fabric weight. Category label is a guide — a blouse can serve as "top", a tailored jacket as "layer", etc.
+2. Colour proximity: "warm camel wide-leg" can be matched by "cream wide-leg trousers" if nothing closer exists. Silhouette match takes priority over exact colour match.
+3. For a singlePiece slot: only match a dress or jumpsuit from the catalog.
+4. For a top+bottom outfit: exactly one top-category item and exactly one bottom/skirt item.
+5. For shoes: always include exactly one shoe item if available in the catalog.
+6. For layer, bag, accessory slots: only include if a genuinely good match exists — it is better to have fewer items than a wrong one. Do not force.
+7. The same item ID must NOT appear in more than 2 outfits across all 6.
+8. Only use item IDs that exist in the catalog above. Do not invent IDs.
+9. Every outfit must have at least 2 items (a base + shoes minimum).
+
+Return ONLY a valid JSON array of exactly 6 objects:
+[
+  {
+    "occasion": "casual",
+    "styleNote": "3-5 word title (use the blueprint title)",
+    "itemIds": ["catalog-id-1", "catalog-id-2", "catalog-id-3"]
+  }
+]
+
+Return ONLY the JSON array. No markdown, no explanation.`;
+
+  const response = await getAI().models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [{ parts: [{ text: prompt }] }],
+  });
+
+  const text = response.text ?? '';
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error(`No JSON array in matching response: ${text.slice(0, 300)}`);
+  const recs = JSON.parse(match[0]) as OutfitRecommendation[];
+  if (!Array.isArray(recs)) throw new Error('Gemini matching did not return an array');
+  console.log(`Catalog matching complete — ${recs.length} outfits matched`);
+  return recs;
+}
+
+// ─── Main Export ──────────────────────────────────────────────────────────────
+
 export async function generateOutfitRecommendations(
   profile: {
     height_cm?: number;
@@ -218,278 +534,59 @@ export async function generateOutfitRecommendations(
   },
   items: FashionItem[]
 ): Promise<OutfitRecommendation[]> {
-  const itemList = items.map(item => {
-    const entry: Record<string, unknown> = {
-      id: item.id,
-      name: item.item_name,
-      category: item.category,
-    };
-    if (item.color?.length) entry.color = item.color;
-    if (item.brand) entry.brand = item.brand;
-    if (item.price != null) entry.price = item.price;
-    if (item.material?.length) entry.material = item.material;
-    if (item.style_description) entry.description = item.style_description;
-    return entry;
-  });
-
-  const { season, description: seasonDescription } = getIndianSeason(new Date());
-
+  const season = getIndianSeason(new Date());
   const activeRestrictions = (profile.style_restrictions ?? []).filter(r => RESTRICTION_RULES[r]);
 
-  // Restrictions block — placed at the very top of the prompt so the model sees them first
-  // and they are not displaced by later context.
-  const restrictionsBlock = activeRestrictions.length > 0
-    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⛔ ABSOLUTE RESTRICTIONS — APPLY TO EVERY OUTFIT, NO EXCEPTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-These rules override every other styling decision. Violating any restriction is not acceptable under any circumstance:
-${activeRestrictions.map(r => `- ${RESTRICTION_RULES[r]}`).join('\n')}
+  // ── Pass 0: Diagnose style profile ────────────────────────────────────────
+  const diagnosis = await diagnoseStyleProfile(
+    profile.style_notes ?? null,
+    profile.visual_profile ?? null,
+    {
+      height_cm: profile.height_cm,
+      weight_kg: profile.weight_kg,
+      bust_cm: profile.bust_cm,
+      waist_cm: profile.waist_cm,
+      hips_cm: profile.hips_cm,
+    }
+  );
 
-`
-    : '';
-
-  // Pass 1 — analyse style notes into structured DNA (runs in parallel with nothing else yet)
-  const styleDNA = profile.style_notes?.trim()
-    ? await analyzeStyleDNA(profile.style_notes.trim())
-    : null;
-
-  // Style DNA block — uses the analysed DNA when available, falls back to raw notes
-  const styleNotesBlock = profile.style_notes?.trim()
-    ? styleDNA
-      ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CLIENT STYLE DNA (analysed from her references — this is who she is as a dresser)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-AESTHETIC IDENTITY: ${styleDNA.aesthetic}
-
-SILHOUETTE LANGUAGE: ${styleDNA.silhouette}
-
-COLOUR STORY: ${styleDNA.colourStory}
-
-FABRIC & TEXTURE: ${styleDNA.fabricTexture}
-
-HOW SHE STYLES: ${styleDNA.stylingSignals}
-
-WHAT TO AVOID: ${styleDNA.avoid}
-
-HOW THIS TRANSLATES ACROSS OCCASIONS:
-${styleDNA.occasionTranslation}
-
-Original client notes (for reference):
-"${profile.style_notes.trim()}"
-
-CRITICAL INSTRUCTION: Every outfit must feel like it belongs to THIS client's aesthetic identity — not a generic version of the occasion. Use the DNA above as the creative brief. The occasion brief below defines the context; the DNA defines the character.
-If the notes reference specific outfits or looks, study why she likes them — the silhouette logic, the colour balance, the proportion play — and reproduce that reasoning with the available catalog items, not just the surface details.
-Per-occasion direction in the DNA takes absolute priority over the default occasion briefs.
-
-`
-      : `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CLIENT STYLE NOTES (primary signal — read carefully)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-The client's own words:
-"${profile.style_notes.trim()}"
-
-How to apply these notes:
-1. Extract the client's overall aesthetic and apply it as the baseline across all 6 outfits.
-2. If the notes mention specific outfits or looks, understand WHY she likes them — the silhouette, the colour balance, the proportion — and reproduce that logic with the available catalog items.
-3. If the notes mention a specific occasion by name, that preference OVERRIDES the default occasion brief below.
-4. Per-occasion instructions take absolute priority over the OCCASION BRIEFS section.
-
-`
-    : '';
-
-  // Visual profile block — AI-generated appearance description from client photos
-  const visualProfileBlock = profile.visual_profile?.trim()
-    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CLIENT APPEARANCE PROFILE (generated from client photos)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${profile.visual_profile.trim()}
-
-Use this to:
-- Recommend colours that flatter this specific skin tone and undertone
-- Select silhouettes and proportions suited to this body shape and build
-- Ensure fit language matches the client's frame (e.g. avoid overwhelming a petite frame with oversized volumes)
-
-`
-    : '';
-
-  // Derive undertone from visual profile and build dynamic colour rules
-  const undertone: Undertone | null = profile.visual_profile?.trim()
-    ? extractUndertone(profile.visual_profile)
-    : null;
+  // Derive undertone: from diagnosis if available, else parse visual profile text
+  let undertone: Undertone | null = null;
+  if (diagnosis) {
+    undertone = mapDiagnosisToUndertone(diagnosis.chromaticHarmony.undertone);
+  } else if (profile.visual_profile?.trim()) {
+    undertone = extractUndertone(profile.visual_profile);
+  }
   const colourRules = buildColourRules(undertone);
 
-  // Budget block — controls which price tier of items to prioritise
-  const BUDGET_GUIDANCE: Record<string, string> = {
-    high: 'BUDGET: High — No price constraint. Select the best item for each slot in the outfit regardless of cost. Prioritise quality, craftsmanship, and luxury. Price is not a filtering criterion.',
-    mid:  'BUDGET: Mid — The client is value-conscious but willing to invest in key pieces. Prefer mid-range items. Avoid the most expensive option in the catalog unless it is clearly the best fit with no suitable alternative. Strike a balance between quality and cost.',
-    low:  'BUDGET: Low — Budget-conscious. Always prefer the most affordable item that still works well for the outfit. When two items are equally suitable, choose the lower-priced one. Avoid premium-priced items unless no other option fits the occasion or outfit structure.',
-  };
-  const budgetBlock = profile.budget_level && BUDGET_GUIDANCE[profile.budget_level]
-    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BUDGET LEVEL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${BUDGET_GUIDANCE[profile.budget_level]}
-The catalog includes a price field for each item — use it to make budget-aligned decisions across all 6 outfits.
+  // ── Pass 1: Generate ideal outfit blueprints ──────────────────────────────
+  const blueprints = await generateIdealBlueprints(
+    diagnosis,
+    colourRules,
+    activeRestrictions,
+    season,
+    profile.budget_level ?? null,
+    profile.style_notes ?? null
+  );
 
-`
-    : '';
+  // ── Pass 2: Match blueprints to catalog items ─────────────────────────────
+  const recs = await matchBlueprintsToItems(blueprints, items, activeRestrictions);
 
-  // Restriction reminder used in the final verification step
-  const restrictionReminder = activeRestrictions.length > 0
-    ? `\n⛔ RE-CHECK RESTRICTIONS on every outfit before returning:\n${activeRestrictions.map(r => `   - ${RESTRICTION_RULES[r]}`).join('\n')}\n`
-    : '';
-
-  const prompt = `You are a senior fashion stylist for Iconik Club, an Indian luxury womenswear brand. Your aesthetic is modern trendy but minimal. Every outfit you build must feel intentional and wearable, not a random assortment of pieces.
-
-${restrictionsBlock}${styleNotesBlock}${visualProfileBlock}${budgetBlock}Client measurements:
-- Height: ${profile.height_cm ?? 'unknown'} cm
-- Weight: ${profile.weight_kg ?? 'unknown'} kg
-- Bust: ${profile.bust_cm ?? 'unknown'} cm
-- Waist: ${profile.waist_cm ?? 'unknown'} cm
-- Hips: ${profile.hips_cm ?? 'unknown'} cm
-
-Current season: ${season}
-${seasonDescription}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OUTFIT STRUCTURE RULES (non-negotiable)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Every outfit is built from these slots:
-
-BASE (required — exactly one of these combinations):
-  Option A — Single piece: one dress or jumpsuit worn alone as the full base
-  Option B — Two-piece base: one top + one bottom (skirt or trousers). NEVER two bottoms together.
-  A single piece and a separate bottom must NEVER be combined.
-
-LAYER (optional — maximum one):
-  Any item from the catalog can serve as a layer, regardless of its category label. Category is just a filing system — it does not define whether a piece can be worn over something else. Use your judgment as a stylist:
-  - A blazer layered over a slip dress
-  - A shirt worn open over a fitted top
-  - A structured vest over a knit
-  - A longline coat over wide-leg trousers
-  - A printed scarf tied as a top layer
-  - A denim jacket over a flowy skirt
-  If an item in the catalog could realistically be worn over the base outfit and adds to the look, it is a valid layer. Do not restrict layering to items tagged "outerwear".
-
-SHOES (required — exactly one pair): Always include footwear.
-
-BAG (optional — maximum one): Include only if it genuinely completes the look.
-
-ACCESSORY (optional — maximum one): Include only if it adds the character the outfit needs.
-
-Total items per outfit: 2–6. The layer, bag, and accessory slots are optional additions — use them when they improve the outfit, not as obligation.
-
-${colourRules}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ITEM REUSE LIMITS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- The same item ID must NOT appear in more than 2 outfits across the full set of 6.
-- Prioritise variety — spread items across outfits so the wardrobe feels diverse, not repetitive.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OCCASION BRIEFS (defaults — overridden by client style notes above if applicable)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-casual   — Relaxed but put-together. Think effortless daywear: a clean top with well-fitted trousers or a simple midi dress. Comfortable fabrics (cotton, linen, jersey). No eveningwear fabrics.
-work     — Polished and professional for an Indian metro office. Structured silhouettes: tailored trousers, blazers, midi skirts, shirts. Smart fabrics (crepe, cotton-blend). Nothing bodycon, nothing sheer.
-evening  — Elevated and refined for a dinner out or cocktail event. Silk, georgette, or satin pieces. One statement element (a draped top, a midi skirt in a rich tone). Understated glamour — not party-loud.
-weekend  — Stylish but laid-back. Relaxed-fit pieces the client would genuinely wear to brunch or shopping: wide-leg trousers, a breezy top, loafers or clean sneakers. Comfortable yet visually coherent.
-formal   — Occasion-ready for a wedding guest, gala, or formal Indian event. Full-length or midi silhouettes in luxurious fabrics (chiffon, satin, embroidered). Coordinated and complete-looking.
-party    — Fun and confident for a night out or celebration. Bolder colour or texture than evening — a metallic, a rich jewel tone, or a statement silhouette. Still minimal in layering; avoid over-accessorising.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STYLING PRINCIPLES — apply all six to every outfit
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-These are what separate a styled outfit from a dressed one. Each principle is mandatory — not optional flourish.
-
-FOUNDATION (always apply)
-- Modern and minimal: if an item does not add to the outfit, leave it out.
-- One focal "hero" piece per outfit — everything else supports it quietly.
-- Fit and proportion: pair oversized/relaxed tops with fitted bottoms, or fitted tops with wider-leg bottoms — never loose + loose.
-
-1. PRINT AGAINST PLAIN
-   If the hero piece is solid, at least one supporting piece must introduce pattern or texture. A stripe shirt against a white skirt. A floral blouse against camel trousers. An abstract print scarf against a plain blazer. Two flat solids together with no texture break makes an outfit die — never allow this combination.
-
-2. BELT AS ARCHITECTURE
-   Belting is silhouette engineering, not decoration. A belt signals that the waist was considered — not that pieces were just thrown together. Apply it across all occasion types where a belt exists in the catalog: belted over a blazer, wide belt over a tucked knit, chain belt over a flowy skirt. When in doubt, belt it.
-
-3. LAYERING WITH OPINION
-   When adding an outer layer, it must have its own strong silhouette — not just a cardigan. A biker jacket, oversized blazer, structured vest, or longline coat. The layer should feel like it has a point of view and could stand alone. This principle applies to office, casual, and occasion wear equally — not just casual looks.
-
-4. CONSIDERED COLOUR LOGIC
-   The accent or disruptor colour must feel chosen, not defaulted to. Always pick the more considered version: powder blue over navy, burgundy over maroon, rust over orange, olive over standard green. For this client's Indian skin tone specifically, jewel tones (emerald, sapphire, deep burgundy, amber) and earthy saturated shades (terracotta, rust, deep olive, saffron) will always outperform safe muted ones — prioritise these whenever the catalog allows.
-
-5. THE CHARACTER ACCESSORY
-   Every outfit should include one accessory that gives the look personality — not just completion. A printed neck scarf. A wide statement belt. A woven or textured bag. A chunky chain. Stacked rings. This is the difference between "dressed" and "styled." When the catalog contains such a piece and the occasion allows it, always include it.
-
-6. UNEXPECTED FOOTWEAR
-   The shoe should create a small, deliberate surprise that signals the aesthetic. Woven mary janes with a formal skirt. Ankle boots with a flowy hem. Chunky loafers with something delicate and feminine. Never default to the obvious safe shoe — choose the one that makes the outfit feel considered and complete.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-AVAILABLE CATALOG
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${JSON.stringify(itemList)}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TASK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Create EXACTLY 6 outfits — one per occasion (casual, work, evening, weekend, formal, party). Each occasion must appear exactly once. Only use item IDs that exist in the catalog above.
-
-Before returning, verify every outfit against ALL of the following:
-- Each outfit has a valid base (single-piece OR top + one bottom — never two bottoms, never single-piece + separate bottom)
-- Each outfit includes footwear
-- No item ID appears in more than 2 outfits
-- Any layering piece is something that could realistically be worn over the base — category label is irrelevant, wearability is the test
-- Client style notes and DNA have been applied — especially any per-occasion preferences${restrictionReminder}
-Return ONLY a valid JSON array with exactly 6 objects. Each object must have:
-- itemIds: array of item ID strings from the catalog
-- occasion: exactly one of "casual", "work", "evening", "weekend", "formal", "party"
-- styleNote: 3–5 word editorial headline for the outfit (e.g. "Effortless Weekend Ease", "Sharp Boardroom Power", "Evening Drama in Ivory") — no full sentences, no punctuation at the end
-
-Return ONLY the JSON array, no markdown, no explanation.`;
-
-  const response = await getAI().models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: [{ parts: [{ text: prompt }] }],
-  });
-
-  const text = response.text ?? '';
-
-  // Extract the JSON array robustly — works regardless of markdown fences or extra text
-  const arrayMatch = text.match(/\[[\s\S]*\]/);
-  if (!arrayMatch) {
-    throw new Error(`No JSON array found in Gemini response: ${text.slice(0, 300)}`);
-  }
-
-  let recs: OutfitRecommendation[];
-  try {
-    recs = JSON.parse(arrayMatch[0]);
-  } catch {
-    throw new Error(`Gemini returned unparseable JSON: ${arrayMatch[0].slice(0, 300)}`);
-  }
-
-  if (!Array.isArray(recs)) throw new Error('Gemini did not return an array');
-
-  // Validate item IDs exist in our catalog
+  // ── Validation: structural guards ─────────────────────────────────────────
   const validIds = new Set(items.map(i => i.id));
   const itemById = new Map(items.map(i => [i.id, i]));
-
-  // Single-piece categories — a dress/jumpsuit is its own bottom layer
   const SINGLE_PIECE_CATS = new Set(['dress', 'jumpsuit']);
-  // Separate bottom categories — only one allowed per outfit
   const BOTTOM_CATS = new Set(['bottom', 'skirt']);
 
   const validated = recs.slice(0, 6).map(rec => {
     let ids: string[] = (rec.itemIds ?? []).filter(id => validIds.has(id));
 
-    // Guard: remove duplicate bottoms — keep only the first bottom/skirt found,
-    // and drop any separate bottom if a single-piece (dress/jumpsuit) is present.
+    // Drop separate bottoms if a single-piece (dress/jumpsuit) is in the outfit
     const hasSinglePiece = ids.some(id => SINGLE_PIECE_CATS.has(itemById.get(id)?.category ?? ''));
     if (hasSinglePiece) {
-      // Drop all separate bottoms — dress/jumpsuit is the bottom layer
       ids = ids.filter(id => !BOTTOM_CATS.has(itemById.get(id)?.category ?? ''));
     } else {
-      // Keep only the first bottom/skirt, remove subsequent ones
+      // Keep only the first bottom/skirt, remove duplicates
       let bottomSeen = false;
       ids = ids.filter(id => {
         if (BOTTOM_CATS.has(itemById.get(id)?.category ?? '')) {
@@ -503,7 +600,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
     return { ...rec, itemIds: ids };
   });
 
-  // Ensure every outfit has footwear — inject a shoe if the AI forgot
+  // Inject a shoe if the AI forgot to include one
   const shoeItems = items.filter(i => i.category === 'shoes');
   if (shoeItems.length > 0) {
     for (const rec of validated) {

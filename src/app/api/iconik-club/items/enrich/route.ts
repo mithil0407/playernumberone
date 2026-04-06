@@ -21,12 +21,15 @@ export async function POST(request: NextRequest) {
 
   const supabase = createSupabaseAdminServerClient();
 
-  // Fetch all items without a style_description
+  const url = new URL(request.url);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '20', 10), 50);
+
+  // Fetch next batch of items without a style_description
   const { data: items, error: fetchError } = await supabase
     .from('fashion_items')
     .select('id, item_name, image_url, raw_description')
     .is('style_description', null)
-    .eq('status', 'active');
+    .limit(limit);
 
   if (fetchError) {
     console.error('Enrich fetch error:', fetchError);
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!items || items.length === 0) {
-    return NextResponse.json({ message: 'All active items already have a style_description', enriched: 0, failed: 0 });
+    return NextResponse.json({ message: 'All items already have a style_description — nothing to do.', enriched: 0, failed: 0, remaining: 0 });
   }
 
   let enriched = 0;
@@ -66,10 +69,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Count how many are still pending after this batch
+  const { count: remaining } = await supabase
+    .from('fashion_items')
+    .select('id', { count: 'exact', head: true })
+    .is('style_description', null);
+
   return NextResponse.json({
-    message: `Enrichment complete. ${enriched} succeeded, ${failures.length} failed.`,
+    message: `Batch complete. ${enriched} succeeded, ${failures.length} failed. ${remaining ?? '?'} items still pending.`,
     enriched,
     failed: failures.length,
     failures,
+    remaining: remaining ?? null,
   });
 }
