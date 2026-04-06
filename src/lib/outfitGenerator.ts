@@ -228,6 +228,7 @@ export async function generateOutfitRecommendations(
     if (item.brand) entry.brand = item.brand;
     if (item.price != null) entry.price = item.price;
     if (item.material?.length) entry.material = item.material;
+    if (item.style_description) entry.description = item.style_description;
     return entry;
   });
 

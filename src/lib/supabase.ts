@@ -285,6 +285,7 @@ export interface FashionItem {
   currency?: string;
   size_availability?: string[];
   purchase_link?: string;
+  style_description?: string;
   image_url: string;
   ai_confidence?: number;
   ai_raw_response?: Record<string, unknown>;
