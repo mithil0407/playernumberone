@@ -120,89 +120,88 @@ function extractUndertone(visualProfile: string): Undertone {
 // Returns the COLOUR RULES section tailored to the client's undertone.
 // When no visual profile is available, falls back to generic guidance.
 function buildColourRules(undertone: Undertone | null): string {
-  const base = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const structure = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COLOUR RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STRUCTURE (applies always):
-- Maximum 3 distinct colours per outfit — 2 is ideal for a clean minimal look.
-- Build each outfit around ONE dominant neutral on the largest piece, ONE secondary tone on the mid piece, and let the shoe either echo the neutral or introduce a controlled third tone.
+STRUCTURE (applies to every outfit):
+- Maximum 3 distinct colours per outfit. 2 is ideal.
 - Never combine two bold or printed pieces — one statement item, everything else quiet.
-- Tonal dressing (different shades of the same colour family) is strongly preferred over high-contrast mixing. Example: ivory blouse + cream wide-leg trouser + tan loafer reads richer than white + black + brown.
-- Metallics (gold, silver) count as a neutral for evening and formal outfits only.`;
+- Tonal dressing (different shades of the same colour family) is strongly preferred over high-contrast mixing.
+- Metallics (gold, silver) count as a neutral for evening and formal outfits only.
+
+COLOUR HIERARCHY — every outfit must fill all three roles:
+  LEAD — gives the outfit its character. Usually the richer or darker tone. Sits in the structure piece (blazer, top, waistcoat) or the top half.
+  SUPPORT — carries the larger or more voluminous piece (wide-leg trousers, midi skirt, dress base). Usually the neutral.
+  GROUNDING ACCENT — a tan, cognac, or warm neutral in the accessories (bag, shoes, belt) that stops the outfit feeling unfinished. Shifts to grey or nude for cool-undertone outfits. Must be present in almost every outfit.
+  If any of the three roles is unfilled, the outfit will feel incomplete — always check before returning.`;
 
   if (undertone === 'warm') {
-    return `${base}
+    return `${structure}
 
-UNDERTONE: WARM — this client has warm undertones (golden, olive, or yellow-based). The following is mandatory colour guidance:
+UNDERTONE: WARM (golden, peachy, yellow-based skin)
+The following combinations make warm-toned skin glow. Match catalog items to these target palettes as closely as possible — use the colour field on each item to guide selection.
 
-Neutrals to anchor outfits (use these as the dominant piece):
-  Ivory, cream, camel, warm beige, warm taupe, chocolate brown, off-white, warm stone.
-  AVOID: stark white, cool grey, icy silver — these fight warm skin and look ashy.
+  Approved LEAD + SUPPORT combinations (grounding accent goes in accessories):
+  - Burgundy + Toffee             → cognac or camel grounding
+  - Khaki + Army Green            → ivory bridge piece if needed
+  - Rust + Off-white              → tan or cognac grounding
+  - Forest Green + Sand           → warm brown grounding
+  - Chocolate + Peach             → warm ivory or cream grounding
+  - Moss Green + Cream            → camel or tan grounding
+  - Saddle Brown + Wheat          → cognac grounding
+  - Olive + Warm Wheat            → tan grounding
+  - Deep Red + Burlywood          → warm brown grounding
+  - Burgundy + Burnt Sienna       → ivory bridge (both warm-red family)
+  - Burnt Orange + Dark Gold      → cream or sand grounding
+  - Dark Espresso + Peach         → warm ivory grounding
+  - Cognac + Warm Linen           → tan grounding
+  - Dark Olive + Caramel          → warm cream grounding
 
-Accent colours that will flatter (use on the secondary or statement piece):
-  Terracotta, rust, saffron, mustard, warm olive, burnt sienna, brick red, cognac, warm burgundy.
-  These are the colours that glow against warm skin — always prioritise them when available in the catalog.
-
-Jewel tones that work for evening/formal:
-  Amber, warm emerald (yellow-green undertone), deep teal, rich gold, deep coral.
-
-What to avoid as accent colours:
-  Icy pastels (ice blue, lavender, mint), cobalt blue, neon pink, silver metallics — all cool-toned and unflattering on warm skin.
-
-Occasion colour logic:
-  Casual/weekend: cream or camel base + rust or olive accent.
-  Work: warm beige or ivory base + warm burgundy or chocolate as the second tone.
-  Evening/formal: rich amber, terracotta, or deep warm olive — or a full tonal warm-neutral build.
-  Party: bold jewel with warm bias — amber, deep coral, burnt orange-red.`;
+  Anchor neutrals (dominant piece): ivory, cream, camel, warm beige, warm taupe, chocolate brown, off-white, warm stone.
+  AVOID: stark white, cool grey, icy silver, cobalt blue, lavender, mint — all fight warm skin.`;
   }
 
   if (undertone === 'cool') {
-    return `${base}
+    return `${structure}
 
-UNDERTONE: COOL — this client has cool undertones (pink, red, or blue-based). The following is mandatory colour guidance:
+UNDERTONE: COOL (pink, blue, or red-based skin)
+The following combinations work with the cool clarity in the skin. Match catalog items to these target palettes as closely as possible.
 
-Neutrals to anchor outfits (use these as the dominant piece):
-  Pure white, black, cool grey, slate, navy, charcoal, cool stone.
-  AVOID: cream, camel, warm beige, warm brown — these clash with cool skin and look muddy.
+  Approved LEAD + SUPPORT combinations (grounding accent goes in accessories):
+  - Ivory + Navy                  → grey or nude grounding
+  - Sage Green + Grey             → cream bridge if needed
+  - Burgundy + Black              → grey or silver grounding
+  - Stone Blue + Ivory            → slate or grey grounding
+  - Denim Blue + Taupe            → ivory bridge
+  - Steel Blue + Light Grey       → white or ivory grounding
+  - Slate Purple + Ivory          → nude or grey grounding
+  - Sea Green + Off-white         → grey or nude grounding
+  - Burgundy + Silver Grey        → ivory grounding
+  - Midnight Navy + Powder Blue   → white grounding
+  - Deep Plum + Lavender          → nude or ivory grounding
+  - Charcoal + Dusty Blue         → ivory bridge (two muted cools)
+  - Teal + Ivory                  → grey grounding
+  - Slate Blue + Pale Grey        → ivory bridge
 
-Accent colours that will flatter (use on the secondary or statement piece):
-  Sapphire blue, emerald (blue-green undertone), ruby red, cool burgundy, amethyst, cobalt, rose, cool mauve.
-  These are the colours that sharpen and elevate cool skin — always prioritise when available.
-
-Jewel tones that work for evening/formal:
-  Deep sapphire, emerald, plum, cool ruby, midnight navy, icy silver.
-
-What to avoid as accent colours:
-  Orange-based tones (rust, terracotta, mustard, saffron), warm brown, coral — all warm-toned and unflattering on cool skin.
-
-Occasion colour logic:
-  Casual/weekend: white or cool grey base + sapphire or navy accent.
-  Work: charcoal or navy base + cool burgundy or slate as the second tone.
-  Evening/formal: deep sapphire, emerald, or plum — or full monochromatic cool-neutral build.
-  Party: bold cool jewel — cobalt, ruby, deep amethyst.`;
+  Anchor neutrals (dominant piece): pure white, black, cool grey, slate, navy, charcoal, cool stone.
+  AVOID: cream, camel, warm beige, rust, terracotta, mustard, saffron — all warm-toned and unflattering on cool skin.`;
   }
 
   // Neutral undertone or unknown
-  return `${base}
+  return `${structure}
 
-UNDERTONE: NEUTRAL — this client has balanced undertones and can wear both warm and cool palettes. The following is mandatory colour guidance:
+UNDERTONE: NEUTRAL (balanced undertones — can move between warm and cool palettes)
+These combinations sit in the middle ground. Pick one temperature per outfit and stay within it — do not mix warm and cool tones in the same outfit.
 
-Neutrals to anchor outfits (use these as the dominant piece):
-  Both warm and cool neutrals work — ivory, cream, white, warm beige, cool grey, navy, camel, slate.
-  This is a rare flexibility — use it deliberately, not randomly. Pick one temperature and build the outfit within it.
+  Approved LEAD + SUPPORT combinations (grounding accent goes in accessories):
+  - Warm Taupe + Slate Grey       → cognac or nude grounding
+  - Dusty Rose + White            → nude or blush grounding
+  - Sage + Warm Cream             → tan grounding
+  - Muted Plum + Nude             → grey or taupe grounding
+  - Charcoal + Warm Ivory         → tan or cognac grounding
+  - Olive + Sand Beige            → warm brown grounding
 
-Accent colours that will flatter (use on the secondary or statement piece):
-  Rose, mauve, jade, teal, soft coral, dusty pink, warm olive, muted cobalt.
-  Neutral undertones are flattered by colours that are themselves balanced — neither aggressively warm nor icy cool.
-
-Jewel tones that work for evening/formal:
-  Teal, emerald, rose gold, deep mauve, burgundy, warm navy.
-
-Occasion colour logic:
-  Casual/weekend: pick a temperature (either ivory + olive OR white + slate) and stay within it.
-  Work: neutral-temperature anchor (warm beige or cool grey) + one considered accent.
-  Evening/formal: jewel tone that sits in the middle — teal, deep mauve, warm emerald.
-  Party: go bolder — rich teal, deep rose, or a statement jewel tone.`;
+  Anchor neutrals: ivory, cream, white, warm beige, cool grey, navy, camel, slate — all work. Pick a temperature and commit.`;
 }
 
 export async function generateOutfitRecommendations(
