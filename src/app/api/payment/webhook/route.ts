@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
-import { sendConfirmationEmail, sendMenConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
+import { sendConfirmationEmail, sendManConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -506,8 +506,8 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
         } else {
           try {
             const baseProduct = await getBaseProductFromRazorpayOrder(order.id);
-            const isMenOrder = baseProduct === 'Iconik Men Style Blueprint';
-            const emailFn = isMenOrder ? sendMenConfirmationEmail : sendConfirmationEmail;
+            const isMenOrder = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
+            const emailFn = isMenOrder ? sendManConfirmationEmail : sendConfirmationEmail;
             const emailResult = await emailFn({
               customer_name: existingOrder.customers.name,
               customer_email: existingOrder.customers.email,

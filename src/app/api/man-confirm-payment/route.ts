@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendMenConfirmationEmail } from '@/lib/email';
+import { sendManConfirmationEmail } from '@/lib/email';
 
 // Called client-side after Razorpay's handler fires for international USD /man payments.
 // Updates the order status and sends the confirmation email with USD currency symbol.
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       const addOns = has_outfit_preview ? 'Outfit Preview on You' : (updatedOrder?.add_ons || '');
 
       try {
-        const result = await sendMenConfirmationEmail({
+        const result = await sendManConfirmationEmail({
           customer_name: emailTo.split('@')[0],
           customer_email: emailTo,
           customer_phone: phone,

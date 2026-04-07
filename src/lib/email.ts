@@ -278,7 +278,7 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
 
 // ── Men's Order Confirmation Email ─────────────────────────────────────────
 
-function buildMenEmailHtml(data: ConfirmationEmailData): string {
+function buildManEmailHtml(data: ConfirmationEmailData): string {
   const { customer_email, customer_phone, order_amount, add_ons, payment_id, currency_symbol = '₹' } = data;
   const intakeLink = `https://www.iconik.pro/man/intake?email=${encodeURIComponent(customer_email)}&phone=${encodeURIComponent(customer_phone)}`;
 
@@ -301,7 +301,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Iconik Men's Blueprint is Confirmed!</title>
+  <title>Your Iconik Man Blueprint is Confirmed!</title>
 </head>
 <body style="margin:0; padding:0; background-color:#fdf8f5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fdf8f5; padding: 40px 20px;">
@@ -313,7 +313,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
           <tr>
             <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 40px 32px; text-align:center;">
               <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:700; letter-spacing:-0.5px;">ICONIK</h1>
-              <p style="margin:8px 0 0; color:rgba(255,255,255,0.75); font-size:14px; letter-spacing:2px; text-transform:uppercase;">Men&apos;s Style &amp; Image Consulting</p>
+              <p style="margin:8px 0 0; color:rgba(255,255,255,0.75); font-size:14px; letter-spacing:2px; text-transform:uppercase;">Man Style &amp; Image Consulting</p>
             </td>
           </tr>
 
@@ -331,7 +331,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
             <td style="padding: 28px 40px 0;">
               <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">Hi there,</p>
               <p style="margin:0 0 12px; color:#333; font-size:16px; line-height:1.7;">
-                Thank you for purchasing your <strong>Iconik Men&apos;s Style Blueprint</strong>. Your order is confirmed — and your journey to dressing with intention officially begins now.
+                Thank you for purchasing your <strong>Iconik Man Style Blueprint</strong>. Your order is confirmed — and your journey to dressing with intention officially begins now.
               </p>
             </td>
           </tr>
@@ -343,7 +343,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="padding: 6px 0; border-bottom: 1px solid #f0e8e8; color:#555; font-size:14px;">
-                      <strong style="color:#333;">Service:</strong> Iconik Men&apos;s Style Blueprint
+                      <strong style="color:#333;">Service:</strong> Iconik Man Style Blueprint
                     </td>
                   </tr>
                   ${addOnsHtml}
@@ -406,7 +406,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
           <!-- Footer -->
           <tr>
             <td style="padding: 32px 40px 40px; text-align:center; border-top:1px solid #f0e8e8; margin-top:28px;">
-              <p style="margin:0 0 4px; color:#1a1a2e; font-weight:700; font-size:15px;">ICONIK Men&apos;s Style &amp; Image Consulting</p>
+              <p style="margin:0 0 4px; color:#1a1a2e; font-weight:700; font-size:15px;">ICONIK Man Style &amp; Image Consulting</p>
               <p style="margin:0; color:#999; font-size:13px;">help.iconikfashion@gmail.com</p>
               <p style="margin:16px 0 0; color:#bbb; font-size:12px;">© 2025 ICONIK. All rights reserved.</p>
             </td>
@@ -421,7 +421,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
   `.trim();
 }
 
-export async function sendMenConfirmationEmail(data: ConfirmationEmailData): Promise<{ success: boolean; error?: string }> {
+export async function sendManConfirmationEmail(data: ConfirmationEmailData): Promise<{ success: boolean; error?: string }> {
   try {
     const transporter = getTransporter();
 
@@ -434,15 +434,15 @@ export async function sendMenConfirmationEmail(data: ConfirmationEmailData): Pro
     const info = await transporter.sendMail({
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
-      subject: `Your Iconik Men's Blueprint is Confirmed ✅`,
-      text: `Hi there,\n\nThank you for purchasing your Iconik Men's Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now and your Blueprint will be ready within 24 hours:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
-      html: buildMenEmailHtml(data),
+      subject: `Your Iconik Man Blueprint is Confirmed ✅`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now and your Blueprint will be ready within 24 hours:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
+      html: buildManEmailHtml(data),
     });
 
-    console.log(`Men's confirmation email sent to ${data.customer_email}. Message ID: ${info.messageId}`);
+    console.log(`Man confirmation email sent to ${data.customer_email}. Message ID: ${info.messageId}`);
     return { success: true };
   } catch (error) {
-    console.error('Error sending men\'s confirmation email:', error);
+    console.error('Error sending man confirmation email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

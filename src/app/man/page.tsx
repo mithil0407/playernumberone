@@ -707,7 +707,7 @@ export default function ManLandingPage() {
                         A personal styling session in India costs ₹15,000–50,000+. They give you one day. You forget half of it. You still don&apos;t know your colours or your frame.
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
-                        <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Men&apos;s Blueprint</div>
+                        <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Man Blueprint</div>
                         <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">{isLoading ? '...' : pricing.displayBase}</div>
                         <p className="luxury-body text-luxury-warm-white/70 text-lg">
                             Yours forever. Built on your specific frame, face, and colour profile.

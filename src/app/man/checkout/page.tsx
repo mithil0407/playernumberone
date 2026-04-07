@@ -193,8 +193,8 @@ export default function ManCheckoutPage() {
           key: responseData.key,
           amount: responseData.amount,
           currency: responseData.currency,
-          name: 'ICONIK Men',
-          description: 'ICONIK Men Style Blueprint',
+          name: 'ICONIK Man',
+          description: 'ICONIK Man Style Blueprint',
           image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
           handler: async function (response: RazorpayResponse) {
@@ -282,7 +282,7 @@ export default function ManCheckoutPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link href="/man" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
             <ArrowLeft className="w-5 h-5" />
-            Back to ICONIK Men
+            Back to ICONIK Man
           </Link>
         </div>
       </header>
@@ -317,7 +317,7 @@ export default function ManCheckoutPage() {
           className="text-center mb-6 md:mb-8"
         >
           <h1 className="text-2xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
-            Your Men&apos;s Style Blueprint Starts Now
+            Your Man Style Blueprint Starts Now
           </h1>
           <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
             <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{pricing.displayOriginal}</span>
@@ -377,7 +377,7 @@ export default function ManCheckoutPage() {
                 BEST SELLER
               </div>
               <div className="mb-4">
-                <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Men&apos;s Style Blueprint</h3>
+                <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Man Style Blueprint</h3>
                 <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3">Delivered 1-on-1 by Certified Style &amp; Image Consultants</p>
                 <div className="text-2xl md:text-3xl mb-4">
                   <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{pricing.displayOriginal}</span>
@@ -441,7 +441,7 @@ export default function ManCheckoutPage() {
             <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-5 md:p-6 border border-luxury-cream">
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                  <span>Men&apos;s Style Blueprint</span><span>{pricing.displayBase}</span>
+                  <span>Man Style Blueprint</span><span>{pricing.displayBase}</span>
                 </div>
                 {outfitPreviewAddon && <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70"><span>+ Outfit Preview</span><span>{pricing.displayAddon}</span></div>}
               </div>
