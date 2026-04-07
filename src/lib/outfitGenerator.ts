@@ -447,6 +447,8 @@ async function matchBlueprintsToItems(
     if (item.color?.length) entry.color = item.color;
     if (item.material?.length) entry.material = item.material;
     if (item.price != null) entry.price = item.price;
+    // Prefer structured tags for matching; fall back to prose description
+    if (item.style_tags) entry.tags = item.style_tags;
     if (item.style_description) entry.description = item.style_description;
     return entry;
   });
@@ -483,8 +485,9 @@ ${JSON.stringify(catalog)}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MATCHING RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Match by silhouette first, then colour proximity, then fabric weight. Category label is a guide — a blouse can serve as "top", a tailored jacket as "layer", etc.
-2. Colour proximity: "warm camel wide-leg" can be matched by "cream wide-leg trousers" if nothing closer exists. Silhouette match takes priority over exact colour match.
+1. Each catalog item may include a "tags" object with structured fields (silhouette_type, fit_category, sleeve_type, coverage, occasion_tags, undertone_compatibility, etc.) AND/OR a prose "description". When "tags" is present, use it as the primary matching signal — it is rule-based and precise. Use "description" for additional nuance only.
+2. Match priority: (a) silhouette_type + fit_category from tags, (b) coverage constraints from tags (e.g. arms_covered must satisfy restriction), (c) occasion_tags overlap with blueprint occasion, (d) undertone_compatibility overlap with client undertone, (e) colour proximity, (f) fabric_weight. Category label is a guide — a blouse can serve as "top", a tailored jacket as "layer", etc.
+3. Colour proximity: "warm camel wide-leg" can be matched by "cream wide-leg trousers" if nothing closer exists. Silhouette match takes priority over exact colour match.
 3. For a singlePiece slot: only match a dress or jumpsuit from the catalog.
 4. For a top+bottom outfit: exactly one top-category item and exactly one bottom/skirt item.
 5. For shoes: always include exactly one shoe item if available in the catalog.

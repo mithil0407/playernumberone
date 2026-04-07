@@ -2,6 +2,7 @@
 // Uses the main Supabase project (NEXT_PUBLIC_SUPABASE_URL), men_* tables.
 
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import type { FashionItemStyleTags } from '@/lib/supabase';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ export interface MenFashionItem {
   size_availability?: string[];
   purchase_link?: string;
   style_description?: string;
+  style_tags?: FashionItemStyleTags;
   image_url: string;
   ai_confidence?: number;
   ai_raw_response?: Record<string, unknown>;

@@ -259,6 +259,23 @@ export type ItemCategory =
   | 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes'
   | 'bag' | 'accessory' | 'jumpsuit' | 'skirt' | 'other';
 
+// Structured tags extracted by AI during item ingestion.
+// Used for rule-based catalog matching in Phase 3 outfit generation.
+// Replaces reliance on prose style_description for matching decisions.
+export interface FashionItemStyleTags {
+  silhouette_type: 'A-line' | 'fitted' | 'relaxed' | 'flowy' | 'structured' | 'boxy' | 'tailored' | 'oversized' | 'wrap' | 'sheath' | 'column';
+  length: 'crop' | 'hip' | 'midi' | 'maxi' | 'full' | 'knee' | 'ankle' | 'mini' | null;
+  neckline: 'crew' | 'v-neck' | 'scoop' | 'boat' | 'square' | 'halter' | 'cowl' | 'polo' | 'mandarin' | 'sweetheart' | 'off-shoulder' | 'none' | null;
+  fit_category: 'slim' | 'regular' | 'relaxed' | 'oversized';
+  visual_weight: 'light' | 'medium' | 'heavy';
+  sleeve_type: 'sleeveless' | 'cap' | 'short' | '3-quarter' | 'full' | 'none' | null;
+  coverage: Array<'arms_covered' | 'tummy_covered' | 'tummy_skimming' | 'tummy_exposed' | 'knee_below' | 'knee_above' | 'shoulders_covered' | 'back_covered'>;
+  occasion_tags: Array<'casual' | 'work' | 'evening' | 'weekend' | 'formal' | 'party'>;
+  undertone_compatibility: Array<'warm' | 'cool' | 'neutral' | 'deep-warm' | 'olive'>;
+  fabric_weight: 'light' | 'medium' | 'heavy';
+  pattern: 'solid' | 'stripe' | 'check' | 'floral' | 'abstract' | 'geometric' | 'animal-print' | 'embroidered' | 'textured' | 'printed';
+}
+
 export type ItemStatus = 'active' | 'archived' | 'draft';
 
 export type OutfitOccasion = 'casual' | 'work' | 'evening' | 'weekend' | 'formal' | 'party';
@@ -286,6 +303,7 @@ export interface FashionItem {
   size_availability?: string[];
   purchase_link?: string;
   style_description?: string;
+  style_tags?: FashionItemStyleTags;
   image_url: string;
   ai_confidence?: number;
   ai_raw_response?: Record<string, unknown>;

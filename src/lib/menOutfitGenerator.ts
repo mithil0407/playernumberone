@@ -325,6 +325,8 @@ async function matchBlueprintsToItems(
     if (item.color?.length) entry.color = item.color;
     if (item.material?.length) entry.material = item.material;
     if (item.price != null) entry.price = item.price;
+    // Prefer structured tags for matching; fall back to prose description
+    if (item.style_tags) entry.tags = item.style_tags;
     if (item.style_description) entry.description = item.style_description;
     return entry;
   });
@@ -359,8 +361,9 @@ ${JSON.stringify(catalog)}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MATCHING RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Match by fit and silhouette first, then colour proximity, then fabric weight. Category label is a guide — a tailored shirt can serve as "top", a structured jacket as "layer", etc.
-2. Colour proximity: if ideal says "navy slim trousers" and catalog has "charcoal slim trousers", that is an acceptable match — similar tone family and silhouette.
+1. Each catalog item may include a "tags" object with structured fields (silhouette_type, fit_category, sleeve_type, occasion_tags, undertone_compatibility, etc.) AND/OR a prose "description". When "tags" is present, use it as the primary matching signal — it is rule-based and precise. Use "description" for additional nuance only.
+2. Match priority: (a) silhouette_type + fit_category from tags, (b) occasion_tags overlap with blueprint occasion, (c) undertone_compatibility overlap with client undertone, (d) colour proximity, (e) fabric_weight. Category label is a guide — a tailored shirt can serve as "top", a structured jacket as "layer", etc.
+3. Colour proximity: if ideal says "navy slim trousers" and catalog has "charcoal slim trousers", that is an acceptable match — similar tone family and silhouette.
 3. For top: match a shirt, tshirt, or kurta.
 4. For bottom: match exactly one trouser, jeans, or similar. Never two bottoms.
 5. For shoes: always include exactly one shoe item.

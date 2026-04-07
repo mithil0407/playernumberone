@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import type { FashionItem, ItemCategory } from './supabase';
+import type { FashionItem, FashionItemStyleTags, ItemCategory } from './supabase';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 
@@ -14,6 +14,7 @@ export interface FashionItemAIResult {
   size_availability: string[];
   purchase_link: string | null;
   style_description: string;
+  style_tags: FashionItemStyleTags | null;
   confidence: number; // 0–1
 }
 
@@ -37,6 +38,20 @@ Return ONLY a valid JSON object with these exact fields:
     5. Occasion suitability: which of casual / work / evening / weekend / formal / party does it genuinely suit, and which does it NOT suit?
     6. Season and fabric notes: is the fabric lightweight, medium-weight, or heavy? any weather sensitivity (avoid monsoon, ideal for summer, etc.)?
   Be specific and practical. Use stylist vocabulary. Never say "this item" — name the piece.
+- style_tags: object with structured tags for rule-based outfit matching. Use null for fields that do not apply to this item type (e.g. neckline/sleeve for shoes, length for bags). All enum values are exact strings — do not invent new values.
+  {
+    "silhouette_type": one of: "A-line" | "fitted" | "relaxed" | "flowy" | "structured" | "boxy" | "tailored" | "oversized" | "wrap" | "sheath" | "column",
+    "length": one of: "crop" | "hip" | "midi" | "maxi" | "full" | "knee" | "ankle" | "mini" | null,
+    "neckline": one of: "crew" | "v-neck" | "scoop" | "boat" | "square" | "halter" | "cowl" | "polo" | "mandarin" | "sweetheart" | "off-shoulder" | "none" | null,
+    "fit_category": one of: "slim" | "regular" | "relaxed" | "oversized",
+    "visual_weight": one of: "light" | "medium" | "heavy",
+    "sleeve_type": one of: "sleeveless" | "cap" | "short" | "3-quarter" | "full" | "none" | null,
+    "coverage": array of zero or more: "arms_covered" | "tummy_covered" | "tummy_skimming" | "tummy_exposed" | "knee_below" | "knee_above" | "shoulders_covered" | "back_covered",
+    "occasion_tags": array of one or more: "casual" | "work" | "evening" | "weekend" | "formal" | "party",
+    "undertone_compatibility": array of one or more: "warm" | "cool" | "neutral" | "deep-warm" | "olive",
+    "fabric_weight": one of: "light" | "medium" | "heavy",
+    "pattern": one of: "solid" | "stripe" | "check" | "floral" | "abstract" | "geometric" | "animal-print" | "embroidered" | "textured" | "printed"
+  }
 - confidence: float 0–1 (your confidence in the extraction accuracy)
 
 Rules:
@@ -92,8 +107,84 @@ export async function parseItemWithGemini(
   if (!Array.isArray(parsed.size_availability)) parsed.size_availability = [];
   if (typeof parsed.confidence !== 'number')   parsed.confidence = 0.5;
   if (typeof parsed.style_description !== 'string') parsed.style_description = '';
+  if (parsed.style_tags && typeof parsed.style_tags === 'object') {
+    if (!Array.isArray(parsed.style_tags.coverage)) parsed.style_tags.coverage = [];
+    if (!Array.isArray(parsed.style_tags.occasion_tags)) parsed.style_tags.occasion_tags = [];
+    if (!Array.isArray(parsed.style_tags.undertone_compatibility)) parsed.style_tags.undertone_compatibility = [];
+  } else {
+    parsed.style_tags = null;
+  }
 
   return parsed;
+}
+
+/**
+ * Generate structured style_tags for an existing item using its stored image URL.
+ * Used by the retroactive enrichment endpoint to backfill items ingested before
+ * structured tagging was introduced.
+ *
+ * @param imageUrl       - Public URL of the item image in Supabase Storage
+ * @param itemName       - Name of the item (used as context)
+ * @param rawDescription - Original admin description if available
+ */
+export async function generateStyleTags(
+  imageUrl: string,
+  itemName: string,
+  rawDescription: string
+): Promise<FashionItemStyleTags | null> {
+  const TAGS_PROMPT = `You are a fashion data specialist. Study this clothing item and return ONLY a valid JSON object with structured tags for outfit matching.
+
+Item name: "${itemName}"
+${rawDescription ? `Admin notes: "${rawDescription}"` : ''}
+
+Return this exact JSON shape — use null for fields that do not apply to this item type:
+{
+  "silhouette_type": one of: "A-line" | "fitted" | "relaxed" | "flowy" | "structured" | "boxy" | "tailored" | "oversized" | "wrap" | "sheath" | "column",
+  "length": one of: "crop" | "hip" | "midi" | "maxi" | "full" | "knee" | "ankle" | "mini" | null,
+  "neckline": one of: "crew" | "v-neck" | "scoop" | "boat" | "square" | "halter" | "cowl" | "polo" | "mandarin" | "sweetheart" | "off-shoulder" | "none" | null,
+  "fit_category": one of: "slim" | "regular" | "relaxed" | "oversized",
+  "visual_weight": one of: "light" | "medium" | "heavy",
+  "sleeve_type": one of: "sleeveless" | "cap" | "short" | "3-quarter" | "full" | "none" | null,
+  "coverage": array of zero or more: "arms_covered" | "tummy_covered" | "tummy_skimming" | "tummy_exposed" | "knee_below" | "knee_above" | "shoulders_covered" | "back_covered",
+  "occasion_tags": array of one or more: "casual" | "work" | "evening" | "weekend" | "formal" | "party",
+  "undertone_compatibility": array of one or more: "warm" | "cool" | "neutral" | "deep-warm" | "olive",
+  "fabric_weight": one of: "light" | "medium" | "heavy",
+  "pattern": one of: "solid" | "stripe" | "check" | "floral" | "abstract" | "geometric" | "animal-print" | "embroidered" | "textured" | "printed"
+}
+
+Return ONLY the JSON object. No markdown, no explanation.`;
+
+  const imageRes = await fetch(imageUrl);
+  if (!imageRes.ok) throw new Error(`Failed to fetch image: ${imageUrl}`);
+  const arrayBuffer = await imageRes.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString('base64');
+  const mimeType = imageRes.headers.get('content-type') || 'image/jpeg';
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [
+      {
+        parts: [
+          { inlineData: { mimeType, data: base64 } },
+          { text: TAGS_PROMPT },
+        ],
+      },
+    ],
+  });
+
+  const text = (response.text ?? '').trim();
+  const cleaned = text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+
+  try {
+    const parsed = JSON.parse(cleaned) as FashionItemStyleTags;
+    if (!Array.isArray(parsed.coverage)) parsed.coverage = [];
+    if (!Array.isArray(parsed.occasion_tags)) parsed.occasion_tags = [];
+    if (!Array.isArray(parsed.undertone_compatibility)) parsed.undertone_compatibility = [];
+    return parsed;
+  } catch {
+    console.error('generateStyleTags: failed to parse JSON:', text.slice(0, 200));
+    return null;
+  }
 }
 
 /**
@@ -168,6 +259,7 @@ export function aiResultToFashionItem(
     size_availability: result.size_availability,
     purchase_link: result.purchase_link ?? undefined,
     style_description: result.style_description || undefined,
+    style_tags: result.style_tags ?? undefined,
     image_url: imageUrl,
     ai_confidence: result.confidence,
     ai_raw_response: result as unknown as Record<string, unknown>,
