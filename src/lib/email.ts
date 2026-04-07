@@ -280,6 +280,7 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
 
 function buildMenEmailHtml(data: ConfirmationEmailData): string {
   const { customer_email, customer_phone, order_amount, add_ons, payment_id, currency_symbol = '₹' } = data;
+  const intakeLink = `https://www.iconik.pro/man/intake?email=${encodeURIComponent(customer_email)}&phone=${encodeURIComponent(customer_phone)}`;
 
   const addOnsList = add_ons && add_ons !== 'None' && add_ons !== ''
     ? add_ons.split(',').map(a => a.trim()).filter(Boolean)
@@ -353,7 +354,7 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
                   </tr>
                   <tr>
                     <td style="padding: 6px 0; border-bottom: 1px solid #f0e8e8; color:#555; font-size:14px;">
-                      <strong style="color:#333;">Phone:</strong> +91 ${customer_phone}
+                      <strong style="color:#333;">Phone:</strong> ${customer_phone}
                     </td>
                   </tr>
                   <tr>
@@ -367,68 +368,25 @@ function buildMenEmailHtml(data: ConfirmationEmailData): string {
             </td>
           </tr>
 
-          <!-- Book Session CTA -->
+          <!-- Intake Form CTA -->
           <tr>
             <td style="padding: 28px 40px 0;">
-              <p style="margin:0 0 16px; color:#333; font-size:16px; line-height:1.7;">
-                To get started, book your 1-on-1 stylist call using the link below:
+              <p style="margin:0 0 8px; color:#333; font-size:16px; line-height:1.7;">
+                <strong style="color:#1a1a2e;">One thing stands between you and your Blueprint:</strong> completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.
+              </p>
+              <p style="margin:0 0 20px; color:#333; font-size:16px; line-height:1.7;">
+                Complete your intake form now and your Blueprint will be ready within 24 hours:
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="https://cal.com/iconone-wpnx1q/30min-copy"
+                    <a href="${intakeLink}"
                        style="display:inline-block; background:#1a1a2e; color:#ffffff; text-decoration:none; font-size:16px; font-weight:700; padding:16px 36px; border-radius:50px; letter-spacing:0.3px;">
-                      👉 Schedule Your Stylist Call Here
+                      Complete My Intake Form →
                     </a>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-
-          <!-- Session Policies -->
-          <tr>
-            <td style="padding: 28px 40px 0;">
-              <p style="margin:0 0 16px; color:#333; font-size:16px; font-weight:700;">Please note our session policies:</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding: 12px 0; border-bottom: 1px solid #f5eded; vertical-align:top;">
-                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">⏰ 24-Hour Rescheduling Rule</p>
-                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
-                      You can reschedule your session for free as long as you do so at least 24 hours before your scheduled time.
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 0; border-bottom: 1px solid #f5eded; vertical-align:top;">
-                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">💳 Late Rescheduling</p>
-                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
-                      Changes made within 24 hours of the meeting will incur a <strong>₹399 convenience fee</strong> to book a new slot.
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 0; border-bottom: 1px solid #f5eded; vertical-align:top;">
-                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">🚫 No-Show Policy</p>
-                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
-                      We value our consultants&apos; time. If you miss your scheduled session without prior notice (No-Show), no refunds will be issued, and a <strong>₹399 fee</strong> will apply if you wish to re-book.
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 12px 0; vertical-align:top;">
-                    <p style="margin:0 0 4px; color:#1a1a1a; font-size:15px; font-weight:700;">📋 Preparation</p>
-                    <p style="margin:0; color:#555; font-size:14px; line-height:1.6;">
-                      Be in a quiet space with a stable internet connection. Have a rough sense of your style goals and daily contexts ready — it makes the call sharper.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:16px 0 0; color:#555; font-size:14px; line-height:1.6;">
-                Choose a time when you&apos;re fully available. The more focused the call, the better your Blueprint.
-              </p>
             </td>
           </tr>
 
@@ -471,11 +429,13 @@ export async function sendMenConfirmationEmail(data: ConfirmationEmailData): Pro
       ? ` + ${data.add_ons}`
       : '';
 
+    const intakeLink = `https://www.iconik.pro/man/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
+
     const info = await transporter.sendMail({
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your Iconik Men's Blueprint is Confirmed ✅`,
-      text: `Hi there,\n\nThank you for purchasing your Iconik Men's Style Blueprint${addOnsSuffix}. Your order is confirmed — and your journey to dressing with intention officially begins now.\n\nTo get started, book your 1-on-1 stylist call using the link below:\n👉 Schedule Your Stylist Call Here: https://cal.com/iconone-wpnx1q/30min-copy\n\nPlease note our session policies:\n\n24-Hour Rescheduling Rule: You can reschedule your session for free as long as you do so at least 24 hours before your scheduled time.\n\nLate Rescheduling: Changes made within 24 hours of the meeting will incur a ₹399 convenience fee to book a new slot.\n\nNo-Show Policy: We value our consultants' time. If you miss your scheduled session without prior notice (No-Show), no refunds will be issued, and a ₹399 fee will apply if you wish to re-book.\n\nPreparation: Be in a quiet space with a stable internet connection. Have a rough sense of your style goals and daily contexts ready — it makes the call sharper.\n\nChoose a time when you're fully available. The more focused the call, the better your Blueprint.\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Men's Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now and your Blueprint will be ready within 24 hours:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
       html: buildMenEmailHtml(data),
     });
 
