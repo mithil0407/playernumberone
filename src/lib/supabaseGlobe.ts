@@ -55,6 +55,7 @@ export interface GlobeIntakeSubmission {
     customer_phone?: string;
     photo_fullbody_url?: string;
     photo_headshot_url?: string;
+    // Legacy fields (kept for historical rows)
     frustrations?: string;
     frustrations_custom?: string;
     situations?: string;
@@ -65,6 +66,34 @@ export interface GlobeIntakeSubmission {
     style_outcome?: string;
     style_restrictions?: string;
     hair_type?: string;
+    // Section 1 — Basics
+    primary_goal?: string;
+    style_relationship?: string;
+    dressing_context?: string;
+    location_tier?: string;
+    // Section 2 — Body
+    height_category?: string;
+    body_shape?: string;
+    fat_storage_zone?: string;
+    highlight_zone?: string;
+    minimise_zone?: string;
+    fit_preference?: string;
+    modesty_level?: string;
+    wardrobe_composition?: string;
+    // Section 3 — Colour
+    skin_tone?: string;
+    vein_undertone?: string;
+    white_test?: string;
+    hair_colour?: string;
+    eye_colour?: string;
+    derived_colour_season?: string;
+    // Section 4 — Face
+    face_shape?: string;
+    facial_feature_type?: string;
+    // Section 5 — Style
+    style_goal?: string;
+    visual_style_reference?: string;
+    free_text_note?: string;
     created_at?: string;
 }
 

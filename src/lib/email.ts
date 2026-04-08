@@ -37,16 +37,34 @@ export interface GlobeIntakeNotificationData {
   customer_phone: string;
   photo_fullbody_url?: string;
   photo_headshot_url?: string;
-  frustrations?: string;
-  frustrations_custom?: string;
-  situations?: string;
-  body_insecurities?: string;
-  wardrobe_type?: string;
-  colour_preference?: string;
-  style_aesthetics?: string;
-  style_outcome?: string;
-  style_restrictions?: string;
-  hair_type?: string;
+  // Section 1 — Basics
+  primary_goal?: string;
+  style_relationship?: string;
+  dressing_context?: string;
+  location_tier?: string;
+  // Section 2 — Body
+  height_category?: string;
+  body_shape?: string;
+  fat_storage_zone?: string;
+  highlight_zone?: string;
+  minimise_zone?: string;
+  fit_preference?: string;
+  modesty_level?: string;
+  wardrobe_composition?: string;
+  // Section 3 — Colour
+  skin_tone?: string;
+  vein_undertone?: string;
+  white_test?: string;
+  hair_colour?: string;
+  eye_colour?: string;
+  derived_colour_season?: string;
+  // Section 4 — Face
+  face_shape?: string;
+  facial_feature_type?: string;
+  // Section 5 — Style
+  style_goal?: string;
+  visual_style_reference?: string;
+  free_text_note?: string;
 }
 
 function getTransporter() {
@@ -980,6 +998,9 @@ export async function sendGlobeIntakeNotificationEmail(
     const photoLink = (label: string, url: string | undefined) =>
       url ? `<tr><td style="padding:6px 12px;font-size:13px;color:#555;border-bottom:1px solid #f0e8e8;"><strong style="color:#333;">${label}:</strong></td><td style="padding:6px 12px;font-size:13px;border-bottom:1px solid #f0e8e8;"><a href="${url}" style="color:#c2185b;text-decoration:none;">View Photo →</a></td></tr>` : '';
 
+    const sectionHeader = (title: string) =>
+      `<tr><td colspan="2" style="padding:10px 12px 4px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c2185b;background:#fdf8f5;">${title}</td></tr>`;
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"/><title>New Globe Intake Submission</title></head>
@@ -999,20 +1020,39 @@ export async function sendGlobeIntakeNotificationEmail(
 
 <tr><td style="padding:16px 40px 28px;">
   <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0e8e8;border-radius:10px;overflow:hidden;">
+    ${sectionHeader('Client')}
     ${row('Email', data.customer_email)}
     ${row('Phone', data.customer_phone)}
     ${photoLink('Full Body Photo', data.photo_fullbody_url)}
     ${photoLink('Headshot', data.photo_headshot_url)}
-    ${row('Frustrations', data.frustrations?.replace(/,/g, ', '))}
-    ${row('Custom frustration', data.frustrations_custom)}
-    ${row('Situations', data.situations?.replace(/,/g, ', '))}
-    ${row('Body insecurities', data.body_insecurities?.replace(/,/g, ', '))}
-    ${row('Wardrobe type', data.wardrobe_type)}
-    ${row('Colour preference', data.colour_preference)}
-    ${row('Style aesthetics', data.style_aesthetics?.replace(/,/g, ', '))}
-    ${row('Style outcome', data.style_outcome)}
-    ${row('Coverage / restrictions', data.style_restrictions?.replace(/,/g, ', '))}
-    ${row('Hair type', data.hair_type?.replace(/,/g, ', '))}
+    ${sectionHeader('Section 1 — Basics')}
+    ${row('Primary goal', data.primary_goal)}
+    ${row('Style relationship', data.style_relationship)}
+    ${row('Dressing context', data.dressing_context?.replace(/,/g, ', '))}
+    ${row('Location', data.location_tier)}
+    ${sectionHeader('Section 2 — Body')}
+    ${row('Height', data.height_category)}
+    ${row('Body shape', data.body_shape)}
+    ${row('Fat storage zone', data.fat_storage_zone)}
+    ${row('Highlight zone', data.highlight_zone)}
+    ${row('Minimise zone', data.minimise_zone)}
+    ${row('Fit preference', data.fit_preference)}
+    ${row('Modesty level', data.modesty_level)}
+    ${row('Wardrobe composition', data.wardrobe_composition?.replace(/,/g, ', '))}
+    ${sectionHeader('Section 3 — Colour')}
+    ${row('Skin tone', data.skin_tone)}
+    ${row('Vein undertone', data.vein_undertone)}
+    ${row('White test', data.white_test)}
+    ${row('Hair colour', data.hair_colour)}
+    ${row('Eye colour', data.eye_colour)}
+    ${row('Derived colour season', data.derived_colour_season)}
+    ${sectionHeader('Section 4 — Face')}
+    ${row('Face shape', data.face_shape)}
+    ${row('Facial features', data.facial_feature_type)}
+    ${sectionHeader('Section 5 — Style')}
+    ${row('Style goal', data.style_goal)}
+    ${row('Visual style reference', data.visual_style_reference)}
+    ${row('Client note', data.free_text_note)}
   </table>
 </td></tr>
 
@@ -1031,16 +1071,34 @@ export async function sendGlobeIntakeNotificationEmail(
       `Phone: ${data.customer_phone}\n` +
       (data.photo_fullbody_url ? `Full body photo: ${data.photo_fullbody_url}\n` : '') +
       (data.photo_headshot_url ? `Headshot: ${data.photo_headshot_url}\n` : '') +
-      (data.frustrations ? `Frustrations: ${data.frustrations}\n` : '') +
-      (data.frustrations_custom ? `Custom frustration: ${data.frustrations_custom}\n` : '') +
-      (data.situations ? `Situations: ${data.situations}\n` : '') +
-      (data.body_insecurities ? `Body insecurities: ${data.body_insecurities}\n` : '') +
-      (data.wardrobe_type ? `Wardrobe type: ${data.wardrobe_type}\n` : '') +
-      (data.colour_preference ? `Colour preference: ${data.colour_preference}\n` : '') +
-      (data.style_aesthetics ? `Style aesthetics: ${data.style_aesthetics}\n` : '') +
-      (data.style_outcome ? `Style outcome: ${data.style_outcome}\n` : '') +
-      (data.style_restrictions ? `Coverage/restrictions: ${data.style_restrictions}\n` : '') +
-      (data.hair_type ? `Hair type: ${data.hair_type}\n` : '');
+      `\n--- Section 1: Basics ---\n` +
+      (data.primary_goal ? `Primary goal: ${data.primary_goal}\n` : '') +
+      (data.style_relationship ? `Style relationship: ${data.style_relationship}\n` : '') +
+      (data.dressing_context ? `Dressing context: ${data.dressing_context}\n` : '') +
+      (data.location_tier ? `Location: ${data.location_tier}\n` : '') +
+      `\n--- Section 2: Body ---\n` +
+      (data.height_category ? `Height: ${data.height_category}\n` : '') +
+      (data.body_shape ? `Body shape: ${data.body_shape}\n` : '') +
+      (data.fat_storage_zone ? `Fat storage zone: ${data.fat_storage_zone}\n` : '') +
+      (data.highlight_zone ? `Highlight zone: ${data.highlight_zone}\n` : '') +
+      (data.minimise_zone ? `Minimise zone: ${data.minimise_zone}\n` : '') +
+      (data.fit_preference ? `Fit preference: ${data.fit_preference}\n` : '') +
+      (data.modesty_level ? `Modesty level: ${data.modesty_level}\n` : '') +
+      (data.wardrobe_composition ? `Wardrobe composition: ${data.wardrobe_composition}\n` : '') +
+      `\n--- Section 3: Colour ---\n` +
+      (data.skin_tone ? `Skin tone: ${data.skin_tone}\n` : '') +
+      (data.vein_undertone ? `Vein undertone: ${data.vein_undertone}\n` : '') +
+      (data.white_test ? `White test: ${data.white_test}\n` : '') +
+      (data.hair_colour ? `Hair colour: ${data.hair_colour}\n` : '') +
+      (data.eye_colour ? `Eye colour: ${data.eye_colour}\n` : '') +
+      (data.derived_colour_season ? `Derived colour season: ${data.derived_colour_season}\n` : '') +
+      `\n--- Section 4: Face ---\n` +
+      (data.face_shape ? `Face shape: ${data.face_shape}\n` : '') +
+      (data.facial_feature_type ? `Facial features: ${data.facial_feature_type}\n` : '') +
+      `\n--- Section 5: Style ---\n` +
+      (data.style_goal ? `Style goal: ${data.style_goal}\n` : '') +
+      (data.visual_style_reference ? `Visual style reference: ${data.visual_style_reference}\n` : '') +
+      (data.free_text_note ? `Client note: ${data.free_text_note}\n` : '');
 
     const info = await transporter.sendMail({
       from: `"ICONIK Intake Bot" <${process.env.GMAIL_USER}>`,
