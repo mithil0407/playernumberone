@@ -131,6 +131,7 @@ export async function POST(
           client_id:        profileId,
           occasion:         rec.occasion,
           ai_style_note:    rec.styleNote,
+          ai_blueprint:     rec.blueprint ?? null,
           status:           'generating',
           generation_batch: 1,
         })

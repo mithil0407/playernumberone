@@ -11,6 +11,7 @@ export interface OutfitRecommendation {
   itemIds: string[];
   occasion: OutfitOccasion;
   styleNote: string;
+  blueprint?: OutfitBlueprint;
 }
 
 // ─── Internal Types ───────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ interface StyleDiagnosis {
   signatureCodes: string[];
 }
 
-interface OutfitBlueprint {
+export interface OutfitBlueprint {
   occasion: OutfitOccasion;
   title: string;
   singlePiece: string | null;  // dress or jumpsuit — when set, top+bottom are null
@@ -612,6 +613,12 @@ export async function generateOutfitRecommendations(
         rec.itemIds.push(shoeItems[Math.floor(Math.random() * shoeItems.length)].id!);
       }
     }
+  }
+
+  // Attach the blueprint to each rec so callers can persist/display what Gemini ideally designed
+  const blueprintByOccasion = new Map(blueprints.map(b => [b.occasion, b]));
+  for (const rec of validated) {
+    rec.blueprint = blueprintByOccasion.get(rec.occasion);
   }
 
   return validated;

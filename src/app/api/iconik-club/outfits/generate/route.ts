@@ -130,10 +130,11 @@ export async function POST() {
       const { data: outfitSet, error: insertErr } = await admin
         .from('outfit_sets')
         .insert({
-          client_id: profile.id,
-          occasion: rec.occasion,
-          ai_style_note: rec.styleNote,
-          status: 'generating',
+          client_id:        profile.id,
+          occasion:         rec.occasion,
+          ai_style_note:    rec.styleNote,
+          ai_blueprint:     rec.blueprint ?? null,
+          status:           'generating',
           generation_batch: 1,
         })
         .select()
