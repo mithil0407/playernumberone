@@ -119,10 +119,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-V4126JH4EJ', {
-              page_title: 'ICONIK',
-              page_location: 'https://playernumberone.com'
-            });
+            gtag('config', 'G-V4126JH4EJ');
             gtag('config', 'G-94CVS6PDTF');
           `}
         </Script>
