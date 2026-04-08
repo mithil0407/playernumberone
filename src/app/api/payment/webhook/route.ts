@@ -66,6 +66,12 @@ async function getBaseProductFromRazorpayOrder(razorpayOrderId: string): Promise
   }
 }
 
+function mapProductType(baseProduct: string): string {
+  if (baseProduct === 'Iconik Man Style Blueprint') return 'man_blueprint';
+  if (baseProduct === 'Iconik Man Style Blueprint INTL') return 'man_blueprint_intl';
+  return 'consultation';
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Get the raw body
@@ -248,8 +254,11 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
     }
 
     if (existingOrder) {
-      // Fetch actual add-ons from Razorpay order notes
-      const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
+      // Fetch actual add-ons and base product from Razorpay order notes
+      const [addOnsString, baseProduct] = await Promise.all([
+        getAddOnsFromRazorpayOrder(order_id),
+        getBaseProductFromRazorpayOrder(order_id),
+      ]);
 
       // Update existing order - match your actual schema
       const { error: updateError } = await supabaseAdmin
@@ -260,7 +269,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
           payment_method: method,
           amount: Math.round(amount / 100), // Convert to integer as per your schema
           add_ons: addOnsString,
-          product_type: 'consultation'
+          product_type: mapProductType(baseProduct),
         })
         .eq('razorpay_order_id', order_id);
 
@@ -354,8 +363,11 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
 
     const { order_id, amount, method } = payment;
 
-    // Fetch actual add-ons from Razorpay order notes
-    const addOnsString = await getAddOnsFromRazorpayOrder(order_id);
+    // Fetch actual add-ons and base product from Razorpay order notes
+    const [addOnsString, baseProduct] = await Promise.all([
+      getAddOnsFromRazorpayOrder(order_id),
+      getBaseProductFromRazorpayOrder(order_id),
+    ]);
 
     // Update order status in database for test mode
     const { error: updateError } = await supabaseAdmin
@@ -366,7 +378,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
         payment_method: method,
         amount: Math.round(amount / 100), // Convert to integer as per your schema
         add_ons: addOnsString,
-        product_type: 'consultation'
+        product_type: mapProductType(baseProduct),
       })
       .eq('razorpay_order_id', order_id);
 
@@ -464,6 +476,8 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
       // Fetch actual add-ons from Razorpay order notes
       const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
 
+      const baseProduct = await getBaseProductFromRazorpayOrder(order.id);
+
       // Update order status in database
       const { error: updateError } = await supabaseAdmin
         .from('orders')
@@ -473,7 +487,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           payment_method: payment.method,
           amount: Math.round(order.amount / 100), // Convert to integer as per your schema
           add_ons: addOnsString,
-          product_type: 'consultation'
+          product_type: mapProductType(baseProduct),
         })
         .eq('razorpay_order_id', order.id);
 
@@ -505,7 +519,6 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           console.log('Confirmation email already sent for order:', order.id, '— skipping duplicate');
         } else {
           try {
-            const baseProduct = await getBaseProductFromRazorpayOrder(order.id);
             const isMenOrder = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
             const emailFn = isMenOrder ? sendManConfirmationEmail : sendConfirmationEmail;
             const emailResult = await emailFn({
