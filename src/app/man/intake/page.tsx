@@ -300,8 +300,8 @@ function ManIntakePageInner() {
                 hair_type: form.hairType.join(','),
             });
 
-            // Notify the ICONIK team (fire-and-forget)
-            fetch('/api/man-intake-notify', {
+            // Notify the ICONIK team
+            await fetch('/api/man-intake-notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -319,7 +319,12 @@ function ManIntakePageInner() {
                     style_outcome: form.styleOutcome,
                     hair_type: form.hairType.join(','),
                 }),
-            }).catch(err => console.warn('Man intake notify failed:', err));
+            }).then(async res => {
+                if (!res.ok) {
+                    const text = await res.text().catch(() => '');
+                    console.error('Man intake notify HTTP error:', res.status, text);
+                }
+            }).catch(err => console.error('Man intake notify failed:', err));
 
             trackCompleteRegistration(2499, 'ICONIK Blueprint Man — Intake Submitted', 'INR');
             setDirection(1);
