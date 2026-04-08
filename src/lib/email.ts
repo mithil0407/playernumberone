@@ -65,6 +65,17 @@ export interface GlobeIntakeNotificationData {
   style_goal?: string;
   visual_style_reference?: string;
   free_text_note?: string;
+  // Additional intake fields
+  frustrations?: string;
+  frustrations_custom?: string;
+  situations?: string;
+  body_insecurities?: string;
+  wardrobe_type?: string;
+  colour_preference?: string;
+  style_aesthetics?: string;
+  style_outcome?: string;
+  style_restrictions?: string;
+  hair_type?: string;
 }
 
 function getTransporter() {
