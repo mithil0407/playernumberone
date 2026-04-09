@@ -24,7 +24,6 @@ export interface ManIntakeSubmission {
     highlight_zone?: string;
     minimise_zone?: string;
     fit_preference?: string;
-    modesty_level?: string;
     wardrobe_composition?: string;
     // Section 3 — Colour
     skin_tone?: string;
@@ -36,9 +35,17 @@ export interface ManIntakeSubmission {
     // Section 4 — Face
     face_shape?: string;
     facial_feature_type?: string;
-    // Section 5 — Style
-    style_goal?: string;
-    visual_style_reference?: string;
+    // Section 5 — Style Identity
+    primary_style_goal?: string;
+    branch_answer?: string;
+    style_tribes?: string;
+    style_pole_structure?: string;
+    style_pole_expression?: string;
+    style_pole_tone?: string;
+    style_pole_register?: string;
+    style_blocker?: string;
+    style_anti_pref?: string;
+    style_anti_pref_note?: string;
     free_text_note?: string;
     created_at?: string;
 }
@@ -46,14 +53,15 @@ export interface ManIntakeSubmission {
 // ── Database operations ────────────────────────────────────────────────────
 
 export const saveManIntakeSubmission = async (submission: ManIntakeSubmission) => {
-    const { data, error } = await supabaseMain
-        .from('man_intake_submissions')
-        .insert([submission])
-        .select()
-        .single();
+    const response = await fetch('/api/man-intake-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submission),
+    });
 
-    if (error) throw error;
-    return data;
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to save intake submission');
+    return result.data;
 };
 
 export const uploadManIntakePhoto = async (
