@@ -55,10 +55,10 @@ export async function POST() {
     return NextResponse.json({ message: 'Outfits already generated' });
   }
 
-  // 4. Fetch active men's fashion items
+  // 4. Fetch active men's fashion items (text metadata only — images downloaded per-outfit after selection)
   const { data: items, error: itemsErr } = await admin
     .from('men_fashion_items')
-    .select('*')
+    .select('id, item_name, category, color, material, brand, price, style_description, style_tags, image_url, status, raw_description')
     .eq('status', 'active');
 
   if (itemsErr || !items?.length) {
@@ -70,36 +70,35 @@ export async function POST() {
     }, { status: 422 });
   }
 
-  // 5. Pre-fetch item images
-  const itemImageMap = new Map<string, ImageData>();
-  await Promise.all(
-    items.filter(i => i.image_url).map(async (item) => {
-      const match = item.image_url.match(/\/men-fashion-items\/([^/?]+\.[a-z]+)/i);
-      if (!match) return;
-      const { data } = await admin.storage.from('men-fashion-items').download(match[1]);
-      if (data) {
-        const buf = Buffer.from(await data.arrayBuffer());
-        const ext = match[1].split('.').pop()?.toLowerCase() ?? 'jpg';
-        itemImageMap.set(item.id!, { data: buf.toString('base64'), mimeType: MIME_FOR_EXT[ext] ?? 'image/jpeg' });
-      }
-    })
-  );
-
-  const usableItems = items.filter(i => i.id && itemImageMap.has(i.id));
-  if (usableItems.length < MIN_ITEMS) {
-    return NextResponse.json({
-      error: `Only ${usableItems.length} item(s) have valid images, need at least ${MIN_ITEMS}.`
-    }, { status: 422 });
-  }
-
-  // 6. Generate recommendations via Gemini
+  // 6. Generate recommendations via Gemini using text metadata (no images needed for selection)
   let recommendations;
   try {
-    recommendations = await generateMenOutfitRecommendations(profile, usableItems);
+    recommendations = await generateMenOutfitRecommendations(profile, items);
   } catch (err) {
     console.error('Gemini men outfit generation error:', err);
     return NextResponse.json({ error: 'AI generation failed' }, { status: 500 });
   }
+
+  // Collect unique item IDs across all recommendations, then download only those images once
+  const allSelectedIds = new Set(recommendations.flatMap(r => r.itemIds));
+  const itemImageMap = new Map<string, ImageData>();
+  await Promise.all(
+    items
+      .filter(i => i.id && allSelectedIds.has(i.id) && i.image_url)
+      .map(async (item) => {
+        const match = item.image_url.match(/\/men-fashion-items\/([^/?]+\.[a-z]+)/i);
+        if (!match) return;
+        const { data } = await admin.storage.from('men-fashion-items').download(match[1]);
+        if (data) {
+          const buf = Buffer.from(await data.arrayBuffer());
+          const ext = match[1].split('.').pop()?.toLowerCase() ?? 'jpg';
+          itemImageMap.set(item.id!, { data: buf.toString('base64'), mimeType: MIME_FOR_EXT[ext] ?? 'image/jpeg' });
+        }
+      })
+  );
+  console.log(`Men: downloaded ${itemImageMap.size} images for ${allSelectedIds.size} selected items (catalog has ${items.length})`);
+
+  const usableItems = items.filter(i => i.id && itemImageMap.has(i.id));
 
   // 7. Create outfit sets sequentially (no parallel Gemini image calls)
   let succeeded = 0;

@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') ?? '';
 
     const admin = createSupabaseAdminServerClient();
-    let query = admin.from('men_fashion_items').select('*', { count: 'exact' });
+    // Exclude ai_raw_response and style_tags (large JSON) — only needed on the detail view
+    const LIST_COLUMNS = 'id, item_name, category, color, material, brand, price, currency, size_availability, purchase_link, style_description, image_url, ai_confidence, status, uploaded_by, created_at, updated_at';
+    let query = admin.from('men_fashion_items').select(LIST_COLUMNS, { count: 'exact' });
 
     if (status !== 'all') query = query.eq('status', status);
     if (category)         query = query.eq('category', category);

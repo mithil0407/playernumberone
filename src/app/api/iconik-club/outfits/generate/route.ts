@@ -63,10 +63,10 @@ export async function POST() {
     return NextResponse.json({ message: 'Outfits already generated' });
   }
 
-  // 4. Fetch active fashion items
+  // 4. Fetch active fashion items (text metadata only — images downloaded per-outfit after selection)
   const { data: items, error: itemsErr } = await admin
     .from('fashion_items')
-    .select('*')
+    .select('id, item_name, category, color, material, brand, price, style_description, style_tags, image_url, status, raw_description')
     .eq('status', 'active');
 
   const MIN_ITEMS = 8; // need enough variety to build 6 distinct outfits
@@ -79,46 +79,35 @@ export async function POST() {
     }, { status: 422 });
   }
 
-  // 4b. Pre-fetch all fashion item images from storage (download once, reuse across outfits)
-  const itemImageMap = new Map<string, ImageData>();
-  await Promise.all(
-    items.filter(i => i.image_url).map(async (item) => {
-      // Extract storage key from public URL (e.g. ".../fashion-items/UUID.jpg")
-      const match = item.image_url.match(/\/fashion-items\/([^/?]+\.[a-z]+)/i);
-      if (!match) {
-        console.warn(`Item ${item.id} "${item.item_name}" has invalid image URL: ${item.image_url}`);
-        return;
-      }
-      const { data, error } = await admin.storage.from('fashion-items').download(match[1]);
-      if (data) {
-        const buf = Buffer.from(await data.arrayBuffer());
-        const ext = match[1].split('.').pop()?.toLowerCase() ?? 'jpg';
-        itemImageMap.set(item.id!, { data: buf.toString('base64'), mimeType: MIME_FOR_EXT[ext] ?? 'image/jpeg' });
-      } else {
-        console.warn(`Failed to download item ${item.id} "${item.item_name}":`, error?.message);
-      }
-    })
-  );
-
-  // Only send items with successfully loaded images to the AI —
-  // this prevents the AI from recommending items we can't render.
-  const usableItems = items.filter(i => i.id && itemImageMap.has(i.id));
-  console.log(`Fashion item images loaded: ${itemImageMap.size}/${items.length} — using ${usableItems.length} items for recommendations`);
-
-  if (usableItems.length < MIN_ITEMS) {
-    return NextResponse.json({
-      error: `Only ${usableItems.length} item(s) have valid images, need at least ${MIN_ITEMS}.`
-    }, { status: 422 });
-  }
-
-  // 5. Generate recommendations via Gemini (only usable items with loaded images)
+  // 5. Generate recommendations via Gemini using text metadata (no images needed for selection)
   let recommendations;
   try {
-    recommendations = await generateOutfitRecommendations(profile, usableItems);
+    recommendations = await generateOutfitRecommendations(profile, items);
   } catch (err) {
     console.error('Gemini outfit generation error:', err);
     return NextResponse.json({ error: 'AI generation failed' }, { status: 500 });
   }
+
+  // Collect unique item IDs across all recommendations, then download only those images once
+  const allSelectedIds = new Set(recommendations.flatMap(r => r.itemIds));
+  const itemImageMap = new Map<string, ImageData>();
+  await Promise.all(
+    items
+      .filter(i => i.id && allSelectedIds.has(i.id) && i.image_url)
+      .map(async (item) => {
+        const match = item.image_url.match(/\/fashion-items\/([^/?]+\.[a-z]+)/i);
+        if (!match) return;
+        const { data, error } = await admin.storage.from('fashion-items').download(match[1]);
+        if (data) {
+          const buf = Buffer.from(await data.arrayBuffer());
+          const ext = match[1].split('.').pop()?.toLowerCase() ?? 'jpg';
+          itemImageMap.set(item.id!, { data: buf.toString('base64'), mimeType: MIME_FOR_EXT[ext] ?? 'image/jpeg' });
+        } else {
+          console.warn(`Failed to download item ${item.id} "${item.item_name}":`, error?.message);
+        }
+      })
+  );
+  console.log(`Downloaded ${itemImageMap.size} images for ${allSelectedIds.size} selected items (catalog has ${items.length})`);
 
   // 6. Create outfit sets sequentially — Gemini image generation must not run in parallel.
   // Concurrent requests referencing the same person trigger safety overrides and rate limits,
@@ -142,8 +131,8 @@ export async function POST() {
 
       if (insertErr || !outfitSet) throw new Error('Failed to insert outfit_set');
 
-      // Resolve the actual item rows (only from usable items with loaded images)
-      const outfitItems = usableItems.filter(item => rec.itemIds.includes(item.id!));
+      // Resolve the actual item rows
+      const outfitItems = items.filter(item => rec.itemIds.includes(item.id!));
       const cardItems = outfitItems.map(i => ({
         imageUrl: i.image_url,
         name: i.item_name,

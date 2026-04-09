@@ -45,7 +45,9 @@ export async function GET(_req: NextRequest) {
         .filter(Boolean),
     }));
 
-    return NextResponse.json({ outfits });
+    return NextResponse.json({ outfits }, {
+      headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' },
+    });
   } catch (err) {
     console.error('Men outfits list error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
