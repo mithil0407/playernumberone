@@ -520,6 +520,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
         } else {
           try {
             const isMenOrder = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
+            const isIntl = baseProduct === 'Iconik Man Style Blueprint INTL';
             const emailFn = isMenOrder ? sendManConfirmationEmail : sendConfirmationEmail;
             const emailResult = await emailFn({
               customer_name: existingOrder.customers.name,
@@ -528,6 +529,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
               order_amount: existingOrder.amount,
               add_ons: addOnsString,
               payment_id: payment.id,
+              ...(isIntl ? { currency_symbol: '$' } : {}),
             });
             if (emailResult.success) {
               console.log('Confirmation email sent to:', existingOrder.customers.email);

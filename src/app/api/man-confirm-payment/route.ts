@@ -23,14 +23,11 @@ export async function POST(request: NextRequest) {
 
     let updatedOrder: { customer_email?: string; customer_phone?: string; amount?: number; add_ons?: string } | null = null;
 
+    // Mark as paid (but NOT email_sent yet — we set that only after the email succeeds)
     if (db_order_id && db_order_id !== 'mock-order-id') {
       const { data, error } = await supabaseAdmin
         .from('orders')
-        .update({
-          status: 'paid',
-          razorpay_payment_id,
-          email_sent: true,
-        })
+        .update({ status: 'paid', razorpay_payment_id })
         .eq('id', db_order_id)
         .select()
         .single();
@@ -41,18 +38,14 @@ export async function POST(request: NextRequest) {
     if (!updatedOrder && razorpay_order_id) {
       const { data, error } = await supabaseAdmin
         .from('orders')
-        .update({
-          status: 'paid',
-          razorpay_payment_id,
-          email_sent: true,
-        })
+        .update({ status: 'paid', razorpay_payment_id })
         .eq('razorpay_order_id', razorpay_order_id)
         .select()
         .single();
 
       if (error) {
-        console.error('Man confirm payment (intl) error:', error);
-        // Non-fatal — still send the email below
+        console.error('Man confirm payment (intl) DB error:', error);
+        // Non-fatal — still attempt to send the email below
       } else {
         updatedOrder = data;
       }
@@ -80,6 +73,12 @@ export async function POST(request: NextRequest) {
           console.error('Man INTL confirmation email failed:', result.error);
         } else {
           console.log(`Man INTL confirmation email sent to ${emailTo}`);
+          // Only mark email_sent after the email actually succeeds
+          const idCol = db_order_id && db_order_id !== 'mock-order-id' ? 'id' : 'razorpay_order_id';
+          const idVal = idCol === 'id' ? db_order_id : razorpay_order_id;
+          if (idVal) {
+            await supabaseAdmin.from('orders').update({ email_sent: true }).eq(idCol, idVal);
+          }
         }
       } catch (emailErr) {
         console.error('Man INTL confirmation email threw:', emailErr);
