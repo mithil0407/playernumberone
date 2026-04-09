@@ -9,41 +9,11 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
-        const {
-            customer_email,
-            customer_phone,
-            photo_fullbody_url,
-            photo_headshot_url,
-            frustrations,
-            frustrations_custom,
-            situations,
-            body_concerns,
-            wardrobe_type,
-            colour_preference,
-            style_aesthetics,
-            style_outcome,
-            hair_type,
-        } = body;
-
-        if (!customer_email) {
+        if (!body.customer_email) {
             return NextResponse.json({ error: 'Missing customer_email' }, { status: 400 });
         }
 
-        const result = await sendManIntakeNotificationEmail({
-            customer_email,
-            customer_phone: customer_phone || '',
-            photo_fullbody_url,
-            photo_headshot_url,
-            frustrations,
-            frustrations_custom,
-            situations,
-            body_concerns,
-            wardrobe_type,
-            colour_preference,
-            style_aesthetics,
-            style_outcome,
-            hair_type,
-        });
+        const result = await sendManIntakeNotificationEmail(body);
 
         if (!result.success) {
             console.error('Man intake notification failed:', result.error);

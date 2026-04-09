@@ -301,28 +301,28 @@ const STYLE_TRIBES = [
     {
         context: 'Casual',
         tribes: [
-            { value: 'old_money', label: 'Old Money', image: '/tribes/man-casual-old-money.webp' },
-            { value: 'off_duty', label: 'Off Duty', image: '/tribes/man-casual-off-duty.webp' },
-            { value: 'urban_wear', label: 'Urban Wear', image: '/tribes/man-casual-urban-wear.webp' },
-            { value: 'indian_casual', label: 'Indian Casual', image: '/tribes/man-casual-indian-casual.webp' },
+            { value: 'old_money', label: 'Old Money', image: '/oldmoney.webp' },
+            { value: 'off_duty', label: 'Off Duty', image: '/offduty.webp' },
+            { value: 'urban_wear', label: 'Urban Wear', image: '/urbanwear.webp' },
+            { value: 'indian_casual', label: 'Indian Casual', image: '/indiancasual.webp' },
         ],
     },
     {
         context: 'Formal',
         tribes: [
-            { value: 'power_classic', label: 'Power Classic', image: '/tribes/man-formal-power-classic.webp' },
-            { value: 'new_boardroom', label: 'The New Boardroom', image: '/tribes/man-formal-new-boardroom.webp' },
-            { value: 'dark_romantic', label: 'Dark Romantic', image: '/tribes/man-formal-dark-romantic.webp' },
-            { value: 'indo_authority', label: 'Indo Authority', image: '/tribes/man-formal-indo-authority.webp' },
+            { value: 'power_classic', label: 'Power Classic', image: '/powerclassic.webp' },
+            { value: 'new_boardroom', label: 'The New Boardroom', image: '/boardroom.webp' },
+            { value: 'dark_romantic', label: 'Dark Romantic', image: '/darkromance.webp' },
+            { value: 'indo_authority', label: 'Indo Authority', image: '/indoauthority.webp' },
         ],
     },
     {
         context: 'Evening',
         tribes: [
-            { value: 'quiet_luxury', label: 'Quiet Luxury', image: '/tribes/man-evening-quiet-luxury.webp' },
-            { value: 'sharp_evening', label: 'Sharp Evening', image: '/tribes/man-evening-sharp-evening.webp' },
-            { value: 'royal_edit', label: 'Royal Edit', image: '/tribes/man-evening-royal-edit.webp' },
-            { value: 'classic_evening', label: 'Classic Evening', image: '/tribes/man-evening-classic-evening.webp' },
+            { value: 'quiet_luxury', label: 'Quiet Luxury', image: '/quietluxury.webp' },
+            { value: 'sharp_evening', label: 'Sharp Evening', image: '/sharpevening.webp' },
+            { value: 'royal_edit', label: 'Royal Edit', image: '/royaledit.webp' },
+            { value: 'classic_evening', label: 'Classic Evening', image: '/classicevening.webp' },
         ],
     },
 ];
@@ -551,22 +551,18 @@ function ManIntakePageInner() {
         setSubmitting(true);
         setSubmitError('');
         try {
-            let photoFullBodyUrl = '';
-            let photoHeadshotUrl = '';
-
-            if (form.photoFullBody) {
-                try {
-                    const baseName = form.photoFullBody.name.replace(/\.[^.]+$/, '');
-                    photoFullBodyUrl = await uploadManIntakePhoto(form.photoFullBody, `${Date.now()}_fullbody_${baseName}.jpg`);
-                } catch (err) { console.warn('Full body photo upload failed:', err); }
-            }
-
-            if (form.photoHeadshot) {
-                try {
-                    const baseName = form.photoHeadshot.name.replace(/\.[^.]+$/, '');
-                    photoHeadshotUrl = await uploadManIntakePhoto(form.photoHeadshot, `${Date.now()}_headshot_${baseName}.jpg`);
-                } catch (err) { console.warn('Headshot upload failed:', err); }
-            }
+            // Upload both photos in parallel
+            const ts = Date.now();
+            const [photoFullBodyUrl, photoHeadshotUrl] = await Promise.all([
+                form.photoFullBody
+                    ? uploadManIntakePhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`)
+                        .catch(err => { console.warn('Full body photo upload failed:', err); return ''; })
+                    : Promise.resolve(''),
+                form.photoHeadshot
+                    ? uploadManIntakePhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`)
+                        .catch(err => { console.warn('Headshot upload failed:', err); return ''; })
+                    : Promise.resolve(''),
+            ]);
 
             const derivedColourSeason = deriveColourSeason(
                 form.skinTone,
@@ -576,7 +572,7 @@ function ManIntakePageInner() {
                 form.eyeColour,
             );
 
-            await saveManIntakeSubmission({
+            const submissionPayload = {
                 customer_email: form.email,
                 customer_phone: form.phone,
                 photo_fullbody_url: photoFullBodyUrl,
@@ -611,58 +607,28 @@ function ManIntakePageInner() {
                 style_anti_pref: form.styleAntiPref,
                 style_anti_pref_note: form.styleAntiPrefNote || undefined,
                 free_text_note: form.freeTextNote || undefined,
-            });
+            };
 
-            // Notify the ICONIK team
+            // Move to confirmation immediately — save + notify fire-and-forget
+            trackCompleteRegistration(2499, 'ICONIK Blueprint Man — Intake Submitted', 'INR');
+            setDirection(1);
+            setStep(CONFIRMATION_STEP);
+
+            // Save to DB (background)
+            saveManIntakeSubmission(submissionPayload)
+                .catch(err => console.error('Man intake save error:', err));
+
+            // Notify the ICONIK team (background)
             fetch('/api/man-intake-notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customer_email: form.email,
-                    customer_phone: form.phone,
-                    photo_fullbody_url: photoFullBodyUrl,
-                    photo_headshot_url: photoHeadshotUrl,
-                    primary_goal: form.primaryGoal,
-                    style_relationship: form.styleRelationship,
-                    dressing_context: form.dressingContext.join(','),
-                    location_tier: form.locationTier,
-                    height_category: form.heightCategory,
-                    body_shape: form.bodyShape,
-                    fat_storage_zone: form.fatStorageZone,
-                    highlight_zone: form.highlightZone,
-                    minimise_zone: form.minimiseZone,
-                    fit_preference: form.fitPreference,
-                    wardrobe_composition: form.wardrobeComposition.join(','),
-                    skin_tone: form.skinTone,
-                    vein_undertone: form.veinUndertone,
-                    white_test: form.whiteTest,
-                    hair_colour: form.hairColour,
-                    eye_colour: form.eyeColour,
-                    derived_colour_season: derivedColourSeason,
-                    face_shape: form.faceShape,
-                    facial_feature_type: form.facialFeatureType,
-                    primary_style_goal: form.primaryStyleGoal,
-                    branch_answer: form.branchAnswer,
-                    style_tribes: form.styleTribes.join(','),
-                    style_pole_structure: form.stylePoleStructure,
-                    style_pole_expression: form.stylePoleExpression,
-                    style_pole_tone: form.stylePoleTone,
-                    style_pole_register: form.stylePoleRegister,
-                    style_blocker: form.styleBlocker,
-                    style_anti_pref: form.styleAntiPref,
-                    style_anti_pref_note: form.styleAntiPrefNote || undefined,
-                    free_text_note: form.freeTextNote || undefined,
-                }),
+                body: JSON.stringify(submissionPayload),
             }).then(async res => {
                 if (!res.ok) {
                     const text = await res.text().catch(() => '');
                     console.error('Man intake notify HTTP error:', res.status, text);
                 }
             }).catch(err => console.error('Man intake notify failed:', err));
-
-            trackCompleteRegistration(2499, 'ICONIK Blueprint Man — Intake Submitted', 'INR');
-            setDirection(1);
-            setStep(CONFIRMATION_STEP);
 
         } catch (err) {
             console.error('Man intake submit error:', err);
@@ -1343,7 +1309,7 @@ function ManIntakePageInner() {
                                     </motion.div>
                                     <h2 className="text-4xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">Your intake is complete.</h2>
                                     <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl leading-relaxed max-w-lg mx-auto mb-6">
-                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong className="font-semibold text-luxury-charcoal">24 hours</strong>.
+                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong className="font-semibold text-luxury-charcoal">48 hours</strong>.
                                     </p>
                                     <p className="luxury-body text-sm text-luxury-charcoal/50">Check your spam folder just in case.</p>
                                 </div>

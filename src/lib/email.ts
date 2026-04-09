@@ -1136,15 +1136,41 @@ export interface ManIntakeNotificationData {
   customer_phone: string;
   photo_fullbody_url?: string;
   photo_headshot_url?: string;
-  frustrations?: string;
-  frustrations_custom?: string;
-  situations?: string;
-  body_concerns?: string;
-  wardrobe_type?: string;
-  colour_preference?: string;
-  style_aesthetics?: string;
-  style_outcome?: string;
-  hair_type?: string;
+  // Section 1 — Basics
+  primary_goal?: string;
+  style_relationship?: string;
+  dressing_context?: string;
+  location_tier?: string;
+  // Section 2 — Body
+  height_category?: string;
+  body_shape?: string;
+  fat_storage_zone?: string;
+  highlight_zone?: string;
+  minimise_zone?: string;
+  fit_preference?: string;
+  wardrobe_composition?: string;
+  // Section 3 — Colour
+  skin_tone?: string;
+  vein_undertone?: string;
+  white_test?: string;
+  hair_colour?: string;
+  eye_colour?: string;
+  derived_colour_season?: string;
+  // Section 4 — Face
+  face_shape?: string;
+  facial_feature_type?: string;
+  // Section 5 — Style Identity
+  primary_style_goal?: string;
+  branch_answer?: string;
+  style_tribes?: string;
+  style_pole_structure?: string;
+  style_pole_expression?: string;
+  style_pole_tone?: string;
+  style_pole_register?: string;
+  style_blocker?: string;
+  style_anti_pref?: string;
+  style_anti_pref_note?: string;
+  free_text_note?: string;
 }
 
 export async function sendManIntakeNotificationEmail(
@@ -1158,6 +1184,9 @@ export async function sendManIntakeNotificationEmail(
 
     const photoLink = (label: string, url: string | undefined) =>
       url ? `<tr><td style="padding:6px 12px;font-size:13px;color:#555;border-bottom:1px solid #f0e8e8;"><strong style="color:#333;">${label}:</strong></td><td style="padding:6px 12px;font-size:13px;border-bottom:1px solid #f0e8e8;"><a href="${url}" style="color:#1b5e20;text-decoration:none;">View Photo →</a></td></tr>` : '';
+
+    const section = (title: string) =>
+      `<tr><td colspan="2" style="padding:10px 12px 4px;background:#f7f3f0;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2e7d32;border-bottom:1px solid #f0e8e8;">${title}</td></tr>`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1178,19 +1207,51 @@ export async function sendManIntakeNotificationEmail(
 
 <tr><td style="padding:16px 40px 28px;">
   <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0e8e8;border-radius:10px;overflow:hidden;">
+    ${section('Contact')}
     ${row('Email', data.customer_email)}
     ${row('Phone', data.customer_phone)}
     ${photoLink('Full Body Photo', data.photo_fullbody_url)}
     ${photoLink('Headshot', data.photo_headshot_url)}
-    ${row('Frustrations', data.frustrations?.replace(/,/g, ', '))}
-    ${row('Custom frustration', data.frustrations_custom)}
-    ${row('Situations', data.situations?.replace(/,/g, ', '))}
-    ${row('Body concerns', data.body_concerns?.replace(/,/g, ', '))}
-    ${row('Wardrobe type', data.wardrobe_type)}
-    ${row('Colour preference', data.colour_preference)}
-    ${row('Style aesthetics', data.style_aesthetics?.replace(/,/g, ', '))}
-    ${row('Style outcome', data.style_outcome)}
-    ${row('Hair type', data.hair_type?.replace(/,/g, ', '))}
+
+    ${section('Section 1 — Basics')}
+    ${row('Primary goal', data.primary_goal?.replace(/_/g, ' '))}
+    ${row('Style relationship', data.style_relationship?.replace(/_/g, ' '))}
+    ${row('Dressing context', data.dressing_context?.replace(/,/g, ', ').replace(/_/g, ' '))}
+    ${row('Location', data.location_tier?.replace(/_/g, ' '))}
+
+    ${section('Section 2 — Body')}
+    ${row('Height category', data.height_category?.replace(/_/g, ' '))}
+    ${row('Body shape', data.body_shape?.replace(/_/g, ' '))}
+    ${row('Fat storage zone', data.fat_storage_zone?.replace(/_/g, ' '))}
+    ${row('Highlight zone', data.highlight_zone?.replace(/_/g, ' '))}
+    ${row('Minimise zone', data.minimise_zone?.replace(/_/g, ' '))}
+    ${row('Fit preference', data.fit_preference?.replace(/_/g, ' '))}
+    ${row('Wardrobe composition', data.wardrobe_composition?.replace(/,/g, ', ').replace(/_/g, ' '))}
+
+    ${section('Section 3 — Colour')}
+    ${row('Skin tone', data.skin_tone?.replace(/_/g, ' '))}
+    ${row('Vein undertone', data.vein_undertone?.replace(/_/g, ' '))}
+    ${row('White test', data.white_test?.replace(/_/g, ' '))}
+    ${row('Hair colour', data.hair_colour?.replace(/_/g, ' '))}
+    ${row('Eye colour', data.eye_colour?.replace(/_/g, ' '))}
+    ${row('Derived colour season', data.derived_colour_season?.replace(/_/g, ' '))}
+
+    ${section('Section 4 — Face')}
+    ${row('Face shape', data.face_shape?.replace(/_/g, ' '))}
+    ${row('Facial feature type', data.facial_feature_type?.replace(/_/g, ' '))}
+
+    ${section('Section 5 — Style Identity')}
+    ${row('Primary style goal', data.primary_style_goal?.replace(/_/g, ' '))}
+    ${row('Branch answer', data.branch_answer?.replace(/_/g, ' '))}
+    ${row('Style tribes', data.style_tribes?.replace(/,/g, ', ').replace(/_/g, ' '))}
+    ${row('Pole — Structure', data.style_pole_structure?.replace(/_/g, ' '))}
+    ${row('Pole — Expression', data.style_pole_expression?.replace(/_/g, ' '))}
+    ${row('Pole — Tone', data.style_pole_tone?.replace(/_/g, ' '))}
+    ${row('Pole — Register', data.style_pole_register?.replace(/_/g, ' '))}
+    ${row('Style blocker', data.style_blocker?.replace(/_/g, ' '))}
+    ${row('Anti-pref', data.style_anti_pref?.replace(/_/g, ' '))}
+    ${row('Anti-pref note', data.style_anti_pref_note)}
+    ${row('Free text note', data.free_text_note)}
   </table>
 </td></tr>
 
@@ -1207,17 +1268,43 @@ export async function sendManIntakeNotificationEmail(
       `New Man intake submission\n` +
       `Email: ${data.customer_email}\n` +
       `Phone: ${data.customer_phone}\n` +
-      (data.photo_fullbody_url ? `Full body photo: ${data.photo_fullbody_url}\n` : '') +
+      (data.photo_fullbody_url ? `Full body: ${data.photo_fullbody_url}\n` : '') +
       (data.photo_headshot_url ? `Headshot: ${data.photo_headshot_url}\n` : '') +
-      (data.frustrations ? `Frustrations: ${data.frustrations}\n` : '') +
-      (data.frustrations_custom ? `Custom frustration: ${data.frustrations_custom}\n` : '') +
-      (data.situations ? `Situations: ${data.situations}\n` : '') +
-      (data.body_concerns ? `Body concerns: ${data.body_concerns}\n` : '') +
-      (data.wardrobe_type ? `Wardrobe type: ${data.wardrobe_type}\n` : '') +
-      (data.colour_preference ? `Colour preference: ${data.colour_preference}\n` : '') +
-      (data.style_aesthetics ? `Style aesthetics: ${data.style_aesthetics}\n` : '') +
-      (data.style_outcome ? `Style outcome: ${data.style_outcome}\n` : '') +
-      (data.hair_type ? `Hair type: ${data.hair_type}\n` : '');
+      `\n— Section 1: Basics —\n` +
+      (data.primary_goal ? `Primary goal: ${data.primary_goal}\n` : '') +
+      (data.style_relationship ? `Style relationship: ${data.style_relationship}\n` : '') +
+      (data.dressing_context ? `Dressing context: ${data.dressing_context}\n` : '') +
+      (data.location_tier ? `Location: ${data.location_tier}\n` : '') +
+      `\n— Section 2: Body —\n` +
+      (data.height_category ? `Height: ${data.height_category}\n` : '') +
+      (data.body_shape ? `Body shape: ${data.body_shape}\n` : '') +
+      (data.fat_storage_zone ? `Fat storage zone: ${data.fat_storage_zone}\n` : '') +
+      (data.highlight_zone ? `Highlight zone: ${data.highlight_zone}\n` : '') +
+      (data.minimise_zone ? `Minimise zone: ${data.minimise_zone}\n` : '') +
+      (data.fit_preference ? `Fit preference: ${data.fit_preference}\n` : '') +
+      (data.wardrobe_composition ? `Wardrobe composition: ${data.wardrobe_composition}\n` : '') +
+      `\n— Section 3: Colour —\n` +
+      (data.skin_tone ? `Skin tone: ${data.skin_tone}\n` : '') +
+      (data.vein_undertone ? `Vein undertone: ${data.vein_undertone}\n` : '') +
+      (data.white_test ? `White test: ${data.white_test}\n` : '') +
+      (data.hair_colour ? `Hair colour: ${data.hair_colour}\n` : '') +
+      (data.eye_colour ? `Eye colour: ${data.eye_colour}\n` : '') +
+      (data.derived_colour_season ? `Colour season: ${data.derived_colour_season}\n` : '') +
+      `\n— Section 4: Face —\n` +
+      (data.face_shape ? `Face shape: ${data.face_shape}\n` : '') +
+      (data.facial_feature_type ? `Facial features: ${data.facial_feature_type}\n` : '') +
+      `\n— Section 5: Style Identity —\n` +
+      (data.primary_style_goal ? `Primary style goal: ${data.primary_style_goal}\n` : '') +
+      (data.branch_answer ? `Branch answer: ${data.branch_answer}\n` : '') +
+      (data.style_tribes ? `Style tribes: ${data.style_tribes}\n` : '') +
+      (data.style_pole_structure ? `Pole (Structure): ${data.style_pole_structure}\n` : '') +
+      (data.style_pole_expression ? `Pole (Expression): ${data.style_pole_expression}\n` : '') +
+      (data.style_pole_tone ? `Pole (Tone): ${data.style_pole_tone}\n` : '') +
+      (data.style_pole_register ? `Pole (Register): ${data.style_pole_register}\n` : '') +
+      (data.style_blocker ? `Style blocker: ${data.style_blocker}\n` : '') +
+      (data.style_anti_pref ? `Anti-pref: ${data.style_anti_pref}\n` : '') +
+      (data.style_anti_pref_note ? `Anti-pref note: ${data.style_anti_pref_note}\n` : '') +
+      (data.free_text_note ? `Free text note: ${data.free_text_note}\n` : '');
 
     const info = await transporter.sendMail({
       from: `"ICONIK Intake Bot" <${process.env.GMAIL_USER}>`,
