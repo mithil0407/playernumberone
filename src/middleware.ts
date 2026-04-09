@@ -27,6 +27,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // ── 1b. Man admin routes: same cookie, separate login page ───────────────
+  if (pathname.startsWith('/man/admin')) {
+    if (!pathname.startsWith('/man/admin/login')) {
+      if (!isAdminAuthenticated(request)) {
+        const loginUrl = new URL('/man/admin/login', request.url);
+        loginUrl.searchParams.set('redirectTo', pathname);
+        return NextResponse.redirect(loginUrl, { status: 307 });
+      }
+    }
+    return NextResponse.next();
+  }
+
   // ── 2. Client routes: Supabase Auth check ───────────────────────────────
   if (pathname.startsWith('/iconik-club/client')) {
     if (CLIENT_PUBLIC.some(p => pathname.startsWith(p))) {
