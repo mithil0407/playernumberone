@@ -40,8 +40,17 @@ interface FormState {
     faceShape: string;
     facialFeatureType: string;
     // Section 5 — Style
-    styleGoal: string;
-    visualStyleReference: string;
+    primaryStyleGoal: string;
+    branchSubGoal: string;
+    branchBlocker: string;
+    branchReference: string;
+    stylePoleStructure: string;
+    stylePoleExpression: string;
+    stylePoleTone: string;
+    stylePoleRegister: string;
+    styleBlocker: string;
+    styleAntiPref: string;
+    styleAntiPrefNote: string;
     freeTextNote: string;
 }
 
@@ -236,26 +245,73 @@ const FACIAL_FEATURE_TYPES = [
     { value: 'mixed', label: 'A mix — somewhere in between' },
 ];
 
-const STYLE_GOALS = [
-    { value: 'polished', label: 'Polished — always looks intentional and put-together' },
-    { value: 'effortless', label: 'Effortless — looks stylish without trying too hard' },
-    { value: 'bold', label: 'Bold — makes a statement, is noticed in the room' },
-    { value: 'elegant', label: 'Elegant — timeless, refined, never overdone' },
-    { value: 'comfortable', label: 'Comfortable — stylish but always physically at ease' },
-    { value: 'discovering', label: "I genuinely have no idea — that's why I'm here" },
+// Section 5 — Style constants
+const PRIMARY_STYLE_GOALS = [
+    { value: 'polished', label: 'I want to look more polished and put-together' },
+    { value: 'authentic', label: 'I want to look more like myself' },
+    { value: 'confident', label: 'I want to feel more confident in what I wear' },
+    { value: 'variety', label: 'I want more variety and versatility' },
+    { value: 'occasion', label: 'I have a specific occasion or life change to dress for' },
 ];
 
-const VISUAL_STYLE_REFERENCES = [
-    { value: 'editorial_minimal', label: 'Editorial Minimal', sub: 'Clean lines, neutral palette, structured silhouettes' },
-    { value: 'classic_indian_chic', label: 'Classic Indian Chic', sub: 'Elegant ethnic-western fusion' },
-    { value: 'modern_workwear', label: 'Modern Workwear', sub: 'Sharp, polished, boardroom-ready' },
-    { value: 'relaxed_boho', label: 'Relaxed Boho', sub: 'Flowy, layered, earthy tones' },
-    { value: 'undiscovered', label: 'None of these — I need help discovering mine', sub: '' },
+// Branch A — Polished
+const BRANCH_A_SUBGOAL = [
+    { value: 'fit_perfectly', label: 'Clothes that fit perfectly' },
+    { value: 'intentional', label: 'Looking intentional, not accidental' },
+    { value: 'appropriate', label: 'Being appropriate for every context' },
+    { value: 'signature', label: 'Looking like I have a signature look' },
+];
+const BRANCH_A_BLOCKER = [
+    { value: 'fit_off_rack', label: "Clothes don't fit well off the rack" },
+    { value: 'occasion_clueless', label: "I don't know what occasion calls for what" },
+    { value: 'dont_work_together', label: "I buy things that don't work together" },
+    { value: 'never_elevated', label: 'I look fine but never elevated' },
+];
+const BRANCH_A_REFERENCE = [
+    { value: 'deepika', label: 'Deepika Padukone — clean, minimal power' },
+    { value: 'priyanka', label: 'Priyanka Chopra — sharp corporate edge' },
+    { value: 'sonam', label: 'Sonam Kapoor — structured and intentional' },
+    { value: 'none', label: 'None of these — I can describe it' },
 ];
 
-// Step 0 = welcome, Steps 1–24 = content, Step 25 = confirmation
-const CONFIRMATION_STEP = 25;
-const QUESTION_COUNT = 24;
+const STYLE_POLE_STRUCTURE = [
+    { value: 'structured', label: 'Structured and tailored' },
+    { value: 'fluid', label: 'Fluid and draped' },
+];
+const STYLE_POLE_EXPRESSION = [
+    { value: 'minimal', label: 'Minimal and quiet' },
+    { value: 'expressive', label: 'Expressive and layered' },
+];
+const STYLE_POLE_TONE = [
+    { value: 'classic', label: 'Classic and timeless' },
+    { value: 'current', label: 'Current and fashion-forward' },
+];
+const STYLE_POLE_REGISTER = [
+    { value: 'dressed_up', label: 'Dressed up is my comfort zone' },
+    { value: 'dressed_down', label: 'Dressed down is my comfort zone' },
+];
+
+const STYLE_BLOCKERS = [
+    { value: 'nothing_fits', label: 'Nothing fits the way I want it to' },
+    { value: 'dont_know_body', label: "I don't know what works on my body" },
+    { value: 'buy_never_wear', label: 'I buy things I never wear' },
+    { value: 'dont_know_style', label: "I don't know what my style actually is" },
+    { value: 'dress_for_others', label: 'I dress for others, not myself' },
+    { value: 'dont_know_where', label: "I don't know where to shop for my needs" },
+    { value: 'lifestyle', label: "My lifestyle doesn't allow the style I want" },
+];
+
+const ANTI_PREFS = [
+    { value: 'yes_colour', label: 'Yes — a colour' },
+    { value: 'yes_silhouette', label: 'Yes — a silhouette or cut' },
+    { value: 'yes_category', label: 'Yes — a style category (e.g. ethnic, formal)' },
+    { value: 'no_wear_told', label: "No — I wear what I'm told looks good" },
+    { value: 'never_thought', label: "I've never thought about this" },
+];
+
+// Step 0 = welcome, Steps 1–29 = content, Step 30 = confirmation
+const CONFIRMATION_STEP = 30;
+const QUESTION_COUNT = 29;
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -385,8 +441,17 @@ function GlobeIntakePageInner() {
         eyeColour: '',
         faceShape: '',
         facialFeatureType: '',
-        styleGoal: '',
-        visualStyleReference: '',
+        primaryStyleGoal: '',
+        branchSubGoal: '',
+        branchBlocker: '',
+        branchReference: '',
+        stylePoleStructure: '',
+        stylePoleExpression: '',
+        stylePoleTone: '',
+        stylePoleRegister: '',
+        styleBlocker: '',
+        styleAntiPref: '',
+        styleAntiPrefNote: '',
         freeTextNote: '',
     });
 
@@ -410,21 +475,27 @@ function GlobeIntakePageInner() {
         }
     }, [step, form.email, form.phone]);
 
+    const isBranchPolished = form.primaryStyleGoal === 'polished';
+
     const goNext = useCallback(() => {
         setDirection(1);
         setStep(s => {
             if (s === 0 && contactPrefilled) return 2;
+            // Skip branch sub-questions (23–25) if not polished
+            if (s === 22 && !isBranchPolished) return 26;
             return s + 1;
         });
-    }, [contactPrefilled]);
+    }, [contactPrefilled, isBranchPolished]);
 
     const goBack = useCallback(() => {
         setDirection(-1);
         setStep(s => {
             if (s === 2 && contactPrefilled) return 0;
+            // Skip back over branch sub-questions if not polished
+            if (s === 26 && !isBranchPolished) return 22;
             return Math.max(0, s - 1);
         });
-    }, [contactPrefilled]);
+    }, [contactPrefilled, isBranchPolished]);
 
     const toggleMulti = (field: keyof FormState, value: string, max?: number) => {
         setForm(prev => {
@@ -489,8 +560,17 @@ function GlobeIntakePageInner() {
                 derived_colour_season: derivedColourSeason ?? undefined,
                 face_shape: form.faceShape,
                 facial_feature_type: form.facialFeatureType,
-                style_goal: form.styleGoal,
-                visual_style_reference: form.visualStyleReference,
+                primary_style_goal: form.primaryStyleGoal,
+                branch_sub_goal: form.branchSubGoal || undefined,
+                branch_blocker: form.branchBlocker || undefined,
+                branch_reference: form.branchReference || undefined,
+                style_pole_structure: form.stylePoleStructure,
+                style_pole_expression: form.stylePoleExpression,
+                style_pole_tone: form.stylePoleTone,
+                style_pole_register: form.stylePoleRegister,
+                style_blocker: form.styleBlocker,
+                style_anti_pref: form.styleAntiPref,
+                style_anti_pref_note: form.styleAntiPrefNote || undefined,
                 free_text_note: form.freeTextNote || undefined,
             });
 
@@ -522,8 +602,17 @@ function GlobeIntakePageInner() {
                     derived_colour_season: derivedColourSeason,
                     face_shape: form.faceShape,
                     facial_feature_type: form.facialFeatureType,
-                    style_goal: form.styleGoal,
-                    visual_style_reference: form.visualStyleReference,
+                    primary_style_goal: form.primaryStyleGoal,
+                    branch_sub_goal: form.branchSubGoal || undefined,
+                    branch_blocker: form.branchBlocker || undefined,
+                    branch_reference: form.branchReference || undefined,
+                    style_pole_structure: form.stylePoleStructure,
+                    style_pole_expression: form.stylePoleExpression,
+                    style_pole_tone: form.stylePoleTone,
+                    style_pole_register: form.stylePoleRegister,
+                    style_blocker: form.styleBlocker,
+                    style_anti_pref: form.styleAntiPref,
+                    style_anti_pref_note: form.styleAntiPrefNote || undefined,
                     free_text_note: form.freeTextNote || undefined,
                 }),
             }).catch(err => console.warn('Globe intake notify failed:', err));
@@ -569,9 +658,14 @@ function GlobeIntakePageInner() {
             case 20: return !!form.faceShape;
             case 21: return !!form.facialFeatureType;
             // Section 5
-            case 22: return !!form.styleGoal;
-            case 23: return !!form.visualStyleReference;
-            case 24: return true; // optional free text
+            case 22: return !!form.primaryStyleGoal;
+            case 23: return !!form.branchSubGoal;
+            case 24: return !!form.branchBlocker;
+            case 25: return !!form.branchReference;
+            case 26: return !!form.stylePoleStructure && !!form.stylePoleExpression && !!form.stylePoleTone && !!form.stylePoleRegister;
+            case 27: return !!form.styleBlocker;
+            case 28: return !!form.styleAntiPref;
+            case 29: return true; // optional free text
             default: return true;
         }
     }, [step, form]);
@@ -582,7 +676,7 @@ function GlobeIntakePageInner() {
         exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
     };
 
-    const isLastQuestion = step === 24;
+    const isLastQuestion = step === 29;
 
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden flex flex-col">
@@ -1031,15 +1125,15 @@ function GlobeIntakePageInner() {
                                 </div>
                             )}
 
-                            {/* ── Step 22: Q19 Style Goal ──────────────────────── */}
+                            {/* ── Step 22: Q22 Primary Style Goal (Anchor) ─────── */}
                             {step === 22 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Your Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">If you could describe your dream style in one word, which is closest?</h2>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What is your primary style goal right now?</h2>
                                     <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
                                     <div className="space-y-3">
-                                        {STYLE_GOALS.map(o => (
-                                            <RadioCard key={o.value} selected={form.styleGoal === o.value} onClick={() => setForm(p => ({ ...p, styleGoal: o.value }))}>
+                                        {PRIMARY_STYLE_GOALS.map(o => (
+                                            <RadioCard key={o.value} selected={form.primaryStyleGoal === o.value} onClick={() => setForm(p => ({ ...p, primaryStyleGoal: o.value, branchSubGoal: '', branchBlocker: '', branchReference: '' }))}>
                                                 <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
                                             </RadioCard>
                                         ))}
@@ -1047,37 +1141,152 @@ function GlobeIntakePageInner() {
                                 </div>
                             )}
 
-                            {/* ── Step 23: Q20 Visual Style Reference ──────────── */}
+                            {/* ── Step 23: Q22a Branch A — Sub-goal ────────────── */}
                             {step === 23 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Your Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Which of these styles most resonates with you visually?</h2>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What does &ldquo;put-together&rdquo; mean to you?</h2>
                                     <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
                                     <div className="space-y-3">
-                                        {VISUAL_STYLE_REFERENCES.map(o => (
-                                            <RadioCard key={o.value} selected={form.visualStyleReference === o.value} onClick={() => setForm(p => ({ ...p, visualStyleReference: o.value }))}>
-                                                <div>
-                                                    <div className="font-semibold text-luxury-charcoal luxury-body">{o.label}</div>
-                                                    {o.sub && <div className="text-sm text-luxury-charcoal/60 luxury-body mt-0.5">{o.sub}</div>}
-                                                </div>
+                                        {BRANCH_A_SUBGOAL.map(o => (
+                                            <RadioCard key={o.value} selected={form.branchSubGoal === o.value} onClick={() => setForm(p => ({ ...p, branchSubGoal: o.value }))}>
+                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── Step 24: Q21 Free Text (Optional) ────────────── */}
+                            {/* ── Step 24: Q22b Branch A — Blocker ─────────────── */}
                             {step === 24 && (
                                 <div>
-                                    <SectionLabel label="Section 5 of 5 — Your Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Is there anything specific you want us to know?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-1">A concern, a life event, something you&apos;ve always struggled with. <span className="text-luxury-accent font-medium">Optional.</span></p>
-                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">Skip if nothing comes to mind</p>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What&apos;s getting in the way right now?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <div className="space-y-3">
+                                        {BRANCH_A_BLOCKER.map(o => (
+                                            <RadioCard key={o.value} selected={form.branchBlocker === o.value} onClick={() => setForm(p => ({ ...p, branchBlocker: o.value }))}>
+                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                            </RadioCard>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 25: Q22c Branch A — Reference ───────────── */}
+                            {step === 25 && (
+                                <div>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Who comes to mind when you think &ldquo;polished&rdquo;?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Pick closest.</p>
+                                    <div className="space-y-3">
+                                        {BRANCH_A_REFERENCE.map(o => (
+                                            <RadioCard key={o.value} selected={form.branchReference === o.value} onClick={() => setForm(p => ({ ...p, branchReference: o.value }))}>
+                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                            </RadioCard>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 26: Q23 Style Poles ─────────────────────── */}
+                            {step === 26 && (
+                                <div>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Where do you sit on each of these axes?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-1">Pick one from each axis.</p>
+                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">Your 4-point style coordinate</p>
+                                    <div className="space-y-6">
+                                        {[
+                                            { label: 'Structure', field: 'stylePoleStructure' as const, options: STYLE_POLE_STRUCTURE },
+                                            { label: 'Expression', field: 'stylePoleExpression' as const, options: STYLE_POLE_EXPRESSION },
+                                            { label: 'Tone', field: 'stylePoleTone' as const, options: STYLE_POLE_TONE },
+                                            { label: 'Register', field: 'stylePoleRegister' as const, options: STYLE_POLE_REGISTER },
+                                        ].map(axis => (
+                                            <div key={axis.label}>
+                                                <p className="text-xs font-semibold luxury-body text-luxury-charcoal/50 uppercase tracking-widest mb-3">{axis.label}</p>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {axis.options.map(o => {
+                                                        const selected = form[axis.field] === o.value;
+                                                        return (
+                                                            <button
+                                                                key={o.value}
+                                                                type="button"
+                                                                onClick={() => setForm(p => ({ ...p, [axis.field]: o.value }))}
+                                                                className={`text-center border-2 rounded-xl px-4 py-3 text-sm font-semibold luxury-body transition-all duration-200 ${selected
+                                                                    ? 'border-luxury-accent bg-luxury-pink-bg text-luxury-accent shadow-sm shadow-luxury-accent/10'
+                                                                    : 'border-luxury-cream bg-luxury-warm-white text-luxury-charcoal hover:border-luxury-accent/40'
+                                                                }`}
+                                                            >
+                                                                {o.label}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 27: Q24 Style Blocker ───────────────────── */}
+                            {step === 27 && (
+                                <div>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What&apos;s the one thing that most often stops you from dressing how you want?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <div className="space-y-3">
+                                        {STYLE_BLOCKERS.map(o => (
+                                            <RadioCard key={o.value} selected={form.styleBlocker === o.value} onClick={() => setForm(p => ({ ...p, styleBlocker: o.value }))}>
+                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                            </RadioCard>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Step 28: Q25 Style Anti-Preferences ──────────── */}
+                            {step === 28 && (
+                                <div>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Have you ever been told something looks good on you — but you personally dislike wearing it?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <div className="space-y-3">
+                                        {ANTI_PREFS.map(o => (
+                                            <RadioCard key={o.value} selected={form.styleAntiPref === o.value} onClick={() => setForm(p => ({ ...p, styleAntiPref: o.value, styleAntiPrefNote: o.value.startsWith('yes') ? p.styleAntiPrefNote : '' }))}>
+                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                            </RadioCard>
+                                        ))}
+                                    </div>
+                                    {form.styleAntiPref.startsWith('yes') && (
+                                        <div className="mt-6">
+                                            <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">What is it, and why don&apos;t you like wearing it?</label>
+                                            <textarea
+                                                value={form.styleAntiPrefNote}
+                                                onChange={e => { if (e.target.value.length <= 150) setForm(p => ({ ...p, styleAntiPrefNote: e.target.value })); }}
+                                                className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body resize-none"
+                                                placeholder="e.g. Red — it feels too attention-grabbing for me..."
+                                                rows={3}
+                                                maxLength={150}
+                                            />
+                                            <p className="text-xs text-luxury-charcoal/40 mt-2 text-right">{form.styleAntiPrefNote.length}/150</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── Step 29: Q26 Anything Else (Optional) ────────── */}
+                            {step === 29 && (
+                                <div>
+                                    <SectionLabel label="Section 5 of 5 — Style" />
+                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Anything else you want your stylist to know?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/60 mb-1"><span className="text-luxury-accent font-medium">Optional.</span></p>
+                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">No prompt — just space</p>
                                     <textarea
                                         value={form.freeTextNote}
                                         onChange={e => { if (e.target.value.length <= 200) setForm(p => ({ ...p, freeTextNote: e.target.value })); }}
                                         className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body resize-none"
-                                        placeholder="Share anything that would help us personalise your Blueprint..."
+                                        placeholder=""
                                         rows={4}
                                         maxLength={200}
                                     />
@@ -1088,7 +1297,7 @@ function GlobeIntakePageInner() {
                                 </div>
                             )}
 
-                            {/* ── Step 25: Confirmation ─────────────────────────── */}
+                            {/* ── Step 30: Confirmation ─────────────────────────── */}
                             {step === CONFIRMATION_STEP && (
                                 <div className="text-center py-10">
                                     <motion.div

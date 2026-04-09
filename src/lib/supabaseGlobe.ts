@@ -90,9 +90,21 @@ export interface GlobeIntakeSubmission {
     // Section 4 — Face
     face_shape?: string;
     facial_feature_type?: string;
-    // Section 5 — Style
+    // Section 5 — Style (legacy, kept for historical rows)
     style_goal?: string;
     visual_style_reference?: string;
+    // Section 5 — Style (current)
+    primary_style_goal?: string;
+    branch_sub_goal?: string;
+    branch_blocker?: string;
+    branch_reference?: string;
+    style_pole_structure?: string;
+    style_pole_expression?: string;
+    style_pole_tone?: string;
+    style_pole_register?: string;
+    style_blocker?: string;
+    style_anti_pref?: string;
+    style_anti_pref_note?: string;
     free_text_note?: string;
     created_at?: string;
 }
