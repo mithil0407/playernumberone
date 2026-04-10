@@ -1,0 +1,73 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
+import { cookies } from 'next/headers';
+
+// ── GET — fetch full report (admin) ────────────────────────────────────────
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ reportId: string }> }
+) {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(ADMIN_COOKIE)?.value;
+  if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { reportId } = await params;
+
+  const { data, error } = await supabaseAdmin
+    .from('man_reports')
+    .select('*, man_intake_submissions(customer_email, customer_phone)')
+    .eq('id', reportId)
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ report: data });
+}
+
+// ── PATCH — update approvals, report_data edits, or status ────────────────
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ reportId: string }> }
+) {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(ADMIN_COOKIE)?.value;
+  if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { reportId } = await params;
+  const body = await request.json();
+
+  const allowedFields = ['section_approvals', 'report_data', 'status', 'sent_at'];
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+  for (const field of allowedFields) {
+    if (body[field] !== undefined) update[field] = body[field];
+  }
+
+  // When status transitions to 'sent', stamp sent_at
+  if (body.status === 'sent' && !body.sent_at) {
+    update.sent_at = new Date().toISOString();
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('man_reports')
+    .update(update)
+    .eq('id', reportId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[man-report PATCH] error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ report: data });
+}
