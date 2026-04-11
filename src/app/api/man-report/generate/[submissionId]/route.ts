@@ -17,8 +17,9 @@ import { runClassification, runReportGeneration, type ReportData } from '@/lib/m
 import { generateBaseModel, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
-// Allow up to 10 minutes — text pipeline + 16 image generations
-export const maxDuration = 600;
+// Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
+// at concurrency 4 (~80s) fits comfortably within this limit.
+export const maxDuration = 300;
 
 // ── Helper: update report progress stage ──────────────────────────────────
 
