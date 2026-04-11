@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use, useCallback, useRef } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw } from 'lucide-react';
@@ -24,6 +24,7 @@ interface Report {
   share_token: string;
   section_approvals: SectionApprovals;
   submission_id: string;
+  created_at: string;
   sent_at: string | null;
   man_intake_submissions: { id: string; customer_email: string; customer_phone: string | null } | null;
 }
