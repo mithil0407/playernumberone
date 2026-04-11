@@ -97,7 +97,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
       .update({
         status:         'draft_ready',
         progress_stage: null,
-        report_data:    { classification, sections, generated_at: new Date().toISOString() } as ReportData,
+        report_data:    { classification, sections, generated_at: new Date().toISOString() } as unknown as ReportData,
         image_urls:     imageUrls,
         generated_at:   new Date().toISOString(),
         updated_at:     new Date().toISOString(),
