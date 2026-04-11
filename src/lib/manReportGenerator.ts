@@ -691,3 +691,73 @@ export async function runReportGeneration(
   const text = await callGeminiText(REPORT_SYSTEM_PROMPT, userPrompt);
   return parseReportSections(text);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Per-section generation (progressive pipeline)
+// Each function makes one Gemini call for a single section.
+// ─────────────────────────────────────────────────────────────
+
+const SECTION_USER_PREAMBLE_TEMPLATE = `Write ONE section of the ICONIK Men's Style Blueprint.
+Use the classification data and original form data provided below.
+Write ONLY the single section requested. Use the exact section header provided.
+The section must be complete, specific, and personalised — no filler sentences.
+
+--- CLASSIFICATION JSON ---
+{{classification_json}}
+--- END CLASSIFICATION ---
+
+--- ORIGINAL FORM DATA (reference only) ---
+Free Note: {{free_note}}
+Primary Goal: {{primary_goal}}
+Style Blocker: {{style_blocker}}
+--- END FORM DATA ---
+
+Write the following section now:
+
+---
+
+`;
+
+// Extract the 6 section instruction blocks from the combined template at module load time.
+// Sections in REPORT_USER_TEMPLATE are separated by '\n\n---\n\n' and each starts with '## SECTION'.
+const _SECTION_BLOCKS = REPORT_USER_TEMPLATE
+  .split('\n\n---\n\n')
+  .filter(block => block.trimStart().startsWith('## SECTION'));
+
+function buildSectionUserPrompt(
+  sectionIndex: number,
+  classification: ClassificationResult,
+  submission: ManIntakeSubmission
+): string {
+  const preamble = fillTemplate(SECTION_USER_PREAMBLE_TEMPLATE, {
+    classification_json: JSON.stringify(classification, null, 2),
+    free_note:           submission.free_text_note ?? 'Not provided',
+    primary_goal:        mapField('primary_goal',  submission.primary_goal),
+    style_blocker:       mapField('style_blocker', submission.style_blocker),
+  });
+  return preamble + _SECTION_BLOCKS[sectionIndex];
+}
+
+export async function runSection1(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(0, classification, submission));
+}
+
+export async function runSection2(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(1, classification, submission));
+}
+
+export async function runSection3(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(2, classification, submission));
+}
+
+export async function runSection4(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission));
+}
+
+export async function runSection5(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(4, classification, submission));
+}
+
+export async function runSection6(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(5, classification, submission));
+}

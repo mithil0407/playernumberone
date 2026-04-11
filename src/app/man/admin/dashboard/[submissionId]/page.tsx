@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, AlertCircle, Loader2, Zap } from 'lucide-react';
 
@@ -194,6 +195,8 @@ function ReportStatusBanner({ report, onGenerate, generating }: {
 export default function SubmissionDetailPage({ params }: { params: Promise<{ submissionId: string }> }) {
   const { submissionId } = use(params);
 
+  const router = useRouter();
+
   const [submission, setSubmission] = useState<ManSubmission | null>(null);
   const [reports, setReports]       = useState<ManReport[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -229,7 +232,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
       const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) { setGenError(data.error ?? 'Generation failed'); return; }
-      await load();
+      if (data.reportId) router.push(`/man/admin/report/${data.reportId}`);
     } catch {
       setGenError('Something went wrong. Please try again.');
     } finally {

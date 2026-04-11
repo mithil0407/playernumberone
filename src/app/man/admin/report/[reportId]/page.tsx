@@ -4,7 +4,7 @@ import { useEffect, useState, use, useCallback } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X } from 'lucide-react';
 import ManReport from '@/components/ManReport';
-import type { ReportData } from '@/lib/manReportGenerator';
+import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -17,7 +17,8 @@ interface SectionApprovals {
 interface Report {
   id: string;
   status: string;
-  report_data: ReportData;
+  progress_stage: string | null;
+  report_data: ReportData | null;
   image_urls: ResolvedImageUrls | null;
   share_token: string;
   section_approvals: SectionApprovals;
@@ -26,15 +27,33 @@ interface Report {
 }
 
 const SECTIONS = [
-  { key: 's1', label: 'Face Architecture' },
-  { key: 's2', label: 'Body Geometry' },
-  { key: 's3', label: 'Chromatic Harmony' },
-  { key: 's4', label: '16 Outfits' },
-  { key: 's5', label: 'Style Rules' },
-  { key: 's6', label: 'Identity Statement' },
+  { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
+  { key: 's2', label: 'Body Geometry',       field: 's2_body'     },
+  { key: 's3', label: 'Chromatic Harmony',   field: 's3_colour'   },
+  { key: 's4', label: '16 Outfits',          field: 's4_outfits'  },
+  { key: 's5', label: 'Style Rules',         field: 's5_rules'    },
+  { key: 's6', label: 'Identity Statement',  field: 's6_identity' },
 ] as const;
 
 type SectionKey = typeof SECTIONS[number]['key'];
+type SectionField = typeof SECTIONS[number]['field'];
+
+const STAGE_LABELS: Record<string, string> = {
+  classifying:       'Classifying profile…',
+  generating_s1:     'Writing Face Architecture…',
+  generating_s2:     'Writing Body Geometry…',
+  generating_s3:     'Writing Chromatic Harmony…',
+  generating_s4:     'Writing 16 Outfits…',
+  generating_s5:     'Writing Style Rules…',
+  generating_s6:     'Writing Identity Statement…',
+  generating_images: 'Generating images…',
+  finalising:        'Finalising…',
+};
+
+const SECTION_FIELD_MAP: Record<SectionKey, SectionField> = {
+  s1: 's1_face', s2: 's2_body', s3: 's3_colour',
+  s4: 's4_outfits', s5: 's5_rules', s6: 's6_identity',
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -42,27 +61,42 @@ function allApproved(approvals: SectionApprovals): boolean {
   return Object.values(approvals).every(Boolean);
 }
 
+function buildSafeReportData(reportData: ReportData): ReportData {
+  return {
+    classification: reportData.classification,
+    sections: {
+      s1_face:     reportData.sections?.s1_face     ?? '',
+      s2_body:     reportData.sections?.s2_body     ?? '',
+      s3_colour:   reportData.sections?.s3_colour   ?? '',
+      s4_outfits:  reportData.sections?.s4_outfits  ?? '',
+      s5_rules:    reportData.sections?.s5_rules    ?? '',
+      s6_identity: reportData.sections?.s6_identity ?? '',
+    } as ReportSections,
+    generated_at: reportData.generated_at,
+  };
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function AdminReportPage({ params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = use(params);
 
-  const [report, setReport]         = useState<Report | null>(null);
-  const [loading, setLoading]       = useState(true);
+  const [report, setReport]               = useState<Report | null>(null);
+  const [loading, setLoading]             = useState(true);
   const [activeSection, setActiveSection] = useState<SectionKey>('s1');
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
-  const [editText, setEditText]     = useState('');
-  const [saving, setSaving]         = useState(false);
-  const [sending, setSending]       = useState(false);
-  const [copied, setCopied]         = useState(false);
-  const [error, setError]           = useState('');
+  const [editText, setEditText]           = useState('');
+  const [saving, setSaving]               = useState(false);
+  const [sending, setSending]             = useState(false);
+  const [copied, setCopied]               = useState(false);
+  const [error, setError]                 = useState('');
 
   const load = useCallback(async () => {
     const res  = await fetch(`/api/man-report/${reportId}`);
     const data = await res.json();
     if (data.report) {
       setReport(data.report);
-      // Auto-transition draft_ready → in_review on first open
+      // Auto-transition draft_ready → in_review on first open (skip if still generating)
       if (data.report.status === 'draft_ready') {
         await fetch(`/api/man-report/${reportId}`, {
           method: 'PATCH',
@@ -75,6 +109,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   }, [reportId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Poll every 3s while generation is in progress
+  useEffect(() => {
+    if (report?.status !== 'generating') return;
+    const interval = setInterval(load, 3000);
+    return () => clearInterval(interval);
+  }, [report?.status, load]);
 
   // ── Section approval ──────────────────────────────────────────────────
 
@@ -106,26 +147,17 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // ── Inline section edit ────────────────────────────────────────────────
 
   const startEdit = (key: SectionKey) => {
-    if (!report) return;
-    const sectionTextKey = `s${key.slice(1)}_${SECTIONS.find(s => s.key === key)?.label.toLowerCase().split(' ')[0]}`;
-    // Map key to report_data.sections field
-    const fieldMap: Record<SectionKey, keyof ReportData['sections']> = {
-      s1: 's1_face', s2: 's2_body', s3: 's3_colour',
-      s4: 's4_outfits', s5: 's5_rules', s6: 's6_identity',
-    };
-    setEditText(report.report_data.sections[fieldMap[key]] ?? '');
+    if (!report?.report_data) return;
+    const field = SECTION_FIELD_MAP[key];
+    setEditText(report.report_data.sections?.[field] ?? '');
     setEditingSection(key);
   };
 
   const saveEdit = async () => {
-    if (!report || !editingSection) return;
+    if (!report?.report_data || !editingSection) return;
     setSaving(true);
-    const fieldMap: Record<SectionKey, keyof ReportData['sections']> = {
-      s1: 's1_face', s2: 's2_body', s3: 's3_colour',
-      s4: 's4_outfits', s5: 's5_rules', s6: 's6_identity',
-    };
-    const field    = fieldMap[editingSection];
-    const newData  = {
+    const field   = SECTION_FIELD_MAP[editingSection];
+    const newData = {
       ...report.report_data,
       sections: { ...report.report_data.sections, [field]: editText },
     };
@@ -179,10 +211,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     );
   }
 
-  if (!report || !report.report_data) {
+  if (!report) {
     return (
       <div className="text-center py-20">
-        <p style={{ color: '#6b5f4a' }}>Report not found or still generating.</p>
+        <p style={{ color: '#6b5f4a' }}>Report not found.</p>
         <Link href="/man/admin/dashboard" className="text-sm mt-4 inline-block" style={{ color: '#c9a96e' }}>
           ← Back to dashboard
         </Link>
@@ -190,14 +222,25 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     );
   }
 
-  const approvals = report.section_approvals ?? { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false };
-  const ready     = allApproved(approvals);
+  const approvals    = report.section_approvals ?? { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false };
+  const ready        = allApproved(approvals);
+  const isGenerating = report.status === 'generating';
+  const safeData     = report.report_data ? buildSafeReportData(report.report_data) : null;
 
   return (
     <div className="flex gap-0 h-[calc(100vh-4rem)] -m-5 lg:-m-8 overflow-hidden">
       {/* ── Left: Report Preview ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto" style={{ background: '#f5f5f5' }}>
-        <ManReport data={report.report_data} imageUrls={report.image_urls} />
+        {safeData ? (
+          <ManReport data={safeData} imageUrls={report.image_urls} />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <Loader2 size={22} className="animate-spin" style={{ color: '#c9a96e' }} />
+            <p className="text-xs" style={{ color: '#6b5f4a' }}>
+              {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Right: Edit Panel ────────────────────────────────────────────── */}
@@ -216,13 +259,23 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
           <p className="text-xs mt-0.5 truncate" style={{ color: '#6b5f4a' }}>
             {report.man_intake_submissions?.customer_email ?? reportId}
           </p>
+          {isGenerating && (
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#c9a96e' }} />
+              <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#c9a96e' }}>
+                LIVE · {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Section tabs + approvals */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-          {SECTIONS.map(({ key, label }) => {
-            const approved = approvals[key];
-            const active   = activeSection === key;
+          {SECTIONS.map(({ key, label, field }) => {
+            const approved   = approvals[key];
+            const active     = activeSection === key;
+            const hasContent = !!report.report_data?.sections?.[field];
+
             return (
               <div
                 key={key}
@@ -233,44 +286,55 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 }}
                 onClick={() => setActiveSection(key)}
               >
-                {/* Approve toggle */}
-                <button
-                  onClick={e => { e.stopPropagation(); toggleApproval(key); }}
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-                  style={{
-                    background: approved ? '#16a34a' : '#1e1e1e',
-                    border: `1px solid ${approved ? '#16a34a' : '#2a2a2a'}`,
-                  }}
-                  title={approved ? 'Approved — click to un-approve' : 'Click to approve'}
-                >
-                  {approved && <Check size={10} className="text-white" />}
-                </button>
+                {/* Approve toggle / skeleton circle */}
+                {hasContent ? (
+                  <button
+                    onClick={e => { e.stopPropagation(); toggleApproval(key); }}
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      background: approved ? '#16a34a' : '#1e1e1e',
+                      border: `1px solid ${approved ? '#16a34a' : '#2a2a2a'}`,
+                    }}
+                    title={approved ? 'Approved — click to un-approve' : 'Click to approve'}
+                  >
+                    {approved && <Check size={10} className="text-white" />}
+                  </button>
+                ) : (
+                  <div
+                    className="w-5 h-5 rounded-full flex-shrink-0 animate-pulse"
+                    style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
+                  />
+                )}
 
-                <span className="flex-1 text-xs font-medium" style={{ color: active ? '#c9a96e' : '#6b5f4a' }}>
+                <span className="flex-1 text-xs font-medium" style={{ color: hasContent ? (active ? '#c9a96e' : '#6b5f4a') : '#3a3028' }}>
                   {label}
                 </span>
 
-                {/* Edit button */}
-                <button
-                  onClick={e => { e.stopPropagation(); startEdit(key); }}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity hover:opacity-100"
-                  style={{ color: '#6b5f4a' }}
-                  title="Edit section text"
-                >
-                  <Pencil size={11} />
-                </button>
+                {/* Edit button — only when content exists */}
+                {hasContent && (
+                  <button
+                    onClick={e => { e.stopPropagation(); startEdit(key); }}
+                    className="p-1 rounded transition-opacity hover:opacity-100 opacity-0 group-hover:opacity-100"
+                    style={{ color: '#6b5f4a' }}
+                    title="Edit section text"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                )}
               </div>
             );
           })}
 
-          {/* Approve all */}
-          <button
-            onClick={approveAll}
-            className="w-full mt-3 py-2 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-            style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
-          >
-            Approve All Sections
-          </button>
+          {/* Approve all — disabled while generating */}
+          {!isGenerating && (
+            <button
+              onClick={approveAll}
+              className="w-full mt-3 py-2 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+              style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+            >
+              Approve All Sections
+            </button>
+          )}
         </div>
 
         {/* Send controls */}
@@ -292,16 +356,21 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             </div>
           ) : (
             <>
-              {!ready && (
+              {!ready && !isGenerating && (
                 <p className="text-[10px] text-center" style={{ color: '#4a4030' }}>
                   Approve all {Object.values(approvals).filter(Boolean).length}/6 sections to send
                 </p>
               )}
+              {isGenerating && (
+                <p className="text-[10px] text-center" style={{ color: '#4a4030' }}>
+                  Generation in progress — approve sections as they appear
+                </p>
+              )}
               <button
                 onClick={sendToClient}
-                disabled={!ready || sending}
+                disabled={!ready || sending || isGenerating}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
-                style={{ background: ready ? 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)' : '#1e1e1e', color: '#fff' }}
+                style={{ background: ready && !isGenerating ? 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)' : '#1e1e1e', color: '#fff' }}
               >
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 {sending ? 'Sending…' : 'Send to Client'}

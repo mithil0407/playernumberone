@@ -1,0 +1,247 @@
+# Progressive Report QC — Implementation Plan
+
+## Goal
+Allow the admin to navigate to the report review page **immediately after triggering generation** and see each of the 6 sections appear one by one as Gemini finishes them — enabling QC in real time without waiting for the full pipeline to complete.
+
+No text streaming. Each section appears whole when done, like tiles loading in.
+
+---
+
+## The Core Problem Today
+
+The current pipeline makes **one big Gemini call** for all 6 sections at once, then writes everything to the DB in a single atomic update at the very end. The admin review page (`/man/admin/report/:reportId`) refuses to render at all unless `report_data` is fully populated.
+
+```
+Classification → [ALL 6 SECTIONS IN ONE CALL] → Images → full DB write → draft_ready
+                                                                              ↑
+                                                         Admin can only see from here
+```
+
+---
+
+## Target Behaviour
+
+```
+Classification written to DB immediately
+  → Section 1 generated → written to DB → admin sees S1
+    → Section 2 generated → written to DB → admin sees S1 + S2
+      → Section 3 generated → written to DB → admin sees S1 + S2 + S3
+        → ...
+          → Section 6 done → Images start → admin can approve while images generate
+            → Images done → status = draft_ready
+```
+
+Admin can navigate to the report review page right after hitting "Generate" and watch it populate.
+
+---
+
+## What Changes
+
+### 3 files to modify, 0 new files needed.
+
+---
+
+## Change 1 — `src/lib/manReportGenerator.ts`
+
+**What:** Split `runReportGeneration()` (currently 1 Gemini call → 6 sections) into **6 separate Gemini calls**, one per section. Export them individually.
+
+**How:** The existing `REPORT_SYSTEM_PROMPT` and `REPORT_USER_TEMPLATE` already define each section in numbered order. We break the single combined user prompt template into 6 section-specific prompts, each containing the same system context + classification JSON but requesting only one section at a time.
+
+Add one new export per section:
+
+```typescript
+// New exports — each runs one Gemini call and returns that section's text
+export async function runSection1(classification, submission): Promise<string>
+export async function runSection2(classification, submission): Promise<string>
+export async function runSection3(classification, submission): Promise<string>
+export async function runSection4(classification, submission): Promise<string>
+export async function runSection5(classification, submission): Promise<string>
+export async function runSection6(classification, submission): Promise<string>
+```
+
+Each function uses the existing `callGeminiText()` wrapper. The prompt for each is exactly the section block already in `REPORT_USER_TEMPLATE` (the `## SECTION N:` block), passed with the full classification JSON and the relevant form fields (free_note, primary_goal, style_blocker).
+
+**Keep `runReportGeneration()` as-is** — it's not broken, just unused after this change. No regressions.
+
+---
+
+## Change 2 — `src/app/api/man-report/generate/[submissionId]/route.ts`
+
+**What:** Rewrite `runPipeline()` to write to the DB after each section, instead of one big write at the end.
+
+**Current `runPipeline`:**
+```
+Phase 1: classify → (in memory)
+Phase 2: all 6 sections in one call → (in memory)
+Phase 3+4: images → (in memory)
+→ ONE write: report_data + image_urls + status=draft_ready
+```
+
+**New `runPipeline`:**
+```
+Phase 1: classify
+  → write classification + progress_stage='generating_s1' to DB
+
+Phase 2: Section 1
+  → write s1_face + progress_stage='generating_s2' to DB
+
+Phase 2: Section 2
+  → write s2_body + progress_stage='generating_s3' to DB
+
+Phase 2: Section 3
+  → write s3_colour + progress_stage='generating_s4' to DB
+
+Phase 2: Section 4
+  → write s4_outfits + progress_stage='generating_s5' to DB
+
+Phase 2: Section 5
+  → write s5_rules + progress_stage='generating_s6' to DB
+
+Phase 2: Section 6
+  → write s6_identity + progress_stage='generating_images' to DB
+
+Phase 3+4: Images (non-fatal, same as today)
+  → write image_urls + status='draft_ready' + progress_stage=null to DB
+```
+
+Each DB write is a `PATCH` to `man_reports` where it updates `report_data` by merging the new section into whatever is already there. The `report_data` JSONB column is always a valid partial object — sections that haven't generated yet just aren't present.
+
+**New progress stages** (replacing the current 3):
+| Stage | Meaning |
+|---|---|
+| `classifying` | Prompt 1 running |
+| `generating_s1` | Section 1 (Face) running |
+| `generating_s2` | Section 2 (Body) running |
+| `generating_s3` | Section 3 (Colour) running |
+| `generating_s4` | Section 4 (Outfits) running |
+| `generating_s5` | Section 5 (Rules) running |
+| `generating_s6` | Section 6 (Identity) running |
+| `generating_images` | Image pipeline running |
+| `finalising` | Final DB write |
+
+---
+
+## Change 3 — `src/app/man/admin/report/[reportId]/page.tsx`
+
+**What:** Make the review page work during `generating` status — poll for updates and render whatever sections exist, with skeleton placeholders for sections not yet generated.
+
+### 3a — Allow access during generation
+
+Currently the page shows `"Report not found or still generating."` if `report_data` is null. Remove this gate. The page should render even with partial data.
+
+Also:
+- The auto-transition `draft_ready → in_review` on page open should be skipped if status is `generating`
+
+### 3b — Poll while generating
+
+Add a `useEffect` that polls `GET /api/man-report/:reportId` every **3 seconds** while `report.status === 'generating'`. Stop polling when status changes to anything else.
+
+```typescript
+useEffect(() => {
+  if (report?.status !== 'generating') return;
+  const interval = setInterval(load, 3000);
+  return () => clearInterval(interval);
+}, [report?.status]);
+```
+
+### 3c — Live generation indicator
+
+When status is `generating`, show a "Live" indicator in the review panel header:
+
+```
+● LIVE · Generating S3 – Chromatic Harmony…
+```
+
+Map the `progress_stage` value to a human-readable label:
+
+```typescript
+const STAGE_LABELS: Record<string, string> = {
+  classifying:       'Classifying profile…',
+  generating_s1:     'Writing Face Architecture…',
+  generating_s2:     'Writing Body Geometry…',
+  generating_s3:     'Writing Chromatic Harmony…',
+  generating_s4:     'Writing 16 Outfits…',
+  generating_s5:     'Writing Style Rules…',
+  generating_s6:     'Writing Identity Statement…',
+  generating_images: 'Generating images…',
+  finalising:        'Finalising…',
+};
+```
+
+### 3d — Section skeletons for incomplete sections
+
+In the section list in the right panel, each section row should show:
+
+- `●` green dot + section text if that section is complete in `report_data.sections`
+- `○` grey pulsing shimmer if section is not yet generated
+
+The `<ManReport>` component on the left should not break on missing sections. Pass empty string or `null` for sections not yet populated — `ManReport` should skip rendering a section if its content is empty.
+
+> **Note:** `ManReport.tsx` likely already handles empty strings gracefully since sections are strings. Verify this — if it renders empty headers, add a guard: `if (!section) return null`.
+
+### 3e — Admin can approve completed sections immediately
+
+The approve toggle should work on any section that has content — even while generation is still running. This is the main QC benefit. No change needed to the approval logic itself; just make sure the UI doesn't block approval during `generating` status.
+
+---
+
+## Change 4 — `src/app/man/admin/dashboard/[submissionId]/page.tsx`
+
+**What:** After triggering generation, redirect directly to the report review page instead of staying on the submission detail page.
+
+Currently `handleGenerate()` does:
+```typescript
+const res = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+await load(); // re-fetches submission detail
+```
+
+Change to:
+```typescript
+const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+const data = await res.json();
+if (data.reportId) router.push(`/man/admin/report/${data.reportId}`);
+```
+
+The admin lands directly on the report review page, which starts polling and shows sections as they appear. They never have to stay on the "status banner" page.
+
+---
+
+## Execution Order
+
+1. **`manReportGenerator.ts`** — add the 6 per-section exports  
+2. **`generate/route.ts`** — rewrite `runPipeline()` to call them sequentially with per-section DB writes  
+3. **`admin/report/page.tsx`** — polling, skeleton states, live indicator, remove generating gate  
+4. **`admin/dashboard/[submissionId]/page.tsx`** — redirect after trigger  
+
+---
+
+## What Does NOT Change
+
+- The classification prompt (Prompt 1) — untouched
+- The section content/quality — same prompts, just called individually
+- Image generation — identical to today
+- `ManReport.tsx` component — only needs a guard for empty sections (minor)
+- All other API routes — untouched
+- The public client report page — untouched
+- Database schema — no new columns. `report_data` JSONB already supports partial writes
+
+---
+
+## Risk: Does splitting into 6 calls change quality?
+
+Minimal risk. Each section call receives the **full classification JSON** as context — the same structured data the single call used. The classification is comprehensive enough that section-level context is fully preserved. The only thing lost is cross-section "cohesion" that Gemini might have had when writing all 6 in one pass — but in practice the classification JSON already encodes that cohesion. Section 4 (outfits) already references the colour palette and body rules from the classification, not from section 3's prose.
+
+---
+
+## Verification Plan
+
+1. Trigger generation on a test submission
+2. Immediately navigate to `/man/admin/report/:reportId`
+3. Confirm: "Live · Writing Face Architecture…" indicator appears
+4. Confirm: Section 1 card appears (with text) within ~30-60s of triggering
+5. Confirm: Remaining sections show skeleton shimmer
+6. Confirm: Can approve Section 1 while Section 2 is still generating
+7. Confirm: Sections appear one by one as pipeline progresses
+8. Confirm: Images appear after all sections complete
+9. Confirm: Status transitions to `draft_ready` at the end
+10. Full pipeline completion time should be comparable to today (sequential section calls vs. one big call is similar total token volume)

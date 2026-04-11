@@ -13,7 +13,7 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { runClassification, runReportGeneration, type ReportData } from '@/lib/manReportGenerator';
+import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
 import { generateBaseModel, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
@@ -32,50 +32,72 @@ async function updateStage(reportId: string, stage: string) {
 
 // ── Pipeline: runs after response is sent ─────────────────────────────────
 
+async function writePartialData(
+  reportId: string,
+  classification: ClassificationResult,
+  sections: Record<string, string>,
+  nextStage: string
+) {
+  await supabaseAdmin
+    .from('man_reports')
+    .update({
+      report_data:    { classification, sections: { ...sections }, generated_at: new Date().toISOString() },
+      progress_stage: nextStage,
+      updated_at:     new Date().toISOString(),
+    })
+    .eq('id', reportId);
+}
+
 async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
   try {
-    // Phase 1 — Classification (Prompt 1)
-    await updateStage(reportId, 'analysing_face');
+    // Phase 1 — Classification
+    await updateStage(reportId, 'classifying');
     const classification = await runClassification(submission);
 
-    // Phase 2 — Report generation (Prompt 2)
-    await updateStage(reportId, 'generating_outfits');
-    const sections = await runReportGeneration(classification, submission);
+    // Write classification to DB so admin can navigate to review page immediately
+    const sections: Record<string, string> = {};
+    await writePartialData(reportId, classification, sections, 'generating_s1');
 
-    const reportData: ReportData = {
-      classification,
-      sections,
-      generated_at: new Date().toISOString(),
-    };
+    // Phase 2 — Sections (one Gemini call per section, DB write after each)
+    sections.s1_face = await runSection1(classification, submission);
+    await writePartialData(reportId, classification, sections, 'generating_s2');
+
+    sections.s2_body = await runSection2(classification, submission);
+    await writePartialData(reportId, classification, sections, 'generating_s3');
+
+    sections.s3_colour = await runSection3(classification, submission);
+    await writePartialData(reportId, classification, sections, 'generating_s4');
+
+    sections.s4_outfits = await runSection4(classification, submission);
+    await writePartialData(reportId, classification, sections, 'generating_s5');
+
+    sections.s5_rules = await runSection5(classification, submission);
+    await writePartialData(reportId, classification, sections, 'generating_s6');
+
+    sections.s6_identity = await runSection6(classification, submission);
+    await writePartialData(reportId, classification, sections, 'generating_images');
 
     // Phase 3+4 — Image generation (non-fatal — text report is complete regardless)
     let imageUrls: ManReportImagePaths | null = null;
     try {
-      await updateStage(reportId, 'generating_images');
-
       const baseModelPath = await generateBaseModel(reportId, submission, classification);
-      const outfitPaths   = await generateAllOutfitImages(reportId, baseModelPath, classification, sections);
-
-      imageUrls = {
-        baseModel:   baseModelPath,
-        outfitCards: outfitPaths,
-      };
-
+      const outfitPaths   = await generateAllOutfitImages(
+        reportId, baseModelPath, classification, sections as ReportData['sections']
+      );
+      imageUrls = { baseModel: baseModelPath, outfitCards: outfitPaths };
       console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
     } catch (imgErr) {
       console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErr instanceof Error ? imgErr.message : imgErr);
-      // Report is still marked draft_ready — stylist can approve text even without images
     }
 
     // Finalise
     await updateStage(reportId, 'finalising');
-
     await supabaseAdmin
       .from('man_reports')
       .update({
         status:         'draft_ready',
         progress_stage: null,
-        report_data:    reportData,
+        report_data:    { classification, sections, generated_at: new Date().toISOString() } as ReportData,
         image_urls:     imageUrls,
         generated_at:   new Date().toISOString(),
         updated_at:     new Date().toISOString(),
@@ -143,7 +165,7 @@ export async function POST(
     .insert({
       submission_id:     submissionId,
       status:            'generating',
-      progress_stage:    'analysing_face',
+      progress_stage:    'classifying',
       section_approvals: { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false },
     })
     .select('id')
