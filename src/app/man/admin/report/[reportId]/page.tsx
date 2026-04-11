@@ -25,6 +25,7 @@ interface Report {
   section_approvals: SectionApprovals;
   submission_id: string;
   created_at: string;
+  error_message: string | null;
   sent_at: string | null;
   man_intake_submissions: { id: string; customer_email: string; customer_phone: string | null } | null;
 }
