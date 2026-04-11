@@ -82,7 +82,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
     try {
       const baseModelPath = await generateBaseModel(reportId, submission, classification);
       const outfitPaths   = await generateAllOutfitImages(
-        reportId, baseModelPath, classification, sections as ReportData['sections']
+        reportId, baseModelPath, classification, sections as unknown as ReportData['sections']
       );
       imageUrls = { baseModel: baseModelPath, outfitCards: outfitPaths };
       console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
