@@ -80,14 +80,22 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
     // Phase 3+4 — Image generation (non-fatal — text report is complete regardless)
     let imageUrls: ManReportImagePaths | null = null;
     try {
+      await updateStage(reportId, 'generating_base_model');
       const baseModelPath = await generateBaseModel(reportId, submission, classification);
+      await updateStage(reportId, 'generating_outfit_images');
       const outfitPaths   = await generateAllOutfitImages(
         reportId, baseModelPath, classification, sections as unknown as ReportData['sections']
       );
       imageUrls = { baseModel: baseModelPath, outfitCards: outfitPaths };
       console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
     } catch (imgErr) {
-      console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErr instanceof Error ? imgErr.message : imgErr);
+      const imgErrMsg = imgErr instanceof Error ? imgErr.message : String(imgErr);
+      console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErrMsg);
+      // Write the image error into the DB so it's visible in the admin UI
+      await supabaseAdmin
+        .from('man_reports')
+        .update({ error_message: `Image generation failed: ${imgErrMsg}`, updated_at: new Date().toISOString() })
+        .eq('id', reportId);
     }
 
     // Finalise

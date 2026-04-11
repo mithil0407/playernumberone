@@ -97,63 +97,122 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
 // Markdown renderer — handles ###, **bold**, - lists, paragraphs
 // ─────────────────────────────────────────────────────────────
 
-function boldify(text: string): string {
-  return text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+function richify(text: string): string {
+  return text
+    // bold must come before italic to avoid double-processing
+    .replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+    // clean up any residual lone asterisks not part of formatting
+    .replace(/(^|\s)\*(\s|$)/g, '$1$2');
 }
+
+interface ListItem { text: string; type: 'bullet' | 'cross' | 'check' }
 
 function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolean }) {
   const lines    = text.split('\n');
   const elements: React.ReactNode[] = [];
-  let listItems: string[] = [];
+  let listItems: ListItem[] = [];
+  let orderedItems: string[] = [];
   let key = 0;
 
   const flushList = () => {
-    if (!listItems.length) return;
-    elements.push(
-      <ul key={key++} className="space-y-2 my-3">
-        {listItems.map((item, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: GOLD + '66' }} />
-            <span
-              className="text-xs text-gray-600 font-light leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: boldify(item) }}
-            />
-          </li>
-        ))}
-      </ul>
-    );
-    listItems = [];
+    if (listItems.length) {
+      elements.push(
+        <ul key={key++} className="space-y-2 my-3">
+          {listItems.map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5">
+              {item.type === 'cross' ? (
+                <span className="text-[10px] font-bold mt-0.5 flex-shrink-0" style={{ color: '#ef4444aa' }}>✗</span>
+              ) : item.type === 'check' ? (
+                <span className="text-[10px] font-bold mt-0.5 flex-shrink-0" style={{ color: GOLD }}>✓</span>
+              ) : (
+                <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: GOLD + '66' }} />
+              )}
+              <span
+                className="text-xs text-gray-600 font-light leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: richify(item.text) }}
+              />
+            </li>
+          ))}
+        </ul>
+      );
+      listItems = [];
+    }
+    if (orderedItems.length) {
+      elements.push(
+        <ol key={key++} className="space-y-2 my-3">
+          {orderedItems.map((item, i) => (
+            <li key={i} className="flex items-start gap-2.5">
+              <span className="text-[9px] font-black flex-shrink-0 mt-0.5 w-4" style={{ color: GOLD }}>{i + 1}.</span>
+              <span
+                className="text-xs text-gray-600 font-light leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: richify(item) }}
+              />
+            </li>
+          ))}
+        </ol>
+      );
+      orderedItems = [];
+    }
   };
 
   for (const raw of lines) {
     const line = raw.trimEnd();
 
+    if (!line.trim()) { flushList(); continue; }
     if (line.startsWith('## ') && skipH2) continue;
+    // Skip the outfit section confirmation line (e.g. "Total: 16 outfits confirmed…")
+    if (/^total.*\d+.*outfits?\s+(confirmed|=)/i.test(line.trim())) continue;
 
     if (line.startsWith('### ')) {
       flushList();
       elements.push(
-        <p key={key++} className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mt-6 mb-3" style={{ color: '#9ca3af' }}>
-          {line.slice(4)}
+        <p key={key++} className="text-[9px] font-black uppercase tracking-[0.3em] mt-6 mb-3" style={{ color: '#9ca3af' }}>
+          {line.slice(4).replace(/\*\*/g, '')}
         </p>
       );
-    } else if (line.match(/^(\*\*|__)[^*]+(\*\*|__)$/)) {
+    } else if (line.startsWith('## ')) {
+      flushList();
+      elements.push(
+        <p key={key++} className="text-[9px] font-black uppercase tracking-[0.3em] mt-5 mb-2" style={{ color: GOLD + 'cc' }}>
+          {line.slice(3).replace(/\*\*/g, '')}
+        </p>
+      );
+    } else if (line.startsWith('# ')) {
+      flushList();
+      elements.push(
+        <p key={key++} className="text-sm font-bold text-black mt-4 mb-2">{line.slice(2).replace(/\*\*/g, '')}</p>
+      );
+    } else if (/^\d+\.\s/.test(line)) {
+      // Ordered list item
+      listItems.length && flushList();
+      orderedItems.push(line.replace(/^\d+\.\s+/, ''));
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      orderedItems.length && flushList();
+      listItems.push({ text: line.slice(2), type: 'bullet' });
+    } else if (line.startsWith('✗ ') || line.startsWith('✘ ')) {
+      orderedItems.length && flushList();
+      listItems.push({ text: line.slice(2), type: 'cross' });
+    } else if (line.startsWith('✓ ') || line.startsWith('✔ ')) {
+      orderedItems.length && flushList();
+      listItems.push({ text: line.slice(2), type: 'check' });
+    } else if (/^(\*\*|__).+(\*\*|__)$/.test(line)) {
       // Standalone bold line = sub-label
       flushList();
       elements.push(
         <p key={key++} className="text-xs font-bold text-black mt-4 mb-1"
-          dangerouslySetInnerHTML={{ __html: boldify(line) }} />
+          dangerouslySetInnerHTML={{ __html: richify(line) }} />
       );
-    } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      listItems.push(line.slice(2));
-    } else if (line.trim()) {
+    } else if (/^═+$/.test(line) || /^─+$/.test(line) || /^━+$/.test(line)) {
+      // Divider lines — skip
+      flushList();
+    } else {
       flushList();
       elements.push(
         <p key={key++} className="text-xs text-gray-600 font-light leading-relaxed my-1.5"
-          dangerouslySetInnerHTML={{ __html: boldify(line) }} />
+          dangerouslySetInnerHTML={{ __html: richify(line) }} />
       );
-    } else {
-      flushList();
     }
   }
 
@@ -492,23 +551,33 @@ function OutfitsSection({ cls, text, outfitImageUrls }: { cls: ClassificationRes
             const outfitImg = outfitImageUrls?.[outfit.number - 1] ?? null;
             return (
             <div key={oi} className="flex flex-col md:flex-row bg-white border-b" style={{ borderColor: BORDER }}>
-              {/* Left: outfit image or number placeholder */}
+              {/* Left: outfit image or number placeholder — 40% card width */}
               <div
-                className="w-full md:w-[180px] flex-shrink-0 border-r overflow-hidden flex items-center justify-center"
-                style={{ background: CREAM2, borderColor: BORDER, minHeight: 200 }}
+                className="w-full md:w-2/5 flex-shrink-0 border-r overflow-hidden relative"
+                style={{ background: CREAM2, borderColor: BORDER, minHeight: 420 }}
               >
                 {outfitImg ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={outfitImg}
                     alt={`Outfit ${outfit.number} — ${outfit.label}`}
-                    className="w-full h-full object-cover"
-                    style={{ minHeight: 200 }}
+                    className="absolute inset-0 w-full h-full object-cover object-top"
                   />
                 ) : (
-                  <div className="text-center px-4">
-                    <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: GOLD + '80' }}>Outfit</p>
-                    <p className="text-3xl font-black text-gray-200">{String(outfit.number).padStart(2, '0')}</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    {/* Outfit number — large editorial placeholder */}
+                    <p className="text-[80px] font-black leading-none select-none" style={{ color: GOLD + '18' }}>
+                      {String(outfit.number).padStart(2, '0')}
+                    </p>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className="w-8 h-px" style={{ background: GOLD + '40' }} />
+                      <p className="text-[8px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD + '60' }}>
+                        {cat.name}
+                      </p>
+                      <p className="text-[9px] font-light italic text-center px-6 leading-relaxed" style={{ color: '#9ca3af' }}>
+                        {outfit.label}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -602,7 +671,7 @@ function IdentitySection({ text }: { text: string }) {
           <div className="border-l-4 pl-6" style={{ borderColor: GOLD }}>
             <p className="text-[9px] font-black uppercase tracking-[0.3em] mb-4 italic" style={{ color: GOLD }}>Personal Statement</p>
             <p className="text-sm text-gray-700 font-light leading-relaxed italic"
-              dangerouslySetInnerHTML={{ __html: boldify(body) }} />
+              dangerouslySetInnerHTML={{ __html: richify(body) }} />
           </div>
         </div>
       </div>

@@ -50,8 +50,10 @@ const STAGE_LABELS: Record<string, string> = {
   generating_s4:     'Writing 16 Outfits…',
   generating_s5:     'Writing Style Rules…',
   generating_s6:     'Writing Identity Statement…',
-  generating_images: 'Generating images…',
-  finalising:        'Finalising…',
+  generating_images:       'Generating images…',
+  generating_base_model:   'Generating base model…',
+  generating_outfit_images:'Generating outfit images…',
+  finalising:              'Finalising…',
 };
 
 const SECTION_FIELD_MAP: Record<SectionKey, SectionField> = {
