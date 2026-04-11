@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, use, useCallback } from 'react';
+import { useEffect, useState, use, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X } from 'lucide-react';
+import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw } from 'lucide-react';
 import ManReport from '@/components/ManReport';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
@@ -22,8 +23,9 @@ interface Report {
   image_urls: ResolvedImageUrls | null;
   share_token: string;
   section_approvals: SectionApprovals;
+  submission_id: string;
   sent_at: string | null;
-  man_intake_submissions: { customer_email: string; customer_phone: string | null } | null;
+  man_intake_submissions: { id: string; customer_email: string; customer_phone: string | null } | null;
 }
 
 const SECTIONS = [
@@ -80,6 +82,7 @@ function buildSafeReportData(reportData: ReportData): ReportData {
 
 export default function AdminReportPage({ params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = use(params);
+  const router = useRouter();
 
   const [report, setReport]               = useState<Report | null>(null);
   const [loading, setLoading]             = useState(true);
@@ -90,6 +93,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [sending, setSending]             = useState(false);
   const [copied, setCopied]               = useState(false);
   const [error, setError]                 = useState('');
+  const [terminating, setTerminating]     = useState(false);
+  const [retrying, setRetrying]           = useState(false);
+  const [elapsedSecs, setElapsedSecs]     = useState(0);
 
   const load = useCallback(async () => {
     const res  = await fetch(`/api/man-report/${reportId}`);
@@ -116,6 +122,20 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const interval = setInterval(load, 3000);
     return () => clearInterval(interval);
   }, [report?.status, load]);
+
+  // Elapsed-time ticker while generating
+  useEffect(() => {
+    if (report?.status !== 'generating' || !report.created_at) {
+      setElapsedSecs(0);
+      return;
+    }
+    const tick = () => {
+      setElapsedSecs(Math.floor((Date.now() - new Date(report.created_at).getTime()) / 1000));
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [report?.status, report?.created_at]);
 
   // ── Section approval ──────────────────────────────────────────────────
 
@@ -201,6 +221,52 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── Terminate (kill generating pipeline) ──────────────────────────────
+  const handleTerminate = async () => {
+    if (!report || terminating) return;
+    setTerminating(true);
+    setError('');
+    try {
+      await fetch(`/api/man-report/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'error',
+          progress_stage: null,
+          error_message: 'Manually cancelled by admin',
+        }),
+      });
+      await load();
+    } catch {
+      setError('Failed to cancel. Try again.');
+    } finally {
+      setTerminating(false);
+    }
+  };
+
+  // ── Retry (regenerate from scratch) ───────────────────────────────────
+  const handleRetry = async () => {
+    if (!report || retrying) return;
+    const submissionId = report.submission_id;
+    if (!submissionId) { setError('Missing submission ID — cannot retry.'); return; }
+    setRetrying(true);
+    setError('');
+    try {
+      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Retry failed'); return; }
+      if (data.reportId && data.reportId !== reportId) {
+        router.push(`/man/admin/report/${data.reportId}`);
+      } else {
+        await load();
+      }
+    } catch {
+      setError('Retry failed. Please try again.');
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   // ── Loading / error states ─────────────────────────────────────────────
 
   if (loading) {
@@ -225,12 +291,54 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const approvals    = report.section_approvals ?? { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false };
   const ready        = allApproved(approvals);
   const isGenerating = report.status === 'generating';
+  const isError      = report.status === 'error';
+  const isStuck      = isGenerating && elapsedSecs > 600;
   const safeData     = report.report_data ? buildSafeReportData(report.report_data) : null;
+
+  const elapsedLabel = (() => {
+    if (elapsedSecs < 60) return `${elapsedSecs}s`;
+    const m = Math.floor(elapsedSecs / 60);
+    const s = elapsedSecs % 60;
+    return `${m}m ${s}s`;
+  })();
 
   return (
     <div className="flex gap-0 h-[calc(100vh-4rem)] -m-5 lg:-m-8 overflow-hidden">
       {/* ── Left: Report Preview ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto" style={{ background: '#f5f5f5' }}>
+      <div className="flex-1 overflow-y-auto flex flex-col" style={{ background: '#f5f5f5' }}>
+        {/* Stuck banner */}
+        {isStuck && (
+          <div className="flex items-center justify-between gap-4 px-5 py-3 flex-shrink-0"
+            style={{ background: '#1a0f00', borderBottom: '1px solid #3a2000' }}>
+            <div className="flex items-center gap-2">
+              <AlertCircle size={14} style={{ color: '#fb923c' }} />
+              <span className="text-xs font-medium" style={{ color: '#fb923c' }}>
+                Generation has been running for {elapsedLabel} — it may be stuck.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={handleTerminate}
+                disabled={terminating}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
+              >
+                {terminating ? <Loader2 size={11} className="animate-spin" /> : <Ban size={11} />}
+                Cancel
+              </button>
+              <button
+                onClick={async () => { await handleTerminate(); await handleRetry(); }}
+                disabled={terminating || retrying}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+              >
+                {(terminating || retrying) ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
+                Force Restart
+              </button>
+            </div>
+          </div>
+        )}
+
         {safeData ? (
           <ManReport data={safeData} imageUrls={report.image_urls} />
         ) : (
@@ -260,11 +368,25 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             {report.man_intake_submissions?.customer_email ?? reportId}
           </p>
           {isGenerating && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#c9a96e' }} />
-              <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#c9a96e' }}>
-                LIVE · {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
-              </span>
+            <div className="mt-2 space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: isStuck ? '#fb923c' : '#c9a96e' }} />
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: isStuck ? '#fb923c' : '#c9a96e' }}>
+                  {isStuck ? `STUCK · ${elapsedLabel}` : `LIVE · ${elapsedLabel}`}
+                </span>
+              </div>
+              <p className="text-[9px]" style={{ color: '#6b5f4a' }}>
+                {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
+              </p>
+              <button
+                onClick={handleTerminate}
+                disabled={terminating}
+                className="flex items-center gap-1 text-[9px] font-medium px-2 py-1 rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
+              >
+                {terminating ? <Loader2 size={9} className="animate-spin" /> : <Ban size={9} />}
+                {terminating ? 'Cancelling…' : 'Cancel Generation'}
+              </button>
             </div>
           )}
         </div>
@@ -354,6 +476,24 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {copied ? 'Copied!' : 'Copy Client Link'}
               </button>
             </div>
+          ) : isError ? (
+            <>
+              <div className="flex items-center gap-2 px-2 py-2 rounded-lg mb-1" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
+                <AlertCircle size={12} style={{ color: '#f87171', flexShrink: 0 }} />
+                <p className="text-[10px] leading-tight" style={{ color: '#f87171' }}>
+                  {report.error_message ?? 'Generation failed'}
+                </p>
+              </div>
+              <button
+                onClick={handleRetry}
+                disabled={retrying}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+              >
+                {retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                {retrying ? 'Starting…' : 'Retry Generation'}
+              </button>
+            </>
           ) : (
             <>
               {!ready && !isGenerating && (

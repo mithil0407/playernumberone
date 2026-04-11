@@ -20,7 +20,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('man_reports')
-    .select('*, man_intake_submissions(customer_email, customer_phone)')
+    .select('*, man_intake_submissions(id, customer_email, customer_phone)')
     .eq('id', reportId)
     .single();
 
@@ -56,7 +56,7 @@ export async function PATCH(
   const { reportId } = await params;
   const body = await request.json();
 
-  const allowedFields = ['section_approvals', 'report_data', 'status', 'sent_at'];
+  const allowedFields = ['section_approvals', 'report_data', 'status', 'sent_at', 'progress_stage', 'error_message'];
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   for (const field of allowedFields) {

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, RefreshCw, Users, FileCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, Zap, Loader2 } from 'lucide-react';
+import { Search, RefreshCw, Users, FileCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, Zap, Loader2, RotateCcw } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -15,6 +15,7 @@ interface LatestReport {
   generated_at: string | null;
   sent_at: string | null;
   error_message: string | null;
+  created_at: string;
 }
 
 interface Submission {
@@ -54,14 +55,17 @@ function ReportBadge({ report }: { report: LatestReport | null }) {
     );
   }
 
+  const isStuck = report.status === 'generating' &&
+    (Date.now() - new Date(report.created_at).getTime()) > 10 * 60 * 1000;
+
   const configs: Record<string, { bg: string; color: string; label: string; dot?: boolean }> = {
-    pending:     { bg: '#1e1e1e', color: '#6b5f4a',  label: 'Pending' },
-    generating:  { bg: '#2a2010', color: '#c9a96e',  label: report.progress_stage ? stageName(report.progress_stage) : 'Generating…', dot: true },
-    draft_ready: { bg: '#2a2010', color: '#e8c17a',  label: 'Draft Ready' },
-    in_review:   { bg: '#0e1e2a', color: '#60a5fa',  label: 'In Review' },
-    approved:    { bg: '#0e2010', color: '#4ade80',  label: 'Approved' },
-    sent:        { bg: '#0e2010', color: '#22c55e',  label: 'Sent ✓' },
-    error:       { bg: '#2a0e0e', color: '#f87171',  label: 'Error' },
+    pending:     { bg: '#1e1e1e',  color: '#6b5f4a',  label: 'Pending' },
+    generating:  { bg: isStuck ? '#2a1500' : '#2a2010', color: isStuck ? '#fb923c' : '#c9a96e', label: isStuck ? 'Stuck?' : (report.progress_stage ? stageName(report.progress_stage) : 'Generating…'), dot: true },
+    draft_ready: { bg: '#2a2010',  color: '#e8c17a',  label: 'Draft Ready' },
+    in_review:   { bg: '#0e1e2a',  color: '#60a5fa',  label: 'In Review' },
+    approved:    { bg: '#0e2010',  color: '#4ade80',  label: 'Approved' },
+    sent:        { bg: '#0e2010',  color: '#22c55e',  label: 'Sent ✓' },
+    error:       { bg: '#2a0e0e',  color: '#f87171',  label: 'Error' },
   };
 
   const cfg = configs[report.status] ?? configs.pending;
@@ -344,17 +348,30 @@ export default function ManSubmissionsDashboard() {
                         </button>
                       )}
 
-                      {/* Generating — View Live deeplink */}
-                      {sub.latest_report?.status === 'generating' && sub.latest_report.id && (
-                        <Link
-                          href={`/man/admin/report/${sub.latest_report.id}`}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                          style={{ background: '#2a2010', color: '#c9a96e', border: '1px solid #3a3010' }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: '#c9a96e' }} />
-                          View Live
-                        </Link>
-                      )}
+                      {/* Generating — View Live or Force Restart if stuck */}
+                      {sub.latest_report?.status === 'generating' && sub.latest_report.id && (() => {
+                        const stuck = (Date.now() - new Date(sub.latest_report.created_at).getTime()) > 10 * 60 * 1000;
+                        return stuck ? (
+                          <button
+                            onClick={() => handleGenerate(sub.id)}
+                            disabled={generatingIds.has(sub.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
+                            style={{ background: '#2a1500', color: '#fb923c', border: '1px solid #3a2000' }}
+                          >
+                            {generatingIds.has(sub.id) ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
+                            Force Restart
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/man/admin/report/${sub.latest_report.id}`}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+                            style={{ background: '#2a2010', color: '#c9a96e', border: '1px solid #3a3010' }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: '#c9a96e' }} />
+                            View Live
+                          </Link>
+                        );
+                      })()}
 
                       {/* Error — Retry inline */}
                       {sub.latest_report?.status === 'error' && (
