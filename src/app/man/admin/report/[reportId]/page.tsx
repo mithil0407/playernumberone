@@ -279,7 +279,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             return (
               <div
                 key={key}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all"
+                className="group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all"
                 style={{
                   background: active ? '#1e1a14' : 'transparent',
                   border: `1px solid ${active ? '#2a2010' : 'transparent'}`,

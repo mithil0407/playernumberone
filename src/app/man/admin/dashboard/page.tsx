@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, RefreshCw, Users, FileCheck, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, RefreshCw, Users, FileCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, Zap, Loader2 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -120,12 +121,14 @@ function StatCard({ label, value, icon: Icon, color, loading }: {
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export default function ManSubmissionsDashboard() {
+  const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [total, setTotal]   = useState(0);
   const [page, setPage]     = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
 
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
@@ -152,6 +155,19 @@ export default function ManSubmissionsDashboard() {
     sent:          submissions.filter(s => s.latest_report?.status === 'sent').length,
     awaitingReview: submissions.filter(s => ['draft_ready','in_review'].includes(s.latest_report?.status ?? '')).length,
     errors:        submissions.filter(s => s.latest_report?.status === 'error').length,
+  };
+
+  const handleGenerate = async (submissionId: string) => {
+    setGeneratingIds(prev => new Set(prev).add(submissionId));
+    try {
+      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.reportId) {
+        router.push(`/man/admin/report/${data.reportId}`);
+      }
+    } finally {
+      setGeneratingIds(prev => { const next = new Set(prev); next.delete(submissionId); return next; });
+    }
   };
 
   const totalPages = Math.ceil(total / 20);
@@ -314,24 +330,76 @@ export default function ManSubmissionsDashboard() {
 
                   {/* Actions */}
                   <td style={tdStyle}>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/man/admin/dashboard/${sub.id}`}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                        style={{ background: '#1e1e1e', color: '#c8bfae' }}
-                      >
-                        View
-                      </Link>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* No report — inline Generate */}
+                      {!sub.latest_report && (
+                        <button
+                          onClick={() => handleGenerate(sub.id)}
+                          disabled={generatingIds.has(sub.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
+                          style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+                        >
+                          {generatingIds.has(sub.id) ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                          Generate
+                        </button>
+                      )}
+
+                      {/* Generating — View Live deeplink */}
+                      {sub.latest_report?.status === 'generating' && sub.latest_report.id && (
+                        <Link
+                          href={`/man/admin/report/${sub.latest_report.id}`}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+                          style={{ background: '#2a2010', color: '#c9a96e', border: '1px solid #3a3010' }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: '#c9a96e' }} />
+                          View Live
+                        </Link>
+                      )}
+
+                      {/* Error — Retry inline */}
+                      {sub.latest_report?.status === 'error' && (
+                        <button
+                          onClick={() => handleGenerate(sub.id)}
+                          disabled={generatingIds.has(sub.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
+                          style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
+                        >
+                          {generatingIds.has(sub.id) ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                          Retry
+                        </button>
+                      )}
+
+                      {/* Draft Ready / In Review / Approved — Review deeplink */}
+                      {['draft_ready', 'in_review', 'approved'].includes(sub.latest_report?.status ?? '') && sub.latest_report?.id && (
+                        <Link
+                          href={`/man/admin/report/${sub.latest_report.id}`}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                          style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+                        >
+                          Review →
+                        </Link>
+                      )}
+
+                      {/* Sent — Report external link */}
                       {sub.latest_report?.status === 'sent' && (
                         <Link
                           href={`/man/report/${sub.latest_report.share_token}`}
                           target="_blank"
                           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                          style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+                          style={{ background: '#0e2010', color: '#22c55e', border: '1px solid #1a3a1a' }}
                         >
                           Report ↗
                         </Link>
                       )}
+
+                      {/* View always available (dimmer) */}
+                      <Link
+                        href={`/man/admin/dashboard/${sub.id}`}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+                        style={{ background: '#1e1e1e', color: '#6b5f4a' }}
+                      >
+                        View
+                      </Link>
                     </div>
                   </td>
                 </tr>
