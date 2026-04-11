@@ -96,19 +96,25 @@ function buildBaseModelPrompt(c: ClassificationResult): string {
   const hairstyle = c.face.hairstyle_recommendations[0];
   const faceShape = c.face.face_shape;
 
-  return `Transform this full-body photograph of a man:
+  return `Transform this full-body photograph into a high-editorial menswear image.
 
-1. HAIRSTYLE: Replace current hairstyle with: ${hairstyle}. Must look natural and achievable on a ${faceShape} face shape. Do not alter face identity.
+BACKGROUND
+Replace the entire background with flat solid #94a6ad (ICONIK slate). No gradient, no texture, no vignette, no shadow bleed. Edge of subject must be clean against the slate.
 
-2. BACKGROUND: Replace entire background with flat solid colour #94a6ad (ICONIK slate). No gradient, no vignette, no shadow bleed onto background.
+HAIRSTYLE
+Replace the current hair with: ${hairstyle}. Must look freshly styled and intentional — not just changed, but groomed. Natural to a ${faceShape} face shape. Do not alter the face, skin tone, or facial features in any way.
 
-3. LIGHTING: Reprocess to clean editorial quality — soft directional light from slightly above, even skin tone rendering, no harsh shadows or blown highlights.
+POSE
+Reposition the subject to: standing perfectly upright, weight centred, arms relaxed at sides, facing directly toward the camera (full frontal). Full body from head to feet visible, subject centred in frame.
 
-4. POSE: Clean neutral standing — weight centred, arms relaxed at sides, slight 3/4 angle toward camera. Full body from head to feet must be visible.
+LIGHTING
+High-end editorial quality — clean, even, soft directional light from slightly above. Consistent skin tone rendering. No harsh shadows, no blown highlights, no under-exposure on the face.
 
-5. PRESERVE EXACTLY: Face identity, skin tone depth, body proportions, and height impression must remain unchanged.
+PRESERVE EXACTLY
+Face identity, skin tone depth, eye colour, body proportions, height impression. Do not slim, sculpt, or alter the body in any way.
 
-Output: Full body, head to feet, subject centred, flat slate background.`;
+OUTPUT
+Portrait format. Full body head to feet. Subject centred. Flat #94a6ad slate background. No props, no text, no decorative elements.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
@@ -328,11 +334,24 @@ export async function resolveManReportImageUrls(
 
   const resolveOne = async (path: string | null | undefined): Promise<string | null> => {
     if (!path) return null;
-    try {
-      return await getSignedUrl(path, SIGNED_URL_TTL);
-    } catch {
-      return null;
+
+    // 1. Try signed URL (works for both public and private buckets)
+    const { data: signedData, error: signedError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .createSignedUrl(path, SIGNED_URL_TTL);
+
+    if (signedData?.signedUrl) return signedData.signedUrl;
+
+    console.error(`[manImageGenerator] createSignedUrl failed for "${path}":`, signedError?.message ?? 'no signedUrl returned');
+
+    // 2. Fall back to public URL (works if bucket is set to public)
+    const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+    if (publicData?.publicUrl) {
+      console.warn(`[manImageGenerator] Using public URL fallback for "${path}"`);
+      return publicData.publicUrl;
     }
+
+    return null;
   };
 
   const allPaths = [paths.baseModel, ...(paths.outfitCards ?? [])];
