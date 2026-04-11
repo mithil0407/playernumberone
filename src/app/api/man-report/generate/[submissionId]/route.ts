@@ -156,7 +156,24 @@ export async function POST(
 
   const latest = existingReports?.[0];
   if (latest?.status === 'generating') {
-    return NextResponse.json({ reportId: latest.id, status: 'generating', alreadyRunning: true });
+    // Only treat it as still-running if it was created within the last 10 minutes.
+    // Beyond that, the pipeline is considered dead (Vercel killed the after() callback).
+    const { data: latestFull } = await supabaseAdmin
+      .from('man_reports')
+      .select('created_at')
+      .eq('id', latest.id)
+      .single();
+    const ageMs = latestFull?.created_at
+      ? Date.now() - new Date(latestFull.created_at).getTime()
+      : Infinity;
+    if (ageMs < 10 * 60 * 1000) {
+      return NextResponse.json({ reportId: latest.id, status: 'generating', alreadyRunning: true });
+    }
+    // Stale — mark the dead row as errored so it doesn't keep blocking
+    await supabaseAdmin
+      .from('man_reports')
+      .update({ status: 'error', progress_stage: null, error_message: 'Generation timed out — restarted', updated_at: new Date().toISOString() })
+      .eq('id', latest.id);
   }
 
   // 3. Create a new report row with 'generating' status
