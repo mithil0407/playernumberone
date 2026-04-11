@@ -270,28 +270,108 @@ One paragraph (3-4 sentences): pattern scale, contrast level, and fabric texture
 
 ## SECTION 4: YOUR 16 OUTFITS
 
-For each outfit category (from outfit_split in classification), introduce the category with one sentence on the objective of these looks for this client.
+═══════════════════════════════════════════════
+ABSOLUTE BANNED GARMENTS — NEVER USE IN ANY OUTFIT
+═══════════════════════════════════════════════
+The following are permanently prohibited regardless of client profile, season, or occasion:
+✗ Skinny jeans (tapered below the knee, ankle-hugging silhouette)
+✗ Slim-fit trousers with aggressive thigh-to-ankle taper (look for: "slim", "skinny", "spray-on" fit descriptors — all banned)
+✗ Body-hugging or muscle-fit t-shirts (fabric stretched across chest/arms, revealing musculature)
+✗ Stretch denim in any cut narrower than straight-leg
+✗ Compression-style tops worn as outerwear
+✗ Jeggings or denim with elastane construction in slim silhouettes
+Any outfit that violates the above is invalid. If you notice a violation mid-generation, correct it before outputting.
 
-For each individual outfit:
+═══════════════════════════════════════════════
+GARMENT VOCABULARY & FIT STANDARDS
+═══════════════════════════════════════════════
+Approved trouser silhouettes (use these exact descriptors):
+  • Straight-leg — consistent width from hip to hem, clean break at shoe
+  • Tailored straight — structured, mid-rise, slight taper only through knee (not below)
+  • Wide-leg — relaxed through thigh and leg, contemporary proportion
+  • Pleated trousers — single or double pleat, high-rise, full seat, straight leg
+  • Chinos (straight or tailored straight only — never slim-leg chinos)
+  • Cropped trousers — straight leg with no-break hem (appropriate for smart casual/casual only)
 
-**Outfit [N] — [One-word mood/occasion label]**
-- Top: [specific garment description including colour from palette]
-- Bottom: [specific garment including colour from palette]
-- Layer/Outerwear: [if applicable — or "No layer needed"]
-- Footwear: [specific shoe type and colour]
-- Detail: [one accessory or grooming note]
-- Why it works: [One sentence connecting outfit to body geometry, colour profile, and style brief]
+Approved top silhouettes:
+  • Classic-fit shirt — chest and body have ease, not fitted to the torso
+  • Relaxed-fit shirt — more ease through body, intended to be worn untucked or loosely tucked
+  • Boxy or straight-cut tee — fabric falls straight from shoulder, not contoured to chest
+  • Oversized tee — deliberate volume, worn with intention not by default
+  • Knitwear — ribbed, cable, fine-gauge; always with ease through body
+  • Polo — classic fit only, never fitted/slim polo
 
-Rules:
-1. Every colour used must come from the client's primary palette, neutral base, or accent colours.
-2. Every silhouette choice must comply with the body geometry rules.
-3. Every outfit must be consistent with the style brief aesthetic direction.
-4. No two outfits may use the same top + bottom combination.
-5. Across the full 16, every primary palette colour must appear at least once.
-6. At least 3 outfits must directly reflect the Free Note aspiration (if substantive).
-7. Casual outfits must still be colour-correct and silhouette-correct — not an afterthought.
+Approved outerwear:
+  • Structured blazer / sport coat (single or double breasted)
+  • Suit jacket
+  • Unstructured linen/cotton blazer
+  • Overcoat / topcoat
+  • Trench coat
+  • Bomber jacket (relaxed fit, not cropped tight)
+  • Field jacket / harrington jacket
+  • Knitwear layer (cardigan, zip-through)
 
-Before generating outfits, confirm: total = exactly 16, all categories represented, counts match classification.
+═══════════════════════════════════════════════
+FOOTWEAR TAXONOMY — USE ONLY THESE TERMS
+═══════════════════════════════════════════════
+Formal/Work:
+  • Oxford (cap-toe, plain, brogue) — closed lacing, most formal
+  • Derby — open lacing, slightly less formal, more toe box room
+  • Loafer (penny, tassel, horsebit) — slip-on, smart casual to semi-formal
+  • Chelsea boot — elastic side panel, clean ankle, works formal to smart casual
+
+Smart Casual:
+  • Suede loafer — relaxed material, smarter than trainers
+  • Suede chukka boot — two-eyelet ankle boot, versatile
+  • Derby in suede or textured leather
+  • Clean white leather trainer — minimal, no chunky sole
+
+Casual:
+  • Canvas or leather low-top trainer (clean, minimal colourway)
+  • Suede desert boot
+  • Leather sandal (appropriate for India/UAE climates, warm months)
+
+Always specify: shoe type + material + colour.
+Example: "Tan suede penny loafer" or "Black leather cap-toe Oxford"
+
+═══════════════════════════════════════════════
+OUTFIT FORMAT — REQUIRED FOR ALL 16
+═══════════════════════════════════════════════
+
+For each outfit category (from outfit_split in classification), open with:
+Category intro (2 sentences): Objective of this category for this specific client — what role these outfits play in his life, and what they should achieve for his presence.
+
+Then for each outfit, use this exact structure:
+
+**Outfit [N] — [Two to three word occasion/mood label]**
+
+- Top: [garment type] in [colour name] ([hex]) — [fit descriptor: classic-fit / relaxed-fit / boxy / oversized] — [fabric: e.g. brushed cotton, fine merino, linen, heavy Oxford cloth] — [tuck instruction: tucked / untucked / half-tuck]
+- Bottom: [trouser type from approved list] in [colour name] ([hex]) — [rise: mid-rise / high-rise] — [fabric: e.g. wool-blend, cotton twill, linen, stretch-free denim] — [break: no break / quarter break / half break]
+- Layer: [specific outerwear type] in [colour name] ([hex]) — [worn: open / closed / over-arm] | or: No layer
+- Footwear: [type + material + colour from approved taxonomy] — [sock note: no-show / fine cotton / wool ribbed / no socks]
+- Accessories: [1-2 items maximum — belt, watch, pocket square, bag. Specific material and colour. If none, omit this line entirely]
+- Fit note: [One sentence on how each piece should physically fit this client's specific body geometry — reference silhouette type and highlight/minimise zones]
+- Colour logic: [One sentence tracing every colour in this outfit back to the palette — name the palette category for each piece]
+- Why it works: [One sentence connecting the complete outfit to this client's style brief and aspiration — reference the aesthetic direction and register]
+
+═══════════════════════════════════════════════
+GENERATION RULES — ALL 16 MUST PASS EVERY CHECK
+═══════════════════════════════════════════════
+1. COLOUR FIDELITY — Every colour must come from primary palette, neutral base, or accent colours. Name the palette source for each piece in Colour logic.
+2. SILHOUETTE COMPLIANCE — Every bottom must use an approved trouser silhouette. Every top must use an approved top silhouette. No exceptions.
+3. STYLE BRIEF ALIGNMENT — Every outfit must be traceable to the aesthetic direction and register in the classification style_brief.
+4. UNIQUENESS — No two outfits may share the same top + bottom combination.
+5. PALETTE COVERAGE — Across the 16 outfits, every primary palette colour must appear at least once.
+6. ASPIRATION ANCHORING — At least 3 outfits must directly reflect the Free Note aspiration (if the Free Note contains substantive content).
+7. CATEGORY INTEGRITY — Casual outfits are not downgraded in quality — they must be as colour-correct and silhouette-precise as work outfits.
+8. FABRIC LOGIC — Fabric choices must suit the occasion tier (e.g. no linen suit in a formal corporate outfit, no heavy tweed in a casual summer look).
+9. LAYERING LOGIC — Only add a layer if it serves a functional or proportional purpose. Specify open vs closed. Never add a layer just to fill the field.
+10. FOOTWEAR REGISTER — Shoe formality must match the outfit's occasion tier. No trainers in Work/Formal. No Oxfords in Casual.
+11. BANNED GARMENTS CHECK — Before finalising each outfit, verify: no skinny jeans, no slim-tapered trousers, no fitted/muscle-fit tops. If any are present, replace immediately.
+12. LOCATION CLIMATE — Factor in the client's location region for layering decisions. India T1 / UAE: reduce layering in warm categories. UK / Canada: include outerwear more frequently.
+13. PROPORTION SYSTEM — Each outfit must function as a coherent proportion system. If the bottom has volume (wide-leg, pleated), the top should have some structure or tuck. If the top has volume (oversized, relaxed), the bottom should be cleaner and straighter.
+
+Before generating the first outfit: confirm total = exactly 16, all categories represented, counts match classification outfit_split. State this confirmation as a single line before the first category header.
 
 ---
 

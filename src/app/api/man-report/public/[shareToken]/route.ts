@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { resolveManReportImageUrls, type ManReportImagePaths } from '@/lib/manImageGenerator';
 
 // GET — fetch report by share token (no auth required)
 // Only returns reports with status = 'sent'
@@ -21,5 +22,15 @@ export async function GET(
     return NextResponse.json({ error: 'Report not found or not yet published' }, { status: 404 });
   }
 
-  return NextResponse.json({ report: data });
+  // Resolve storage paths → fresh signed URLs before sending to client
+  const imageUrls = await resolveManReportImageUrls(
+    data.image_urls as ManReportImagePaths | null
+  );
+
+  return NextResponse.json({
+    report: {
+      ...data,
+      image_urls: imageUrls,
+    },
+  });
 }

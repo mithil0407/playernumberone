@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X } from 'lucide-react';
 import ManReport from '@/components/ManReport';
 import type { ReportData } from '@/lib/manReportGenerator';
+import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -17,7 +18,7 @@ interface Report {
   id: string;
   status: string;
   report_data: ReportData;
-  image_urls: Record<string, unknown> | null;
+  image_urls: ResolvedImageUrls | null;
   share_token: string;
   section_approvals: SectionApprovals;
   sent_at: string | null;
@@ -196,7 +197,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     <div className="flex gap-0 h-[calc(100vh-4rem)] -m-5 lg:-m-8 overflow-hidden">
       {/* ── Left: Report Preview ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto" style={{ background: '#f5f5f5' }}>
-        <ManReport data={report.report_data} />
+        <ManReport data={report.report_data} imageUrls={report.image_urls} />
       </div>
 
       {/* ── Right: Edit Panel ────────────────────────────────────────────── */}

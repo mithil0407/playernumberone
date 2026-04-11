@@ -3,6 +3,7 @@
 // Design matches the embedded report preview on /man landing page exactly.
 
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
+import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens (matches /man/page.tsx embedded report)
@@ -18,14 +19,16 @@ const CREAM2  = '#f5f3ef';
 // ─────────────────────────────────────────────────────────────
 
 interface ParsedOutfit {
-  number: number;
-  label: string;
-  top: string;
-  bottom: string;
-  layer: string;
-  footwear: string;
-  detail: string;
-  whyItWorks: string;
+  number:      number;
+  label:       string;
+  top:         string;
+  bottom:      string;
+  layer:       string;
+  footwear:    string;
+  accessories: string;
+  fitNote:     string;
+  colourLogic: string;
+  whyItWorks:  string;
 }
 
 interface OutfitCategory {
@@ -68,14 +71,16 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
     }
 
     const outfit: ParsedOutfit = {
-      number:     parseInt(outfitMatch[1]),
-      label:      outfitMatch[2].trim(),
-      top:        getField(block, 'Top'),
-      bottom:     getField(block, 'Bottom'),
-      layer:      getField(block, 'Layer(?:\\/Outerwear)?(?:\\/Layer)?'),
-      footwear:   getField(block, 'Footwear'),
-      detail:     getField(block, 'Detail'),
-      whyItWorks: getField(block, 'Why it works'),
+      number:      parseInt(outfitMatch[1]),
+      label:       outfitMatch[2].trim(),
+      top:         getField(block, 'Top'),
+      bottom:      getField(block, 'Bottom'),
+      layer:       getField(block, 'Layer(?:\\/Outerwear)?(?:\\/Layer)?'),
+      footwear:    getField(block, 'Footwear'),
+      accessories: getField(block, 'Accessories'),
+      fitNote:     getField(block, 'Fit note'),
+      colourLogic: getField(block, 'Colour logic'),
+      whyItWorks:  getField(block, 'Why it works'),
     };
 
     if (!currentCat) {
@@ -447,7 +452,7 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
 // Section 04 — 16 Outfits
 // ─────────────────────────────────────────────────────────────
 
-function OutfitsSection({ cls, text }: { cls: ClassificationResult; text: string }) {
+function OutfitsSection({ cls, text, outfitImageUrls }: { cls: ClassificationResult; text: string; outfitImageUrls?: (string | null)[] }) {
   const categories = parseOutfitCategories(text);
   const split      = cls.outfit_split;
 
@@ -483,17 +488,29 @@ function OutfitsSection({ cls, text }: { cls: ClassificationResult; text: string
           </div>
 
           {/* Outfit cards */}
-          {cat.outfits.map((outfit, oi) => (
+          {cat.outfits.map((outfit, oi) => {
+            const outfitImg = outfitImageUrls?.[outfit.number - 1] ?? null;
+            return (
             <div key={oi} className="flex flex-col md:flex-row bg-white border-b" style={{ borderColor: BORDER }}>
-              {/* Left: no image yet (placeholder for image generation phase) */}
+              {/* Left: outfit image or number placeholder */}
               <div
-                className="w-full md:w-[180px] flex-shrink-0 border-r flex items-center justify-center"
+                className="w-full md:w-[180px] flex-shrink-0 border-r overflow-hidden flex items-center justify-center"
                 style={{ background: CREAM2, borderColor: BORDER, minHeight: 200 }}
               >
-                <div className="text-center px-4">
-                  <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: GOLD + '80' }}>Outfit</p>
-                  <p className="text-3xl font-black text-gray-200">{String(outfit.number).padStart(2, '0')}</p>
-                </div>
+                {outfitImg ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={outfitImg}
+                    alt={`Outfit ${outfit.number} — ${outfit.label}`}
+                    className="w-full h-full object-cover"
+                    style={{ minHeight: 200 }}
+                  />
+                ) : (
+                  <div className="text-center px-4">
+                    <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: GOLD + '80' }}>Outfit</p>
+                    <p className="text-3xl font-black text-gray-200">{String(outfit.number).padStart(2, '0')}</p>
+                  </div>
+                )}
               </div>
 
               {/* Right: outfit details */}
@@ -510,11 +527,11 @@ function OutfitsSection({ cls, text }: { cls: ClassificationResult; text: string
                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Composition</p>
                     <div className="space-y-3">
                       {[
-                        { label: 'Top',            value: outfit.top },
-                        { label: 'Bottom',         value: outfit.bottom },
-                        { label: 'Layer',          value: outfit.layer },
-                        { label: 'Footwear',       value: outfit.footwear },
-                        { label: 'Detail',         value: outfit.detail },
+                        { label: 'Top',         value: outfit.top },
+                        { label: 'Bottom',      value: outfit.bottom },
+                        { label: 'Layer',       value: outfit.layer },
+                        { label: 'Footwear',    value: outfit.footwear },
+                        { label: 'Accessories', value: outfit.accessories },
                       ].map(({ label, value }) => value && value !== '—' ? (
                         <div key={label}>
                           <DataLabel>{label}</DataLabel>
@@ -525,13 +542,28 @@ function OutfitsSection({ cls, text }: { cls: ClassificationResult; text: string
                   </div>
 
                   {/* Rationale */}
-                  <div>
-                    <StylistNote>{outfit.whyItWorks}</StylistNote>
+                  <div className="space-y-4">
+                    {outfit.whyItWorks && outfit.whyItWorks !== '—' && (
+                      <StylistNote>{outfit.whyItWorks}</StylistNote>
+                    )}
+                    {outfit.fitNote && outfit.fitNote !== '—' && (
+                      <div>
+                        <DataLabel>Fit Note</DataLabel>
+                        <span className="text-xs text-gray-500 font-light leading-relaxed">{outfit.fitNote}</span>
+                      </div>
+                    )}
+                    {outfit.colourLogic && outfit.colourLogic !== '—' && (
+                      <div>
+                        <DataLabel>Colour Logic</DataLabel>
+                        <span className="text-xs text-gray-500 font-light leading-relaxed">{outfit.colourLogic}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       ))}
     </div>
@@ -584,9 +616,10 @@ function IdentitySection({ text }: { text: string }) {
 
 interface ManReportProps {
   data: ReportData;
+  imageUrls?: ResolvedImageUrls | null;
 }
 
-export default function ManReport({ data }: ManReportProps) {
+export default function ManReport({ data, imageUrls }: ManReportProps) {
   const { classification: cls, sections } = data;
 
   return (
@@ -652,7 +685,7 @@ export default function ManReport({ data }: ManReportProps) {
       <FaceSection   cls={cls} text={sections.s1_face} />
       <BodySection   cls={cls} text={sections.s2_body} />
       <ColourSection cls={cls} text={sections.s3_colour} />
-      <OutfitsSection cls={cls} text={sections.s4_outfits} />
+      <OutfitsSection cls={cls} text={sections.s4_outfits} outfitImageUrls={imageUrls?.outfitCards ?? undefined} />
       <StyleRulesSection text={sections.s5_rules} />
       <IdentitySection   text={sections.s6_identity} />
 

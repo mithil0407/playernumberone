@@ -1,6 +1,11 @@
 // POST /api/man-report/generate/[submissionId]
 //
-// Creates a man_reports row and fires the two-prompt Gemini pipeline.
+// Creates a man_reports row and fires the four-phase Gemini pipeline:
+//   Phase 1 — Classification JSON          (analysing_face)
+//   Phase 2 — Report copy (6 sections)     (generating_outfits)
+//   Phase 3 — Base model image             (generating_images)
+//   Phase 4 — 16 outfit images             (generating_images)
+//
 // Returns { reportId } immediately; pipeline runs via Next.js `after()`.
 // Admin dashboard polls /api/man-report/status/[reportId] for progress.
 
@@ -9,10 +14,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
 import { runClassification, runReportGeneration, type ReportData } from '@/lib/manReportGenerator';
+import { generateBaseModel, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
-// Allow up to 5 minutes — Gemini classification + full report generation
-export const maxDuration = 300;
+// Allow up to 10 minutes — text pipeline + 16 image generations
+export const maxDuration = 600;
 
 // ── Helper: update report progress stage ──────────────────────────────────
 
@@ -27,16 +33,13 @@ async function updateStage(reportId: string, stage: string) {
 
 async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
   try {
-    // Stage 1 — Classification (Prompt 1)
+    // Phase 1 — Classification (Prompt 1)
     await updateStage(reportId, 'analysing_face');
     const classification = await runClassification(submission);
 
-    // Stage 2 — Report generation (Prompt 2)
+    // Phase 2 — Report generation (Prompt 2)
     await updateStage(reportId, 'generating_outfits');
     const sections = await runReportGeneration(classification, submission);
-
-    // Stage 3 — Finalising
-    await updateStage(reportId, 'finalising');
 
     const reportData: ReportData = {
       classification,
@@ -44,12 +47,35 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
       generated_at: new Date().toISOString(),
     };
 
+    // Phase 3+4 — Image generation (non-fatal — text report is complete regardless)
+    let imageUrls: ManReportImagePaths | null = null;
+    try {
+      await updateStage(reportId, 'generating_images');
+
+      const baseModelPath = await generateBaseModel(reportId, submission, classification);
+      const outfitPaths   = await generateAllOutfitImages(reportId, baseModelPath, classification, sections);
+
+      imageUrls = {
+        baseModel:   baseModelPath,
+        outfitCards: outfitPaths,
+      };
+
+      console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
+    } catch (imgErr) {
+      console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErr instanceof Error ? imgErr.message : imgErr);
+      // Report is still marked draft_ready — stylist can approve text even without images
+    }
+
+    // Finalise
+    await updateStage(reportId, 'finalising');
+
     await supabaseAdmin
       .from('man_reports')
       .update({
         status:         'draft_ready',
         progress_stage: null,
         report_data:    reportData,
+        image_urls:     imageUrls,
         generated_at:   new Date().toISOString(),
         updated_at:     new Date().toISOString(),
       })
@@ -72,7 +98,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
   }
 }
 
-// ── Route handler ─────────────────────────────────────────────────────────
+// ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(
   _request: NextRequest,
@@ -107,7 +133,6 @@ export async function POST(
 
   const latest = existingReports?.[0];
   if (latest?.status === 'generating') {
-    // Already running — return the existing reportId so admin can poll it
     return NextResponse.json({ reportId: latest.id, status: 'generating', alreadyRunning: true });
   }
 

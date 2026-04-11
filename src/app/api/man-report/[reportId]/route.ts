@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
+import { resolveManReportImageUrls, type ManReportImagePaths } from '@/lib/manImageGenerator';
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
@@ -27,7 +28,17 @@ export async function GET(
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ report: data });
+  // Resolve storage paths → fresh signed URLs before sending to admin client
+  const imageUrls = await resolveManReportImageUrls(
+    data.image_urls as ManReportImagePaths | null
+  );
+
+  return NextResponse.json({
+    report: {
+      ...data,
+      image_urls: imageUrls,
+    },
+  });
 }
 
 // ── PATCH — update approvals, report_data edits, or status ────────────────
