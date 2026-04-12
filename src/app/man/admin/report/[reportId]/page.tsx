@@ -401,7 +401,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
-                onClick={handleTerminate}
+                onClick={() => handleTerminate()}
                 disabled={terminating}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
                 style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
@@ -467,7 +467,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
               </p>
               <button
-                onClick={handleTerminate}
+                onClick={() => handleTerminate()}
                 disabled={terminating}
                 className="flex items-center gap-1 text-[9px] font-medium px-2 py-1 rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
                 style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
