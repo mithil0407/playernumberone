@@ -427,17 +427,11 @@ Label every piece as one of:
   [complementary tone] \u2014 e.g. "Sage (#8a9e7a) \u2014 complementary tone, not on avoid list"
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-FREE NOTE TRANSLATION \u2014 OUTPUT BEFORE ANY OUTFIT
+FREE NOTE TRANSLATION \u2014 INTERNAL PLANNING STEP (DO NOT OUTPUT)
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Before generating any outfit, output this line:
+Before generating any outfit, internally translate the client's Free Note aspiration into specific garment types, colour names, and occasion terms. Do NOT output this translation — use it only to inform ≥3 outfits that directly embody the client's stated aesthetic. Every aspiration-anchored outfit must trace to a concrete element from this internal translation.
 
-FREE NOTE TRANSLATION: [Convert the client's Free Note aspiration into specific garment types, colour names, and occasion terms. Be concrete \u2014 name the actual pieces and colours that embody this aesthetic for this specific man.]
-
-Example: "Ralph Lauren for a dusky Indian man = navy blazer, cream Oxford shirt, stone/khaki chinos, tan penny loafers \u2014 warm rust and olive as accent colour entries."
-
-If Free Note is absent or vague, write: "No free note \u2014 defaulting to style brief: [aesthetic_direction from classification]."
-
-The \u22653 aspiration-anchored outfits rule is enforced against this translation. Every aspiration-anchored outfit must trace directly to a specific element in this translation.
+If Free Note is absent or vague, default to the style brief's aesthetic_direction from classification.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 OUTFIT ORDERING RULE
@@ -451,20 +445,16 @@ If lifestyle context includes Corporate or Client Facing: a suit or formal blaze
 The first outfit the client reads sets the quality benchmark for the whole report. If Outfit 1 is weak, the perceived value of everything that follows drops.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-PRE-GENERATION DECLARATION \u2014 OUTPUT BEFORE OUTFIT 1
+PRE-GENERATION CHECKLIST \u2014 INTERNAL ONLY, DO NOT OUTPUT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Before writing the first category header, output this complete block. Do not skip any field.
+Before writing the first category header, silently verify all of the following. Do NOT output this check — proceed directly to writing the first category header once verified.
 
-PRE-GENERATION CHECK
-Free Note Translation: [one sentence]
-Outfit split confirmed: [Category] [N] / [Category] [N] / [Category] [N] / [Category] [N] = 16 total
-Top silhouette distribution: Classic-fit shirt [N] / Relaxed-fit shirt [N] / Polo [N] / Tee [N] / Knitwear [N] / Other [N]
-Cap compliance: Classic-fit \u22645 [\u2713/\u2717] / Relaxed \u22643 [\u2713/\u2717] / Polo \u22643 [\u2713/\u2717] / Tee \u22643 [\u2713/\u2717] / Knitwear \u22643 [\u2713/\u2717] \u2014 if any \u2717, revise distribution before proceeding.
-Location: [location_region] \u2192 Fabric matrix: [India T1 / International]
-Colours to avoid (hard block): [list from classification colours_to_avoid]
-Universal neutrals planned: [list]
-Palette colours in \u226510 outfits: [confirmed / count]
-Short-client module: [Active \u2014 rules applied to all 16 / Not active]
+- Outfit split totals exactly 16 across all categories
+- Top silhouette frequency caps respected: Classic-fit ≤5, Relaxed ≤3, Polo ≤3, Tee ≤3, Knitwear ≤3
+- Correct fabric matrix applied for client's location_region
+- colours_to_avoid list confirmed and hard-blocked in all 16 outfits
+- Short-client module active status confirmed
+- ≥10 of 16 outfits will include at least one palette colour
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 OUTFIT FORMAT \u2014 REQUIRED FOR ALL 16
@@ -886,14 +876,13 @@ export async function runSection3(classification: ClassificationResult, submissi
   return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(2, classification, submission));
 }
 
-/** Strip the PRE-GENERATION CHECK block and FREE NOTE TRANSLATION line that the model
- *  outputs as planning text before writing the actual outfits. These should not appear
- *  in the saved section content or in the rendered report. */
+/** Safety net: strip any planning/meta text the model may output before the actual outfits.
+ *  The prompt now instructs the model NOT to output these, but strip defensively anyway. */
 function stripSection4Preamble(text: string): string {
   return text
     .replace(/^FREE NOTE TRANSLATION:.*$/gim, '')
-    .replace(/^PRE-GENERATION CHECK\s*$/gim, '')
-    .replace(/^(?:Free Note Translation|Outfit split confirmed|Top silhouette distribution|Cap compliance|Location|Colours to avoid \(hard block\)|Universal neutrals planned|Palette colours[^:]*|Short-client module):.*$/gim, '')
+    .replace(/^PRE-GENERATION CHECK[:\s].*$/gim, '')
+    .replace(/^(?:Free Note Translation|Outfit split confirmed|Top silhouette distribution|Cap compliance|Location|Colours to avoid[^:]*|Universal neutrals planned|Palette colours[^:]*|Short-client module):.*$/gim, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
