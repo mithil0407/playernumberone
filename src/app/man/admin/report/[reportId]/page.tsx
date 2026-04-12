@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use, useCallback, useMemo } from 'react';
+import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw } from 'lucide-react';
@@ -277,7 +277,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   };
 
   // ── Terminate (kill generating pipeline) ──────────────────────────────
-  const handleTerminate = async () => {
+  const handleTerminate = useCallback(async (reason = 'Manually cancelled by admin') => {
     if (!report || terminating) return;
     setTerminating(true);
     setError('');
@@ -288,7 +288,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         body: JSON.stringify({
           status: 'error',
           progress_stage: null,
-          error_message: 'Manually cancelled by admin',
+          error_message: reason,
         }),
       });
       await load();
@@ -297,7 +297,32 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     } finally {
       setTerminating(false);
     }
-  };
+  }, [report, reportId, terminating, load]);
+
+  // Auto-terminate if the pipeline has been running longer than Vercel's max (300s).
+  // When the server's after() callback is killed the DB status stays 'generating'
+  // forever — this effect clears it automatically without requiring user action.
+  const autoTerminatedRef = useRef(false);
+  useEffect(() => {
+    if (autoTerminatedRef.current) return;
+    if (!report || report.status !== 'generating') return;
+    const ageMs = report.created_at
+      ? Date.now() - new Date(report.created_at).getTime()
+      : 0;
+    if (ageMs < 360_000) return; // < 6 min: pipeline may still be alive
+    autoTerminatedRef.current = true;
+    setTerminating(true);
+    fetch(`/api/man-report/${reportId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'error',
+        progress_stage: null,
+        error_message: 'Generation timed out — pipeline was killed by the server',
+      }),
+    }).then(() => load()).catch(() => {}).finally(() => setTerminating(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report?.status, report?.created_at]);
 
   // ── Retry (regenerate from scratch) ───────────────────────────────────
   const handleRetry = async () => {

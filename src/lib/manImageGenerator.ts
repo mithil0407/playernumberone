@@ -210,6 +210,36 @@ async function getSignedUrl(path: string, ttl = SIGNED_URL_TTL): Promise<string>
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Concurrency + retry helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Run task functions with at most `limit` in-flight at once. */
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number,
+): Promise<T[]> {
+  const results = new Array<T>(tasks.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < tasks.length) {
+      const i = next++;
+      results[i] = await tasks[i]();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
+}
+
+/** Run fn, retrying once on failure (gives transient API errors a second chance). */
+async function withOneRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch {
+    return fn();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Public API — generation
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -234,7 +264,7 @@ export async function generateHairstyleImages(
   const hairstyles = face.hairstyle_recommendations.slice(0, 2);
 
   const tasks = hairstyles.map((hairstyle, i) =>
-    callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel)
+    withOneRetry(() => callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel))
       .then(outputBase64 => uploadToStorage(reportId, outputBase64, `hairstyle_${i + 1}.jpg`))
       .catch(err => {
         console.error(`[manImageGenerator] Hairstyle variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
@@ -266,36 +296,37 @@ export async function generateAllOutfitImages(
     return [];
   }
 
-  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images fully parallel (model: ${imageModel})`);
+  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images (concurrency 4, model: ${imageModel})`);
 
-  // Fetch the full-body reference photo once, reuse across all 16 calls
+  // Fetch the full-body reference photo once, reuse across all calls
   const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
 
   // Pre-allocate for partial progress writes
   const partialPaths: (string | null)[] = new Array(outfits.length).fill(null);
 
-  const tasks = outfits.map((outfit, taskIdx) =>
-    callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel)
-      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`))
-      .then(async path => {
-        partialPaths[taskIdx] = path;
-        // Always include hairstylePaths so they are never overwritten by outfit progress writes
-        await supabaseAdmin
-          .from('man_reports')
-          .update({
-            image_urls:  { hairstyleCards: hairstylePaths, outfitCards: [...partialPaths] },
-            updated_at:  new Date().toISOString(),
-          })
-          .eq('id', reportId);
-        return path;
-      })
-      .catch(err => {
-        console.error(`[manImageGenerator] Outfit ${outfit.index} failed:`, err instanceof Error ? err.message : err);
-        return null;
-      })
-  );
+  const tasks = outfits.map((outfit, taskIdx) => async () => {
+    try {
+      const outputBase64 = await withOneRetry(() =>
+        callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel)
+      );
+      const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
+      partialPaths[taskIdx] = path;
+      // Always include hairstylePaths so they are never overwritten by outfit progress writes
+      await supabaseAdmin
+        .from('man_reports')
+        .update({
+          image_urls:  { hairstyleCards: hairstylePaths, outfitCards: [...partialPaths] },
+          updated_at:  new Date().toISOString(),
+        })
+        .eq('id', reportId);
+      return path;
+    } catch (err) {
+      console.error(`[manImageGenerator] Outfit ${outfit.index} failed:`, err instanceof Error ? err.message : err);
+      return null;
+    }
+  });
 
-  return Promise.all(tasks);
+  return runWithConcurrency(tasks, 4);
 }
 
 /**
