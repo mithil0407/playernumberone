@@ -1,7 +1,11 @@
+'use client';
+
 // ManReport.tsx
 // Renders the full ICONIK Men's Blueprint report.
 // Design matches the embedded report preview on /man landing page exactly.
 
+import { useState } from 'react';
+import { Pencil, X, Loader2 } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 
@@ -91,6 +95,14 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
   }
 
   return categories.filter(c => c.outfits.length > 0);
+}
+
+function extractOutfitBlock(s4Text: string, outfitNumber: number): string {
+  const blocks = s4Text.split(/(?=\*\*Outfit\s+\d+)/i);
+  const block = blocks.find(b =>
+    new RegExp(`^\\*\\*Outfit\\s+${outfitNumber}\\s*[—–-]`).test(b.trim())
+  );
+  return block?.trim() ?? '';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -511,7 +523,38 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
 // Section 04 — 16 Outfits
 // ─────────────────────────────────────────────────────────────
 
-function OutfitsSection({ cls, text, outfitImageUrls }: { cls: ClassificationResult; text: string; outfitImageUrls?: (string | null)[] }) {
+function OutfitsSection({
+  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit,
+}: {
+  cls: ClassificationResult;
+  text: string;
+  outfitImageUrls?: (string | null)[];
+  adminMode?: boolean;
+  onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
+}) {
+  const [editingNumber, setEditingNumber]   = useState<number | null>(null);
+  const [editText, setEditText]             = useState('');
+  const [regenerating, setRegenerating]     = useState(false);
+  const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
+
+  const startEdit = (outfitNumber: number) => {
+    setEditText(extractOutfitBlock(text, outfitNumber));
+    setEditingNumber(outfitNumber);
+  };
+  const cancelEdit = () => { setEditingNumber(null); setEditText(''); };
+
+  const handleRegenerate = async () => {
+    if (!editingNumber || !onRegenerateOutfit) return;
+    setRegenerating(true);
+    try {
+      const newUrl = await onRegenerateOutfit(editingNumber, editText);
+      if (newUrl) setImageOverrides(prev => ({ ...prev, [editingNumber]: newUrl }));
+      cancelEdit();
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   const categories = parseOutfitCategories(text);
   const split      = cls.outfit_split;
 
@@ -548,7 +591,10 @@ function OutfitsSection({ cls, text, outfitImageUrls }: { cls: ClassificationRes
 
           {/* Outfit cards */}
           {cat.outfits.map((outfit, oi) => {
-            const outfitImg = outfitImageUrls?.[outfit.number - 1] ?? null;
+            const outfitImg   = imageOverrides[outfit.number] ?? outfitImageUrls?.[outfit.number - 1] ?? null;
+            const isEditing   = editingNumber === outfit.number;
+            const isRegenning = regenerating && isEditing;
+            const canEdit     = adminMode && !!onRegenerateOutfit;
             return (
             <div key={oi} className="flex flex-col md:flex-row bg-white border-b" style={{ borderColor: BORDER }}>
               {/* Left: outfit image or number placeholder — 40% card width */}
@@ -580,9 +626,58 @@ function OutfitsSection({ cls, text, outfitImageUrls }: { cls: ClassificationRes
                     </div>
                   </div>
                 )}
+                {/* Edit toggle button */}
+                {canEdit && (
+                  <button
+                    onClick={() => isEditing ? cancelEdit() : startEdit(outfit.number)}
+                    className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded transition-opacity hover:opacity-100 opacity-70"
+                    style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}
+                    title={isEditing ? 'Cancel edit' : 'Edit outfit'}
+                  >
+                    {isEditing ? <X size={11} /> : <Pencil size={11} />}
+                  </button>
+                )}
+                {/* Regenerating overlay */}
+                {isRegenning && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2"
+                    style={{ background: 'rgba(0,0,0,0.55)' }}>
+                    <Loader2 size={28} className="animate-spin" style={{ color: GOLD }} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-white">Generating…</span>
+                  </div>
+                )}
               </div>
 
-              {/* Right: outfit details */}
+              {/* Right: outfit details OR inline editor */}
+              {isEditing ? (
+                <div className="flex-1 p-5 flex flex-col gap-3" style={{ background: '#fafafa' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: GOLD }}>
+                      Edit Outfit {outfit.number}
+                    </span>
+                    <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <textarea
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    className="flex-1 font-mono text-[11px] text-gray-800 bg-white border border-gray-200 rounded-lg p-3 resize-none leading-relaxed focus:outline-none focus:ring-1"
+                    style={{ minHeight: 320, focusRingColor: GOLD } as React.CSSProperties}
+                    spellCheck={false}
+                  />
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={regenerating}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold tracking-wide disabled:opacity-40 transition-opacity"
+                    style={{ background: GOLD, color: '#fff' }}
+                  >
+                    {regenerating
+                      ? <><Loader2 size={13} className="animate-spin" /> Regenerating…</>
+                      : 'Regenerate Image'
+                    }
+                  </button>
+                </div>
+              ) : (
               <div className="flex-1 p-6 md:p-8">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD }}>{cat.name} Ensemble</span>
@@ -630,6 +725,7 @@ function OutfitsSection({ cls, text, outfitImageUrls }: { cls: ClassificationRes
                   </div>
                 </div>
               </div>
+              )}
             </div>
           );
           })}
@@ -686,9 +782,11 @@ function IdentitySection({ text }: { text: string }) {
 interface ManReportProps {
   data: ReportData;
   imageUrls?: ResolvedImageUrls | null;
+  adminMode?: boolean;
+  onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
 }
 
-export default function ManReport({ data, imageUrls }: ManReportProps) {
+export default function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReportProps) {
   const { classification: cls, sections } = data;
 
   return (
@@ -754,7 +852,13 @@ export default function ManReport({ data, imageUrls }: ManReportProps) {
       <FaceSection   cls={cls} text={sections.s1_face} />
       <BodySection   cls={cls} text={sections.s2_body} />
       <ColourSection cls={cls} text={sections.s3_colour} />
-      <OutfitsSection cls={cls} text={sections.s4_outfits} outfitImageUrls={imageUrls?.outfitCards ?? undefined} />
+      <OutfitsSection
+        cls={cls}
+        text={sections.s4_outfits}
+        outfitImageUrls={imageUrls?.outfitCards ?? undefined}
+        adminMode={adminMode}
+        onRegenerateOutfit={onRegenerateOutfit}
+      />
       <StyleRulesSection text={sections.s5_rules} />
       <IdentitySection   text={sections.s6_identity} />
 

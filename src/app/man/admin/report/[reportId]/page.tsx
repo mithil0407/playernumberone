@@ -228,6 +228,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── Outfit image regeneration ─────────────────────────────────────────
+  const regenerateOutfit = useCallback(async (outfitNumber: number, newText: string): Promise<string | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/regenerate-outfit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outfitNumber, outfitText: newText, imageModel }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.imageUrl as string) ?? null;
+  }, [reportId, imageModel]);
+
   // ── Reject & retry (discard current report, start fresh) ─────────────
   const handleRejectAndRetry = async () => {
     if (!report || rejecting) return;
@@ -380,7 +392,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         )}
 
         {safeData ? (
-          <ManReport data={safeData} imageUrls={report.image_urls} />
+          <ManReport
+            data={safeData}
+            imageUrls={report.image_urls}
+            adminMode
+            onRegenerateOutfit={regenerateOutfit}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <Loader2 size={22} className="animate-spin" style={{ color: '#c9a96e' }} />

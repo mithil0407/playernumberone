@@ -311,6 +311,33 @@ export async function generateAllOutfitImages(
   return withConcurrency(tasks, 4);
 }
 
+/**
+ * Regenerate a single outfit image from an edited outfit text block.
+ * Overwrites the existing outfit_N.jpg in storage.
+ * Returns the storage path (same as before, just re-uploaded).
+ */
+export async function regenerateSingleOutfitImage(
+  reportId:       string,
+  outfitNumber:   number,           // 1-indexed (1–16)
+  outfitText:     string,           // raw markdown block for this outfit
+  baseModelPath:  string,
+  classification: ClassificationResult,
+  imageModel:     string = MODEL,
+): Promise<string> {
+  const parsed = parseOutfitsFromSection(outfitText);
+  if (parsed.length === 0) throw new Error(`Could not parse outfit from text block`);
+
+  const outfit = parsed[0];
+
+  const baseSignedUrl                          = await getSignedUrl(baseModelPath, 300);
+  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(baseSignedUrl);
+
+  const prompt       = buildOutfitPrompt(outfit, classification);
+  const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel);
+
+  return uploadToStorage(reportId, outputBase64, `outfit_${outfitNumber}.jpg`);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API — resolution (paths → signed URLs for serving)
 // ─────────────────────────────────────────────────────────────────────────────
