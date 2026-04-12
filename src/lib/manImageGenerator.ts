@@ -248,13 +248,15 @@ export async function generateHairstyleImages(
 /**
  * Phase 4: Generate all 16 outfit images fully in parallel.
  * Takes the client's original full-body photo URL directly (not a storage path).
+ * hairstylePaths must be passed in so partial progress writes don't overwrite them.
  * Returns array of storage paths (null where generation failed).
  */
 export async function generateAllOutfitImages(
   reportId:       string,
-  basePhotoUrl:   string,    // direct URL to the full-body photo (e.g. submission.photo_fullbody_url)
+  basePhotoUrl:   string,              // direct URL to the full-body photo
   classification: ClassificationResult,
   sections:       ReportSections,
+  hairstylePaths: (string | null)[],   // preserved in every partial DB write
   imageModel:     string = MODEL,
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
@@ -269,19 +271,19 @@ export async function generateAllOutfitImages(
   // Fetch the full-body reference photo once, reuse across all 16 calls
   const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
 
-  // Pre-allocate for partial progress writes — so DB always has the latest state
+  // Pre-allocate for partial progress writes
   const partialPaths: (string | null)[] = new Array(outfits.length).fill(null);
 
   const tasks = outfits.map((outfit, taskIdx) =>
     callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel)
       .then(outputBase64 => uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`))
       .then(async path => {
-        // Persist immediately after each upload — partial progress is always safe
         partialPaths[taskIdx] = path;
+        // Always include hairstylePaths so they are never overwritten by outfit progress writes
         await supabaseAdmin
           .from('man_reports')
           .update({
-            image_urls:  { hairstyleCards: [], outfitCards: [...partialPaths] },
+            image_urls:  { hairstyleCards: hairstylePaths, outfitCards: [...partialPaths] },
             updated_at:  new Date().toISOString(),
           })
           .eq('id', reportId);
@@ -357,8 +359,12 @@ export async function resolveManReportImageUrls(
     return null;
   };
 
-  // Resolve hairstyle cards (new format), falling back to legacy baseModel
-  const hairstylePaths: (string | null)[] = paths.hairstyleCards?.length
+  // Resolve hairstyle cards.
+  // New format: hairstyleCards array is present (even if it contains nulls for failed images).
+  // Legacy format: only baseModel exists — treat it as a single hairstyle card.
+  // Distinguish "no hairstyleCards key" (undefined) from "empty array" ([]): if the key
+  // exists (even as []), trust it — don't fall back to baseModel for new-format reports.
+  const hairstylePaths: (string | null)[] = paths.hairstyleCards !== undefined
     ? paths.hairstyleCards
     : paths.baseModel ? [paths.baseModel] : [];
 

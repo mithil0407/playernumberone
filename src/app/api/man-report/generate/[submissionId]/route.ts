@@ -101,7 +101,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, im
 
       await updateStage(reportId, 'generating_outfit_images');
       const outfitPaths = await generateAllOutfitImages(
-        reportId, fullBodyUrl, classification, sections as unknown as ReportData['sections'], resolvedImageModel
+        reportId, fullBodyUrl, classification, sections as unknown as ReportData['sections'], hairstylePaths, resolvedImageModel
       );
       imageUrls = { hairstyleCards: hairstylePaths, outfitCards: outfitPaths };
       console.log(`[man-report] Images generated for reportId=${reportId} — ${hairstylePaths.filter(Boolean).length}/2 hairstyles + ${outfitPaths.filter(Boolean).length}/16 outfits`);
