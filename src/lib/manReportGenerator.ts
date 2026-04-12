@@ -265,7 +265,7 @@ One paragraph (3-4 sentences): pattern scale, contrast level, and fabric texture
 ## SECTION 4: YOUR 16 OUTFITS
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-ABSOLUTE BANNED GARMENTS \u2014 NEVER USE IN ANY OUTFIT
+BANNED GARMENTS \u2014 INTERNAL INSTRUCTION, DO NOT OUTPUT THIS SECTION HEADER
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 Only one garment type is banned:
 \u2717 Skinny jeans \u2014 ankle-hugging, spray-on fit below the knee
@@ -394,9 +394,10 @@ COLOUR RULES
 RULE 1 \u2014 COLOUR FREEDOM:
 Any colour is permitted in any outfit. The client's palette colours are a useful starting point but NOT a constraint. Use the full colour spectrum to create variety.
 The ONLY hard block: the classification colours_to_avoid list. Everything else is fair game.
+CRITICAL: Do NOT let the client's undertone (warm/cool/neutral) restrict which colours appear in outfits. Undertone only determines which colours to avoid — it does NOT mean every outfit must use warm or earth tones. A warm-undertone client can and should wear navy, forest green, burgundy, slate blue, cobalt, olive, rust, teal, mauve, dusty pink, and any other colour that isn't on the avoid list.
 
 RULE 2 \u2014 DIVERSITY IS MANDATORY:
-No two outfits should share the same dominant colour story. Actively use different colour families across 16 outfits \u2014 earth tones, jewel tones, pastels, brights, monochromes, neutrals. A man's wardrobe should have range. Do not default to the same 3-4 colours repeatedly.
+No two outfits should share the same dominant colour story. Actively use different colour families across 16 outfits \u2014 earth tones, jewel tones, pastels, brights, monochromes, neutrals, cool tones, muted tones. A man's wardrobe must have range across multiple colour families. Do not default to the same 3-4 warm/earth colours repeatedly. If the first 4 outfits are all in warm/earth tones, you are failing this rule — course-correct immediately and introduce cool, jewel, and neutral families.
 
 RULE 3 \u2014 COLOUR LOGIC FIELD:
 For each outfit, name the colours used and briefly note why they work together.
@@ -413,9 +414,11 @@ GARMENT DIVERSITY (hard requirements):
 - Use at least 4 different footwear types across 16 outfits
 
 COLOUR DIVERSITY (hard requirements):
-- No single colour (including navy, white, black, grey) should appear in more than 6 of 16 outfits
-- At least 3 outfits must feature a bold or unexpected colour (not a neutral)
+- No single colour (including navy, white, black, grey) should appear in more than 4 of 16 outfits
+- At least 4 outfits must feature a bold or unexpected colour (not a neutral or earth tone)
 - At least 2 outfits must be fully tonal (head-to-toe in shades of one colour family)
+- Outfits must span at least 5 distinct colour families (e.g. warm earth, cool blue/navy, jewel tone, pastel/muted, monochrome/neutral). Do not cluster in one family.
+- Do not treat the client's undertone as a colour restriction for outfits. The palette section lists aspirational signature colours; the outfit section should be broader and more varied.
 
 SILHOUETTE DIVERSITY:
 - Mix fitted and relaxed silhouettes \u2014 do not make every outfit the same proportional shape
