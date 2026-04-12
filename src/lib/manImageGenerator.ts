@@ -96,17 +96,21 @@ function buildBaseModelPrompt(c: ClassificationResult): string {
   const hairstyle = c.face.hairstyle_recommendations[0];
   const faceShape = c.face.face_shape;
 
-  return `Editorial menswear portrait. The subject is the person in the reference photo — preserve their face, skin tone, eye colour, and body proportions exactly. Do not alter or idealise the body in any way.
+  return `Professional editorial fashion catalogue photography.
 
-Hair: Style the hair as: ${hairstyle}. Natural and groomed for a ${faceShape} face shape. Do not change face, skin tone, or facial features.
+STERNLY IGNORE and COMPLETELY DISCARD the original background from the uploaded photo.
 
-Pose: Standing upright, relaxed and confident. Arms at sides. Facing the camera directly. Full body visible from head to feet, subject centred in frame.
+Extract ONLY the subject's face, features, and body proportions. Preserve their exact skin tone, facial features, eye colour, and body shape — do not alter, slim, or idealise.
 
-Background: Clean, flat, solid #94a6ad (cool slate grey). No texture, no gradient, no shadow spill onto the background. Subject edges clean against the background.
+Place the subject against a professional studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient, no props.
 
-Lighting: High-end editorial — soft, even light from slightly above. Clean skin tone rendering. No harsh shadows, no blown highlights.
+Apply polished grooming throughout. Style the hair as: ${hairstyle} — natural and intentional for a ${faceShape} face shape.
 
-Do not add props, text, furniture, or any additional elements. Portrait format.`;
+Pose: Standing upright, confident, arms relaxed at sides, facing the camera directly. Full body head to feet visible, subject centred in frame.
+
+The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, flat, no harsh shadows, no blown highlights. Consistent skin tone rendering.
+
+Do not add text, furniture, or decorative elements. Portrait format.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
@@ -118,24 +122,26 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
     outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
   ].filter(Boolean).join('\n');
 
-  const fitNote = outfit.fitNote ? `\nFit: ${outfit.fitNote}` : '';
+  const fitNote = outfit.fitNote ? `\nFit context: ${outfit.fitNote}` : '';
 
-  return `Editorial menswear portrait. The subject is the person in the reference photo — preserve their face, skin tone, and body proportions exactly. Do not alter or idealise the body.
+  return `Professional editorial fashion catalogue photography.
 
-Wearing this:
+STERNLY IGNORE and COMPLETELY DISCARD the original background from the reference photo.
+
+Extract ONLY the subject's face, features, and body proportions from the reference image. Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
+
+Place the subject against our brand studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient.
+
+Apply polished grooming — clean, fresh, well-kept. No changes to facial features or skin tone.
+
+Dress the subject in this specific outfit:
 ${garmentLines}${fitNote}
 
-Pose: Standing upright, relaxed and confident, arms at sides, facing the camera directly. Full body visible from head to feet. Same stance as the reference image.
+Garment rendering: Clothes should look pressed, tailored, and naturally worn on this body — not floating, not distorted. Colour accuracy is critical — match the described colours precisely. No logos or brand markings visible. Garments must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}.
 
-Background: Same flat solid #94a6ad (cool slate grey) as the reference image. Clean, no texture, no gradient.
+Pose: Standing upright, confident, arms relaxed at sides, facing the camera directly. Full body head to feet visible, subject centred in frame.
 
-Lighting: Match the editorial lighting from the reference image — soft, even, from slightly above.
-
-Garment rendering: Clothes should look pressed and naturally worn — not floating, not distorted. Colours must be accurate to the description. No logos or brand markings visible.
-
-Body silhouette (${c.body.silhouette_type}): ${c.body.fit_directive}. Highlight zone: ${c.body.highlight_zone}. The garments should suit this body type — ${c.body.silhouette_rules.slice(0, 2).join('; ')}.
-
-Do not use skinny jeans, slim-tapered trousers, or fitted/muscle-fit tops. Trousers must have a clean, non-constricting silhouette.`;
+The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, soft, no harsh shadows, no blown highlights.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
