@@ -283,13 +283,29 @@ export async function generateAllOutfitImages(
   console.log(`[manImageGenerator] Generating ${outfits.length} outfit images with concurrency 4 (model: ${imageModel})`);
 
   // Fetch base model once (short-lived signed URL for internal use)
-  const baseSignedUrl                   = await getSignedUrl(baseModelPath, 300);
+  const baseSignedUrl                        = await getSignedUrl(baseModelPath, 300);
   const { data: baseData, mimeType: baseMime } = await fetchAsBase64(baseSignedUrl);
 
-  const tasks = outfits.map((outfit) => async () => {
+  // Pre-allocate so we can write partial progress to the DB after each upload.
+  // If Vercel kills the after() callback mid-generation, whatever completed is already persisted.
+  const partialPaths: (string | null)[] = new Array(outfits.length).fill(null);
+
+  const tasks = outfits.map((outfit, taskIdx) => async () => {
     const prompt       = buildOutfitPrompt(outfit, classification);
     const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel);
-    return uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
+    const path         = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
+
+    // Persist immediately — don't wait for all outfits to finish
+    partialPaths[taskIdx] = path;
+    await supabaseAdmin
+      .from('man_reports')
+      .update({
+        image_urls:  { baseModel: baseModelPath, outfitCards: [...partialPaths] },
+        updated_at:  new Date().toISOString(),
+      })
+      .eq('id', reportId);
+
+    return path;
   });
 
   return withConcurrency(tasks, 4);

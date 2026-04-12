@@ -88,19 +88,20 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, im
       await updateStage(reportId, 'generating_base_model');
       const baseModelPath = await generateBaseModel(reportId, submission, classification, resolvedImageModel);
 
+      // Persist base model path immediately so it's never lost
+      await supabaseAdmin
+        .from('man_reports')
+        .update({ image_urls: { baseModel: baseModelPath, outfitCards: [] }, updated_at: new Date().toISOString() })
+        .eq('id', reportId);
+
       await updateStage(reportId, 'generating_outfit_images');
+      // generateAllOutfitImages writes each outfit path to the DB as it completes,
+      // so partial progress is always persisted even if the process is killed mid-way.
       const outfitPaths = await generateAllOutfitImages(
         reportId, baseModelPath, classification, sections as unknown as ReportData['sections'], resolvedImageModel
       );
       imageUrls = { baseModel: baseModelPath, outfitCards: outfitPaths };
       console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
-
-      // Write image_urls immediately after generation — if finalization is killed by Vercel,
-      // the paths are already persisted and the report can be rescued.
-      await supabaseAdmin
-        .from('man_reports')
-        .update({ image_urls: imageUrls, updated_at: new Date().toISOString() })
-        .eq('id', reportId);
     } catch (imgErr) {
       const imgErrMsg = imgErr instanceof Error ? imgErr.message : String(imgErr);
       console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErrMsg);
