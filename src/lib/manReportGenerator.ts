@@ -5,6 +5,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import type { ManIntakeSubmission } from './supabaseMan';
+import { STYLE_REFERENCE_LIBRARY } from './manStyleLibrary';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 
@@ -132,22 +133,15 @@ Return ONLY the following JSON object, fully populated:
   "outfit_split": {
     "total": 16,
     "categories": [
-      {"category": "", "count": 0, "rationale": ""},
-      {"category": "", "count": 0, "rationale": ""},
-      {"category": "", "count": 0, "rationale": ""},
-      {"category": "", "count": 0, "rationale": ""}
+      {"category": "Formal", "count": 5, "rationale": "Office, meetings, professional settings, structured events"},
+      {"category": "Casual", "count": 6, "rationale": "Everyday, weekend, errands, relaxed socialising"},
+      {"category": "Evening Wear", "count": 5, "rationale": "Dinner, parties, dates, evening events, nightlife"}
     ]
   }
 }
 
-OUTFIT SPLIT LOGIC — derive dynamically from Dressing Context + Wardrobe:
-- If Dressing Context = "Corporate Office, Client Facing": Work/Formal: 7, Smart Casual: 5, Casual: 4
-- If Dressing Context = "Corporate Office" only: Work: 6, Smart Casual: 5, Casual: 5
-- If Dressing Context includes "Client Facing" + "Events": Work: 5, Smart Casual: 5, Formal/Events: 4, Casual: 2
-- If Dressing Context = "Casual / Everyday": Casual: 8, Smart Casual: 5, Work: 3
-- If Dressing Context = "Mixed / No specific context": Casual: 5, Smart Casual: 5, Work: 4, Formal: 2
-- If Wardrobe = "Scratch": All outfits must function as a complete wardrobe system.
-- If Wardrobe includes "Casuals": Casual category must cover both weekday off-duty and weekend.`;
+OUTFIT SPLIT — always use this exact fixed split regardless of dressing context:
+  Formal: 5 | Casual: 6 | Evening Wear: 5 = 16 total`;
 
 // ─────────────────────────────────────────────────────────────
 // PROMPT 2 — REPORT GENERATION ENGINE
@@ -273,230 +267,219 @@ One paragraph (3-4 sentences): pattern scale, contrast level, and fabric texture
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 ABSOLUTE BANNED GARMENTS \u2014 NEVER USE IN ANY OUTFIT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-The following are permanently prohibited regardless of client profile, season, or occasion:
-\u2717 Skinny jeans (tapered below the knee, ankle-hugging silhouette)
-\u2717 Slim-fit trousers with aggressive thigh-to-ankle taper (look for: "slim", "skinny", "spray-on" fit descriptors \u2014 all banned)
-\u2717 Body-hugging or muscle-fit t-shirts (fabric stretched across chest/arms, revealing musculature)
-\u2717 Stretch denim in any cut narrower than straight-leg
-\u2717 Compression-style tops worn as outerwear
-\u2717 Jeggings or denim with elastane construction in slim silhouettes
-Any outfit that violates the above is invalid. If you notice a violation mid-generation, correct it before outputting.
+Only one garment type is banned:
+\u2717 Skinny jeans \u2014 ankle-hugging, spray-on fit below the knee
+Everything else is permitted \u2014 slim-fit trousers, tapered chinos, fitted tees, stretch denim, slim-straight cuts \u2014 all fine.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-GARMENT VOCABULARY & FIT STANDARDS
+GARMENT VOCABULARY \u2014 DIVERSITY IS MANDATORY
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Approved trouser silhouettes (use these exact descriptors):
-  \u2022 Straight-leg \u2014 consistent width from hip to hem, clean break at shoe
-  \u2022 Tailored straight \u2014 structured, mid-rise, slight taper only through knee (not below)
-  \u2022 Wide-leg \u2014 relaxed through thigh and leg, contemporary proportion
-  \u2022 Pleated trousers \u2014 single or double pleat, high-rise, full seat, straight leg
-  \u2022 Chinos (straight or tailored straight only \u2014 never slim-leg chinos)
-  \u2022 Cropped trousers \u2014 straight leg, no-break hem (smart casual/casual only \u2014 never for short clients)
+BOTTOMS \u2014 use at least 4 different types across 16 outfits, no single type should dominate:
+  \u2022 Straight-leg jeans (raw denim, washed, or lightly distressed \u2014 vary the wash)
+  \u2022 Slim-straight jeans (fitted through thigh, straight below knee)
+  \u2022 Wide-leg trousers (relaxed through thigh and leg)
+  \u2022 Tailored trousers (pleated or flat-front)
+  \u2022 Chinos (any fit)
+  \u2022 Cargo / utility trousers
+  \u2022 Linen trousers
+  \u2022 Cropped trousers (not for short clients)
+  \u2022 Corduroy trousers
+  \u2022 Jogger-style trousers in structured fabric (casual only)
 
-Approved top silhouettes with frequency caps:
-  \u2022 Classic-fit shirt \u2014 maximum 5 appearances across 16 outfits
-  \u2022 Relaxed-fit shirt \u2014 maximum 3 appearances
-  \u2022 Polo (classic fit only, never fitted) \u2014 maximum 3 appearances
-  \u2022 Boxy or straight-cut tee \u2014 counts toward combined tee cap
-  \u2022 Oversized tee \u2014 counts toward combined tee cap (boxy + oversized combined: maximum 3)
-  \u2022 Knitwear (ribbed/cable/fine-gauge, always with ease) \u2014 maximum 3 appearances
-  \u2022 Suit jacket as primary top layer \u2014 maximum 2 appearances
+TOPS \u2014 use at least 5 different types across 16 outfits. Avoid repeating the same type more than 3 times:
+  \u2022 Dress shirt (any fit)
+  \u2022 Casual button-down / Oxford shirt
+  \u2022 Linen shirt (relaxed or camp collar)
+  \u2022 Cuban / camp collar shirt
+  \u2022 Polo shirt
+  \u2022 Crew-neck or V-neck t-shirt (any fit)
+  \u2022 Henley
+  \u2022 Turtleneck / roll-neck
+  \u2022 Knitwear (crew-neck, V-neck, cable-knit, fine-gauge)
+  \u2022 Band-collar / mandarin-collar shirt
+  \u2022 Printed / patterned shirt (geometric, abstract, stripes \u2014 NO floral prints)
+  \u2022 Kurta (Indian occasion)
 
-Approved outerwear:
-  \u2022 Structured blazer / sport coat (single or double breasted)
-  \u2022 Suit jacket
-  \u2022 Unstructured linen/cotton blazer
-  \u2022 Overcoat / topcoat (UK/Canada only \u2014 or cold-climate clients)
+LAYERS & OUTERWEAR \u2014 use at least 4 different layer types across the 16 outfits:
+  \u2022 Structured blazer (single or double breasted)
+  \u2022 Unstructured / deconstructed blazer
+  \u2022 Leather jacket (biker, caf\u00e9 racer, or classic)
+  \u2022 Suede jacket
+  \u2022 Bomber jacket
+  \u2022 Denim jacket
+  \u2022 Field jacket / utility jacket
+  \u2022 Harrington jacket
+  \u2022 Overshirt / shirt jacket (shacket)
+  \u2022 Cardigan (chunky, fine-gauge, or zip-through)
+  \u2022 Gilet / vest (quilted or knit)
   \u2022 Trench coat
-  \u2022 Bomber jacket (relaxed fit, not cropped tight)
-  \u2022 Field jacket / harrington jacket
-  \u2022 Knitwear layer (cardigan, zip-through)
+  \u2022 Overcoat / topcoat (cold climates)
+  \u2022 Nehru jacket / bandh-gala (Indian occasion)
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-FOOTWEAR TAXONOMY \u2014 USE ONLY THESE TERMS
+FOOTWEAR \u2014 use at least 4 different types across 16 outfits
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Formal/Work:
+Formal:
   \u2022 Oxford (cap-toe, plain, brogue) \u2014 closed lacing, most formal
-  \u2022 Derby \u2014 open lacing, slightly less formal, more toe box room
+  \u2022 Derby \u2014 open lacing, slightly less formal
   \u2022 Loafer (penny, tassel, horsebit) \u2014 slip-on, smart casual to semi-formal
-  \u2022 Chelsea boot \u2014 elastic side panel, clean ankle, works formal to smart casual
+  \u2022 Chelsea boot \u2014 elastic side panel, formal to smart casual
 
-Smart Casual:
-  \u2022 Suede loafer \u2014 relaxed material, smarter than trainers
-  \u2022 Suede chukka boot \u2014 two-eyelet ankle boot, versatile
+Casual / Evening:
+  \u2022 Suede loafer or suede chukka boot
   \u2022 Derby in suede or textured leather
-  \u2022 Clean white leather trainer \u2014 minimal, no chunky sole
-
-Casual:
-  \u2022 Canvas or leather low-top trainer (clean, minimal colourway)
+  \u2022 Clean white leather trainer \u2014 minimal
+  \u2022 Canvas or leather low-top trainer
   \u2022 Suede desert boot
-  \u2022 Leather sandal (appropriate for India/UAE climates, warm months)
+  \u2022 Chunky-sole sneakers (leather or canvas)
+  \u2022 Leather sandal (India/UAE warm months)
 
 Always specify: shoe type + material + colour.
 Example: "Tan suede penny loafer" or "Black leather cap-toe Oxford"
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-FABRIC CLIMATE GATE \u2014 CHECK BEFORE GENERATING ANY OUTFIT
+FABRIC CLIMATE GATE
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Read the client's location_region from classification. Apply the correct column as a hard gate \u2014 not a guideline.
+Read the client's location_region from classification.
 
 India T1 / UAE:
-  PERMITTED work fabrics: structured cotton, cotton-wool blend (max 20% wool), cotton-silk, linen-blend, matte polyester suiting.
-  BANNED work fabrics (hard block): heavy wool, wool flannel, wool mohair, velvet, thick tweed.
-  All categories: no heavy knitwear layers \u2014 light cotton knitwear only.
+  PERMITTED: structured cotton, cotton-wool blend (max 20% wool), cotton-silk, linen-blend, matte polyester suiting.
+  BANNED: heavy wool, wool flannel, wool mohair, velvet, thick tweed.
+  Light cotton knitwear only \u2014 no heavy knitwear layers.
 
 UK / Canada:
   All fabrics permitted: wool-blend, flannel, tweed, overcoat weight, heavy knitwear.
 
 Mixed / Unknown \u2014 Default to India T1 rules.
 
-Confirm which column applies before generating Outfit 1. A wool mohair suit in a UAE report is not a minor error \u2014 it breaks client trust in the entire report.
-
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-ACCESSORY SYSTEM \u2014 4 TIERS
+ACCESSORY SYSTEM \u2014 3 TIERS
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Do not default to belt in every outfit. Apply the correct tier per outfit.
+Do not default to belt in every outfit.
 
-Hardware rule \u2014 hardcoded from undertone:
+Hardware rule from undertone:
   Warm undertone \u2192 gold hardware, cognac or tan leather
   Cool undertone \u2192 silver hardware, black or dark brown leather
-  Neutral undertone \u2192 choose based on outfit colour temperature (warmer outfit = gold/cognac, cooler = silver/dark)
+  Neutral undertone \u2192 choose based on outfit colour temperature
 
-TIER 1 \u2014 Formal/Work (suit or blazer + trouser outfits):
-  Specify: belt colour + buckle finish (per hardware rule) + watch type (dress watch or field watch) + pocket square colour if worn.
+TIER 1 \u2014 Formal:
+  Belt + watch + pocket square (if blazer/suit). Specify colours and finishes.
   Example: "Cognac leather belt, gold buckle \u2014 slim dress watch \u2014 ivory pocket square"
 
-TIER 2 \u2014 Smart Casual (chino/blazer outfits):
-  Specify: belt or explicitly state no belt + watch (optional) + bag type only if relevant (briefcase, canvas tote).
-  Example: "No belt \u2014 brushed silver field watch"
+TIER 2 \u2014 Evening Wear:
+  Watch or statement accessory (chain, bracelet, rings). Belt optional.
+  Example: "Silver chain \u2014 black leather strap watch"
 
-TIER 3 \u2014 Casual (jeans/chinos + tee/polo/relaxed shirt):
-  Specify: watch (optional) + chain only if undertone = warm (subtle, not statement) + bag only if functional (backpack, canvas tote).
-  If no accessory adds genuine value, omit the Accessories line entirely.
-
-TIER 4 \u2014 Events (Indian occasion outfits):
-  No belt. Specify ethnic-appropriate accessory only if it genuinely suits the garment: dupatta fold placement, brooch, embroidered pocket detail.
-  Do not force an accessory if none is natural to the garment.
+TIER 3 \u2014 Casual:
+  Only if it adds genuine value. No belt-as-filler default.
+  If no accessory improves the outfit, omit the Accessories line entirely.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 SHORT CLIENT PROPORTION MODULE
 Activate if: height_category = "short" (under 5'7")
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-If active, these rules override general silhouette rules for every outfit:
-
-  \u2717 No cropped trousers in any outfit, any occasion
-  \u2717 No ankle-exposed hemlines in any context
-  \u2713 Trouser break: quarter break minimum, half break preferred (adds perceived leg length)
-  \u2717 No wide-leg trousers unless top is extremely fitted AND tucked \u2014 state volume ratio in Fit Note
-  \u2713 Blazer length: must reach the hip bone \u2014 no cropped or waist-length blazers
-  \u2713 Vertical emphasis mandatory in \u226510 of 16 outfits: vertical seams, pinstripes, tonal top-to-bottom builds, longline layers
-  \u2713 Monochromatic or tonal builds (top + bottom in same colour family, close value) count as vertical emphasis \u2014 must appear in \u22653 outfits
+If active, apply these guidelines:
+  \u2717 No cropped trousers
+  \u2713 Trouser break: quarter break minimum, half break preferred
+  \u2713 Blazer length: must reach the hip bone
+  \u2713 Favour tonal or monochromatic builds for vertical elongation
 
 If fat_storage_zone = abdomen or torso (Short + Belly profile):
-  \u2717 No horizontal break at the waist \u2014 no contrasting belt or strong two-tone colour block at the waistline
-  \u2713 Tuck instruction: half-tuck or full tuck only \u2014 never untucked (untucked adds visual width at the widest point)
-  \u2713 Blazer or structured layer creates vertical structure \u2014 prioritise in Work and Smart Casual categories
+  \u2713 Prefer half-tuck or full tuck
+  \u2713 Favour structured layers (blazer, overshirt) to create vertical structure
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 COLOUR RULES
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-RULE 1 \u2014 COLOUR APPROACH:
-The client's palette colours are a strong preference \u2014 target \u226510 of 16 outfits containing at least one palette colour.
-Outfits are NOT restricted exclusively to palette colours.
+RULE 1 \u2014 COLOUR FREEDOM:
+Any colour is permitted in any outfit. The client's palette colours are a useful starting point but NOT a constraint. Use the full colour spectrum to create variety.
+The ONLY hard block: the classification colours_to_avoid list. Everything else is fair game.
 
-Universal wardrobe staples are always permitted regardless of colour season or undertone:
-  navy, white, off-white, charcoal, light grey, stone, camel, khaki, mid-blue, cream, burgundy, ecru
+RULE 2 \u2014 DIVERSITY IS MANDATORY:
+No two outfits should share the same dominant colour story. Actively use different colour families across 16 outfits \u2014 earth tones, jewel tones, pastels, brights, monochromes, neutrals. A man's wardrobe should have range. Do not default to the same 3-4 colours repeatedly.
 
-The ONLY hard block is the classification colours_to_avoid list. Nothing else is banned.
+RULE 3 \u2014 COLOUR LOGIC FIELD:
+For each outfit, name the colours used and briefly note why they work together.
 
-A Warm Autumn man dressed exclusively in warm tones looks like a paint swatch, not a wardrobe.
-The colour season tells you what activates the skin \u2014 neutrals are the wardrobe foundation; palette colours are the differentiator.
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+DIVERSITY MANDATE \u2014 THE MOST IMPORTANT RULE IN THIS ENTIRE PROMPT
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+The 16 outfits must feel like 16 DIFFERENT outfits, not variations of the same look.
 
-RULE 2 \u2014 COLOUR COLLISION PREVENTION:
-Never pair two colours from the same colour family in one outfit unless:
-  (a) Value contrast is at least 40% \u2014 ivory + dark chocolate = acceptable; forest green + teal = not acceptable, AND
-  (b) The intent is explicit tonal dressing \u2014 which must be named as such in the Colour Logic field.
+GARMENT DIVERSITY (hard requirements):
+- Use at least 4 different bottom types across 16 outfits (e.g. jeans, chinos, tailored trousers, linen trousers)
+- Use at least 5 different top types across 16 outfits (e.g. dress shirt, t-shirt, polo, knit, linen shirt)
+- Use at least 4 different layer/outerwear types (e.g. blazer, leather jacket, bomber, overshirt)
+- Use at least 4 different footwear types across 16 outfits
 
-RULE 3 \u2014 DIVERSITY:
-Each outfit must have a distinct colour story. No repeated two-colour pairing across multiple outfits. If Outfit 3 uses navy + stone, Outfit 7 cannot also use navy + stone.
+COLOUR DIVERSITY (hard requirements):
+- No single colour (including navy, white, black, grey) should appear in more than 6 of 16 outfits
+- At least 3 outfits must feature a bold or unexpected colour (not a neutral)
+- At least 2 outfits must be fully tonal (head-to-toe in shades of one colour family)
 
-RULE 4 \u2014 COLOUR LOGIC FIELD FORMAT:
-Label every piece as one of:
-  [palette colour] \u2014 e.g. "Rich rust (#b5451b) \u2014 palette accent"
-  [universal neutral] \u2014 e.g. "Navy (#1a2b4a) \u2014 universal neutral"
-  [complementary tone] \u2014 e.g. "Sage (#8a9e7a) \u2014 complementary tone, not on avoid list"
+SILHOUETTE DIVERSITY:
+- Mix fitted and relaxed silhouettes \u2014 do not make every outfit the same proportional shape
+- At least 3 outfits should feature a layer or outerwear piece
+- At least 2 outfits should be intentionally minimal (top + bottom + shoes only)
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 FREE NOTE TRANSLATION \u2014 INTERNAL PLANNING STEP (DO NOT OUTPUT)
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Before generating any outfit, internally translate the client's Free Note aspiration into specific garment types, colour names, and occasion terms. Do NOT output this translation — use it only to inform ≥3 outfits that directly embody the client's stated aesthetic. Every aspiration-anchored outfit must trace to a concrete element from this internal translation.
+Before generating any outfit, internally translate the client's Free Note aspiration into specific garment types, colour names, and occasion terms. Do NOT output this translation \u2014 use it only to inform \u22653 outfits that directly embody the client's aesthetic.
 
 If Free Note is absent or vague, default to the style brief's aesthetic_direction from classification.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-OUTFIT ORDERING RULE
+OUTFIT ORDERING
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Within each category, order outfits from HIGHEST-STAKES to LOWEST-STAKES.
-
-Work category: the most formal entry (suit or structured blazer + trouser) must appear within the first 4 outfits of the Work category \u2014 never saved for last.
-
-If lifestyle context includes Corporate or Client Facing: a suit or formal blazer composition must be Outfit 1 or Outfit 2 of the entire report.
-
-The first outfit the client reads sets the quality benchmark for the whole report. If Outfit 1 is weak, the perceived value of everything that follows drops.
+Present outfits in this order: Formal (5), then Casual (6), then Evening Wear (5).
+Within each category, order from highest-stakes to most relaxed.
+The first outfit sets the quality benchmark \u2014 make it the strongest look.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 PRE-GENERATION CHECKLIST \u2014 INTERNAL ONLY, DO NOT OUTPUT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Before writing the first category header, silently verify all of the following. Do NOT output this check — proceed directly to writing the first category header once verified.
-
-- Outfit split totals exactly 16 across all categories
-- Top silhouette frequency caps respected: Classic-fit ≤5, Relaxed ≤3, Polo ≤3, Tee ≤3, Knitwear ≤3
-- Correct fabric matrix applied for client's location_region
-- colours_to_avoid list confirmed and hard-blocked in all 16 outfits
-- Short-client module active status confirmed
-- ≥10 of 16 outfits will include at least one palette colour
+Before writing the first category header, silently verify:
+- Outfit split: 5 Formal + 6 Casual + 5 Evening Wear = 16
+- colours_to_avoid confirmed and hard-blocked in all 16 outfits
+- Diversity: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 footwear types planned
+- No single colour in more than 6 outfits
+- No two outfits share the same dominant colour story
+- Reference Library consulted \u2014 \u22658 of 16 outfits are LIBRARY or LIBRARY-ADAPTED
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 OUTFIT FORMAT \u2014 REQUIRED FOR ALL 16
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-For each outfit category (from outfit_split in classification), open with:
-Category intro (2 sentences): Objective of this category for this specific client \u2014 what role these outfits play in his life, and what they should achieve for his presence.
+For each outfit category (Formal, Casual, Evening Wear), open with:
+Category intro (2 sentences): Objective of this category for this specific client \u2014 what role these outfits play in his life.
 
 Then for each outfit, use this exact structure:
 
 **Outfit [N] \u2014 [Two to three word occasion/mood label]**
 
-- Top: [garment type] in [colour name] ([hex]) \u2014 [fit descriptor: classic-fit / relaxed-fit / boxy / oversized] \u2014 [fabric: e.g. brushed cotton, fine merino, linen, heavy Oxford cloth] \u2014 [tuck instruction: tucked / untucked / half-tuck]
-- Bottom: [trouser type from approved list] in [colour name] ([hex]) \u2014 [rise: mid-rise / high-rise] \u2014 [fabric: e.g. cotton twill, linen, stretch-free denim] \u2014 [break: no break / quarter break / half break]
+- Top: [garment type] in [colour name] ([hex]) \u2014 [fit descriptor] \u2014 [fabric] \u2014 [tuck instruction: tucked / untucked / half-tuck]
+- Bottom: [trouser type] in [colour name] ([hex]) \u2014 [rise] \u2014 [fabric] \u2014 [break: no break / quarter break / half break]
 - Layer: [specific outerwear type] in [colour name] ([hex]) \u2014 [worn: open / closed / over-arm] | or: No layer
-- Footwear: [type + material + colour from approved taxonomy] \u2014 [sock note: no-show / fine cotton / wool ribbed / no socks]
-- Accessories: [Apply the correct tier from the 4-tier accessory system. If Tier 3 or 4 warrants no accessories, omit this line entirely \u2014 do not default to a belt.]
-- Fit note: [One sentence on how each piece physically fits this client's body geometry \u2014 reference silhouette type, highlight/minimise zones, and any active short-module rules]
-- Colour logic: [Label every piece as palette colour / universal neutral / complementary tone \u2014 with colour name and hex for each piece]
+- Footwear: [type + material + colour] \u2014 [sock note: no-show / fine cotton / wool ribbed / no socks]
+- Accessories: [Apply the correct tier. If Tier 3 warrants no accessories, omit this line entirely.]
+- Fit note: [One sentence on how each piece physically fits this client's body geometry]
+- Colour logic: [Name the colours used and briefly note why they work together. Note if LIBRARY / LIBRARY-ADAPTED / GENERATED.]
 - Occasion anchor: [One sentence \u2014 "Wear this to [specific situation] \u2014 it signals [specific quality] to [specific audience]."]
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 FULL GENERATION CHECKLIST \u2014 ALL 16 MUST PASS BEFORE OUTPUT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-\u2713 COLOUR APPROACH: Palette as preference (\u226510/16 outfits). Universal neutrals freely used. colours_to_avoid hard-blocked. Nothing else banned.
-\u2713 COLOUR COLLISION: No same-family pairing without 40% value contrast AND explicit tonal naming in Colour Logic.
-\u2713 DIVERSITY: Each outfit has a distinct colour story. No repeated two-colour pairing across outfits.
-\u2713 SILHOUETTE COMPLIANCE: Every bottom = approved trouser silhouette. Every top = approved top silhouette.
-\u2713 FREQUENCY CAPS: Classic-fit \u22645 / Relaxed \u22643 / Polo \u22643 / Tee \u22643 / Knitwear \u22643. Declared in pre-generation block.
-\u2713 OUTFIT ORDERING: Work opens with most formal entry. Suit/formal blazer = Outfit 1 or 2 if Corporate/Client Facing.
-\u2713 FABRIC CLIMATE: Correct matrix applied. Banned fabrics absent from all India T1/UAE outfits.
-\u2713 ACCESSORY TIER: Correct tier per outfit. Hardware matches undertone. No belt-as-filler default.
-\u2713 SHORT MODULE: If active \u2014 no cropped trousers, correct breaks, vertical emphasis in \u22656, tonal in \u22653, tuck rule applied.
-\u2713 STYLE BRIEF: Every outfit traceable to aesthetic direction and register from classification.
-\u2713 UNIQUENESS: No two outfits share the same top + bottom combination.
-\u2713 ASPIRATION: \u22653 outfits match Free Note Translation directly.
-\u2713 CATEGORY INTEGRITY: Casual outfits at same colour + silhouette precision as work outfits.
-\u2713 LAYERING LOGIC: Layer only if functional or proportional. Specify open/closed. Never decorative filler.
-\u2713 FOOTWEAR REGISTER: Shoe formality matches tier. No trainers in Work/Formal. No Oxfords in Casual.
-\u2713 FABRIC OCCASION: Fabric suits occasion tier. No linen in formal corporate. No heavy tweed in casual.
-\u2713 PROPORTION SYSTEM: Volume bottom \u2192 structured/tucked top. Volume top \u2192 clean straight bottom.
-\u2713 BANNED GARMENTS: No skinny jeans, no slim-tapered trousers, no muscle-fit tops in any outfit.
+\u2713 BANNED GARMENTS: No skinny jeans in any outfit.
+\u2713 COLOUR BLOCK: colours_to_avoid absent from all 16.
+\u2713 DIVERSITY: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 shoe types used.
+\u2713 COLOUR DIVERSITY: No colour in >6 outfits. \u22653 bold/unexpected colours. \u22652 tonal builds.
+\u2713 UNIQUENESS: No two outfits share the same top+bottom combination or colour story.
+\u2713 FABRIC CLIMATE: Correct matrix applied for client's location.
+\u2713 FIT NOTE: Every outfit references client's body geometry.
+\u2713 OCCASION ANCHOR: Every outfit has a specific wear-to scenario.
+\u2713 CATEGORY SPLIT: 5 Formal, 6 Casual, 5 Evening Wear \u2014 all present.
+\u2713 REFERENCE LIBRARY: \u22658 of 16 are LIBRARY or LIBRARY-ADAPTED.
 
 ---
 
@@ -861,7 +844,16 @@ function buildSectionUserPrompt(
     primary_goal:        mapField('primary_goal',  submission.primary_goal),
     style_blocker:       mapField('style_blocker', submission.style_blocker),
   });
-  return preamble + _SECTION_BLOCKS[sectionIndex];
+
+  let prompt = preamble + _SECTION_BLOCKS[sectionIndex];
+
+  // Inject the style reference library for Section 4 (outfits) so Gemini
+  // prioritises proven outfit combinations over invented ones.
+  if (sectionIndex === 3) {
+    prompt = STYLE_REFERENCE_LIBRARY + '\n\n' + prompt;
+  }
+
+  return prompt;
 }
 
 export async function runSection1(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
