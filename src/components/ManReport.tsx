@@ -281,93 +281,90 @@ function StylistNote({ children }: { children: React.ReactNode }) {
 // Section 01 — Face Architecture
 // ─────────────────────────────────────────────────────────────
 
-function FaceSection({ cls, text, hairstyleUrls }: { cls: ClassificationResult; text: string; hairstyleUrls?: (string | null)[] }) {
+function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: ClassificationResult; text: string; hairstyleUrls?: (string | null)[]; eyewearUrls?: (string | null)[] }) {
   const { face } = cls;
+  const hasHairstyleImages = hairstyleUrls && hairstyleUrls.some(Boolean);
+  const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
   return (
     <div className="bg-white border-b" style={{ borderColor: BORDER }}>
       <SectionHeader label="Section 01 — Facial Architecture Analysis™" />
       <div className="p-6 md:p-10">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           <GoldPill>{face.face_shape} Face</GoldPill>
           <span className="text-xs text-gray-400 font-light">{face.feature_type} feature type</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          {/* Recommended */}
-          <div>
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Recommended For You</p>
-            <div className="space-y-4">
-              {face.neckline_recommendations.map((n, i) => (
-                <div key={i}>
-                  <DataLabel>Collar {i + 1}</DataLabel>
-                  <span className="text-xs text-black font-light">{n}</span>
+        {/* Hairstyle images — two headshots side by side */}
+        {hasHairstyleImages && (
+          <div className="mb-8">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Hairstyle Options</p>
+            <div className="grid grid-cols-2 gap-4">
+              {hairstyleUrls!.slice(0, 2).map((url, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  {url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={url}
+                      alt={`Hairstyle option ${i + 1}`}
+                      loading="lazy"
+                      className="w-full rounded-xl border object-cover object-top"
+                      style={{ aspectRatio: '3/4', borderColor: BORDER }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-xl border flex items-center justify-center"
+                      style={{ aspectRatio: '3/4', borderColor: BORDER, background: CREAM2 }}>
+                      <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
+                    </div>
+                  )}
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-center" style={{ color: GOLD }}>
+                    Option {i + 1}
+                  </span>
                 </div>
               ))}
-              <div>
-                <DataLabel>Eyewear</DataLabel>
-                <span className="text-xs text-black font-light">{face.eyewear_shapes.join(' · ')}</span>
-              </div>
-              <div>
-                <DataLabel>Facial Hair</DataLabel>
-                <span className="text-xs text-black font-light">{face.facial_hair_recommendations}</span>
-              </div>
             </div>
           </div>
+        )}
 
-          {/* Hairstyles */}
-          <div>
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Hairstyle Recommendations</p>
-
-            {/* Hairstyle preview images (when generated) */}
-            {hairstyleUrls && hairstyleUrls.some(Boolean) && (
-              <div className="flex gap-3 mb-5">
-                {hairstyleUrls.slice(0, 2).map((url, i) => (
-                  <div key={i} className="flex-1 flex flex-col gap-1.5">
-                    {url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={url}
-                        alt={`Hairstyle option ${i + 1}`}
-                        loading="lazy"
-                        className="w-full rounded-lg border object-cover object-top"
-                        style={{ aspectRatio: '3/4', borderColor: BORDER }}
-                      />
-                    ) : (
-                      <div className="w-full rounded-lg border flex items-center justify-center"
-                        style={{ aspectRatio: '3/4', borderColor: BORDER, background: CREAM2 }}>
-                        <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
-                      </div>
-                    )}
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-center" style={{ color: GOLD + 'aa' }}>
-                      Option {i + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              {face.hairstyle_recommendations.map((h, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <span className="text-[9px] font-black mt-0.5 flex-shrink-0" style={{ color: GOLD }}>0{i + 1}</span>
-                  <span className="text-xs text-gray-600 font-light leading-relaxed">{h}</span>
+        {/* Eyewear images — two headshots side by side */}
+        {hasEyewearImages && (
+          <div className="mb-8">
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Eyewear Options</p>
+            <div className="grid grid-cols-2 gap-4">
+              {eyewearUrls!.slice(0, 2).map((url, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  {url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={url}
+                      alt={`Eyewear option ${i + 1}`}
+                      loading="lazy"
+                      className="w-full rounded-xl border object-cover object-top"
+                      style={{ aspectRatio: '3/4', borderColor: BORDER }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-xl border flex items-center justify-center"
+                      style={{ aspectRatio: '3/4', borderColor: BORDER, background: CREAM2 }}>
+                      <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
+                    </div>
+                  )}
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-center" style={{ color: GOLD }}>
+                    Option {i + 1}
+                  </span>
                 </div>
               ))}
             </div>
+          </div>
+        )}
 
-            {face.necklines_to_avoid.length > 0 && (
-              <div className="mt-6">
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] mb-3" style={{ color: '#ef4444' + 'aa' }}>Avoid</p>
-                <div className="space-y-2">
-                  {face.necklines_to_avoid.map((item, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-200 mt-1.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-400 font-light">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Eyewear & Facial Hair */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t" style={{ borderColor: BORDER }}>
+          <div>
+            <DataLabel>Eyewear</DataLabel>
+            <span className="text-xs text-black font-light">{face.eyewear_shapes.join(' · ')}</span>
+          </div>
+          <div>
+            <DataLabel>Facial Hair</DataLabel>
+            <span className="text-xs text-black font-light">{face.facial_hair_recommendations}</span>
           </div>
         </div>
 
@@ -926,7 +923,7 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
       </div>
 
       {/* 6 Sections */}
-      <FaceSection   cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} />
+      <FaceSection   cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} eyewearUrls={imageUrls?.eyewearCards ?? undefined} />
       <BodySection   cls={cls} text={sections.s2_body} />
       <ColourSection cls={cls} text={sections.s3_colour} />
       <OutfitsSection

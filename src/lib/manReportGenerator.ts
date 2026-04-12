@@ -106,9 +106,7 @@ Return ONLY the following JSON object, fully populated:
   "face": {
     "face_shape": "",
     "feature_type": "",
-    "neckline_recommendations": ["", "", ""],
-    "necklines_to_avoid": ["", ""],
-    "hairstyle_recommendations": ["", "", "", ""],
+    "hairstyle_recommendations": ["", ""],
     "facial_hair_recommendations": "",
     "eyewear_shapes": ["", ""]
   },
@@ -212,21 +210,6 @@ Each section must be complete, specific, and personalised — no filler sentence
 
 Opening paragraph (3-4 sentences):
 State the face shape and feature type. Explain what this means structurally — what proportions are at play. Set up why the recommendations below work for this specific geometry.
-
-### Collar & Neckline Guide
-List the 3 recommended collar/neckline types. For each:
-- Name of collar/neckline
-- One sentence explaining why it works for this face shape
-- One specific garment application
-
-### Collars to Avoid
-List 2 collars/necklines to avoid. One sentence each explaining the geometric conflict.
-
-### Hairstyle Recommendations
-List 4 hairstyle recommendations. For each:
-- Hairstyle name/description
-- One sentence explaining why it works for this face shape and feature type
-- One sentence on how to maintain or style it
 
 ### Facial Hair Guide
 One paragraph (2-3 sentences) on facial hair. Be specific — not "keep it neat."
@@ -575,8 +558,6 @@ export interface ClassificationResult {
   face: {
     face_shape: string;
     feature_type: string;
-    neckline_recommendations: string[];
-    necklines_to_avoid: string[];
     hairstyle_recommendations: string[];
     facial_hair_recommendations: string;
     eyewear_shapes: string[];

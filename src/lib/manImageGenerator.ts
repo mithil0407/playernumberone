@@ -27,6 +27,7 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 days — refreshed on every fetch
 /** Shape stored in image_urls JSONB column — storage paths, not URLs */
 export interface ManReportImagePaths {
   hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
+  eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
   outfitCards:    (string | null)[];
   baseModel?:     string;            // legacy — kept for backward compat with old reports
 }
@@ -34,6 +35,7 @@ export interface ManReportImagePaths {
 /** Shape returned to clients — signed URLs ready for <img> tags */
 export interface ResolvedImageUrls {
   hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
+  eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
   outfitCards:    (string | null)[];
   baseModel?:     string | null;     // legacy
 }
@@ -93,6 +95,23 @@ function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
 // ─────────────────────────────────────────────────────────────────────────────
 // Prompt builders
 // ─────────────────────────────────────────────────────────────────────────────
+
+function buildEyewearPrompt(eyewearShape: string, faceShape: string): string {
+  return `You are editing a headshot photo. Your only task is to add a pair of glasses to the subject's face.
+
+PRESERVE EVERYTHING EXCEPT THE EYEWEAR:
+- Background: keep it exactly as it appears in the uploaded photo — same colour, same setting, same objects
+- Face: same skin tone, same features, same expression, same lighting on face
+- Hair: unchanged
+- Clothing: unchanged
+- Framing and composition: unchanged
+
+ONLY CHANGE: Place a pair of ${eyewearShape} eyeglass frames on the subject's face. The glasses should sit naturally on the nose bridge, fit the face proportions of a ${faceShape} face shape, and look like premium, realistic eyewear — not cartoonish or digital-looking. The lenses should be clear (not tinted).
+
+Do not alter the background in any way. Do not change the lighting. Do not reframe or crop differently.
+
+Portrait format, tightly framed on the head and upper shoulders.`;
+}
 
 function buildHairstylePrompt(hairstyle: string, faceShape: string): string {
   return `You are editing a headshot photo. Your only task is to change the subject's hairstyle.
@@ -276,9 +295,41 @@ export async function generateHairstyleImages(
 }
 
 /**
+ * Phase 3b: Generate 2 eyewear variant headshots from the client's headshot photo.
+ * Uses eyewear_shapes[0] and [1]. Background is kept unchanged.
+ * Returns [path1, path2] — either may be null if that variant failed.
+ */
+export async function generateEyewearImages(
+  reportId:       string,
+  submission:     ManIntakeSubmission,
+  classification: ClassificationResult,
+  imageModel:     string = MODEL,
+): Promise<(string | null)[]> {
+  const photoUrl = submission.photo_headshot_url ?? submission.photo_fullbody_url;
+  if (!photoUrl) {
+    throw new Error('No headshot or full-body photo on submission — cannot generate eyewear images');
+  }
+
+  const { data, mimeType } = await fetchAsBase64(photoUrl);
+  const { face } = classification;
+  const shapes = face.eyewear_shapes.slice(0, 2);
+
+  const tasks = shapes.map((shape, i) =>
+    withOneRetry(() => callGeminiImageEdit(data, mimeType, buildEyewearPrompt(shape, face.face_shape), imageModel))
+      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `eyewear_${i + 1}.jpg`))
+      .catch(err => {
+        console.error(`[manImageGenerator] Eyewear variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
+        return null;
+      })
+  );
+
+  return Promise.all(tasks);
+}
+
+/**
  * Phase 4: Generate all 16 outfit images fully in parallel.
  * Takes the client's original full-body photo URL directly (not a storage path).
- * hairstylePaths must be passed in so partial progress writes don't overwrite them.
+ * hairstylePaths and eyewearPaths must be passed in so partial progress writes don't overwrite them.
  * Returns array of storage paths (null where generation failed).
  */
 export async function generateAllOutfitImages(
@@ -287,6 +338,7 @@ export async function generateAllOutfitImages(
   classification: ClassificationResult,
   sections:       ReportSections,
   hairstylePaths: (string | null)[],   // preserved in every partial DB write
+  eyewearPaths:   (string | null)[],   // preserved in every partial DB write
   imageModel:     string = MODEL,
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
@@ -311,11 +363,11 @@ export async function generateAllOutfitImages(
       );
       const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
       partialPaths[taskIdx] = path;
-      // Always include hairstylePaths so they are never overwritten by outfit progress writes
+      // Always include hairstylePaths + eyewearPaths so they are never overwritten by outfit progress writes
       await supabaseAdmin
         .from('man_reports')
         .update({
-          image_urls:  { hairstyleCards: hairstylePaths, outfitCards: [...partialPaths] },
+          image_urls:  { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [...partialPaths] },
           updated_at:  new Date().toISOString(),
         })
         .eq('id', reportId);
@@ -326,7 +378,7 @@ export async function generateAllOutfitImages(
     }
   });
 
-  return runWithConcurrency(tasks, 4);
+  return runWithConcurrency(tasks, 1);
 }
 
 /**
@@ -399,13 +451,15 @@ export async function resolveManReportImageUrls(
     ? paths.hairstyleCards
     : paths.baseModel ? [paths.baseModel] : [];
 
-  const [hairstyleUrls, outfitUrls] = await Promise.all([
+  const [hairstyleUrls, eyewearUrls, outfitUrls] = await Promise.all([
     Promise.all(hairstylePaths.map(resolveOne)),
+    Promise.all((paths.eyewearCards ?? []).map(resolveOne)),
     Promise.all((paths.outfitCards ?? []).map(resolveOne)),
   ]);
 
   return {
     hairstyleCards: hairstyleUrls,
+    eyewearCards:   eyewearUrls,
     outfitCards:    outfitUrls,
     baseModel:      paths.baseModel ? await resolveOne(paths.baseModel) : null,
   };
