@@ -357,19 +357,20 @@ Then for each outfit, use this exact structure:
 ═══════════════════════════════════════════════
 GENERATION RULES — ALL 16 MUST PASS EVERY CHECK
 ═══════════════════════════════════════════════
-1. COLOUR FIDELITY — Every colour must come from primary palette, neutral base, or accent colours. Name the palette source for each piece in Colour logic.
+1. COLOUR APPROACH — Use the client's primary palette and neutral base as a strong preference — prioritise those colours across the 16 outfits. However, do NOT restrict outfits exclusively to palette colours. Universal wardrobe staples (navy, white, off-white, charcoal, light grey, stone, camel, olive, ecru, mid-blue) are always permitted regardless of season. The ONLY hard restriction is the "colours to avoid" list — never use those specific colours. In Colour logic, note whether each piece is from the palette, a universal neutral, or a complementary tone.
 2. SILHOUETTE COMPLIANCE — Every bottom must use an approved trouser silhouette. Every top must use an approved top silhouette. No exceptions.
 3. STYLE BRIEF ALIGNMENT — Every outfit must be traceable to the aesthetic direction and register in the classification style_brief.
 4. UNIQUENESS — No two outfits may share the same top + bottom combination.
-5. PALETTE COVERAGE — Across the 16 outfits, every primary palette colour must appear at least once.
+5. PALETTE REPRESENTATION — Across the 16 outfits, at least 10 outfits should feature at least one primary palette colour. The remaining outfits may lean on universal neutrals for variety and versatility.
 6. ASPIRATION ANCHORING — At least 3 outfits must directly reflect the Free Note aspiration (if the Free Note contains substantive content).
-7. CATEGORY INTEGRITY — Casual outfits are not downgraded in quality — they must be as colour-correct and silhouette-precise as work outfits.
+7. CATEGORY INTEGRITY — Casual outfits are not downgraded in quality — they must be as colour-considered and silhouette-precise as work outfits.
 8. FABRIC LOGIC — Fabric choices must suit the occasion tier (e.g. no linen suit in a formal corporate outfit, no heavy tweed in a casual summer look).
 9. LAYERING LOGIC — Only add a layer if it serves a functional or proportional purpose. Specify open vs closed. Never add a layer just to fill the field.
 10. FOOTWEAR REGISTER — Shoe formality must match the outfit's occasion tier. No trainers in Work/Formal. No Oxfords in Casual.
 11. BANNED GARMENTS CHECK — Before finalising each outfit, verify: no skinny jeans, no slim-tapered trousers, no fitted/muscle-fit tops. If any are present, replace immediately.
 12. LOCATION CLIMATE — Factor in the client's location region for layering decisions. India T1 / UAE: reduce layering in warm categories. UK / Canada: include outerwear more frequently.
 13. PROPORTION SYSTEM — Each outfit must function as a coherent proportion system. If the bottom has volume (wide-leg, pleated), the top should have some structure or tuck. If the top has volume (oversized, relaxed), the bottom should be cleaner and straighter.
+14. DIVERSITY — Across the 16 outfits, aim for genuine variety in colour combinations. Avoid repeating the same colour story across multiple outfits. Each outfit should feel distinct.
 
 Before generating the first outfit: confirm total = exactly 16, all categories represented, counts match classification outfit_split. State this confirmation as a single line before the first category header.
 

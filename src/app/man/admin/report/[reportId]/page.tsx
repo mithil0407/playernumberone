@@ -97,10 +97,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [sending, setSending]             = useState(false);
   const [copied, setCopied]               = useState(false);
   const [error, setError]                 = useState('');
-  const [terminating, setTerminating]     = useState(false);
-  const [retrying, setRetrying]           = useState(false);
-  const [rejecting, setRejecting]         = useState(false);
-  const [elapsedSecs, setElapsedSecs]     = useState(0);
+  const [terminating, setTerminating]       = useState(false);
+  const [retrying, setRetrying]             = useState(false);
+  const [rejecting, setRejecting]           = useState(false);
+  const [confirmingReject, setConfirmingReject] = useState(false);
+  const [imageModel, setImageModel]         = useState<'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image'>('gemini-3.1-flash-image-preview');
+  const [elapsedSecs, setElapsedSecs]       = useState(0);
 
   const load = useCallback(async () => {
     const res  = await fetch(`/api/man-report/${reportId}`);
@@ -229,10 +231,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // ── Reject & retry (discard current report, start fresh) ─────────────
   const handleRejectAndRetry = async () => {
     if (!report || rejecting) return;
-    if (!window.confirm('Reject this report and generate a new one from scratch?')) return;
     const submissionId = report.submission_id;
     if (!submissionId) { setError('Missing submission ID — cannot retry.'); return; }
     setRejecting(true);
+    setConfirmingReject(false);
     setError('');
     try {
       await fetch(`/api/man-report/${reportId}`, {
@@ -240,7 +242,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'error', error_message: 'Rejected by admin — new report requested' }),
       });
-      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const res  = await fetch(`/api/man-report/generate/${report.submission_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageModel }),
+      });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Retry failed'); return; }
       if (data.reportId) router.push(`/man/admin/report/${data.reportId}`);
@@ -282,7 +288,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     setRetrying(true);
     setError('');
     try {
-      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const res  = await fetch(`/api/man-report/generate/${submissionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageModel }),
+      });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Retry failed'); return; }
       if (data.reportId && data.reportId !== reportId) {
@@ -491,6 +501,28 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
         {/* Send controls */}
         <div className="px-3 py-4 border-t space-y-2" style={{ borderColor: '#1e1e1e' }}>
+          {/* Image model toggle — shown whenever retry/reject actions are available */}
+          {(isError || ['draft_ready', 'in_review', 'approved'].includes(report.status)) && (
+            <div className="rounded-lg p-2 space-y-1.5" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#4a4030' }}>Image Model</p>
+              <div className="flex gap-1">
+                {(['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setImageModel(m)}
+                    className="flex-1 py-1 rounded text-[9px] font-medium transition-all"
+                    style={{
+                      background: imageModel === m ? '#2a2010' : 'transparent',
+                      color: imageModel === m ? '#c9a96e' : '#4a4030',
+                      border: `1px solid ${imageModel === m ? '#3a3010' : '#1e1e1e'}`,
+                    }}
+                  >
+                    {m === 'gemini-3.1-flash-image-preview' ? '3.1 Preview' : '2.5 Flash'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {report.status === 'sent' ? (
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -553,15 +585,37 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 <Copy size={12} /> Preview Link
               </button>
               {['draft_ready', 'in_review', 'approved'].includes(report.status) && (
-                <button
-                  onClick={handleRejectAndRetry}
-                  disabled={rejecting}
-                  className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-40"
-                  style={{ background: '#1a0a0a', color: '#f87171', border: '1px solid #3a1010' }}
-                >
-                  {rejecting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-                  {rejecting ? 'Rejecting…' : 'Reject & Retry'}
-                </button>
+                confirmingReject ? (
+                  <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
+                    <p className="text-[10px] text-center" style={{ color: '#f87171' }}>Reject this report and generate a new one?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmingReject(false)}
+                        className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+                        style={{ background: '#1e1e1e', color: '#6b5f4a', border: '1px solid #2a2a2a' }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleRejectAndRetry}
+                        disabled={rejecting}
+                        className="flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80 disabled:opacity-40"
+                        style={{ background: '#7f1d1d', color: '#fca5a5' }}
+                      >
+                        {rejecting ? <Loader2 size={11} className="animate-spin" /> : null}
+                        {rejecting ? 'Rejecting…' : 'Confirm'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmingReject(true)}
+                    className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+                    style={{ background: '#1a0a0a', color: '#f87171', border: '1px solid #3a1010' }}
+                  >
+                    <RotateCcw size={12} /> Reject & Retry
+                  </button>
+                )
               )}
             </>
           )}

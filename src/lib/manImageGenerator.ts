@@ -96,79 +96,46 @@ function buildBaseModelPrompt(c: ClassificationResult): string {
   const hairstyle = c.face.hairstyle_recommendations[0];
   const faceShape = c.face.face_shape;
 
-  return `Transform this full-body photograph into a high-editorial menswear image.
+  return `Editorial menswear portrait. The subject is the person in the reference photo — preserve their face, skin tone, eye colour, and body proportions exactly. Do not alter or idealise the body in any way.
 
-BACKGROUND
-Replace the entire background with flat solid #94a6ad (ICONIK slate). No gradient, no texture, no vignette, no shadow bleed. Edge of subject must be clean against the slate.
+Hair: Style the hair as: ${hairstyle}. Natural and groomed for a ${faceShape} face shape. Do not change face, skin tone, or facial features.
 
-HAIRSTYLE
-Replace the current hair with: ${hairstyle}. Must look freshly styled and intentional — not just changed, but groomed. Natural to a ${faceShape} face shape. Do not alter the face, skin tone, or facial features in any way.
+Pose: Standing upright, relaxed and confident. Arms at sides. Facing the camera directly. Full body visible from head to feet, subject centred in frame.
 
-POSE
-Reposition the subject to: standing perfectly upright, weight centred, arms relaxed at sides, facing directly toward the camera (full frontal). Full body from head to feet visible, subject centred in frame.
+Background: Clean, flat, solid #94a6ad (cool slate grey). No texture, no gradient, no shadow spill onto the background. Subject edges clean against the background.
 
-LIGHTING
-High-end editorial quality — clean, even, soft directional light from slightly above. Consistent skin tone rendering. No harsh shadows, no blown highlights, no under-exposure on the face.
+Lighting: High-end editorial — soft, even light from slightly above. Clean skin tone rendering. No harsh shadows, no blown highlights.
 
-PRESERVE EXACTLY
-Face identity, skin tone depth, eye colour, body proportions, height impression. Do not slim, sculpt, or alter the body in any way.
-
-OUTPUT
-Portrait format. Full body head to feet. Subject centred. Flat #94a6ad slate background. No props, no text, no decorative elements.`;
+Do not add props, text, furniture, or any additional elements. Portrait format.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
-  const silhouetteRules = c.body.silhouette_rules.map(r => `  • ${r}`).join('\n');
-  const avoidCuts       = c.body.avoid_cuts.map(r => `  ✗ ${r}`).join('\n');
-
-  const garmentBlock = [
-    `TOP:         ${outfit.top}`,
-    `BOTTOM:      ${outfit.bottom}`,
-    `LAYER:       ${outfit.layer ?? 'No layer'}`,
-    `FOOTWEAR:    ${outfit.footwear}`,
-    outfit.accessories ? `ACCESSORIES: ${outfit.accessories}` : null,
+  const garmentLines = [
+    `Top: ${outfit.top}`,
+    `Bottom: ${outfit.bottom}`,
+    outfit.layer ? `Layer: ${outfit.layer}` : null,
+    `Footwear: ${outfit.footwear}`,
+    outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
   ].filter(Boolean).join('\n');
 
-  const fitContext = outfit.fitNote
-    ? `\nFit context for this client: ${outfit.fitNote}`
-    : '';
+  const fitNote = outfit.fitNote ? `\nFit: ${outfit.fitNote}` : '';
 
-  const colourContext = outfit.colourLogic
-    ? `\nColour sourcing: ${outfit.colourLogic}`
-    : '';
+  return `Editorial menswear portrait. The subject is the person in the reference photo — preserve their face, skin tone, and body proportions exactly. Do not alter or idealise the body.
 
-  return `Dress this man in Outfit ${outfit.index} — ${outfit.label}.
+Wearing this:
+${garmentLines}${fitNote}
 
-━━━ GARMENTS TO RENDER ━━━━━━━━━━━━━━━━━━━━━━━━━━
-${garmentBlock}${fitContext}${colourContext}
+Pose: Standing upright, relaxed and confident, arms at sides, facing the camera directly. Full body visible from head to feet. Same stance as the reference image.
 
-━━━ BODY SILHOUETTE RULES (mandatory) ━━━━━━━━━━━
-Body type: ${c.body.silhouette_type}
-Fit directive: ${c.body.fit_directive}
-Highlight zone: ${c.body.highlight_zone}
-Minimise zone: ${c.body.minimise_zone}
-Silhouette rules to apply:
-${silhouetteRules}
-Cuts to never render:
-${avoidCuts}
+Background: Same flat solid #94a6ad (cool slate grey) as the reference image. Clean, no texture, no gradient.
 
-━━━ GARMENT FIT STANDARDS (non-negotiable) ━━━━━━
-✗ NO skinny jeans or slim-tapered trousers
-✗ NO fitted/muscle-fit tops — fabric must not stretch across chest or arms
-✗ NO slim-leg trousers with aggressive ankle taper
-✓ Trousers: straight leg or wider — clean, non-constricting silhouette
-✓ Tops: fabric must have visible ease — not contoured to the torso
-✓ Layer (if present): should sit cleanly — not pulled tight across shoulders
+Lighting: Match the editorial lighting from the reference image — soft, even, from slightly above.
 
-━━━ RENDER CONSTRAINTS ━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Identical pose to base image — do not alter stance, weight, or body position
-- Background: flat solid #94a6ad — exact match to base image
-- Lighting: match base image editorial lighting exactly — no new shadows
-- Garments pressed and styled — no rumpling, no bunching
-- Colour accuracy critical — match hex values from outfit description precisely
-- No logos, labels, or brand markings visible on any garment
-- Full body head to feet — no cropping
-- Western garments only — suits, trousers, shirts, chinos, outerwear`;
+Garment rendering: Clothes should look pressed and naturally worn — not floating, not distorted. Colours must be accurate to the description. No logos or brand markings visible.
+
+Body silhouette (${c.body.silhouette_type}): ${c.body.fit_directive}. Highlight zone: ${c.body.highlight_zone}. The garments should suit this body type — ${c.body.silhouette_rules.slice(0, 2).join('; ')}.
+
+Do not use skinny jeans, slim-tapered trousers, or fitted/muscle-fit tops. Trousers must have a clean, non-constricting silhouette.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -179,9 +146,10 @@ async function callGeminiImageEdit(
   imageBase64: string,
   mimeType: string,
   prompt: string,
+  model: string = MODEL,
 ): Promise<string> {
   const response = await ai.models.generateContent({
-    model: MODEL,
+    model,
     contents: [{
       parts: [
         { inlineData: { mimeType, data: imageBase64 } },
@@ -271,9 +239,10 @@ async function withConcurrency<T>(
  * Returns storage path (e.g. "{reportId}/base.jpg").
  */
 export async function generateBaseModel(
-  reportId:      string,
-  submission:    ManIntakeSubmission,
+  reportId:       string,
+  submission:     ManIntakeSubmission,
   classification: ClassificationResult,
+  imageModel:     string = MODEL,
 ): Promise<string> {
   if (!submission.photo_fullbody_url) {
     throw new Error('No photo_fullbody_url on submission — cannot generate base model');
@@ -281,7 +250,7 @@ export async function generateBaseModel(
 
   const { data, mimeType } = await fetchAsBase64(submission.photo_fullbody_url);
   const prompt             = buildBaseModelPrompt(classification);
-  const outputBase64       = await callGeminiImageEdit(data, mimeType, prompt);
+  const outputBase64       = await callGeminiImageEdit(data, mimeType, prompt, imageModel);
 
   return uploadToStorage(reportId, outputBase64, 'base.jpg');
 }
@@ -296,6 +265,7 @@ export async function generateAllOutfitImages(
   baseModelPath:   string,
   classification:  ClassificationResult,
   sections:        ReportSections,
+  imageModel:      string = MODEL,
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
 
@@ -304,7 +274,7 @@ export async function generateAllOutfitImages(
     return [];
   }
 
-  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images with concurrency 4`);
+  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images with concurrency 4 (model: ${imageModel})`);
 
   // Fetch base model once (short-lived signed URL for internal use)
   const baseSignedUrl                   = await getSignedUrl(baseModelPath, 300);
@@ -312,7 +282,7 @@ export async function generateAllOutfitImages(
 
   const tasks = outfits.map((outfit) => async () => {
     const prompt       = buildOutfitPrompt(outfit, classification);
-    const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt);
+    const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel);
     return uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
   });
 

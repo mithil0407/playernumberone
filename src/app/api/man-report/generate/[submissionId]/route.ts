@@ -48,7 +48,12 @@ async function writePartialData(
     .eq('id', reportId);
 }
 
-async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
+const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
+
+async function runPipeline(reportId: string, submission: ManIntakeSubmission, imageModel?: string) {
+  const resolvedImageModel = ALLOWED_IMAGE_MODELS.includes(imageModel ?? '')
+    ? imageModel!
+    : 'gemini-3.1-flash-image-preview';
   try {
     // Phase 1 — Classification
     await updateStage(reportId, 'classifying');
@@ -81,17 +86,24 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
     let imageUrls: ManReportImagePaths | null = null;
     try {
       await updateStage(reportId, 'generating_base_model');
-      const baseModelPath = await generateBaseModel(reportId, submission, classification);
+      const baseModelPath = await generateBaseModel(reportId, submission, classification, resolvedImageModel);
+
       await updateStage(reportId, 'generating_outfit_images');
-      const outfitPaths   = await generateAllOutfitImages(
-        reportId, baseModelPath, classification, sections as unknown as ReportData['sections']
+      const outfitPaths = await generateAllOutfitImages(
+        reportId, baseModelPath, classification, sections as unknown as ReportData['sections'], resolvedImageModel
       );
       imageUrls = { baseModel: baseModelPath, outfitCards: outfitPaths };
       console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
+
+      // Write image_urls immediately after generation — if finalization is killed by Vercel,
+      // the paths are already persisted and the report can be rescued.
+      await supabaseAdmin
+        .from('man_reports')
+        .update({ image_urls: imageUrls, updated_at: new Date().toISOString() })
+        .eq('id', reportId);
     } catch (imgErr) {
       const imgErrMsg = imgErr instanceof Error ? imgErr.message : String(imgErr);
       console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErrMsg);
-      // Write the image error into the DB so it's visible in the admin UI
       await supabaseAdmin
         .from('man_reports')
         .update({ error_message: `Image generation failed: ${imgErrMsg}`, updated_at: new Date().toISOString() })
@@ -132,7 +144,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ submissionId: string }> }
 ) {
   const cookieStore = await cookies();
@@ -140,6 +152,9 @@ export async function POST(
   if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const body = await request.json().catch(() => ({}));
+  const imageModel: string | undefined = typeof body?.imageModel === 'string' ? body.imageModel : undefined;
 
   const { submissionId } = await params;
 
@@ -205,7 +220,7 @@ export async function POST(
 
   // 4. Schedule the pipeline to run after this response is sent
   after(async () => {
-    await runPipeline(reportId, submission as ManIntakeSubmission);
+    await runPipeline(reportId, submission as ManIntakeSubmission, imageModel);
   });
 
   // 5. Return immediately — admin dashboard starts polling
