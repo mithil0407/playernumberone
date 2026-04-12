@@ -26,7 +26,29 @@ Rules:
 - Outfit split is dynamic — derive from Dressing Context and Wardrobe fields.
 - Style brief is derived from Free Note (primary), then Style Tribes, then Style Goal.
   If Free Note contains substantive content, it governs aesthetic direction.
-  Tribe aesthetics and Style Goal inform secondary parameters only.`;
+  Tribe aesthetics and Style Goal inform secondary parameters only.
+
+HEX CODE ACCURACY — CRITICAL:
+Every hex code you produce must be visually accurate. The rendered colour swatch MUST match what a human expects when reading the colour name.
+Never hallucinate or approximate hex codes. Use the canonical, widely-recognised hex for each named colour.
+Mandatory reference anchors (use these exact ranges):
+  - olive / olive green → #6B6B00 to #808000 (dark yellow-green, NOT light green)
+  - camel → #C19A6B to #C09A5B
+  - burgundy / wine → #800020 to #722F37
+  - navy → #001F5B to #003087
+  - charcoal → #36454F to #454545
+  - cream / ivory → #FFFDD0 to #FFFFF0
+  - tan → #D2B48C to #C4A882
+  - dark tan → #A0785A to #8B6340
+  - forest green → #228B22 to #1B5E20
+  - teal → #008080 to #004D40
+  - rust → #B7410E to #A0522D
+  - dusty rose → #DCAE96 to #C4887A
+  - slate blue → #6A7FA8 to #5B6E8F
+  - off-white → #F5F5F0 to #FAF9F6
+  - cobalt → #0047AB to #003D9E
+  - mauve → #8E4585 to #7B3F6E
+If unsure of a colour's hex, choose a darker/more saturated version rather than a light pastel — most style palette colours lean mid-depth, not pale.`;
 
 const CLASSIFICATION_USER_TEMPLATE = `Classify the following ICONIK men's intake form data and return a JSON object matching the schema exactly.
 
@@ -391,16 +413,30 @@ If fat_storage_zone = abdomen or torso (Short + Belly profile):
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 COLOUR RULES
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-RULE 1 \u2014 COLOUR FREEDOM:
-Any colour is permitted in any outfit. The client's palette colours are a useful starting point but NOT a constraint. Use the full colour spectrum to create variety.
-The ONLY hard block: the classification colours_to_avoid list. Everything else is fair game.
-CRITICAL: Do NOT let the client's undertone (warm/cool/neutral) restrict which colours appear in outfits. Undertone only determines which colours to avoid — it does NOT mean every outfit must use warm or earth tones. A warm-undertone client can and should wear navy, forest green, burgundy, slate blue, cobalt, olive, rust, teal, mauve, dusty pink, and any other colour that isn't on the avoid list.
+RULE 1 \u2014 COLOUR FREEDOM WITH PURPOSE:
+Any colour family is permitted in any outfit. The client's primary palette colours are NOT a default — do NOT cluster outfits around the palette colours just because they are listed there. Treat the palette as one data source among many, not as the outfit colour guide.
+The ONLY hard block: the classification colours_to_avoid list. Everything else is open.
+The client's primary palette already covers his signature colours — the 16 outfits should go BEYOND that narrow range and demonstrate the full breadth of a well-built wardrobe.
 
-RULE 2 \u2014 DIVERSITY IS MANDATORY:
-No two outfits should share the same dominant colour story. Actively use different colour families across 16 outfits \u2014 earth tones, jewel tones, pastels, brights, monochromes, neutrals, cool tones, muted tones. A man's wardrobe must have range across multiple colour families. Do not default to the same 3-4 warm/earth colours repeatedly. If the first 4 outfits are all in warm/earth tones, you are failing this rule — course-correct immediately and introduce cool, jewel, and neutral families.
+RULE 2 \u2014 UNDERTONE SHAPES SHADE, NOT COLOUR FAMILY:
+The client's undertone determines WHICH SHADE to pick within a colour family — it does NOT restrict which families are available.
+  Warm undertone \u2192 reach for warm-shifted shades: teal-blue (not icy blue), moss or olive green (not mint), amber, rust, terracotta, warm burgundy, camel, tobacco, dusty rose
+  Cool undertone \u2192 reach for cool-shifted shades: cobalt blue, true navy, emerald green, plum, icy grey, slate, mauve, cool white, silver-toned neutrals
+  Neutral undertone \u2192 both temperature directions work; anchor in mid-depth shades
+A warm-undertone client SHOULD wear blue, green, purple, grey — he just picks the warmer-shifted version of each. A cool-undertone client SHOULD wear earth tones — he just picks cooler-shifted versions (slate green vs olive, cool taupe vs camel). Never let undertone become a reason to stay in one colour zone.
 
-RULE 3 \u2014 COLOUR LOGIC FIELD:
-For each outfit, name the colours used and briefly note why they work together.
+RULE 3 \u2014 COLOUR PAIRING STRATEGY (required per outfit):
+Every outfit must follow one of these four named pairing strategies. State the strategy name in the Colour Logic field:
+  TONAL \u2014 shades of the same family across all pieces (e.g. warm white shirt + stone chinos + sand suede loafer)
+  ANALOGOUS \u2014 adjacent colour families on the wheel (e.g. olive + rust, navy + forest green, camel + warm brown)
+  NEUTRAL ANCHOR + ACCENT \u2014 two neutrals as the base + one colour as the focal point (e.g. charcoal + ivory + deep teal accent)
+  DARK/LIGHT CONTRAST \u2014 one deep shade + one light shade, matched in temperature (e.g. dark burgundy + cream, midnight navy + soft white)
+
+RULE 4 \u2014 OCCASION COLOUR TEMPERATURE:
+Colour choice must respect the context of each category:
+  FORMAL (outfits 1\u20135): Dominant colour must be a sober, authoritative tone \u2014 navy, charcoal, dark grey, stone, ivory, dark burgundy, dark forest green, mid-blue, chocolate brown, or black. A creative or fashion-forward primary_brief may introduce one structured bold colour, but in no more than 2 of the 5 formal looks.
+  CASUAL (outfits 6\u201311): Widest latitude. Introduce pastels, brights, unexpected combinations, warm and cool experimentals here. This is where colour range is built.
+  EVENING WEAR (outfits 12\u201316): Rich, confident, sophisticated. Jewel tones, bold monochromes, deep saturated shades. Avoid safe neutrals here \u2014 evening is the correct context for the palette's accent colours and for maximum colour impact.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 DIVERSITY MANDATE \u2014 THE MOST IMPORTANT RULE IN THIS ENTIRE PROMPT
@@ -414,11 +450,17 @@ GARMENT DIVERSITY (hard requirements):
 - Use at least 4 different footwear types across 16 outfits
 
 COLOUR DIVERSITY (hard requirements):
-- No single colour (including navy, white, black, grey) should appear in more than 4 of 16 outfits
-- At least 4 outfits must feature a bold or unexpected colour (not a neutral or earth tone)
+- No single dominant colour should appear in more than 4 of 16 outfits (this includes navy, white, black, grey)
+- At least 4 outfits must feature a bold or unexpected colour as the dominant note (not a neutral or earth tone)
 - At least 2 outfits must be fully tonal (head-to-toe in shades of one colour family)
-- Outfits must span at least 5 distinct colour families (e.g. warm earth, cool blue/navy, jewel tone, pastel/muted, monochrome/neutral). Do not cluster in one family.
-- Do not treat the client's undertone as a colour restriction for outfits. The palette section lists aspirational signature colours; the outfit section should be broader and more varied.
+- No more than 3 consecutive outfits within the same colour family
+- All 6 of the following colour families MUST appear across the 16 outfits \u2014 if any are missing the output fails:
+    \u2713 Warm earth (camel, rust, tan, terracotta, tobacco, warm brown, warm olive)
+    \u2713 Cool neutral (charcoal, slate, cool grey, true navy, stone, off-white, black)
+    \u2713 Jewel tone (deep teal, emerald, burgundy, cobalt, plum, rich olive, sapphire)
+    \u2713 Pastel / muted (dusty rose, sage, powder blue, muted lavender, soft terracotta, pale stone)
+    \u2713 Monochrome / tonal (a head-to-toe look in shades of one family)
+    \u2713 Bright / bold (at least one genuinely saturated high-energy colour that demands attention)
 
 SILHOUETTE DIVERSITY:
 - Mix fitted and relaxed silhouettes \u2014 do not make every outfit the same proportional shape
@@ -446,8 +488,10 @@ Before writing the first category header, silently verify:
 - Outfit split: 5 Formal + 6 Casual + 5 Evening Wear = 16
 - colours_to_avoid confirmed and hard-blocked in all 16 outfits
 - Diversity: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 footwear types planned
-- No single colour in more than 6 outfits
+- No single dominant colour in more than 4 outfits
 - No two outfits share the same dominant colour story
+- All 6 colour families covered: warm earth, cool neutral, jewel tone, pastel/muted, monochrome/tonal, bright/bold
+- Occasion colour temperature applied: formal=sober, casual=open, evening=rich
 - Reference Library consulted \u2014 \u22658 of 16 outfits are LIBRARY or LIBRARY-ADAPTED
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -461,13 +505,13 @@ Then for each outfit, use this exact structure:
 
 **Outfit [N] \u2014 [Two to three word occasion/mood label]**
 
-- Top: [garment type] in [colour name] ([hex]) \u2014 [fit descriptor] \u2014 [fabric] \u2014 [tuck instruction: tucked / untucked / half-tuck]
-- Bottom: [trouser type] in [colour name] ([hex]) \u2014 [rise] \u2014 [fabric] \u2014 [break: no break / quarter break / half break]
-- Layer: [specific outerwear type] in [colour name] ([hex]) \u2014 [worn: open / closed / over-arm] | or: No layer
+- Top: [garment type] in [colour name] \u2014 [fit descriptor] \u2014 [fabric] \u2014 [tuck instruction: tucked / untucked / half-tuck]
+- Bottom: [trouser type] in [colour name] \u2014 [rise] \u2014 [fabric] \u2014 [break: no break / quarter break / half break]
+- Layer: [specific outerwear type] in [colour name] \u2014 [worn: open / closed / over-arm] | or: No layer
 - Footwear: [type + material + colour] \u2014 [sock note: no-show / fine cotton / wool ribbed / no socks]
 - Accessories: [Apply the correct tier. If Tier 3 warrants no accessories, omit this line entirely.]
 - Fit note: [One sentence on how each piece physically fits this client's body geometry]
-- Colour logic: [Name the colours used and briefly note why they work together. Note if LIBRARY / LIBRARY-ADAPTED / GENERATED.]
+- Colour logic: [Strategy: TONAL / ANALOGOUS / NEUTRAL ANCHOR + ACCENT / DARK-LIGHT CONTRAST \u2014 then name the colours used and one sentence on why this combination works. Note if LIBRARY / LIBRARY-ADAPTED / GENERATED.]
 - Occasion anchor: [One sentence \u2014 "Wear this to [specific situation] \u2014 it signals [specific quality] to [specific audience]."]
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -476,7 +520,7 @@ FULL GENERATION CHECKLIST \u2014 ALL 16 MUST PASS BEFORE OUTPUT
 \u2713 BANNED GARMENTS: No skinny jeans in any outfit.
 \u2713 COLOUR BLOCK: colours_to_avoid absent from all 16.
 \u2713 DIVERSITY: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 shoe types used.
-\u2713 COLOUR DIVERSITY: No colour in >6 outfits. \u22653 bold/unexpected colours. \u22652 tonal builds.
+\u2713 COLOUR DIVERSITY: No dominant colour in >4 outfits. \u22654 bold/unexpected colours. \u22652 tonal builds. All 6 colour families present.
 \u2713 UNIQUENESS: No two outfits share the same top+bottom combination or colour story.
 \u2713 FABRIC CLIMATE: Correct matrix applied for client's location.
 \u2713 FIT NOTE: Every outfit references client's body geometry.

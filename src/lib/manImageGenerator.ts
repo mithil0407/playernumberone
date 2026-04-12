@@ -110,7 +110,7 @@ Pose: Standing upright, confident, arms relaxed at sides, facing the camera dire
 
 The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, flat, no harsh shadows, no blown highlights. Consistent skin tone rendering.
 
-Do not add text, furniture, or decorative elements. Portrait format.`;
+Do not add text, furniture, or decorative elements. Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the vertical frame from head to toe with minimal headroom and no cropping at the feet.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
@@ -141,7 +141,9 @@ Garment rendering: Clothes should look pressed, tailored, and naturally worn on 
 
 Pose: Standing upright, confident, arms relaxed at sides, facing the camera directly. Full body head to feet visible, subject centred in frame.
 
-The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, soft, no harsh shadows, no blown highlights.`;
+The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, soft, no harsh shadows, no blown highlights.
+
+Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the vertical frame from head to toe with minimal headroom and no cropping at the feet.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

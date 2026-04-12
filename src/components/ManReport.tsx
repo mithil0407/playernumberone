@@ -41,9 +41,15 @@ interface OutfitCategory {
   outfits: ParsedOutfit[];
 }
 
+// Strips hex colour codes like (FFFDD0) or (#FFFDD0) from outfit text
+function stripHex(text: string): string {
+  return text.replace(/\s*\(#?[0-9A-Fa-f]{3,6}\)/g, '').trim();
+}
+
 function getField(block: string, label: string): string {
   const pattern = new RegExp(`-\\s*${label}\\s*:\\s*(.+?)(?=\\n-|\\n\\n|\\n\\*\\*|$)`, 'si');
-  return block.match(pattern)?.[1]?.replace(/\n/g, ' ').trim() ?? '—';
+  const raw = block.match(pattern)?.[1]?.replace(/\n/g, ' ').trim() ?? '—';
+  return stripHex(raw);
 }
 
 function parseOutfitCategories(text: string): OutfitCategory[] {
@@ -438,24 +444,24 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
           {/* Primary palette */}
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Your Primary Palette</p>
-            <div className="grid grid-cols-6 gap-2 mb-4">
+            <div className="grid grid-cols-6 gap-2 mb-5">
               {colour.primary_palette.map((c, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5">
+                <div key={i} className="flex flex-col items-center gap-2">
                   <div
-                    className="w-full aspect-square rounded-lg border shadow-sm"
-                    style={{ backgroundColor: c.hex, borderColor: BORDER }}
+                    className="w-full rounded-xl border shadow-sm"
+                    style={{ backgroundColor: c.hex, borderColor: BORDER, aspectRatio: '1/1.3' }}
                     title={`${c.name} — ${c.usage}`}
                   />
-                  <span className="text-[7px] font-bold text-gray-300 uppercase tracking-wide text-center leading-none">{c.hex}</span>
+                  <span className="text-[7px] font-bold text-gray-500 uppercase tracking-wide text-center leading-tight px-0.5">{c.name}</span>
                 </div>
               ))}
             </div>
-            {/* Colour names */}
-            <div className="space-y-1">
+            {/* Colour usage notes */}
+            <div className="space-y-1.5">
               {colour.primary_palette.map((c, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: c.hex }} />
-                  <span className="text-[10px] text-gray-500 font-light">
+                <div key={i} className="flex items-start gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5 border" style={{ backgroundColor: c.hex, borderColor: BORDER }} />
+                  <span className="text-[10px] text-gray-500 font-light leading-snug">
                     <strong className="font-semibold text-gray-700">{c.name}</strong> — {c.usage}
                   </span>
                 </div>
@@ -470,13 +476,13 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {colour.colours_to_avoid.map((c, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
-                    <div className="w-full aspect-square rounded-lg border-2 border-red-200 relative shadow-sm" style={{ backgroundColor: c.hex }}>
+                    <div className="w-full rounded-lg border-2 border-red-200 relative shadow-sm overflow-hidden" style={{ backgroundColor: c.hex, aspectRatio: '1/1.3' }}>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-full h-px bg-red-300 rotate-45 absolute" />
-                        <div className="w-full h-px bg-red-300 -rotate-45 absolute" />
+                        <div className="w-full h-px bg-red-400 rotate-45 absolute" style={{ opacity: 0.7 }} />
+                        <div className="w-full h-px bg-red-400 -rotate-45 absolute" style={{ opacity: 0.7 }} />
                       </div>
                     </div>
-                    <span className="text-[7px] font-bold text-red-300 uppercase tracking-wide text-center">{c.name}</span>
+                    <span className="text-[7px] font-bold text-red-400 uppercase tracking-wide text-center leading-tight">{c.name}</span>
                   </div>
                 ))}
               </div>
@@ -485,11 +491,11 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
 
             <div>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Neutral Base</p>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 {colour.neutral_base_colours.map((c, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1">
-                    <div className="w-8 h-8 rounded-md" style={{ backgroundColor: c.hex }} />
-                    <span className="text-[7px] text-gray-400 text-center leading-none">{c.name}</span>
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-lg border shadow-sm" style={{ backgroundColor: c.hex, borderColor: BORDER }} />
+                    <span className="text-[7px] text-gray-500 text-center leading-tight max-w-[44px]">{c.name}</span>
                   </div>
                 ))}
               </div>
@@ -497,11 +503,11 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
 
             <div>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Accent</p>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 {colour.accent_colours.map((c, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1">
-                    <div className="w-8 h-8 rounded-md" style={{ backgroundColor: c.hex }} />
-                    <span className="text-[7px] text-gray-400 text-center leading-none">{c.name}</span>
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-lg border shadow-sm" style={{ backgroundColor: c.hex, borderColor: BORDER }} />
+                    <span className="text-[7px] text-gray-500 text-center leading-tight max-w-[44px]">{c.name}</span>
                   </div>
                 ))}
               </div>
@@ -600,7 +606,7 @@ function OutfitsSection({
               {/* Left: outfit image or number placeholder — 40% card width */}
               <div
                 className="w-full md:w-2/5 flex-shrink-0 border-r overflow-hidden relative"
-                style={{ background: CREAM2, borderColor: BORDER, minHeight: 420 }}
+                style={{ background: CREAM2, borderColor: BORDER, aspectRatio: '3/4', minHeight: 360 }}
               >
                 {outfitImg ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -678,51 +684,55 @@ function OutfitsSection({
                   </button>
                 </div>
               ) : (
-              <div className="flex-1 p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD }}>{cat.name} Ensemble</span>
-                  <div className="h-px w-8" style={{ background: GOLD + '44' }} />
+              <div className="flex-1 p-6 md:p-8 flex flex-col">
+                {/* Header */}
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[8px] font-black uppercase tracking-[0.5em] px-2 py-1" style={{ color: GOLD, background: GOLD + '12' }}>{cat.name}</span>
+                    <span className="text-[9px] text-gray-300 font-light">#{String(outfit.number).padStart(2, '0')}</span>
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-light italic text-black leading-tight">{outfit.label}</h3>
                 </div>
-                <h3 className="text-2xl font-light italic text-black mb-5 leading-tight">{outfit.label}</h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                  {/* Composition */}
-                  <div>
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Composition</p>
-                    <div className="space-y-3">
-                      {[
-                        { label: 'Top',         value: outfit.top },
-                        { label: 'Bottom',      value: outfit.bottom },
-                        { label: 'Layer',       value: outfit.layer },
-                        { label: 'Footwear',    value: outfit.footwear },
-                        { label: 'Accessories', value: outfit.accessories },
-                      ].map(({ label, value }) => value && value !== '—' ? (
-                        <div key={label}>
-                          <DataLabel>{label}</DataLabel>
-                          <span className="text-xs text-black font-light leading-relaxed">{value}</span>
-                        </div>
-                      ) : null)}
+                {/* Composition — clean stacked rows */}
+                <div className="mb-6">
+                  <p className="text-[8px] font-black text-gray-300 uppercase tracking-[0.35em] mb-3">Outfit Composition</p>
+                  <div className="space-y-2.5">
+                    {[
+                      { label: 'Top',         value: outfit.top },
+                      { label: 'Bottom',      value: outfit.bottom },
+                      { label: 'Layer',       value: outfit.layer },
+                      { label: 'Footwear',    value: outfit.footwear },
+                      { label: 'Accessories', value: outfit.accessories },
+                    ].map(({ label, value }) => value && value !== '—' ? (
+                      <div key={label} className="flex items-baseline gap-3">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em] flex-shrink-0 w-20" style={{ color: GOLD + 'cc' }}>{label}</span>
+                        <span className="text-[11px] text-gray-700 font-light leading-snug">{value}</span>
+                      </div>
+                    ) : null)}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px mb-5" style={{ background: BORDER }} />
+
+                {/* Rationale */}
+                <div className="space-y-4 flex-1">
+                  {outfit.whyItWorks && outfit.whyItWorks !== '—' && (
+                    <StylistNote>{outfit.whyItWorks}</StylistNote>
+                  )}
+                  {outfit.fitNote && outfit.fitNote !== '—' && (
+                    <div>
+                      <DataLabel>Fit Note</DataLabel>
+                      <span className="text-[11px] text-gray-500 font-light leading-relaxed">{outfit.fitNote}</span>
                     </div>
-                  </div>
-
-                  {/* Rationale */}
-                  <div className="space-y-4">
-                    {outfit.whyItWorks && outfit.whyItWorks !== '—' && (
-                      <StylistNote>{outfit.whyItWorks}</StylistNote>
-                    )}
-                    {outfit.fitNote && outfit.fitNote !== '—' && (
-                      <div>
-                        <DataLabel>Fit Note</DataLabel>
-                        <span className="text-xs text-gray-500 font-light leading-relaxed">{outfit.fitNote}</span>
-                      </div>
-                    )}
-                    {outfit.colourLogic && outfit.colourLogic !== '—' && (
-                      <div>
-                        <DataLabel>Colour Logic</DataLabel>
-                        <span className="text-xs text-gray-500 font-light leading-relaxed">{outfit.colourLogic}</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  {outfit.colourLogic && outfit.colourLogic !== '—' && (
+                    <div>
+                      <DataLabel>Colour Logic</DataLabel>
+                      <span className="text-[11px] text-gray-500 font-light leading-relaxed">{stripHex(outfit.colourLogic)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               )}
