@@ -5,7 +5,7 @@
 // Design matches the embedded report preview on /man landing page exactly.
 
 import { useState } from 'react';
-import { Pencil, X, Loader2 } from 'lucide-react';
+import { Pencil, X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 
@@ -281,7 +281,7 @@ function StylistNote({ children }: { children: React.ReactNode }) {
 // Section 01 — Face Architecture
 // ─────────────────────────────────────────────────────────────
 
-function FaceSection({ cls, text }: { cls: ClassificationResult; text: string }) {
+function FaceSection({ cls, text, hairstyleUrls }: { cls: ClassificationResult; text: string; hairstyleUrls?: (string | null)[] }) {
   const { face } = cls;
   return (
     <div className="bg-white border-b" style={{ borderColor: BORDER }}>
@@ -317,6 +317,34 @@ function FaceSection({ cls, text }: { cls: ClassificationResult; text: string })
           {/* Hairstyles */}
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Hairstyle Recommendations</p>
+
+            {/* Hairstyle preview images (when generated) */}
+            {hairstyleUrls && hairstyleUrls.some(Boolean) && (
+              <div className="flex gap-3 mb-5">
+                {hairstyleUrls.slice(0, 2).map((url, i) => (
+                  <div key={i} className="flex-1 flex flex-col gap-1.5">
+                    {url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={url}
+                        alt={`Hairstyle option ${i + 1}`}
+                        className="w-full rounded-lg border object-cover object-top"
+                        style={{ aspectRatio: '3/4', borderColor: BORDER }}
+                      />
+                    ) : (
+                      <div className="w-full rounded-lg border flex items-center justify-center"
+                        style={{ aspectRatio: '3/4', borderColor: BORDER, background: CREAM2 }}>
+                        <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
+                      </div>
+                    )}
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-center" style={{ color: GOLD + 'aa' }}>
+                      Option {i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="space-y-3">
               {face.hairstyle_recommendations.map((h, i) => (
                 <div key={i} className="flex items-start gap-2.5">
@@ -541,6 +569,7 @@ function OutfitsSection({
   const [editingNumber, setEditingNumber]   = useState<number | null>(null);
   const [editText, setEditText]             = useState('');
   const [regenerating, setRegenerating]     = useState(false);
+  const [retryingNumber, setRetryingNumber] = useState<number | null>(null);
   const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
 
   const startEdit = (outfitNumber: number) => {
@@ -558,6 +587,19 @@ function OutfitsSection({
       cancelEdit();
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  // Quick retry for failed images — no editing, just re-fires generation with current outfit text
+  const handleQuickRetry = async (outfitNumber: number) => {
+    if (!onRegenerateOutfit) return;
+    setRetryingNumber(outfitNumber);
+    try {
+      const outfitBlock = extractOutfitBlock(text, outfitNumber);
+      const newUrl = await onRegenerateOutfit(outfitNumber, outfitBlock);
+      if (newUrl) setImageOverrides(prev => ({ ...prev, [outfitNumber]: newUrl }));
+    } finally {
+      setRetryingNumber(null);
     }
   };
 
@@ -615,9 +657,32 @@ function OutfitsSection({
                     alt={`Outfit ${outfit.number} — ${outfit.label}`}
                     className="absolute inset-0 w-full h-full object-cover object-top"
                   />
+                ) : canEdit ? (
+                  /* Error state — image failed, show retry button */
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6"
+                    style={{ background: '#FFF8F8' }}>
+                    <AlertCircle size={28} style={{ color: '#ef4444', opacity: 0.6 }} />
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <p className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: '#ef4444', opacity: 0.7 }}>
+                        Image failed
+                      </p>
+                      <p className="text-[9px] text-gray-400 font-light">Generation did not complete</p>
+                    </div>
+                    <button
+                      onClick={() => handleQuickRetry(outfit.number)}
+                      disabled={retryingNumber === outfit.number}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded text-[9px] font-black uppercase tracking-widest transition-opacity disabled:opacity-40"
+                      style={{ background: GOLD, color: '#fff' }}
+                    >
+                      {retryingNumber === outfit.number
+                        ? <><Loader2 size={10} className="animate-spin" /> Retrying…</>
+                        : <><RefreshCw size={10} /> Retry</>
+                      }
+                    </button>
+                  </div>
                 ) : (
+                  /* Public placeholder */
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                    {/* Outfit number — large editorial placeholder */}
                     <p className="text-[80px] font-black leading-none select-none" style={{ color: GOLD + '18' }}>
                       {String(outfit.number).padStart(2, '0')}
                     </p>
@@ -859,7 +924,7 @@ export default function ManReport({ data, imageUrls, adminMode, onRegenerateOutf
       </div>
 
       {/* 6 Sections */}
-      <FaceSection   cls={cls} text={sections.s1_face} />
+      <FaceSection   cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} />
       <BodySection   cls={cls} text={sections.s2_body} />
       <ColourSection cls={cls} text={sections.s3_colour} />
       <OutfitsSection

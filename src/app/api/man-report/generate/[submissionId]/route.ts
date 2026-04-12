@@ -14,7 +14,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
 import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
-import { generateBaseModel, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
+import { generateHairstyleImages, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
 // Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
@@ -85,23 +85,26 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, im
     // Phase 3+4 — Image generation (non-fatal — text report is complete regardless)
     let imageUrls: ManReportImagePaths | null = null;
     try {
+      // Phase 3 — 2 hairstyle variants from the headshot, background kept as-is
       await updateStage(reportId, 'generating_base_model');
-      const baseModelPath = await generateBaseModel(reportId, submission, classification, resolvedImageModel);
+      const hairstylePaths = await generateHairstyleImages(reportId, submission, classification, resolvedImageModel);
 
-      // Persist base model path immediately so it's never lost
+      // Persist hairstyle paths immediately
       await supabaseAdmin
         .from('man_reports')
-        .update({ image_urls: { baseModel: baseModelPath, outfitCards: [] }, updated_at: new Date().toISOString() })
+        .update({ image_urls: { hairstyleCards: hairstylePaths, outfitCards: [] }, updated_at: new Date().toISOString() })
         .eq('id', reportId);
 
+      // Phase 4 — 16 outfit images fully in parallel, using the full-body photo directly
+      const fullBodyUrl = submission.photo_fullbody_url;
+      if (!fullBodyUrl) throw new Error('No photo_fullbody_url on submission — cannot generate outfit images');
+
       await updateStage(reportId, 'generating_outfit_images');
-      // generateAllOutfitImages writes each outfit path to the DB as it completes,
-      // so partial progress is always persisted even if the process is killed mid-way.
       const outfitPaths = await generateAllOutfitImages(
-        reportId, baseModelPath, classification, sections as unknown as ReportData['sections'], resolvedImageModel
+        reportId, fullBodyUrl, classification, sections as unknown as ReportData['sections'], resolvedImageModel
       );
-      imageUrls = { baseModel: baseModelPath, outfitCards: outfitPaths };
-      console.log(`[man-report] Images generated for reportId=${reportId} — base + ${outfitPaths.filter(Boolean).length}/16 outfits`);
+      imageUrls = { hairstyleCards: hairstylePaths, outfitCards: outfitPaths };
+      console.log(`[man-report] Images generated for reportId=${reportId} — ${hairstylePaths.filter(Boolean).length}/2 hairstyles + ${outfitPaths.filter(Boolean).length}/16 outfits`);
     } catch (imgErr) {
       const imgErrMsg = imgErr instanceof Error ? imgErr.message : String(imgErr);
       console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErrMsg);

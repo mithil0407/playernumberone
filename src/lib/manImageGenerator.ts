@@ -1,11 +1,11 @@
 // manImageGenerator.ts
 // Phase 3 & 4 of the /man report pipeline: image generation via Gemini.
 //
-// Phase 3 — Base model (1 call):
-//   Client's full-body photo → recommended hairstyle + #94a6ad bg + editorial lighting
+// Phase 3 — Hairstyle images (2 calls, parallel):
+//   Client's HEADSHOT → 2 hairstyle variants applied, background kept as-is
 //
-// Phase 4 — Outfit images (16 calls, concurrency 4):
-//   Base model image → each of the 16 outfits applied
+// Phase 4 — Outfit images (16 calls, fully parallel):
+//   Client's FULL-BODY PHOTO → each of the 16 outfits applied
 //
 // image_urls in the DB stores storage paths (not signed URLs).
 // resolveManReportImageUrls() converts paths → fresh signed URLs at serve time.
@@ -26,14 +26,16 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 days — refreshed on every fetch
 
 /** Shape stored in image_urls JSONB column — storage paths, not URLs */
 export interface ManReportImagePaths {
-  baseModel: string;
-  outfitCards: (string | null)[];
+  hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
+  outfitCards:    (string | null)[];
+  baseModel?:     string;            // legacy — kept for backward compat with old reports
 }
 
 /** Shape returned to clients — signed URLs ready for <img> tags */
 export interface ResolvedImageUrls {
-  baseModel: string | null;
-  outfitCards: (string | null)[];
+  hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
+  outfitCards:    (string | null)[];
+  baseModel?:     string | null;     // legacy
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,25 +94,20 @@ function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
 // Prompt builders
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildBaseModelPrompt(c: ClassificationResult): string {
-  const hairstyle = c.face.hairstyle_recommendations[0];
-  const faceShape = c.face.face_shape;
+function buildHairstylePrompt(hairstyle: string, faceShape: string): string {
+  return `You are editing a headshot photo. Your only task is to change the subject's hairstyle.
 
-  return `Professional editorial fashion catalogue photography.
+PRESERVE EVERYTHING EXCEPT THE HAIR:
+- Background: keep it exactly as it appears in the uploaded photo — same colour, same setting, same objects
+- Face: same skin tone, same features, same expression, same lighting on face
+- Clothing: unchanged
+- Framing and composition: unchanged
 
-STERNLY IGNORE and COMPLETELY DISCARD the original background from the uploaded photo.
+ONLY CHANGE: Apply this hairstyle — ${hairstyle} — styled naturally and intentionally for a ${faceShape} face shape. The hair should look polished, well-groomed, and realistic. Match the natural hair texture of the subject.
 
-Extract ONLY the subject's face, features, and body proportions. Preserve their exact skin tone, facial features, eye colour, and body shape — do not alter, slim, or idealise.
+Do not alter the background in any way. Do not change the lighting. Do not reframe or crop differently.
 
-Place the subject against a professional studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient, no props.
-
-Apply polished grooming throughout. Style the hair as: ${hairstyle} — natural and intentional for a ${faceShape} face shape.
-
-Pose: Standing upright, confident, arms relaxed at sides, facing the camera directly. Full body head to feet visible, subject centred in frame.
-
-The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, flat, no harsh shadows, no blown highlights. Consistent skin tone rendering.
-
-Do not add text, furniture, or decorative elements. Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the vertical frame from head to toe with minimal headroom and no cropping at the feet.`;
+Portrait format, tightly framed on the head and upper shoulders.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
@@ -211,69 +208,54 @@ async function getSignedUrl(path: string, ttl = SIGNED_URL_TTL): Promise<string>
   return data.signedUrl;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Concurrency helper — no p-limit dependency needed
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function withConcurrency<T>(
-  tasks: Array<() => Promise<T>>,
-  limit: number,
-): Promise<(T | null)[]> {
-  const results: (T | null)[] = new Array(tasks.length).fill(null);
-  let cursor = 0;
-
-  async function worker() {
-    while (cursor < tasks.length) {
-      const i = cursor++;
-      try {
-        results[i] = await tasks[i]();
-      } catch (err) {
-        console.error(`[manImageGenerator] Task ${i} failed:`, err instanceof Error ? err.message : err);
-      }
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
-  return results;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API — generation
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Phase 3: Generate base model image from client's full-body photo.
- * Applies recommended hairstyle, ICONIK slate background, editorial lighting.
- * Returns storage path (e.g. "{reportId}/base.jpg").
+ * Phase 3: Generate 2 hairstyle variant headshots from the client's headshot photo.
+ * Uses hairstyle_recommendations[0] and [1]. Background is kept unchanged.
+ * Returns [path1, path2] — either may be null if that variant failed.
  */
-export async function generateBaseModel(
+export async function generateHairstyleImages(
   reportId:       string,
   submission:     ManIntakeSubmission,
   classification: ClassificationResult,
   imageModel:     string = MODEL,
-): Promise<string> {
-  if (!submission.photo_fullbody_url) {
-    throw new Error('No photo_fullbody_url on submission — cannot generate base model');
+): Promise<(string | null)[]> {
+  const photoUrl = submission.photo_headshot_url ?? submission.photo_fullbody_url;
+  if (!photoUrl) {
+    throw new Error('No headshot or full-body photo on submission — cannot generate hairstyle images');
   }
 
-  const { data, mimeType } = await fetchAsBase64(submission.photo_fullbody_url);
-  const prompt             = buildBaseModelPrompt(classification);
-  const outputBase64       = await callGeminiImageEdit(data, mimeType, prompt, imageModel);
+  const { data, mimeType } = await fetchAsBase64(photoUrl);
+  const { face } = classification;
+  const hairstyles = face.hairstyle_recommendations.slice(0, 2);
 
-  return uploadToStorage(reportId, outputBase64, 'base.jpg');
+  const tasks = hairstyles.map((hairstyle, i) =>
+    callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel)
+      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `hairstyle_${i + 1}.jpg`))
+      .catch(err => {
+        console.error(`[manImageGenerator] Hairstyle variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
+        return null;
+      })
+  );
+
+  return Promise.all(tasks);
 }
 
 /**
- * Phase 4: Generate all 16 outfit images from the base model.
- * Runs with concurrency limit of 4.
+ * Phase 4: Generate all 16 outfit images fully in parallel.
+ * Takes the client's original full-body photo URL directly (not a storage path).
  * Returns array of storage paths (null where generation failed).
  */
 export async function generateAllOutfitImages(
-  reportId:        string,
-  baseModelPath:   string,
-  classification:  ClassificationResult,
-  sections:        ReportSections,
-  imageModel:      string = MODEL,
+  reportId:       string,
+  basePhotoUrl:   string,    // direct URL to the full-body photo (e.g. submission.photo_fullbody_url)
+  classification: ClassificationResult,
+  sections:       ReportSections,
+  imageModel:     string = MODEL,
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
 
@@ -282,47 +264,49 @@ export async function generateAllOutfitImages(
     return [];
   }
 
-  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images with concurrency 4 (model: ${imageModel})`);
+  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images fully parallel (model: ${imageModel})`);
 
-  // Fetch base model once (short-lived signed URL for internal use)
-  const baseSignedUrl                        = await getSignedUrl(baseModelPath, 300);
-  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(baseSignedUrl);
+  // Fetch the full-body reference photo once, reuse across all 16 calls
+  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
 
-  // Pre-allocate so we can write partial progress to the DB after each upload.
-  // If Vercel kills the after() callback mid-generation, whatever completed is already persisted.
+  // Pre-allocate for partial progress writes — so DB always has the latest state
   const partialPaths: (string | null)[] = new Array(outfits.length).fill(null);
 
-  const tasks = outfits.map((outfit, taskIdx) => async () => {
-    const prompt       = buildOutfitPrompt(outfit, classification);
-    const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel);
-    const path         = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
-
-    // Persist immediately — don't wait for all outfits to finish
-    partialPaths[taskIdx] = path;
-    await supabaseAdmin
-      .from('man_reports')
-      .update({
-        image_urls:  { baseModel: baseModelPath, outfitCards: [...partialPaths] },
-        updated_at:  new Date().toISOString(),
+  const tasks = outfits.map((outfit, taskIdx) =>
+    callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel)
+      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`))
+      .then(async path => {
+        // Persist immediately after each upload — partial progress is always safe
+        partialPaths[taskIdx] = path;
+        await supabaseAdmin
+          .from('man_reports')
+          .update({
+            image_urls:  { hairstyleCards: [], outfitCards: [...partialPaths] },
+            updated_at:  new Date().toISOString(),
+          })
+          .eq('id', reportId);
+        return path;
       })
-      .eq('id', reportId);
+      .catch(err => {
+        console.error(`[manImageGenerator] Outfit ${outfit.index} failed:`, err instanceof Error ? err.message : err);
+        return null;
+      })
+  );
 
-    return path;
-  });
-
-  return withConcurrency(tasks, 4);
+  return Promise.all(tasks);
 }
 
 /**
  * Regenerate a single outfit image from an edited outfit text block.
  * Overwrites the existing outfit_N.jpg in storage.
+ * Takes the full-body photo URL directly (from submission.photo_fullbody_url).
  * Returns the storage path (same as before, just re-uploaded).
  */
 export async function regenerateSingleOutfitImage(
   reportId:       string,
-  outfitNumber:   number,           // 1-indexed (1–16)
-  outfitText:     string,           // raw markdown block for this outfit
-  baseModelPath:  string,
+  outfitNumber:   number,     // 1-indexed (1–16)
+  outfitText:     string,     // raw markdown block for this outfit
+  basePhotoUrl:   string,     // direct URL to full-body photo
   classification: ClassificationResult,
   imageModel:     string = MODEL,
 ): Promise<string> {
@@ -331,8 +315,7 @@ export async function regenerateSingleOutfitImage(
 
   const outfit = parsed[0];
 
-  const baseSignedUrl                          = await getSignedUrl(baseModelPath, 300);
-  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(baseSignedUrl);
+  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
 
   const prompt       = buildOutfitPrompt(outfit, classification);
   const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel);
@@ -347,6 +330,7 @@ export async function regenerateSingleOutfitImage(
 /**
  * Convert stored image_urls paths → fresh signed URLs.
  * Call this in API route handlers before returning report data to clients.
+ * Handles both new format (hairstyleCards) and legacy format (baseModel).
  */
 export async function resolveManReportImageUrls(
   paths: ManReportImagePaths | null | undefined,
@@ -356,7 +340,6 @@ export async function resolveManReportImageUrls(
   const resolveOne = async (path: string | null | undefined): Promise<string | null> => {
     if (!path) return null;
 
-    // 1. Try signed URL (works for both public and private buckets)
     const { data: signedData, error: signedError } = await supabaseAdmin.storage
       .from(BUCKET)
       .createSignedUrl(path, SIGNED_URL_TTL);
@@ -365,7 +348,6 @@ export async function resolveManReportImageUrls(
 
     console.error(`[manImageGenerator] createSignedUrl failed for "${path}":`, signedError?.message ?? 'no signedUrl returned');
 
-    // 2. Fall back to public URL (works if bucket is set to public)
     const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
     if (publicData?.publicUrl) {
       console.warn(`[manImageGenerator] Using public URL fallback for "${path}"`);
@@ -375,9 +357,19 @@ export async function resolveManReportImageUrls(
     return null;
   };
 
-  const allPaths = [paths.baseModel, ...(paths.outfitCards ?? [])];
-  const allUrls  = await Promise.all(allPaths.map(resolveOne));
-  const [baseModel, ...outfitCards] = allUrls;
+  // Resolve hairstyle cards (new format), falling back to legacy baseModel
+  const hairstylePaths: (string | null)[] = paths.hairstyleCards?.length
+    ? paths.hairstyleCards
+    : paths.baseModel ? [paths.baseModel] : [];
 
-  return { baseModel: baseModel ?? null, outfitCards };
+  const [hairstyleUrls, outfitUrls] = await Promise.all([
+    Promise.all(hairstylePaths.map(resolveOne)),
+    Promise.all((paths.outfitCards ?? []).map(resolveOne)),
+  ]);
+
+  return {
+    hairstyleCards: hairstyleUrls,
+    outfitCards:    outfitUrls,
+    baseModel:      paths.baseModel ? await resolveOne(paths.baseModel) : null,
+  };
 }

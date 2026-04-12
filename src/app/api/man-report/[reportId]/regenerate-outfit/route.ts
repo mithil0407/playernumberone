@@ -43,7 +43,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('man_reports')
-    .select('report_data, image_urls')
+    .select('report_data, image_urls, submission_id')
     .eq('id', reportId)
     .single();
 
@@ -51,9 +51,15 @@ export async function POST(
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
 
-  const imagePaths = report.image_urls as ManReportImagePaths | null;
-  if (!imagePaths?.baseModel) {
-    return NextResponse.json({ error: 'No base model image found — generate images first' }, { status: 400 });
+  // Fetch full-body photo URL from the submission
+  const { data: submission, error: subErr } = await supabaseAdmin
+    .from('man_intake_submissions')
+    .select('photo_fullbody_url')
+    .eq('id', report.submission_id)
+    .single();
+
+  if (subErr || !submission?.photo_fullbody_url) {
+    return NextResponse.json({ error: 'No full-body photo found on submission — cannot regenerate outfit image' }, { status: 400 });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,20 +68,26 @@ export async function POST(
     return NextResponse.json({ error: 'No classification data found' }, { status: 400 });
   }
 
+  const imagePaths = report.image_urls as ManReportImagePaths | null;
+
   const newPath = await regenerateSingleOutfitImage(
     reportId,
     outfitNumber,
     outfitText,
-    imagePaths.baseModel,
+    submission.photo_fullbody_url,
     classification,
     imageModel ?? 'gemini-3.1-flash-image-preview',
   );
 
   // Patch outfitCards array (preserve all other slots)
-  const currentCards = imagePaths.outfitCards ?? new Array(16).fill(null);
+  const currentCards = imagePaths?.outfitCards ?? new Array(16).fill(null);
   const newCards = [...currentCards];
   newCards[outfitNumber - 1] = newPath;
-  const newImagePaths: ManReportImagePaths = { baseModel: imagePaths.baseModel, outfitCards: newCards };
+  const newImagePaths: ManReportImagePaths = {
+    hairstyleCards: imagePaths?.hairstyleCards ?? [],
+    outfitCards:    newCards,
+    ...(imagePaths?.baseModel ? { baseModel: imagePaths.baseModel } : {}),
+  };
 
   // Patch s4_outfits text (replace just this outfit block)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
