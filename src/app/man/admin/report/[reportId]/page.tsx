@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use, useCallback } from 'react';
+import { useEffect, useState, use, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw } from 'lucide-react';
@@ -240,6 +240,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return (data.imageUrl as string) ?? null;
   }, [reportId, imageModel]);
 
+  // Stable reference — only recomputes when report_data changes (not on approval toggles)
+  const reportData = report?.report_data ?? null;
+  const safeData   = useMemo(
+    () => (reportData ? buildSafeReportData(reportData) : null),
+    [reportData],
+  );
+
   // ── Reject & retry (discard current report, start fresh) ─────────────
   const handleRejectAndRetry = async () => {
     if (!report || rejecting) return;
@@ -345,7 +352,6 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isGenerating = report.status === 'generating';
   const isError      = report.status === 'error';
   const isStuck      = isGenerating && elapsedSecs > 600;
-  const safeData     = report.report_data ? buildSafeReportData(report.report_data) : null;
 
   const elapsedLabel = (() => {
     if (elapsedSecs < 60) return `${elapsedSecs}s`;

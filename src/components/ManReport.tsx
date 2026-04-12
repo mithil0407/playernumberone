@@ -4,7 +4,7 @@
 // Renders the full ICONIK Men's Blueprint report.
 // Design matches the embedded report preview on /man landing page exactly.
 
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Pencil, X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
@@ -328,6 +328,7 @@ function FaceSection({ cls, text, hairstyleUrls }: { cls: ClassificationResult; 
                       <img
                         src={url}
                         alt={`Hairstyle option ${i + 1}`}
+                        loading="lazy"
                         className="w-full rounded-lg border object-cover object-top"
                         style={{ aspectRatio: '3/4', borderColor: BORDER }}
                       />
@@ -603,7 +604,7 @@ function OutfitsSection({
     }
   };
 
-  const categories = parseOutfitCategories(text);
+  const categories = useMemo(() => parseOutfitCategories(text), [text]);
   const split      = cls.outfit_split;
 
   // Fallback: if parsing failed, render raw markdown
@@ -655,6 +656,7 @@ function OutfitsSection({
                   <img
                     src={outfitImg}
                     alt={`Outfit ${outfit.number} — ${outfit.label}`}
+                    loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover object-top"
                   />
                 ) : canEdit ? (
@@ -861,7 +863,7 @@ interface ManReportProps {
   onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
 }
 
-export default function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReportProps) {
+function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReportProps) {
   const { classification: cls, sections } = data;
 
   return (
@@ -946,3 +948,5 @@ export default function ManReport({ data, imageUrls, adminMode, onRegenerateOutf
     </div>
   );
 }
+
+export default memo(ManReport);
