@@ -99,6 +99,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [error, setError]                 = useState('');
   const [terminating, setTerminating]     = useState(false);
   const [retrying, setRetrying]           = useState(false);
+  const [rejecting, setRejecting]         = useState(false);
   const [elapsedSecs, setElapsedSecs]     = useState(0);
 
   const load = useCallback(async () => {
@@ -223,6 +224,31 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ── Reject & retry (discard current report, start fresh) ─────────────
+  const handleRejectAndRetry = async () => {
+    if (!report || rejecting) return;
+    if (!window.confirm('Reject this report and generate a new one from scratch?')) return;
+    const submissionId = report.submission_id;
+    if (!submissionId) { setError('Missing submission ID — cannot retry.'); return; }
+    setRejecting(true);
+    setError('');
+    try {
+      await fetch(`/api/man-report/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'error', error_message: 'Rejected by admin — new report requested' }),
+      });
+      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Retry failed'); return; }
+      if (data.reportId) router.push(`/man/admin/report/${data.reportId}`);
+    } catch {
+      setError('Reject & retry failed. Please try again.');
+    } finally {
+      setRejecting(false);
+    }
   };
 
   // ── Terminate (kill generating pipeline) ──────────────────────────────
@@ -526,6 +552,17 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               >
                 <Copy size={12} /> Preview Link
               </button>
+              {['draft_ready', 'in_review', 'approved'].includes(report.status) && (
+                <button
+                  onClick={handleRejectAndRetry}
+                  disabled={rejecting}
+                  className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{ background: '#1a0a0a', color: '#f87171', border: '1px solid #3a1010' }}
+                >
+                  {rejecting ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+                  {rejecting ? 'Rejecting…' : 'Reject & Retry'}
+                </button>
+              )}
             </>
           )}
 
