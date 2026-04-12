@@ -791,11 +791,12 @@ async function callGeminiJSON(systemPrompt: string, userPrompt: string): Promise
   return JSON.parse(cleaned);
 }
 
-async function callGeminiText(systemPrompt: string, userPrompt: string): Promise<string> {
+async function callGeminiText(systemPrompt: string, userPrompt: string, maxOutputTokens?: number): Promise<string> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [{ parts: [{ text: combined }] }],
+    ...(maxOutputTokens ? { config: { maxOutputTokens } } : {}),
   });
   return response.text ?? '';
 }
@@ -885,8 +886,21 @@ export async function runSection3(classification: ClassificationResult, submissi
   return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(2, classification, submission));
 }
 
+/** Strip the PRE-GENERATION CHECK block and FREE NOTE TRANSLATION line that the model
+ *  outputs as planning text before writing the actual outfits. These should not appear
+ *  in the saved section content or in the rendered report. */
+function stripSection4Preamble(text: string): string {
+  return text
+    .replace(/^FREE NOTE TRANSLATION:.*$/gim, '')
+    .replace(/^PRE-GENERATION CHECK\s*$/gim, '')
+    .replace(/^(?:Free Note Translation|Outfit split confirmed|Top silhouette distribution|Cap compliance|Location|Colours to avoid \(hard block\)|Universal neutrals planned|Palette colours[^:]*|Short-client module):.*$/gim, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export async function runSection4(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission));
+  const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission), 65536);
+  return stripSection4Preamble(raw);
 }
 
 export async function runSection5(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
