@@ -564,10 +564,10 @@ function OutfitsSection({
   adminMode?: boolean;
   onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
 }) {
-  const [editingNumber, setEditingNumber]   = useState<number | null>(null);
-  const [editText, setEditText]             = useState('');
-  const [regenerating, setRegenerating]     = useState(false);
-  const [retryingNumber, setRetryingNumber] = useState<number | null>(null);
+  const [editingNumber, setEditingNumber] = useState<number | null>(null);
+  const [editText, setEditText]           = useState('');
+  const [regenerating, setRegenerating]   = useState(false);
+  const [retryingSet, setRetryingSet]     = useState<Set<number>>(new Set());
   const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
 
   const startEdit = (outfitNumber: number) => {
@@ -588,16 +588,17 @@ function OutfitsSection({
     }
   };
 
-  // Quick retry for failed images — no editing, just re-fires generation with current outfit text
+  // Quick retry for failed images — no editing, just re-fires generation with current outfit text.
+  // Multiple retries can run simultaneously — each outfit tracks its own loading state.
   const handleQuickRetry = async (outfitNumber: number) => {
     if (!onRegenerateOutfit) return;
-    setRetryingNumber(outfitNumber);
+    setRetryingSet(prev => new Set(prev).add(outfitNumber));
     try {
       const outfitBlock = extractOutfitBlock(text, outfitNumber);
       const newUrl = await onRegenerateOutfit(outfitNumber, outfitBlock);
       if (newUrl) setImageOverrides(prev => ({ ...prev, [outfitNumber]: newUrl }));
     } finally {
-      setRetryingNumber(null);
+      setRetryingSet(prev => { const next = new Set(prev); next.delete(outfitNumber); return next; });
     }
   };
 
@@ -669,11 +670,11 @@ function OutfitsSection({
                     </div>
                     <button
                       onClick={() => handleQuickRetry(outfit.number)}
-                      disabled={retryingNumber === outfit.number}
+                      disabled={retryingSet.has(outfit.number)}
                       className="flex items-center gap-1.5 px-4 py-2 rounded text-[9px] font-black uppercase tracking-widest transition-opacity disabled:opacity-40"
                       style={{ background: GOLD, color: '#fff' }}
                     >
-                      {retryingNumber === outfit.number
+                      {retryingSet.has(outfit.number)
                         ? <><Loader2 size={10} className="animate-spin" /> Retrying…</>
                         : <><RefreshCw size={10} /> Retry</>
                       }

@@ -142,13 +142,15 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
 
   return `Professional editorial fashion catalogue photography.
 
-STERNLY IGNORE and COMPLETELY DISCARD the original background from the reference photo.
+Two reference photos are provided: the first is a full-body photo, the second is a styled headshot showing the subject's recommended hairstyle.
 
-Extract ONLY the subject's face, features, and body proportions from the reference image. Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
+STERNLY IGNORE and COMPLETELY DISCARD the original background from both reference photos.
+
+Extract the subject's face and hairstyle from the HEADSHOT (second image) — use this as the definitive face and hair reference. Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
 
 Place the subject against our brand studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient.
 
-Apply polished grooming — clean, fresh, well-kept. No changes to facial features or skin tone.
+Apply polished grooming — clean, fresh, well-kept. Carry the hairstyle from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.
 
 Dress the subject in this specific outfit:
 ${garmentLines}${fitNote}
@@ -171,15 +173,16 @@ async function callGeminiImageEdit(
   mimeType: string,
   prompt: string,
   model: string = MODEL,
+  extraImage?: { data: string; mimeType: string }, // optional second reference image (e.g. hairstyle headshot)
 ): Promise<string> {
+  const parts: object[] = [
+    { inlineData: { mimeType, data: imageBase64 } },
+    ...(extraImage ? [{ inlineData: { mimeType: extraImage.mimeType, data: extraImage.data } }] : []),
+    { text: prompt },
+  ];
   const response = await ai.models.generateContent({
     model,
-    contents: [{
-      parts: [
-        { inlineData: { mimeType, data: imageBase64 } },
-        { text: prompt },
-      ],
-    }],
+    contents: [{ parts }],
     config: { responseModalities: ['IMAGE'] },
   });
 
@@ -353,13 +356,25 @@ export async function generateAllOutfitImages(
   // Fetch the full-body reference photo once, reuse across all calls
   const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
 
+  // Fetch hairstyle headshot (path[0]) as an extra face/hair reference — best effort, non-fatal
+  let hairstyleRef: { data: string; mimeType: string } | undefined;
+  const hairstylePath = hairstylePaths[0];
+  if (hairstylePath) {
+    try {
+      const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(hairstylePath, 300);
+      if (signedData?.signedUrl) hairstyleRef = await fetchAsBase64(signedData.signedUrl);
+    } catch {
+      console.warn('[manImageGenerator] Could not fetch hairstyle reference for outfit generation — proceeding without it');
+    }
+  }
+
   // Pre-allocate for partial progress writes
   const partialPaths: (string | null)[] = new Array(outfits.length).fill(null);
 
   const tasks = outfits.map((outfit, taskIdx) => async () => {
     try {
       const outputBase64 = await withOneRetry(() =>
-        callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel)
+        callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef)
       );
       const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
       partialPaths[taskIdx] = path;
@@ -388,22 +403,28 @@ export async function generateAllOutfitImages(
  * Returns the storage path (same as before, just re-uploaded).
  */
 export async function regenerateSingleOutfitImage(
-  reportId:       string,
-  outfitNumber:   number,     // 1-indexed (1–16)
-  outfitText:     string,     // raw markdown block for this outfit
-  basePhotoUrl:   string,     // direct URL to full-body photo
-  classification: ClassificationResult,
-  imageModel:     string = MODEL,
+  reportId:            string,
+  outfitNumber:        number,          // 1-indexed (1–16)
+  outfitText:          string,          // raw markdown block for this outfit
+  basePhotoUrl:        string,          // direct URL to full-body photo
+  classification:      ClassificationResult,
+  imageModel:          string = MODEL,
+  hairstyleHeadshotUrl?: string | null, // optional hairstyle headshot for face/hair reference
 ): Promise<string> {
   const parsed = parseOutfitsFromSection(outfitText);
   if (parsed.length === 0) throw new Error(`Could not parse outfit from text block`);
 
   const outfit = parsed[0];
 
-  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
+  const [{ data: baseData, mimeType: baseMime }, hairstyleRef] = await Promise.all([
+    fetchAsBase64(basePhotoUrl),
+    hairstyleHeadshotUrl
+      ? fetchAsBase64(hairstyleHeadshotUrl).catch(() => undefined)
+      : Promise.resolve(undefined),
+  ]);
 
   const prompt       = buildOutfitPrompt(outfit, classification);
-  const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel);
+  const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel, hairstyleRef ?? undefined);
 
   return uploadToStorage(reportId, outputBase64, `outfit_${outfitNumber}.jpg`);
 }

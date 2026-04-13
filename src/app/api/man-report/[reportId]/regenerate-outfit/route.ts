@@ -70,6 +70,16 @@ export async function POST(
 
   const imagePaths = report.image_urls as ManReportImagePaths | null;
 
+  // Resolve hairstyle headshot signed URL for face/hair reference (best effort)
+  let hairstyleHeadshotUrl: string | null = null;
+  const hairstylePath = imagePaths?.hairstyleCards?.[0];
+  if (hairstylePath) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from('man-report-images')
+      .createSignedUrl(hairstylePath, 300);
+    hairstyleHeadshotUrl = signed?.signedUrl ?? null;
+  }
+
   const newPath = await regenerateSingleOutfitImage(
     reportId,
     outfitNumber,
@@ -77,6 +87,7 @@ export async function POST(
     submission.photo_fullbody_url,
     classification,
     imageModel ?? 'gemini-3.1-flash-image-preview',
+    hairstyleHeadshotUrl,
   );
 
   // Patch outfitCards array (preserve all other slots)
