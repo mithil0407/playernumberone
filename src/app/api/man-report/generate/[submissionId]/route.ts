@@ -1,10 +1,11 @@
 // POST /api/man-report/generate/[submissionId]
 //
-// Creates a man_reports row and fires the four-phase Gemini pipeline:
-//   Phase 1 — Classification JSON          (analysing_face)
-//   Phase 2 — Report copy (6 sections)     (generating_outfits)
-//   Phase 3 — Base model image             (generating_images)
-//   Phase 4 — 16 outfit images             (generating_images)
+// Creates a man_reports row and fires the two-phase text pipeline:
+//   Phase 1 — Classification JSON          (classifying)
+//   Phase 2 — Report copy (6 sections)     (generating_s1 … generating_s6)
+//
+// Image generation is intentionally decoupled. Once text is draft_ready,
+// trigger POST /api/man-report/[reportId]/generate-images separately.
 //
 // Returns { reportId } immediately; pipeline runs via Next.js `after()`.
 // Admin dashboard polls /api/man-report/status/[reportId] for progress.
@@ -14,7 +15,6 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
 import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
-import { generateHairstyleImages, generateEyewearImages, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
 // Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
@@ -48,12 +48,7 @@ async function writePartialData(
     .eq('id', reportId);
 }
 
-const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
-
-async function runPipeline(reportId: string, submission: ManIntakeSubmission, imageModel?: string) {
-  const resolvedImageModel = ALLOWED_IMAGE_MODELS.includes(imageModel ?? '')
-    ? imageModel!
-    : 'gemini-3.1-flash-image-preview';
+async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
   try {
     // Phase 1 — Classification
     await updateStage(reportId, 'classifying');
@@ -80,52 +75,15 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, im
     await writePartialData(reportId, classification, sections, 'generating_s6');
 
     sections.s6_identity = await runSection6(classification, submission);
-    await writePartialData(reportId, classification, sections, 'generating_images');
 
-    // Phase 3+4 — Image generation (non-fatal — text report is complete regardless)
-    let imageUrls: ManReportImagePaths | null = null;
-    try {
-      // Phase 3a — 2 hairstyle variants from the headshot, background kept as-is
-      await updateStage(reportId, 'generating_base_model');
-      const [hairstylePaths, eyewearPaths] = await Promise.all([
-        generateHairstyleImages(reportId, submission, classification, resolvedImageModel),
-        generateEyewearImages(reportId, submission, classification, resolvedImageModel),
-      ]);
-
-      // Persist hairstyle + eyewear paths immediately
-      await supabaseAdmin
-        .from('man_reports')
-        .update({ image_urls: { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [] }, updated_at: new Date().toISOString() })
-        .eq('id', reportId);
-
-      // Phase 4 — 16 outfit images fully in parallel, using the full-body photo directly
-      const fullBodyUrl = submission.photo_fullbody_url;
-      if (!fullBodyUrl) throw new Error('No photo_fullbody_url on submission — cannot generate outfit images');
-
-      await updateStage(reportId, 'generating_outfit_images');
-      const outfitPaths = await generateAllOutfitImages(
-        reportId, fullBodyUrl, classification, sections as unknown as ReportData['sections'], hairstylePaths, eyewearPaths, resolvedImageModel
-      );
-      imageUrls = { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths };
-      console.log(`[man-report] Images generated for reportId=${reportId} — ${hairstylePaths.filter(Boolean).length}/2 hairstyles + ${eyewearPaths.filter(Boolean).length}/2 eyewear + ${outfitPaths.filter(Boolean).length}/16 outfits`);
-    } catch (imgErr) {
-      const imgErrMsg = imgErr instanceof Error ? imgErr.message : String(imgErr);
-      console.error(`[man-report] Image generation failed for reportId=${reportId}:`, imgErrMsg);
-      await supabaseAdmin
-        .from('man_reports')
-        .update({ error_message: `Image generation failed: ${imgErrMsg}`, updated_at: new Date().toISOString() })
-        .eq('id', reportId);
-    }
-
-    // Finalise
-    await updateStage(reportId, 'finalising');
+    // Text pipeline complete — mark draft_ready immediately.
+    // Images are generated separately via POST /api/man-report/[reportId]/generate-images.
     await supabaseAdmin
       .from('man_reports')
       .update({
         status:         'draft_ready',
         progress_stage: null,
         report_data:    { classification, sections, generated_at: new Date().toISOString() } as unknown as ReportData,
-        image_urls:     imageUrls,
         generated_at:   new Date().toISOString(),
         updated_at:     new Date().toISOString(),
       })
@@ -151,7 +109,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, im
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ submissionId: string }> }
 ) {
   const cookieStore = await cookies();
@@ -159,9 +117,6 @@ export async function POST(
   if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const body = await request.json().catch(() => ({}));
-  const imageModel: string | undefined = typeof body?.imageModel === 'string' ? body.imageModel : undefined;
 
   const { submissionId } = await params;
 
@@ -227,7 +182,7 @@ export async function POST(
 
   // 4. Schedule the pipeline to run after this response is sent
   after(async () => {
-    await runPipeline(reportId, submission as ManIntakeSubmission, imageModel);
+    await runPipeline(reportId, submission as ManIntakeSubmission);
   });
 
   // 5. Return immediately — admin dashboard starts polling

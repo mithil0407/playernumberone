@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw, ImageIcon } from 'lucide-react';
 import ManReport from '@/components/ManReport';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
@@ -102,6 +102,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [retrying, setRetrying]             = useState(false);
   const [rejecting, setRejecting]           = useState(false);
   const [confirmingReject, setConfirmingReject] = useState(false);
+  const [generatingImages, setGeneratingImages] = useState(false);
   const [imageModel, setImageModel]         = useState<'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image'>('gemini-3.1-flash-image-preview');
   const [elapsedSecs, setElapsedSecs]       = useState(0);
 
@@ -124,12 +125,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   useEffect(() => { load(); }, [load]);
 
-  // Poll every 3s while generation is in progress
+  // Poll every 3s while text is generating OR image pipeline is running
   useEffect(() => {
-    if (report?.status !== 'generating') return;
+    if (report?.status !== 'generating' && !report?.progress_stage) return;
     const interval = setInterval(load, 3000);
     return () => clearInterval(interval);
-  }, [report?.status, load]);
+  }, [report?.status, report?.progress_stage, load]);
 
   // Elapsed-time ticker while generating
   useEffect(() => {
@@ -349,6 +350,27 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       setError('Retry failed. Please try again.');
     } finally {
       setRetrying(false);
+    }
+  };
+
+  // ── Generate images (decoupled from text pipeline) ───────────────────
+  const handleGenerateImages = async () => {
+    if (!report || generatingImages) return;
+    setGeneratingImages(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/man-report/${reportId}/generate-images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageModel }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Failed to start image generation'); return; }
+      await load();
+    } catch {
+      setError('Failed to start image generation. Please try again.');
+    } finally {
+      setGeneratingImages(false);
     }
   };
 
@@ -645,6 +667,27 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 {sending ? 'Sending…' : 'Send to Client'}
               </button>
+              {/* Generate images — shown when text is ready but no images yet */}
+              {!isGenerating && report.report_data && !report.image_urls && !report.progress_stage && (
+                <button
+                  onClick={handleGenerateImages}
+                  disabled={generatingImages}
+                  className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-40"
+                  style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+                >
+                  {generatingImages ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                  {generatingImages ? 'Starting…' : 'Generate Images'}
+                </button>
+              )}
+              {/* Images in progress */}
+              {report.progress_stage && !isGenerating && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
+                  <Loader2 size={11} className="animate-spin flex-shrink-0" style={{ color: '#c9a96e' }} />
+                  <span className="text-[10px]" style={{ color: '#6b5f4a' }}>
+                    {STAGE_LABELS[report.progress_stage] ?? 'Generating images…'}
+                  </span>
+                </div>
+              )}
               <button
                 onClick={() => setShowLinkPreview(v => !v)}
                 className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
