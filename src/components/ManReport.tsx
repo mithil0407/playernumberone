@@ -5,9 +5,11 @@
 // Design matches the embedded report preview on /man landing page exactly.
 
 import { useState, useMemo, memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
+import { SPRING, staggerContainer, staggerItem, fadeUp, VIEWPORT_OPTS } from '@/lib/reportAnimations';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens (matches /man/page.tsx embedded report)
@@ -895,8 +897,13 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
   return (
     <div style={{ background: CREAM, fontFamily: 'var(--font-geist-sans, system-ui)' }} className="overflow-x-hidden">
       {/* Sticky Nav */}
-      <div className="sticky top-0 z-10 border-b px-5 md:px-10 h-12 md:h-14 flex items-center justify-between"
-        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderColor: BORDER }}>
+      <motion.div
+        className="sticky top-0 z-10 border-b px-5 md:px-10 h-12 md:h-14 flex items-center justify-between"
+        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderColor: BORDER }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+      >
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 md:w-7 md:h-7 bg-black flex items-center justify-center">
             <span className="text-[9px] md:text-[10px] font-black" style={{ color: GOLD }}>I</span>
@@ -906,7 +913,7 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
           </span>
         </div>
         <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2026</span>
-      </div>
+      </motion.div>
 
       {/* Report Header */}
       <div className="px-5 md:px-10 py-8 md:py-12 border-b bg-white" style={{ borderColor: BORDER }}>
@@ -951,19 +958,32 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
         </div>
       </div>
 
-      {/* 6 Sections */}
-      <FaceSection   cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} eyewearUrls={imageUrls?.eyewearCards ?? undefined} />
-      <BodySection   cls={cls} text={sections.s2_body} />
-      <ColourSection cls={cls} text={sections.s3_colour} />
-      <OutfitsSection
-        cls={cls}
-        text={sections.s4_outfits}
-        outfitImageUrls={imageUrls?.outfitCards ?? undefined}
-        adminMode={adminMode}
-        onRegenerateOutfit={onRegenerateOutfit}
-      />
-      <StyleRulesSection text={sections.s5_rules} />
-      <IdentitySection   text={sections.s6_identity} />
+      {/* 6 Sections — each fades up as it scrolls into view */}
+      {([
+        <FaceSection   key="s1" cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} eyewearUrls={imageUrls?.eyewearCards ?? undefined} />,
+        <BodySection   key="s2" cls={cls} text={sections.s2_body} />,
+        <ColourSection key="s3" cls={cls} text={sections.s3_colour} />,
+        <OutfitsSection
+          key="s4"
+          cls={cls}
+          text={sections.s4_outfits}
+          outfitImageUrls={imageUrls?.outfitCards ?? undefined}
+          adminMode={adminMode}
+          onRegenerateOutfit={onRegenerateOutfit}
+        />,
+        <StyleRulesSection key="s5" text={sections.s5_rules} />,
+        <IdentitySection   key="s6" text={sections.s6_identity} />,
+      ]).map((section, i) => (
+        <motion.div
+          key={i}
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT_OPTS}
+          variants={fadeUp}
+        >
+          {section}
+        </motion.div>
+      ))}
 
       {/* Footer */}
       <div className="bg-white px-6 md:px-10 py-10 text-center border-t" style={{ borderColor: BORDER }}>

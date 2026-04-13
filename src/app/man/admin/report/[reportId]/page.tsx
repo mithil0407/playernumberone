@@ -4,6 +4,8 @@ import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw, ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SPRING } from '@/lib/reportAnimations';
 import ManReport from '@/components/ManReport';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
@@ -111,7 +113,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const res  = await fetch(`/api/man-report/${reportId}`);
     const data = await res.json();
     if (data.report) {
-      setReport(data.report);
+      // Only re-render when DB actually changed — suppress polling jank
+      setReport(prev => {
+        if (prev?.updated_at === data.report.updated_at) return prev;
+        return data.report;
+      });
       // Auto-transition draft_ready → in_review on first open (skip if still generating)
       if (data.report.status === 'draft_ready') {
         await fetch(`/api/man-report/${reportId}`, {
@@ -526,47 +532,72 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             return (
               <div
                 key={key}
-                className="group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all"
-                style={{
-                  background: active ? '#1e1a14' : 'transparent',
-                  border: `1px solid ${active ? '#2a2010' : 'transparent'}`,
-                }}
+                className="group relative flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer"
                 onClick={() => setActiveSection(key)}
               >
-                {/* Approve toggle / skeleton circle */}
-                {hasContent ? (
-                  <button
-                    onClick={e => { e.stopPropagation(); toggleApproval(key); }}
-                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-                    style={{
-                      background: approved ? '#16a34a' : '#1e1e1e',
-                      border: `1px solid ${approved ? '#16a34a' : '#2a2a2a'}`,
-                    }}
-                    title={approved ? 'Approved — click to un-approve' : 'Click to approve'}
-                  >
-                    {approved && <Check size={10} className="text-white" />}
-                  </button>
-                ) : (
-                  <div
-                    className="w-5 h-5 rounded-full flex-shrink-0 animate-pulse"
-                    style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
+                {/* Sliding active highlight */}
+                {active && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 rounded-lg"
+                    style={{ background: '#1e1a14', border: '1px solid #2a2010' }}
+                    transition={SPRING}
                   />
                 )}
 
-                <span className="flex-1 text-xs font-medium" style={{ color: hasContent ? (active ? '#c9a96e' : '#6b5f4a') : '#3a3028' }}>
+                {/* Approve toggle / skeleton circle */}
+                <div className="relative z-10 flex-shrink-0">
+                  {hasContent ? (
+                    <motion.button
+                      onClick={e => { e.stopPropagation(); toggleApproval(key); }}
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{
+                        background: approved ? '#16a34a' : '#1e1e1e',
+                        border: `1px solid ${approved ? '#16a34a' : '#2a2a2a'}`,
+                      }}
+                      title={approved ? 'Approved — click to un-approve' : 'Click to approve'}
+                      whileHover={{ scale: 1.18 }}
+                      whileTap={{ scale: 0.88 }}
+                      transition={SPRING}
+                    >
+                      <AnimatePresence>
+                        {approved && (
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                          >
+                            <Check size={10} className="text-white" />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+                  ) : (
+                    <div
+                      className="w-5 h-5 rounded-full animate-pulse"
+                      style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
+                    />
+                  )}
+                </div>
+
+                <span className="relative z-10 flex-1 text-xs font-medium" style={{ color: hasContent ? (active ? '#c9a96e' : '#6b5f4a') : '#3a3028' }}>
                   {label}
                 </span>
 
                 {/* Edit button — only when content exists */}
                 {hasContent && (
-                  <button
+                  <motion.button
                     onClick={e => { e.stopPropagation(); startEdit(key); }}
-                    className="p-1 rounded transition-opacity hover:opacity-100 opacity-0 group-hover:opacity-100"
+                    className="relative z-10 p-1 rounded opacity-0 group-hover:opacity-100"
                     style={{ color: '#6b5f4a' }}
                     title="Edit section text"
+                    whileHover={{ scale: 1.15, opacity: 1 }}
+                    whileTap={{ scale: 0.9 }}
+                    transition={SPRING}
                   >
                     <Pencil size={11} />
-                  </button>
+                  </motion.button>
                 )}
               </div>
             );
@@ -574,13 +605,16 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
           {/* Approve all — disabled while generating */}
           {!isGenerating && (
-            <button
+            <motion.button
               onClick={approveAll}
-              className="w-full mt-3 py-2 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+              className="w-full mt-3 py-2 rounded-lg text-xs font-medium"
               style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+              whileHover={{ scale: 1.02, opacity: 0.9 }}
+              whileTap={{ scale: 0.98 }}
+              transition={SPRING}
             >
               Approve All Sections
-            </button>
+            </motion.button>
           )}
         </div>
 
@@ -650,15 +684,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                   {report.error_message ?? 'Generation failed'}
                 </p>
               </div>
-              <button
+              <motion.button
                 onClick={handleRetry}
                 disabled={retrying}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={SPRING}
               >
                 {retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
                 {retrying ? 'Starting…' : 'Retry Generation'}
-              </button>
+              </motion.button>
             </>
           ) : (
             <>
@@ -672,15 +709,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                   Generation in progress — approve sections as they appear
                 </p>
               )}
-              <button
+              <motion.button
                 onClick={sendToClient}
                 disabled={!ready || sending || isGenerating}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
                 style={{ background: ready && !isGenerating ? 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)' : '#1e1e1e', color: '#fff' }}
+                whileHover={ready && !isGenerating ? { scale: 1.02 } : undefined}
+                whileTap={ready && !isGenerating ? { scale: 0.98 } : undefined}
+                transition={SPRING}
               >
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 {sending ? 'Sending…' : 'Send to Client'}
-              </button>
+              </motion.button>
               {/* Image error — shown when image generation failed */}
               {!isGenerating && !report.progress_stage && !hasAllImages && report.error_message?.startsWith('Image generation failed') && (
                 <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
@@ -692,15 +732,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               )}
               {/* Generate images — shown when text is ready but images are missing or partial */}
               {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
-                <button
+                <motion.button
                   onClick={handleGenerateImages}
                   disabled={generatingImages}
-                  className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-40"
+                  className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 disabled:opacity-40"
                   style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={SPRING}
                 >
                   {generatingImages ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
                   {generatingImages ? 'Starting…' : 'Generate Images'}
-                </button>
+                </motion.button>
               )}
               {/* Images in progress */}
               {report.progress_stage && !isGenerating && (
@@ -809,9 +852,24 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       </div>
 
       {/* ── Inline section editor modal ───────────────────────────────────── */}
+      <AnimatePresence>
       {editingSection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="rounded-2xl border w-full max-w-2xl mx-4 flex flex-col" style={{ background: '#111111', borderColor: '#2a2a2a', maxHeight: '80vh' }}>
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+        >
+          <motion.div
+            className="rounded-2xl border w-full max-w-2xl mx-4 flex flex-col"
+            style={{ background: '#111111', borderColor: '#2a2a2a', maxHeight: '80vh' }}
+            initial={{ scale: 0.96, opacity: 0, y: 12 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 12 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+          >
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#1e1e1e' }}>
               <p className="text-sm font-medium" style={{ color: '#f0ebe0' }}>
                 Edit — {SECTIONS.find(s => s.key === editingSection)?.label}
@@ -844,9 +902,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {saving ? 'Saving…' : 'Save'}
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
