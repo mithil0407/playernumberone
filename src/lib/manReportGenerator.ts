@@ -793,7 +793,7 @@ function parseReportSections(text: string): ReportSections {
 async function callGeminiJSON(systemPrompt: string, userPrompt: string): Promise<unknown> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: [{ parts: [{ text: combined }] }],
   });
   const text    = response.text ?? '';
@@ -804,7 +804,7 @@ async function callGeminiJSON(systemPrompt: string, userPrompt: string): Promise
 async function callGeminiText(systemPrompt: string, userPrompt: string, maxOutputTokens?: number): Promise<string> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: [{ parts: [{ text: combined }] }],
     ...(maxOutputTokens ? { config: { maxOutputTokens } } : {}),
   });
