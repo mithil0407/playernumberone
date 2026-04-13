@@ -96,6 +96,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [saving, setSaving]               = useState(false);
   const [sending, setSending]             = useState(false);
   const [copied, setCopied]               = useState(false);
+  const [showLinkPreview, setShowLinkPreview] = useState(false);
   const [error, setError]                 = useState('');
   const [terminating, setTerminating]       = useState(false);
   const [retrying, setRetrying]             = useState(false);
@@ -572,19 +573,38 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             </div>
           )}
           {report.status === 'sent' ? (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
                 <CheckCheck size={14} className="text-green-400" />
                 <span className="text-xs text-green-400 font-medium">Sent to client</span>
               </div>
-              <button
-                onClick={copyLink}
-                className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-                style={{ background: '#1e1e1e', color: '#c8bfae', border: '1px solid #2a2a2a' }}
-              >
-                {copied ? <CheckCheck size={13} /> : <Copy size={13} />}
-                {copied ? 'Copied!' : 'Copy Client Link'}
-              </button>
+              {report.share_token && (
+                <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#0d0d0d', border: '1px solid #2a2a2a' }}>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#4a4030' }}>Client Link</p>
+                  <p className="text-[10px] break-all leading-relaxed" style={{ color: '#c8bfae' }}>
+                    {`${window.location.origin}/man/report/${report.share_token}`}
+                  </p>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={copyLink}
+                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
+                      style={{ background: '#1e1e1e', color: '#c8bfae', border: '1px solid #2a2a2a' }}
+                    >
+                      {copied ? <CheckCheck size={11} /> : <Copy size={11} />}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <a
+                      href={`/man/report/${report.share_token}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
+                      style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+                    >
+                      Open
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           ) : isError ? (
             <>
@@ -626,12 +646,39 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {sending ? 'Sending…' : 'Send to Client'}
               </button>
               <button
-                onClick={copyLink}
+                onClick={() => setShowLinkPreview(v => !v)}
                 className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
                 style={{ background: '#1e1e1e', color: '#6b5f4a', border: '1px solid #2a2a2a' }}
               >
                 <Copy size={12} /> Preview Link
               </button>
+              {showLinkPreview && report.share_token && (
+                <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#0d0d0d', border: '1px solid #2a2a2a' }}>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#4a4030' }}>Client Link</p>
+                  <p className="text-[10px] break-all leading-relaxed" style={{ color: '#c8bfae' }}>
+                    {`${window.location.origin}/man/report/${report.share_token}`}
+                  </p>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={copyLink}
+                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
+                      style={{ background: '#1e1e1e', color: '#c8bfae', border: '1px solid #2a2a2a' }}
+                    >
+                      {copied ? <CheckCheck size={11} /> : <Copy size={11} />}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <a
+                      href={`/man/report/${report.share_token}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
+                      style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+                    >
+                      Open
+                    </a>
+                  </div>
+                </div>
+              )}
               {['draft_ready', 'in_review', 'approved'].includes(report.status) && (
                 confirmingReject ? (
                   <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>

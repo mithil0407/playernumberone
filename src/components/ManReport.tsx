@@ -214,7 +214,7 @@ function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolea
     if (line.startsWith('### ')) {
       flushList();
       elements.push(
-        <p key={key++} className="text-[9px] font-black uppercase tracking-[0.3em] mt-6 mb-3" style={{ color: '#9ca3af' }}>
+        <p key={key++} className="text-xs font-bold mt-6 mb-2" style={{ color: '#111111' }}>
           {line.slice(4).replace(/\*\*/g, '')}
         </p>
       );

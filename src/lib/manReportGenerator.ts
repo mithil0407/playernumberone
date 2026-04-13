@@ -227,23 +227,19 @@ List 2-3 eyewear frame shapes that suit this face. One sentence each on why.
 
 ## SECTION 2: YOUR BODY GEOMETRY ANALYSIS
 
-Opening paragraph (3-4 sentences):
-State the silhouette type. Explain the structural strengths and the proportional challenges honestly. Frame it in terms of what the right clothing does — not what's "wrong" with the body.
+One sentence: name the silhouette type and the single most important clothing principle for this frame.
 
-### Your Structural Strengths
-2-3 sentences on what this body type carries exceptionally well. Name the garment types, cuts, or details.
+### Structural Strengths
+3 bullet points maximum. Each bullet: one garment type or cut this body carries exceptionally well. No filler sentences.
 
-### Your Fit Blueprint
-List the 4-5 silhouette rules from the classification. For each:
-- The rule stated clearly (bold)
-- One sentence explaining the geometric logic
-- One practical application
+### Fit Blueprint
+4-5 bullet points. Each bullet: one rule stated clearly in bold, then a dash, then one sentence of geometric logic. No sub-bullets, no examples.
 
 ### Cuts to Avoid
-List 2-4 cuts/fits to avoid. For each: state the cut, explain why it conflicts with this body's geometry. No shame language.
+3 bullet points maximum. Each: cut name in bold, dash, one sentence on why it conflicts. No shame language.
 
-### The Height Equation
-One paragraph (2-3 sentences) specific to this client's height category. Explain specific adjustments — trouser break, jacket length, vertical vs horizontal elements.
+### Height Equation
+2 bullet points. Each: one specific adjustment (trouser break, jacket length, or vertical/horizontal element).
 
 ---
 
@@ -529,10 +525,9 @@ FULL GENERATION CHECKLIST \u2014 ALL 16 MUST PASS BEFORE OUTPUT
 
 ## SECTION 5: YOUR STYLE RULES
 
-### 5 Always Rules
-Five rules specific to this client's body + colour + style brief combination.
-Not generic advice. Each rule must be traceable to the classification.
-Format: **[Rule title]** — [2 sentence explanation with specific application]
+### 3 Always Rules
+Three rules specific to this client's body + colour + style brief combination. Not generic advice. Each must be traceable to the classification.
+Format: - **[Rule title]** — one sentence, specific application only. No filler.
 
 ### 3 Never Rules
 Three rules specific to what this client must avoid based on his profile.
