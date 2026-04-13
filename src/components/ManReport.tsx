@@ -47,32 +47,44 @@ function stripHex(text: string): string {
 }
 
 function getField(block: string, label: string): string {
-  const pattern = new RegExp(`-\\s*${label}\\s*:\\s*(.+?)(?=\\n-|\\n\\n|\\n\\*\\*|$)`, 'si');
+  // Handles both formats:
+  //   Old: "- Label: value"  (bold/dash format)
+  //   New: "LABEL: value"    (uppercase plain format)
+  const pattern = new RegExp(
+    `(?:^|\\n)[ \\t]*-?[ \\t]*${label}[ \\t]*:[ \\t]*(.+?)(?=\\n[ \\t]*-?[ \\t]*[\\w]|\\n\\n|\\n\\*\\*|$)`,
+    'si'
+  );
   const raw = block.match(pattern)?.[1]?.replace(/\n/g, ' ').trim() ?? '—';
   return stripHex(raw);
 }
 
-function parseOutfitCategories(text: string): OutfitCategory[] {
-  // Split on outfit block headers, keeping them
-  const outfitBlocks = text.split(/(?=\*\*Outfit\s+\d+)/i);
+function toTitleCase(str: string): string {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
 
-  // First block may contain category intro text before any outfit
-  // Group outfits under their categories
+// Known context names from new format — used to detect if label IS the category
+const KNOWN_CONTEXTS = new Set(['FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
+
+function parseOutfitCategories(text: string): OutfitCategory[] {
+  // Supports both formats:
+  //   Old: "**Outfit N — Descriptive Label**" with preceding category header blocks
+  //   New: "OUTFIT N — CONTEXT NAME" (plain uppercase, context embedded in header)
+  const outfitBlocks = text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
+
   const categories: OutfitCategory[] = [];
   let currentCat: OutfitCategory | null = null;
 
-  // Extract category intro lines (lines that don't start an outfit)
-  const catIntroPattern = /^(?:\*\*)?(?:###\s*)?([A-Z][^*\n]{2,50})(?:\*\*)?[\s\n]/;
-
   for (const block of outfitBlocks) {
-    const outfitMatch = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
+    const boldMatch  = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
+    const plainMatch = block.match(/^OUTFIT\s+(\d+)\s*[—–-]\s*(.+)/im);
+    const outfitMatch = boldMatch ?? plainMatch;
 
     if (!outfitMatch) {
-      // This is a category header block
+      // Old format: category header block between outfits
       const catLine = block.split('\n').find(l => l.trim().length > 4 && !l.startsWith('#'));
       const catName = catLine?.replace(/\*\*/g, '').replace(/###/, '').trim() ?? '';
       if (catName && catName.length > 3 && catName.length < 60) {
-        const introLines = block.split('\n').filter(l => l.trim() && !l.match(/^#+/) && !l.match(/\*\*Outfit/));
+        const introLines = block.split('\n').filter(l => l.trim() && !l.match(/^#+/) && !l.match(/\*\*Outfit|^OUTFIT/i));
         const intro = introLines.slice(1).join(' ').trim();
         currentCat = { name: catName, intro, outfits: [] };
         categories.push(currentCat);
@@ -80,14 +92,29 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       continue;
     }
 
+    const outfitNum  = parseInt(outfitMatch[1]);
+    const rawLabel   = outfitMatch[2].trim();
+    const isNewFormat = !boldMatch && !!plainMatch;
+
+    // New format: label IS the context (e.g. "FORMAL") — group by it
+    if (isNewFormat && KNOWN_CONTEXTS.has(rawLabel.toUpperCase())) {
+      const catName = toTitleCase(rawLabel);
+      let cat = categories.find(c => c.name === catName);
+      if (!cat) {
+        cat = { name: catName, intro: '', outfits: [] };
+        categories.push(cat);
+      }
+      currentCat = cat;
+    }
+
     const outfit: ParsedOutfit = {
-      number:      parseInt(outfitMatch[1]),
-      label:       outfitMatch[2].trim(),
+      number:      outfitNum,
+      label:       rawLabel,
       top:         getField(block, 'Top'),
       bottom:      getField(block, 'Bottom'),
       layer:       getField(block, 'Layer(?:\\/Outerwear)?(?:\\/Layer)?'),
       footwear:    getField(block, 'Footwear'),
-      accessories: getField(block, 'Accessories'),
+      accessories: getField(block, 'Accessorys?'),  // handles ACCESSORY and Accessories
       fitNote:     getField(block, 'Fit note'),
       colourLogic: getField(block, 'Colour logic'),
       whyItWorks:  getField(block, 'Why it works(?:\\s+for\\s+you)?'),
@@ -104,10 +131,11 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
 }
 
 function extractOutfitBlock(s4Text: string, outfitNumber: number): string {
-  const blocks = s4Text.split(/(?=\*\*Outfit\s+\d+)/i);
-  const block = blocks.find(b =>
-    new RegExp(`^\\*\\*Outfit\\s+${outfitNumber}\\s*[—–-]`).test(b.trim())
-  );
+  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
+  const block = blocks.find(b => {
+    const t = b.trim();
+    return new RegExp(`^(?:\\*\\*Outfit|OUTFIT)\\s+${outfitNumber}\\s*[—–-]`).test(t);
+  });
   return block?.trim() ?? '';
 }
 

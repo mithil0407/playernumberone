@@ -59,20 +59,25 @@ interface ParsedOutfit {
 
 function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
   const outfits: ParsedOutfit[] = [];
-  const blocks = s4Text.split(/(?=\*\*Outfit\s+\d+)/i);
+  // Split on either bold format "**Outfit N" or plain uppercase "OUTFIT N"
+  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
 
   for (const block of blocks) {
-    const header = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
+    const boldMatch  = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
+    const plainMatch = block.match(/^OUTFIT\s+(\d+)\s*[—–-]\s*(.+)/im);
+    const header     = boldMatch ?? plainMatch;
     if (!header) continue;
 
-    // Grabs everything after "Label:" up to the next field marker or double newline
+    // Field extractor handles both:
+    //   Old: "- Label: value" or "• Label: value"
+    //   New: "LABEL: value" (plain uppercase, no dash)
     const field = (label: string): string => {
-      const m = block.match(new RegExp(`[-•]\\s*${label}\\s*:\\s*([^\\n]+)`, 'i'));
+      const m = block.match(new RegExp(`(?:^|\\n)[ \\t]*[-•]?[ \\t]*${label}[ \\t]*:[ \\t]*([^\\n]+)`, 'i'));
       return m ? m[1].replace(/\*\*/g, '').trim() : '';
     };
 
     const layerRaw       = field('Layer(?:/Outerwear)?');
-    const accessoriesRaw = field('Accessories');
+    const accessoriesRaw = field('Accessory(?:ies)?');
     const fitNoteRaw     = field('Fit note');
     const colourLogicRaw = field('Colour logic');
 

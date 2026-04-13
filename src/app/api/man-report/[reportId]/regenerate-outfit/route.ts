@@ -9,11 +9,13 @@ import {
 } from '@/lib/manImageGenerator';
 
 // Replace the outfit block for `outfitNumber` in the full s4_outfits string.
+// Handles both old bold format "**Outfit N —" and new plain uppercase "OUTFIT N —".
 function replaceOutfitBlock(s4Text: string, outfitNumber: number, newBlock: string): string {
-  const blocks = s4Text.split(/(?=\*\*Outfit\s+\d+)/i);
-  const idx = blocks.findIndex(b =>
-    new RegExp(`^\\*\\*Outfit\\s+${outfitNumber}\\s*[—–-]`).test(b.trim())
-  );
+  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
+  const idx = blocks.findIndex(b => {
+    const t = b.trim();
+    return new RegExp(`^(?:\\*\\*Outfit|OUTFIT)\\s+${outfitNumber}\\s*[—–-]`).test(t);
+  });
   if (idx === -1) return s4Text;
   blocks[idx] = newBlock.trimEnd() + '\n\n';
   return blocks.join('');

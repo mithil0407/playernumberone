@@ -1,6 +1,6 @@
 # ICONIK Men's Blueprint — Outfit Recommendation Engine
 
-**Version:** 2.0  
+**Version:** 2.1  
 **Scope:** Automated Blueprint report generation — outfit recommendation section only  
 **Output:** 16 outfits across 4 lifestyle contexts (4 per context)  
 **Geography:** Western clothing only (no Indian ethnic garments)  
@@ -39,6 +39,7 @@ The following form fields directly drive outfit logic. Reference these throughou
 | Q15 (Hair Colour) | `HAIR` | Colour season input |
 | Q16 (Eye Colour) | `EYES` | Colour season input |
 | Q3 (Dressing Contexts) | `CONTEXTS` | Confirms which 4 contexts to populate |
+| Q4 (Location) | `CLIMATE_ZONE` | Determines climate tier — drives fabric weight, layer frequency, and warm-weather item restrictions |
 | Q11 (Wardrobe Composition) | `WARDROBE_BASE` | Starting point awareness |
 | Q19 (Primary Style Goal) | `STYLE_GOAL` | Tone and direction of copy |
 | Q21 (Style Tribes) | `STYLE_TRIBES` | Off Duty / Urban Wear signals streetwear outfit |
@@ -172,6 +173,59 @@ Apply these rules to every outfit regardless of context. Silhouette rules are no
 
 ---
 
+## SECTION 04B — CLIMATE ZONE RULES
+
+Derive `CLIMATE_ZONE` from Q4 (Location) before generating any outfits. Climate zone controls fabric weight, layer frequency, and which tops are permitted. It does not override silhouette or colour rules.
+
+### Climate Zone Classification
+
+| Q4 Location | Climate Zone | Behaviour |
+|---|---|---|
+| India Tier 1 city | **HOT** | Warm-climate rules apply |
+| India Tier 2/3 city | **HOT** | Warm-climate rules apply |
+| UAE / Middle East | **HOT** | Warm-climate rules apply |
+| UK / Europe | **TEMPERATE** | Full vocabulary available |
+| Canada / USA | **TEMPERATE** | Full vocabulary available |
+| Other | **TEMPERATE** | Default to full vocabulary; use judgment |
+
+---
+
+### HOT CLIMATE RULES (India, UAE)
+
+These rules apply in addition to all other constraint rules when `CLIMATE_ZONE = HOT`.
+
+**Fabric restrictions:**
+- No wool, no flannel, no heavy knits, no merino in any base top
+- Blazers and structured outerwear: use linen-cotton blend, lightweight cotton, or unlined cotton only — no wool blazers
+- Trousers: linen, cotton chino, or lightweight cotton blend only — no heavy wool trousers
+- Denim is acceptable in casual contexts; avoid very thick or raw denim
+
+**Item restrictions:**
+- No turtlenecks of any kind — remove entirely from vocabulary for this client
+- No heavy crewneck knit sweaters
+- No quarter-zips in wool or heavy merino (lightweight cotton quarter-zip remains acceptable)
+- No thick bomber jackets or heavy field jackets — lightweight nylon or cotton-shell versions only
+
+**Layer frequency adjustment for HOT climate:**
+- Layers are less frequent overall — the AI must apply genuine judgment about whether a layer makes sense
+- A well-chosen single top + trouser + footwear combination is a complete outfit in hot climates
+- When a layer is used, it should be lightweight and worn open (never closed/buttoned) to allow airflow
+- Preferred layers in hot climate: unlined linen-cotton blazer, lightweight cotton overshirt (open), lightweight nylon bomber, unstructured cotton sport coat
+
+**Elevated no-layer top options for HOT climate (Formal and Smart Casual):**
+- Fine cotton poplin Oxford shirt, spread or camp collar, slim-fit — worn alone with tailored trousers this is a complete formal outfit
+- Linen-cotton blend shirt, slim-fit, open collar
+- Breathable fine cotton polo, long sleeve, slim-fit
+- Camp collar short-sleeve shirt in fine cotton (smart casual only — not formal)
+
+---
+
+### TEMPERATE CLIMATE RULES (UK, Europe, Canada, USA)
+
+Full vocabulary applies. No restrictions on wool, merino, flannel, knits, or turtlenecks. Layer frequency follows the standard context rules in Section 10.
+
+---
+
 ## SECTION 05 — FAT STORAGE ZONE CAMOUFLAGE RULES
 
 Always consult `MINIMISE_ZONE` and `MINIMISE_ZONE_2` before generating each outfit.
@@ -247,28 +301,36 @@ Generate exactly 4 outfits per context. 16 outfits total.
 ### CONTEXT A — FORMAL
 **Definition:** Corporate office, client-facing meetings, board settings, job interviews, formal events.
 
-**Rules:**
-- Layering on all 4 outfits — vary the type: minimum 2 blazers or suit jackets; the other 2 can use a quarter-zip over a formal shirt, a fine merino crewneck over a dress shirt, or a structured rollneck as the base under a blazer
+**Layer frequency: 3 out of 4 outfits have a layer. 1 outfit stands alone.**
+
+**Layering judgment rules:**
+- 3 outfits must include a layer — vary the type: minimum 2 blazers or suit jackets; the third can be a quarter-zip over a formal shirt or a structured overshirt
+- 1 outfit stands without a layer — this must be a strong top + tailored trouser combination that reads as complete and polished on its own. A fine cotton poplin shirt in a bold palette colour with tailored trousers and leather shoes is sufficient. In HOT climates, no-layer outfits are encouraged here.
 - Quarter-zip pullovers are acceptable over formal shirts as a modern office layer — pair only with flat-front tailored trousers
+- In HOT climates: if a blazer is used, it must be unlined linen-cotton or lightweight cotton — never wool
 - Trousers: Flat-front slim or tailored fit only; absolutely no jeans
 - Footwear: Leather Oxfords, Derby shoes, Chelsea boots (leather only)
 - Colour: Power neutrals from the client's season; max 1 accent piece per outfit
 - No sneakers, no denim, no visible logo, no waistcoats
 - Apply body shape silhouette rules strictly
 
-**Outfit 4 of 4 rule:** The fourth formal outfit is the most elevated — a full coordinated suit or a bold colour-matched combination using an accent from the client's palette.
+**Outfit 4 of 4 rule:** The fourth formal outfit is the most elevated — a full coordinated suit or a strong colour-matched combination using an accent from the client's palette.
 
 ---
 
 ### CONTEXT B — SMART CASUAL
 **Definition:** Business casual workplace, client lunches, startup office, dinner with colleagues.
 
-**Rules:**
-- Layering on 3 of 4 outfits — vary across: unstructured blazer, tweed sport coat, structured overshirt, bomber jacket, quarter-zip, open Oxford shirt worn as a layer
+**Layer frequency: 2 out of 4 outfits have a layer. 2 outfits stand alone.**
+
+**Layering judgment rules:**
+- 2 outfits include a layer — vary across: unstructured blazer, tweed sport coat (TEMPERATE only), structured overshirt, lightweight bomber, quarter-zip, open Oxford shirt worn as a layer
+- 2 outfits stand without a layer — a well-fitted polo, a clean Oxford shirt, or a fine cotton crewneck with smart chinos and loafers is a complete smart casual outfit on its own
+- In HOT climates: no-layer outfits are the default here; a layer is only added if the style poles lean strongly structured
+- No waistcoats
 - Trousers: Chinos, smart trousers, dark clean denim on 1–2 outfits acceptable
 - Footwear: Loafers, clean white leather sneakers, suede Chelsea boots
 - Colour: Expand from power neutrals into accent colours here
-- No waistcoats
 - Apply body shape and undertone rules
 
 ---
@@ -276,10 +338,12 @@ Generate exactly 4 outfits per context. 16 outfits total.
 ### CONTEXT C — EVENING WEAR
 **Definition:** Dinner dates, cocktail events, parties, rooftop evenings, weddings as a guest.
 
-**Rules:**
-- Sharp and intentional — personality is expressed here
-- Structured layer on all 4 outfits — vary across: double-breasted blazer, single-breasted blazer in an accent colour, tweed or wool textured blazer, biker jacket (leather or faux), bomber jacket in a rich tone
-- Black outerwear (biker jacket, black blazer) is always permitted here regardless of season — balance it with a coloured or palette-correct top or trouser
+**Layer frequency: 3 out of 4 outfits have a layer. 1 outfit stands alone.**
+
+**Layering judgment rules:**
+- 3 outfits include a layer — vary across: double-breasted blazer, single-breasted blazer in an accent colour, tweed or wool textured blazer (TEMPERATE only), biker jacket, bomber jacket in a rich tone
+- 1 outfit stands without a layer — only if the base top is elevated enough to carry the look alone. Qualifying tops: silk-blend polo, fine textured knit, satin-finish camp collar shirt, richly coloured fine cotton crewneck. A plain tee or basic Oxford shirt does NOT qualify as a no-layer evening top.
+- Black outerwear (biker jacket, black blazer) always permitted regardless of season — balance with a palette-correct top or trouser
 - Dark tones, rich colours, or high-contrast pairings appropriate here
 - Footwear: Chelsea boots, leather loafers, clean white leather sneakers for one outfit only
 - Accessories: Up to 2 per outfit — watch + chain combination acceptable here
@@ -291,23 +355,30 @@ Generate exactly 4 outfits per context. 16 outfits total.
 ### CONTEXT D — RELAXED CASUAL
 **Definition:** Weekends, coffee, travel, running errands, social hangouts.
 
-**Rules:**
-- Comfort-forward but intentional — never sloppy
+**Layer frequency: 2 out of 4 outfits have a layer. 2 outfits stand alone.**
+
+**Layering judgment rules:**
+- 2 outfits include a layer — use only lightweight, casual-appropriate options: open denim jacket, field jacket, Harrington jacket, lightweight bomber, open cotton overshirt. Never use a blazer in Relaxed Casual.
+- 2 outfits stand alone — a well-chosen tee, Henley, or polo with clean denim and good footwear is a complete casual outfit. No layer needed.
+- In HOT climates: maximum 1 layer across the 4 Relaxed Casual outfits; the other 3 stand alone
 - Vary tops across: fitted crew-neck tee, V-neck tee, Henley (full sleeve), long-sleeve polo, casual overshirt worn open — do not repeat the same top type across multiple outfits
-- Layering optional but encouraged on 2 of 4: field jacket, Harrington jacket, bomber jacket, open overshirt
 - Bottoms: Clean denim (slim-straight or straight-leg), chinos, casual trousers; no active or gym wear
 - Footwear: White leather low-top sneakers or white leather chunky-sole sneakers only
 - Accessories: Minimal — one item max (watch or chain)
 - Apply body shape camouflage rules even in casual context
 - Colour palette: Accent colours appropriate here; more relaxed combinations acceptable
 
-**STREETWEAR OUTFIT RULE:** If the client selected "Off Duty" or "Urban Wear" under Q21 (Style Tribes), one of the 4 Relaxed Casual outfits must be a streetwear-adjacent look. Use: heavyweight graphic-free oversized tee or boxy crewneck + either oversized wide-leg denim (dark wash) OR black heavy-duty cargo trousers (relaxed fit) + white leather chunky-sole sneakers. Keep colours within the client's season palette. This replaces one of the standard 4 Relaxed Casual outfits.
+**STREETWEAR OUTFIT RULE:** If the client selected "Off Duty" or "Urban Wear" under Q21 (Style Tribes), one of the 4 Relaxed Casual outfits must be a streetwear-adjacent look. Use: heavyweight graphic-free oversized tee or boxy crewneck + either oversized wide-leg denim (dark wash) OR black heavy-duty cargo trousers (relaxed fit) + white leather chunky-sole sneakers. Keep colours within the client's season palette. This replaces one of the standard 4 Relaxed Casual outfits. No layer on the streetwear outfit.
 
 ---
 
 ## SECTION 11 — LAYERING VARIETY RULE
 
-**Blazers maximum 5 times across all 16 outfits.** Track the count as you generate. Once you hit 5 blazers total, all remaining outfits requiring a layer must use alternatives. This rule exists to produce a wardrobe with genuine variety, not 16 versions of "blazer + trouser."
+**Blazers maximum 5 times across all 16 outfits.** Track the count as you generate. Once you hit 5 blazers total, all remaining outfits requiring a layer must use alternatives.
+
+**Overall layer count target: 10 layers maximum, 8 minimum across all 16 outfits.** This means roughly 6 of 16 outfits stand without any layer. Layers must feel like a deliberate style choice, not a default fill.
+
+**HOT CLIMATE adjustment (India, UAE):** Reduce total layers to 7 maximum across all 16 outfits. Layers in hot climates must always be lightweight and worn open.
 
 **Approved Layering by Context:**
 
@@ -316,15 +387,18 @@ Generate exactly 4 outfits per context. 16 outfits total.
 | Single-breasted slim blazer | ✓ | ✓ | ✓ | ✗ |
 | Double-breasted slim blazer | ✓ | ✗ | ✓ | ✗ |
 | Unstructured / sport coat blazer | ✗ | ✓ | ✓ | ✗ |
-| Tweed / wool textured blazer | ✓ | ✓ | ✓ | ✗ |
+| Tweed / wool textured blazer (TEMPERATE only) | ✓ | ✓ | ✓ | ✗ |
 | Tailored suit jacket (full suit) | ✓ | ✗ | ✓ | ✗ |
 | Quarter-zip pullover | ✓ | ✓ | ✗ | ✗ |
 | Bomber jacket | ✗ | ✓ | ✓ | ✓ |
 | Biker jacket (leather / faux) | ✗ | ✗ | ✓ | ✓ |
+| Denim jacket (dark wash, clean) | ✗ | ✗ | ✗ | ✓ |
 | Field jacket | ✗ | ✓ | ✗ | ✓ |
 | Harrington jacket | ✗ | ✓ | ✗ | ✓ |
 | Open Oxford shirt as layer | ✗ | ✓ | ✗ | ✓ |
 | Cotton overshirt (open) | ✗ | ✓ | ✗ | ✓ |
+
+**Never use a blazer in Relaxed Casual context under any circumstances.**
 
 ---
 
@@ -356,19 +430,22 @@ Generate exactly 4 outfits per context. 16 outfits total.
 Use this exact structure for all 16 outfits. No deviation.
 
 ```
-**Outfit [NUMBER] — [Two to four word context/mood label]**
+---
+OUTFIT [NUMBER] — [CONTEXT NAME]
 
-- Top: [Specific item — fit + fabric + colour + style detail]
-- Layer: [Specific item — type + fit + fabric + colour] or "None"
-- Bottom: [Specific item — fit + fabric + colour + style detail]
-- Footwear: [Specific item — type + colour + material detail]
-- Accessories: [1–2 items max, or "None"]
-- Why it works for you: [1–2 sentences connecting this outfit to this client's specific body shape, undertone, or style goal using ICONIK language]
+TOP: [Specific item — fit + fabric + colour + style detail]
+LAYER: [Specific item — type + fit + fabric + colour] or "None"
+BOTTOM: [Specific item — fit + fabric + colour + style detail]
+FOOTWEAR: [Specific item — type + colour + material detail]
+ACCESSORY: [1–2 items max, or "None"]
+
+WHY IT WORKS FOR YOU: [1–2 sentences connecting this outfit to this client's specific body shape, undertone, or style goal using ICONIK language]
+---
 ```
 
-**Note:** Top = base layer worn closest to the body. Layer = outerwear or second layer. If no layer, write "None."
+**Note:** TOP = base layer worn closest to the body. LAYER = outerwear or second layer. If no layer, write "None."
 
-**"Why it works for you" — Writing Rules:**
+**"Why It Works For You" — Writing Rules:**
 - Always reference at least one specific form input (body shape, undertone, fat storage zone, or style goal)
 - Never use filler phrases like "this is a great look" or "you'll love this"
 - Use ICONIK's language: geometric balance, chromatic harmony, vertical line, shoulder-to-hip contrast, undertone alignment
@@ -415,8 +492,9 @@ Use only the items listed here. Do not invent item types outside this list.
 - Harrington jacket, waxed cotton or lightweight cotton
 - Cotton overshirt, worn open as casual layer
 - Structured overshirt, worn open as smart casual layer
+- Denim jacket, dark wash, clean (Relaxed Casual only)
 
-**NEVER SUGGEST:** Waistcoats in any form. They are removed from the vocabulary entirely.
+**NEVER SUGGEST:** Waistcoats in any form. Turtlenecks for HOT climate clients (India, UAE).
 
 ### BOTTOMS
 - Flat-front slim-fit wool or wool-blend trousers
@@ -488,6 +566,7 @@ CLIENT PROFILE:
 - Style Poles: Structure [1–5], Expression [1–5], Tone [1–5], Register [1–5]
 - Anti-Preferences: [ANTI_PREFS]
 - Wardrobe Base: [WARDROBE_BASE]
+- Climate Zone: [CLIMATE_ZONE — HOT or TEMPERATE, derived from Q4 Location]
 
 CONSTRAINT RULES (non-negotiable — apply all):
 
@@ -527,14 +606,17 @@ Generate exactly 16 outfits:
 
 Format every outfit exactly as:
 
-**Outfit [NUMBER] — [Two to four word context/mood label]**
+---
+OUTFIT [NUMBER] — [CONTEXT NAME]
 
-- Top: [item — fit + fabric + colour + style detail]
-- Layer: [item — type + fit + fabric + colour] or "None"
-- Bottom: [item — fit + fabric + colour + style detail]
-- Footwear: [item — type + colour + material]
-- Accessories: [1–2 items, or "None"]
-- Why it works for you: [1–2 sentences — reference at least one specific client variable using ICONIK language]
+TOP: [item — fit + fabric + colour + style detail]
+LAYER: [item — type + fit + fabric + colour] or "None"
+BOTTOM: [item — fit + fabric + colour + style detail]
+FOOTWEAR: [item — type + colour + material]
+ACCESSORY: [1–2 items, or "None"]
+
+WHY IT WORKS FOR YOU: [1–2 sentences — reference at least one specific client variable using ICONIK language]
+---
 
 RULES — MUST FOLLOW ALL:
 1. Never include any item from ANTI_PREFS
@@ -546,13 +628,17 @@ RULES — MUST FOLLOW ALL:
 7. NEVER suggest skinny jeans. NEVER suggest cropped or ankle-cut trousers. Hem must reach the ankle.
 8. Blazers maximum 5 times total across all 16 outfits — use other layer types for the rest
 9. NEVER suggest waistcoats
-10. Sneakers are white only — never brown, tan, grey, or any other colour
-11. No sneakers in Formal. No leather Oxfords or Derby shoes in Relaxed Casual.
-12. Vary top types — do not repeat the same top style more than twice within any one context
-13. Always name fabric specifically — never write "fabric" or "material"
-14. Accessories: max 2 in Evening, max 1 in all other contexts
-15. "Why It Works For You" must reference at least one specific client variable — never generic
-16. No two outfits within the same context should feel similar — vary tops, layers, bottoms, footwear
+10. If CLIMATE_ZONE = HOT: no turtlenecks, no wool fabrics, no heavy knits; all blazers must be unlined linen-cotton or lightweight cotton; maximum 7 layers total across all 16 outfits
+11. If CLIMATE_ZONE = TEMPERATE: full vocabulary applies; maximum 10 layers total across all 16 outfits
+12. Layer count targets by context — Formal: 3 of 4 | Smart Casual: 2 of 4 | Evening: 3 of 4 | Relaxed Casual: 2 of 4 (HOT climate: reduce each by 1)
+13. Sneakers are white only — never brown, tan, grey, or any other colour
+14. No sneakers in Formal. No leather Oxfords or Derby shoes in Relaxed Casual.
+15. Vary top types — do not repeat the same top style more than twice within any one context
+16. Always name fabric specifically — never write "fabric" or "material"
+17. Accessories: max 2 in Evening, max 1 in all other contexts
+18. "Why It Works For You" must reference at least one specific client variable — never generic
+19. No two outfits within the same context should feel similar — vary tops, layers, bottoms, footwear
+20. Never use a blazer in Relaxed Casual context
 ```
 
 ---
@@ -570,6 +656,10 @@ Before finalising output, check every outfit against this list:
 - [ ] No skinny jeans, no cropped trousers, no ankle-cut anything
 - [ ] No waistcoats
 - [ ] Blazer count is 5 or fewer across all 16 outfits
+- [ ] No blazers in Relaxed Casual
+- [ ] Total layer count: max 10 (TEMPERATE) or max 7 (HOT) across all 16 outfits
+- [ ] Layer count per context matches targets: Formal 3/4 | Smart Casual 2/4 | Evening 3/4 | Casual 2/4
+- [ ] HOT climate: no turtlenecks, no wool, no heavy knits, all blazers are lightweight unlined
 - [ ] Sneakers are white only
 - [ ] No item from ANTI_PREFS included
 - [ ] Fabric named specifically in every line
@@ -577,7 +667,7 @@ Before finalising output, check every outfit against this list:
 - [ ] Accessory count within limit for this context
 - [ ] "Why It Works For You" references a specific client variable
 - [ ] No two outfits within the same context are too similar
-- [ ] Streetwear outfit included if Off Duty / Urban Wear selected
+- [ ] Streetwear outfit included if Off Duty / Urban Wear selected (no layer on that outfit)
 
 ---
 
@@ -588,52 +678,56 @@ Before finalising output, check every outfit against this list:
 ---
 
 ```
-**Outfit 1 — Structured Formal Authority**
+OUTFIT 1 — FORMAL
 
-- Top: Fitted fine cotton poplin Oxford shirt, warm ivory, spread collar — worn untucked under layer
-- Layer: Single-breasted slim-fit blazer, camel wool-blend, notch lapel — worn open
-- Bottom: Flat-front slim-fit olive cotton-twill trousers, ankle-clean hem
-- Footwear: Tan suede Chelsea boots, slim toe
-- Accessories: Gold minimalist watch
-- Why it works for you: The open blazer creates a deliberate vertical channel through your midsection rather than widening it horizontally — a direct function of your Oval Geometric Silhouette profile. Camel and warm olive are core Warm Medium palette pairings that produce chromatic harmony with your golden undertone depth.
+TOP: Fitted fine cotton poplin Oxford shirt, warm ivory, spread collar — worn untucked under layer
+LAYER: Single-breasted slim-fit blazer, camel wool-blend, notch lapel — worn open
+BOTTOM: Flat-front slim-fit olive wool trousers, slight taper, ankle-clean hem
+FOOTWEAR: Tan suede Chelsea boots, slim toe
+ACCESSORY: Gold minimalist watch
+
+WHY IT WORKS FOR YOU: The open blazer creates a deliberate vertical channel through your midsection rather than widening it horizontally — a direct function of your Oval Geometric Silhouette profile. Camel and warm olive are core Warm Medium palette pairings that produce chromatic harmony with your golden undertone depth.
 ```
 
 ```
-**Outfit 5 — Smart Casual Layered**
+OUTFIT 5 — SMART CASUAL
 
-- Top: Fine merino long-sleeve crewneck in rust, slim-fit
-- Layer: Quarter-zip pullover, warm tan fine merino — worn over crewneck, collar visible above zip
-- Bottom: Flat-front slim chino in khaki cotton twill, slim-straight, ankle-clean
-- Footwear: Tan suede penny loafers
-- Accessories: Slim dark brown leather belt
-- Why it works for you: Layering the quarter-zip over a contrasting crewneck adds vertical depth and draws the eye upward rather than across the midsection. Rust and warm tan are an accent-to-neutral pairing within your Warm Medium palette — chromatic harmony without tonal repetition.
+TOP: Fine merino long-sleeve crewneck in rust, slim-fit
+LAYER: Quarter-zip pullover, warm tan fine merino — worn over crewneck, collar visible above zip
+BOTTOM: Flat-front slim chino in khaki cotton twill, slim-straight, ankle-clean
+FOOTWEAR: Tan suede penny loafers
+ACCESSORY: Slim dark brown leather belt
+
+WHY IT WORKS FOR YOU: Layering the quarter-zip over a contrasting crewneck adds vertical depth and draws the eye upward rather than across the midsection. Rust and warm tan are an accent-to-neutral pairing within your Warm Medium palette — chromatic harmony without tonal repetition.
 ```
 
 ```
-**Outfit 9 — Sharp Evening**
+OUTFIT 9 — EVENING WEAR
 
-- Top: Fitted crew-neck T-shirt, heavyweight washed cotton, warm ivory — untucked
-- Layer: Black faux leather biker jacket, slim-fit, zip front — worn open
-- Bottom: Slim-straight clean denim, dark indigo, ankle-clean
-- Footwear: Black leather Chelsea boots, slim toe
-- Accessories: Thin gold chain
-- Why it works for you: Black outerwear anchors the evening look regardless of colour season — the warm ivory tee underneath prevents a cold flat read and sits within your Warm Medium palette. The open biker jacket preserves the vertical line your Oval geometry requires rather than closing across the midsection.
+TOP: Fitted crew-neck T-shirt, heavyweight washed cotton, warm ivory — untucked
+LAYER: Black faux leather biker jacket, slim-fit, zip front — worn open
+BOTTOM: Slim-straight clean denim, dark indigo, ankle-clean
+FOOTWEAR: Black leather Chelsea boots, slim toe
+ACCESSORY: Thin gold chain
+
+WHY IT WORKS FOR YOU: Black outerwear anchors the evening look regardless of colour season — the warm ivory tee underneath prevents a cold flat read and sits within your Warm Medium palette. The open biker jacket preserves the vertical line your Oval geometry requires rather than closing across the midsection.
 ```
 
 ```
-**Outfit 13 — Relaxed Weekend**
+OUTFIT 13 — RELAXED CASUAL
 
-- Top: Fitted Henley shirt, full sleeve, washed cotton in warm olive — two-button placket, worn untucked
-- Layer: None
-- Bottom: Relaxed straight-leg denim, dark indigo, full length
-- Footwear: White clean leather low-top sneakers
-- Accessories: Gold minimalist watch
-- Why it works for you: The untucked Henley in warm olive skims the midsection cleanly — relaxed in fit but geometrically intentional. Straight-leg denim rather than a tapered cut prevents the trouser from pulling focus toward the lower midsection, keeping the silhouette balanced from waist to ankle.
+TOP: Fitted Henley shirt, full sleeve, washed cotton in warm olive — two-button placket, worn untucked
+LAYER: None
+BOTTOM: Relaxed straight-leg denim, dark indigo, full length
+FOOTWEAR: White clean leather low-top sneakers
+ACCESSORY: Gold minimalist watch
+
+WHY IT WORKS FOR YOU: The untucked Henley in warm olive skims the midsection cleanly — relaxed in fit but geometrically intentional. Straight-leg denim rather than a tapered cut prevents the trouser from pulling focus toward the lower midsection, keeping the silhouette balanced from waist to ankle.
 ```
 
 ---
 
-*ICONIK Men's Blueprint Outfit Recommendation Engine — SKILL.md v2.0*  
+*ICONIK Men's Blueprint Outfit Recommendation Engine — SKILL.md v2.1*  
 *For use in automated Blueprint generation pipeline only.*  
 *All constraint logic is derived from ICONIK's proprietary three-pillar methodology:*  
 *Geometric Silhouette Profiling™ · Chromatic Harmony Mapping™ · Facial Architecture Analysis™*

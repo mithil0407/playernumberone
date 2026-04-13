@@ -875,6 +875,12 @@ const _SECTION_BLOCKS = REPORT_USER_TEMPLATE
   .split('\n\n---\n\n')
   .filter(block => block.trimStart().startsWith('## SECTION'));
 
+function deriveClimateZone(locationRegion: string): 'HOT' | 'TEMPERATE' {
+  const loc = locationRegion.toLowerCase();
+  if (/india|uae|middle\s*east|dubai|mumbai|delhi|bangalore|hyderabad|chennai|kolkata/.test(loc)) return 'HOT';
+  return 'TEMPERATE';
+}
+
 function buildSectionUserPrompt(
   sectionIndex: number,
   classification: ClassificationResult,
@@ -889,9 +895,11 @@ function buildSectionUserPrompt(
 
   let prompt = preamble + _SECTION_BLOCKS[sectionIndex];
 
-  // Inject the outfit recommendation skill for Section 4.
+  // Inject the outfit recommendation skill for Section 4, with explicit CLIMATE_ZONE.
   if (sectionIndex === 3) {
-    prompt = OUTFIT_SKILL + '\n\n' + prompt;
+    const climateZone = deriveClimateZone(classification.client.location_region);
+    const climateHeader = `DERIVED VARIABLES (use these — do not re-derive):\nCLIMATE_ZONE = ${climateZone}\n\n`;
+    prompt = OUTFIT_SKILL + '\n\n' + climateHeader + prompt;
   }
 
   return prompt;
