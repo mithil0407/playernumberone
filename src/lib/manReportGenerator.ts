@@ -3,9 +3,14 @@
 // Prompt 1 → Classification JSON (deterministic science layer)
 // Prompt 2 → Full report copy (voice layer, depends on Prompt 1 output)
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import type { ManIntakeSubmission } from './supabaseMan';
-import { STYLE_REFERENCE_LIBRARY } from './manStyleLibrary';
+
+const OUTFIT_SKILL = readFileSync(
+  join(process.cwd(), 'src/lib/outfitrecommendationskill.md'), 'utf-8'
+);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 
@@ -153,15 +158,16 @@ Return ONLY the following JSON object, fully populated:
   "outfit_split": {
     "total": 16,
     "categories": [
-      {"category": "Formal", "count": 5, "rationale": "Office, meetings, professional settings, structured events"},
-      {"category": "Casual", "count": 6, "rationale": "Everyday, weekend, errands, relaxed socialising"},
-      {"category": "Evening Wear", "count": 5, "rationale": "Dinner, parties, dates, evening events, nightlife"}
+      {"category": "Formal", "count": 4, "rationale": "Corporate office, client-facing, formal events"},
+      {"category": "Smart Casual", "count": 4, "rationale": "Business casual, startup office, client lunches"},
+      {"category": "Evening Wear", "count": 4, "rationale": "Dinner, parties, dates, evening events"},
+      {"category": "Relaxed Casual", "count": 4, "rationale": "Weekends, coffee, travel, errands, social hangouts"}
     ]
   }
 }
 
 OUTFIT SPLIT — always use this exact fixed split regardless of dressing context:
-  Formal: 5 | Casual: 6 | Evening Wear: 5 = 16 total`;
+  Formal: 4 | Smart Casual: 4 | Evening Wear: 4 | Relaxed Casual: 4 = 16 total`;
 
 // ─────────────────────────────────────────────────────────────
 // PROMPT 2 — REPORT GENERATION ENGINE
@@ -269,7 +275,15 @@ One paragraph (3-4 sentences): pattern scale, contrast level, and fabric texture
 
 ## SECTION 4: YOUR 16 OUTFITS
 
-\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+The ICONIK Outfit Recommendation Skill has been injected above. Follow it exactly — all constraint rules, format, and context splits are defined there.
+
+Generate all 16 outfits now using the format from Section 13 of the skill:
+- Outfits 1–4: FORMAL
+- Outfits 5–8: SMART CASUAL
+- Outfits 9–12: EVENING WEAR
+- Outfits 13–16: RELAXED CASUAL
+
+---
 BANNED GARMENTS \u2014 INTERNAL INSTRUCTION, DO NOT OUTPUT THIS SECTION HEADER
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 Only one garment type is banned:
@@ -875,10 +889,9 @@ function buildSectionUserPrompt(
 
   let prompt = preamble + _SECTION_BLOCKS[sectionIndex];
 
-  // Inject the style reference library for Section 4 (outfits) so Gemini
-  // prioritises proven outfit combinations over invented ones.
+  // Inject the outfit recommendation skill for Section 4.
   if (sectionIndex === 3) {
-    prompt = STYLE_REFERENCE_LIBRARY + '\n\n' + prompt;
+    prompt = OUTFIT_SKILL + '\n\n' + prompt;
   }
 
   return prompt;

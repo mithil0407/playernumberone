@@ -85,6 +85,7 @@ export async function POST(
   newCards[outfitNumber - 1] = newPath;
   const newImagePaths: ManReportImagePaths = {
     hairstyleCards: imagePaths?.hairstyleCards ?? [],
+    eyewearCards:   imagePaths?.eyewearCards ?? [],
     outfitCards:    newCards,
     ...(imagePaths?.baseModel ? { baseModel: imagePaths.baseModel } : {}),
   };

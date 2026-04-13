@@ -90,7 +90,7 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       accessories: getField(block, 'Accessories'),
       fitNote:     getField(block, 'Fit note'),
       colourLogic: getField(block, 'Colour logic'),
-      whyItWorks:  getField(block, 'Why it works'),
+      whyItWorks:  getField(block, 'Why it works(?:\\s+for\\s+you)?'),
     };
 
     if (!currentCat) {
