@@ -3,7 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { resolveManReportImageUrls, type ManReportImagePaths } from '@/lib/manImageGenerator';
 
 // GET — fetch report by share token (no auth required)
-// Only returns reports with status = 'sent'
+// Returns any report that has content — the share token itself is the access gate.
+// Statuses 'generating' and 'error' are excluded (no content to show).
+
+const VIEWABLE_STATUSES = ['sent', 'draft_ready', 'in_review', 'approved'];
 
 export async function GET(
   _request: NextRequest,
@@ -15,7 +18,7 @@ export async function GET(
     .from('man_reports')
     .select('id, status, report_data, image_urls, share_token, sent_at')
     .eq('share_token', shareToken)
-    .eq('status', 'sent')
+    .in('status', VIEWABLE_STATUSES)
     .single();
 
   if (error || !data) {
