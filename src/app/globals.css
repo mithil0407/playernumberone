@@ -153,6 +153,29 @@
     @apply bg-background text-foreground;
   }
 
+  /* Smooth scrolling for report viewer containers */
+  .report-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* GPU-composited shimmer for loading skeletons */
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      #f0ede8 25%,
+      #e8e4dc 50%,
+      #f0ede8 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+    will-change: background-position;
+  }
+
   /* Custom luxury typography styles */
   .luxury-heading {
     font-family: var(--font-playfair, "Playfair Display", serif);

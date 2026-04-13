@@ -431,7 +431,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   return (
     <div className="flex gap-0 h-[calc(100vh-4rem)] -m-5 lg:-m-8 overflow-hidden">
       {/* ── Left: Report Preview ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto flex flex-col" style={{ background: '#f5f5f5' }}>
+      <div className="flex-1 overflow-y-auto flex flex-col report-scroll" style={{ background: '#f5f5f5' }}>
         {/* Stuck banner */}
         {isStuck && (
           <div className="flex items-center justify-between gap-4 px-5 py-3 flex-shrink-0"

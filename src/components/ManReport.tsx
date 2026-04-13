@@ -338,11 +338,12 @@ function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: Classific
                       alt={`Hairstyle option ${i + 1}`}
                       loading="lazy"
                       className="w-full rounded-xl border object-cover object-top"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER }}
+                      style={{ aspectRatio: '3/4', borderColor: BORDER, opacity: 0, transition: 'opacity 0.5s ease' }}
+                      onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                     />
                   ) : (
-                    <div className="w-full rounded-xl border flex items-center justify-center"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER, background: CREAM2 }}>
+                    <div className="w-full rounded-xl border skeleton-shimmer flex items-center justify-center"
+                      style={{ aspectRatio: '3/4', borderColor: BORDER }}>
                       <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
                     </div>
                   )}
@@ -369,11 +370,12 @@ function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: Classific
                       alt={`Eyewear option ${i + 1}`}
                       loading="lazy"
                       className="w-full rounded-xl border object-cover object-top"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER }}
+                      style={{ aspectRatio: '3/4', borderColor: BORDER, opacity: 0, transition: 'opacity 0.5s ease' }}
+                      onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                     />
                   ) : (
-                    <div className="w-full rounded-xl border flex items-center justify-center"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER, background: CREAM2 }}>
+                    <div className="w-full rounded-xl border skeleton-shimmer flex items-center justify-center"
+                      style={{ aspectRatio: '3/4', borderColor: BORDER }}>
                       <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
                     </div>
                   )}
@@ -428,14 +430,20 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Fit Blueprint</p>
-            <div className="space-y-3">
+            <motion.div
+              className="space-y-3"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={VIEWPORT_OPTS}
+            >
               {body.silhouette_rules.map((rule, i) => (
-                <div key={i} className="flex items-start gap-2.5">
+                <motion.div key={i} className="flex items-start gap-2.5" variants={staggerItem}>
                   <span className="text-[9px] font-black mt-0.5 flex-shrink-0" style={{ color: GOLD }}>0{i + 1}</span>
                   <span className="text-xs text-black font-light leading-relaxed">{rule}</span>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           <div>
@@ -485,7 +493,7 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
 // Section 03 — Chromatic Harmony Map
 // ─────────────────────────────────────────────────────────────
 
-function ColourSection({ cls, text }: { cls: ClassificationResult; text: string }) {
+function ColourSection({ cls, text: _text }: { cls: ClassificationResult; text: string }) {
   const { colour } = cls;
   return (
     <div className="bg-white border-b" style={{ borderColor: BORDER }}>
@@ -500,18 +508,24 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
           {/* Primary palette */}
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Your Primary Palette</p>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
+            <motion.div
+              className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={VIEWPORT_OPTS}
+            >
               {colour.primary_palette.map((c, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
+                <motion.div key={i} className="flex flex-col items-center gap-2" variants={staggerItem}>
                   <div
                     className="w-full rounded-xl border shadow-sm"
                     style={{ backgroundColor: c.hex, borderColor: BORDER, aspectRatio: '1/1.3' }}
                     title={`${c.name} — ${c.usage}`}
                   />
                   <span className="text-[8px] sm:text-[7px] font-bold text-gray-500 uppercase tracking-wide text-center leading-tight px-0.5">{c.name}</span>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
             {/* Colour usage notes */}
             <div className="space-y-1.5">
               {colour.primary_palette.map((c, i) => (
@@ -673,7 +687,15 @@ function OutfitsSection({
             const isRegenning = regenerating && isEditing;
             const canEdit     = adminMode && !!onRegenerateOutfit;
             return (
-            <div key={oi} className="flex flex-col md:flex-row bg-white border-b" style={{ borderColor: BORDER }}>
+            <motion.div
+              key={oi}
+              className="flex flex-col md:flex-row bg-white border-b"
+              style={{ borderColor: BORDER }}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.05 }}
+              transition={{ duration: 0.38, delay: oi * 0.03, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }}
+            >
               {/* Left: outfit image or number placeholder — 40% card width */}
               <div
                 className="w-full md:w-2/5 flex-shrink-0 border-b md:border-b-0 md:border-r overflow-hidden relative"
@@ -686,6 +708,8 @@ function OutfitsSection({
                     alt={`Outfit ${outfit.number} — ${outfit.label}`}
                     loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover object-top"
+                    style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
+                    onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                   />
                 ) : canEdit ? (
                   /* Error state — image failed, show retry button */
@@ -698,17 +722,20 @@ function OutfitsSection({
                       </p>
                       <p className="text-[9px] text-gray-400 font-light">Generation did not complete</p>
                     </div>
-                    <button
+                    <motion.button
                       onClick={() => handleQuickRetry(outfit.number)}
                       disabled={retryingSet.has(outfit.number)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded text-[9px] font-black uppercase tracking-widest transition-opacity disabled:opacity-40"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
                       style={{ background: GOLD, color: '#fff' }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.96 }}
+                      transition={SPRING}
                     >
                       {retryingSet.has(outfit.number)
                         ? <><Loader2 size={10} className="animate-spin" /> Retrying…</>
                         : <><RefreshCw size={10} /> Retry</>
                       }
-                    </button>
+                    </motion.button>
                   </div>
                 ) : (
                   /* Public placeholder */
@@ -729,14 +756,17 @@ function OutfitsSection({
                 )}
                 {/* Edit toggle button */}
                 {canEdit && (
-                  <button
+                  <motion.button
                     onClick={() => isEditing ? cancelEdit() : startEdit(outfit.number)}
-                    className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded transition-opacity hover:opacity-100 opacity-70"
+                    className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-70 hover:opacity-100"
                     style={{ background: 'rgba(0,0,0,0.65)', color: '#fff' }}
                     title={isEditing ? 'Cancel edit' : 'Edit outfit'}
+                    whileHover={{ scale: 1.12 }}
+                    whileTap={{ scale: 0.9 }}
+                    transition={SPRING}
                   >
                     {isEditing ? <X size={11} /> : <Pencil size={11} />}
-                  </button>
+                  </motion.button>
                 )}
                 {/* Regenerating overlay */}
                 {isRegenning && (
@@ -749,8 +779,17 @@ function OutfitsSection({
               </div>
 
               {/* Right: outfit details OR inline editor */}
+              <AnimatePresence mode="wait" initial={false}>
               {isEditing ? (
-                <div className="flex-1 p-5 flex flex-col gap-3" style={{ background: '#fafafa' }}>
+                <motion.div
+                  key="edit"
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.16 }}
+                  className="flex-1 p-5 flex flex-col gap-3"
+                  style={{ background: '#fafafa' }}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: GOLD }}>
                       Edit Outfit {outfit.number}
@@ -766,20 +805,30 @@ function OutfitsSection({
                     style={{ minHeight: 320, focusRingColor: GOLD } as React.CSSProperties}
                     spellCheck={false}
                   />
-                  <button
+                  <motion.button
                     onClick={handleRegenerate}
                     disabled={regenerating}
-                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold tracking-wide disabled:opacity-40 transition-opacity"
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold tracking-wide disabled:opacity-40"
                     style={{ background: GOLD, color: '#fff' }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={SPRING}
                   >
                     {regenerating
                       ? <><Loader2 size={13} className="animate-spin" /> Regenerating…</>
                       : 'Regenerate Image'
                     }
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
               ) : (
-              <div className="flex-1 p-5 md:p-8 flex flex-col">
+              <motion.div
+                key="details"
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.16 }}
+                className="flex-1 p-5 md:p-8 flex flex-col"
+              >
                 {/* Header */}
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-2">
@@ -829,9 +878,10 @@ function OutfitsSection({
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
               )}
-            </div>
+              </AnimatePresence>
+            </motion.div>
           );
           })}
         </div>
