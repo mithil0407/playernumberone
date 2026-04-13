@@ -24,7 +24,7 @@ async function runImagePipeline(
   try {
     await supabaseAdmin
       .from('man_reports')
-      .update({ progress_stage: 'generating_base_model', updated_at: new Date().toISOString() })
+      .update({ progress_stage: 'generating_base_model', error_message: null, updated_at: new Date().toISOString() })
       .eq('id', reportId);
 
     const [hairstylePaths, eyewearPaths] = await Promise.all([
@@ -66,6 +66,7 @@ async function runImagePipeline(
       .from('man_reports')
       .update({
         progress_stage: null,
+        image_urls:     null,   // reset so the Generate Images button reappears
         error_message:  `Image generation failed: ${message}`,
         updated_at:     new Date().toISOString(),
       })

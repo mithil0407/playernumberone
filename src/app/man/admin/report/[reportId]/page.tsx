@@ -667,6 +667,15 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 {sending ? 'Sending…' : 'Send to Client'}
               </button>
+              {/* Image error — shown when image generation failed */}
+              {!isGenerating && !report.progress_stage && !report.image_urls && report.error_message?.startsWith('Image generation failed') && (
+                <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
+                  <AlertCircle size={12} style={{ color: '#f87171', flexShrink: 0 }} />
+                  <p className="text-[10px] leading-tight" style={{ color: '#f87171' }}>
+                    {report.error_message}
+                  </p>
+                </div>
+              )}
               {/* Generate images — shown when text is ready but no images yet */}
               {!isGenerating && report.report_data && !report.image_urls && !report.progress_stage && (
                 <button
