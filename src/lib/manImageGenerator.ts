@@ -185,6 +185,9 @@ async function callGeminiImageEdit(
     ...(extraImage ? [{ inlineData: { mimeType: extraImage.mimeType, data: extraImage.data } }] : []),
     { text: prompt },
   ];
+
+  console.log(`[callGeminiImageEdit] Calling model=${model}, hasExtraImage=${!!extraImage}`);
+
   const response = await ai.models.generateContent({
     model,
     contents: [{ parts }],
@@ -192,12 +195,18 @@ async function callGeminiImageEdit(
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const imagePart = response.candidates?.[0]?.content?.parts?.find((p: any) =>
-    p.inlineData?.mimeType?.startsWith('image/')
-  );
+  const allParts = response.candidates?.[0]?.content?.parts ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const imagePart = allParts.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
 
   if (!imagePart?.inlineData?.data) {
-    throw new Error('Gemini returned no image data');
+    // Capture any text the model returned — often explains a refusal or safety block
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const textPart = allParts.find((p: any) => typeof p.text === 'string');
+    const modelText = textPart?.text?.slice(0, 500) ?? '(no text in response)';
+    const finishReason = response.candidates?.[0]?.finishReason ?? 'unknown';
+    console.error(`[callGeminiImageEdit] No image returned. model=${model} finishReason=${finishReason} modelText="${modelText}"`);
+    throw new Error(`Gemini returned no image data (model=${model}, finishReason=${finishReason}): ${modelText}`);
   }
 
   return imagePart.inlineData.data as string; // base64
@@ -259,20 +268,31 @@ async function runWithConcurrency<T>(
 
 /**
  * Retry fn up to maxAttempts times with exponential backoff.
- * Only backs off on 503 / UNAVAILABLE (model overload) — other errors throw immediately.
+ * Retries on transient Gemini errors: 503 overload, 429 rate limit, quota exceeded.
+ * Hard failures (bad model, auth, safety block) throw immediately.
  */
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelayMs = 5_000): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5, baseDelayMs = 8_000): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (err) {
       lastErr = err;
-      const msg = err instanceof Error ? err.message : String(err);
-      const isOverload = msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand');
-      if (!isOverload || attempt === maxAttempts - 1) throw err;
-      const delayMs = baseDelayMs * Math.pow(3, attempt); // 5s → 15s → 45s
-      console.warn(`[withRetry] Attempt ${attempt + 1} failed (model overload), retrying in ${delayMs / 1000}s…`);
+      const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+      const isTransient =
+        msg.includes('503') ||
+        msg.includes('unavailable') ||
+        msg.includes('high demand') ||
+        msg.includes('429') ||
+        msg.includes('resource_exhausted') ||
+        msg.includes('quota') ||
+        msg.includes('rate limit') ||
+        msg.includes('too many requests') ||
+        msg.includes('overloaded');
+      if (!isTransient || attempt === maxAttempts - 1) throw err;
+      const delayMs = baseDelayMs * Math.pow(2, attempt); // 8s → 16s → 32s → 64s
+      const errSnippet = (err instanceof Error ? err.message : String(err)).slice(0, 200);
+      console.warn(`[withRetry] Attempt ${attempt + 1}/${maxAttempts} failed (transient), retrying in ${delayMs / 1000}s… error: ${errSnippet}`);
       await new Promise(r => setTimeout(r, delayMs));
     }
   }
@@ -303,14 +323,19 @@ export async function generateHairstyleImages(
   const { face } = classification;
   const hairstyles = face.hairstyle_recommendations.slice(0, 2);
 
-  const tasks = hairstyles.map((hairstyle, i) =>
-    withRetry(() => callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel))
-      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `hairstyle_${i + 1}.jpg`))
-      .catch(err => {
-        console.error(`[manImageGenerator] Hairstyle variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
-        return null;
+  const tasks = hairstyles.map((hairstyle, i) => {
+    console.log(`[manImageGenerator] Starting hairstyle ${i + 1}: "${hairstyle}" (model: ${imageModel})`);
+    return withRetry(() => callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel))
+      .then(outputBase64 => {
+        console.log(`[manImageGenerator] Hairstyle ${i + 1} generated OK, uploading…`);
+        return uploadToStorage(reportId, outputBase64, `hairstyle_${i + 1}.jpg`);
       })
-  );
+      .then(path => { console.log(`[manImageGenerator] Hairstyle ${i + 1} saved: ${path}`); return path; })
+      .catch(err => {
+        console.error(`[manImageGenerator] Hairstyle ${i + 1} FAILED (model: ${imageModel}):`, err instanceof Error ? err.message : err);
+        return null;
+      });
+  });
 
   return Promise.all(tasks);
 }
@@ -335,14 +360,19 @@ export async function generateEyewearImages(
   const { face } = classification;
   const shapes = face.eyewear_shapes.slice(0, 2);
 
-  const tasks = shapes.map((shape, i) =>
-    withRetry(() => callGeminiImageEdit(data, mimeType, buildEyewearPrompt(shape, face.face_shape), imageModel))
-      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `eyewear_${i + 1}.jpg`))
-      .catch(err => {
-        console.error(`[manImageGenerator] Eyewear variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
-        return null;
+  const tasks = shapes.map((shape, i) => {
+    console.log(`[manImageGenerator] Starting eyewear ${i + 1}: "${shape}" (model: ${imageModel})`);
+    return withRetry(() => callGeminiImageEdit(data, mimeType, buildEyewearPrompt(shape, face.face_shape), imageModel))
+      .then(outputBase64 => {
+        console.log(`[manImageGenerator] Eyewear ${i + 1} generated OK, uploading…`);
+        return uploadToStorage(reportId, outputBase64, `eyewear_${i + 1}.jpg`);
       })
-  );
+      .then(path => { console.log(`[manImageGenerator] Eyewear ${i + 1} saved: ${path}`); return path; })
+      .catch(err => {
+        console.error(`[manImageGenerator] Eyewear ${i + 1} FAILED (model: ${imageModel}):`, err instanceof Error ? err.message : err);
+        return null;
+      });
+  });
 
   return Promise.all(tasks);
 }
@@ -395,12 +425,14 @@ export async function generateAllOutfitImages(
   const tasks = toGenerate.map((outfit) => {
     const taskIdx = outfits.findIndex(o => o.index === outfit.index);
     return async () => {
+      console.log(`[manImageGenerator] Starting outfit ${outfit.index}/${outfits.length} "${outfit.label}" (model: ${imageModel})`);
       try {
         const outputBase64 = await withRetry(() =>
           callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef)
         );
         const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
         partialPaths[taskIdx] = path;
+        console.log(`[manImageGenerator] Outfit ${outfit.index} saved: ${path}`);
         // Write progress immediately — always include hairstyle/eyewear so they are never overwritten
         await supabaseAdmin
           .from('man_reports')
@@ -411,7 +443,14 @@ export async function generateAllOutfitImages(
           .eq('id', reportId);
         return path;
       } catch (err) {
-        console.error(`[manImageGenerator] Outfit ${outfit.index} failed:`, err instanceof Error ? err.message : err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[manImageGenerator] Outfit ${outfit.index} FAILED (model: ${imageModel}): ${errMsg}`);
+        // Persist error immediately so admin dashboard shows it without waiting
+        await supabaseAdmin
+          .from('man_reports')
+          .update({ error_message: `Outfit ${outfit.index} failed: ${errMsg.slice(0, 500)}`, updated_at: new Date().toISOString() })
+          .eq('id', reportId)
+          .then();
         return null;
       }
     };

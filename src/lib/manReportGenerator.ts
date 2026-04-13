@@ -790,25 +790,50 @@ function parseReportSections(text: string): ReportSections {
 // Gemini call wrappers
 // ─────────────────────────────────────────────────────────────
 
+async function withTextRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelayMs = 5_000): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+      const isTransient =
+        msg.includes('503') || msg.includes('unavailable') || msg.includes('high demand') ||
+        msg.includes('429') || msg.includes('resource_exhausted') || msg.includes('quota') ||
+        msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('overloaded');
+      if (!isTransient || attempt === maxAttempts - 1) throw err;
+      const delayMs = baseDelayMs * Math.pow(2, attempt); // 5s → 10s → 20s
+      console.warn(`[manReportGenerator] Attempt ${attempt + 1}/${maxAttempts} failed (transient), retrying in ${delayMs / 1000}s… error: ${(err instanceof Error ? err.message : String(err)).slice(0, 200)}`);
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr;
+}
+
 async function callGeminiJSON(systemPrompt: string, userPrompt: string): Promise<unknown> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [{ parts: [{ text: combined }] }],
+  return withTextRetry(async () => {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [{ text: combined }] }],
+    });
+    const text    = response.text ?? '';
+    const cleaned = cleanJson(text);
+    return JSON.parse(cleaned);
   });
-  const text    = response.text ?? '';
-  const cleaned = cleanJson(text);
-  return JSON.parse(cleaned);
 }
 
 async function callGeminiText(systemPrompt: string, userPrompt: string, maxOutputTokens?: number): Promise<string> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [{ parts: [{ text: combined }] }],
-    ...(maxOutputTokens ? { config: { maxOutputTokens } } : {}),
+  return withTextRetry(async () => {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [{ text: combined }] }],
+      ...(maxOutputTokens ? { config: { maxOutputTokens } } : {}),
+    });
+    return response.text ?? '';
   });
-  return response.text ?? '';
 }
 
 // ─────────────────────────────────────────────────────────────
