@@ -257,13 +257,26 @@ async function runWithConcurrency<T>(
   return results;
 }
 
-/** Run fn, retrying once on failure (gives transient API errors a second chance). */
-async function withOneRetry<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch {
-    return fn();
+/**
+ * Retry fn up to maxAttempts times with exponential backoff.
+ * Only backs off on 503 / UNAVAILABLE (model overload) — other errors throw immediately.
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelayMs = 5_000): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      const isOverload = msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand');
+      if (!isOverload || attempt === maxAttempts - 1) throw err;
+      const delayMs = baseDelayMs * Math.pow(3, attempt); // 5s → 15s → 45s
+      console.warn(`[withRetry] Attempt ${attempt + 1} failed (model overload), retrying in ${delayMs / 1000}s…`);
+      await new Promise(r => setTimeout(r, delayMs));
+    }
   }
+  throw lastErr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -291,7 +304,7 @@ export async function generateHairstyleImages(
   const hairstyles = face.hairstyle_recommendations.slice(0, 2);
 
   const tasks = hairstyles.map((hairstyle, i) =>
-    withOneRetry(() => callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel))
+    withRetry(() => callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel))
       .then(outputBase64 => uploadToStorage(reportId, outputBase64, `hairstyle_${i + 1}.jpg`))
       .catch(err => {
         console.error(`[manImageGenerator] Hairstyle variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
@@ -323,7 +336,7 @@ export async function generateEyewearImages(
   const shapes = face.eyewear_shapes.slice(0, 2);
 
   const tasks = shapes.map((shape, i) =>
-    withOneRetry(() => callGeminiImageEdit(data, mimeType, buildEyewearPrompt(shape, face.face_shape), imageModel))
+    withRetry(() => callGeminiImageEdit(data, mimeType, buildEyewearPrompt(shape, face.face_shape), imageModel))
       .then(outputBase64 => uploadToStorage(reportId, outputBase64, `eyewear_${i + 1}.jpg`))
       .catch(err => {
         console.error(`[manImageGenerator] Eyewear variant ${i + 1} failed:`, err instanceof Error ? err.message : err);
@@ -348,6 +361,7 @@ export async function generateAllOutfitImages(
   hairstylePaths: (string | null)[],   // preserved in every partial DB write
   eyewearPaths:   (string | null)[],   // preserved in every partial DB write
   imageModel:     string = MODEL,
+  existingOutfitPaths: (string | null)[] = [], // already-generated slots — skip on resume
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
 
@@ -356,12 +370,17 @@ export async function generateAllOutfitImages(
     return [];
   }
 
-  console.log(`[manImageGenerator] Generating ${outfits.length} outfit images (concurrency 4, model: ${imageModel})`);
+  // Seed partialPaths from any existing paths so we never lose already-generated images
+  const partialPaths: (string | null)[] = outfits.map((_, i) => existingOutfitPaths[i] ?? null);
+  const toGenerate = outfits.filter((_, i) => !partialPaths[i]);
+  console.log(`[manImageGenerator] ${toGenerate.length}/${outfits.length} outfit images to generate (model: ${imageModel})`);
+
+  if (toGenerate.length === 0) return partialPaths;
 
   // Fetch the full-body reference photo once, reuse across all calls
   const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
 
-  // Fetch hairstyle headshot (path[0]) as an extra face/hair reference — best effort, non-fatal
+  // Fetch hairstyle headshot as extra face/hair reference — best effort, non-fatal
   let hairstyleRef: { data: string; mimeType: string } | undefined;
   const hairstylePath = hairstylePaths[0];
   if (hairstylePath) {
@@ -369,36 +388,37 @@ export async function generateAllOutfitImages(
       const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(hairstylePath, 300);
       if (signedData?.signedUrl) hairstyleRef = await fetchAsBase64(signedData.signedUrl);
     } catch {
-      console.warn('[manImageGenerator] Could not fetch hairstyle reference for outfit generation — proceeding without it');
+      console.warn('[manImageGenerator] Could not fetch hairstyle reference — proceeding without it');
     }
   }
 
-  // Pre-allocate for partial progress writes
-  const partialPaths: (string | null)[] = new Array(outfits.length).fill(null);
-
-  const tasks = outfits.map((outfit, taskIdx) => async () => {
-    try {
-      const outputBase64 = await withOneRetry(() =>
-        callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef)
-      );
-      const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
-      partialPaths[taskIdx] = path;
-      // Always include hairstylePaths + eyewearPaths so they are never overwritten by outfit progress writes
-      await supabaseAdmin
-        .from('man_reports')
-        .update({
-          image_urls:  { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [...partialPaths] },
-          updated_at:  new Date().toISOString(),
-        })
-        .eq('id', reportId);
-      return path;
-    } catch (err) {
-      console.error(`[manImageGenerator] Outfit ${outfit.index} failed:`, err instanceof Error ? err.message : err);
-      return null;
-    }
+  const tasks = toGenerate.map((outfit) => {
+    const taskIdx = outfits.findIndex(o => o.index === outfit.index);
+    return async () => {
+      try {
+        const outputBase64 = await withRetry(() =>
+          callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef)
+        );
+        const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
+        partialPaths[taskIdx] = path;
+        // Write progress immediately — always include hairstyle/eyewear so they are never overwritten
+        await supabaseAdmin
+          .from('man_reports')
+          .update({
+            image_urls: { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [...partialPaths] },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', reportId);
+        return path;
+      } catch (err) {
+        console.error(`[manImageGenerator] Outfit ${outfit.index} failed:`, err instanceof Error ? err.message : err);
+        return null;
+      }
+    };
   });
 
-  return runWithConcurrency(tasks, 1);
+  await runWithConcurrency(tasks, 1);
+  return partialPaths;
 }
 
 /**

@@ -1,72 +1,99 @@
 // POST /api/man-report/[reportId]/generate-images
 //
-// Triggers image generation for a report that already has text (draft_ready / in_review).
+// Triggers image generation for a report that already has text.
+// Safe to call repeatedly — resumes from wherever it left off:
+//   • Skips hairstyle/eyewear if already in image_urls
+//   • Skips outfit slots that already have a stored path
+//   • Clears stale progress_stage if updated_at is >10 min old (pipeline died)
+//
 // Runs via Next.js after() so it returns immediately.
-// Progress is tracked via progress_stage on the report row.
 
 import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { generateHairstyleImages, generateEyewearImages, generateAllOutfitImages } from '@/lib/manImageGenerator';
+import { generateHairstyleImages, generateEyewearImages, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import type { ClassificationResult, ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
+const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
 
 async function runImagePipeline(
-  reportId: string,
-  submission: ManIntakeSubmission,
+  reportId:       string,
+  submission:     ManIntakeSubmission,
   classification: ClassificationResult,
-  sections: ReportData['sections'],
-  imageModel: string,
+  sections:       ReportData['sections'],
+  imageModel:     string,
+  existingImageUrls: ManReportImagePaths | null,
 ) {
   try {
-    await supabaseAdmin
-      .from('man_reports')
-      .update({ progress_stage: 'generating_base_model', error_message: null, updated_at: new Date().toISOString() })
-      .eq('id', reportId);
+    // ── Hairstyle + eyewear ───────────────────────────────────────────────────
+    // Skip if already generated
+    let hairstylePaths = existingImageUrls?.hairstyleCards ?? [];
+    let eyewearPaths   = existingImageUrls?.eyewearCards   ?? [];
+    const existingOutfitPaths = existingImageUrls?.outfitCards ?? [];
 
-    const [hairstylePaths, eyewearPaths] = await Promise.all([
-      generateHairstyleImages(reportId, submission, classification, imageModel),
-      generateEyewearImages(reportId, submission, classification, imageModel),
-    ]);
+    const needsHeadshots = hairstylePaths.every(p => !p) || eyewearPaths.every(p => !p);
 
-    // Persist hairstyle + eyewear immediately so partial progress is visible
-    await supabaseAdmin
-      .from('man_reports')
-      .update({
-        image_urls:     { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [] },
-        progress_stage: 'generating_outfit_images',
-        updated_at:     new Date().toISOString(),
-      })
-      .eq('id', reportId);
+    if (needsHeadshots) {
+      await supabaseAdmin
+        .from('man_reports')
+        .update({ progress_stage: 'generating_base_model', error_message: null, updated_at: new Date().toISOString() })
+        .eq('id', reportId);
 
+      [hairstylePaths, eyewearPaths] = await Promise.all([
+        generateHairstyleImages(reportId, submission, classification, imageModel),
+        generateEyewearImages(reportId, submission, classification, imageModel),
+      ]);
+
+      // Persist immediately before starting outfit images
+      await supabaseAdmin
+        .from('man_reports')
+        .update({
+          image_urls:     { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: existingOutfitPaths },
+          progress_stage: 'generating_outfit_images',
+          updated_at:     new Date().toISOString(),
+        })
+        .eq('id', reportId);
+    } else {
+      // Headshots already done — jump straight to outfit images
+      await supabaseAdmin
+        .from('man_reports')
+        .update({ progress_stage: 'generating_outfit_images', error_message: null, updated_at: new Date().toISOString() })
+        .eq('id', reportId);
+    }
+
+    // ── Outfit images (resume from existing partial paths) ────────────────────
     const fullBodyUrl = submission.photo_fullbody_url;
     if (!fullBodyUrl) throw new Error('No photo_fullbody_url on submission — cannot generate outfit images');
 
     const outfitPaths = await generateAllOutfitImages(
-      reportId, fullBodyUrl, classification, sections, hairstylePaths, eyewearPaths, imageModel
+      reportId, fullBodyUrl, classification, sections,
+      hairstylePaths, eyewearPaths, imageModel,
+      existingOutfitPaths,
     );
 
+    // ── Done ──────────────────────────────────────────────────────────────────
     await supabaseAdmin
       .from('man_reports')
       .update({
         image_urls:     { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths },
         progress_stage: null,
+        error_message:  null,
         updated_at:     new Date().toISOString(),
       })
       .eq('id', reportId);
 
-    console.log(`[generate-images] Done for reportId=${reportId} — ${hairstylePaths.filter(Boolean).length}/2 hairstyles, ${eyewearPaths.filter(Boolean).length}/2 eyewear, ${outfitPaths.filter(Boolean).length}/16 outfits`);
+    const doneOutfits = outfitPaths.filter(Boolean).length;
+    console.log(`[generate-images] Done for ${reportId} — ${hairstylePaths.filter(Boolean).length}/2 hairstyles, ${eyewearPaths.filter(Boolean).length}/2 eyewear, ${doneOutfits}/${outfitPaths.length} outfits`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[generate-images] Failed for reportId=${reportId}:`, message);
+    console.error(`[generate-images] Pipeline failed for ${reportId}:`, message);
     await supabaseAdmin
       .from('man_reports')
       .update({
         progress_stage: null,
-        image_urls:     null,   // reset so the Generate Images button reappears
         error_message:  `Image generation failed: ${message}`,
         updated_at:     new Date().toISOString(),
       })
@@ -90,10 +117,9 @@ export async function POST(
     ? body.imageModel
     : 'gemini-3.1-flash-image-preview';
 
-  // Fetch the report to get classification + sections + submission_id
   const { data: report, error: reportErr } = await supabaseAdmin
     .from('man_reports')
-    .select('status, progress_stage, report_data, submission_id')
+    .select('status, progress_stage, report_data, submission_id, image_urls, updated_at')
     .eq('id', reportId)
     .single();
 
@@ -105,11 +131,27 @@ export async function POST(
     return NextResponse.json({ error: 'Report has no text yet — run text generation first' }, { status: 400 });
   }
 
+  // If progress_stage is set, only block if it's genuinely recent (pipeline alive).
+  // If it's stale (>10 min since last DB write), the pipeline died — auto-clear and proceed.
   if (report.progress_stage) {
-    return NextResponse.json({ error: 'Image generation already in progress', progress_stage: report.progress_stage }, { status: 409 });
+    const ageMs = report.updated_at
+      ? Date.now() - new Date(report.updated_at).getTime()
+      : Infinity;
+
+    if (ageMs < STALE_MS) {
+      return NextResponse.json(
+        { error: 'Image generation already in progress', progress_stage: report.progress_stage },
+        { status: 409 }
+      );
+    }
+
+    console.log(`[generate-images] Stale progress_stage "${report.progress_stage}" detected (${Math.round(ageMs / 60000)}m old) — clearing and restarting`);
+    await supabaseAdmin
+      .from('man_reports')
+      .update({ progress_stage: null, updated_at: new Date().toISOString() })
+      .eq('id', reportId);
   }
 
-  // Fetch the submission for photo URLs + client details
   const { data: submission, error: subErr } = await supabaseAdmin
     .from('man_intake_submissions')
     .select('*')
@@ -120,7 +162,8 @@ export async function POST(
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
 
-  const reportData = report.report_data as ReportData;
+  const reportData       = report.report_data as ReportData;
+  const existingImageUrls = report.image_urls as ManReportImagePaths | null;
 
   after(async () => {
     await runImagePipeline(
@@ -129,6 +172,7 @@ export async function POST(
       reportData.classification,
       reportData.sections,
       imageModel,
+      existingImageUrls,
     );
   });
 

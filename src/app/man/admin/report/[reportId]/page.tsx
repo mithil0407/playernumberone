@@ -25,6 +25,7 @@ interface Report {
   section_approvals: SectionApprovals;
   submission_id: string;
   created_at: string;
+  updated_at: string;
   error_message: string | null;
   sent_at: string | null;
   man_intake_submissions: { id: string; customer_email: string; customer_phone: string | null } | null;
@@ -401,6 +402,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isError      = report.status === 'error';
   const isStuck      = isGenerating && elapsedSecs > 600;
 
+  // Image pipeline stale detection: progress_stage set but updated_at hasn't changed in >10 min
+  const imageProgressAgeMs = report.progress_stage && !isGenerating && report.updated_at
+    ? Date.now() - new Date(report.updated_at).getTime()
+    : 0;
+  const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
+
   const elapsedLabel = (() => {
     if (elapsedSecs < 60) return `${elapsedSecs}s`;
     const m = Math.floor(elapsedSecs / 60);
@@ -690,11 +697,30 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               )}
               {/* Images in progress */}
               {report.progress_stage && !isGenerating && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
-                  <Loader2 size={11} className="animate-spin flex-shrink-0" style={{ color: '#c9a96e' }} />
-                  <span className="text-[10px]" style={{ color: '#6b5f4a' }}>
-                    {STAGE_LABELS[report.progress_stage] ?? 'Generating images…'}
-                  </span>
+                <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#0d0d0d', border: `1px solid ${isImageStuck ? '#3a2000' : '#1e1e1e'}` }}>
+                  <div className="flex items-center gap-2">
+                    {isImageStuck
+                      ? <AlertCircle size={11} className="flex-shrink-0" style={{ color: '#fb923c' }} />
+                      : <Loader2 size={11} className="animate-spin flex-shrink-0" style={{ color: '#c9a96e' }} />
+                    }
+                    <span className="text-[10px]" style={{ color: isImageStuck ? '#fb923c' : '#6b5f4a' }}>
+                      {isImageStuck
+                        ? `Stuck — pipeline died (${Math.round(imageProgressAgeMs / 60000)}m ago)`
+                        : (STAGE_LABELS[report.progress_stage] ?? 'Generating images…')
+                      }
+                    </span>
+                  </div>
+                  {isImageStuck && (
+                    <button
+                      onClick={handleGenerateImages}
+                      disabled={generatingImages}
+                      className="w-full py-1.5 rounded-md text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80 disabled:opacity-40"
+                      style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+                    >
+                      {generatingImages ? <Loader2 size={10} className="animate-spin" /> : <RotateCcw size={10} />}
+                      {generatingImages ? 'Restarting…' : 'Force Restart Images'}
+                    </button>
+                  )}
                 </div>
               )}
               <button
