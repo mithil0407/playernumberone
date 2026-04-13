@@ -498,7 +498,7 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
           {/* Primary palette */}
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Your Primary Palette</p>
-            <div className="grid grid-cols-6 gap-2 mb-5">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
               {colour.primary_palette.map((c, i) => (
                 <div key={i} className="flex flex-col items-center gap-2">
                   <div
@@ -506,7 +506,7 @@ function ColourSection({ cls, text }: { cls: ClassificationResult; text: string 
                     style={{ backgroundColor: c.hex, borderColor: BORDER, aspectRatio: '1/1.3' }}
                     title={`${c.name} — ${c.usage}`}
                   />
-                  <span className="text-[7px] font-bold text-gray-500 uppercase tracking-wide text-center leading-tight px-0.5">{c.name}</span>
+                  <span className="text-[8px] sm:text-[7px] font-bold text-gray-500 uppercase tracking-wide text-center leading-tight px-0.5">{c.name}</span>
                 </div>
               ))}
             </div>
@@ -674,8 +674,8 @@ function OutfitsSection({
             <div key={oi} className="flex flex-col md:flex-row bg-white border-b" style={{ borderColor: BORDER }}>
               {/* Left: outfit image or number placeholder — 40% card width */}
               <div
-                className="w-full md:w-2/5 flex-shrink-0 border-r overflow-hidden relative"
-                style={{ background: CREAM2, borderColor: BORDER, aspectRatio: '3/4', minHeight: 360 }}
+                className="w-full md:w-2/5 flex-shrink-0 border-b md:border-b-0 md:border-r overflow-hidden relative"
+                style={{ background: CREAM2, borderColor: BORDER, aspectRatio: '3/4' }}
               >
                 {outfitImg ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -777,14 +777,14 @@ function OutfitsSection({
                   </button>
                 </div>
               ) : (
-              <div className="flex-1 p-6 md:p-8 flex flex-col">
+              <div className="flex-1 p-5 md:p-8 flex flex-col">
                 {/* Header */}
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[8px] font-black uppercase tracking-[0.5em] px-2 py-1" style={{ color: GOLD, background: GOLD + '12' }}>{cat.name}</span>
                     <span className="text-[9px] text-gray-300 font-light">#{String(outfit.number).padStart(2, '0')}</span>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-light italic text-black leading-tight">{outfit.label}</h3>
+                  <h3 className="text-lg md:text-2xl font-light italic text-black leading-tight">{outfit.label}</h3>
                 </div>
 
                 {/* Composition — clean stacked rows */}
@@ -893,40 +893,40 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
   const { classification: cls, sections } = data;
 
   return (
-    <div style={{ background: CREAM, fontFamily: 'var(--font-geist-sans, system-ui)' }}>
+    <div style={{ background: CREAM, fontFamily: 'var(--font-geist-sans, system-ui)' }} className="overflow-x-hidden">
       {/* Sticky Nav */}
-      <div className="sticky top-0 z-10 border-b px-6 md:px-10 h-14 flex items-center justify-between"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderColor: BORDER }}>
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-black flex items-center justify-center">
-            <span className="text-[10px] font-black" style={{ color: GOLD }}>I</span>
+      <div className="sticky top-0 z-10 border-b px-5 md:px-10 h-12 md:h-14 flex items-center justify-between"
+        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderColor: BORDER }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 md:w-7 md:h-7 bg-black flex items-center justify-center">
+            <span className="text-[9px] md:text-[10px] font-black" style={{ color: GOLD }}>I</span>
           </div>
           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">
             Iconik <span style={{ color: GOLD }}>Blueprint</span>
           </span>
         </div>
-        <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2026</span>
+        <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2026</span>
       </div>
 
       {/* Report Header */}
-      <div className="px-6 md:px-10 py-10 border-b bg-white" style={{ borderColor: BORDER }}>
-        <div className="flex items-center gap-3 mb-3 text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD }}>
+      <div className="px-5 md:px-10 py-8 md:py-12 border-b bg-white" style={{ borderColor: BORDER }}>
+        <div className="flex items-center gap-3 mb-4 text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: GOLD }}>
           <span>✓</span> Analysis Verified
         </div>
-        <h2 className="text-4xl md:text-6xl italic tracking-tighter leading-none text-black font-light">
+        <h2 className="text-[2.6rem] md:text-6xl italic tracking-tighter leading-none text-black font-light">
           The Lookbook
         </h2>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-2">
           <GoldPill>{cls.body.silhouette_type} Build</GoldPill>
-          <span className="px-4 py-2 border text-[9px] font-black uppercase tracking-widest text-gray-400"
+          <span className="px-3 py-1.5 border text-[9px] font-black uppercase tracking-widest text-gray-400"
             style={{ background: CREAM, borderColor: BORDER }}>
             {cls.face.face_shape} Face
           </span>
-          <span className="px-4 py-2 border text-[9px] font-black uppercase tracking-widest text-gray-400"
+          <span className="px-3 py-1.5 border text-[9px] font-black uppercase tracking-widest text-gray-400"
             style={{ background: CREAM, borderColor: BORDER }}>
             {cls.outfit_split.total} Ensembles
           </span>
-          <span className="px-4 py-2 border text-[9px] font-black uppercase tracking-widest text-gray-400"
+          <span className="px-3 py-1.5 border text-[9px] font-black uppercase tracking-widest text-gray-400"
             style={{ background: CREAM, borderColor: BORDER }}>
             {cls.colour.season}
           </span>

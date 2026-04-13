@@ -408,6 +408,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     : 0;
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
+  // True only when hairstyle, eyewear AND all outfit images are present
+  const hasAllImages = (
+    (report.image_urls?.hairstyleCards ?? []).some(Boolean) &&
+    (report.image_urls?.eyewearCards   ?? []).some(Boolean) &&
+    (report.image_urls?.outfitCards    ?? []).some(Boolean)
+  );
+
   const elapsedLabel = (() => {
     if (elapsedSecs < 60) return `${elapsedSecs}s`;
     const m = Math.floor(elapsedSecs / 60);
@@ -675,7 +682,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {sending ? 'Sending…' : 'Send to Client'}
               </button>
               {/* Image error — shown when image generation failed */}
-              {!isGenerating && !report.progress_stage && !report.image_urls && report.error_message?.startsWith('Image generation failed') && (
+              {!isGenerating && !report.progress_stage && !hasAllImages && report.error_message?.startsWith('Image generation failed') && (
                 <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
                   <AlertCircle size={12} style={{ color: '#f87171', flexShrink: 0 }} />
                   <p className="text-[10px] leading-tight" style={{ color: '#f87171' }}>
@@ -683,8 +690,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                   </p>
                 </div>
               )}
-              {/* Generate images — shown when text is ready but no images yet */}
-              {!isGenerating && report.report_data && !report.image_urls && !report.progress_stage && (
+              {/* Generate images — shown when text is ready but images are missing or partial */}
+              {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
                 <button
                   onClick={handleGenerateImages}
                   disabled={generatingImages}
