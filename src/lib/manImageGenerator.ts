@@ -541,7 +541,7 @@ export async function resolveManReportImageUrls(
     }
 
     for (const { path, signedUrl } of signed ?? []) {
-      if (signedUrl) signedUrlMap.set(path, signedUrl!);
+      if (path && signedUrl) signedUrlMap.set(path, signedUrl);
     }
 
     // Public URL fallback for any that failed individual signing
