@@ -221,6 +221,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         body: JSON.stringify({ status: 'sent' }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to send. Please try again.');
+        return;
+      }
       if (data.report) setReport(prev => prev ? { ...prev, status: 'sent', sent_at: data.report.sent_at } : prev);
     } catch {
       setError('Failed to send. Please try again.');
