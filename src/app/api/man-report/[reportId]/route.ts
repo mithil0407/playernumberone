@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { resolveManReportImageUrls, type ManReportImagePaths } from '@/lib/manImageGenerator';
 import { sendMenBlueprintReportEmail } from '@/lib/emailMen';
 import type { ReportData } from '@/lib/manReportGenerator';
+import { revalidateManReportCache } from '@/lib/manReportCache';
+import { getAdminManReportById } from '@/lib/manReportLoader';
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
@@ -19,25 +20,13 @@ export async function GET(
   }
 
   const { reportId } = await params;
+  const report = await getAdminManReportById(reportId);
 
-  const { data, error } = await supabaseAdmin
-    .from('man_reports')
-    .select('*, man_intake_submissions(id, customer_email, customer_phone)')
-    .eq('id', reportId)
-    .single();
-
-  if (error || !data) {
+  if (!report) {
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
 
-  const imageUrls = await resolveManReportImageUrls(data.image_urls as ManReportImagePaths | null);
-
-  return NextResponse.json({
-    report: {
-      ...data,
-      image_urls: imageUrls,
-    },
-  });
+  return NextResponse.json({ report });
 }
 
 // ── PATCH — update approvals, report_data edits, or status ────────────────
@@ -103,6 +92,8 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  await revalidateManReportCache(reportId, existingReport.share_token);
+
   if (isFirstSend && recipientEmail) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';
     const reportUrl = `${siteUrl}/man/report/${existingReport.share_token}`;
@@ -128,6 +119,8 @@ export async function PATCH(
           updated_at: new Date().toISOString(),
         })
         .eq('id', reportId);
+
+      await revalidateManReportCache(reportId, existingReport.share_token);
 
       return NextResponse.json(
         { error: `Client email failed: ${emailResult.error ?? 'Unknown error'}` },

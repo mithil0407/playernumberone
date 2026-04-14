@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
-import { SPRING, staggerContainer, staggerItem, fadeUp } from '@/lib/reportAnimations';
+import { SPRING } from '@/lib/reportAnimations';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens (matches /man/page.tsx embedded report)
@@ -19,6 +20,7 @@ const GOLD    = '#b58e4d';
 const BORDER  = '#f0ede8';
 const CREAM   = '#faf9f6';
 const CREAM2  = '#f5f3ef';
+const SECTION_REVEAL_EASE: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
 // ─────────────────────────────────────────────────────────────
 // Parsing helpers
@@ -241,16 +243,16 @@ function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolea
       );
     } else if (/^\d+\.\s/.test(line)) {
       // Ordered list item
-      listItems.length && flushList();
+      if (listItems.length) flushList();
       orderedItems.push(line.replace(/^\d+\.\s+/, ''));
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      orderedItems.length && flushList();
+      if (orderedItems.length) flushList();
       listItems.push({ text: line.slice(2), type: 'bullet' });
     } else if (line.startsWith('✗ ') || line.startsWith('✘ ')) {
-      orderedItems.length && flushList();
+      if (orderedItems.length) flushList();
       listItems.push({ text: line.slice(2), type: 'cross' });
     } else if (line.startsWith('✓ ') || line.startsWith('✔ ')) {
-      orderedItems.length && flushList();
+      if (orderedItems.length) flushList();
       listItems.push({ text: line.slice(2), type: 'check' });
     } else if (/^(\*\*|__).+(\*\*|__)$/.test(line)) {
       // Standalone bold line = sub-label
@@ -344,6 +346,7 @@ function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: Classific
                       src={url}
                       alt={`Hairstyle option ${i + 1}`}
                       loading="lazy"
+                      decoding="async"
                       className="w-full rounded-xl border object-cover object-top"
                       style={{ aspectRatio: '3/4', borderColor: BORDER, opacity: 0, transition: 'opacity 0.5s ease' }}
                       onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
@@ -376,6 +379,7 @@ function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: Classific
                       src={url}
                       alt={`Eyewear option ${i + 1}`}
                       loading="lazy"
+                      decoding="async"
                       className="w-full rounded-xl border object-cover object-top"
                       style={{ aspectRatio: '3/4', borderColor: BORDER, opacity: 0, transition: 'opacity 0.5s ease' }}
                       onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
@@ -437,19 +441,14 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Fit Blueprint</p>
-            <motion.div
-              className="space-y-3"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
+            <div className="space-y-3">
               {body.silhouette_rules.map((rule, i) => (
-                <motion.div key={i} className="flex items-start gap-2.5" variants={staggerItem}>
+                <div key={i} className="flex items-start gap-2.5">
                   <span className="text-[9px] font-black mt-0.5 flex-shrink-0" style={{ color: GOLD }}>0{i + 1}</span>
                   <span className="text-xs text-black font-light leading-relaxed">{rule}</span>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           <div>
@@ -499,7 +498,7 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
 // Section 03 — Chromatic Harmony Map
 // ─────────────────────────────────────────────────────────────
 
-function ColourSection({ cls, text: _text }: { cls: ClassificationResult; text: string }) {
+function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
   const { colour } = cls;
   return (
     <div className="bg-white border-b" style={{ borderColor: BORDER }}>
@@ -514,23 +513,18 @@ function ColourSection({ cls, text: _text }: { cls: ClassificationResult; text: 
           {/* Primary palette */}
           <div>
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Your Primary Palette</p>
-            <motion.div
-              className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
               {colour.primary_palette.map((c, i) => (
-                <motion.div key={i} className="flex flex-col items-center gap-2" variants={staggerItem}>
+                <div key={i} className="flex flex-col items-center gap-2">
                   <div
                     className="w-full rounded-xl border shadow-sm"
                     style={{ backgroundColor: c.hex, borderColor: BORDER, aspectRatio: '1/1.3' }}
                     title={`${c.name} — ${c.usage}`}
                   />
                   <span className="text-[8px] sm:text-[7px] font-bold text-gray-500 uppercase tracking-wide text-center leading-tight px-0.5">{c.name}</span>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
             {/* Colour usage notes */}
             <div className="space-y-1.5">
               {colour.primary_palette.map((c, i) => (
@@ -686,20 +680,17 @@ function OutfitsSection({
           </div>
 
           {/* Outfit cards */}
-          {cat.outfits.map((outfit, oi) => {
+          {cat.outfits.map((outfit) => {
             const outfitImg   = imageOverrides[outfit.number] ?? outfitImageUrls?.[outfit.number - 1] ?? null;
             const isEditing   = editingNumber === outfit.number;
             const isRegenning = regenerating && isEditing;
             const canEdit     = adminMode && !!onRegenerateOutfit;
             const prioritiseImage = outfit.number <= 2;
             return (
-            <motion.div
-              key={oi}
+            <div
+              key={outfit.number}
               className="flex flex-col md:flex-row bg-white border-b"
               style={{ borderColor: BORDER }}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.38, delay: oi * 0.03, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }}
             >
               {/* Left: outfit image or number placeholder — 40% card width */}
               <div
@@ -713,6 +704,7 @@ function OutfitsSection({
                     alt={`Outfit ${outfit.number} — ${outfit.label}`}
                     loading={prioritiseImage ? 'eager' : 'lazy'}
                     fetchPriority={prioritiseImage ? 'high' : 'auto'}
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover object-top"
                     style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
                     onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
@@ -887,7 +879,7 @@ function OutfitsSection({
               </motion.div>
               )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           );
           })}
         </div>
@@ -943,33 +935,170 @@ function IdentitySection({ text }: { text: string }) {
 interface ManReportProps {
   data: ReportData;
   imageUrls?: ResolvedImageUrls | null;
+  viewerMode?: 'admin' | 'public';
+  motionMode?: 'reduced' | 'standard';
+  deferSections?: boolean;
   adminMode?: boolean;
   onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
 }
 
-function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReportProps) {
+function DeferredSection({
+  children,
+  label,
+  estimatedHeight,
+  background,
+  motionMode,
+  defer,
+}: {
+  children: React.ReactNode;
+  label: string;
+  estimatedHeight: number;
+  background: string;
+  motionMode: 'reduced' | 'standard';
+  defer: boolean;
+}) {
+  const { elementRef, hasIntersected } = useIntersectionObserver({
+    threshold: 0,
+    rootMargin: '600px 0px',
+  });
+
+  const shouldRender = !defer || hasIntersected;
+
+  if (!shouldRender) {
+    return (
+      <div
+        ref={elementRef}
+        className="border-b"
+        style={{ borderColor: BORDER, background, minHeight: estimatedHeight }}
+      >
+        <div className="px-6 md:px-10 py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-px flex-1" style={{ background: BORDER }} />
+            <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: GOLD, opacity: 0.6 }}>
+              {label}
+            </span>
+            <div className="h-px flex-1" style={{ background: BORDER }} />
+          </div>
+          <div className="space-y-3 animate-pulse">
+            <div className="h-6 w-44 rounded-full" style={{ background: BORDER }} />
+            <div className="h-4 w-full max-w-xl rounded-full" style={{ background: BORDER }} />
+            <div className="h-4 w-full max-w-lg rounded-full" style={{ background: BORDER }} />
+            <div className="h-4 w-full max-w-md rounded-full" style={{ background: BORDER }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={elementRef}>
+      {motionMode === 'standard' ? (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: SECTION_REVEAL_EASE }}
+        >
+          {children}
+        </motion.div>
+      ) : children}
+    </div>
+  );
+}
+
+function ManReport({
+  data,
+  imageUrls,
+  viewerMode = 'public',
+  motionMode = 'standard',
+  deferSections = false,
+  adminMode,
+  onRegenerateOutfit,
+}: ManReportProps) {
   const { classification: cls, sections } = data;
+  const isAdminViewer = viewerMode === 'admin' || adminMode === true;
+  const stickyHeader = (
+    <div
+      className="sticky top-0 z-10 border-b px-5 md:px-10 h-12 md:h-14 flex items-center justify-between"
+      style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderColor: BORDER }}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="w-6 h-6 md:w-7 md:h-7 bg-black flex items-center justify-center">
+          <span className="text-[9px] md:text-[10px] font-black" style={{ color: GOLD }}>I</span>
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">
+          Iconik <span style={{ color: GOLD }}>Blueprint</span>
+        </span>
+      </div>
+      <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2026</span>
+    </div>
+  );
+
+  const sectionConfigs = [
+    {
+      key: 's1',
+      label: 'Section 01 — Facial Architecture Analysis™',
+      estimatedHeight: 980,
+      background: '#ffffff',
+      node: <FaceSection key="s1" cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} eyewearUrls={imageUrls?.eyewearCards ?? undefined} />,
+    },
+    {
+      key: 's2',
+      label: 'Section 02 — Body Geometry Analysis™',
+      estimatedHeight: 860,
+      background: CREAM,
+      node: <BodySection key="s2" cls={cls} text={sections.s2_body} />,
+    },
+    {
+      key: 's3',
+      label: 'Section 03 — Chromatic Harmony Map™',
+      estimatedHeight: 900,
+      background: '#ffffff',
+      node: <ColourSection key="s3" cls={cls} text={sections.s3_colour} />,
+    },
+    {
+      key: 's4',
+      label: `Section 04 — Your ${cls.outfit_split.total} Outfit Formulas`,
+      estimatedHeight: 2200,
+      background: CREAM,
+      node: (
+        <OutfitsSection
+          key="s4"
+          cls={cls}
+          text={sections.s4_outfits}
+          outfitImageUrls={imageUrls?.outfitCards ?? undefined}
+          adminMode={isAdminViewer}
+          onRegenerateOutfit={onRegenerateOutfit}
+        />
+      ),
+    },
+    {
+      key: 's5',
+      label: 'Section 05 — Your Style Rules',
+      estimatedHeight: 560,
+      background: '#ffffff',
+      node: <StyleRulesSection key="s5" text={sections.s5_rules} />,
+    },
+    {
+      key: 's6',
+      label: 'Section 06 — Your Style Identity',
+      estimatedHeight: 420,
+      background: CREAM,
+      node: <IdentitySection key="s6" text={sections.s6_identity} />,
+    },
+  ] as const;
 
   return (
     <div style={{ background: CREAM, fontFamily: 'var(--font-geist-sans, system-ui)' }} className="overflow-x-hidden">
       {/* Sticky Nav */}
-      <motion.div
-        className="sticky top-0 z-10 border-b px-5 md:px-10 h-12 md:h-14 flex items-center justify-between"
-        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderColor: BORDER }}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 md:w-7 md:h-7 bg-black flex items-center justify-center">
-            <span className="text-[9px] md:text-[10px] font-black" style={{ color: GOLD }}>I</span>
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">
-            Iconik <span style={{ color: GOLD }}>Blueprint</span>
-          </span>
-        </div>
-        <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2026</span>
-      </motion.div>
+      {motionMode === 'standard' ? (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.24, ease: SECTION_REVEAL_EASE }}
+        >
+          {stickyHeader}
+        </motion.div>
+      ) : stickyHeader}
 
       {/* Report Header */}
       <div className="px-5 md:px-10 py-8 md:py-12 border-b bg-white" style={{ borderColor: BORDER }}>
@@ -1014,30 +1143,17 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
         </div>
       </div>
 
-      {/* 6 Sections — each fades up as it scrolls into view */}
-      {([
-        <FaceSection   key="s1" cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} eyewearUrls={imageUrls?.eyewearCards ?? undefined} />,
-        <BodySection   key="s2" cls={cls} text={sections.s2_body} />,
-        <ColourSection key="s3" cls={cls} text={sections.s3_colour} />,
-        <OutfitsSection
-          key="s4"
-          cls={cls}
-          text={sections.s4_outfits}
-          outfitImageUrls={imageUrls?.outfitCards ?? undefined}
-          adminMode={adminMode}
-          onRegenerateOutfit={onRegenerateOutfit}
-        />,
-        <StyleRulesSection key="s5" text={sections.s5_rules} />,
-        <IdentitySection   key="s6" text={sections.s6_identity} />,
-      ]).map((section, i) => (
-        <motion.div
-          key={i}
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
+      {sectionConfigs.map((section, index) => (
+        <DeferredSection
+          key={section.key}
+          label={section.label}
+          estimatedHeight={section.estimatedHeight}
+          background={section.background}
+          motionMode={motionMode}
+          defer={deferSections && index >= 2}
         >
-          {section}
-        </motion.div>
+          {section.node}
+        </DeferredSection>
       ))}
 
       {/* Footer */}

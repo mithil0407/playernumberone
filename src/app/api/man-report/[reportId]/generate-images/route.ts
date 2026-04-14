@@ -22,12 +22,14 @@ import {
 } from '@/lib/manImageGenerator';
 import type { ClassificationResult, ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
+import { revalidateManReportCache } from '@/lib/manReportCache';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
 
 async function runImagePipeline(
   reportId:       string,
+  shareToken:     string | null,
   submission:     ManIntakeSubmission,
   classification: ClassificationResult,
   sections:       ReportData['sections'],
@@ -50,6 +52,8 @@ async function runImagePipeline(
         .update({ progress_stage: 'generating_base_model', error_message: null, updated_at: new Date().toISOString() })
         .eq('id', reportId);
 
+      await revalidateManReportCache(reportId, shareToken);
+
       [hairstylePaths, eyewearPaths] = await Promise.all([
         generateHairstyleImages(reportId, submission, classification, imageModel),
         generateEyewearImages(reportId, submission, classification, imageModel),
@@ -67,6 +71,8 @@ async function runImagePipeline(
         .from('man_reports')
         .update({ progress_stage: 'generating_outfit_images', error_message: null, updated_at: new Date().toISOString() })
         .eq('id', reportId);
+
+      await revalidateManReportCache(reportId, shareToken);
     }
 
     // ── Outfit images (resume from existing partial paths) ────────────────────
@@ -104,6 +110,8 @@ async function runImagePipeline(
         updated_at:     new Date().toISOString(),
       })
       .eq('id', reportId);
+
+    await revalidateManReportCache(reportId, shareToken);
   }
 }
 
@@ -125,7 +133,7 @@ export async function POST(
 
   const { data: report, error: reportErr } = await supabaseAdmin
     .from('man_reports')
-    .select('status, progress_stage, report_data, submission_id, image_urls, updated_at')
+    .select('status, progress_stage, report_data, submission_id, image_urls, updated_at, share_token')
     .eq('id', reportId)
     .single();
 
@@ -156,6 +164,8 @@ export async function POST(
       .from('man_reports')
       .update({ progress_stage: null, updated_at: new Date().toISOString() })
       .eq('id', reportId);
+
+    await revalidateManReportCache(reportId, report.share_token ?? null);
   }
 
   const { data: submission, error: subErr } = await supabaseAdmin
@@ -174,6 +184,7 @@ export async function POST(
   after(async () => {
     await runImagePipeline(
       reportId,
+      report.share_token ?? null,
       submission as ManIntakeSubmission,
       reportData.classification,
       reportData.sections,

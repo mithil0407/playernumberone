@@ -1,33 +1,19 @@
 import { notFound } from 'next/navigation';
 import ManReport from '@/components/ManReport';
-import type { ReportData } from '@/lib/manReportGenerator';
-import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
+import { getPublicManReportByShareToken, type PublicLoadedManReport } from '@/lib/manReportLoader';
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
 }
 
-interface ReportResult {
-  data:      ReportData;
-  imageUrls: ResolvedImageUrls | null;
-}
+type LoadedPublicReport = PublicLoadedManReport & {
+  report_data: NonNullable<PublicLoadedManReport['report_data']>;
+};
 
-async function getReport(shareToken: string): Promise<ReportResult | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-  try {
-    const res = await fetch(`${baseUrl}/api/man-report/public/${shareToken}`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    const { report } = await res.json();
-    if (!report?.report_data) return null;
-    return {
-      data:      report.report_data,
-      imageUrls: report.image_urls ?? null,
-    };
-  } catch {
-    return null;
-  }
+async function getReport(shareToken: string): Promise<LoadedPublicReport | null> {
+  const report = await getPublicManReportByShareToken(shareToken);
+  if (!report?.report_data) return null;
+  return report as LoadedPublicReport;
 }
 
 export default async function PublicReportPage({ params }: PageProps) {
@@ -49,7 +35,13 @@ export default async function PublicReportPage({ params }: PageProps) {
         className="min-h-screen min-h-dvh"
         style={{ background: '#faf9f6', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <ManReport data={result.data} imageUrls={result.imageUrls} />
+        <ManReport
+          data={result.report_data}
+          imageUrls={result.image_urls}
+          viewerMode="public"
+          motionMode="standard"
+          deferSections
+        />
 
         {/* Footer */}
         <div className="bg-white border-t px-5 md:px-10 py-8 text-center" style={{ borderColor: '#f0ede8' }}>
@@ -74,7 +66,7 @@ export async function generateMetadata({ params }: PageProps) {
   const { shareToken } = await params;
   const result = await getReport(shareToken);
   if (!result) return {};
-  const { classification: cls } = result.data;
+  const { classification: cls } = result.report_data;
   return {
     title:       `Your ICONIK Blueprint — ${cls.body.silhouette_type} · ${cls.colour.season}`,
     description: `Your personalised ICONIK Men's Style Blueprint. ${cls.style_brief.key_aspiration}`,

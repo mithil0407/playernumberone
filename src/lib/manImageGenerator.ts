@@ -14,6 +14,7 @@ import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from './supabase';
 import type { ClassificationResult, ReportSections } from './manReportGenerator';
 import type { ManIntakeSubmission } from './supabaseMan';
+import { revalidateManReportCache } from './manReportCache';
 
 const ai     = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MODEL  = 'gemini-3.1-flash-image-preview';
@@ -136,13 +137,14 @@ export async function mergeManReportImagePathsForReport(
       ? query.eq('updated_at', state.updatedAt)
       : query.is('updated_at', null);
 
-    const { data, error } = await query.select('image_urls').maybeSingle();
+    const { data, error } = await query.select('image_urls, share_token').maybeSingle();
 
     if (error) {
       throw new Error(`Could not persist image paths for report ${reportId}: ${error.message}`);
     }
 
     if (data) {
+      await revalidateManReportCache(reportId, data.share_token ?? null);
       return data.image_urls ? normaliseImagePaths(data.image_urls as ManReportImagePaths) : merged;
     }
   }
@@ -304,7 +306,6 @@ async function callGeminiImageEdit(
     config: { responseModalities: ['IMAGE'] },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allParts = response.candidates?.[0]?.content?.parts ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const imagePart = allParts.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));

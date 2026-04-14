@@ -33,6 +33,15 @@ interface Report {
   man_intake_submissions: { id: string; customer_email: string; customer_phone: string | null } | null;
 }
 
+interface ReportStatusSnapshot {
+  reportId: string;
+  status: string;
+  progressStage: string | null;
+  errorMessage: string | null;
+  generatedAt: string | null;
+  shareToken: string;
+}
+
 const SECTIONS = [
   { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
   { key: 's2', label: 'Body Geometry',       field: 's2_body'     },
@@ -110,7 +119,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [elapsedSecs, setElapsedSecs]       = useState(0);
 
   const load = useCallback(async () => {
-    const res  = await fetch(`/api/man-report/${reportId}`);
+    const res  = await fetch(`/api/man-report/${reportId}`, { cache: 'no-store' });
     const data = await res.json();
     if (data.report) {
       // Only re-render when DB actually changed — suppress polling jank
@@ -132,12 +141,50 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   useEffect(() => { load(); }, [load]);
 
-  // Poll every 3s while text is generating OR image pipeline is running
+  // Poll lightweight status only while text or image generation is in flight.
   useEffect(() => {
     if (report?.status !== 'generating' && !report?.progress_stage) return;
-    const interval = setInterval(load, 3000);
-    return () => clearInterval(interval);
-  }, [report?.status, report?.progress_stage, load]);
+
+    let active = true;
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(`/api/man-report/status/${reportId}`, { cache: 'no-store' });
+        if (!res.ok) return;
+
+        const next = await res.json() as ReportStatusSnapshot;
+        if (!active) return;
+
+        const changed =
+          next.status !== report?.status ||
+          next.progressStage !== report?.progress_stage ||
+          next.errorMessage !== report?.error_message ||
+          next.shareToken !== report?.share_token;
+
+        if (!changed) return;
+
+        setReport(prev => prev ? {
+          ...prev,
+          status: next.status,
+          progress_stage: next.progressStage,
+          error_message: next.errorMessage,
+          share_token: next.shareToken ?? prev.share_token,
+        } : prev);
+
+        await load();
+      } catch {
+        // Ignore transient polling failures; full load remains the source of truth.
+      }
+    };
+
+    void pollStatus();
+    const interval = setInterval(() => { void pollStatus(); }, 3000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [reportId, report?.status, report?.progress_stage, report?.error_message, report?.share_token, load]);
 
   // Elapsed-time ticker while generating
   useEffect(() => {
@@ -475,7 +522,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
           <ManReport
             data={safeData}
             imageUrls={report.image_urls}
-            adminMode
+            viewerMode="admin"
+            motionMode="reduced"
+            deferSections
             onRegenerateOutfit={regenerateOutfit}
           />
         ) : (

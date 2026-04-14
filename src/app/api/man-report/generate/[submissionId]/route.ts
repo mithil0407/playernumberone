@@ -16,6 +16,7 @@ import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAu
 import { cookies } from 'next/headers';
 import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
+import { revalidateManReportCache } from '@/lib/manReportCache';
 
 // Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
 // at concurrency 4 (~80s) fits comfortably within this limit.
@@ -23,17 +24,20 @@ export const maxDuration = 300;
 
 // ── Helper: update report progress stage ──────────────────────────────────
 
-async function updateStage(reportId: string, stage: string) {
+async function updateStage(reportId: string, stage: string, shareToken: string | null) {
   await supabaseAdmin
     .from('man_reports')
     .update({ progress_stage: stage, updated_at: new Date().toISOString() })
     .eq('id', reportId);
+
+  await revalidateManReportCache(reportId, shareToken);
 }
 
 // ── Pipeline: runs after response is sent ─────────────────────────────────
 
 async function writePartialData(
   reportId: string,
+  shareToken: string | null,
   classification: ClassificationResult,
   sections: Record<string, string>,
   nextStage: string
@@ -46,33 +50,35 @@ async function writePartialData(
       updated_at:     new Date().toISOString(),
     })
     .eq('id', reportId);
+
+  await revalidateManReportCache(reportId, shareToken);
 }
 
-async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
+async function runPipeline(reportId: string, submission: ManIntakeSubmission, shareToken: string | null) {
   try {
     // Phase 1 — Classification
-    await updateStage(reportId, 'classifying');
+    await updateStage(reportId, 'classifying', shareToken);
     const classification = await runClassification(submission);
 
     // Write classification to DB so admin can navigate to review page immediately
     const sections: Record<string, string> = {};
-    await writePartialData(reportId, classification, sections, 'generating_s1');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s1');
 
     // Phase 2 — Sections (one Gemini call per section, DB write after each)
     sections.s1_face = await runSection1(classification, submission);
-    await writePartialData(reportId, classification, sections, 'generating_s2');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s2');
 
     sections.s2_body = await runSection2(classification, submission);
-    await writePartialData(reportId, classification, sections, 'generating_s3');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s3');
 
     sections.s3_colour = await runSection3(classification, submission);
-    await writePartialData(reportId, classification, sections, 'generating_s4');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s4');
 
     sections.s4_outfits = await runSection4(classification, submission);
-    await writePartialData(reportId, classification, sections, 'generating_s5');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s5');
 
     sections.s5_rules = await runSection5(classification, submission);
-    await writePartialData(reportId, classification, sections, 'generating_s6');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s6');
 
     sections.s6_identity = await runSection6(classification, submission);
 
@@ -89,6 +95,8 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
       })
       .eq('id', reportId);
 
+    await revalidateManReportCache(reportId, shareToken);
+
     console.log(`[man-report] Pipeline complete for reportId=${reportId}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -103,6 +111,8 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission) {
         updated_at:     new Date().toISOString(),
       })
       .eq('id', reportId);
+
+    await revalidateManReportCache(reportId, shareToken);
   }
 }
 
@@ -170,7 +180,7 @@ export async function POST(
       progress_stage:    'classifying',
       section_approvals: { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false },
     })
-    .select('id')
+    .select('id, share_token')
     .single();
 
   if (reportErr || !report) {
@@ -182,7 +192,7 @@ export async function POST(
 
   // 4. Schedule the pipeline to run after this response is sent
   after(async () => {
-    await runPipeline(reportId, submission as ManIntakeSubmission);
+    await runPipeline(reportId, submission as ManIntakeSubmission, report.share_token ?? null);
   });
 
   // 5. Return immediately — admin dashboard starts polling
