@@ -28,10 +28,11 @@ export async function GET(
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
 
-  // Resolve storage paths → fresh signed URLs before sending to admin client
-  const imageUrls = await resolveManReportImageUrls(
-    data.image_urls as ManReportImagePaths | null
-  );
+  // Skip signed URL resolution while generation is in progress — the client only
+  // needs progress_stage during polling, not renderable image URLs.
+  const imageUrls = data.progress_stage
+    ? (data.image_urls ?? null)
+    : await resolveManReportImageUrls(data.image_urls as ManReportImagePaths | null);
 
   return NextResponse.json({
     report: {

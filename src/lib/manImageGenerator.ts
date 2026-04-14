@@ -407,20 +407,23 @@ export async function generateAllOutfitImages(
 
   if (toGenerate.length === 0) return partialPaths;
 
-  // Fetch the full-body reference photo once, reuse across all calls
-  const { data: baseData, mimeType: baseMime } = await fetchAsBase64(basePhotoUrl);
-
-  // Fetch hairstyle headshot as extra face/hair reference — best effort, non-fatal
-  let hairstyleRef: { data: string; mimeType: string } | undefined;
-  const hairstylePath = hairstylePaths[0];
-  if (hairstylePath) {
+  // Fetch base photo and hairstyle reference concurrently — they're independent
+  const fetchHairstyleRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
+    const hairstylePath = hairstylePaths[0];
+    if (!hairstylePath) return undefined;
     try {
       const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(hairstylePath, 300);
-      if (signedData?.signedUrl) hairstyleRef = await fetchAsBase64(signedData.signedUrl);
+      if (signedData?.signedUrl) return fetchAsBase64(signedData.signedUrl);
     } catch {
       console.warn('[manImageGenerator] Could not fetch hairstyle reference — proceeding without it');
     }
-  }
+    return undefined;
+  };
+
+  const [{ data: baseData, mimeType: baseMime }, hairstyleRef] = await Promise.all([
+    fetchAsBase64(basePhotoUrl),
+    fetchHairstyleRef(),
+  ]);
 
   const tasks = toGenerate.map((outfit) => {
     const taskIdx = outfits.findIndex(o => o.index === outfit.index);
@@ -433,30 +436,31 @@ export async function generateAllOutfitImages(
         const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
         partialPaths[taskIdx] = path;
         console.log(`[manImageGenerator] Outfit ${outfit.index} saved: ${path}`);
-        // Write progress immediately — always include hairstyle/eyewear so they are never overwritten
-        await supabaseAdmin
+        // Fire-and-forget — don't block the concurrency slot on a DB round-trip
+        void supabaseAdmin
           .from('man_reports')
           .update({
             image_urls: { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [...partialPaths] },
             updated_at: new Date().toISOString(),
           })
-          .eq('id', reportId);
+          .eq('id', reportId)
+          .then(null, (e: unknown) => console.warn(`[manImageGenerator] Progress write failed for outfit ${outfit.index}:`, e));
         return path;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         console.error(`[manImageGenerator] Outfit ${outfit.index} FAILED (model: ${imageModel}): ${errMsg}`);
-        // Persist error immediately so admin dashboard shows it without waiting
-        await supabaseAdmin
+        // Fire-and-forget error persist
+        void supabaseAdmin
           .from('man_reports')
           .update({ error_message: `Outfit ${outfit.index} failed: ${errMsg.slice(0, 500)}`, updated_at: new Date().toISOString() })
           .eq('id', reportId)
-          .then();
+          .then(null, () => {});
         return null;
       }
     };
   });
 
-  await runWithConcurrency(tasks, 1);
+  await runWithConcurrency(tasks, 8);
   return partialPaths;
 }
 
@@ -507,26 +511,6 @@ export async function resolveManReportImageUrls(
 ): Promise<ResolvedImageUrls | null> {
   if (!paths) return null;
 
-  const resolveOne = async (path: string | null | undefined): Promise<string | null> => {
-    if (!path) return null;
-
-    const { data: signedData, error: signedError } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .createSignedUrl(path, SIGNED_URL_TTL);
-
-    if (signedData?.signedUrl) return signedData.signedUrl;
-
-    console.error(`[manImageGenerator] createSignedUrl failed for "${path}":`, signedError?.message ?? 'no signedUrl returned');
-
-    const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
-    if (publicData?.publicUrl) {
-      console.warn(`[manImageGenerator] Using public URL fallback for "${path}"`);
-      return publicData.publicUrl;
-    }
-
-    return null;
-  };
-
   // Resolve hairstyle cards.
   // New format: hairstyleCards array is present (even if it contains nulls for failed images).
   // Legacy format: only baseModel exists — treat it as a single hairstyle card.
@@ -536,16 +520,47 @@ export async function resolveManReportImageUrls(
     ? paths.hairstyleCards
     : paths.baseModel ? [paths.baseModel] : [];
 
-  const [hairstyleUrls, eyewearUrls, outfitUrls] = await Promise.all([
-    Promise.all(hairstylePaths.map(resolveOne)),
-    Promise.all((paths.eyewearCards ?? []).map(resolveOne)),
-    Promise.all((paths.outfitCards ?? []).map(resolveOne)),
-  ]);
+  // Collect every non-null path in a single flat list for one batch signing call
+  const allPaths = [
+    ...hairstylePaths,
+    ...(paths.eyewearCards ?? []),
+    ...(paths.outfitCards  ?? []),
+    paths.baseModel ?? null,
+  ];
+  const uniquePaths = [...new Set(allPaths.filter((p): p is string => !!p))];
+
+  const signedUrlMap = new Map<string, string>();
+
+  if (uniquePaths.length > 0) {
+    const { data: signed, error: batchError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .createSignedUrls(uniquePaths, SIGNED_URL_TTL);
+
+    if (batchError) {
+      console.error('[manImageGenerator] createSignedUrls batch failed:', batchError.message);
+    }
+
+    for (const { path, signedUrl } of signed ?? []) {
+      if (signedUrl) signedUrlMap.set(path, signedUrl!);
+    }
+
+    // Public URL fallback for any that failed individual signing
+    for (const path of uniquePaths) {
+      if (!signedUrlMap.has(path)) {
+        console.warn(`[manImageGenerator] Falling back to public URL for "${path}"`);
+        const { data: pub } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+        if (pub?.publicUrl) signedUrlMap.set(path, pub.publicUrl);
+      }
+    }
+  }
+
+  const resolve = (path: string | null | undefined): string | null =>
+    path ? (signedUrlMap.get(path) ?? null) : null;
 
   return {
-    hairstyleCards: hairstyleUrls,
-    eyewearCards:   eyewearUrls,
-    outfitCards:    outfitUrls,
-    baseModel:      paths.baseModel ? await resolveOne(paths.baseModel) : null,
+    hairstyleCards: hairstylePaths.map(resolve),
+    eyewearCards:   (paths.eyewearCards ?? []).map(resolve),
+    outfitCards:    (paths.outfitCards  ?? []).map(resolve),
+    baseModel:      resolve(paths.baseModel),
   };
 }

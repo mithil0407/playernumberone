@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, X, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
-import { SPRING, staggerContainer, staggerItem, fadeUp, VIEWPORT_OPTS } from '@/lib/reportAnimations';
+import { SPRING, staggerContainer, staggerItem, fadeUp } from '@/lib/reportAnimations';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens (matches /man/page.tsx embedded report)
@@ -49,11 +49,13 @@ function stripHex(text: string): string {
 }
 
 function getField(block: string, label: string): string {
-  // Handles both formats:
-  //   Old: "- Label: value"  (bold/dash format)
-  //   New: "LABEL: value"    (uppercase plain format)
+  // Handles all known formats:
+  //   "- Label: value"        (dash + title case)
+  //   "LABEL: value"          (uppercase plain)
+  //   "**Label:** value"      (AI-generated bold markdown)
+  //   "**Label:** **value**"  (double bold)
   const pattern = new RegExp(
-    `(?:^|\\n)[ \\t]*-?[ \\t]*${label}[ \\t]*:[ \\t]*(.+?)(?=\\n[ \\t]*-?[ \\t]*[\\w]|\\n\\n|\\n\\*\\*|$)`,
+    `(?:^|\\n)[ \\t]*-?[ \\t]*\\*{0,2}${label}\\*{0,2}[ \\t]*:[ \\t]*\\*{0,2}(.+?)\\*{0,2}(?=\\n[ \\t]*-?[ \\t]*\\*{0,2}[\\w]|\\n\\n|\\n\\*\\*|$)`,
     'si'
   );
   const raw = block.match(pattern)?.[1]?.replace(/\n/g, ' ').trim() ?? '—';
@@ -95,7 +97,8 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
     }
 
     const outfitNum  = parseInt(outfitMatch[1]);
-    const rawLabel   = outfitMatch[2].trim();
+    // Strip any residual ** markdown from the label (AI sometimes omits closing **)
+    const rawLabel   = outfitMatch[2].replace(/\*+/g, '').trim();
     const isNewFormat = !boldMatch && !!plainMatch;
 
     // New format: label IS the context (e.g. "FORMAL") — group by it
@@ -119,7 +122,11 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       accessories: getField(block, 'Accessorys?'),  // handles ACCESSORY and Accessories
       fitNote:     getField(block, 'Fit note'),
       colourLogic: getField(block, 'Colour logic'),
-      whyItWorks:  getField(block, 'Why it works(?:\\s+for\\s+you)?'),
+      // "Occasion anchor" is the current prompt field; "Why it works" is the legacy field
+      whyItWorks: (() => {
+        const v = getField(block, 'Occasion anchor');
+        return v !== '—' ? v : getField(block, 'Why it works(?:\\s+for\\s+you)?');
+      })(),
     };
 
     if (!currentCat) {
@@ -434,8 +441,7 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
               className="space-y-3"
               variants={staggerContainer}
               initial="hidden"
-              whileInView="visible"
-              viewport={VIEWPORT_OPTS}
+              animate="visible"
             >
               {body.silhouette_rules.map((rule, i) => (
                 <motion.div key={i} className="flex items-start gap-2.5" variants={staggerItem}>
@@ -512,8 +518,7 @@ function ColourSection({ cls, text: _text }: { cls: ClassificationResult; text: 
               className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5"
               variants={staggerContainer}
               initial="hidden"
-              whileInView="visible"
-              viewport={VIEWPORT_OPTS}
+              animate="visible"
             >
               {colour.primary_palette.map((c, i) => (
                 <motion.div key={i} className="flex flex-col items-center gap-2" variants={staggerItem}>
@@ -686,14 +691,14 @@ function OutfitsSection({
             const isEditing   = editingNumber === outfit.number;
             const isRegenning = regenerating && isEditing;
             const canEdit     = adminMode && !!onRegenerateOutfit;
+            const prioritiseImage = outfit.number <= 2;
             return (
             <motion.div
               key={oi}
               className="flex flex-col md:flex-row bg-white border-b"
               style={{ borderColor: BORDER }}
               initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.05 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.38, delay: oi * 0.03, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }}
             >
               {/* Left: outfit image or number placeholder — 40% card width */}
@@ -706,7 +711,8 @@ function OutfitsSection({
                   <img
                     src={outfitImg}
                     alt={`Outfit ${outfit.number} — ${outfit.label}`}
-                    loading="lazy"
+                    loading={prioritiseImage ? 'eager' : 'lazy'}
+                    fetchPriority={prioritiseImage ? 'high' : 'auto'}
                     className="absolute inset-0 w-full h-full object-cover object-top"
                     style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
                     onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
@@ -1027,8 +1033,7 @@ function ManReport({ data, imageUrls, adminMode, onRegenerateOutfit }: ManReport
         <motion.div
           key={i}
           initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT_OPTS}
+          animate="visible"
           variants={fadeUp}
         >
           {section}
