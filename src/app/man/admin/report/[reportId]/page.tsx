@@ -418,11 +418,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     : 0;
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
-  // True only when hairstyle, eyewear AND all outfit images are present
+  const expectedOutfitCount = report.report_data?.classification?.outfit_split?.total ?? 16;
+
+  // True only when hairstyle, eyewear AND every expected outfit image are present
   const hasAllImages = (
-    (report.image_urls?.hairstyleCards ?? []).some(Boolean) &&
-    (report.image_urls?.eyewearCards   ?? []).some(Boolean) &&
-    (report.image_urls?.outfitCards    ?? []).some(Boolean)
+    (report.image_urls?.hairstyleCards ?? []).filter(Boolean).length >= 2 &&
+    (report.image_urls?.eyewearCards   ?? []).filter(Boolean).length >= 2 &&
+    (report.image_urls?.outfitCards    ?? []).filter(Boolean).length >= expectedOutfitCount
   );
 
   const elapsedLabel = (() => {

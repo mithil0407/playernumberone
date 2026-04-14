@@ -4,6 +4,7 @@ import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAu
 import { cookies } from 'next/headers';
 import {
   regenerateSingleOutfitImage,
+  mergeManReportImagePathsForReport,
   resolveManReportImageUrls,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
@@ -92,26 +93,18 @@ export async function POST(
     hairstyleHeadshotUrl,
   );
 
-  // Patch outfitCards array (preserve all other slots)
-  const currentCards = imagePaths?.outfitCards ?? new Array(16).fill(null);
-  const newCards = [...currentCards];
-  newCards[outfitNumber - 1] = newPath;
-  const newImagePaths: ManReportImagePaths = {
-    hairstyleCards: imagePaths?.hairstyleCards ?? [],
-    eyewearCards:   imagePaths?.eyewearCards ?? [],
-    outfitCards:    newCards,
-    ...(imagePaths?.baseModel ? { baseModel: imagePaths.baseModel } : {}),
-  };
+  const outfitPatch: (string | null | undefined)[] = [];
+  outfitPatch[outfitNumber - 1] = newPath;
 
   // Patch s4_outfits text (replace just this outfit block)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentS4 = (report.report_data as any)?.sections?.s4_outfits ?? '';
   const newS4 = replaceOutfitBlock(currentS4, outfitNumber, outfitText);
 
-  await supabaseAdmin
-    .from('man_reports')
-    .update({
-      image_urls:  newImagePaths,
+  const newImagePaths = await mergeManReportImagePathsForReport(
+    reportId,
+    { outfitCards: outfitPatch },
+    {
       report_data: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...(report.report_data as any),
@@ -121,9 +114,8 @@ export async function POST(
           s4_outfits: newS4,
         },
       },
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', reportId);
+    },
+  );
 
   const resolved = await resolveManReportImageUrls(newImagePaths);
   const imageUrl = resolved?.outfitCards?.[outfitNumber - 1] ?? null;

@@ -40,6 +40,116 @@ export interface ResolvedImageUrls {
   baseModel?:     string | null;     // legacy
 }
 
+interface PartialImagePathPatch {
+  hairstyleCards?: (string | null | undefined)[];
+  eyewearCards?: (string | null | undefined)[];
+  outfitCards?: (string | null | undefined)[];
+  baseModel?: string | null;
+}
+interface StoredImagePathState {
+  imageUrls: ManReportImagePaths | null;
+  updatedAt: string | null;
+}
+
+function normaliseImagePath(value: string | null | undefined): string | null {
+  return value ? value : null;
+}
+
+function mergeImagePathArrays(
+  current: (string | null)[] | undefined,
+  incoming: (string | null | undefined)[] | undefined,
+): (string | null)[] {
+  const maxLen = Math.max(current?.length ?? 0, incoming?.length ?? 0);
+  const merged: (string | null)[] = [];
+  for (let i = 0; i < maxLen; i++) {
+    const nextValue = normaliseImagePath(incoming?.[i]);
+    const currentValue = normaliseImagePath(current?.[i]);
+    merged[i] = nextValue ?? currentValue ?? null;
+  }
+  return merged;
+}
+
+function normaliseImagePaths(paths: ManReportImagePaths | null | undefined): ManReportImagePaths {
+  return {
+    hairstyleCards: (paths?.hairstyleCards ?? []).map(normaliseImagePath),
+    eyewearCards:   (paths?.eyewearCards   ?? []).map(normaliseImagePath),
+    outfitCards:    (paths?.outfitCards    ?? []).map(normaliseImagePath),
+    ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
+  };
+}
+
+export function mergeManReportImagePaths(
+  current: ManReportImagePaths | null | undefined,
+  incoming: PartialImagePathPatch | null | undefined,
+): ManReportImagePaths {
+  const base = normaliseImagePaths(current);
+
+  return {
+    hairstyleCards: mergeImagePathArrays(base.hairstyleCards, incoming?.hairstyleCards),
+    eyewearCards:   mergeImagePathArrays(base.eyewearCards, incoming?.eyewearCards),
+    outfitCards:    mergeImagePathArrays(base.outfitCards, incoming?.outfitCards),
+    ...(normaliseImagePath(incoming?.baseModel) ?? base.baseModel
+      ? { baseModel: normaliseImagePath(incoming?.baseModel) ?? base.baseModel! }
+      : {}),
+  };
+}
+
+async function getStoredManReportImagePathState(reportId: string): Promise<StoredImagePathState> {
+  const { data, error } = await supabaseAdmin
+    .from('man_reports')
+    .select('image_urls, updated_at')
+    .eq('id', reportId)
+    .single();
+
+  if (error) throw new Error(`Could not load current image paths for report ${reportId}: ${error.message}`);
+  return {
+    imageUrls: data?.image_urls ? normaliseImagePaths(data.image_urls as ManReportImagePaths) : null,
+    updatedAt: data?.updated_at ?? null,
+  };
+}
+
+export async function getStoredManReportImagePaths(reportId: string): Promise<ManReportImagePaths | null> {
+  const state = await getStoredManReportImagePathState(reportId);
+  return state.imageUrls;
+}
+
+export async function mergeManReportImagePathsForReport(
+  reportId: string,
+  incoming: PartialImagePathPatch,
+  extraUpdates: Record<string, unknown> = {},
+): Promise<ManReportImagePaths> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const state = await getStoredManReportImagePathState(reportId);
+    const merged = mergeManReportImagePaths(state.imageUrls, incoming);
+    const nextUpdatedAt = new Date().toISOString();
+
+    let query = supabaseAdmin
+      .from('man_reports')
+      .update({
+        ...extraUpdates,
+        image_urls: merged,
+        updated_at: nextUpdatedAt,
+      })
+      .eq('id', reportId);
+
+    query = state.updatedAt
+      ? query.eq('updated_at', state.updatedAt)
+      : query.is('updated_at', null);
+
+    const { data, error } = await query.select('image_urls').maybeSingle();
+
+    if (error) {
+      throw new Error(`Could not persist image paths for report ${reportId}: ${error.message}`);
+    }
+
+    if (data) {
+      return data.image_urls ? normaliseImagePaths(data.image_urls as ManReportImagePaths) : merged;
+    }
+  }
+
+  throw new Error(`Could not persist image paths for report ${reportId}: concurrent update retries exhausted`);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Outfit parser
 // Extracts the 16 structured outfits from Section 4 markdown text
@@ -389,7 +499,7 @@ export async function generateAllOutfitImages(
   classification: ClassificationResult,
   sections:       ReportSections,
   hairstylePaths: (string | null)[],   // preserved in every partial DB write
-  eyewearPaths:   (string | null)[],   // preserved in every partial DB write
+  _eyewearPaths:  (string | null)[],   // preserved by merge-safe writes at route level
   imageModel:     string = MODEL,
   existingOutfitPaths: (string | null)[] = [], // already-generated slots — skip on resume
 ): Promise<(string | null)[]> {
@@ -406,6 +516,27 @@ export async function generateAllOutfitImages(
   console.log(`[manImageGenerator] ${toGenerate.length}/${outfits.length} outfit images to generate (model: ${imageModel})`);
 
   if (toGenerate.length === 0) return partialPaths;
+
+  let progressWriteQueue = Promise.resolve();
+  const queueProgressWrite = (taskIdx: number, path: string) => {
+    const outfitPatch: (string | null | undefined)[] = [];
+    outfitPatch[taskIdx] = path;
+
+    progressWriteQueue = progressWriteQueue
+      .then(() =>
+        mergeManReportImagePathsForReport(
+          reportId,
+          { outfitCards: outfitPatch },
+          {},
+        ).then(() => undefined)
+      )
+      .catch((e: unknown) => {
+        console.warn(
+          `[manImageGenerator] Progress write failed for outfit ${taskIdx + 1}:`,
+          e instanceof Error ? e.message : e,
+        );
+      });
+  };
 
   // Fetch base photo and hairstyle reference concurrently — they're independent
   const fetchHairstyleRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
@@ -436,15 +567,7 @@ export async function generateAllOutfitImages(
         const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
         partialPaths[taskIdx] = path;
         console.log(`[manImageGenerator] Outfit ${outfit.index} saved: ${path}`);
-        // Fire-and-forget — don't block the concurrency slot on a DB round-trip
-        void supabaseAdmin
-          .from('man_reports')
-          .update({
-            image_urls: { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: [...partialPaths] },
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', reportId)
-          .then(null, (e: unknown) => console.warn(`[manImageGenerator] Progress write failed for outfit ${outfit.index}:`, e));
+        queueProgressWrite(taskIdx, path);
         return path;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
@@ -461,6 +584,7 @@ export async function generateAllOutfitImages(
   });
 
   await runWithConcurrency(tasks, 8);
+  await progressWriteQueue;
   return partialPaths;
 }
 
@@ -544,12 +668,17 @@ export async function resolveManReportImageUrls(
       if (path && signedUrl) signedUrlMap.set(path, signedUrl);
     }
 
-    // Public URL fallback for any that failed individual signing
+    // Retry any missing entries individually. The bucket is private, so public URLs are not valid fallback.
     for (const path of uniquePaths) {
       if (!signedUrlMap.has(path)) {
-        console.warn(`[manImageGenerator] Falling back to public URL for "${path}"`);
-        const { data: pub } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
-        if (pub?.publicUrl) signedUrlMap.set(path, pub.publicUrl);
+        try {
+          signedUrlMap.set(path, await getSignedUrl(path));
+        } catch (error) {
+          console.warn(
+            `[manImageGenerator] Individual signed URL retry failed for "${path}":`,
+            error instanceof Error ? error.message : error,
+          );
+        }
       }
     }
   }

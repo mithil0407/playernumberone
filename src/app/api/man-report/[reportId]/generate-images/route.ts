@@ -12,7 +12,14 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { generateHairstyleImages, generateEyewearImages, generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
+import {
+  generateHairstyleImages,
+  generateEyewearImages,
+  generateAllOutfitImages,
+  getStoredManReportImagePaths,
+  mergeManReportImagePathsForReport,
+  type ManReportImagePaths,
+} from '@/lib/manImageGenerator';
 import type { ClassificationResult, ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 
@@ -28,11 +35,12 @@ async function runImagePipeline(
   existingImageUrls: ManReportImagePaths | null,
 ) {
   try {
+    const latestImageUrls = (await getStoredManReportImagePaths(reportId)) ?? existingImageUrls ?? null;
+
     // ── Hairstyle + eyewear ───────────────────────────────────────────────────
     // Skip if already generated
-    let hairstylePaths = existingImageUrls?.hairstyleCards ?? [];
-    let eyewearPaths   = existingImageUrls?.eyewearCards   ?? [];
-    const existingOutfitPaths = existingImageUrls?.outfitCards ?? [];
+    let hairstylePaths = latestImageUrls?.hairstyleCards ?? [];
+    let eyewearPaths   = latestImageUrls?.eyewearCards   ?? [];
 
     const needsHeadshots = hairstylePaths.every(p => !p) || eyewearPaths.every(p => !p);
 
@@ -48,14 +56,11 @@ async function runImagePipeline(
       ]);
 
       // Persist immediately before starting outfit images
-      await supabaseAdmin
-        .from('man_reports')
-        .update({
-          image_urls:     { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: existingOutfitPaths },
-          progress_stage: 'generating_outfit_images',
-          updated_at:     new Date().toISOString(),
-        })
-        .eq('id', reportId);
+      await mergeManReportImagePathsForReport(
+        reportId,
+        { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths },
+        { progress_stage: 'generating_outfit_images' },
+      );
     } else {
       // Headshots already done — jump straight to outfit images
       await supabaseAdmin
@@ -68,6 +73,11 @@ async function runImagePipeline(
     const fullBodyUrl = submission.photo_fullbody_url;
     if (!fullBodyUrl) throw new Error('No photo_fullbody_url on submission — cannot generate outfit images');
 
+    const currentBeforeOutfits = await getStoredManReportImagePaths(reportId);
+    const existingOutfitPaths = currentBeforeOutfits?.outfitCards ?? [];
+    hairstylePaths = currentBeforeOutfits?.hairstyleCards ?? hairstylePaths;
+    eyewearPaths = currentBeforeOutfits?.eyewearCards ?? eyewearPaths;
+
     const outfitPaths = await generateAllOutfitImages(
       reportId, fullBodyUrl, classification, sections,
       hairstylePaths, eyewearPaths, imageModel,
@@ -75,18 +85,14 @@ async function runImagePipeline(
     );
 
     // ── Done ──────────────────────────────────────────────────────────────────
-    await supabaseAdmin
-      .from('man_reports')
-      .update({
-        image_urls:     { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths },
-        progress_stage: null,
-        error_message:  null,
-        updated_at:     new Date().toISOString(),
-      })
-      .eq('id', reportId);
+    const mergedImagePaths = await mergeManReportImagePathsForReport(
+      reportId,
+      { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths },
+      { progress_stage: null, error_message: null },
+    );
 
-    const doneOutfits = outfitPaths.filter(Boolean).length;
-    console.log(`[generate-images] Done for ${reportId} — ${hairstylePaths.filter(Boolean).length}/2 hairstyles, ${eyewearPaths.filter(Boolean).length}/2 eyewear, ${doneOutfits}/${outfitPaths.length} outfits`);
+    const doneOutfits = mergedImagePaths.outfitCards.filter(Boolean).length;
+    console.log(`[generate-images] Done for ${reportId} — ${mergedImagePaths.hairstyleCards.filter(Boolean).length}/2 hairstyles, ${mergedImagePaths.eyewearCards.filter(Boolean).length}/2 eyewear, ${doneOutfits}/${mergedImagePaths.outfitCards.length} outfits`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[generate-images] Pipeline failed for ${reportId}:`, message);
