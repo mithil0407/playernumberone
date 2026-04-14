@@ -605,7 +605,10 @@ function OutfitsSection({
   text: string;
   outfitImageUrls?: (string | null)[];
   adminMode?: boolean;
-  onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
+  onRegenerateOutfit?: (
+    outfitNumber: number,
+    newText: string,
+  ) => Promise<{ imageUrl: string; updatedS4Outfits: string } | null>;
 }) {
   const [editingNumber, setEditingNumber] = useState<number | null>(null);
   const [editText, setEditText]           = useState('');
@@ -623,8 +626,9 @@ function OutfitsSection({
     if (!editingNumber || !onRegenerateOutfit) return;
     setRegenerating(true);
     try {
-      const newUrl = await onRegenerateOutfit(editingNumber, editText);
-      if (newUrl) setImageOverrides(prev => ({ ...prev, [editingNumber]: newUrl }));
+      const result = await onRegenerateOutfit(editingNumber, editText);
+      if (!result) return;
+      setImageOverrides(prev => ({ ...prev, [editingNumber]: result.imageUrl }));
       cancelEdit();
     } finally {
       setRegenerating(false);
@@ -638,8 +642,8 @@ function OutfitsSection({
     setRetryingSet(prev => new Set(prev).add(outfitNumber));
     try {
       const outfitBlock = extractOutfitBlock(text, outfitNumber);
-      const newUrl = await onRegenerateOutfit(outfitNumber, outfitBlock);
-      if (newUrl) setImageOverrides(prev => ({ ...prev, [outfitNumber]: newUrl }));
+      const result = await onRegenerateOutfit(outfitNumber, outfitBlock);
+      if (result) setImageOverrides(prev => ({ ...prev, [outfitNumber]: result.imageUrl }));
     } finally {
       setRetryingSet(prev => { const next = new Set(prev); next.delete(outfitNumber); return next; });
     }
@@ -939,7 +943,10 @@ interface ManReportProps {
   motionMode?: 'reduced' | 'standard';
   deferSections?: boolean;
   adminMode?: boolean;
-  onRegenerateOutfit?: (outfitNumber: number, newText: string) => Promise<string | null>;
+  onRegenerateOutfit?: (
+    outfitNumber: number,
+    newText: string,
+  ) => Promise<{ imageUrl: string; updatedS4Outfits: string } | null>;
 }
 
 function DeferredSection({

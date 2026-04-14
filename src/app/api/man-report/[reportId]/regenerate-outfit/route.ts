@@ -120,5 +120,9 @@ export async function POST(
   const resolved = await resolveManReportImageUrls(newImagePaths);
   const imageUrl = resolved?.outfitCards?.[outfitNumber - 1] ?? null;
 
-  return NextResponse.json({ imageUrl, storagePath: newPath });
+  return NextResponse.json({
+    imageUrl,
+    storagePath: newPath,
+    updatedS4Outfits: newS4,
+  });
 }

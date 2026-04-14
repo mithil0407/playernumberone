@@ -42,6 +42,11 @@ interface ReportStatusSnapshot {
   shareToken: string;
 }
 
+interface OutfitRegenerationResult {
+  imageUrl: string;
+  updatedS4Outfits: string;
+}
+
 const SECTIONS = [
   { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
   { key: 's2', label: 'Body Geometry',       field: 's2_body'     },
@@ -289,7 +294,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   };
 
   // ── Outfit image regeneration ─────────────────────────────────────────
-  const regenerateOutfit = useCallback(async (outfitNumber: number, newText: string): Promise<string | null> => {
+  const regenerateOutfit = useCallback(async (
+    outfitNumber: number,
+    newText: string,
+  ): Promise<OutfitRegenerationResult | null> => {
     const res = await fetch(`/api/man-report/${reportId}/regenerate-outfit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -297,7 +305,26 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return (data.imageUrl as string) ?? null;
+    const imageUrl = data.imageUrl as string | null;
+    const updatedS4Outfits = data.updatedS4Outfits as string | null;
+
+    if (!imageUrl || !updatedS4Outfits) return null;
+
+    setReport(prev => {
+      if (!prev?.report_data) return prev;
+      return {
+        ...prev,
+        report_data: {
+          ...prev.report_data,
+          sections: {
+            ...prev.report_data.sections,
+            s4_outfits: updatedS4Outfits,
+          } as ReportSections,
+        },
+      };
+    });
+
+    return { imageUrl, updatedS4Outfits };
   }, [reportId, imageModel]);
 
   // Stable reference — only recomputes when report_data changes (not on approval toggles)
