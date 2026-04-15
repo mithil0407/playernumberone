@@ -32,10 +32,14 @@ export default function AdminClientEditPage() {
   const [waist,      setWaist]      = useState('');
   const [hips,       setHips]       = useState('');
   const [styleNotes, setStyleNotes] = useState('');
+  const [likedOutfitExamplesText, setLikedOutfitExamplesText] = useState('');
   const [visualProfile, setVisualProfile] = useState('');
+  const [preferenceProfileText, setPreferenceProfileText] = useState('');
   const [restrictions, setRestrictions] = useState<string[]>([]);
   const [budgetLevel, setBudgetLevel] = useState<BudgetLevel | ''>('');
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [generatingPreferenceProfile, setGeneratingPreferenceProfile] = useState(false);
+  const [preferenceProfileGenError, setPreferenceProfileGenError] = useState('');
 
   const populate = useCallback((c: ClientProfile) => {
     setClient(c);
@@ -48,7 +52,9 @@ export default function AdminClientEditPage() {
     setWaist(c.waist_cm != null ? String(c.waist_cm) : '');
     setHips(c.hips_cm != null ? String(c.hips_cm) : '');
     setStyleNotes(c.style_notes ?? '');
+    setLikedOutfitExamplesText((c.liked_outfit_examples ?? []).join('\n'));
     setVisualProfile(c.visual_profile ?? '');
+    setPreferenceProfileText(c.preference_profile ? JSON.stringify(c.preference_profile, null, 2) : '');
     setRestrictions(c.style_restrictions ?? []);
     setBudgetLevel(c.budget_level ?? '');
     setOnboardingComplete(c.onboarding_complete ?? false);
@@ -82,6 +88,25 @@ export default function AdminClientEditPage() {
     }
   };
 
+  const handleGeneratePreferenceProfile = async () => {
+    setPreferenceProfileGenError('');
+    setGeneratingPreferenceProfile(true);
+    try {
+      const res = await fetch(`/api/iconik-club/admin/clients/${id}/preference-profile`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setPreferenceProfileGenError(data.error ?? 'Generation failed');
+        return;
+      }
+      setPreferenceProfileText(data.preference_profile ? JSON.stringify(data.preference_profile, null, 2) : '');
+      if (data.client) populate(data.client);
+    } catch {
+      setPreferenceProfileGenError('Network error. Please try again.');
+    } finally {
+      setGeneratingPreferenceProfile(false);
+    }
+  };
+
   const handleSave = async () => {
     setError('');
     setSaving(true);
@@ -100,6 +125,10 @@ export default function AdminClientEditPage() {
       visual_profile:      visualProfile.trim() || null,
       style_restrictions:  restrictions,
       budget_level:        budgetLevel || null,
+      liked_outfit_examples: likedOutfitExamplesText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean),
       onboarding_complete: onboardingComplete,
     };
 
@@ -229,6 +258,20 @@ export default function AdminClientEditPage() {
           <div className="space-y-5">
 
             <div>
+              <label className={labelCls}>Liked outfit examples</label>
+              <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">
+                One outfit formula per line. This is the primary taste signal the new generator learns from.
+              </p>
+              <textarea
+                value={likedOutfitExamplesText}
+                onChange={e => setLikedOutfitExamplesText(e.target.value)}
+                placeholder={`e.g. White shirt + high-waist trousers + pointed flats\nStructured midi dress + tan bag\nDark jeans + blazer + simple heels`}
+                rows={5}
+                className={`${inputCls} resize-none leading-relaxed`}
+              />
+            </div>
+
+            <div>
               <label className={labelCls}>Style notes</label>
               <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">
                 Brands, aesthetics, outfit vibes the client already loves. Fed directly into the AI stylist.
@@ -314,6 +357,35 @@ export default function AdminClientEditPage() {
             placeholder="e.g. Late 20s. Medium warm-toned skin, Indian wheatish complexion, warm undertone. Pear shape — hips wider than shoulders, defined waist. Average height, medium build. Dark brown straight hair, long past shoulders."
             rows={4}
             className={`${inputCls} resize-none leading-relaxed`}
+          />
+        </div>
+
+        {/* ── Preference profile ─────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Preference profile</p>
+            <button
+              type="button"
+              onClick={handleGeneratePreferenceProfile}
+              disabled={generatingPreferenceProfile}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#fff0f5] border border-[#ffb3d1] text-[#ff6b9d] text-[11px] font-semibold hover:bg-[#ffe0ee] disabled:opacity-50 transition-colors shrink-0"
+            >
+              {generatingPreferenceProfile
+                ? <><Loader2 size={11} className="animate-spin" /> Building…</>
+                : <><Sparkles size={11} /> {preferenceProfileText ? 'Regenerate' : 'Generate'}</>
+              }
+            </button>
+          </div>
+          <p className="text-[11px] text-[#4a2c3e]/40 mb-4 leading-relaxed">
+            Stored taste profile derived from liked outfit examples, style notes, and visual profile. Outfit generation now uses this as the stable source of truth.
+          </p>
+          {preferenceProfileGenError && <p className="text-xs text-red-500 mb-3">{preferenceProfileGenError}</p>}
+          <textarea
+            value={preferenceProfileText}
+            readOnly
+            placeholder="No preference profile generated yet."
+            rows={12}
+            className={`${inputCls} resize-none leading-relaxed font-mono text-[11px]`}
           />
         </div>
 

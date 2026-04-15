@@ -41,6 +41,8 @@ export interface ResolvedImageUrls {
   baseModel?:     string | null;     // legacy
 }
 
+export type FaceImageKind = 'hairstyle' | 'eyewear';
+
 interface PartialImagePathPatch {
   hairstyleCards?: (string | null | undefined)[];
   eyewearCards?: (string | null | undefined)[];
@@ -169,6 +171,10 @@ interface ParsedOutfit {
   colourLogic: string | null;
 }
 
+function stripHex(text: string): string {
+  return text.replace(/\s*\(#?[0-9A-Fa-f]{3,6}\)/g, '').trim();
+}
+
 function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
   const outfits: ParsedOutfit[] = [];
   // Split on either bold format "**Outfit N" or plain uppercase "OUTFIT N"
@@ -180,12 +186,17 @@ function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
     const header     = boldMatch ?? plainMatch;
     if (!header) continue;
 
-    // Field extractor handles both:
+    // Field extractor handles all known formats:
     //   Old: "- Label: value" or "• Label: value"
     //   New: "LABEL: value" (plain uppercase, no dash)
+    //   Edited: "**Label:** value" / "- **Label:** value"
     const field = (label: string): string => {
-      const m = block.match(new RegExp(`(?:^|\\n)[ \\t]*[-•]?[ \\t]*${label}[ \\t]*:[ \\t]*([^\\n]+)`, 'i'));
-      return m ? m[1].replace(/\*\*/g, '').trim() : '';
+      const pattern = new RegExp(
+        `(?:^|\\n)[ \\t]*[-•]?[ \\t]*\\*{0,2}${label}\\*{0,2}[ \\t]*:[ \\t]*\\*{0,2}(.+?)\\*{0,2}(?=\\n[ \\t]*[-•]?[ \\t]*\\*{0,2}[A-Za-z]|\\n\\n|\\n\\*\\*Outfit|\\nOUTFIT|$)`,
+        'is',
+      );
+      const raw = block.match(pattern)?.[1]?.replace(/\n/g, ' ').trim() ?? '';
+      return stripHex(raw);
     };
 
     const layerRaw       = field('Layer(?:/Outerwear)?');
@@ -265,6 +276,11 @@ STERNLY IGNORE and COMPLETELY DISCARD the original background from both referenc
 
 Extract the subject's face and hairstyle from the HEADSHOT (second image) — use this as the definitive face and hair reference. Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
 
+CRITICAL CLOTHING INSTRUCTION:
+- Remove and discard the original clothing from BOTH reference photos
+- Do not preserve, copy, blend, reinterpret, or borrow any garments, shoes, accessories, collars, lapels, colours, or silhouettes from either reference image
+- The outfit specification below is the ONLY authority for what the subject wears
+
 Place the subject against our brand studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient.
 
 Apply polished grooming — clean, fresh, well-kept. Carry the hairstyle from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.
@@ -272,7 +288,7 @@ Apply polished grooming — clean, fresh, well-kept. Carry the hairstyle from th
 Dress the subject in this specific outfit:
 ${garmentLines}${fitNote}
 
-Garment rendering: Clothes should look pressed, tailored, and naturally worn on this body — not floating, not distorted. Colour accuracy is critical — match the described colours precisely. No logos or brand markings visible. Garments must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}.
+Garment rendering: Clothes should look pressed, tailored, and naturally worn on this body — not floating, not distorted. Colour accuracy is critical — match the described colours precisely. No logos or brand markings visible. Garments must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}. If there is any conflict between the reference photos and the outfit specification, the outfit specification wins.
 
 Pose: Standing upright, confident, arms relaxed at sides, facing the camera directly. Full body head to feet visible, subject centred in frame.
 
@@ -489,6 +505,49 @@ export async function generateEyewearImages(
 }
 
 /**
+ * Regenerate a single face image slot (hairstyle or eyewear).
+ * Uses the submission headshot when present, otherwise falls back to the full-body photo.
+ * Overwrites the existing slot file in storage.
+ */
+export async function regenerateSingleFaceImage(
+  reportId:       string,
+  submission:     Pick<ManIntakeSubmission, 'photo_headshot_url' | 'photo_fullbody_url'>,
+  classification: ClassificationResult,
+  kind:           FaceImageKind,
+  optionIndex:    number, // 1-indexed
+  imageModel:     string = MODEL,
+): Promise<string> {
+  if (![1, 2].includes(optionIndex)) {
+    throw new Error(`Invalid ${kind} option index: ${optionIndex}`);
+  }
+
+  const photoUrl = submission.photo_headshot_url ?? submission.photo_fullbody_url;
+  if (!photoUrl) {
+    throw new Error('No headshot or full-body photo on submission — cannot regenerate face image');
+  }
+
+  const { data, mimeType } = await fetchAsBase64(photoUrl);
+  const { face } = classification;
+  const selectedOption = kind === 'hairstyle'
+    ? face.hairstyle_recommendations[optionIndex - 1]
+    : face.eyewear_shapes[optionIndex - 1];
+
+  if (!selectedOption) {
+    throw new Error(`No ${kind} recommendation found for option ${optionIndex}`);
+  }
+
+  const prompt = kind === 'hairstyle'
+    ? buildHairstylePrompt(selectedOption, face.face_shape)
+    : buildEyewearPrompt(selectedOption, face.face_shape);
+
+  const outputBase64 = await withRetry(() =>
+    callGeminiImageEdit(data, mimeType, prompt, imageModel),
+  );
+
+  return uploadToStorage(reportId, outputBase64, `${kind}_${optionIndex}.jpg`);
+}
+
+/**
  * Phase 4: Generate all 16 outfit images fully in parallel.
  * Takes the client's original full-body photo URL directly (not a storage path).
  * hairstylePaths and eyewearPaths must be passed in so partial progress writes don't overwrite them.
@@ -511,9 +570,33 @@ export async function generateAllOutfitImages(
     return [];
   }
 
-  // Seed partialPaths from any existing paths so we never lose already-generated images
-  const partialPaths: (string | null)[] = outfits.map((_, i) => existingOutfitPaths[i] ?? null);
-  const toGenerate = outfits.filter((_, i) => !partialPaths[i]);
+  const highestOutfitIndex = outfits.reduce((max, outfit) => Math.max(max, outfit.index), 0);
+  const totalOutfitSlots = Math.max(
+    classification.outfit_split?.total ?? 0,
+    existingOutfitPaths.length,
+    highestOutfitIndex,
+  );
+
+  // Key every image slot by the declared outfit number, not by the parser's dense array index.
+  // This prevents mismatches if Section 4 formatting causes any block to be skipped.
+  const partialPaths: (string | null)[] = Array.from(
+    { length: totalOutfitSlots },
+    (_, i) => existingOutfitPaths[i] ?? null,
+  );
+  const toGenerate = outfits.filter(outfit => !partialPaths[outfit.index - 1]);
+
+  const missingOutfitNumbers: number[] = [];
+  for (let outfitNumber = 1; outfitNumber <= highestOutfitIndex; outfitNumber++) {
+    if (!outfits.some(outfit => outfit.index === outfitNumber)) {
+      missingOutfitNumbers.push(outfitNumber);
+    }
+  }
+  if (missingOutfitNumbers.length > 0) {
+    console.warn(
+      `[manImageGenerator] Section 4 parser skipped outfit numbers: ${missingOutfitNumbers.join(', ')}`,
+    );
+  }
+
   console.log(`[manImageGenerator] ${toGenerate.length}/${outfits.length} outfit images to generate (model: ${imageModel})`);
 
   if (toGenerate.length === 0) return partialPaths;
@@ -558,7 +641,7 @@ export async function generateAllOutfitImages(
   ]);
 
   const tasks = toGenerate.map((outfit) => {
-    const taskIdx = outfits.findIndex(o => o.index === outfit.index);
+    const taskIdx = outfit.index - 1;
     return async () => {
       console.log(`[manImageGenerator] Starting outfit ${outfit.index}/${outfits.length} "${outfit.label}" (model: ${imageModel})`);
       try {

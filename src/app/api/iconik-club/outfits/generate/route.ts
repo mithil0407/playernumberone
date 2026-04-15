@@ -80,13 +80,23 @@ export async function POST() {
   }
 
   // 5. Generate recommendations via Gemini using text metadata (no images needed for selection)
-  let recommendations;
+  let generationResult;
   try {
-    recommendations = await generateOutfitRecommendations(profile, items);
+    generationResult = await generateOutfitRecommendations(profile, items);
   } catch (err) {
     console.error('Gemini outfit generation error:', err);
     return NextResponse.json({ error: 'AI generation failed' }, { status: 500 });
   }
+  const recommendations = generationResult.recommendations;
+
+  await admin
+    .from('client_profiles')
+    .update({
+      preference_profile: generationResult.preferenceProfile,
+      preference_profile_version: generationResult.generationVersion,
+      preference_profile_updated_at: new Date().toISOString(),
+    })
+    .eq('id', profile.id);
 
   // Collect unique item IDs across all recommendations, then download only those images once
   const allSelectedIds = new Set(recommendations.flatMap(r => r.itemIds));
@@ -123,6 +133,10 @@ export async function POST() {
           occasion:         rec.occasion,
           ai_style_note:    rec.styleNote,
           ai_blueprint:     rec.blueprint ?? null,
+          generation_version: generationResult.generationVersion,
+          preference_profile_snapshot: generationResult.preferenceProfile,
+          match_diagnostics: rec.diagnostics ?? null,
+          validation_errors: rec.validationErrors ?? [],
           status:           'generating',
           generation_batch: 1,
         })

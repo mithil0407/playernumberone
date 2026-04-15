@@ -42,7 +42,7 @@ export async function PATCH(
     'name', 'email', 'phone',
     'height_cm', 'weight_kg', 'bust_cm', 'waist_cm', 'hips_cm',
     'style_notes', 'style_restrictions', 'onboarding_complete',
-    'budget_level', 'visual_profile',
+    'budget_level', 'visual_profile', 'liked_outfit_examples',
   ] as const;
 
   const updates: Record<string, unknown> = {};
@@ -52,6 +52,25 @@ export async function PATCH(
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+  }
+
+  const invalidatesPreferenceProfile = [
+    'style_notes',
+    'style_restrictions',
+    'budget_level',
+    'visual_profile',
+    'liked_outfit_examples',
+    'height_cm',
+    'weight_kg',
+    'bust_cm',
+    'waist_cm',
+    'hips_cm',
+  ].some(key => key in updates);
+
+  if (invalidatesPreferenceProfile) {
+    updates.preference_profile = null;
+    updates.preference_profile_version = null;
+    updates.preference_profile_updated_at = null;
   }
 
   updates.updated_at = new Date().toISOString();

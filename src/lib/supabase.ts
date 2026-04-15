@@ -289,6 +289,71 @@ export type BodyShape =
 
 export type BudgetLevel = 'high' | 'mid' | 'low';
 
+export type ColourTemperature = 'warm' | 'cool' | 'neutral';
+export type ColourDepth = 'light' | 'medium' | 'deep';
+export type ColourSaturation = 'soft' | 'balanced' | 'rich';
+export type StructurePreference =
+  | 'layer-led' | 'waist-defined' | 'top-structured'
+  | 'bottom-weighted' | 'elongating' | 'balanced';
+export type FitPreference = 'relaxed' | 'regular' | 'fitted';
+export type DisruptorStyle = 'chromatic' | 'structural' | 'accessory' | 'footwear';
+export type DisruptorTolerance = 'subtle' | 'moderate';
+
+export interface PreferenceProfile {
+  profileVersion: string;
+  tasteSummary: string;
+  colour: {
+    temperature: ColourTemperature;
+    depth: ColourDepth;
+    saturation: ColourSaturation;
+    undertone: 'warm' | 'cool' | 'neutral' | 'deep-warm' | 'olive';
+    preferredColours: string[];
+    avoidedColours: string[];
+    anchorNeutrals: string[];
+  };
+  silhouette: {
+    family: 'apple' | 'pear' | 'hourglass' | 'rectangle' | 'inverted-triangle' | 'petite' | 'plus';
+    structurePreference: StructurePreference;
+    fitPreference: FitPreference;
+    preferredCuts: string[];
+    avoidCuts: string[];
+  };
+  styling: {
+    footwearLanguage: string[];
+    bagLanguage: string[];
+    accessoryLanguage: string[];
+    disruptorStyle: DisruptorStyle;
+    disruptorTolerance: DisruptorTolerance;
+    modestyRules: string[];
+    signatureCodes: string[];
+    antiCodes: string[];
+  };
+  occasionDirectives: Record<OutfitOccasion, string>;
+}
+
+export interface CatalogCandidate {
+  id: string;
+  name: string;
+  category: ItemCategory | 'piece';
+  score: number;
+  reasons: string[];
+  color?: string[];
+  material?: string[];
+}
+
+export interface CatalogCandidatePool {
+  occasion: OutfitOccasion;
+  slot: 'singlePiece' | 'top' | 'layer' | 'bottom' | 'shoes' | 'bag' | 'accessory';
+  candidates: CatalogCandidate[];
+}
+
+export interface MatchDiagnostics {
+  selectionSource: 'model' | 'repair';
+  candidatePools: CatalogCandidatePool[];
+  slotSelections?: Record<string, string | null>;
+  notes?: string[];
+}
+
 export interface FashionItem {
   id?: string;
   raw_description?: string;
@@ -332,6 +397,10 @@ export interface ClientProfile {
   visual_profile?: string;
   style_notes?: string;
   style_restrictions?: string[];
+  liked_outfit_examples?: string[];
+  preference_profile?: PreferenceProfile;
+  preference_profile_version?: string;
+  preference_profile_updated_at?: string;
   subscription_id?: string;
   onboarding_complete?: boolean;
   preview_token?: string;
@@ -350,6 +419,10 @@ export interface OutfitSet {
   status?: OutfitStatus;
   generation_batch?: number;
   error_message?: string;
+  generation_version?: string;
+  preference_profile_snapshot?: PreferenceProfile;
+  match_diagnostics?: MatchDiagnostics;
+  validation_errors?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -359,6 +432,14 @@ export interface OutfitItem {
   outfit_set_id: string;
   fashion_item_id: string;
   position?: number;
+}
+
+export interface OutfitFeedback {
+  id?: string;
+  client_id: string;
+  outfit_set_id: string;
+  vote: 'like' | 'dislike';
+  created_at?: string;
 }
 
 // OutfitSet with its items and full item details — used for client outfit gallery

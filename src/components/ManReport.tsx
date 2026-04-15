@@ -11,6 +11,7 @@ import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator'
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 import { SPRING } from '@/lib/reportAnimations';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import type { FaceImageKind } from '@/lib/manImageGenerator';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens (matches /man/page.tsx embedded report)
@@ -320,10 +321,123 @@ function StylistNote({ children }: { children: React.ReactNode }) {
 // Section 01 — Face Architecture
 // ─────────────────────────────────────────────────────────────
 
-function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: ClassificationResult; text: string; hairstyleUrls?: (string | null)[]; eyewearUrls?: (string | null)[] }) {
+interface FaceImageRegenerationResult {
+  kind: FaceImageKind;
+  optionIndex: number;
+  imageUrl: string;
+}
+
+function FaceSection({
+  cls,
+  text,
+  hairstyleUrls,
+  eyewearUrls,
+  adminMode,
+  onRegenerateFaceImage,
+}: {
+  cls: ClassificationResult;
+  text: string;
+  hairstyleUrls?: (string | null)[];
+  eyewearUrls?: (string | null)[];
+  adminMode?: boolean;
+  onRegenerateFaceImage?: (
+    kind: FaceImageKind,
+    optionIndex: number,
+  ) => Promise<FaceImageRegenerationResult | null>;
+}) {
   const { face } = cls;
+  const [retryingSlots, setRetryingSlots] = useState<Set<string>>(new Set());
+  const [hairstyleOverrides, setHairstyleOverrides] = useState<Record<number, string>>({});
+  const [eyewearOverrides, setEyewearOverrides] = useState<Record<number, string>>({});
   const hasHairstyleImages = hairstyleUrls && hairstyleUrls.some(Boolean);
   const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
+
+  const handleRetryFaceImage = async (kind: FaceImageKind, optionIndex: number) => {
+    if (!onRegenerateFaceImage) return;
+    const slotKey = `${kind}-${optionIndex}`;
+    setRetryingSlots(prev => new Set(prev).add(slotKey));
+    try {
+      const result = await onRegenerateFaceImage(kind, optionIndex);
+      if (!result) return;
+      if (kind === 'hairstyle') {
+        setHairstyleOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+      } else {
+        setEyewearOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+      }
+    } finally {
+      setRetryingSlots(prev => {
+        const next = new Set(prev);
+        next.delete(slotKey);
+        return next;
+      });
+    }
+  };
+
+  const renderFaceImageSlot = (kind: FaceImageKind, url: string | null | undefined, optionIndex: number) => {
+    const effectiveUrl = kind === 'hairstyle'
+      ? hairstyleOverrides[optionIndex] ?? url
+      : eyewearOverrides[optionIndex] ?? url;
+    const canRetry = adminMode && !!onRegenerateFaceImage;
+    const slotKey = `${kind}-${optionIndex}`;
+    const isRetrying = retryingSlots.has(slotKey);
+
+    return (
+      <div key={optionIndex} className="flex flex-col gap-2">
+        <div
+          className="w-full rounded-xl border overflow-hidden relative"
+          style={{ aspectRatio: '3/4', borderColor: BORDER }}
+        >
+          {effectiveUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={effectiveUrl}
+              alt={`${kind} option ${optionIndex}`}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover object-top"
+              style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
+              onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+            />
+          ) : canRetry ? (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center"
+              style={{ background: '#FFF8F8' }}
+            >
+              <AlertCircle size={28} style={{ color: '#ef4444', opacity: 0.6 }} />
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: '#ef4444', opacity: 0.7 }}>
+                  Image failed
+                </p>
+                <p className="text-[9px] text-gray-400 font-light">Generation did not complete</p>
+              </div>
+              <motion.button
+                onClick={() => handleRetryFaceImage(kind, optionIndex)}
+                disabled={isRetrying}
+                className="flex items-center gap-1.5 px-4 py-2 rounded text-[9px] font-black uppercase tracking-widest disabled:opacity-40"
+                style={{ background: GOLD, color: '#fff' }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={SPRING}
+              >
+                {isRetrying
+                  ? <><Loader2 size={10} className="animate-spin" /> Retrying…</>
+                  : <><RefreshCw size={10} /> Retry</>
+                }
+              </motion.button>
+            </div>
+          ) : (
+            <div className="w-full h-full skeleton-shimmer flex items-center justify-center">
+              <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
+            </div>
+          )}
+        </div>
+        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-center" style={{ color: GOLD }}>
+          Option {optionIndex}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white border-b" style={{ borderColor: BORDER }}>
       <SectionHeader label="Section 01 — Facial Architecture Analysis™" />
@@ -334,67 +448,25 @@ function FaceSection({ cls, text, hairstyleUrls, eyewearUrls }: { cls: Classific
         </div>
 
         {/* Hairstyle images — two headshots side by side */}
-        {hasHairstyleImages && (
+        {(hasHairstyleImages || (adminMode && !!onRegenerateFaceImage)) && (
           <div className="mb-8">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Hairstyle Options</p>
             <div className="grid grid-cols-2 gap-4">
-              {hairstyleUrls!.slice(0, 2).map((url, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  {url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={url}
-                      alt={`Hairstyle option ${i + 1}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full rounded-xl border object-cover object-top"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER, opacity: 0, transition: 'opacity 0.5s ease' }}
-                      onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                    />
-                  ) : (
-                    <div className="w-full rounded-xl border skeleton-shimmer flex items-center justify-center"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER }}>
-                      <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
-                    </div>
-                  )}
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-center" style={{ color: GOLD }}>
-                    Option {i + 1}
-                  </span>
-                </div>
-              ))}
+              {[1, 2].map(optionIndex =>
+                renderFaceImageSlot('hairstyle', hairstyleUrls?.[optionIndex - 1] ?? null, optionIndex),
+              )}
             </div>
           </div>
         )}
 
         {/* Eyewear images — two headshots side by side */}
-        {hasEyewearImages && (
+        {(hasEyewearImages || (adminMode && !!onRegenerateFaceImage)) && (
           <div className="mb-8">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Your Eyewear Options</p>
             <div className="grid grid-cols-2 gap-4">
-              {eyewearUrls!.slice(0, 2).map((url, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  {url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={url}
-                      alt={`Eyewear option ${i + 1}`}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full rounded-xl border object-cover object-top"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER, opacity: 0, transition: 'opacity 0.5s ease' }}
-                      onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                    />
-                  ) : (
-                    <div className="w-full rounded-xl border skeleton-shimmer flex items-center justify-center"
-                      style={{ aspectRatio: '3/4', borderColor: BORDER }}>
-                      <span className="text-[8px] text-gray-300 uppercase tracking-widest">Not generated</span>
-                    </div>
-                  )}
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-center" style={{ color: GOLD }}>
-                    Option {i + 1}
-                  </span>
-                </div>
-              ))}
+              {[1, 2].map(optionIndex =>
+                renderFaceImageSlot('eyewear', eyewearUrls?.[optionIndex - 1] ?? null, optionIndex),
+              )}
             </div>
           </div>
         )}
@@ -947,6 +1019,10 @@ interface ManReportProps {
     outfitNumber: number,
     newText: string,
   ) => Promise<{ imageUrl: string; updatedS4Outfits: string } | null>;
+  onRegenerateFaceImage?: (
+    kind: FaceImageKind,
+    optionIndex: number,
+  ) => Promise<FaceImageRegenerationResult | null>;
 }
 
 function DeferredSection({
@@ -1020,6 +1096,7 @@ function ManReport({
   deferSections = false,
   adminMode,
   onRegenerateOutfit,
+  onRegenerateFaceImage,
 }: ManReportProps) {
   const { classification: cls, sections } = data;
   const isAdminViewer = viewerMode === 'admin' || adminMode === true;
@@ -1046,7 +1123,17 @@ function ManReport({
       label: 'Section 01 — Facial Architecture Analysis™',
       estimatedHeight: 980,
       background: '#ffffff',
-      node: <FaceSection key="s1" cls={cls} text={sections.s1_face} hairstyleUrls={imageUrls?.hairstyleCards ?? undefined} eyewearUrls={imageUrls?.eyewearCards ?? undefined} />,
+      node: (
+        <FaceSection
+          key="s1"
+          cls={cls}
+          text={sections.s1_face}
+          hairstyleUrls={imageUrls?.hairstyleCards ?? undefined}
+          eyewearUrls={imageUrls?.eyewearCards ?? undefined}
+          adminMode={isAdminViewer}
+          onRegenerateFaceImage={onRegenerateFaceImage}
+        />
+      ),
     },
     {
       key: 's2',

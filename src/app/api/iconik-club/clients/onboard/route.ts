@@ -3,6 +3,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { enhanceClientPhotos, generateVisualProfile } from '@/lib/outfitCompositor';
 
+function parseExamples(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(entry => typeof entry === 'string' ? entry.trim() : '')
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Auth: must be a signed-in client
@@ -26,6 +39,8 @@ export async function POST(request: NextRequest) {
     const style_restrictions: string[] = styleRestrictionsRaw
       ? JSON.parse(styleRestrictionsRaw)
       : [];
+    const likedOutfitExamplesRaw = formData.get('liked_outfit_examples') as string | null;
+    const liked_outfit_examples = parseExamples(likedOutfitExamplesRaw);
     const style_notes = (formData.get('style_notes') as string | null)?.trim() || null;
 
     if (!headshot || !bodyPhoto) {
@@ -138,7 +153,11 @@ export async function POST(request: NextRequest) {
         waist_cm,
         hips_cm,
         style_restrictions,
+        liked_outfit_examples,
         style_notes,
+        preference_profile: null,
+        preference_profile_version: null,
+        preference_profile_updated_at: null,
         onboarding_complete: true,
       }, { onConflict: 'user_id' })
       .select()

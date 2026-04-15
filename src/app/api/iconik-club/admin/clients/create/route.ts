@@ -4,6 +4,19 @@ import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 import { enhanceClientPhotos, generateVisualProfile } from '@/lib/outfitCompositor';
 
+function parseExamples(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(entry => typeof entry === 'string' ? entry.trim() : '')
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 /*
   Run this SQL migration in Supabase before using this route:
 
@@ -35,6 +48,8 @@ export async function POST(request: NextRequest) {
     const style_restrictions: string[] = styleRestrictionsRaw
       ? JSON.parse(styleRestrictionsRaw)
       : [];
+    const likedOutfitExamplesRaw = formData.get('liked_outfit_examples') as string | null;
+    const liked_outfit_examples = parseExamples(likedOutfitExamplesRaw);
     const style_notes = (formData.get('style_notes') as string | null)?.trim() || null;
 
     if (!name || !email) {
@@ -49,7 +64,22 @@ export async function POST(request: NextRequest) {
     // Create the profile row first to get the ID we'll use as the storage path
     const { data: profile, error: profileErr } = await admin
       .from('client_profiles')
-      .insert({ name, email, phone, height_cm, bust_cm, waist_cm, hips_cm, style_notes, style_restrictions, onboarding_complete: false })
+      .insert({
+        name,
+        email,
+        phone,
+        height_cm,
+        bust_cm,
+        waist_cm,
+        hips_cm,
+        style_notes,
+        style_restrictions,
+        liked_outfit_examples,
+        preference_profile: null,
+        preference_profile_version: null,
+        preference_profile_updated_at: null,
+        onboarding_complete: false,
+      })
       .select()
       .single();
 

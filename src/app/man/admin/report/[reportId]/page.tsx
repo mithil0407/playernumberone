@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING } from '@/lib/reportAnimations';
 import ManReport from '@/components/ManReport';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
-import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
+import type { ResolvedImageUrls, FaceImageKind } from '@/lib/manImageGenerator';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -45,6 +45,12 @@ interface ReportStatusSnapshot {
 interface OutfitRegenerationResult {
   imageUrl: string;
   updatedS4Outfits: string;
+}
+
+interface FaceImageRegenerationResult {
+  kind: FaceImageKind;
+  optionIndex: number;
+  imageUrl: string;
 }
 
 const SECTIONS = [
@@ -327,6 +333,60 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return { imageUrl, updatedS4Outfits };
   }, [reportId, imageModel]);
 
+  const regenerateFaceImage = useCallback(async (
+    kind: FaceImageKind,
+    optionIndex: number,
+  ): Promise<FaceImageRegenerationResult | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/regenerate-face-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, optionIndex, imageModel }),
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const imageUrl = data.imageUrl as string | null;
+    const responseKind = data.kind as FaceImageKind | null;
+    const responseOptionIndex = data.optionIndex as number | null;
+
+    if (!imageUrl || !responseKind || !responseOptionIndex) return null;
+
+    setReport(prev => {
+      if (!prev) return prev;
+
+      const existingImageUrls = prev.image_urls ?? {
+        hairstyleCards: [],
+        eyewearCards: [],
+        outfitCards: [],
+        baseModel: null,
+      };
+      const nextImageUrls: ResolvedImageUrls = {
+        ...existingImageUrls,
+        hairstyleCards: [...(existingImageUrls.hairstyleCards ?? [])],
+        eyewearCards: [...(existingImageUrls.eyewearCards ?? [])],
+        outfitCards: [...(existingImageUrls.outfitCards ?? [])],
+        baseModel: existingImageUrls.baseModel ?? null,
+      };
+
+      if (responseKind === 'hairstyle') {
+        nextImageUrls.hairstyleCards[responseOptionIndex - 1] = imageUrl;
+      } else {
+        nextImageUrls.eyewearCards[responseOptionIndex - 1] = imageUrl;
+      }
+
+      return {
+        ...prev,
+        image_urls: nextImageUrls,
+      };
+    });
+
+    return {
+      kind: responseKind,
+      optionIndex: responseOptionIndex,
+      imageUrl,
+    };
+  }, [reportId, imageModel]);
+
   // Stable reference — only recomputes when report_data changes (not on approval toggles)
   const reportData = report?.report_data ?? null;
   const safeData   = useMemo(
@@ -552,6 +612,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             viewerMode="admin"
             motionMode="reduced"
             deferSections
+            onRegenerateFaceImage={regenerateFaceImage}
             onRegenerateOutfit={regenerateOutfit}
           />
         ) : (

@@ -33,6 +33,7 @@ export default function NewClientPage() {
   const [hipsCm, setHipsCm]     = useState('');
   const [styleRestrictions, setStyleRestrictions] = useState<string[]>([]);
   const [styleNotes, setStyleNotes] = useState('');
+  const [likedOutfitExamplesText, setLikedOutfitExamplesText] = useState('');
 
   // Photos
   const [headshot, setHeadshot]         = useState<File | null>(null);
@@ -102,6 +103,11 @@ export default function NewClientPage() {
       if (waistCm)  fd.append('waist_cm',  waistCm);
       if (hipsCm)   fd.append('hips_cm',   hipsCm);
       fd.append('style_restrictions', JSON.stringify(styleRestrictions));
+      const likedExamples = likedOutfitExamplesText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+      if (likedExamples.length) fd.append('liked_outfit_examples', JSON.stringify(likedExamples));
       if (styleNotes.trim()) fd.append('style_notes', styleNotes.trim());
 
       const res  = await fetch('/api/iconik-club/admin/clients/create', { method: 'POST', body: fd });
@@ -217,6 +223,7 @@ export default function NewClientPage() {
               setBodyPhoto(null); setBodyPreview('');
               setHeightCm(''); setBustCm(''); setWaistCm(''); setHipsCm('');
               setStyleNotes(''); setStyleRestrictions([]);
+              setLikedOutfitExamplesText('');
               setEmailSent(false);
             }}
             className="flex-1 text-xs font-semibold bg-[#4a2c3e] text-white rounded-xl py-3 hover:bg-[#3a1c2e] transition-colors"
@@ -389,6 +396,18 @@ export default function NewClientPage() {
           <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Style Preferences <span className="font-normal normal-case text-[#4a2c3e]/30">(optional)</span></p>
 
           <div className="mt-4 mb-5">
+            <label className="block text-xs font-semibold text-[#4a2c3e]/60 mb-1.5">Liked outfit examples</label>
+            <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">One line per outfit formula or style cue the client already loves. This becomes the primary taste signal.</p>
+            <textarea
+              value={likedOutfitExamplesText}
+              onChange={e => setLikedOutfitExamplesText(e.target.value)}
+              placeholder={`e.g. Cream blazer with wide-leg trousers and pointed heels\nIvory midi dress with tan structured bag\nDark jeans, tucked knit top, loafers`}
+              rows={4}
+              className="w-full px-3 py-2.5 text-sm border border-[#ffb3d1] rounded-xl bg-[#fff9f5] text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition placeholder:text-[#4a2c3e]/30 resize-none leading-relaxed"
+            />
+          </div>
+
+          <div className="mb-5">
             <label className="block text-xs font-semibold text-[#4a2c3e]/60 mb-1.5">Style notes</label>
             <p className="text-[11px] text-[#4a2c3e]/40 mb-2 leading-relaxed">Brands, aesthetics, outfit vibes the client loves. Fed directly into the AI stylist prompt.</p>
             <textarea

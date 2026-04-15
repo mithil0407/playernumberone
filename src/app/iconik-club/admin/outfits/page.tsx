@@ -20,6 +20,32 @@ interface OutfitBlueprint {
   disruptor: string;
   colourHierarchy: string;
   structurePiece: string;
+  signatureCodesUsed?: string[];
+}
+
+interface PreferenceProfileSnapshot {
+  tasteSummary?: string;
+  styling?: {
+    signatureCodes?: string[];
+    antiCodes?: string[];
+  };
+}
+
+interface MatchDiagnostics {
+  selectionSource?: 'model' | 'repair';
+  candidatePools?: Array<{
+    occasion: string;
+    slot: string;
+    candidates: Array<{
+      id: string;
+      name: string;
+      category: string;
+      score: number;
+      reasons?: string[];
+    }>;
+  }>;
+  slotSelections?: Record<string, string | null>;
+  notes?: string[];
 }
 
 interface OutfitRow {
@@ -29,6 +55,10 @@ interface OutfitRow {
   outfit_card_url?: string;
   ai_style_note?: string;
   ai_blueprint?: OutfitBlueprint;
+  generation_version?: string;
+  preference_profile_snapshot?: PreferenceProfileSnapshot;
+  match_diagnostics?: MatchDiagnostics;
+  validation_errors?: string[];
   occasion?: string;
   season?: string;
   status?: OutfitStatus;
@@ -89,7 +119,8 @@ function BlueprintPanel({ bp }: { bp: OutfitBlueprint }) {
 }
 
 function OutfitCard({ outfit }: { outfit: OutfitRow }) {
-  const [open, setOpen] = useState(false);
+  const [openBlueprint, setOpenBlueprint] = useState(false);
+  const [openDiagnostics, setOpenDiagnostics] = useState(false);
 
   return (
     <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
@@ -145,13 +176,97 @@ function OutfitCard({ outfit }: { outfit: OutfitRow }) {
       {outfit.ai_blueprint && (
         <>
           <button
-            onClick={() => setOpen(o => !o)}
+            onClick={() => setOpenBlueprint(o => !o)}
             className="flex items-center justify-between w-full px-3 py-2 border-t border-[#ffb3d1]/30 text-[10px] font-semibold text-[#4a2c3e]/50 hover:text-[#ff6b9d] hover:bg-[#fff0f5] transition-colors"
           >
             <span>Gemini blueprint</span>
-            {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {openBlueprint ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
-          {open && <BlueprintPanel bp={outfit.ai_blueprint} />}
+          {openBlueprint && <BlueprintPanel bp={outfit.ai_blueprint} />}
+        </>
+      )}
+
+      {(outfit.match_diagnostics || outfit.preference_profile_snapshot || outfit.generation_version) && (
+        <>
+          <button
+            onClick={() => setOpenDiagnostics(o => !o)}
+            className="flex items-center justify-between w-full px-3 py-2 border-t border-[#ffb3d1]/30 text-[10px] font-semibold text-[#4a2c3e]/50 hover:text-[#ff6b9d] hover:bg-[#fff0f5] transition-colors"
+          >
+            <span>Diagnostics</span>
+            {openDiagnostics ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+          {openDiagnostics && (
+            <div className="px-3 pb-3 border-t border-[#ffb3d1]/30 pt-2.5 space-y-3">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 mb-1">Generation</p>
+                <p className="text-[10px] text-[#4a2c3e]/70 leading-snug">
+                  Version: {outfit.generation_version ?? '—'}
+                  {outfit.match_diagnostics?.selectionSource ? ` · Selection: ${outfit.match_diagnostics.selectionSource}` : ''}
+                </p>
+              </div>
+
+              {outfit.preference_profile_snapshot?.tasteSummary && (
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 mb-1">Taste summary</p>
+                  <p className="text-[10px] text-[#4a2c3e]/70 leading-snug">{outfit.preference_profile_snapshot.tasteSummary}</p>
+                </div>
+              )}
+
+              {!!outfit.preference_profile_snapshot?.styling?.signatureCodes?.length && (
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 mb-1">Signature codes</p>
+                  <p className="text-[10px] text-[#4a2c3e]/70 leading-snug">
+                    {outfit.preference_profile_snapshot.styling.signatureCodes.join(' · ')}
+                  </p>
+                </div>
+              )}
+
+              {!!outfit.match_diagnostics?.slotSelections && (
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 mb-1">Slot selections</p>
+                  <div className="space-y-1">
+                    {Object.entries(outfit.match_diagnostics.slotSelections).map(([slot, itemId]) => (
+                      itemId ? (
+                        <div key={slot} className="flex gap-1.5">
+                          <span className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 w-16 flex-shrink-0">{slot}</span>
+                          <span className="text-[10px] text-[#4a2c3e]/70 break-all">{itemId}</span>
+                        </div>
+                      ) : null
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!!outfit.match_diagnostics?.candidatePools?.length && (
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 mb-1">Top candidates</p>
+                  <div className="space-y-2">
+                    {outfit.match_diagnostics.candidatePools.slice(0, 4).map(pool => (
+                      <div key={`${pool.occasion}-${pool.slot}`}>
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-[#ff6b9d]/50 mb-0.5">{pool.slot}</p>
+                        {pool.candidates.slice(0, 3).map(candidate => (
+                          <p key={candidate.id} className="text-[10px] text-[#4a2c3e]/70 leading-snug">
+                            {candidate.name} · {candidate.score}
+                          </p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!!outfit.validation_errors?.length && (
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-[#4a2c3e]/35 mb-1">Repair input</p>
+                  <div className="space-y-1">
+                    {outfit.validation_errors.map(error => (
+                      <p key={error} className="text-[10px] text-[#4a2c3e]/70 leading-snug">{error}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
