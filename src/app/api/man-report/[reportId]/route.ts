@@ -5,12 +5,12 @@ import { cookies } from 'next/headers';
 import { sendMenBlueprintReportEmail } from '@/lib/emailMen';
 import type { ReportData } from '@/lib/manReportGenerator';
 import { revalidateManReportCache } from '@/lib/manReportCache';
-import { getAdminManReportById } from '@/lib/manReportLoader';
+import { getAdminManReportById, loadAdminManReportByIdFresh } from '@/lib/manReportLoader';
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> }
 ) {
   const cookieStore = await cookies();
@@ -20,7 +20,10 @@ export async function GET(
   }
 
   const { reportId } = await params;
-  const report = await getAdminManReportById(reportId);
+  const fresh = request.nextUrl.searchParams.get('fresh') === '1';
+  const report = fresh
+    ? await loadAdminManReportByIdFresh(reportId)
+    : await getAdminManReportById(reportId);
 
   if (!report) {
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });

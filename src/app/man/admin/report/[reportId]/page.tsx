@@ -40,6 +40,12 @@ interface ReportStatusSnapshot {
   errorMessage: string | null;
   generatedAt: string | null;
   shareToken: string;
+  updatedAt: string | null;
+  imageCounts: {
+    hairstyleDone: number;
+    eyewearDone: number;
+    outfitDone: number;
+  };
 }
 
 interface OutfitRegenerationResult {
@@ -126,16 +132,26 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [rejecting, setRejecting]           = useState(false);
   const [confirmingReject, setConfirmingReject] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
+  const [imageGenerationPending, setImageGenerationPending] = useState(false);
   const [imageModel, setImageModel]         = useState<'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image'>('gemini-3.1-flash-image-preview');
   const [elapsedSecs, setElapsedSecs]       = useState(0);
+  const latestStatusUpdatedAtRef = useRef<string | null>(null);
+  const latestImageCountSigRef = useRef<string>('');
 
-  const load = useCallback(async () => {
-    const res  = await fetch(`/api/man-report/${reportId}`, { cache: 'no-store' });
+  const load = useCallback(async (options?: { fresh?: boolean; force?: boolean }) => {
+    const suffix = options?.fresh ? '?fresh=1' : '';
+    const res  = await fetch(`/api/man-report/${reportId}${suffix}`, { cache: 'no-store' });
     const data = await res.json();
     if (data.report) {
+      latestStatusUpdatedAtRef.current = data.report.updated_at ?? null;
+      latestImageCountSigRef.current = JSON.stringify({
+        hairstyleDone: (data.report.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
+        eyewearDone:   (data.report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
+        outfitDone:    (data.report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
+      });
       // Only re-render when DB actually changed — suppress polling jank
       setReport(prev => {
-        if (prev?.updated_at === data.report.updated_at) return prev;
+        if (!options?.force && prev?.updated_at === data.report.updated_at) return prev;
         return data.report;
       });
       // Auto-transition draft_ready → in_review on first open (skip if still generating)
@@ -154,7 +170,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   // Poll lightweight status only while text or image generation is in flight.
   useEffect(() => {
-    if (report?.status !== 'generating' && !report?.progress_stage) return;
+    if (report?.status !== 'generating' && !report?.progress_stage && !imageGenerationPending) return;
 
     let active = true;
 
@@ -166,13 +182,22 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         const next = await res.json() as ReportStatusSnapshot;
         if (!active) return;
 
+        const nextImageCountSig = JSON.stringify(next.imageCounts ?? {});
+        const updatedAtChanged = next.updatedAt !== latestStatusUpdatedAtRef.current;
+        const imageCountsChanged = nextImageCountSig !== latestImageCountSigRef.current;
         const changed =
           next.status !== report?.status ||
           next.progressStage !== report?.progress_stage ||
           next.errorMessage !== report?.error_message ||
-          next.shareToken !== report?.share_token;
+          next.shareToken !== report?.share_token ||
+          updatedAtChanged ||
+          imageCountsChanged;
 
         if (!changed) return;
+
+        const hadImageRunInFlight = imageGenerationPending || !!report?.progress_stage;
+        latestStatusUpdatedAtRef.current = next.updatedAt;
+        latestImageCountSigRef.current = nextImageCountSig;
 
         setReport(prev => prev ? {
           ...prev,
@@ -182,7 +207,15 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
           share_token: next.shareToken ?? prev.share_token,
         } : prev);
 
-        await load();
+        const shouldUseFreshLoad = imageGenerationPending || !!next.progressStage || updatedAtChanged || imageCountsChanged;
+
+        if (hadImageRunInFlight && !next.progressStage && next.status !== 'generating') {
+          await load({ fresh: true, force: true });
+          setImageGenerationPending(false);
+          return;
+        }
+
+        await load({ fresh: shouldUseFreshLoad, force: updatedAtChanged || imageCountsChanged });
       } catch {
         // Ignore transient polling failures; full load remains the source of truth.
       }
@@ -195,7 +228,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       active = false;
       clearInterval(interval);
     };
-  }, [reportId, report?.status, report?.progress_stage, report?.error_message, report?.share_token, load]);
+  }, [reportId, report?.status, report?.progress_stage, report?.error_message, report?.share_token, imageGenerationPending, load]);
 
   // Elapsed-time ticker while generating
   useEffect(() => {
@@ -510,8 +543,27 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         body: JSON.stringify({ imageModel }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Failed to start image generation'); return; }
-      await load();
+      if (!res.ok) {
+        if (res.status === 409 && data.progress_stage) {
+          setImageGenerationPending(true);
+          setReport(prev => prev ? {
+            ...prev,
+            progress_stage: data.progress_stage,
+            error_message: null,
+          } : prev);
+          await load({ fresh: true, force: true });
+          return;
+        }
+        setError(data.error ?? 'Failed to start image generation');
+        return;
+      }
+      setImageGenerationPending(true);
+      setReport(prev => prev ? {
+        ...prev,
+        progress_stage: data.progressStage ?? 'generating_images',
+        error_message: null,
+      } : prev);
+      await load({ fresh: true, force: true });
     } catch {
       setError('Failed to start image generation. Please try again.');
     } finally {

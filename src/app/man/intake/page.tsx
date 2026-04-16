@@ -632,7 +632,7 @@ function ManIntakePageInner() {
 
         } catch (err) {
             console.error('Man intake submit error:', err);
-            setSubmitError('Something went wrong. Please try again or email support@playernumberone.com');
+            setSubmitError('Something went wrong. Please try again or email support@iconik.pro');
         } finally {
             setSubmitting(false);
         }

@@ -41,7 +41,7 @@ export default function BasicSuccessPage() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto"
           >
-            Welcome to your Alpha1 transformation journey! Your Basic Starter PDF Guide is being prepared with care.
+            Welcome to Iconik. Your Basic Starter PDF Guide is being prepared with care.
           </motion.p>
 
           {/* What Happens Next */}
@@ -62,7 +62,7 @@ export default function BasicSuccessPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Within 24 Hours</h3>
                   <p className="text-gray-600 text-sm">
-                    You&apos;ll receive your personalized Alpha1 Basic Starter PDF Guide via email
+                    You&apos;ll receive your personalized Iconik Basic Starter PDF Guide via email
                   </p>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function BasicSuccessPage() {
             className="mt-8 text-center"
           >
             <p className="text-sm text-gray-500">
-              Check your email (including spam folder) for your Alpha1 Basic Guide within 24 hours.
+              Check your email (including spam folder) for your Iconik Basic Guide within 24 hours.
               <br />
               Need immediate help? Email us at{' '}
               <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline">
@@ -209,5 +209,4 @@ export default function BasicSuccessPage() {
     </div>
   );
 }
-
 

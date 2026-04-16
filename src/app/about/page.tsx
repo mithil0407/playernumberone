@@ -19,7 +19,7 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            Back to Alpha1
+            Back to Iconik
           </Link>
         </div>
       </header>
@@ -36,9 +36,9 @@ export default function AboutPage() {
             <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
               <User className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">About Alpha1</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">About Iconik</h1>
             <p className="text-xl text-gray-600">
-              Your trusted partner in men&apos;s transformation and confidence building.
+              A personal styling service built to turn wardrobe confusion into a repeatable decision framework.
             </p>
           </div>
 
@@ -57,7 +57,7 @@ export default function AboutPage() {
                   <p className="text-2xl font-bold text-blue-600 mb-4">MITHIL NILESH NAVALAKHA</p>
                   
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Brand Name</h3>
-                  <p className="text-xl text-gray-700">PlayerNumberOne Alpha1</p>
+                  <p className="text-xl text-gray-700">Iconik</p>
                 </div>
                 
                 <div>
@@ -65,7 +65,7 @@ export default function AboutPage() {
                   <p className="text-gray-700 mb-4">Individual Proprietorship</p>
                   
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Industry</h3>
-                  <p className="text-gray-700">Men&apos;s Lifestyle & Transformation Coaching</p>
+                  <p className="text-gray-700">Personal Styling & Wardrobe Strategy</p>
                 </div>
               </div>
             </section>
@@ -76,22 +76,22 @@ export default function AboutPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Alpha1 Transformation Program</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Iconik Style Blueprint</h3>
                   <ul className="space-y-2 text-gray-700">
-                    <li>• Personalized grooming and skincare guidance</li>
-                    <li>• Custom style and wardrobe recommendations</li>
-                    <li>• Fitness and nutrition planning</li>
-                    <li>• Confidence and communication coaching</li>
+                    <li>• Body shape and silhouette guidance</li>
+                    <li>• Undertone-led colour recommendations</li>
+                    <li>• Outfit formulas for work, casual, and occasion dressing</li>
+                    <li>• Face-shape guidance for necklines and accessories</li>
                   </ul>
                 </div>
                 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Services</h3>
                   <ul className="space-y-2 text-gray-700">
-                    <li>• AI-powered before/after visualizations</li>
-                    <li>• 1-on-1 consultation sessions</li>
-                    <li>• Ongoing support and guidance</li>
-                    <li>• Lifestyle transformation coaching</li>
+                    <li>• 1-on-1 stylist consultation</li>
+                    <li>• Market-specific styling pages for India and international audiences</li>
+                    <li>• Ongoing styling support through selected subscription products</li>
+                    <li>• Editorial guides that explain the methodology in practical terms</li>
                   </ul>
                 </div>
               </div>
@@ -103,14 +103,13 @@ export default function AboutPage() {
               
               <div className="space-y-4">
                 <p className="text-gray-700 leading-relaxed">
-                  At Alpha1, we believe every man deserves to feel confident and attractive. Our mission is to 
-                  provide personalized transformation coaching that helps men improve their appearance, boost 
-                  their confidence, and achieve their personal and professional goals.
+                  At Iconik, we believe personal styling works best when it is clear, analytical, and practical. Our mission is to
+                  help women understand what suits them, shop with confidence, and build wardrobes that work across real life.
                 </p>
                 
                 <p className="text-gray-700 leading-relaxed">
-                  Through our comprehensive approach covering grooming, style, fitness, and confidence building, 
-                  we&apos;ve helped over 200 men transform their lives and become the best versions of themselves.
+                  Through a methodology-led approach to styling, Iconik helps clients buy better, dress more consistently,
+                  and stop relying on generic fashion advice that does not translate to their real lives.
                 </p>
               </div>
             </section>
@@ -125,8 +124,8 @@ export default function AboutPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
                     <p className="text-gray-700">
-                      <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">
-                        support@playernumberone.com
+                      <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">
+                        support@iconik.pro
                       </a>
                     </p>
                   </div>
@@ -183,7 +182,7 @@ export default function AboutPage() {
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border border-blue-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Transform Your Life?</h2>
               <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                Join hundreds of men who have already transformed their confidence and attractiveness with Alpha1.
+                Join women who use Iconik to dress with more clarity, consistency, and confidence.
               </p>
               <Link 
                 href="/checkout"
@@ -203,5 +202,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-

@@ -1,10 +1,12 @@
 'use client';
 
-import Head from 'next/head';
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import ExploreLinksSection from '@/components/ExploreLinksSection';
+import { footerExploreGroups } from '@/lib/seoContent';
+import { SUPPORT_EMAIL } from '@/lib/seo';
 import {
   CheckCircle,
   ArrowRight,
@@ -330,20 +332,6 @@ export default function MonthlyPage() {
   };
 
   return (
-    <>
-      <Head>
-        <title>ICONIK - Personal Style Transformation | Choose Your Plan</title>
-        <meta name="description" content="ICONIK: Your complete style transformation program. Choose from Style Starter, Seasonal, or VIP packages. Transform your wardrobe and confidence." />
-        <meta name="keywords" content="style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover" />
-        <meta property="og:title" content="ICONIK - Personal Style Transformation | Choose Your Plan" />
-        <meta property="og:description" content="ICONIK: Your complete style transformation program. Choose from Style Starter, Seasonal, or VIP packages." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://playernumberone.com/monthly" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ICONIK - Personal Style Transformation | Choose Your Plan" />
-        <meta name="twitter:description" content="ICONIK: Your complete style transformation program. Choose from Style Starter, Seasonal, or VIP packages." />
-        <link rel="canonical" href="https://playernumberone.com/monthly" />
-      </Head>
       <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
         <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
@@ -975,6 +963,14 @@ export default function MonthlyPage() {
           </div>
         </section>
 
+        <ExploreLinksSection
+          eyebrow="Understand the Framework"
+          title="Use the Core Pages Before Choosing a Tier"
+          description="These pages explain the logic behind Iconik's recommendations, so you know whether one-time or ongoing styling support makes sense."
+          groups={footerExploreGroups}
+          className="bg-luxury-cream/20"
+        />
+
         {/* Footer */}
         <footer className="py-20 bg-luxury-cream/30 border-t border-luxury-cream">
           <div className="max-w-6xl mx-auto px-6 lg:px-8">
@@ -987,10 +983,10 @@ export default function MonthlyPage() {
                 </p>
                 <div className="flex gap-4">
                   <a
-                    href="mailto:support@playernumberone.com"
+                    href={`mailto:${SUPPORT_EMAIL}`}
                     className="luxury-body text-luxury-charcoal/60 hover:text-luxury-green transition-colors"
                   >
-                    support@playernumberone.com
+                    {SUPPORT_EMAIL}
                   </a>
                 </div>
               </div>
@@ -1092,7 +1088,7 @@ export default function MonthlyPage() {
 
             <div className="border-t border-luxury-cream pt-8 text-center">
               <p className="luxury-body text-luxury-charcoal/60">
-                © 2024 PlayerNumberOne ICONIK. All rights reserved. | Transform with elegance.
+                © {new Date().getFullYear()} Iconik. All rights reserved. | Personal styling with ongoing support.
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
                 Business Legal Name: MITHIL NILESH NAVALAKHA
@@ -1133,9 +1129,6 @@ export default function MonthlyPage() {
             </Link>
           </div>
         </div>
-
-
       </div>
-    </>
   );
 }

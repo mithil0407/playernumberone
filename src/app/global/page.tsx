@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
 import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import ExploreLinksSection from '@/components/ExploreLinksSection';
+import { footerExploreGroups } from '@/lib/seoContent';
 
 // ── Data ────────────────────────────────────────────────────────────────────
 
@@ -490,6 +492,14 @@ export default function GlobalLandingPage() {
                     </div>
                 </div>
             </section>
+
+            <ExploreLinksSection
+                eyebrow="Inside Iconik"
+                title="Understand the Blueprint Before Checkout"
+                description="These pages give the broader context around the offer, the methodology, and the advice clusters that support the Blueprint."
+                groups={footerExploreGroups}
+                className="bg-luxury-cream/20"
+            />
 
             {/* ── Minimal Footer ────────────────────────────────────────── */}
             <footer className="py-8 px-6 bg-luxury-cream/20 text-center border-t border-luxury-cream">

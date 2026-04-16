@@ -1,9 +1,10 @@
 'use client';
 
-import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import ExploreLinksSection from '@/components/ExploreLinksSection';
+import { footerExploreGroups } from '@/lib/seoContent';
 import { ArrowRight, ArrowLeft, CheckCircle, Palette, Shapes, Ban } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
@@ -54,22 +55,6 @@ export default function UaeLandingPage() {
   }, [transformationImages]);
 
   return (
-    <>
-      <Head>
-        <title>ICONIK UAE | Your Personal Style Blueprint</title>
-        <meta
-          name="description"
-          content="Your Personal Style Blueprint – curated by professional stylists in 48 hours. Trusted by 2,000+ women across 12 countries."
-        />
-        <meta property="og:title" content="ICONIK UAE | Your Personal Style Blueprint" />
-        <meta
-          property="og:description"
-          content="Finally understand what flatters YOUR body, not just what's trending."
-        />
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://playernumberone.com/uae" />
-      </Head>
-
       <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
         <section className="pt-14 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
@@ -332,6 +317,14 @@ export default function UaeLandingPage() {
           </div>
         </section>
 
+        <ExploreLinksSection
+          eyebrow="Know the Method"
+          title="Read the Core Iconik Guides"
+          description="These pages explain how Iconik approaches body analysis, colour guidance, and the difference between methodology-led styling and generic advice."
+          groups={footerExploreGroups}
+          className="bg-luxury-cream/20"
+        />
+
         <section className="py-16 md:py-20 bg-luxury-charcoal text-luxury-warm-white">
           <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 text-center">
             <motion.h2
@@ -355,6 +348,5 @@ export default function UaeLandingPage() {
           </div>
         </section>
       </div>
-    </>
   );
 }

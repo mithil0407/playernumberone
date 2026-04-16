@@ -277,7 +277,7 @@ export default function GlobeLandingPage() {
                             </div>
                             <div className="flex-1 flex justify-center">
                                 <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 luxury-body tracking-wide">
-                                    iconik.playernumberone.com/your-blueprint
+                                    iconik.pro/your-blueprint
                                 </div>
                             </div>
                         </div>

@@ -193,14 +193,6 @@ export default function RootLayout({
                   "url": "https://www.iconik.pro",
                   "name": "Iconik",
                   "publisher": { "@id": "https://www.iconik.pro/#organization" },
-                  "potentialAction": {
-                    "@type": "SearchAction",
-                    "target": {
-                      "@type": "EntryPoint",
-                      "urlTemplate": "https://www.iconik.pro/search?q={search_term_string}",
-                    },
-                    "query-input": "required name=search_term_string",
-                  },
                 },
               ],
             }),

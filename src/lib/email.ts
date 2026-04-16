@@ -1446,7 +1446,7 @@ export async function sendIconikClubWelcomeEmail(
             <td style="padding:28px 40px 32px; text-align:center; border-top:1px solid #fde8f2; margin-top:28px;">
               <p style="margin:0; color:#c9457a; font-weight:700; font-size:14px;">ICONIK Club</p>
               <p style="margin:4px 0 0; color:#999; font-size:12px;">Questions? Reply to this email or WhatsApp us.</p>
-              <p style="margin:4px 0 0; color:#bbb; font-size:11px;">support@playernumberone.com</p>
+              <p style="margin:4px 0 0; color:#bbb; font-size:11px;">support@iconik.pro</p>
             </td>
           </tr>
 
@@ -1469,7 +1469,7 @@ export async function sendIconikClubWelcomeEmail(
       `2. Our team will reach out on WhatsApp for onboarding\n` +
       `3. Your personalised outfits will appear in your portal once your profile is set up\n\n` +
       `Questions? Reply to this email or WhatsApp us.\n` +
-      `support@playernumberone.com`;
+      `support@iconik.pro`;
 
     const info = await transporter.sendMail({
       from: `"Iconik Club" <${process.env.GMAIL_USER}>`,
@@ -1565,7 +1565,7 @@ export async function sendOutfitsReadyEmail(
       `Your Iconik Club outfit set is ready!\n\n` +
       `View your outfits here: ${outfitsUrl}\n\n` +
       `Questions? Reply to this email or WhatsApp us.\n` +
-      `support@playernumberone.com`;
+      `support@iconik.pro`;
 
     const info = await transporter.sendMail({
       from: `"Iconik Club" <${process.env.GMAIL_USER}>`,

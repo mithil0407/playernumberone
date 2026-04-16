@@ -290,7 +290,7 @@ export default function ManLandingPage() {
                             </div>
                             <div className="flex-1 flex justify-center">
                                 <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 luxury-body tracking-wide">
-                                    iconik.playernumberone.com/your-blueprint
+                                    iconik.pro/your-blueprint
                                 </div>
                             </div>
                         </div>
@@ -982,7 +982,7 @@ export default function ManLandingPage() {
                             <Link href="/privacy-policy" className="hover:text-luxury-green transition-colors">Privacy Policy</Link>
                             <Link href="/refund-policy" className="hover:text-luxury-green transition-colors">Refund Policy</Link>
                             <Link href="/terms" className="hover:text-luxury-green transition-colors">Terms of Service</Link>
-                            <a href="mailto:support@playernumberone.com" className="hover:text-luxury-green transition-colors">support@playernumberone.com</a>
+                            <a href="mailto:support@iconik.pro" className="hover:text-luxury-green transition-colors">support@iconik.pro</a>
                         </div>
                     </div>
                     <div className="mt-8 pt-6 border-t border-luxury-cream text-center">

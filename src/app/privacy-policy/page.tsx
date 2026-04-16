@@ -242,8 +242,8 @@ export default function PrivacyPolicyPage() {
 
                 <p className="leading-relaxed mt-4">
                   To exercise these rights, please contact us at{' '}
-                  <a href="mailto:privacy@playernumberone.com" className="text-blue-600 hover:underline">
-                    privacy@playernumberone.com
+                  <a href="mailto:privacy@iconik.pro" className="text-blue-600 hover:underline">
+                    privacy@iconik.pro
                   </a>
                 </p>
               </div>
@@ -332,7 +332,7 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <ul className="space-y-2">
                   <li>• Clicking the &quot;unsubscribe&quot; link in any marketing email</li>
-                  <li>• Contacting us at support@playernumberone.com</li>
+                  <li>• Contacting us at support@iconik.pro</li>
                   <li>• Adjusting your account preferences</li>
                 </ul>
                 <p className="leading-relaxed mt-3 text-sm">
@@ -365,8 +365,8 @@ export default function PrivacyPolicyPage() {
                 <div className="space-y-2">
                   <p><strong>Business Name:</strong> ICONIK (Player Number One)</p>
                   <p><strong>Operated by:</strong> MITHIL NILESH NAVALAKHA</p>
-                  <p><strong>Privacy Officer:</strong> <a href="mailto:privacy@playernumberone.com" className="text-blue-600 hover:underline">privacy@playernumberone.com</a></p>
-                  <p><strong>General Support:</strong> <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a></p>
+                  <p><strong>Privacy Officer:</strong> <a href="mailto:privacy@iconik.pro" className="text-blue-600 hover:underline">privacy@iconik.pro</a></p>
+                  <p><strong>General Support:</strong> <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a></p>
                 </div>
                 <Link
                   href="/contact"

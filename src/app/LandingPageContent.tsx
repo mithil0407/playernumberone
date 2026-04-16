@@ -1,10 +1,12 @@
 'use client';
 
-import Head from 'next/head';
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import ExploreLinksSection from '@/components/ExploreLinksSection';
+import { footerExploreGroups } from '@/lib/seoContent';
+import { SUPPORT_EMAIL } from '@/lib/seo';
 import {
   CheckCircle,
   ArrowRight,
@@ -135,20 +137,6 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
   ];
 
   return (
-    <>
-      <Head>
-        <title>ICONIK - Discover Your Signature Style & Transform Your Confidence</title>
-        <meta name="description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence. Join 200+ women who transformed their lives." />
-        <meta name="keywords" content="style transformation, personal style, color palette, women fashion, confidence building, style consultation, wardrobe makeover" />
-        <meta property="og:title" content="ICONIK - Discover Your Signature Style & Transform Your Confidence" />
-        <meta property="og:description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://playernumberone.com" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ICONIK - Discover Your Signature Style & Transform Your Confidence" />
-        <meta name="twitter:description" content="ICONIK: Your complete style transformation program. Discover your unique style, personalized color palette, and build unshakeable confidence." />
-        <link rel="canonical" href="https://playernumberone.com" />
-      </Head>
       <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal scroll-smooth overflow-x-hidden pb-20 md:pb-0">
         {/* Navigation */}
         <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
@@ -411,7 +399,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 luxury-body tracking-wide">
-                    iconik.playernumberone.com/your-blueprint
+                                    iconik.pro/your-blueprint
                   </div>
                 </div>
               </div>
@@ -1194,6 +1182,14 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
           </div>
         </section>
 
+        <ExploreLinksSection
+          eyebrow="Knowledge Hub"
+          title="Learn Before You Buy"
+          description="Use the pages below to understand how Iconik works, what it costs, and the methodology behind the recommendations."
+          groups={footerExploreGroups}
+          className="bg-luxury-cream/20"
+        />
+
         {/* Footer */}
         <footer className="py-20 bg-luxury-cream/30 border-t border-luxury-cream">
           <div className="max-w-6xl mx-auto px-6 lg:px-8">
@@ -1206,10 +1202,10 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                 </p>
                 <div className="flex gap-4">
                   <a
-                    href="mailto:support@playernumberone.com"
+                    href={`mailto:${SUPPORT_EMAIL}`}
                     className="luxury-body text-luxury-charcoal/60 hover:text-luxury-green transition-colors"
                   >
-                    support@playernumberone.com
+                    {SUPPORT_EMAIL}
                   </a>
                 </div>
               </div>
@@ -1311,7 +1307,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
 
             <div className="border-t border-luxury-cream pt-8 text-center">
               <p className="luxury-body text-luxury-charcoal/60">
-                © 2024 PlayerNumberOne ICONIK. All rights reserved. | Transform with elegance.
+                © {new Date().getFullYear()} Iconik. All rights reserved. | Scientific styling for Indian women.
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
                 Business Legal Name: MITHIL NILESH NAVALAKHA
@@ -1353,9 +1349,6 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
             </Link>
           </div>
         </div>
-
-
       </div>
-    </>
   );
 }

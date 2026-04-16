@@ -21,13 +21,19 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, progress_stage, error_message, generated_at, share_token')
+    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, image_urls')
     .eq('id', reportId)
     .single();
 
   if (error || !data) {
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
+
+  const imageUrls = data.image_urls as {
+    hairstyleCards?: (string | null)[];
+    eyewearCards?: (string | null)[];
+    outfitCards?: (string | null)[];
+  } | null;
 
   return NextResponse.json({
     reportId:      data.id,
@@ -36,5 +42,11 @@ export async function GET(
     errorMessage:  data.error_message,
     generatedAt:   data.generated_at,
     shareToken:    data.share_token,
+    updatedAt:     data.updated_at,
+    imageCounts: {
+      hairstyleDone: (imageUrls?.hairstyleCards ?? []).filter(Boolean).length,
+      eyewearDone:   (imageUrls?.eyewearCards   ?? []).filter(Boolean).length,
+      outfitDone:    (imageUrls?.outfitCards    ?? []).filter(Boolean).length,
+    },
   });
 }

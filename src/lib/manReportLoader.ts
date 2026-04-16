@@ -60,7 +60,7 @@ async function resolveRowImages<T extends { image_urls: ManReportImagePaths | nu
   };
 }
 
-async function loadAdminReportById(reportId: string): Promise<AdminLoadedManReport | null> {
+export async function loadAdminManReportByIdFresh(reportId: string): Promise<AdminLoadedManReport | null> {
   const { data, error } = await supabaseAdmin
     .from('man_reports')
     .select('*, man_intake_submissions(id, customer_email, customer_phone)')
@@ -87,7 +87,7 @@ async function loadPublicReportByShareToken(shareToken: string): Promise<PublicL
 
 export const getAdminManReportById = cache(async (reportId: string): Promise<AdminLoadedManReport | null> => {
   const load = unstable_cache(
-    () => loadAdminReportById(reportId),
+    () => loadAdminManReportByIdFresh(reportId),
     ['man-report-admin', reportId],
     {
       revalidate: MAN_REPORT_CACHE_SECONDS,

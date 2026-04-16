@@ -181,6 +181,19 @@ export async function POST(
   const reportData       = report.report_data as ReportData;
   const existingImageUrls = report.image_urls as ManReportImagePaths | null;
 
+  const initialProgressStage = 'generating_images';
+
+  await supabaseAdmin
+    .from('man_reports')
+    .update({
+      progress_stage: initialProgressStage,
+      error_message: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', reportId);
+
+  await revalidateManReportCache(reportId, report.share_token ?? null);
+
   after(async () => {
     await runImagePipeline(
       reportId,
@@ -193,5 +206,5 @@ export async function POST(
     );
   });
 
-  return NextResponse.json({ status: 'generating_images' });
+  return NextResponse.json({ status: 'generating_images', progressStage: initialProgressStage });
 }

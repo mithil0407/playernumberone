@@ -85,6 +85,50 @@ export default function CityLandingPage({ city, cityContext, testimonial }: City
           </p>
         </section>
 
+        <section className="mb-12 rounded-xl border border-gray-200 bg-gray-50 p-7">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Common Questions from {city} Clients
+          </h2>
+          <div className="space-y-5 text-gray-600">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Can I use Iconik if I live in {city} but want a fully online service?
+              </h3>
+              <p className="leading-relaxed">
+                Yes. Iconik is designed to work online, so your location in {city} does not limit the quality of the analysis. The process is built around intake, review, and a documented Blueprint rather than an in-person appointment.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Is the Blueprint relevant for {city}&apos;s work and social dressing context?
+              </h3>
+              <p className="leading-relaxed">
+                Yes. The recommendations are built around your lifestyle, which means the final guidance can account for office dressing, event dressing, ethnic wear, and day-to-day wardrobe use in {city}.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Where should I start if I&apos;m comparing local stylists with Iconik?
+              </h3>
+              <p className="leading-relaxed">
+                Start with the national service page and methodology pages first. They explain what the Blueprint includes, how it works across India, and why a digital, measurement-led approach can be more useful than generic local styling advice.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Start with the National Service Pages
+          </h2>
+          <ul className="space-y-2 text-gray-600">
+            <li>→ <Link href="/personal-stylist-india" className="underline hover:opacity-70">Personal Stylist India</Link></li>
+            <li>→ <Link href="/how-it-works" className="underline hover:opacity-70">How Iconik Works</Link></li>
+            <li>→ <Link href="/pricing" className="underline hover:opacity-70">Iconik Pricing</Link></li>
+            <li>→ <Link href="/methodology" className="underline hover:opacity-70">Iconik Methodology</Link></li>
+          </ul>
+        </section>
+
         <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
             8 slots open for {city} women this week

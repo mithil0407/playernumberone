@@ -458,10 +458,10 @@ function JoinPageContent() {
             <p className="luxury-body text-center text-xs text-luxury-charcoal/40">
               Questions?{' '}
               <a
-                href="mailto:support@playernumberone.com"
+                href="mailto:support@iconik.pro"
                 className="text-luxury-accent hover:text-luxury-accent/70 transition-colors"
               >
-                support@playernumberone.com
+                support@iconik.pro
               </a>
             </p>
 

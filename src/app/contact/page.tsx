@@ -76,7 +76,7 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            Back to Alpha1
+            Back to Iconik
           </Link>
         </div>
       </header>
@@ -91,7 +91,7 @@ export default function ContactPage() {
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Contact Us</h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Have questions about Alpha1? We&apos;re here to help you on your transformation journey.
+              Have questions about Iconik? We&apos;re here to help you understand the service, the methodology, and the right next step.
             </p>
           </div>
 

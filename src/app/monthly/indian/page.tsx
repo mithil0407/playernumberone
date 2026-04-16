@@ -1,10 +1,11 @@
 'use client';
 
-import Head from 'next/head';
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import ExploreLinksSection from '@/components/ExploreLinksSection';
+import { footerExploreGroups } from '@/lib/seoContent';
 import {
     CheckCircle,
     ArrowRight,
@@ -317,17 +318,6 @@ export default function MonthlyIndianPage() {
     };
 
     return (
-        <>
-            <Head>
-                <title>ICONIK - Your Personal Stylist. Every Month. Forever. | Monthly Subscription</title>
-                <meta name="description" content="ICONIK Monthly Subscription: Get your personal stylist for ₹999/month. Transform your wardrobe with monthly styling calls, outfit previews, and WhatsApp support." />
-                <meta name="keywords" content="personal stylist subscription, monthly styling, wardrobe transformation, Indian fashion, style consultation" />
-                <meta property="og:title" content="ICONIK - Your Personal Stylist. Every Month. Forever." />
-                <meta property="og:description" content="Get your personal stylist for ₹999/month. Monthly styling calls, outfit previews, and WhatsApp support." />
-                <meta property="og:type" content="website" />
-                <meta property="og:url" content="https://playernumberone.com/monthly/indian" />
-                <link rel="canonical" href="https://playernumberone.com/monthly/indian" />
-            </Head>
             <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal scroll-smooth overflow-x-hidden pb-20 md:pb-0">
                 {/* Navigation */}
                 <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
@@ -886,6 +876,13 @@ export default function MonthlyIndianPage() {
                     </div>
                 </section>
 
+                <ExploreLinksSection
+                    eyebrow="Before You Subscribe"
+                    title="Read the Core Iconik Pages"
+                    description="These pages explain the methodology, pricing logic, and service structure behind the monthly offer."
+                    groups={footerExploreGroups}
+                />
+
                 {/* Final CTA Section */}
                 <section className="py-20 md:py-32 bg-luxury-accent/5">
                     <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 text-center">
@@ -930,6 +927,5 @@ export default function MonthlyIndianPage() {
                 {/* Footer spacing for mobile */}
                 <div className="h-20 md:hidden"></div>
             </div>
-        </>
     );
 }

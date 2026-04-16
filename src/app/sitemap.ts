@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 const BASE = "https://www.iconik.pro";
-const NOW = new Date().toISOString();
+const NOW = new Date("2026-04-16T00:00:00.000Z").toISOString();
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -9,6 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/`, lastModified: NOW, changeFrequency: "weekly", priority: 1.0 },
     { url: `${BASE}/about`, lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/contact`, lastModified: NOW, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE}/how-it-works`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/pricing`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/results`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/what-is-iconik`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/who-is-iconik-for`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/iconik-methodology`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/uae`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/au`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
 
@@ -40,6 +46,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ─── Body type styling pillar + spokes ───────────────────────
     { url: `${BASE}/body-type-styling`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/body-shape-consultation-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/body-type-styling/apple`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/body-type-styling/pear`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/body-type-styling/rectangle`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
@@ -60,6 +67,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // ─── Colour analysis pillar + spokes ─────────────────────────
     { url: `${BASE}/colour-analysis`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/colour-analysis-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/how-to-find-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/warm-cool-neutral-undertone-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/colour-analysis/warm-undertone`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
@@ -76,11 +84,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/colour-analysis/dark-skin-colour-guide-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── Methodology (AEO entity pages) ──────────────────────────
+    { url: `${BASE}/methodology`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/methodology/chromatic-harmony-mapping`, lastModified: NOW, changeFrequency: "yearly", priority: 0.9 },
     { url: `${BASE}/methodology/geometric-silhouette-profiling`, lastModified: NOW, changeFrequency: "yearly", priority: 0.9 },
     { url: `${BASE}/methodology/facial-architecture-analysis`, lastModified: NOW, changeFrequency: "yearly", priority: 0.9 },
 
     // ─── Style guides cluster ─────────────────────────────────────
+    { url: `${BASE}/style-guides`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/style-guides/capsule-wardrobe-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/style-guides/office-wear-indian-women`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/style-guides/saree-draping-body-type`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
@@ -92,14 +102,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/style-guides/dressing-after-weight-gain`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/style-guides/fashion-40s-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/style-guides/modest-professional-fashion-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/wardrobe-audit-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/capsule-wardrobe-service-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── VS / Comparison pages ───────────────────────────────────
+    { url: `${BASE}/vs`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/vs/online-vs-inperson-styling`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/vs/iconik-vs-styling-apps`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/vs/style-blueprint-vs-quiz`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/personal-shopper-vs-personal-stylist-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
 
     // ─── City landing pages ──────────────────────────────────────
+    { url: `${BASE}/personal-stylist-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/online-personal-stylist-india`, lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/personal-stylist-mumbai`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/personal-stylist-bangalore`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/personal-stylist-delhi`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
@@ -129,6 +145,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/blog/what-is-chromatic-harmony-mapping`, lastModified: NOW, changeFrequency: "yearly", priority: 0.8 },
     { url: `${BASE}/blog/what-is-facial-architecture-analysis`, lastModified: NOW, changeFrequency: "yearly", priority: 0.8 },
     { url: `${BASE}/blog/is-personal-stylist-worth-it-india`, lastModified: NOW, changeFrequency: "yearly", priority: 0.8 },
+    { url: `${BASE}/glossary/personal-styling-terms-india`, lastModified: NOW, changeFrequency: "yearly", priority: 0.7 },
 
     // ─── Legal ───────────────────────────────────────────────────
     { url: `${BASE}/terms`, lastModified: NOW, changeFrequency: "yearly", priority: 0.3 },

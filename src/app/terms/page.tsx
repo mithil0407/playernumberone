@@ -306,8 +306,8 @@ export default function TermsOfServicePage() {
                 <div className="space-y-2">
                   <p><strong>Business Name:</strong> ICONIK (Player Number One)</p>
                   <p><strong>Operated by:</strong> MITHIL NILESH NAVALAKHA</p>
-                  <p><strong>Email:</strong> <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a></p>
-                  <p><strong>Support:</strong> <a href="mailto:support@playernumberone.com" className="text-blue-600 hover:underline">support@playernumberone.com</a></p>
+                  <p><strong>Email:</strong> <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a></p>
+                  <p><strong>Support:</strong> <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a></p>
                 </div>
                 <Link
                   href="/contact"

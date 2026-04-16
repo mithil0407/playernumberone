@@ -12,7 +12,7 @@ export default function ShippingPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link href="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-            Back to Alpha1
+            Back to Iconik
           </Link>
         </div>
       </header>
@@ -44,7 +44,7 @@ export default function ShippingPage() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Important Notice</h2>
                   <p className="text-gray-700 text-lg leading-relaxed">
-                    <strong>PlayerNumberOne Alpha1</strong> is a <strong>digital transformation coaching service</strong>. 
+                    <strong>Iconik</strong> is a <strong>digital personal styling service</strong>. 
                     We do not ship physical products. All services are delivered electronically through digital channels.
                   </p>
                 </div>
@@ -71,13 +71,13 @@ export default function ShippingPage() {
                 <div className="border-l-4 border-blue-500 pl-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 2: Welcome Package</h3>
                   <p className="text-gray-700">
-                    You&apos;ll receive a comprehensive welcome email containing:
+                    You&apos;ll receive a welcome email containing:
                   </p>
                   <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
-                    <li>Program overview and expectations</li>
-                    <li>Pre-session preparation guide</li>
-                    <li>Style assessment questionnaire</li>
-                    <li>Contact information for your coach</li>
+                    <li>Service overview and next steps</li>
+                    <li>Preparation guidance for your intake</li>
+                    <li>Assessment instructions or intake links where relevant</li>
+                    <li>Contact information for support</li>
                   </ul>
                   <p className="text-sm text-blue-600 mt-2">⏱️ Delivery Time: Within 1 hour of payment</p>
                 </div>
@@ -85,7 +85,7 @@ export default function ShippingPage() {
                 <div className="border-l-4 border-purple-500 pl-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 3: Session Scheduling</h3>
                   <p className="text-gray-700">
-                    Access to our scheduling system to book your 1-on-1 transformation session at your convenience.
+                    Access to scheduling or intake completion steps, depending on the service purchased.
                   </p>
                   <p className="text-sm text-purple-600 mt-2">⏱️ Available: Immediately after payment confirmation</p>
                 </div>
@@ -93,16 +93,16 @@ export default function ShippingPage() {
                 <div className="border-l-4 border-orange-500 pl-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 4: Coaching Session</h3>
                   <p className="text-gray-700">
-                    Your personalized 1-on-1 video consultation with our transformation expert, delivered via 
+                    Your personalized 1-on-1 video consultation with an Iconik stylist, delivered via 
                     secure video conferencing platform.
                   </p>
                   <p className="text-sm text-orange-600 mt-2">⏱️ Scheduled: Within 7 days of purchase</p>
                 </div>
 
                 <div className="border-l-4 border-red-500 pl-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 5: Transformation Plan</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 5: Blueprint Delivery</h3>
                   <p className="text-gray-700">
-                    Receive your personalized transformation roadmap via email within 24 hours of your session, 
+                    Receive your personalized Blueprint or styling deliverable via email within 24 hours of your session, 
                     including specific recommendations and action steps.
                   </p>
                   <p className="text-sm text-red-600 mt-2">⏱️ Delivery Time: Within 24 hours of session completion</p>
@@ -250,7 +250,7 @@ export default function ShippingPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Service Provider</h3>
                   <p className="text-gray-700"><strong>MITHIL NILESH NAVALAKHA</strong></p>
-                  <p className="text-gray-600">PlayerNumberOne Alpha1</p>
+                  <p className="text-gray-600">Iconik</p>
                 </div>
 
                 <div>
@@ -310,4 +310,3 @@ export default function ShippingPage() {
     </div>
   );
 }
-
