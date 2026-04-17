@@ -29,9 +29,9 @@ export default function RefundPolicyPage() {
             <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Refund & Cancellation Policy</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Satisfaction, Revision & Cancellation Policy</h1>
             <p className="text-xl text-gray-600">
-              Your satisfaction is our priority. Here&apos;s our transparent refund and cancellation policy.
+              Your satisfaction is our priority. Here&apos;s how revisions and cancellations are handled across ICONIK services.
             </p>
           </div>
 
@@ -39,43 +39,44 @@ export default function RefundPolicyPage() {
           <div className="space-y-8">
             {/* Style Consultations */}
             <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Style Consultations (One-Time Purchase)</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Style Blueprints & Consultations (One-Time Purchase)</h2>
 
-              {/* 7-Day Guarantee */}
+              {/* Satisfaction Guarantee */}
               <div className="bg-green-50/70 backdrop-blur-sm rounded-2xl p-6 border border-green-200 mb-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">7-Day Money-Back Guarantee</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">100% Satisfaction Guarantee</h3>
                     <p className="text-gray-700 leading-relaxed">
-                      We offer a <strong>7-day money-back guarantee</strong> from the date of purchase for all style consultation services.
-                      If you&apos;re not completely satisfied with your consultation, you can request a full refund within 7 days.
+                      For ICONIK Blueprints and one-time styling services, our commitment is simple:
+                      if your report does not reflect the needs, goals, or preferences shared in your intake,
+                      we will revise it until it does.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Consultation Refund Conditions */}
+              {/* Satisfaction Policy Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-blue-50/70 backdrop-blur-sm rounded-2xl p-6 border border-blue-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">✅ Eligible for Refund</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">✅ What&apos;s Covered</h3>
                   <ul className="space-y-2 text-gray-700 text-sm">
-                    <li>• Request made within 7 days of purchase</li>
-                    <li>• Valid reason for dissatisfaction</li>
-                    <li>• Original payment method available</li>
-                    <li>• Consultation not yet completed</li>
+                    <li>• Revisions to your Blueprint or consultation outcome if it does not reflect your stated needs</li>
+                    <li>• Updates to recommendations that feel unclear, incomplete, or misaligned with your brief</li>
+                    <li>• Revised reports sent after our team reviews your feedback</li>
+                    <li>• Continued refinement until the delivered output matches the scope purchased</li>
                   </ul>
                 </div>
 
                 <div className="bg-red-50/70 backdrop-blur-sm rounded-2xl p-6 border border-red-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">❌ Not Eligible for Refund</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">ℹ️ What We Need From You</h3>
                   <ul className="space-y-2 text-gray-700 text-sm">
-                    <li>• Request made after 7 days</li>
-                    <li>• Consultation session completed</li>
-                    <li>• Full style profile delivered</li>
-                    <li>• Add-ons already provided</li>
+                    <li>• Clear feedback on what feels off and what needs to change</li>
+                    <li>• Accurate measurements, photos, and preferences in your intake form</li>
+                    <li>• Revision requests tied to the original brief and purchased deliverables</li>
+                    <li>• Reasonable response time so we can keep refining your report without delays</li>
                   </ul>
                 </div>
               </div>
@@ -145,55 +146,55 @@ export default function RefundPolicyPage() {
               </div>
             </section>
 
-            {/* How to Request Refund (General) */}
+            {/* How to Request a Revision */}
             <section className="border-t pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">How to Request a Refund</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">How to Request a Revision</h2>
               <div className="bg-gray-50/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200">
                 <ol className="space-y-4">
                   <li className="flex items-start gap-4">
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Contact Our Support Team</h4>
-                      <p className="text-gray-700">Email us at <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a> with your order details.</p>
+                      <p className="text-gray-700">Reply to your delivery email or write to <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a> with your order details.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Provide Required Information</h4>
-                      <p className="text-gray-700">Include your order/subscription ID, purchase date, and reason for refund request.</p>
+                      <h4 className="font-semibold text-gray-900">Tell Us What Needs to Change</h4>
+                      <p className="text-gray-700">Include your order ID and a clear note on which parts of the report need adjustment.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Wait for Processing</h4>
-                      <p className="text-gray-700">We&apos;ll review your request and respond within 24-48 hours.</p>
+                      <h4 className="font-semibold text-gray-900">Our Team Reviews the Feedback</h4>
+                      <p className="text-gray-700">We&apos;ll review your request and confirm the revision direction within 24-48 hours.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Receive Your Refund</h4>
-                      <p className="text-gray-700">If approved, refunds are processed within 5-7 business days to your original payment method.</p>
+                      <h4 className="font-semibold text-gray-900">Receive Your Revised Report</h4>
+                      <p className="text-gray-700">We&apos;ll send an updated version and continue refining it until the report aligns with your original needs.</p>
                     </div>
                   </li>
                 </ol>
               </div>
             </section>
 
-            {/* Processing Time */}
+            {/* Revision Timeline */}
             <section className="bg-yellow-50/70 backdrop-blur-sm rounded-2xl p-6 border border-yellow-200">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <Clock className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">Processing Timeline</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3">Revision Timeline</h2>
                   <div className="space-y-2 text-gray-700">
-                    <p><strong>Review Time:</strong> 24-48 hours after request submission</p>
-                    <p><strong>Refund Processing:</strong> 5-7 business days once approved</p>
-                    <p><strong>Bank Processing:</strong> Additional 2-3 business days depending on your bank</p>
+                    <p><strong>Initial Response:</strong> Within 24-48 hours of your revision request</p>
+                    <p><strong>Revision Turnaround:</strong> Shared after review based on the depth of updates needed</p>
+                    <p><strong>Guarantee:</strong> We keep refining your report until it aligns with the brief you originally submitted</p>
                   </div>
                 </div>
               </div>
@@ -204,20 +205,17 @@ export default function RefundPolicyPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Additional Terms</h2>
               <div className="space-y-4 text-gray-700">
                 <p>
-                  • <strong>Partial Refunds:</strong> For consultations, if you&apos;ve partially used the service,
-                  we may offer a partial refund based on the services not yet utilized.
+                  • <strong>Original Scope:</strong> Revisions cover the deliverables included in your original purchase and brief.
                 </p>
                 <p>
-                  • <strong>Add-on Services:</strong> Add-ons purchased with consultations (Wardrobe Detox, Smart Shopper&apos;s Guide, Outfit Preview)
-                  are covered under the same 7-day refund policy, provided they haven&apos;t been delivered.
+                  • <strong>Updated Inputs:</strong> If you submit new photos, measurements, or goals after delivery, we may treat that as a fresh brief and quote separately if needed.
                 </p>
                 <p>
-                  • <strong>Payment Gateway Fees:</strong> In some cases, payment gateway processing fees (typically ₹50-100)
-                  may be deducted from refund amounts as they are non-refundable from the payment processor.
+                  • <strong>Add-on Services:</strong> Purchased add-ons are also revised when they form part of the original report package and need alignment with your stated preferences.
                 </p>
                 <p>
                   • <strong>Dispute Resolution:</strong> We encourage direct communication to resolve
-                  any issues before initiating payment disputes with your bank or card company.
+                  any issues through revisions before initiating payment disputes with your bank or card company.
                 </p>
                 <p>
                   • <strong>Policy Updates:</strong> This refund policy may be updated from time to time.
@@ -228,9 +226,9 @@ export default function RefundPolicyPage() {
 
             {/* Contact Information */}
             <section className="bg-blue-50/70 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Questions About Refunds or Cancellations?</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Questions About Revisions or Cancellations?</h2>
               <p className="text-gray-700 mb-6">
-                Our support team is here to help with any questions about our refund or cancellation policy.
+                Our support team is here to help with any questions about revisions, satisfaction guarantees, or cancellations.
               </p>
               <div className="space-y-2">
                 <p className="text-gray-700">

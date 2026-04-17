@@ -87,7 +87,7 @@ const faqs = [
   {
     question: "What if I am not satisfied with my Blueprint?",
     answer:
-      "Iconik offers a revision policy — if your Blueprint does not accurately reflect your requirements as stated in the intake form, you can request a revision. Please review the full refund and revision policy at iconik.pro/refund-policy.",
+      "Iconik offers a 100% satisfaction guarantee. If your Blueprint does not accurately reflect the needs shared in your intake form, you can request a revised report and we will keep refining it until it aligns with your requirements. Please review the full policy at iconik.pro/refund-policy.",
   },
 ];
 

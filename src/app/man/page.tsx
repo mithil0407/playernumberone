@@ -78,7 +78,7 @@ const faqs = [
     },
     {
         question: 'What if I\'m not happy?',
-        answer: '7-day money-back guarantee. Email us. No questions. Full refund within 48 hours.',
+        answer: '100% satisfaction guarantee. If your Blueprint needs adjustments, email us and we\'ll revise the report until it reflects your needs clearly.',
     },
     {
         question: 'Can I do this if I don\'t know anything about my body type or colours?',
@@ -257,7 +257,7 @@ export default function ManLandingPage() {
                             { num: '200+', label: 'Blueprints Delivered' },
                             { num: '4.9', label: 'Average Rating', star: true },
                             { num: '24h', label: 'Delivery Time' },
-                            { num: '7-day', label: 'Money-Back Guarantee' },
+                            { num: '100%', label: 'Satisfaction Guarantee' },
                         ].map((s, i) => (
                             <div key={i} className="group">
                                 <div className="text-2xl md:text-5xl luxury-heading text-luxury-accent mb-2 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-1">
