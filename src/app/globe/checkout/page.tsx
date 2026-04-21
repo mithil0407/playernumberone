@@ -496,7 +496,7 @@ export default function GlobeCheckoutPage() {
                                 </div>
                                 <div className="flex items-center gap-3 luxury-body text-luxury-charcoal/60 text-sm">
                                     <Shield className="w-4 h-4 text-luxury-accent flex-shrink-0" />
-                                    <span>📩 Instant digital delivery — Blueprint arrives within 24 hours of intake.</span>
+                                    <span>📩 Instant digital delivery — Blueprint arrives within 72 hours of intake.</span>
                                 </div>
                                 <div className="flex items-center gap-3 luxury-body text-luxury-charcoal/60 text-sm">
                                     <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0" />

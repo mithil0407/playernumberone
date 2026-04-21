@@ -18,6 +18,7 @@ export interface AUOrderConfirmationEmailData {
   order_amount: number;
   payment_id?: string;
   has_edit_addon?: boolean;
+  delivery_hours?: number;
 }
 
 export interface AUQuizReminderEmailData {
@@ -30,6 +31,12 @@ export interface GlobeQuizReminderEmailData {
   customer_name: string;
   customer_email: string;
   intake_link: string;
+  delivery_hours?: number;
+}
+
+export interface IntakeReceivedEmailData {
+  customer_email: string;
+  customer_phone?: string;
 }
 
 export interface GlobeIntakeNotificationData {
@@ -63,6 +70,17 @@ export interface GlobeIntakeNotificationData {
   facial_feature_type?: string;
   // Section 5 — Style
   style_goal?: string;
+  primary_style_goal?: string;
+  branch_sub_goal?: string;
+  branch_blocker?: string;
+  branch_reference?: string;
+  style_pole_structure?: string;
+  style_pole_expression?: string;
+  style_pole_tone?: string;
+  style_pole_register?: string;
+  style_blocker?: string;
+  style_anti_pref?: string;
+  style_anti_pref_note?: string;
   visual_style_reference?: string;
   free_text_note?: string;
   // Additional intake fields
@@ -404,7 +422,7 @@ function buildManEmailHtml(data: ConfirmationEmailData): string {
                 <strong style="color:#1a1a2e;">One thing stands between you and your Blueprint:</strong> completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.
               </p>
               <p style="margin:0 0 20px; color:#333; font-size:16px; line-height:1.7;">
-                Complete your intake form now and your Blueprint will be ready within 48 hours:
+                Complete your intake form now and your Blueprint will be ready within 72 hours:
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -464,7 +482,7 @@ export async function sendManConfirmationEmail(data: ConfirmationEmailData): Pro
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your Iconik Man Blueprint is Confirmed ✅`,
-      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now and your Blueprint will be ready within 48 hours:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now and your Blueprint will be ready within 72 hours:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
       html: buildManEmailHtml(data),
     });
 
@@ -777,9 +795,10 @@ export async function sendGlobeOrderConfirmationEmail(
     const transporter = getTransporter();
     const firstName = data.customer_name.split(' ')[0] || 'there';
     const intakeLink = `https://www.iconik.pro/globe/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
+    const deliveryHours = data.delivery_hours ?? 24;
 
     const subject = `✅ Your ICONIK Blueprint is confirmed — complete your intake to unlock it`;
-    const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (AED ${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nOnce submitted, your Blueprint arrives within 24 hours.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
+    const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (AED ${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nOnce submitted, your Blueprint arrives within ${deliveryHours} hours.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -808,11 +827,11 @@ ${data.has_edit_addon ? `<tr><td style="padding:6px 0;border-bottom:1px solid #f
 ${data.payment_id ? `<p style="margin:10px 0 0;color:#bbb;font-size:11px;">Payment Ref: ${data.payment_id}</p>` : ''}
 </div></td></tr>
 <tr><td style="padding:28px 40px 0;">
-<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Complete your intake form now and your Blueprint will be ready within 24 hours:</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Complete your intake form now and your Blueprint will be ready within ${deliveryHours} hours:</p>
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <a href="${intakeLink}" style="display:inline-block;background:#c2185b;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 36px;border-radius:50px;letter-spacing:0.3px;">Complete My Intake Form →</a>
 </td></tr></table>
-<p style="margin:12px 0 0;color:#999;font-size:12px;text-align:center;">Takes 4 minutes · Blueprint delivered within 24 hours of completion</p>
+<p style="margin:12px 0 0;color:#999;font-size:12px;text-align:center;">Takes 4 minutes · Blueprint delivered within ${deliveryHours} hours of completion</p>
 </td></tr>
 <tr><td style="padding:24px 40px 0;">
 <p style="margin:0 0 8px;color:#333;font-size:15px;line-height:1.7;">If you have any questions, reply to this email — we're here.</p>
@@ -870,6 +889,7 @@ export async function sendAUQuizReminderEmail(
 function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
   const { customer_name, intake_link } = data;
   const firstName = customer_name.split(' ')[0] || 'there';
+  const deliveryHours = data.delivery_hours ?? 24;
 
   return `
 <!DOCTYPE html>
@@ -919,7 +939,7 @@ function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
                 <li>Your 6 personalised outfit formulas</li>
               </ul>
               <p style="margin:0 0 16px; color:#555; font-size:15px; line-height:1.7;">
-                It only takes <strong>4 minutes</strong>. Complete it now and your Blueprint will be ready within 24 hours.
+                It only takes <strong>4 minutes</strong>. Complete it now and your Blueprint will be ready within ${deliveryHours} hours.
               </p>
             </td>
           </tr>
@@ -937,7 +957,7 @@ function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
                   </td>
                 </tr>
               </table>
-              <p style="margin:12px 0 0; color:#999; font-size:12px; text-align:center;">Takes 4 minutes · Blueprint delivered within 24 hours of completion</p>
+              <p style="margin:12px 0 0; color:#999; font-size:12px; text-align:center;">Takes 4 minutes · Blueprint delivered within ${deliveryHours} hours of completion</p>
             </td>
           </tr>
 
@@ -978,12 +998,13 @@ export async function sendGlobeQuizReminderEmail(
   try {
     const transporter = getTransporter();
     const firstName = data.customer_name.split(' ')[0] || 'there';
+    const deliveryHours = data.delivery_hours ?? 24;
 
     const info = await transporter.sendMail({
       from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `⏳ Your Blueprint is waiting — we need your intake answers to begin`,
-      text: `Hi ${firstName},\n\nWe received your payment but haven't received your intake form answers yet.\n\nWithout them, we cannot prepare your personal Blueprint. It takes 4 minutes:\n${data.intake_link}\n\nOnce submitted, your Blueprint arrives within 24 hours.\n\nIf you've already submitted, please ignore this email.\n\nBest,\nThe ICONIK Team`,
+      text: `Hi ${firstName},\n\nWe received your payment but haven't received your intake form answers yet.\n\nWithout them, we cannot prepare your personal Blueprint. It takes 4 minutes:\n${data.intake_link}\n\nOnce submitted, your Blueprint arrives within ${deliveryHours} hours.\n\nIf you've already submitted, please ignore this email.\n\nBest,\nThe ICONIK Team`,
       html: buildGlobeQuizReminderHtml(data),
     });
 
@@ -991,6 +1012,104 @@ export async function sendGlobeQuizReminderEmail(
     return { success: true };
   } catch (error) {
     console.error('Error sending Globe quiz reminder email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+// ── Intake received client confirmation emails ───────────────────────────────
+
+function buildIntakeReceivedHtml({
+  title,
+  subtitle,
+  body,
+  accent,
+}: {
+  title: string;
+  subtitle: string;
+  body: string;
+  accent: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>${title}</title></head>
+<body style="margin:0;padding:0;background:#fdf8f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#fdf8f5;padding:40px 20px;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+<tr><td style="background:${accent};padding:36px 40px;text-align:center;">
+<h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:2px;">ICONIK</h1>
+<p style="margin:8px 0 0;color:rgba(255,255,255,0.82);font-size:12px;letter-spacing:3px;text-transform:uppercase;">${subtitle}</p>
+</td></tr>
+<tr><td style="padding:32px 40px 0;text-align:center;">
+<div style="display:inline-block;background:#f0fdf4;border:2px solid #22c55e;border-radius:50px;padding:10px 24px;">
+<span style="color:#16a34a;font-size:15px;font-weight:600;">Submission Received</span>
+</div>
+</td></tr>
+<tr><td style="padding:28px 40px 0;">
+<p style="margin:0 0 12px;color:#333;font-size:16px;line-height:1.7;">Hi there,</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">${body}</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Your report will be delivered to your inbox within <strong>72 hours</strong>.</p>
+<p style="margin:0;color:#555;font-size:14px;line-height:1.7;">Please check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.</p>
+</td></tr>
+<tr><td style="padding:28px 40px 40px;text-align:center;border-top:1px solid #f0e8e8;">
+<p style="margin:0 0 4px;color:#333;font-weight:700;font-size:14px;">The ICONIK Team</p>
+<p style="margin:0;color:#999;font-size:13px;">help.iconikfashion@gmail.com</p>
+</td></tr>
+</table></td></tr></table>
+</body></html>`.trim();
+}
+
+export async function sendManIntakeReceivedEmail(
+  data: IntakeReceivedEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const html = buildIntakeReceivedHtml({
+      title: 'Your ICONIK Man Intake Was Received',
+      subtitle: 'Man Style Blueprint',
+      body: 'We have received your ICONIK Man intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.',
+      accent: 'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)',
+    });
+
+    const info = await transporter.sendMail({
+      from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
+      to: data.customer_email,
+      subject: `Your ICONIK Man intake was received`,
+      text: `Hi there,\n\nWe have received your ICONIK Man intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nYour report will be delivered to your inbox within 72 hours.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      html,
+    });
+
+    console.log(`Man intake received email sent to ${data.customer_email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Man intake received email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function sendGlobeIntakeReceivedEmail(
+  data: IntakeReceivedEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const html = buildIntakeReceivedHtml({
+      title: 'Your ICONIK Intake Was Received',
+      subtitle: 'Style Intelligence System · Worldwide',
+      body: 'We have received your ICONIK intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.',
+      accent: 'linear-gradient(135deg,#c2185b 0%,#880e4f 100%)',
+    });
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
+      to: data.customer_email,
+      subject: `Your ICONIK intake was received`,
+      text: `Hi there,\n\nWe have received your ICONIK intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nYour report will be delivered to your inbox within 72 hours.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      html,
+    });
+
+    console.log(`Globe intake received email sent to ${data.customer_email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Globe intake received email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -1062,6 +1181,17 @@ export async function sendGlobeIntakeNotificationEmail(
     ${row('Facial features', data.facial_feature_type)}
     ${sectionHeader('Section 5 — Style')}
     ${row('Style goal', data.style_goal)}
+    ${row('Primary style goal', data.primary_style_goal)}
+    ${row('Branch sub-goal', data.branch_sub_goal)}
+    ${row('Branch blocker', data.branch_blocker)}
+    ${row('Branch reference', data.branch_reference)}
+    ${row('Pole — Structure', data.style_pole_structure)}
+    ${row('Pole — Expression', data.style_pole_expression)}
+    ${row('Pole — Tone', data.style_pole_tone)}
+    ${row('Pole — Register', data.style_pole_register)}
+    ${row('Style blocker', data.style_blocker)}
+    ${row('Anti-pref', data.style_anti_pref)}
+    ${row('Anti-pref note', data.style_anti_pref_note)}
     ${row('Visual style reference', data.visual_style_reference)}
     ${row('Client note', data.free_text_note)}
   </table>
@@ -1108,6 +1238,17 @@ export async function sendGlobeIntakeNotificationEmail(
       (data.facial_feature_type ? `Facial features: ${data.facial_feature_type}\n` : '') +
       `\n--- Section 5: Style ---\n` +
       (data.style_goal ? `Style goal: ${data.style_goal}\n` : '') +
+      (data.primary_style_goal ? `Primary style goal: ${data.primary_style_goal}\n` : '') +
+      (data.branch_sub_goal ? `Branch sub-goal: ${data.branch_sub_goal}\n` : '') +
+      (data.branch_blocker ? `Branch blocker: ${data.branch_blocker}\n` : '') +
+      (data.branch_reference ? `Branch reference: ${data.branch_reference}\n` : '') +
+      (data.style_pole_structure ? `Pole (Structure): ${data.style_pole_structure}\n` : '') +
+      (data.style_pole_expression ? `Pole (Expression): ${data.style_pole_expression}\n` : '') +
+      (data.style_pole_tone ? `Pole (Tone): ${data.style_pole_tone}\n` : '') +
+      (data.style_pole_register ? `Pole (Register): ${data.style_pole_register}\n` : '') +
+      (data.style_blocker ? `Style blocker: ${data.style_blocker}\n` : '') +
+      (data.style_anti_pref ? `Anti-pref: ${data.style_anti_pref}\n` : '') +
+      (data.style_anti_pref_note ? `Anti-pref note: ${data.style_anti_pref_note}\n` : '') +
       (data.visual_style_reference ? `Visual style reference: ${data.visual_style_reference}\n` : '') +
       (data.free_text_note ? `Client note: ${data.free_text_note}\n` : '');
 

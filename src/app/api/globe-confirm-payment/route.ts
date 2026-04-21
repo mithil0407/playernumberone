@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
                     order_amount: orderAmount,
                     payment_id: razorpay_payment_id,
                     has_edit_addon: editAddon,
+                    delivery_hours: 72,
                 });
                 if (!result.success) {
                     console.error('Globe confirmation email failed:', result.error);

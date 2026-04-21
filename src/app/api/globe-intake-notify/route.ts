@@ -1,9 +1,9 @@
 // Globe Intake Notification
 // Called client-side after a successful intake submission.
-// Sends an internal email to help.iconikfashion@gmail.com with all form details + photo links.
+// Sends internal and client confirmation emails after intake submission.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendGlobeIntakeNotificationEmail } from '@/lib/email';
+import { sendGlobeIntakeNotificationEmail, sendGlobeIntakeReceivedEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
     try {
@@ -35,6 +35,17 @@ export async function POST(request: NextRequest) {
             face_shape,
             facial_feature_type,
             style_goal,
+            primary_style_goal,
+            branch_sub_goal,
+            branch_blocker,
+            branch_reference,
+            style_pole_structure,
+            style_pole_expression,
+            style_pole_tone,
+            style_pole_register,
+            style_blocker,
+            style_anti_pref,
+            style_anti_pref_note,
             visual_style_reference,
             free_text_note,
         } = body;
@@ -43,7 +54,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing customer_email' }, { status: 400 });
         }
 
-        const result = await sendGlobeIntakeNotificationEmail({
+        const notificationPayload = {
             customer_email,
             customer_phone: customer_phone || '',
             photo_fullbody_url,
@@ -69,13 +80,43 @@ export async function POST(request: NextRequest) {
             face_shape,
             facial_feature_type,
             style_goal,
+            primary_style_goal,
+            branch_sub_goal,
+            branch_blocker,
+            branch_reference,
+            style_pole_structure,
+            style_pole_expression,
+            style_pole_tone,
+            style_pole_register,
+            style_blocker,
+            style_anti_pref,
+            style_anti_pref_note,
             visual_style_reference,
             free_text_note,
-        });
+        };
 
-        if (!result.success) {
-            console.error('Globe intake notification failed:', result.error);
-            return NextResponse.json({ success: false, error: result.error }, { status: 500 });
+        const [internalResult, clientResult] = await Promise.allSettled([
+            sendGlobeIntakeNotificationEmail(notificationPayload),
+            sendGlobeIntakeReceivedEmail({
+                customer_email,
+                customer_phone: customer_phone || '',
+            }),
+        ]);
+
+        if (internalResult.status === 'rejected') {
+            console.error('Globe internal intake notification threw:', internalResult.reason);
+        } else if (!internalResult.value.success) {
+            console.error('Globe internal intake notification failed:', internalResult.value.error);
+        }
+
+        if (clientResult.status === 'rejected') {
+            console.error('Globe client intake confirmation threw:', clientResult.reason);
+            return NextResponse.json({ success: false, error: 'Client confirmation email failed' }, { status: 500 });
+        }
+
+        if (!clientResult.value.success) {
+            console.error('Globe client intake confirmation failed:', clientResult.value.error);
+            return NextResponse.json({ success: false, error: clientResult.value.error }, { status: 500 });
         }
 
         return NextResponse.json({ success: true });

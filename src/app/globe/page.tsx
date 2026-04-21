@@ -64,7 +64,7 @@ const faqs = [
     },
     {
         question: 'How long does it take to receive my Blueprint?',
-        answer: 'Within 24 hours of submitting your intake form and photos. Most clients receive theirs within a few hours.',
+        answer: 'Within 72 hours of submitting your intake form and photos.',
     },
     {
         question: 'Is this personalised or a generic quiz result?',
@@ -885,7 +885,7 @@ export default function GlobeLandingPage() {
                         {[
                             { step: '01', title: 'Purchase & Upload', desc: 'Complete your purchase. Upload two photos — one full body, one headshot. Fill in 9 questions. Takes 4 minutes.' },
                             { step: '02', title: 'We Analyse', desc: 'Our proprietary ICONIK methodology analyses your geometry, colour profile, and facial architecture.' },
-                            { step: '03', title: 'You Receive', desc: 'Your personalised 12–18 page Blueprint arrives in your inbox within 24 hours. Yours to keep forever.' },
+                            { step: '03', title: 'You Receive', desc: 'Your personalised 12–18 page Blueprint arrives in your inbox within 72 hours. Yours to keep forever.' },
                         ].map((s, i) => (
                             <div
                                 key={i}

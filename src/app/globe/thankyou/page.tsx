@@ -192,7 +192,7 @@ function GlobeThankyouInner() {
                         {[
                             { num: '1', text: 'Complete your intake form (4 minutes, 9 questions + 2 photos)' },
                             { num: '2', text: 'Our stylists analyse your geometry, colour, and facial profile' },
-                            { num: '3', text: 'Your 12–18 page personalised Blueprint lands in your inbox within 24 hours' },
+                            { num: '3', text: 'Your 12–18 page personalised Blueprint lands in your inbox within 72 hours' },
                         ].map((s) => (
                             <div key={s.num} className="flex items-start gap-3">
                                 <div className="w-7 h-7 rounded-full bg-luxury-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -209,7 +209,7 @@ function GlobeThankyouInner() {
                         Complete My Intake Form →
                     </Link>
                     <p className="luxury-body text-luxury-charcoal/40 text-xs text-center mt-3">
-                        Takes 4 minutes · Blueprint delivered within 24 hours of completion
+                        Takes 4 minutes · Blueprint delivered within 72 hours of completion
                     </p>
                 </div>
 

@@ -76,6 +76,7 @@ async function handleReminder(request: NextRequest) {
                 customer_name: name,
                 customer_email: email,
                 intake_link: intakeLink,
+                delivery_hours: 72,
             });
 
             // Mark reminder sent regardless of email outcome (avoid duplicate sends)

@@ -1309,7 +1309,7 @@ function ManIntakePageInner() {
                                     </motion.div>
                                     <h2 className="text-4xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">Your intake is complete.</h2>
                                     <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl leading-relaxed max-w-lg mx-auto mb-6">
-                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong className="font-semibold text-luxury-charcoal">48 hours</strong>.
+                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong className="font-semibold text-luxury-charcoal">72 hours</strong>.
                                     </p>
                                     <p className="luxury-body text-sm text-luxury-charcoal/50">Check your spam folder just in case.</p>
                                 </div>

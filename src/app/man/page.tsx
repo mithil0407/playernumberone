@@ -70,7 +70,7 @@ const faqs = [
     },
     {
         question: 'How long does it take to receive my Blueprint?',
-        answer: 'Within 24 hours of submitting your intake form and photos. Most clients receive theirs within a few hours.',
+        answer: 'Within 72 hours of submitting your intake form and photos.',
     },
     {
         question: 'What if I just want to look sharp, not stylish?',
@@ -898,7 +898,7 @@ export default function ManLandingPage() {
                         {[
                             { step: '01', title: 'Purchase & Fill In', desc: 'Complete your purchase. Upload two photos — one full body, one headshot. Fill in 8 questions about your lifestyle and goals. Takes 4 minutes.' },
                             { step: '02', title: 'We Analyse', desc: 'Our proprietary ICONIK methodology analyses your frame, colour profile, and facial architecture — built specifically for how men dress.' },
-                            { step: '03', title: 'You Receive', desc: 'Your personalised Blueprint arrives within 24 hours. 16 outfits, your colour palette, your face architecture guide. Yours to keep forever.' },
+                            { step: '03', title: 'You Receive', desc: 'Your personalised Blueprint arrives within 72 hours. 16 outfits, your colour palette, your face architecture guide. Yours to keep forever.' },
                         ].map((s, i) => (
                             <div
                                 key={i}

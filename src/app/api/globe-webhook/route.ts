@@ -128,6 +128,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
         order_amount: orderAmount,
         payment_id: payment?.id || '',
         has_edit_addon: editAddon,
+        delivery_hours: 72,
       });
       if (!result.success) {
         console.error('Globe confirmation email failed:', result.error);
