@@ -110,6 +110,15 @@ function getTransporter() {
   });
 }
 
+function htmlEscape(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function buildEmailHtml(data: ConfirmationEmailData): string {
   const { customer_name, customer_email, customer_phone, order_amount, add_ons, payment_id } = data;
 
@@ -1110,6 +1119,70 @@ export async function sendGlobeIntakeReceivedEmail(
     return { success: true };
   } catch (error) {
     console.error('Error sending Globe intake received email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function sendGlobeBlueprintReportEmail(data: {
+  email: string;
+  reportUrl: string;
+  silhouette?: string;
+  faceShape?: string;
+  season?: string;
+  primaryBrief?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const from = process.env.GMAIL_USER!;
+    const firstName = data.email.split('@')[0]?.split(/[._-]/)[0] || 'there';
+    const silhouette = data.silhouette || 'Your silhouette profile';
+    const faceShape = data.faceShape || 'Your face architecture';
+    const season = data.season || 'Your colour map';
+    const brief = data.primaryBrief?.trim() || 'Your report is built around your structure, colouring, lifestyle, and style direction.';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/><title>Your ICONIK Blueprint is ready</title></head>
+<body style="margin:0;padding:0;background:#faf9f6;font-family:Georgia,'Times New Roman',serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f6;padding:32px 16px;"><tr><td align="center">
+<table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#fff;border:1px solid #f0ede8;">
+<tr><td style="padding:36px 40px 20px;text-align:center;">
+  <div style="font-size:11px;letter-spacing:0.34em;text-transform:uppercase;color:#b58e4d;">ICONIK Blueprint</div>
+  <h1 style="margin:12px 0 0;font-size:34px;line-height:1.1;font-weight:400;color:#111;">Your Blueprint is ready.</h1>
+</td></tr>
+<tr><td style="padding:10px 40px 8px;color:#555;font-size:15px;line-height:1.8;">
+  Hi ${htmlEscape(firstName)},<br/>
+  Your completed ICONIK Globe Blueprint is now live. Inside, you will find your facial architecture analysis, body geometry rules, chromatic map, 20 outfit formulas, and your personal style identity statement.
+</td></tr>
+<tr><td style="padding:18px 40px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0ede8;">
+    <tr>
+      <td style="padding:16px;border-right:1px solid #f0ede8;"><div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#b58e4d;">Body</div><div style="font-size:14px;color:#141414;">${htmlEscape(silhouette)}</div></td>
+      <td style="padding:16px;border-right:1px solid #f0ede8;"><div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#b58e4d;">Face</div><div style="font-size:14px;color:#141414;">${htmlEscape(faceShape)}</div></td>
+      <td style="padding:16px;"><div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#b58e4d;">Colour</div><div style="font-size:14px;color:#141414;">${htmlEscape(season)}</div></td>
+    </tr>
+  </table>
+</td></tr>
+<tr><td style="padding:0 40px 20px;color:#666;font-size:14px;line-height:1.7;font-style:italic;">${htmlEscape(brief)}</td></tr>
+<tr><td style="padding:8px 40px 36px;text-align:center;">
+  <a href="${htmlEscape(data.reportUrl)}" style="display:inline-block;background:#111;color:#b58e4d;text-decoration:none;padding:15px 28px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;">Open Blueprint</a>
+</td></tr>
+<tr><td style="padding:20px 40px;text-align:center;border-top:1px solid #f0ede8;color:#aaa;font-size:11px;letter-spacing:.18em;text-transform:uppercase;">ICONIK Blueprint · ${htmlEscape(siteUrl.replace(/^https?:\/\//, ''))}</td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+
+    await transporter.sendMail({
+      from: `"ICONIK Blueprint" <${from}>`,
+      to: data.email,
+      subject: `${firstName}, your ICONIK Blueprint is ready`,
+      text: `Your ICONIK Blueprint is ready.\n\nOpen your private report here:\n${data.reportUrl}\n\nThe ICONIK Team`,
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Globe Blueprint report email:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

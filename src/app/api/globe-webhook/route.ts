@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
+import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 
 interface RazorpayPayment {
   id: string;
@@ -18,6 +19,15 @@ interface RazorpayOrder {
   id: string;
   amount: number | string;
   notes?: RazorpayNotes;
+}
+
+interface RazorpaySubscription {
+  id: string;
+  status: string;
+  charge_at?: number;
+  current_start?: number;
+  ended_at?: number;
+  paid_count?: number;
 }
 
 async function fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null> {
@@ -119,6 +129,27 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
     return;
   }
 
+  if (payment?.id) {
+    await recordRevenueEvent({
+      eventKey: `globe_orders:${existingOrder.id}:payment:${payment.id}`,
+      sourceMarket: 'globe',
+      sourceTable: 'globe_orders',
+      sourceId: existingOrder.id,
+      revenueKind: 'one_time',
+      eventType: 'one_time_payment',
+      productType: 'globe_blueprint',
+      customerEmail,
+      customerName,
+      customerPhone,
+      amountMinor: payment.amount || toMinorUnits(orderAmount),
+      currency: 'USD',
+      status: 'paid',
+      paymentId: payment.id,
+      razorpayOrderId: orderId,
+      metadata: { source: 'globe-webhook' },
+    });
+  }
+
   if (!alreadyPaid && customerEmail) {
     try {
       const result = await sendGlobeOrderConfirmationEmail({
@@ -141,6 +172,52 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
   } else {
     console.log('Globe confirmation email skipped (already paid or missing email)');
   }
+}
+
+async function handleGlobeSubscriptionEvent(event: string, subscription: RazorpaySubscription, payment?: RazorpayPayment) {
+  const status =
+    event === 'subscription.cancelled' ? 'cancelled' :
+      event === 'subscription.completed' ? 'expired' :
+        event === 'subscription.paused' ? 'cancelled' :
+          'active';
+
+  const { data: dbSub, error } = await supabaseGlobe
+    .from('globe_subscriptions')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('razorpay_subscription_id', subscription.id)
+    .select('id, customer_email, customer_name, customer_phone, amount, currency, plan_type, source')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Globe subscription webhook update failed:', error);
+    return;
+  }
+
+  if (event !== 'subscription.charged' || !dbSub) return;
+
+  const eventSuffix = payment?.id || `${subscription.paid_count ?? 'unknown'}:${subscription.current_start ?? Date.now()}`;
+  await recordRevenueEvent({
+    eventKey: `globe_subscriptions:${dbSub.id}:charge:${eventSuffix}`,
+    sourceMarket: 'globe',
+    sourceTable: 'globe_subscriptions',
+    sourceId: dbSub.id,
+    revenueKind: 'subscription',
+    eventType: subscription.paid_count === 1 ? 'subscription_initial' : 'subscription_charge',
+    productType: 'subscription',
+    customerEmail: dbSub.customer_email,
+    customerName: dbSub.customer_name,
+    customerPhone: dbSub.customer_phone,
+    amountMinor: payment?.amount ?? dbSub.amount,
+    currency: 'USD',
+    status: 'paid',
+    paymentId: payment?.id,
+    razorpaySubscriptionId: subscription.id,
+    planType: dbSub.plan_type,
+    occurredAt: subscription.current_start
+      ? new Date(subscription.current_start * 1000).toISOString()
+      : new Date().toISOString(),
+    metadata: { source: 'globe-webhook', webhook_event: event, paid_count: subscription.paid_count },
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -186,6 +263,12 @@ export async function POST(request: NextRequest) {
       const payment = (payload as { payment?: { entity?: RazorpayPayment } }).payment?.entity;
       if (order?.id) {
         await handleGlobePaid(order.id, payment);
+      }
+    } else if (event.startsWith('subscription.')) {
+      const subscription = (payload as { subscription?: { entity?: RazorpaySubscription } }).subscription?.entity;
+      const payment = (payload as { payment?: { entity?: RazorpayPayment } }).payment?.entity;
+      if (subscription?.id) {
+        await handleGlobeSubscriptionEvent(event, subscription, payment);
       }
     } else {
       console.log(`Unhandled globe webhook event: ${event}`);

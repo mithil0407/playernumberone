@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAU } from '@/lib/supabaseAU';
 import { sendAUOrderConfirmationEmail } from '@/lib/email';
+import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 
 export async function POST(request: NextRequest) {
     try {
@@ -64,6 +65,27 @@ export async function POST(request: NextRequest) {
             }
 
             updatedOrder = data;
+        }
+
+        if (updatedOrder && (db_order_id || razorpay_order_id)) {
+            await recordRevenueEvent({
+                eventKey: `au_orders:${db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id}:payment:${razorpay_payment_id}`,
+                sourceMarket: 'au',
+                sourceTable: 'au_orders',
+                sourceId: db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id,
+                revenueKind: 'one_time',
+                eventType: 'one_time_payment',
+                productType: 'au_blueprint',
+                customerEmail: customer_email || updatedOrder.customer_email,
+                customerName: customer_name || updatedOrder.customer_name,
+                customerPhone: customer_phone || updatedOrder.customer_phone,
+                amountMinor: toMinorUnits(amount ?? updatedOrder.amount ?? 0),
+                currency: 'AUD',
+                status: 'paid',
+                paymentId: razorpay_payment_id,
+                razorpayOrderId: razorpay_order_id,
+                metadata: { source: 'au-confirm-payment' },
+            });
         }
 
         // ── Send order confirmation email (fire-and-forget) ─────────────────

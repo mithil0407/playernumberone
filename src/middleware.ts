@@ -39,6 +39,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // ── 1c. Globe admin routes: same cookie, separate login page ─────────────
+  if (pathname.startsWith('/globe/admin')) {
+    if (!pathname.startsWith('/globe/admin/login')) {
+      if (!isAdminAuthenticated(request)) {
+        const loginUrl = new URL('/globe/admin/login', request.url);
+        loginUrl.searchParams.set('redirectTo', pathname);
+        return NextResponse.redirect(loginUrl, { status: 307 });
+      }
+    }
+    return NextResponse.next();
+  }
+
   // ── 2. Client routes: Supabase Auth check ───────────────────────────────
   if (pathname.startsWith('/iconik-club/client')) {
     if (CLIENT_PUBLIC.some(p => pathname.startsWith(p))) {
@@ -95,6 +107,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/globe/admin/:path*',
     '/((?!globe|api|_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|webp|avif|woff2?|ico)).*)',
   ],
 };

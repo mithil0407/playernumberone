@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
+import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 
 export async function POST(request: NextRequest) {
     try {
@@ -55,6 +56,27 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
             }
             updatedOrder = data;
+        }
+
+        if (updatedOrder && (db_order_id || razorpay_order_id)) {
+            await recordRevenueEvent({
+                eventKey: `globe_orders:${db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id}:payment:${razorpay_payment_id}`,
+                sourceMarket: 'globe',
+                sourceTable: 'globe_orders',
+                sourceId: db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id,
+                revenueKind: 'one_time',
+                eventType: 'one_time_payment',
+                productType: 'globe_blueprint',
+                customerEmail: customer_email || updatedOrder.customer_email,
+                customerName: customer_name || updatedOrder.customer_name,
+                customerPhone: customer_phone || updatedOrder.customer_phone,
+                amountMinor: toMinorUnits(amount ?? updatedOrder.amount ?? 0),
+                currency: 'USD',
+                status: 'paid',
+                paymentId: razorpay_payment_id,
+                razorpayOrderId: razorpay_order_id,
+                metadata: { source: 'globe-confirm-payment' },
+            });
         }
 
         // Send confirmation email — awaited so Vercel doesn't kill it before it completes

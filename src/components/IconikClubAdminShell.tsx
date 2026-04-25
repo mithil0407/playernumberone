@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
+  BarChart3,
   ShoppingBag,
   Users,
   Shirt,
@@ -16,6 +17,7 @@ import {
 
 const NAV = [
   { href: '/iconik-club/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/iconik-club/admin/revenue', label: 'Revenue', icon: BarChart3 },
   { href: '/iconik-club/admin/items', label: 'Items', icon: ShoppingBag },
   { href: '/iconik-club/admin/clients', label: 'Clients', icon: Users },
   { href: '/iconik-club/admin/outfits', label: 'Outfits', icon: Shirt },

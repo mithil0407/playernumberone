@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
 import { sendConfirmationEmail, sendManConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
+import { recordRevenueEvent } from '@/lib/revenueEvents';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -278,6 +279,25 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
       } else {
         console.log(`Order ${order_id} marked as completed`);
 
+        await recordRevenueEvent({
+          eventKey: `orders:${existingOrder.id}:payment:${payment.id}`,
+          sourceMarket: 'india',
+          sourceTable: 'orders',
+          sourceId: existingOrder.id,
+          revenueKind: 'one_time',
+          eventType: 'one_time_payment',
+          productType: mapProductType(baseProduct),
+          customerEmail: existingOrder.customers?.email,
+          customerName: existingOrder.customers?.name,
+          customerPhone: existingOrder.customers?.phone,
+          amountMinor: amount,
+          currency: baseProduct === 'Iconik Man Style Blueprint INTL' ? 'USD' : 'INR',
+          status: 'paid',
+          paymentId: payment.id,
+          razorpayOrderId: order_id,
+          metadata: { webhook_event: 'payment.captured' },
+        });
+
         // Add customer data to Google Sheets (only after successful payment)
         try {
           // Fetch actual add-ons from Razorpay order notes
@@ -350,6 +370,37 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
       console.error('Error updating failed order:', updateError);
     } else {
       console.log(`Order ${order_id} marked as failed`);
+
+      const { data: failedOrder } = await supabaseAdmin
+        .from('orders')
+        .select('id, amount, customer_email, product_type, customers(name,email,phone)')
+        .eq('razorpay_order_id', order_id)
+        .maybeSingle();
+
+      if (failedOrder) {
+        const failedCustomer = Array.isArray(failedOrder.customers)
+          ? failedOrder.customers[0]
+          : failedOrder.customers;
+
+        await recordRevenueEvent({
+          eventKey: `orders:${failedOrder.id}:failed:${payment.id}`,
+          sourceMarket: 'india',
+          sourceTable: 'orders',
+          sourceId: failedOrder.id,
+          revenueKind: 'one_time',
+          eventType: 'payment_failed',
+          productType: failedOrder.product_type ?? 'consultation',
+          customerEmail: failedOrder.customer_email ?? failedCustomer?.email,
+          customerName: failedCustomer?.name,
+          customerPhone: failedCustomer?.phone,
+          amountMinor: payment.amount,
+          currency: failedOrder.product_type === 'man_blueprint_intl' ? 'USD' : 'INR',
+          status: 'failed',
+          paymentId: payment.id,
+          razorpayOrderId: order_id,
+          metadata: { error_code, error_description, webhook_event: 'payment.failed' },
+        });
+      }
     }
 
   } catch (error) {
@@ -396,6 +447,25 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
           .single();
 
         if (existingOrder) {
+          await recordRevenueEvent({
+            eventKey: `orders:${existingOrder.id}:payment:${payment.id}`,
+            sourceMarket: 'india',
+            sourceTable: 'orders',
+            sourceId: existingOrder.id,
+            revenueKind: 'one_time',
+            eventType: 'one_time_payment',
+            productType: mapProductType(baseProduct),
+            customerEmail: existingOrder.customers?.email,
+            customerName: existingOrder.customers?.name,
+            customerPhone: existingOrder.customers?.phone,
+            amountMinor: amount,
+            currency: baseProduct === 'Iconik Man Style Blueprint INTL' ? 'USD' : 'INR',
+            status: 'paid',
+            paymentId: payment.id,
+            razorpayOrderId: order_id,
+            metadata: { webhook_event: 'payment.authorized' },
+          });
+
           await addCustomerToSheet({
             customer_name: existingOrder.customers.name,
             customer_email: existingOrder.customers.email,
@@ -495,6 +565,25 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
         console.error('Error updating paid order:', updateError);
       } else {
         console.log(`Order ${order.id} marked as paid`);
+
+        await recordRevenueEvent({
+          eventKey: `orders:${existingOrder.id}:payment:${payment.id}`,
+          sourceMarket: 'india',
+          sourceTable: 'orders',
+          sourceId: existingOrder.id,
+          revenueKind: 'one_time',
+          eventType: 'one_time_payment',
+          productType: mapProductType(baseProduct),
+          customerEmail: existingOrder.customers?.email,
+          customerName: existingOrder.customers?.name,
+          customerPhone: existingOrder.customers?.phone,
+          amountMinor: order.amount,
+          currency: baseProduct === 'Iconik Man Style Blueprint INTL' ? 'USD' : 'INR',
+          status: 'paid',
+          paymentId: payment.id,
+          razorpayOrderId: order.id,
+          metadata: { webhook_event: 'order.paid' },
+        });
 
         // 1. Add customer data to Google Sheets (independent — failure does NOT block email)
         try {
@@ -728,6 +817,38 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
       console.error('Error updating subscription after charge:', updateError);
     } else {
       console.log(`Subscription ${subscription.id} charged successfully, next billing: ${updateData.next_billing_date}`);
+
+      const { data: dbSub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('id, customer_email, customer_name, customer_phone, amount, currency, plan_type')
+        .eq('razorpay_subscription_id', subscription.id)
+        .maybeSingle();
+
+      if (dbSub) {
+        const eventSuffix = payment?.id || `${subscription.paid_count ?? 'unknown'}:${subscription.current_start ?? Date.now()}`;
+        await recordRevenueEvent({
+          eventKey: `subscriptions:${dbSub.id}:charge:${eventSuffix}`,
+          sourceMarket: 'india',
+          sourceTable: 'subscriptions',
+          sourceId: dbSub.id,
+          revenueKind: 'subscription',
+          eventType: subscription.paid_count === 1 ? 'subscription_initial' : 'subscription_charge',
+          productType: 'subscription',
+          customerEmail: dbSub.customer_email,
+          customerName: dbSub.customer_name,
+          customerPhone: dbSub.customer_phone,
+          amountMinor: payment?.amount ?? dbSub.amount,
+          currency: dbSub.currency === 'USD' || dbSub.currency === 'AUD' ? dbSub.currency : 'INR',
+          status: 'paid',
+          paymentId: payment?.id,
+          razorpaySubscriptionId: subscription.id,
+          planType: dbSub.plan_type,
+          occurredAt: subscription.current_start
+            ? new Date(subscription.current_start * 1000).toISOString()
+            : new Date().toISOString(),
+          metadata: { webhook_event: 'subscription.charged', paid_count: subscription.paid_count },
+        });
+      }
     }
 
   } catch (error) {
