@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock, Crown } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackCTAClick, trackViewContent, updateUserData } from '@/lib/metaPixel';
 import { useSearchParams } from 'next/navigation';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -257,7 +258,8 @@ function CheckoutContent() {
                 base_product: currentTier.productName,
                 tier: currentTier.key,
                 add_ons: {},
-                total_base_price: currentTier.price
+                total_base_price: currentTier.price,
+                attribution: getAttributionPayload(),
             };
 
             const response = await fetch('/api/payment', {

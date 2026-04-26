@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, Shield, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { getAttributionPayload } from '@/lib/attribution';
 
 const PLANS = [
   { id: 'monthly' as const, label: 'Monthly', price: '₹699',   period: '/month', subtext: 'Cancel anytime',    badge: null },
@@ -99,6 +100,7 @@ function JoinPageContent() {
           customer_name:  name.trim(),
           customer_email: email.trim(),
           customer_phone: phone.trim(),
+          attribution:    getAttributionPayload(),
         }),
       });
 

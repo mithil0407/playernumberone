@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCustomer, saveOrder, supabaseAdmin } from '@/lib/supabase';
+import { saveCustomer, saveOrder, supabaseAdmin, getCustomerByEmail } from '@/lib/supabase';
+import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price } = body;
+    const incomingAttribution = attributionToColumns(body.attribution);
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -36,13 +38,17 @@ export async function POST(request: NextRequest) {
 
     try {
       // OPTIMIZATION #2: Single UPSERT query (was SELECT + INSERT)
+      const existingCustomer = await getCustomerByEmail(customer_email);
+      const customerAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
       const customer = await saveCustomer({
         name: customer_name,
         email: customer_email,
-        phone: customer_phone
+        phone: customer_phone,
+        ...customerAttribution,
       });
 
       customerId = customer.id!;
+      const orderAttribution = firstTouchAttribution(customer, incomingAttribution);
 
       // Save order to database with temporary ID first
       const order = await saveOrder({
@@ -50,7 +56,8 @@ export async function POST(request: NextRequest) {
         amount,
         add_on: add_ons.presence_guide || add_ons.magnetism_playbook, // Check if any add-ons are selected
         status: 'pending',
-        razorpay_order_id: orderId
+        razorpay_order_id: orderId,
+        ...orderAttribution,
       });
       dbOrderId = order.id!;
 
@@ -85,7 +92,11 @@ export async function POST(request: NextRequest) {
           outfit_preview_price: outfit_preview_price,
           service: 'ICONIK Style Guide',
           db_order_id: dbOrderId,
-          customer_id: customerId
+          customer_id: customerId,
+          utm_source: incomingAttribution.utm_source || '',
+          utm_medium: incomingAttribution.utm_medium || '',
+          utm_campaign: incomingAttribution.utm_campaign || '',
+          landing_page: incomingAttribution.landing_page || '',
         },
       };
 

@@ -5,6 +5,7 @@ import { addCustomerToSheet } from '@/lib/googleSheets';
 import { syncToCrm } from '@/lib/crmSupabase';
 import { sendConfirmationEmail, sendManConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
 import { recordRevenueEvent } from '@/lib/revenueEvents';
+import { attributionFromRow } from '@/lib/attribution';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -295,6 +296,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
           status: 'paid',
           paymentId: payment.id,
           razorpayOrderId: order_id,
+          attribution: attributionFromRow(existingOrder),
           metadata: { webhook_event: 'payment.captured' },
         });
 
@@ -373,7 +375,7 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
 
       const { data: failedOrder } = await supabaseAdmin
         .from('orders')
-        .select('id, amount, customer_email, product_type, customers(name,email,phone)')
+        .select('*, customers(name,email,phone)')
         .eq('razorpay_order_id', order_id)
         .maybeSingle();
 
@@ -398,6 +400,7 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
           status: 'failed',
           paymentId: payment.id,
           razorpayOrderId: order_id,
+          attribution: attributionFromRow(failedOrder),
           metadata: { error_code, error_description, webhook_event: 'payment.failed' },
         });
       }
@@ -463,6 +466,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
             status: 'paid',
             paymentId: payment.id,
             razorpayOrderId: order_id,
+            attribution: attributionFromRow(existingOrder),
             metadata: { webhook_event: 'payment.authorized' },
           });
 
@@ -582,6 +586,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           status: 'paid',
           paymentId: payment.id,
           razorpayOrderId: order.id,
+          attribution: attributionFromRow(existingOrder),
           metadata: { webhook_event: 'order.paid' },
         });
 
@@ -820,7 +825,7 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
 
       const { data: dbSub } = await supabaseAdmin
         .from('subscriptions')
-        .select('id, customer_email, customer_name, customer_phone, amount, currency, plan_type')
+        .select('*')
         .eq('razorpay_subscription_id', subscription.id)
         .maybeSingle();
 
@@ -846,6 +851,7 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
           occurredAt: subscription.current_start
             ? new Date(subscription.current_start * 1000).toISOString()
             : new Date().toISOString(),
+          attribution: attributionFromRow(dbSub),
           metadata: { webhook_event: 'subscription.charged', paid_count: subscription.paid_count },
         });
       }

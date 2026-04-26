@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -277,7 +278,8 @@ export default function CheckoutPage() {
         total_base_price: discountedPrice,
         wardrobe_detox_price: wardrobeDetoxAddon ? wardrobeDetoxPrice : 0,
         smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0,
-        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
+        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0,
+        attribution: getAttributionPayload(),
       };
 
       // Call payment API
@@ -357,6 +359,7 @@ export default function CheckoutPage() {
                     customer_phone: formData.phone,
                     customer_name: formData.email.split('@')[0],
                     original_order_id: responseData.db_order_id,
+                    attribution: getAttributionPayload(),
                   }),
                 });
                 const subData = await subResp.json();

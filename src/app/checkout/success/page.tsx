@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { trackCompleteRegistration, trackPageView, trackViewContent, trackInitiateCheckout } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 const ICONIK_CLUB_PLANS = [
   { id: 'monthly' as const, label: 'Monthly', price: '₹699', period: '/month', subtext: 'Cancel anytime', badge: null },
@@ -114,7 +115,7 @@ function SuccessPageContent() {
       const response = await fetch('/api/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan_type: selectedPlan, customer_email: email, customer_phone: phone, customer_name: name, original_order_id: orderId }),
+        body: JSON.stringify({ plan_type: selectedPlan, customer_email: email, customer_phone: phone, customer_name: name, original_order_id: orderId, attribution: getAttributionPayload() }),
       });
       const data = await response.json();
       if (!data.success || !data.subscription_id) throw new Error(data.error || 'Failed to create subscription');

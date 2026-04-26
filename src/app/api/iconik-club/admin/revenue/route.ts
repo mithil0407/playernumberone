@@ -8,7 +8,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await buildRevenueAnalytics();
+    const { searchParams } = new URL(request.url);
+    const currencyView = searchParams.get('currencyView') === 'native' ? 'native' : 'inr';
+    const data = await buildRevenueAnalytics({
+      from: searchParams.get('from'),
+      to: searchParams.get('to'),
+      market: searchParams.get('market'),
+      product: searchParams.get('product'),
+      source: searchParams.get('source'),
+      campaign: searchParams.get('campaign'),
+      currencyView,
+    });
     return NextResponse.json(data);
   } catch (error) {
     console.error('Revenue analytics API error:', error);

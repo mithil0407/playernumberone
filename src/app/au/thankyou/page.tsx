@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Shield, Clock, Mail } from 'lucide-react';
 import { Suspense, useEffect, useState, useCallback } from 'react';
 import { trackPageView, trackPurchase, trackViewContent, trackInitiateCheckout } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types for subscription ─────────────────────────────────────────
 
@@ -175,6 +176,7 @@ function ThankYouContent() {
                     customer_email: customerEmail,
                     customer_phone: customerPhone,
                     customer_name: customerEmail.split('@')[0],
+                    attribution: getAttributionPayload(),
                 }),
             });
 

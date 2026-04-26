@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock, Calendar } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackCTAClick, trackViewContent, updateUserData } from '@/lib/metaPixel';
 import { useSearchParams } from 'next/navigation';
+import { getAttributionPayload } from '@/lib/attribution';
 
 interface FormData {
     name: string;
@@ -272,7 +273,8 @@ function CheckoutContent() {
                 tier: currentTier.key,
                 billing_frequency: billingFrequency,
                 add_ons: {},
-                total_base_price: currentPrice
+                total_base_price: currentPrice,
+                attribution: getAttributionPayload(),
             };
 
             const response = await fetch('/api/payment', {

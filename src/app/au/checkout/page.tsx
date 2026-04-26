@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
 import { trackPageView, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ export default function AUCheckoutPage() {
                     customer_phone: phone,
                     amount: totalAmount,
                     iconik_edit_addon: iconikEditAddon,
+                    attribution: getAttributionPayload(),
                 }),
             });
 
@@ -152,9 +154,10 @@ export default function AUCheckoutPage() {
                                     customer_email: email,
                                     customer_phone: phone,
                                     amount: totalAmount,
-                                    has_edit_addon: iconikEditAddon,
-                                }),
-                            });
+                                has_edit_addon: iconikEditAddon,
+                                attribution: getAttributionPayload(),
+                            }),
+                        });
                         } catch (err) {
                             console.warn('Could not confirm payment in DB:', err);
                         }

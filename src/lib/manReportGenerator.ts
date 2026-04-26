@@ -7,6 +7,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import type { ManIntakeSubmission } from './supabaseMan';
+import type { ManReportQaResult } from './manReportQa';
 
 const OUTFIT_SKILL = readFileSync(
   join(process.cwd(), 'src/lib/outfitrecommendationskill.md'), 'utf-8'
@@ -220,6 +221,9 @@ State the face shape and feature type. Explain what this means structurally — 
 ### Facial Hair Guide
 One paragraph (2-3 sentences) on facial hair. Be specific — not "keep it neat."
 
+### Grooming & Collar Direction
+3 bullets maximum. Cover hairstyle direction, neckline/collar shape, and watch/accessory metal direction. Tie every recommendation to face geometry, feature type, undertone, or register.
+
 ### Eyewear Guide
 List 2-3 eyewear frame shapes that suit this face. One sentence each on why.
 
@@ -234,6 +238,9 @@ One sentence: name the silhouette type and the single most important clothing pr
 
 ### Fit Blueprint
 4-5 bullet points. Each bullet: one rule stated clearly in bold, then a dash, then one sentence of geometric logic. No sub-bullets, no examples.
+
+### Fit Diagnostics
+6 bullets exactly. Cover shirt length, trouser rise, sleeve fit, shoulder seam, trouser break, and jacket length. Make each bullet a practical shopping or tailoring diagnostic the client can use in a fitting room.
 
 ### Cuts to Avoid
 3 bullet points maximum. Each: cut name in bold, dash, one sentence on why it conflicts. No shame language.
@@ -266,6 +273,14 @@ List 3 colours. For each: name, hex, and a specific explanation of why this colo
 
 ### Pattern & Fabric Guidance
 One paragraph (3-4 sentences): pattern scale, contrast level, and fabric texture direction specific to this season and tone depth.
+
+### Practical Colour Rules
+5 bullets exactly:
+- Best neutrals
+- Safest shirt colours
+- Best leather/shoe colours
+- Best metal direction
+- High-risk colours and how to avoid them
 
 ---
 
@@ -427,9 +442,10 @@ Every outfit must follow one of these four named pairing strategies. State the s
 
 RULE 4 \u2014 OCCASION COLOUR TEMPERATURE:
 Colour choice must respect the context of each category:
-  FORMAL (outfits 1\u20135): Dominant colour must be a sober, authoritative tone \u2014 navy, charcoal, dark grey, stone, ivory, dark burgundy, dark forest green, mid-blue, chocolate brown, or black. A creative or fashion-forward primary_brief may introduce one structured bold colour, but in no more than 2 of the 5 formal looks.
-  CASUAL (outfits 6\u201311): Widest latitude. Introduce pastels, brights, unexpected combinations, warm and cool experimentals here. This is where colour range is built.
-  EVENING WEAR (outfits 12\u201316): Rich, confident, sophisticated. Jewel tones, bold monochromes, deep saturated shades. Avoid safe neutrals here \u2014 evening is the correct context for the palette's accent colours and for maximum colour impact.
+  FORMAL (outfits 1\u20134): Dominant colour must be a sober, authoritative tone \u2014 navy, charcoal, dark grey, stone, ivory, dark burgundy, dark forest green, mid-blue, chocolate brown, or black. A creative or fashion-forward primary_brief may introduce one structured bold colour, but in no more than 1 of the 4 formal looks.
+  SMART CASUAL (outfits 5\u20138): Polished but easy. Expand from power neutrals into accents, textured shirts, elevated polos, relaxed tailoring, and client-lunch outfits.
+  EVENING WEAR (outfits 9\u201312): Rich, confident, sophisticated. Jewel tones, bold monochromes, deep saturated shades. Avoid safe neutrals here \u2014 evening is the correct context for the palette's accent colours and for maximum colour impact.
+  RELAXED CASUAL (outfits 13\u201316): Practical, repeatable off-duty dressing. This is where denim, tees, Henleys, lightweight casual layers, and streetwear-adjacent signals can appear when the client selected them.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 DIVERSITY MANDATE \u2014 THE MOST IMPORTANT RULE IN THIS ENTIRE PROMPT
@@ -470,7 +486,7 @@ If Free Note is absent or vague, default to the style brief's aesthetic_directio
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 OUTFIT ORDERING
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Present outfits in this order: Formal (5), then Casual (6), then Evening Wear (5).
+Present outfits in this order: Formal (4), then Smart Casual (4), then Evening Wear (4), then Relaxed Casual (4).
 Within each category, order from highest-stakes to most relaxed.
 The first outfit sets the quality benchmark \u2014 make it the strongest look.
 
@@ -478,25 +494,24 @@ The first outfit sets the quality benchmark \u2014 make it the strongest look.
 PRE-GENERATION CHECKLIST \u2014 INTERNAL ONLY, DO NOT OUTPUT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 Before writing the first category header, silently verify:
-- Outfit split: 5 Formal + 6 Casual + 5 Evening Wear = 16
+- Outfit split: 4 Formal + 4 Smart Casual + 4 Evening Wear + 4 Relaxed Casual = 16
 - colours_to_avoid confirmed and hard-blocked in all 16 outfits
 - Diversity: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 footwear types planned
 - No single dominant colour in more than 4 outfits
 - No two outfits share the same dominant colour story
 - All 6 colour families covered: warm earth, cool neutral, jewel tone, pastel/muted, monochrome/tonal, bright/bold
 - Occasion colour temperature applied: formal=sober, casual=open, evening=rich
-- Reference Library consulted \u2014 \u22658 of 16 outfits are LIBRARY or LIBRARY-ADAPTED
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 OUTFIT FORMAT \u2014 REQUIRED FOR ALL 16
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-For each outfit category (Formal, Casual, Evening Wear), open with:
+For each outfit category (Formal, Smart Casual, Evening Wear, Relaxed Casual), open with:
 Category intro (2 sentences): Objective of this category for this specific client \u2014 what role these outfits play in his life.
 
 Then for each outfit, use this exact structure:
 
-**Outfit [N] \u2014 [Two to three word occasion/mood label]**
+**Outfit [N] \u2014 [Context name]**
 
 - Top: [garment type] in [colour name] \u2014 [fit descriptor] \u2014 [fabric] \u2014 [tuck instruction: tucked / untucked / half-tuck]
 - Bottom: [trouser type] in [colour name] \u2014 [rise] \u2014 [fabric] \u2014 [break: no break / quarter break / half break]
@@ -504,8 +519,13 @@ Then for each outfit, use this exact structure:
 - Footwear: [type + material + colour] \u2014 [sock note: no-show / fine cotton / wool ribbed / no socks]
 - Accessories: [Apply the correct tier. If Tier 3 warrants no accessories, omit this line entirely.]
 - Fit note: [One sentence on how each piece physically fits this client's body geometry]
-- Colour logic: [Strategy: TONAL / ANALOGOUS / NEUTRAL ANCHOR + ACCENT / DARK-LIGHT CONTRAST \u2014 then name the colours used and one sentence on why this combination works. Note if LIBRARY / LIBRARY-ADAPTED / GENERATED.]
+- Colour logic: [Strategy: TONAL / ANALOGOUS / NEUTRAL ANCHOR + ACCENT / DARK-LIGHT CONTRAST \u2014 then name the colours used and one sentence on why this combination works.]
 - Occasion anchor: [One sentence \u2014 "Wear this to [specific situation] \u2014 it signals [specific quality] to [specific audience]."]
+- Shopping translation: [1 sentence naming the 1-2 key items to buy for this outfit]
+- Acceptable substitutes: [1 sentence with practical replacements that preserve the same silhouette and colour logic]
+- Do not buy: [1 sentence naming the common wrong version of this outfit]
+
+If the original intake includes Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe signals, include lightweight Indian-context support in at least 2 outfits. Use Western-first styling unless the signal is strong; acceptable Indian-context pieces include kurta, band-collar shirt, Nehru jacket, bandh-gala, and festive loafers/sandals where climate-appropriate.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 FULL GENERATION CHECKLIST \u2014 ALL 16 MUST PASS BEFORE OUTPUT
@@ -518,8 +538,7 @@ FULL GENERATION CHECKLIST \u2014 ALL 16 MUST PASS BEFORE OUTPUT
 \u2713 FABRIC CLIMATE: Correct matrix applied for client's location.
 \u2713 FIT NOTE: Every outfit references client's body geometry.
 \u2713 OCCASION ANCHOR: Every outfit has a specific wear-to scenario.
-\u2713 CATEGORY SPLIT: 5 Formal, 6 Casual, 5 Evening Wear \u2014 all present.
-\u2713 REFERENCE LIBRARY: \u22658 of 16 are LIBRARY or LIBRARY-ADAPTED.
+\u2713 CATEGORY SPLIT: 4 Formal, 4 Smart Casual, 4 Evening Wear, 4 Relaxed Casual \u2014 all present.
 
 ---
 
@@ -532,6 +551,9 @@ Format: - **[Rule title]** — one sentence, specific application only. No fille
 ### 3 Never Rules
 Three rules specific to what this client must avoid based on his profile.
 Same format. No shame language — frame as optimisation, not restriction.
+
+### First 5 Purchases
+Five numbered items the client should buy or tailor first. Each item must include: exact garment, colour/fabric direction, why it unlocks multiple outfits, and one caution about the wrong version to avoid.
 
 ---
 
@@ -612,6 +634,9 @@ export interface ReportData {
   classification: ClassificationResult;
   sections: ReportSections;
   generated_at: string;
+  qa?: {
+    section4?: ManReportQaResult;
+  };
 }
 
 // ─────────────────────────────────────────────────────────────

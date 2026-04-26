@@ -17,6 +17,7 @@ import { cookies } from 'next/headers';
 import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
+import { validateManReportSection4, type ManReportQaResult } from '@/lib/manReportQa';
 
 // Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
 // at concurrency 4 (~80s) fits comfortably within this limit.
@@ -40,12 +41,13 @@ async function writePartialData(
   shareToken: string | null,
   classification: ClassificationResult,
   sections: Record<string, string>,
-  nextStage: string
+  nextStage: string,
+  qa?: ReportData['qa'],
 ) {
   await supabaseAdmin
     .from('man_reports')
     .update({
-      report_data:    { classification, sections: { ...sections }, generated_at: new Date().toISOString() },
+      report_data:    { classification, sections: { ...sections }, generated_at: new Date().toISOString(), ...(qa ? { qa } : {}) },
       progress_stage: nextStage,
       updated_at:     new Date().toISOString(),
     })
@@ -75,10 +77,11 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, sh
     await writePartialData(reportId, shareToken, classification, sections, 'generating_s4');
 
     sections.s4_outfits = await runSection4(classification, submission);
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s5');
+    const qa: { section4?: ManReportQaResult } = { section4: validateManReportSection4(sections.s4_outfits, classification) };
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s5', qa);
 
     sections.s5_rules = await runSection5(classification, submission);
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s6');
+    await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa);
 
     sections.s6_identity = await runSection6(classification, submission);
 
@@ -89,7 +92,7 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, sh
       .update({
         status:         'draft_ready',
         progress_stage: null,
-        report_data:    { classification, sections, generated_at: new Date().toISOString() } as unknown as ReportData,
+        report_data:    { classification, sections, generated_at: new Date().toISOString(), qa } as unknown as ReportData,
         generated_at:   new Date().toISOString(),
         updated_at:     new Date().toISOString(),
       })

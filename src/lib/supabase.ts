@@ -62,6 +62,15 @@ export interface Customer {
   name: string;
   email: string;
   phone: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
+  referrer?: string | null;
+  landing_page?: string | null;
+  first_touch_at?: string | null;
+  attribution_payload?: Record<string, unknown> | null;
   created_at?: string;
 }
 
@@ -81,6 +90,15 @@ export interface Order {
   error_code?: string;
   error_description?: string;
   email_sent?: boolean; // Prevents duplicate confirmation emails on webhook retries
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
+  referrer?: string | null;
+  landing_page?: string | null;
+  first_touch_at?: string | null;
+  attribution_payload?: Record<string, unknown> | null;
   created_at?: string;
 }
 
@@ -112,6 +130,15 @@ export interface Subscription {
   cancelled_at?: string;
   notes?: string;
   original_order_id?: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
+  referrer?: string | null;
+  landing_page?: string | null;
+  first_touch_at?: string | null;
+  attribution_payload?: Record<string, unknown> | null;
   created_at?: string;
   updated_at?: string;
 }

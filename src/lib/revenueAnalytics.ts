@@ -4,6 +4,8 @@ import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
 import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
 import type { RevenueCurrency, RevenueMarket, RevenueKind, RevenueStatus } from '@/lib/revenueEvents';
 import { normalizeCurrency, toMinorUnits } from '@/lib/revenueEvents';
+import { attributionFromRow } from '@/lib/attribution';
+import { convertMinorToInr, getFxWarnings } from '@/lib/fxRates';
 
 type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired' | 'pending' | 'completed';
 
@@ -20,7 +22,16 @@ interface NormalizedRevenueEvent {
   customerName: string;
   customerPhone: string;
   amountMinor: number;
+  amountInrMinor: number;
   currency: RevenueCurrency;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmTerm: string;
+  utmContent: string;
+  referrer: string;
+  landingPage: string;
+  firstTouchAt: string;
   status: RevenueStatus;
   paymentId: string;
   razorpayOrderId: string;
@@ -37,19 +48,51 @@ interface NormalizedSubscription {
   customerEmail: string;
   customerName: string;
   amountMinor: number;
+  amountInrMinor: number;
   currency: RevenueCurrency;
   status: SubscriptionStatus;
   planType: string;
   createdAt: string;
   startDate: string;
   cancelledAt: string;
+  attribution: ReturnType<typeof attributionFromRow>;
 }
 
 const CURRENCIES: RevenueCurrency[] = ['INR', 'AUD', 'USD'];
 const MARKETS: RevenueMarket[] = ['india', 'au', 'global', 'globe'];
+const IST_TIME_ZONE = 'Asia/Kolkata';
+
+export interface RevenueAnalyticsOptions {
+  from?: string | null;
+  to?: string | null;
+  market?: string | null;
+  product?: string | null;
+  source?: string | null;
+  campaign?: string | null;
+  currencyView?: 'inr' | 'native';
+}
 
 function monthKey(date: Date) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function dayKey(date: Date, timeZone = IST_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const value = (type: string) => parts.find(part => part.type === type)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+function dayLabel(key: string) {
+  return new Date(`${key}T00:00:00.000+05:30`).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: IST_TIME_ZONE,
+  });
 }
 
 function monthLabel(key: string) {
@@ -88,6 +131,18 @@ function safeDate(value: unknown) {
 function asNumber(value: unknown) {
   const number = typeof value === 'string' ? Number(value) : Number(value ?? 0);
   return Number.isFinite(number) ? number : 0;
+}
+
+function asText(value: unknown, fallback = 'unknown') {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  return trimmed || fallback;
+}
+
+function inrMinorFor(amountMinor: number, currency: RevenueCurrency, row?: Record<string, unknown>) {
+  const existing = asNumber(row?.amount_inr_minor);
+  if (existing > 0 || currency === 'INR') return currency === 'INR' && existing === 0 ? amountMinor : existing;
+  return convertMinorToInr(amountMinor, currency).amountInrMinor ?? 0;
 }
 
 function sourceKey(sourceTable: string, sourceId: string, eventType: string) {
@@ -136,6 +191,9 @@ function emptyCurrencyMap<T>(factory: () => T): Record<RevenueCurrency, T> {
 }
 
 function normalizeLedgerEvent(row: Record<string, unknown>): NormalizedRevenueEvent {
+  const attribution = attributionFromRow(row);
+  const currency = normalizeCurrency(row.currency, 'INR');
+  const amountMinor = asNumber(row.amount_minor);
   return {
     id: String(row.id ?? row.event_key ?? ''),
     eventKey: String(row.event_key ?? ''),
@@ -148,8 +206,17 @@ function normalizeLedgerEvent(row: Record<string, unknown>): NormalizedRevenueEv
     customerEmail: String(row.customer_email ?? ''),
     customerName: String(row.customer_name ?? ''),
     customerPhone: String(row.customer_phone ?? ''),
-    amountMinor: asNumber(row.amount_minor),
-    currency: normalizeCurrency(row.currency, 'INR'),
+    amountMinor,
+    amountInrMinor: inrMinorFor(amountMinor, currency, row),
+    currency,
+    utmSource: asText(attribution.utm_source),
+    utmMedium: asText(attribution.utm_medium),
+    utmCampaign: asText(attribution.utm_campaign),
+    utmTerm: asText(attribution.utm_term),
+    utmContent: asText(attribution.utm_content),
+    referrer: asText(attribution.referrer),
+    landingPage: asText(attribution.landing_page),
+    firstTouchAt: attribution.first_touch_at ?? '',
     status: row.status === 'failed' || row.status === 'pending' ? row.status : 'paid',
     paymentId: String(row.payment_id ?? ''),
     razorpayOrderId: String(row.razorpay_order_id ?? ''),
@@ -168,6 +235,9 @@ function normalizeMainOrder(row: Record<string, unknown>, hasLedgerEvent: boolea
   const productType = String(row.product_type ?? 'consultation');
   const id = String(row.id ?? '');
   if (!id) return null;
+  const currency: RevenueCurrency = productType === 'man_blueprint_intl' ? 'USD' : 'INR';
+  const amountMinor = toMinorUnits(row.amount as number | string);
+  const attribution = attributionFromRow(row);
 
   return {
     id: `synthetic-orders-${id}`,
@@ -181,8 +251,17 @@ function normalizeMainOrder(row: Record<string, unknown>, hasLedgerEvent: boolea
     customerEmail: String(row.customer_email ?? customer?.email ?? ''),
     customerName: String(customer?.name ?? ''),
     customerPhone: String(customer?.phone ?? ''),
-    amountMinor: toMinorUnits(row.amount as number | string),
-    currency: productType === 'man_blueprint_intl' ? 'USD' : 'INR',
+    amountMinor,
+    amountInrMinor: inrMinorFor(amountMinor, currency, row),
+    currency,
+    utmSource: asText(attribution.utm_source),
+    utmMedium: asText(attribution.utm_medium),
+    utmCampaign: asText(attribution.utm_campaign),
+    utmTerm: asText(attribution.utm_term),
+    utmContent: asText(attribution.utm_content),
+    referrer: asText(attribution.referrer),
+    landingPage: asText(attribution.landing_page),
+    firstTouchAt: attribution.first_touch_at ?? '',
     status: 'paid',
     paymentId: String(row.razorpay_payment_id ?? row.payment_id ?? ''),
     razorpayOrderId: String(row.razorpay_order_id ?? ''),
@@ -205,6 +284,8 @@ function normalizeMarketOrder(
   if (!['paid', 'completed'].includes(String(row.status ?? ''))) return null;
   const id = String(row.id ?? '');
   if (!id) return null;
+  const amountMinor = toMinorUnits(row.amount as number | string);
+  const attribution = attributionFromRow(row);
 
   return {
     id: `synthetic-${sourceTable}-${id}`,
@@ -218,8 +299,17 @@ function normalizeMarketOrder(
     customerEmail: String(row.customer_email ?? ''),
     customerName: String(row.customer_name ?? ''),
     customerPhone: String(row.customer_phone ?? ''),
-    amountMinor: toMinorUnits(row.amount as number | string),
+    amountMinor,
+    amountInrMinor: inrMinorFor(amountMinor, currency, row),
     currency,
+    utmSource: asText(attribution.utm_source),
+    utmMedium: asText(attribution.utm_medium),
+    utmCampaign: asText(attribution.utm_campaign),
+    utmTerm: asText(attribution.utm_term),
+    utmContent: asText(attribution.utm_content),
+    referrer: asText(attribution.referrer),
+    landingPage: asText(attribution.landing_page),
+    firstTouchAt: attribution.first_touch_at ?? '',
     status: 'paid',
     paymentId: String(row.razorpay_payment_id ?? ''),
     razorpayOrderId: String(row.razorpay_order_id ?? ''),
@@ -236,14 +326,18 @@ function normalizeSubscription(
   sourceTable: string,
   fallbackCurrency: RevenueCurrency
 ): NormalizedSubscription {
+  const currency = normalizeCurrency(row.currency, fallbackCurrency);
+  const amountMinor = asNumber(row.amount);
+  const attribution = attributionFromRow(row);
   return {
     id: String(row.id ?? ''),
     sourceMarket,
     sourceTable,
     customerEmail: String(row.customer_email ?? ''),
     customerName: String(row.customer_name ?? ''),
-    amountMinor: asNumber(row.amount),
-    currency: normalizeCurrency(row.currency, fallbackCurrency),
+    amountMinor,
+    amountInrMinor: inrMinorFor(amountMinor, currency, row),
+    currency,
     status: String(row.status ?? 'pending') as SubscriptionStatus,
     planType: String(row.plan_type ?? 'monthly'),
     createdAt: safeDate(row.created_at),
@@ -253,6 +347,7 @@ function normalizeSubscription(
       : String(row.status ?? '') === 'cancelled' && typeof row.updated_at === 'string'
         ? row.updated_at
         : '',
+    attribution,
   };
 }
 
@@ -274,7 +369,16 @@ function subscriptionToSyntheticEvent(sub: NormalizedSubscription, hasInitialLed
     customerName: sub.customerName,
     customerPhone: '',
     amountMinor: sub.amountMinor,
+    amountInrMinor: sub.amountInrMinor,
     currency: sub.currency,
+    utmSource: asText(sub.attribution.utm_source),
+    utmMedium: asText(sub.attribution.utm_medium),
+    utmCampaign: asText(sub.attribution.utm_campaign),
+    utmTerm: asText(sub.attribution.utm_term),
+    utmContent: asText(sub.attribution.utm_content),
+    referrer: asText(sub.attribution.referrer),
+    landingPage: asText(sub.attribution.landing_page),
+    firstTouchAt: sub.attribution.first_touch_at ?? '',
     status: 'paid',
     paymentId: '',
     razorpayOrderId: '',
@@ -325,7 +429,7 @@ async function safeSelectGlobe(table: string, select: string, warnings: QueryWar
   return (data ?? []) as unknown as Array<Record<string, unknown>>;
 }
 
-export async function buildRevenueAnalytics() {
+export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {}) {
   const primary = createSupabaseAdminServerClient();
   const queryWarnings: QueryWarning[] = [];
 
@@ -396,9 +500,24 @@ export async function buildRevenueAnalytics() {
     )),
   ].filter((event): event is NormalizedRevenueEvent => Boolean(event));
 
-  const events = [...ledgerEvents, ...syntheticEvents]
+  const allEvents = [...ledgerEvents, ...syntheticEvents]
     .filter(event => event.amountMinor >= 0)
     .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+
+  const filterFrom = options.from || null;
+  const filterTo = options.to || null;
+  const filteredEvents = allEvents.filter(event => {
+    const eventDay = dayKey(new Date(event.occurredAt));
+    if (filterFrom && eventDay < filterFrom) return false;
+    if (filterTo && eventDay > filterTo) return false;
+    if (options.market && options.market !== 'all' && event.sourceMarket !== options.market) return false;
+    if (options.product && options.product !== 'all' && event.productType !== options.product) return false;
+    if (options.source && options.source !== 'all' && event.utmSource !== options.source) return false;
+    if (options.campaign && options.campaign !== 'all' && event.utmCampaign !== options.campaign) return false;
+    return true;
+  });
+
+  const events = filteredEvents;
 
   const now = new Date();
   const currentMonth = monthKey(now);
@@ -556,6 +675,122 @@ export async function buildRevenueAnalytics() {
       : 0,
   };
 
+  const todayKey = dayKey(now);
+  const yesterdayKey = dayKey(new Date(now.getTime() - 86400000));
+  const currentIstMonth = todayKey.slice(0, 7);
+  const [istYear, istMonth, istDay] = todayKey.split('-').map(Number);
+  const daysInCurrentMonth = new Date(istYear, istMonth, 0).getDate();
+  const last30DayKeys = Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(now.getTime() - (29 - index) * 86400000);
+    return dayKey(date);
+  });
+
+  const daily = last30DayKeys.map(key => {
+    const dayEvents = paidEvents.filter(event => dayKey(new Date(event.occurredAt)) === key);
+    const dayFailedEvents = failedEvents.filter(event => dayKey(new Date(event.occurredAt)) === key);
+    const oneTimeInrMinor = dayEvents
+      .filter(event => event.revenueKind === 'one_time')
+      .reduce((sum, event) => sum + event.amountInrMinor, 0);
+    const subscriptionInrMinor = dayEvents
+      .filter(event => event.revenueKind === 'subscription')
+      .reduce((sum, event) => sum + event.amountInrMinor, 0);
+    const paidCount = dayEvents.length;
+    const totalInrMinor = oneTimeInrMinor + subscriptionInrMinor;
+    return {
+      day: key,
+      label: dayLabel(key),
+      oneTimeInrMinor,
+      subscriptionInrMinor,
+      totalInrMinor,
+      paidCount,
+      failedCount: dayFailedEvents.length,
+      averageOrderValueInrMinor: paidCount > 0 ? Math.round(totalInrMinor / paidCount) : 0,
+    };
+  });
+
+  const weekly = Array.from({ length: Math.ceil(daily.length / 7) }, (_, index) => {
+    const rows = daily.slice(index * 7, index * 7 + 7);
+    const totalInrMinor = rows.reduce((sum, row) => sum + row.totalInrMinor, 0);
+    return {
+      week: `${rows[0]?.day ?? ''}:${rows[rows.length - 1]?.day ?? ''}`,
+      label: rows.length ? `${rows[0].label} - ${rows[rows.length - 1].label}` : '',
+      totalInrMinor,
+      paidCount: rows.reduce((sum, row) => sum + row.paidCount, 0),
+      failedCount: rows.reduce((sum, row) => sum + row.failedCount, 0),
+    };
+  });
+
+  const last30RevenueInrMinor = daily.reduce((sum, row) => sum + row.totalInrMinor, 0);
+  const todayRevenueInrMinor = daily.find(row => row.day === todayKey)?.totalInrMinor ?? 0;
+  const yesterdayRevenueInrMinor = daily.find(row => row.day === yesterdayKey)?.totalInrMinor ?? 0;
+  const mtdRevenueInrMinor = paidEvents
+    .filter(event => dayKey(new Date(event.occurredAt)).slice(0, 7) === currentIstMonth)
+    .reduce((sum, event) => sum + event.amountInrMinor, 0);
+  const paidOrderCount = paidEvents.filter(event => event.revenueKind === 'one_time').length;
+  const subscriptionRevenueInrMinor = paidEvents
+    .filter(event => event.revenueKind === 'subscription')
+    .reduce((sum, event) => sum + event.amountInrMinor, 0);
+  const oneTimeRevenueInrMinor = paidEvents
+    .filter(event => event.revenueKind === 'one_time')
+    .reduce((sum, event) => sum + event.amountInrMinor, 0);
+  const mrrInrMinor = subscriptions
+    .filter(sub => sub.status === 'active')
+    .reduce((sum, sub) => sum + planMonthlyAmount(sub.amountInrMinor, sub.planType), 0);
+  const bestDay = daily.reduce((best, row) => row.totalInrMinor > best.totalInrMinor ? row : best, daily[0]);
+  const worstDay = daily.reduce((worst, row) => row.totalInrMinor < worst.totalInrMinor ? row : worst, daily[0]);
+
+  const inrKpis = {
+    totalRevenueInrMinor: paidEvents.reduce((sum, event) => sum + event.amountInrMinor, 0),
+    last30RevenueInrMinor,
+    mtdRevenueInrMinor,
+    todayRevenueInrMinor,
+    yesterdayRevenueInrMinor,
+    dayOverDayGrowthPct: percentChange(todayRevenueInrMinor, yesterdayRevenueInrMinor),
+    averageDailyRevenueInrMinor: Math.round(last30RevenueInrMinor / Math.max(1, daily.length)),
+    projectedMonthEndRevenueInrMinor: Math.round((mtdRevenueInrMinor / Math.max(1, istDay)) * daysInCurrentMonth),
+    averageOrderValueInrMinor: paidOrderCount > 0 ? Math.round(oneTimeRevenueInrMinor / paidOrderCount) : 0,
+    paidOrderCount,
+    failedPaymentCount: failedEvents.length,
+    oneTimeRevenueInrMinor,
+    subscriptionRevenueInrMinor,
+    monthlyRecurringRevenueInrMinor: Math.round(mrrInrMinor),
+    annualRecurringRevenueInrMinor: Math.round(mrrInrMinor * 12),
+    bestDay,
+    worstDay,
+  };
+
+  function attributionRows(field: keyof NormalizedRevenueEvent) {
+    const grouped = paidEvents.reduce<Record<string, { label: string; amountInrMinor: number; paidCount: number }>>((acc, event) => {
+      const value = asText(event[field], 'unknown');
+      acc[value] = acc[value] ?? { label: value, amountInrMinor: 0, paidCount: 0 };
+      acc[value].amountInrMinor += event.amountInrMinor;
+      acc[value].paidCount += 1;
+      return acc;
+    }, {});
+    return Object.values(grouped).sort((a, b) => b.amountInrMinor - a.amountInrMinor);
+  }
+
+  const sourceProduct = Object.values(paidEvents.reduce<Record<string, {
+    source: string;
+    productType: string;
+    productLabel: string;
+    amountInrMinor: number;
+    paidCount: number;
+  }>>((acc, event) => {
+    const source = asText(event.utmSource);
+    const key = `${source}:${event.productType}`;
+    acc[key] = acc[key] ?? {
+      source,
+      productType: event.productType,
+      productLabel: productLabel(event.productType),
+      amountInrMinor: 0,
+      paidCount: 0,
+    };
+    acc[key].amountInrMinor += event.amountInrMinor;
+    acc[key].paidCount += 1;
+    return acc;
+  }, {})).sort((a, b) => b.amountInrMinor - a.amountInrMinor);
+
   const byMarket = MARKETS.flatMap(market => CURRENCIES.map(currency => {
     const amountMinor = paidEvents
       .filter(event => event.sourceMarket === market && event.currency === currency)
@@ -590,20 +825,41 @@ export async function buildRevenueAnalytics() {
     customerEmail: event.customerEmail,
     customerName: event.customerName,
     amountMinor: event.amountMinor,
+    amountInrMinor: event.amountInrMinor,
     currency: event.currency,
+    utmSource: event.utmSource,
+    utmMedium: event.utmMedium,
+    utmCampaign: event.utmCampaign,
+    landingPage: event.landingPage,
     status: event.status,
     paymentId: event.paymentId,
     synthetic: event.synthetic,
   }));
 
+  const filterProducts = Array.from(new Set(allEvents.map(event => event.productType))).sort();
+  const filterSources = Array.from(new Set(allEvents.map(event => event.utmSource))).sort();
+  const filterCampaigns = Array.from(new Set(allEvents.map(event => event.utmCampaign))).sort();
+  const unknownAttributionEvents = allEvents.filter(event => event.utmSource === 'unknown' && event.utmCampaign === 'unknown').length;
+
   return {
     generatedAt: new Date().toISOString(),
     currencies: CURRENCIES,
+    currencyView: options.currencyView ?? 'inr',
     currentMonth,
     previousMonth,
     kpisByCurrency,
+    inrKpis,
     summaryCounts,
     monthly,
+    daily,
+    weekly,
+    attribution: {
+      bySource: attributionRows('utmSource'),
+      byMedium: attributionRows('utmMedium'),
+      byCampaign: attributionRows('utmCampaign'),
+      byLandingPage: attributionRows('landingPage'),
+      sourceProduct,
+    },
     breakdowns: {
       byMarket,
       byProductType,
@@ -611,13 +867,30 @@ export async function buildRevenueAnalytics() {
       subscriptionTimeline,
     },
     recentEvents,
+    filters: {
+      from: filterFrom,
+      to: filterTo,
+      market: options.market ?? 'all',
+      product: options.product ?? 'all',
+      source: options.source ?? 'all',
+      campaign: options.campaign ?? 'all',
+      products: filterProducts,
+      sources: filterSources,
+      campaigns: filterCampaigns,
+    },
     dataQuality: {
       ledgerEvents: ledgerEvents.length,
       syntheticEvents: syntheticEvents.length,
+      returnedEvents: events.length,
+      totalEventsBeforeFilters: allEvents.length,
+      unknownAttributionEvents,
+      fxWarnings: getFxWarnings(CURRENCIES),
       missingTables: queryWarnings,
       note: ledgerEvents.length === 0
         ? 'Using synthesized revenue from source tables until revenue_events is migrated/backfilled.'
-        : 'Using revenue_events plus synthesized source rows that are not yet in the ledger.',
+        : unknownAttributionEvents > 0
+          ? 'Using revenue_events plus synthesized source rows. Some historical rows have unknown attribution.'
+          : 'Using revenue_events plus synthesized source rows that are not yet in the ledger.',
     },
   };
 }

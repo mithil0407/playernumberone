@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Star, Sparkles, Shield, Clock } from 'lucide-react';
 import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -105,6 +106,7 @@ function GlobalThankyouInner() {
                     customer_email: email,
                     customer_phone: phone,
                     customer_name: '',
+                    attribution: getAttributionPayload(),
                 }),
             });
 

@@ -4,6 +4,7 @@ import Razorpay from 'razorpay';
 import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
+import { attributionFromRow } from '@/lib/attribution';
 
 interface RazorpayPayment {
   id: string;
@@ -67,12 +68,13 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
     iconik_edit_addon: boolean | null;
     status: string | null;
     razorpay_payment_id: string | null;
+    [key: string]: unknown;
   };
 
   if (dbOrderId && dbOrderId !== 'mock-order-id') {
     const { data } = await supabaseGlobe
       .from('globe_orders')
-      .select('id, customer_email, customer_name, customer_phone, amount, iconik_edit_addon, status, razorpay_payment_id')
+      .select('*')
       .eq('id', dbOrderId)
       .single();
     existingOrder = data;
@@ -81,7 +83,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
   if (!existingOrder) {
     const { data } = await supabaseGlobe
       .from('globe_orders')
-      .select('id, customer_email, customer_name, customer_phone, amount, iconik_edit_addon, status, razorpay_payment_id')
+      .select('*')
       .eq('razorpay_order_id', orderId)
       .single();
     existingOrder = data;
@@ -146,6 +148,7 @@ async function handleGlobePaid(orderId: string, payment?: RazorpayPayment) {
       status: 'paid',
       paymentId: payment.id,
       razorpayOrderId: orderId,
+      attribution: attributionFromRow(existingOrder),
       metadata: { source: 'globe-webhook' },
     });
   }
@@ -185,7 +188,7 @@ async function handleGlobeSubscriptionEvent(event: string, subscription: Razorpa
     .from('globe_subscriptions')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('razorpay_subscription_id', subscription.id)
-    .select('id, customer_email, customer_name, customer_phone, amount, currency, plan_type, source')
+    .select('*')
     .maybeSingle();
 
   if (error) {
@@ -216,6 +219,7 @@ async function handleGlobeSubscriptionEvent(event: string, subscription: Razorpa
     occurredAt: subscription.current_start
       ? new Date(subscription.current_start * 1000).toISOString()
       : new Date().toISOString(),
+    attribution: attributionFromRow(dbSub),
     metadata: { source: 'globe-webhook', webhook_event: event, paid_count: subscription.paid_count },
   });
 }

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -244,7 +245,8 @@ export default function CheckoutPage() {
         },
         total_base_price: discountedPrice,
         diva_diet_plan_price: divaDietPlanAddon ? divaDietPlanPrice : 0,
-        smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0
+        smart_shoppers_guide_price: smartShoppersGuideAddon ? smartShoppersGuidePrice : 0,
+        attribution: getAttributionPayload(),
       };
 
       // Call payment API

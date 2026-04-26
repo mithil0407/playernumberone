@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { saveAUSubscription, saveAUCustomer, supabaseAU } from '@/lib/supabaseAU';
+import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 
 // AU Style Feed plan IDs (Razorpay)
 const AU_STYLE_FEED_PLANS = {
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
             customer_phone,
             customer_name,
         } = body;
+        const incomingAttribution = attributionToColumns(body.attribution);
 
         // Validate required fields
         if (!plan_type || !customer_email) {
@@ -80,6 +82,10 @@ export async function POST(request: NextRequest) {
                 plan_type,
                 product: 'ICONIK Style Feed — AU',
                 region: 'AU',
+                utm_source: incomingAttribution.utm_source || '',
+                utm_medium: incomingAttribution.utm_medium || '',
+                utm_campaign: incomingAttribution.utm_campaign || '',
+                landing_page: incomingAttribution.landing_page || '',
             },
         };
 
@@ -95,13 +101,21 @@ export async function POST(request: NextRequest) {
 
         try {
             // Upsert customer in au_customers
+            const { data: existingCustomer } = await supabaseAU
+                .from('au_customers')
+                .select('*')
+                .eq('email', customer_email)
+                .single();
+            const customerAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
             const customer = await saveAUCustomer({
                 name,
                 email: customer_email,
                 phone: customer_phone || '',
+                ...customerAttribution,
             });
 
             const customerId: string | undefined = customer?.id;
+            const subscriptionAttribution = firstTouchAttribution(customer, incomingAttribution);
 
             // Check if an active subscription already exists for this email+plan
             const { data: existingSub } = await supabaseAU
@@ -126,6 +140,7 @@ export async function POST(request: NextRequest) {
                     status: 'pending', // Updated to 'active' via Razorpay webhook on first payment
                     source: 'au_oto',
                     notes: `AU OTO — ${plan_type} plan created at ${new Date().toISOString()}`,
+                    ...subscriptionAttribution,
                 });
             }
 

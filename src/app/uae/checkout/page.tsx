@@ -14,6 +14,7 @@ import {
   updateUserData
 } from '@/lib/metaPixel';
 import { clearQuizPhotos, getQuizPhoto } from '@/lib/uaeQuizStorage';
+import { getAttributionPayload } from '@/lib/attribution';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -173,7 +174,8 @@ export default function UaeCheckoutPage() {
         total_base_price: discountedPrice,
         diva_diet_plan_price: 0,
         smart_shoppers_guide_price: 0,
-        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
+        outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0,
+        attribution: getAttributionPayload(),
       };
 
       const response = await fetch('/api/payment', {

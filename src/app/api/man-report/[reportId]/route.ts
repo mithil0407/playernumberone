@@ -6,6 +6,7 @@ import { sendMenBlueprintReportEmail } from '@/lib/emailMen';
 import type { ReportData } from '@/lib/manReportGenerator';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { getAdminManReportById, loadAdminManReportByIdFresh } from '@/lib/manReportLoader';
+import { withManReportSection4Qa } from '@/lib/manReportQa';
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
@@ -63,6 +64,10 @@ export async function PATCH(
 
   for (const field of allowedFields) {
     if (body[field] !== undefined) update[field] = body[field];
+  }
+
+  if (body.report_data?.classification && body.report_data?.sections?.s4_outfits) {
+    update.report_data = withManReportSection4Qa(body.report_data as ReportData);
   }
 
   // When status transitions to 'sent', stamp sent_at

@@ -1,6 +1,8 @@
 import 'server-only';
 
 import { supabaseAdmin } from '@/lib/supabase';
+import { attributionToColumns, type AttributionFields } from '@/lib/attribution';
+import { convertMinorToInr } from '@/lib/fxRates';
 
 export type RevenueCurrency = 'INR' | 'AUD' | 'USD';
 export type RevenueMarket = 'india' | 'au' | 'global' | 'globe';
@@ -31,6 +33,7 @@ export interface RevenueEventInput {
   razorpaySubscriptionId?: string | null;
   planType?: string | null;
   occurredAt?: string | null;
+  attribution?: AttributionFields | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -38,6 +41,9 @@ export async function recordRevenueEvent(input: RevenueEventInput) {
   if (!input.eventKey || !input.sourceId || !Number.isFinite(input.amountMinor)) return;
 
   try {
+    const occurredAt = input.occurredAt ?? new Date().toISOString();
+    const attribution = attributionToColumns(input.attribution);
+    const fx = convertMinorToInr(Math.round(input.amountMinor), input.currency, occurredAt);
     const { error } = await supabaseAdmin
       .from('revenue_events')
       .upsert(
@@ -53,14 +59,30 @@ export async function recordRevenueEvent(input: RevenueEventInput) {
           customer_name: input.customerName ?? null,
           customer_phone: input.customerPhone ?? null,
           amount_minor: Math.round(input.amountMinor),
+          amount_inr_minor: fx.amountInrMinor,
           currency: input.currency,
+          fx_rate_to_inr: fx.fxRateToInr,
+          fx_source: fx.fxSource,
+          fx_recorded_at: fx.fxRecordedAt,
           status: input.status ?? 'paid',
           payment_id: input.paymentId ?? null,
           razorpay_order_id: input.razorpayOrderId ?? null,
           razorpay_subscription_id: input.razorpaySubscriptionId ?? null,
           plan_type: input.planType ?? null,
-          occurred_at: input.occurredAt ?? new Date().toISOString(),
-          metadata: input.metadata ?? {},
+          occurred_at: occurredAt,
+          utm_source: attribution.utm_source,
+          utm_medium: attribution.utm_medium,
+          utm_campaign: attribution.utm_campaign,
+          utm_term: attribution.utm_term,
+          utm_content: attribution.utm_content,
+          referrer: attribution.referrer,
+          landing_page: attribution.landing_page,
+          first_touch_at: attribution.first_touch_at,
+          attribution_payload: attribution.attribution_payload,
+          metadata: {
+            ...(input.metadata ?? {}),
+            ...(fx.warning ? { fx_warning: fx.warning } : {}),
+          },
         },
         { onConflict: 'event_key', ignoreDuplicates: false }
       );

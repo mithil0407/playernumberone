@@ -12,6 +12,15 @@ export interface GlobeCustomer {
     name: string;
     email: string;
     phone: string;
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
+    referrer?: string | null;
+    landing_page?: string | null;
+    first_touch_at?: string | null;
+    attribution_payload?: Record<string, unknown> | null;
     created_at?: string;
 }
 
@@ -27,6 +36,15 @@ export interface GlobeOrder {
     status?: 'pending' | 'completed' | 'failed' | 'paid';
     razorpay_order_id?: string;
     razorpay_payment_id?: string;
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
+    referrer?: string | null;
+    landing_page?: string | null;
+    first_touch_at?: string | null;
+    attribution_payload?: Record<string, unknown> | null;
     created_at?: string;
 }
 
@@ -45,6 +63,15 @@ export interface GlobeSubscription {
     status?: 'pending' | 'active' | 'cancelled' | 'completed' | 'expired';
     source?: string;
     notes?: string;
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
+    referrer?: string | null;
+    landing_page?: string | null;
+    first_touch_at?: string | null;
+    attribution_payload?: Record<string, unknown> | null;
     created_at?: string;
     updated_at?: string;
 }

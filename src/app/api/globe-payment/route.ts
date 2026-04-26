@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveGlobeCustomer, saveGlobeOrder, supabaseGlobe } from '@/lib/supabaseGlobe';
+import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -12,6 +13,7 @@ export async function POST(request: NextRequest) {
             amount,
             iconik_edit_addon = false,
         } = body;
+        const incomingAttribution = attributionToColumns(body.attribution);
 
         if (!customer_name || !customer_email || !customer_phone || !amount) {
             return NextResponse.json(
@@ -36,12 +38,20 @@ export async function POST(request: NextRequest) {
         let dbOrderId = 'mock-order-id';
 
         try {
+            const { data: existingCustomer } = await supabaseGlobe
+                .from('globe_customers')
+                .select('*')
+                .eq('email', customer_email)
+                .single();
+            const customerAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
             const customer = await saveGlobeCustomer({
                 name: customer_name,
                 email: customer_email,
                 phone: customer_phone,
+                ...customerAttribution,
             });
             customerId = customer.id!;
+            const orderAttribution = firstTouchAttribution(customer, incomingAttribution);
 
             const order = await saveGlobeOrder({
                 customer_id: customer.id!,
@@ -53,6 +63,7 @@ export async function POST(request: NextRequest) {
                 iconik_edit_addon,
                 status: 'pending',
                 razorpay_order_id: orderId,
+                ...orderAttribution,
             });
             dbOrderId = order.id!;
         } catch (err) {
@@ -78,6 +89,10 @@ export async function POST(request: NextRequest) {
                     service: 'ICONIK Globe Blueprint',
                     db_order_id: dbOrderId,
                     customer_id: customerId,
+                    utm_source: incomingAttribution.utm_source || '',
+                    utm_medium: incomingAttribution.utm_medium || '',
+                    utm_campaign: incomingAttribution.utm_campaign || '',
+                    landing_page: incomingAttribution.landing_page || '',
                 },
             };
 

@@ -3,7 +3,7 @@
 **Version:** 2.1  
 **Scope:** Automated Blueprint report generation — outfit recommendation section only  
 **Output:** 16 outfits across 4 lifestyle contexts (4 per context)  
-**Geography:** Western clothing only (no Indian ethnic garments)  
+**Geography:** Western clothing by default, with lightweight Indian-context support only when the intake explicitly signals Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe needs  
 **Logic:** Hybrid — rule-based constraints define what is correct, AI generates the outfit copy
 
 ---
@@ -15,7 +15,7 @@ When generating outfit recommendations for an ICONIK Men's Blueprint, you will:
 1. **Read all form inputs** — body shape, undertone, colour season, face shape, lifestyle contexts, style poles, fat storage zone, highlight zone, minimise zone, fit preference
 2. **Apply the constraint rules** in this file to determine WHAT is appropriate for this client
 3. **Generate 16 outfit descriptions** — 4 per context — using those constraints
-4. **Format each outfit** as: Top + Layer + Bottom + Footwear + Accessory (max 2)
+4. **Format each outfit** as: Top + Layer + Bottom + Footwear + Accessory (max 2) + Why It Works + Shopping Translation + Acceptable Substitutes + Do Not Buy
 
 Never generate an outfit that violates a constraint rule. The constraints are the science. The language is yours.
 
@@ -370,6 +370,8 @@ Generate exactly 4 outfits per context. 16 outfits total.
 
 **STREETWEAR OUTFIT RULE:** If the client selected "Off Duty" or "Urban Wear" under Q21 (Style Tribes), one of the 4 Relaxed Casual outfits must be a streetwear-adjacent look. Use: heavyweight graphic-free oversized tee or boxy crewneck + either oversized wide-leg denim (dark wash) OR black heavy-duty cargo trousers (relaxed fit) + white leather chunky-sole sneakers. Keep colours within the client's season palette. This replaces one of the standard 4 Relaxed Casual outfits. No layer on the streetwear outfit.
 
+**INDIAN-CONTEXT RULE:** If the client selected Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe signals, at least 2 outfits across Smart Casual, Evening Wear, or Relaxed Casual must include Indian-context usability. Keep the outfit Western-first unless the signal is strong. Acceptable pieces: band-collar shirt, kurta, Nehru jacket, bandh-gala, festive loafer, or leather sandal in HOT climate. Do not use sherwani unless the intake specifically points to wedding season or formal ethnic needs.
+
 ---
 
 ## SECTION 11 — LAYERING VARIETY RULE
@@ -440,6 +442,9 @@ FOOTWEAR: [Specific item — type + colour + material detail]
 ACCESSORY: [1–2 items max, or "None"]
 
 WHY IT WORKS FOR YOU: [1–2 sentences connecting this outfit to this client's specific body shape, undertone, or style goal using ICONIK language]
+SHOPPING TRANSLATION: [1 sentence naming the 1–2 key items to buy for this outfit]
+ACCEPTABLE SUBSTITUTES: [1 sentence with practical replacements that preserve the same silhouette and colour logic]
+DO NOT BUY: [1 sentence naming the common wrong version of this outfit]
 ---
 ```
 
@@ -616,6 +621,9 @@ FOOTWEAR: [item — type + colour + material]
 ACCESSORY: [1–2 items, or "None"]
 
 WHY IT WORKS FOR YOU: [1–2 sentences — reference at least one specific client variable using ICONIK language]
+SHOPPING TRANSLATION: [1 sentence naming the 1–2 key items to buy for this outfit]
+ACCEPTABLE SUBSTITUTES: [1 sentence with practical replacements that preserve the same silhouette and colour logic]
+DO NOT BUY: [1 sentence naming the common wrong version of this outfit]
 ---
 
 RULES — MUST FOLLOW ALL:
@@ -658,7 +666,7 @@ Before finalising output, check every outfit against this list:
 - [ ] Blazer count is 5 or fewer across all 16 outfits
 - [ ] No blazers in Relaxed Casual
 - [ ] Total layer count: max 10 (TEMPERATE) or max 7 (HOT) across all 16 outfits
-- [ ] Layer count per context matches targets: Formal 3/4 | Smart Casual 2/4 | Evening 3/4 | Casual 2/4
+- [ ] Layer count per context matches targets: Formal 3/4 | Smart Casual 2/4 | Evening 3/4 | Relaxed Casual 2/4
 - [ ] HOT climate: no turtlenecks, no wool, no heavy knits, all blazers are lightweight unlined
 - [ ] Sneakers are white only
 - [ ] No item from ANTI_PREFS included
@@ -666,8 +674,10 @@ Before finalising output, check every outfit against this list:
 - [ ] Fit language matches FIT_PREF (with body shape overrides applied)
 - [ ] Accessory count within limit for this context
 - [ ] "Why It Works For You" references a specific client variable
+- [ ] Shopping Translation, Acceptable Substitutes, and Do Not Buy are present for every outfit
 - [ ] No two outfits within the same context are too similar
 - [ ] Streetwear outfit included if Off Duty / Urban Wear selected (no layer on that outfit)
+- [ ] Indian-context support included if Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe signals are present
 
 ---
 

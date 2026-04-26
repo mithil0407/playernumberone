@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
 import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
@@ -124,6 +125,7 @@ export default function GlobeCheckoutPage() {
                     customer_phone: phone,
                     amount: totalAmount,
                     iconik_edit_addon: iconikEditAddon,
+                    attribution: getAttributionPayload(),
                 }),
             });
 
@@ -154,9 +156,10 @@ export default function GlobeCheckoutPage() {
                                     customer_email: email,
                                     customer_phone: phone,
                                     amount: totalAmount,
-                                    has_edit_addon: iconikEditAddon,
-                                }),
-                            });
+                                has_edit_addon: iconikEditAddon,
+                                attribution: getAttributionPayload(),
+                            }),
+                        });
                         } catch (err) {
                             console.warn('Could not confirm globe payment in DB:', err);
                         }

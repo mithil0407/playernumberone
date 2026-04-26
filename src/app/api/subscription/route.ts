@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { saveSubscription, saveCustomer, getCustomerByEmail } from '@/lib/supabase';
+import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 
 const ICONIK_CLUB_PLANS = {
     monthly:   { id: process.env.ICONIK_CLUB_PLAN_MONTHLY!,   amount: 69900  }, // ₹699
@@ -20,6 +21,7 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { plan_type, customer_name, customer_email, customer_phone, original_order_id } = body;
+        const incomingAttribution = attributionToColumns(body.attribution);
 
         if (!plan_type || !customer_email || !customer_phone) {
             return NextResponse.json(
@@ -62,6 +64,10 @@ export async function POST(request: NextRequest) {
                 plan_type:         plan_type,
                 product:           'Iconik Club',
                 original_order_id: original_order_id || '',
+                utm_source: incomingAttribution.utm_source || '',
+                utm_medium: incomingAttribution.utm_medium || '',
+                utm_campaign: incomingAttribution.utm_campaign || '',
+                landing_page: incomingAttribution.landing_page || '',
             },
         });
 
@@ -79,9 +85,11 @@ export async function POST(request: NextRequest) {
                     name:  resolvedName,
                     email: customer_email,
                     phone: customer_phone,
+                    ...incomingAttribution,
                 });
                 dbCustomerId = newCustomer.id;
             }
+            const subscriptionAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
 
             await saveSubscription({
                 customer_id:              dbCustomerId,
@@ -96,6 +104,7 @@ export async function POST(request: NextRequest) {
                 status:                   'pending',
                 original_order_id:        original_order_id || undefined,
                 notes:                    'Iconik Club subscription',
+                ...subscriptionAttribution,
             });
         } catch (dbError) {
             console.error('DB save failed (non-fatal):', dbError);

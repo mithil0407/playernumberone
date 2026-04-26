@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
 
 // Razorpay types
 interface RazorpayResponse {
@@ -174,7 +175,8 @@ function MonthlyCheckoutPageContent() {
         },
         total_base_price: trialPrice,
         consultation_price: plan === 'with-consultation' ? consultationPrice : 0,
-        monthly_price: monthlyPrice
+        monthly_price: monthlyPrice,
+        attribution: getAttributionPayload(),
       };
 
       // Call payment API
@@ -644,4 +646,3 @@ export default function MonthlyCheckoutPage() {
     </Suspense>
   );
 }
-

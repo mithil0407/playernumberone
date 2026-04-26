@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveCustomer, saveOrder, supabaseAdmin } from '@/lib/supabase';
+import { saveCustomer, saveOrder, supabaseAdmin, getCustomerByEmail } from '@/lib/supabase';
+import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 import Razorpay from 'razorpay';
 
 // Handles USD payment order creation for the /man funnel (international users).
@@ -15,6 +16,7 @@ export async function POST(request: NextRequest) {
       amount,
       outfit_preview_addon = false,
     } = body;
+    const incomingAttribution = attributionToColumns(body.attribution);
 
     if (!customer_email || !customer_phone || !amount) {
       return NextResponse.json(
@@ -39,12 +41,16 @@ export async function POST(request: NextRequest) {
     let dbOrderId = 'mock-order-id';
 
     try {
+      const existingCustomer = await getCustomerByEmail(customer_email);
+      const customerAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
       const customer = await saveCustomer({
         name: customer_email.split('@')[0],
         email: customer_email,
         phone: customer_phone,
+        ...customerAttribution,
       });
       customerId = customer.id!;
+      const orderAttribution = firstTouchAttribution(customer, incomingAttribution);
 
       const order = await saveOrder({
         customer_id: customer.id!,
@@ -54,6 +60,7 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         razorpay_order_id: orderId,
         add_ons: outfit_preview_addon ? 'Outfit Preview on You' : '',
+        ...orderAttribution,
       });
       dbOrderId = order.id!;
     } catch (err) {
@@ -78,6 +85,10 @@ export async function POST(request: NextRequest) {
           outfit_preview_addon: outfit_preview_addon ? 'true' : 'false',
           db_order_id: dbOrderId,
           customer_id: customerId,
+          utm_source: incomingAttribution.utm_source || '',
+          utm_medium: incomingAttribution.utm_medium || '',
+          utm_campaign: incomingAttribution.utm_campaign || '',
+          landing_page: incomingAttribution.landing_page || '',
         },
       });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAU } from '@/lib/supabaseAU';
 import { sendAUOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
+import { attributionFromRow } from '@/lib/attribution';
 
 export async function POST(request: NextRequest) {
     try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing payment ID' }, { status: 400 });
         }
 
-        let updatedOrder: { customer_email?: string; customer_name?: string; customer_phone?: string; amount?: number; iconik_edit_addon?: boolean } | null = null;
+        let updatedOrder: Record<string, unknown> | null = null;
 
         // Update by db_order_id if available, otherwise fall back to razorpay_order_id
         if (db_order_id && db_order_id !== 'mock-order-id') {
@@ -76,25 +77,26 @@ export async function POST(request: NextRequest) {
                 revenueKind: 'one_time',
                 eventType: 'one_time_payment',
                 productType: 'au_blueprint',
-                customerEmail: customer_email || updatedOrder.customer_email,
-                customerName: customer_name || updatedOrder.customer_name,
-                customerPhone: customer_phone || updatedOrder.customer_phone,
-                amountMinor: toMinorUnits(amount ?? updatedOrder.amount ?? 0),
+                customerEmail: customer_email || String(updatedOrder.customer_email ?? ''),
+                customerName: customer_name || String(updatedOrder.customer_name ?? ''),
+                customerPhone: customer_phone || String(updatedOrder.customer_phone ?? ''),
+                amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
                 currency: 'AUD',
                 status: 'paid',
                 paymentId: razorpay_payment_id,
                 razorpayOrderId: razorpay_order_id,
+                attribution: attributionFromRow(updatedOrder),
                 metadata: { source: 'au-confirm-payment' },
             });
         }
 
         // ── Send order confirmation email (fire-and-forget) ─────────────────
-        const emailTo = customer_email || updatedOrder?.customer_email;
+        const emailTo = customer_email || String(updatedOrder?.customer_email ?? '');
         if (emailTo) {
-            const name = customer_name || updatedOrder?.customer_name || emailTo.split('@')[0];
-            const phone = customer_phone || updatedOrder?.customer_phone || '';
-            const orderAmount = amount ?? updatedOrder?.amount ?? 0;
-            const editAddon = has_edit_addon ?? updatedOrder?.iconik_edit_addon ?? false;
+            const name = customer_name || String(updatedOrder?.customer_name ?? '') || emailTo.split('@')[0];
+            const phone = customer_phone || String(updatedOrder?.customer_phone ?? '');
+            const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);
+            const editAddon = has_edit_addon ?? Boolean(updatedOrder?.iconik_edit_addon);
 
             sendAUOrderConfirmationEmail({
                 customer_name: name,

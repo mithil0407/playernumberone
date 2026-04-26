@@ -38,6 +38,9 @@ interface ParsedOutfit {
   fitNote:     string;
   colourLogic: string;
   whyItWorks:  string;
+  shoppingTranslation: string;
+  acceptableSubstitutes: string;
+  doNotBuy: string;
 }
 
 interface OutfitCategory {
@@ -130,6 +133,9 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
         const v = getField(block, 'Occasion anchor');
         return v !== '—' ? v : getField(block, 'Why it works(?:\\s+for\\s+you)?');
       })(),
+      shoppingTranslation: getField(block, 'Shopping translation'),
+      acceptableSubstitutes: getField(block, 'Acceptable substitutes'),
+      doNotBuy: getField(block, 'Do not buy'),
     };
 
     if (!currentCat) {
@@ -949,6 +955,24 @@ function OutfitsSection({
                     <div>
                       <DataLabel>Colour Logic</DataLabel>
                       <span className="text-[11px] text-gray-500 font-light leading-relaxed">{stripHex(outfit.colourLogic)}</span>
+                    </div>
+                  )}
+                  {outfit.shoppingTranslation && outfit.shoppingTranslation !== '—' && (
+                    <div>
+                      <DataLabel>Shopping Translation</DataLabel>
+                      <span className="text-[11px] text-gray-500 font-light leading-relaxed">{outfit.shoppingTranslation}</span>
+                    </div>
+                  )}
+                  {outfit.acceptableSubstitutes && outfit.acceptableSubstitutes !== '—' && (
+                    <div>
+                      <DataLabel>Acceptable Substitutes</DataLabel>
+                      <span className="text-[11px] text-gray-500 font-light leading-relaxed">{outfit.acceptableSubstitutes}</span>
+                    </div>
+                  )}
+                  {outfit.doNotBuy && outfit.doNotBuy !== '—' && (
+                    <div>
+                      <DataLabel>Do Not Buy</DataLabel>
+                      <span className="text-[11px] text-gray-500 font-light leading-relaxed">{outfit.doNotBuy}</span>
                     </div>
                   )}
                 </div>

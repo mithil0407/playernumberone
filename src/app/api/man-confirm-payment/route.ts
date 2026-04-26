@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendManConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
+import { attributionFromRow } from '@/lib/attribution';
 
 // Called client-side after Razorpay's handler fires for international USD /man payments.
 // Updates the order status and sends the confirmation email with USD currency symbol.
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing payment ID' }, { status: 400 });
     }
 
-    let updatedOrder: { id?: string; customer_email?: string; customer_phone?: string; amount?: number; add_ons?: string } | null = null;
+    let updatedOrder: Record<string, unknown> | null = null;
 
     // Mark as paid (but NOT email_sent yet — we set that only after the email succeeds)
     if (db_order_id && db_order_id !== 'mock-order-id') {
@@ -54,30 +55,31 @@ export async function POST(request: NextRequest) {
 
     if (updatedOrder && (db_order_id || razorpay_order_id)) {
       await recordRevenueEvent({
-        eventKey: `orders:${updatedOrder.id ?? (db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id)}:payment:${razorpay_payment_id}`,
+        eventKey: `orders:${String(updatedOrder.id ?? (db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id))}:payment:${razorpay_payment_id}`,
         sourceMarket: 'india',
         sourceTable: 'orders',
-        sourceId: updatedOrder.id ?? (db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id),
+        sourceId: String(updatedOrder.id ?? (db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id)),
         revenueKind: 'one_time',
         eventType: 'one_time_payment',
         productType: 'man_blueprint_intl',
-        customerEmail: customer_email || updatedOrder.customer_email,
-        customerPhone: customer_phone || updatedOrder.customer_phone,
-        amountMinor: toMinorUnits(amount ?? updatedOrder.amount ?? 0),
+        customerEmail: customer_email || String(updatedOrder.customer_email ?? ''),
+        customerPhone: customer_phone || String(updatedOrder.customer_phone ?? ''),
+        amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
         currency: 'USD',
         status: 'paid',
         paymentId: razorpay_payment_id,
         razorpayOrderId: razorpay_order_id,
+        attribution: attributionFromRow(updatedOrder),
         metadata: { source: 'man-confirm-payment' },
       });
     }
 
     // Send confirmation email with USD symbol
-    const emailTo = customer_email || updatedOrder?.customer_email;
+    const emailTo = customer_email || String(updatedOrder?.customer_email ?? '');
     if (emailTo) {
-      const phone = customer_phone || updatedOrder?.customer_phone || '';
-      const orderAmount = amount ?? updatedOrder?.amount ?? 0;
-      const addOns = has_outfit_preview ? 'Outfit Preview on You' : (updatedOrder?.add_ons || '');
+      const phone = customer_phone || String(updatedOrder?.customer_phone ?? '');
+      const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);
+      const addOns = has_outfit_preview ? 'Outfit Preview on You' : String(updatedOrder?.add_ons ?? '');
 
       try {
         const result = await sendManConfirmationEmail({

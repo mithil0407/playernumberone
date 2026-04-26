@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { saveGlobeSubscription, saveGlobeCustomer, supabaseGlobe } from '@/lib/supabaseGlobe';
+import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 
 // Globe Style Feed plan IDs (Razorpay — USD) — shared with /globe
 const GLOBAL_STYLE_FEED_PLANS = {
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
             customer_phone,
             customer_name,
         } = body;
+        const incomingAttribution = attributionToColumns(body.attribution);
 
         if (!plan_type || !customer_email) {
             return NextResponse.json(
@@ -75,6 +77,10 @@ export async function POST(request: NextRequest) {
                 plan_type,
                 product: 'ICONIK Style Feed — Global',
                 region: 'Global',
+                utm_source: incomingAttribution.utm_source || '',
+                utm_medium: incomingAttribution.utm_medium || '',
+                utm_campaign: incomingAttribution.utm_campaign || '',
+                landing_page: incomingAttribution.landing_page || '',
             },
         };
 
@@ -86,13 +92,21 @@ export async function POST(request: NextRequest) {
 
         // Persist to Supabase (fire-and-forget)
         try {
+            const { data: existingCustomer } = await supabaseGlobe
+                .from('globe_customers')
+                .select('*')
+                .eq('email', customer_email)
+                .single();
+            const customerAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
             const customer = await saveGlobeCustomer({
                 name,
                 email: customer_email,
                 phone: customer_phone || '',
+                ...customerAttribution,
             });
 
             const customerId: string | undefined = customer?.id;
+            const subscriptionAttribution = firstTouchAttribution(customer, incomingAttribution);
 
             const { data: existingSub } = await supabaseGlobe
                 .from('globe_subscriptions')
@@ -116,6 +130,7 @@ export async function POST(request: NextRequest) {
                     status: 'pending',
                     source: 'global_oto',
                     notes: `Global OTO — ${plan_type} plan created at ${new Date().toISOString()}`,
+                    ...subscriptionAttribution,
                 });
             }
         } catch (dbError) {

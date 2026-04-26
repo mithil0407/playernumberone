@@ -8,6 +8,8 @@ import {
   resolveManReportImageUrls,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
+import type { ReportData } from '@/lib/manReportGenerator';
+import { withManReportSection4Qa } from '@/lib/manReportQa';
 
 // Replace the outfit block for `outfitNumber` in the full s4_outfits string.
 // Handles both old bold format "**Outfit N —" and new plain uppercase "OUTFIT N —".
@@ -100,20 +102,19 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentS4 = (report.report_data as any)?.sections?.s4_outfits ?? '';
   const newS4 = replaceOutfitBlock(currentS4, outfitNumber, outfitText);
+  const nextReportData = withManReportSection4Qa({
+    ...(report.report_data as ReportData),
+    sections: {
+      ...((report.report_data as ReportData)?.sections),
+      s4_outfits: newS4,
+    },
+  });
 
   const newImagePaths = await mergeManReportImagePathsForReport(
     reportId,
     { outfitCards: outfitPatch },
     {
-      report_data: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...(report.report_data as any),
-        sections: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ...(report.report_data as any)?.sections,
-          s4_outfits: newS4,
-        },
-      },
+      report_data: nextReportData,
     },
   );
 
@@ -124,5 +125,6 @@ export async function POST(
     imageUrl,
     storagePath: newPath,
     updatedS4Outfits: newS4,
+    qa: nextReportData.qa,
   });
 }

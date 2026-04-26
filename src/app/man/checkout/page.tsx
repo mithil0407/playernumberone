@@ -7,6 +7,7 @@ import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide
 import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
 import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing } from '@/lib/manPricing';
+import { getAttributionPayload } from '@/lib/attribution';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -155,7 +156,8 @@ export default function ManCheckoutPage() {
             outfit_preview: outfitPreviewAddon
           },
           total_base_price: discountedPrice,
-          outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0
+          outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0,
+          attribution: getAttributionPayload(),
         };
 
         const response = await fetch('/api/payment', {
@@ -175,6 +177,7 @@ export default function ManCheckoutPage() {
           customer_phone: formData.phone,
           amount: totalAmount,
           outfit_preview_addon: outfitPreviewAddon,
+          attribution: getAttributionPayload(),
         };
 
         const response = await fetch('/api/man-payment-intl', {

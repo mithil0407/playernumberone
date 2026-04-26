@@ -23,6 +23,7 @@ import {
 import type { ClassificationResult, ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
+import { withManReportSection4Qa } from '@/lib/manReportQa';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
@@ -180,6 +181,26 @@ export async function POST(
 
   const reportData       = report.report_data as ReportData;
   const existingImageUrls = report.image_urls as ManReportImagePaths | null;
+  const reportDataWithQa = withManReportSection4Qa(reportData);
+  const blockingQaIssues = reportDataWithQa.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];
+
+  if (blockingQaIssues.length > 0) {
+    await supabaseAdmin
+      .from('man_reports')
+      .update({
+        report_data: reportDataWithQa,
+        error_message: `Fix Section 4 before images: ${blockingQaIssues[0].message}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId);
+
+    await revalidateManReportCache(reportId, report.share_token ?? null);
+
+    return NextResponse.json({
+      error: 'Section 4 has blocking QA issues. Fix the outfit text before generating images.',
+      issues: blockingQaIssues,
+    }, { status: 400 });
+  }
 
   const initialProgressStage = 'generating_images';
 
@@ -188,6 +209,7 @@ export async function POST(
     .update({
       progress_stage: initialProgressStage,
       error_message: null,
+      report_data: reportDataWithQa,
       updated_at: new Date().toISOString(),
     })
     .eq('id', reportId);
@@ -199,8 +221,8 @@ export async function POST(
       reportId,
       report.share_token ?? null,
       submission as ManIntakeSubmission,
-      reportData.classification,
-      reportData.sections,
+      reportDataWithQa.classification,
+      reportDataWithQa.sections,
       imageModel,
       existingImageUrls,
     );

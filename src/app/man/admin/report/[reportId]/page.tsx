@@ -108,6 +108,7 @@ function buildSafeReportData(reportData: ReportData): ReportData {
       s6_identity: reportData.sections?.s6_identity ?? '',
     } as ReportSections,
     generated_at: reportData.generated_at,
+    qa: reportData.qa,
   };
 }
 
@@ -346,6 +347,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const data = await res.json();
     const imageUrl = data.imageUrl as string | null;
     const updatedS4Outfits = data.updatedS4Outfits as string | null;
+    const qa = data.qa as ReportData['qa'] | undefined;
 
     if (!imageUrl || !updatedS4Outfits) return null;
 
@@ -355,6 +357,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         ...prev,
         report_data: {
           ...prev.report_data,
+          qa: qa ?? prev.report_data.qa,
           sections: {
             ...prev.report_data.sections,
             s4_outfits: updatedS4Outfits,
@@ -605,6 +608,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
   const expectedOutfitCount = report.report_data?.classification?.outfit_split?.total ?? 16;
+  const section4Qa = report.report_data?.qa?.section4 ?? null;
+  const section4Issues = section4Qa?.issues ?? [];
+  const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
+  const section4WarningCount = section4Issues.length - section4ErrorCount;
 
   // True only when hairstyle, eyewear AND every expected outfit image are present
   const hasAllImages = (
@@ -723,6 +730,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             const approved   = approvals[key];
             const active     = activeSection === key;
             const hasContent = !!report.report_data?.sections?.[field];
+            const sectionIssues = key === 's4' ? section4Issues.length : 0;
 
             return (
               <div
@@ -779,6 +787,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 <span className="relative z-10 flex-1 text-xs font-medium" style={{ color: hasContent ? (active ? '#c9a96e' : '#6b5f4a') : '#3a3028' }}>
                   {label}
                 </span>
+                {sectionIssues > 0 && (
+                  <span
+                    className="relative z-10 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    style={{
+                      color: section4ErrorCount ? '#f87171' : '#fb923c',
+                      background: section4ErrorCount ? '#2a0e0e' : '#2a1900',
+                      border: `1px solid ${section4ErrorCount ? '#3a1010' : '#3a2000'}`,
+                    }}
+                  >
+                    {sectionIssues}
+                  </span>
+                )}
 
                 {/* Edit button — only when content exists */}
                 {hasContent && (
@@ -797,6 +817,30 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               </div>
             );
           })}
+
+          {/* Approve all — disabled while generating */}
+          {activeSection === 's4' && section4Issues.length > 0 && (
+            <div className="mt-3 rounded-lg p-2.5 space-y-2" style={{ background: '#130f08', border: '1px solid #2a2010' }}>
+              <div className="flex items-center gap-1.5">
+                <AlertCircle size={12} style={{ color: section4ErrorCount ? '#f87171' : '#fb923c' }} />
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: section4ErrorCount ? '#f87171' : '#fb923c' }}>
+                  Section 4 QA · {section4ErrorCount} errors · {section4WarningCount} warnings
+                </p>
+              </div>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                {section4Issues.slice(0, 8).map((qaIssue, index) => (
+                  <p key={`${qaIssue.code}-${index}`} className="text-[10px] leading-snug" style={{ color: qaIssue.severity === 'error' ? '#fca5a5' : '#c8a56a' }}>
+                    {qaIssue.message}
+                  </p>
+                ))}
+                {section4Issues.length > 8 && (
+                  <p className="text-[10px]" style={{ color: '#6b5f4a' }}>
+                    +{section4Issues.length - 8} more issues
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Approve all — disabled while generating */}
           {!isGenerating && (
