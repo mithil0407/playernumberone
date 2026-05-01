@@ -13,8 +13,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
 import {
-  generateHairstyleImages,
-  generateEyewearImages,
+  regenerateMissingFaceSlots,
   generateAllOutfitImages,
   getStoredManReportImagePaths,
   mergeManReportImagePathsForReport,
@@ -41,11 +40,15 @@ async function runImagePipeline(
     const latestImageUrls = (await getStoredManReportImagePaths(reportId)) ?? existingImageUrls ?? null;
 
     // ── Hairstyle + eyewear ───────────────────────────────────────────────────
-    // Skip if already generated
-    let hairstylePaths = latestImageUrls?.hairstyleCards ?? [];
-    let eyewearPaths   = latestImageUrls?.eyewearCards   ?? [];
+    // Resume per-slot: regenerate any face slot that's currently null.
+    // (Old logic only regenerated when ALL hairstyle OR ALL eyewear slots were
+    //  empty — partial failures from a previous run were never picked up.)
+    let hairstylePaths = [...(latestImageUrls?.hairstyleCards ?? [])];
+    let eyewearPaths   = [...(latestImageUrls?.eyewearCards   ?? [])];
 
-    const needsHeadshots = hairstylePaths.every(p => !p) || eyewearPaths.every(p => !p);
+    const missingHairstyle = [1, 2].filter(i => !hairstylePaths[i - 1]);
+    const missingEyewear   = [1, 2].filter(i => !eyewearPaths[i - 1]);
+    const needsHeadshots   = missingHairstyle.length > 0 || missingEyewear.length > 0;
 
     if (needsHeadshots) {
       await supabaseAdmin
@@ -55,10 +58,14 @@ async function runImagePipeline(
 
       await revalidateManReportCache(reportId, shareToken);
 
-      [hairstylePaths, eyewearPaths] = await Promise.all([
-        generateHairstyleImages(reportId, submission, classification, imageModel),
-        generateEyewearImages(reportId, submission, classification, imageModel),
+      const [newHairstyle, newEyewear] = await Promise.all([
+        regenerateMissingFaceSlots(reportId, submission, classification, 'hairstyle', missingHairstyle, imageModel),
+        regenerateMissingFaceSlots(reportId, submission, classification, 'eyewear',   missingEyewear,   imageModel),
       ]);
+
+      // Merge regenerated slots back into the path arrays without clobbering existing successes.
+      missingHairstyle.forEach((slot, idx) => { hairstylePaths[slot - 1] = newHairstyle[idx]; });
+      missingEyewear.forEach((slot, idx)   => { eyewearPaths[slot - 1]   = newEyewear[idx]; });
 
       // Persist immediately before starting outfit images
       await mergeManReportImagePathsForReport(

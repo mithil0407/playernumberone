@@ -33,7 +33,7 @@ export default async function PublicReportPage({ params }: PageProps) {
 
       <div
         className="min-h-screen min-h-dvh"
-        style={{ background: '#faf9f6', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ background: '#FBF8F4', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ManReport
           data={result.report_data}
@@ -43,18 +43,11 @@ export default async function PublicReportPage({ params }: PageProps) {
           deferSections
         />
 
-        {/* Footer */}
-        <div className="bg-white border-t px-5 md:px-10 py-8 text-center" style={{ borderColor: '#f0ede8' }}>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-5 h-5 bg-black flex items-center justify-center">
-              <span className="text-[8px] font-black" style={{ color: '#b58e4d' }}>I</span>
-            </div>
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-black">
-              Iconik <span style={{ color: '#b58e4d' }}>Blueprint</span>
-            </span>
-          </div>
-          <p className="text-[9px] text-gray-300 uppercase tracking-widest">
-            Personal · Confidential · For Your Eyes Only
+        {/* Confidentiality footnote — the rebuilt ManReport now renders its own
+            branded footer, so this strip is just a quiet sign-off. */}
+        <div className="px-5 md:px-12 py-6 text-center" style={{ background: '#FBF8F4' }}>
+          <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: '#5A524A' }}>
+            For your eyes only
           </p>
         </div>
       </div>

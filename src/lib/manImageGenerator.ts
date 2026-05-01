@@ -257,6 +257,28 @@ Do not alter the background in any way. Do not change the lighting. Do not refra
 Portrait format, tightly framed on the head and upper shoulders.`;
 }
 
+// Softer prompt used as a safety-block fallback. Drops "preserve real face features"
+// language that frequently triggers Gemini's image-safety filter on portraits.
+function buildHairstylePromptSoft(hairstyle: string, faceShape: string): string {
+  return `Editorial men's grooming reference photo. A young man with a ${faceShape} face shape, photographed in soft studio light, head and shoulders only.
+
+The hair is styled in this exact style: ${hairstyle}. The hair should look polished, well-groomed, and realistic, with a natural texture.
+
+The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a styling reference, not as identity preservation.
+
+Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
+}
+
+function buildEyewearPromptSoft(eyewearShape: string, faceShape: string): string {
+  return `Editorial men's eyewear reference photo. A young man with a ${faceShape} face shape, photographed in soft studio light, head and shoulders only.
+
+The subject is wearing ${eyewearShape} eyeglass frames that sit naturally on the nose bridge and suit the face proportions. Frames should look like premium, realistic eyewear with clear (not tinted) lenses.
+
+The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a styling reference, not as identity preservation.
+
+Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
+}
+
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
   const garmentLines = [
     `Top: ${outfit.top}`,
@@ -430,73 +452,116 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5, baseDelayMs =
 // Public API — generation
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Phase 3: Generate 2 hairstyle variant headshots from the client's headshot photo.
- * Uses hairstyle_recommendations[0] and [1]. Background is kept unchanged.
- * Returns [path1, path2] — either may be null if that variant failed.
- */
-export async function generateHairstyleImages(
-  reportId:       string,
-  submission:     ManIntakeSubmission,
-  classification: ClassificationResult,
-  imageModel:     string = MODEL,
-): Promise<(string | null)[]> {
-  const photoUrl = submission.photo_headshot_url ?? submission.photo_fullbody_url;
-  if (!photoUrl) {
-    throw new Error('No headshot or full-body photo on submission — cannot generate hairstyle images');
-  }
+const FALLBACK_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 
-  const { data, mimeType } = await fetchAsBase64(photoUrl);
-  const { face } = classification;
-  const hairstyles = face.hairstyle_recommendations.slice(0, 2);
-
-  const tasks = hairstyles.map((hairstyle, i) => {
-    console.log(`[manImageGenerator] Starting hairstyle ${i + 1}: "${hairstyle}" (model: ${imageModel})`);
-    return withRetry(() => callGeminiImageEdit(data, mimeType, buildHairstylePrompt(hairstyle, face.face_shape), imageModel))
-      .then(outputBase64 => {
-        console.log(`[manImageGenerator] Hairstyle ${i + 1} generated OK, uploading…`);
-        return uploadToStorage(reportId, outputBase64, `hairstyle_${i + 1}.jpg`);
-      })
-      .then(path => { console.log(`[manImageGenerator] Hairstyle ${i + 1} saved: ${path}`); return path; })
-      .catch(err => {
-        console.error(`[manImageGenerator] Hairstyle ${i + 1} FAILED (model: ${imageModel}):`, err instanceof Error ? err.message : err);
-        return null;
-      });
-  });
-
-  return Promise.all(tasks);
+function isSafetyBlock(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return msg.includes('safety') || msg.includes('recitation') || msg.includes('prohibited') || msg.includes('blocked');
 }
 
 /**
- * Phase 3b: Generate 2 eyewear variant headshots from the client's headshot photo.
- * Uses eyewear_shapes[0] and [1]. Background is kept unchanged.
- * Returns [path1, path2] — either may be null if that variant failed.
+ * Run a face-image generation attempt with three layers of fallback:
+ *   1. primary prompt + requested model
+ *   2. soft prompt + requested model        (handles safety blocks on real faces)
+ *   3. soft prompt + the other allowed model (handles model-specific refusals)
+ * Each layer wraps `withRetry` so transient quota/503 errors still backoff.
+ *
+ * Lower base delay (3s) so the worst-case retry chain still fits inside the
+ * 5-minute Vercel `after()` budget when this runs across 4 face slots in parallel.
  */
-export async function generateEyewearImages(
+async function generateFaceSlotWithFallback(
+  imageBase64: string,
+  mimeType:    string,
+  primaryPrompt: string,
+  softPrompt:    string,
+  imageModel:    string,
+): Promise<string> {
+  try {
+    return await withRetry(
+      () => callGeminiImageEdit(imageBase64, mimeType, primaryPrompt, imageModel),
+      3,      // attempts
+      3_000,  // 3s → 6s → 12s
+    );
+  } catch (err) {
+    if (!isSafetyBlock(err)) throw err;
+    console.warn('[generateFaceSlotWithFallback] Safety block — retrying with soft prompt');
+  }
+
+  try {
+    return await withRetry(
+      () => callGeminiImageEdit(imageBase64, mimeType, softPrompt, imageModel),
+      2,
+      3_000,
+    );
+  } catch (err) {
+    if (!isSafetyBlock(err)) throw err;
+    const fallbackModel = FALLBACK_IMAGE_MODELS.find(m => m !== imageModel) ?? imageModel;
+    console.warn(`[generateFaceSlotWithFallback] Soft prompt blocked too — falling back to model ${fallbackModel}`);
+    return await withRetry(
+      () => callGeminiImageEdit(imageBase64, mimeType, softPrompt, fallbackModel),
+      2,
+      3_000,
+    );
+  }
+}
+
+/**
+ * Regenerate a list of missing face slots (hairstyle or eyewear) for a report.
+ *
+ * Returns an array aligned to `slots`: each entry is either the storage path
+ * for that slot or `null` if generation ultimately failed. On any null, an
+ * `error_message` is persisted to `man_reports` so the UI can surface it.
+ */
+export async function regenerateMissingFaceSlots(
   reportId:       string,
   submission:     ManIntakeSubmission,
   classification: ClassificationResult,
+  kind:           FaceImageKind,
+  slots:          number[], // 1-indexed slot numbers to regenerate
   imageModel:     string = MODEL,
 ): Promise<(string | null)[]> {
+  if (slots.length === 0) return [];
+
   const photoUrl = submission.photo_headshot_url ?? submission.photo_fullbody_url;
   if (!photoUrl) {
-    throw new Error('No headshot or full-body photo on submission — cannot generate eyewear images');
+    throw new Error(`No headshot or full-body photo on submission — cannot generate ${kind} images`);
   }
 
   const { data, mimeType } = await fetchAsBase64(photoUrl);
   const { face } = classification;
-  const shapes = face.eyewear_shapes.slice(0, 2);
+  const options = kind === 'hairstyle' ? face.hairstyle_recommendations : face.eyewear_shapes;
 
-  const tasks = shapes.map((shape, i) => {
-    console.log(`[manImageGenerator] Starting eyewear ${i + 1}: "${shape}" (model: ${imageModel})`);
-    return withRetry(() => callGeminiImageEdit(data, mimeType, buildEyewearPrompt(shape, face.face_shape), imageModel))
-      .then(outputBase64 => {
-        console.log(`[manImageGenerator] Eyewear ${i + 1} generated OK, uploading…`);
-        return uploadToStorage(reportId, outputBase64, `eyewear_${i + 1}.jpg`);
-      })
-      .then(path => { console.log(`[manImageGenerator] Eyewear ${i + 1} saved: ${path}`); return path; })
+  const tasks = slots.map((slot) => {
+    const optionText = options[slot - 1];
+    if (!optionText) {
+      console.warn(`[regenerateMissingFaceSlots] No ${kind} recommendation for slot ${slot}`);
+      return Promise.resolve<string | null>(null);
+    }
+
+    const primaryPrompt = kind === 'hairstyle'
+      ? buildHairstylePrompt(optionText, face.face_shape)
+      : buildEyewearPrompt(optionText, face.face_shape);
+    const softPrompt = kind === 'hairstyle'
+      ? buildHairstylePromptSoft(optionText, face.face_shape)
+      : buildEyewearPromptSoft(optionText, face.face_shape);
+
+    console.log(`[regenerateMissingFaceSlots] Starting ${kind} ${slot}: "${optionText}" (model: ${imageModel})`);
+
+    return generateFaceSlotWithFallback(data, mimeType, primaryPrompt, softPrompt, imageModel)
+      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `${kind}_${slot}.jpg`))
+      .then(path => { console.log(`[regenerateMissingFaceSlots] ${kind} ${slot} saved: ${path}`); return path as string | null; })
       .catch(err => {
-        console.error(`[manImageGenerator] Eyewear ${i + 1} FAILED (model: ${imageModel}):`, err instanceof Error ? err.message : err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[regenerateMissingFaceSlots] ${kind} ${slot} FAILED (model: ${imageModel}): ${errMsg}`);
+        // Fire-and-forget — surface the failure on the report so the admin sees it.
+        void supabaseAdmin
+          .from('man_reports')
+          .update({
+            error_message: `${kind === 'hairstyle' ? 'Hairstyle' : 'Eyewear'} ${slot} failed: ${errMsg.slice(0, 400)}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', reportId)
+          .then(null, () => {});
         return null;
       });
   });
