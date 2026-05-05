@@ -160,13 +160,15 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
   return categories.filter(c => c.outfits.length > 0);
 }
 
-function extractOutfitBlock(s4Text: string, outfitNumber: number): string {
-  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
-  const block = blocks.find(b => {
-    const t = b.trim();
-    return new RegExp(`^(?:\\*\\*Outfit|OUTFIT)\\s+${outfitNumber}\\s*[—–-]`).test(t);
-  });
-  return block?.trim() ?? '';
+function extractOutfitBlock(s4Text: string, outfitNumber: number): string | null {
+  const headerPattern = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
+  const matches = Array.from(s4Text.matchAll(headerPattern));
+  const matchIndex = matches.findIndex(match => Number(match[1]) === outfitNumber);
+  if (matchIndex === -1) return null;
+
+  const start = matches[matchIndex].index ?? 0;
+  const end = matches[matchIndex + 1]?.index ?? s4Text.length;
+  return s4Text.slice(start, end).trim();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -856,6 +858,13 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
 // Section 04 — 16 Outfits
 // ─────────────────────────────────────────────────────────────
 
+interface OutfitEditResult {
+  imageUrl: string | null;
+  updatedS4Outfits: string;
+  imageStatus: 'generated' | 'failed';
+  error?: string;
+}
+
 function OutfitsSection({
   cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onRetryMissingImages, qaPassedOutfits,
 }: {
@@ -866,30 +875,64 @@ function OutfitsSection({
   onRegenerateOutfit?: (
     outfitNumber: number,
     newText: string,
-  ) => Promise<{ imageUrl: string; updatedS4Outfits: string } | null>;
+  ) => Promise<OutfitEditResult | null>;
   onRetryMissingImages?: () => Promise<void>;
   qaPassedOutfits?: Set<number>; // outfit numbers without QA errors
 }) {
   const [editingNumber, setEditingNumber] = useState<number | null>(null);
   const [editText, setEditText]           = useState('');
+  const [editError, setEditError]         = useState<string | null>(null);
+  const [sectionNotice, setSectionNotice] = useState<string | null>(null);
   const [regenerating, setRegenerating]   = useState(false);
   const [retryingSet, setRetryingSet]     = useState<Set<number>>(new Set());
   const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
 
   const startEdit = (outfitNumber: number) => {
-    setEditText(extractOutfitBlock(text, outfitNumber));
+    if (regenerating) return;
+    const outfitBlock = extractOutfitBlock(text, outfitNumber);
+    if (!outfitBlock) {
+      setEditError(`Could not locate Outfit ${outfitNumber} in Section 4 text. Open the full Section 4 editor to repair the outfit headers.`);
+      setEditingNumber(null);
+      setEditText('');
+      return;
+    }
+    setEditError(null);
+    setSectionNotice(null);
     setEditingNumber(outfitNumber);
+    setEditText(outfitBlock);
   };
-  const cancelEdit = () => { setEditingNumber(null); setEditText(''); };
+  const cancelEdit = (force = false) => {
+    if (regenerating && !force) return;
+    setEditingNumber(null);
+    setEditText('');
+    setEditError(null);
+  };
 
   const handleRegenerate = async () => {
     if (!editingNumber || !onRegenerateOutfit) return;
+    if (!editText.trim()) {
+      setEditError('Outfit text cannot be empty.');
+      return;
+    }
     setRegenerating(true);
+    setEditError(null);
+    setSectionNotice(null);
     try {
       const result = await onRegenerateOutfit(editingNumber, editText);
-      if (!result) return;
-      setImageOverrides(prev => ({ ...prev, [editingNumber]: result.imageUrl }));
-      cancelEdit();
+      if (!result) {
+        setEditError('Could not save outfit edit. Please try again.');
+        return;
+      }
+      setImageOverrides(prev => {
+        const next = { ...prev };
+        if (result.imageUrl) next[editingNumber] = result.imageUrl;
+        else delete next[editingNumber];
+        return next;
+      });
+      if (result.imageStatus === 'failed') {
+        setSectionNotice(`Outfit ${editingNumber} text was saved, but image regeneration failed. Use Retry on the image placeholder when Gemini is available.`);
+      }
+      cancelEdit(true);
     } finally {
       setRegenerating(false);
     }
@@ -908,8 +951,12 @@ function OutfitsSection({
 
       if (!onRegenerateOutfit) return;
       const outfitBlock = extractOutfitBlock(text, outfitNumber);
+      if (!outfitBlock) {
+        setSectionNotice(`Could not locate Outfit ${outfitNumber} in Section 4 text. Open the full Section 4 editor to repair the outfit headers.`);
+        return;
+      }
       const result = await onRegenerateOutfit(outfitNumber, outfitBlock);
-      if (result) setImageOverrides(prev => ({ ...prev, [outfitNumber]: result.imageUrl }));
+      if (result?.imageUrl) setImageOverrides(prev => ({ ...prev, [outfitNumber]: result.imageUrl! }));
     } finally {
       setRetryingSet(prev => { const next = new Set(prev); next.delete(outfitNumber); return next; });
     }
@@ -929,6 +976,10 @@ function OutfitsSection({
       </div>
     );
   }
+
+  const editingOutfit = editingNumber
+    ? categories.flatMap(category => category.outfits).find(outfit => outfit.number === editingNumber) ?? null
+    : null;
 
   // Render an individual outfit row — image left, details right.
   const renderOutfitCard = (cat: OutfitCategory, outfit: ParsedOutfit) => {
@@ -1016,6 +1067,7 @@ function OutfitsSection({
           {canEdit && (
             <motion.button
               onClick={() => isEditing ? cancelEdit() : startEdit(outfit.number)}
+              disabled={regenerating}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full"
               style={{ background: 'rgba(27,24,21,0.7)', color: '#fff', backdropFilter: 'blur(6px)' }}
               title={isEditing ? 'Cancel edit' : 'Edit outfit'}
@@ -1036,50 +1088,9 @@ function OutfitsSection({
           )}
         </div>
 
-        {/* Right: outfit details OR inline editor */}
+        {/* Right: outfit details */}
         <AnimatePresence mode="wait" initial={false}>
-          {isEditing ? (
-            <motion.div
-              key="edit"
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.16 }}
-              className="flex-1 p-6 flex flex-col gap-3"
-              style={{ background: IVORY }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: ACCENT_INK }}>
-                  Edit outfit {outfit.number}
-                </span>
-                <button onClick={cancelEdit} style={{ color: INK_SOFT }}>
-                  <X size={14} />
-                </button>
-              </div>
-              <textarea
-                value={editText}
-                onChange={e => setEditText(e.target.value)}
-                className="flex-1 font-mono text-[12px] rounded-xl p-4 resize-none leading-relaxed focus:outline-none"
-                style={{ minHeight: 320, background: '#fff', border: `1px solid ${BORDER}`, color: INK }}
-                spellCheck={false}
-              />
-              <motion.button
-                onClick={handleRegenerate}
-                disabled={regenerating}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-full text-[12px] font-medium disabled:opacity-40"
-                style={{ background: ACCENT, color: '#fff' }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={SPRING}
-              >
-                {regenerating
-                  ? <><Loader2 size={13} className="animate-spin" /> Regenerating…</>
-                  : 'Regenerate image'
-                }
-              </motion.button>
-            </motion.div>
-          ) : (
-            <motion.div
+          <motion.div
               key="details"
               initial={{ opacity: 0, x: 8 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1168,7 +1179,6 @@ function OutfitsSection({
                 )}
               </div>
             </motion.div>
-          )}
         </AnimatePresence>
       </div>
     );
@@ -1179,6 +1189,20 @@ function OutfitsSection({
       <SectionHeader number="04" label={`Your ${split.total} Outfit Formulas`} />
 
       <div className="px-4 md:px-8 pb-14 space-y-14">
+        {(editError || sectionNotice) && (
+          <div
+            className="mx-2 md:mx-4 flex items-start gap-2 rounded-2xl px-4 py-3"
+            style={{
+              background: editError ? '#fff2f2' : '#f4efe4',
+              border: `1px solid ${editError ? '#f0cccc' : BORDER}`,
+              color: editError ? OXBLOOD : INK_SOFT,
+            }}
+          >
+            <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+            <p className="text-[12px] leading-relaxed">{editError ?? sectionNotice}</p>
+          </div>
+        )}
+
         {categories.map((cat, ci) => {
           const catCount = split.categories.find(c =>
             c.category.toLowerCase().includes(cat.name.toLowerCase().slice(0, 4))
@@ -1220,6 +1244,96 @@ function OutfitsSection({
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {editingNumber && editingOutfit && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: 'rgba(27,24,21,0.58)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            <motion.div
+              className="w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
+              style={{ background: IVORY, maxHeight: '86vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={SPRING}
+            >
+              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
+                    Edit outfit {editingNumber}
+                  </p>
+                  <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                    {editingOutfit.label}
+                  </p>
+                </div>
+                <button
+                  onClick={() => cancelEdit()}
+                  disabled={regenerating}
+                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
+                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="p-6 flex-1 min-h-0 flex flex-col gap-3">
+                {editError && (
+                  <div className="flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: '#fff2f2', color: OXBLOOD }}>
+                    <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                    <p className="text-[11px] leading-relaxed">{editError}</p>
+                  </div>
+                )}
+                <textarea
+                  value={editText}
+                  onChange={e => {
+                    setEditText(e.target.value);
+                    if (editError) setEditError(null);
+                  }}
+                  className="font-mono text-[12px] rounded-2xl p-4 resize-none leading-relaxed focus:outline-none flex-1 min-h-[420px]"
+                  style={{ background: '#fff', border: `1px solid ${BORDER}`, color: INK }}
+                  spellCheck={false}
+                />
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
+                  Saves this outfit text first, then regenerates only this outfit image.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => cancelEdit()}
+                    disabled={regenerating}
+                    className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    onClick={handleRegenerate}
+                    disabled={regenerating || !editText.trim()}
+                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: ACCENT, color: '#fff' }}
+                    whileHover={!regenerating ? { scale: 1.02 } : undefined}
+                    whileTap={!regenerating ? { scale: 0.98 } : undefined}
+                    transition={SPRING}
+                  >
+                    {regenerating
+                      ? <><Loader2 size={13} className="animate-spin" /> Saving + regenerating…</>
+                      : 'Save + regenerate image'
+                    }
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1401,7 +1515,7 @@ interface ManReportProps {
   onRegenerateOutfit?: (
     outfitNumber: number,
     newText: string,
-  ) => Promise<{ imageUrl: string; updatedS4Outfits: string } | null>;
+  ) => Promise<OutfitEditResult | null>;
   onRegenerateFaceImage?: (
     kind: FaceImageKind,
     optionIndex: number,

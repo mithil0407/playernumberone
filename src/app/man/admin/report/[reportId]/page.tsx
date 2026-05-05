@@ -49,8 +49,10 @@ interface ReportStatusSnapshot {
 }
 
 interface OutfitRegenerationResult {
-  imageUrl: string;
+  imageUrl: string | null;
   updatedS4Outfits: string;
+  imageStatus: 'generated' | 'failed';
+  error?: string;
 }
 
 interface FaceImageRegenerationResult {
@@ -344,18 +346,40 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ outfitNumber, outfitText: newText, imageModel }),
     });
-    if (!res.ok) return null;
     const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not save outfit edit.');
+      return null;
+    }
     const imageUrl = data.imageUrl as string | null;
     const updatedS4Outfits = data.updatedS4Outfits as string | null;
     const qa = data.qa as ReportData['qa'] | undefined;
+    const imageStatus = data.imageStatus as OutfitRegenerationResult['imageStatus'] | undefined;
+    const error = data.error as string | undefined;
 
-    if (!imageUrl || !updatedS4Outfits) return null;
+    if (!updatedS4Outfits || !imageStatus) return null;
 
     setReport(prev => {
       if (!prev?.report_data) return prev;
+      const existingImageUrls = prev.image_urls ?? {
+        hairstyleCards: [],
+        eyewearCards: [],
+        outfitCards: [],
+        baseModel: null,
+      };
+      const nextOutfitCards = [...(existingImageUrls.outfitCards ?? [])];
+      while (nextOutfitCards.length < outfitNumber) nextOutfitCards.push(null);
+      nextOutfitCards[outfitNumber - 1] = imageStatus === 'generated' ? imageUrl : null;
+
       return {
         ...prev,
+        error_message: imageStatus === 'failed'
+          ? `Outfit ${outfitNumber} image regeneration failed${error ? `: ${error}` : ''}`
+          : null,
+        image_urls: {
+          ...existingImageUrls,
+          outfitCards: nextOutfitCards,
+        },
         report_data: {
           ...prev.report_data,
           qa: qa ?? prev.report_data.qa,
@@ -367,7 +391,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       };
     });
 
-    return { imageUrl, updatedS4Outfits };
+    return { imageUrl, updatedS4Outfits, imageStatus, error };
   }, [reportId, imageModel]);
 
   const regenerateFaceImage = useCallback(async (
