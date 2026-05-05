@@ -1,6 +1,6 @@
 # ICONIK Men's Blueprint — Outfit Recommendation Engine
 
-**Version:** 2.1  
+**Version:** 2.2  
 **Scope:** Automated Blueprint report generation — outfit recommendation section only  
 **Output:** 16 outfits across 4 lifestyle contexts (4 per context)  
 **Geography:** Western clothing by default, with lightweight Indian-context support only when the intake explicitly signals Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe needs  
@@ -104,20 +104,71 @@ Derive the client's colour season from Q12 + Q13 + Q14 + Q15 + Q16 before genera
 
 #### WARM MEDIUM
 - **Power Neutrals:** Camel, warm tan, olive, khaki, warm brown, warm taupe, dark olive
-- **Accent:** Rust, terracotta, warm mustard, burnt orange, tobacco brown, copper
+- **Accent:** Muted rust, muted terracotta, burnt sienna, tobacco brown, copper
 - **Neutrals shared with all seasons:** Stone, warm grey, warm off-white, dark warm navy
-- **Avoid:** Cool grey, icy white, silver-grey
+- **Avoid:** Cool grey, icy white, silver-grey, mustard, bright yellow-adjacent tones, high-saturation orange
 
 #### WARM DEEP
 - **Power Neutrals:** Dark brown, rich olive, dark khaki, deep warm tan, chocolate brown, dark warm navy
-- **Accent:** Deep rust, burnt sienna, forest green, deep terracotta, amber
+- **Accent:** Muted deep rust, burnt sienna, forest green, deep muted terracotta, amber (accessory level only)
 - **Neutrals shared with all seasons:** Dark stone, warm charcoal, dark warm grey
-- **Avoid:** Cool grey, icy pastels, silver-grey, stark pure white (use warm ivory instead)
+- **Avoid:** Cool grey, icy pastels, silver-grey, stark pure white (use warm ivory instead), mustard, bright yellow-adjacent tones, high-saturation orange
 
 #### NEUTRAL
 - **Power Neutrals:** Navy, warm grey, stone, medium brown, off-white, taupe, slate
 - **Accent:** Both warm and cool accents work — do not combine a very warm accent with a very cool base in the same outfit
 - **Avoid:** Neon tones; extreme temperature pairings within a single outfit
+
+---
+
+## SECTION 02B — COLOUR HIERARCHY RULE ⚡ NEW
+
+**This rule applies to every single outfit across all 16 outfits. No exceptions.**
+
+Every outfit must have a clear **Anchor piece** and a clear **Accent piece**. These two roles must never be reversed or doubled.
+
+### The Two Roles
+
+| Role | Definition | What qualifies |
+|---|---|---|
+| **Anchor** | The dominant, grounding piece that carries the majority of visual weight. Always a neutral or dark tone. | Dark brown, navy, charcoal, olive, khaki, dark indigo, black, warm grey, chocolate, dark tan |
+| **Accent** | The secondary piece that adds colour personality. Appears in ONE piece only per outfit. | Rust, terracotta, burnt sienna, forest green, muted burgundy, teal, slate blue — always in a muted, earthy register |
+
+### Hard Rules
+
+1. **One anchor. One accent. Maximum.** Never two accent-coloured pieces in the same outfit. Never two equally saturated pieces competing for visual dominance.
+2. **Neutrals can pair with neutrals** — but only if one is clearly lighter and one is clearly darker. Dark navy trousers + warm ivory shirt = acceptable. Olive trousers + warm brown shirt = muddy and prohibited.
+3. **Accent pieces go on tops, not bottoms** — in casual and smart casual contexts, the accent colour should be the top (shirt, tee, polo). The bottom should be the anchor (dark trousers, dark denim, dark chino). Exception: In formal and evening contexts where a blazer is the anchor, the trouser can carry a muted accent tone only if the blazer is a deep neutral.
+4. **One temperature family per outfit** — a warm accent must pair with a warm anchor. A cool accent must pair with a cool or neutral anchor. Never pair a warm-toned accent top with cool-toned trousers or vice versa.
+5. **Depth contrast is mandatory** — every outfit must have at least one light/medium piece and at least one dark piece. Two mid-tone pieces together (e.g. rust shirt + brown trouser, olive shirt + camel trouser) is prohibited. The contrast between pieces must be visible and intentional.
+
+### Saturation Ceiling Rule
+
+- **Warm Deep and Cool Deep clients:** All accent colours must be muted and earthy — never high-saturation. Rust yes, but dark muted rust only. Terracotta yes, but deep muted terracotta only. No mustard. No bright yellow-adjacent tones. No high-saturation orange.
+- **Warm Medium clients:** Same saturation ceiling as Warm Deep. Muted accent colours only.
+- **Warm Light and Cool Light clients:** Slightly higher saturation tolerated, but still in a tonal/earthy register — never neon or primary-bright.
+
+### Prohibited Combinations — Never Generate These
+
+| Combination | Why Prohibited |
+|---|---|
+| Rust top + brown trouser | Two warm mid-tones — equal visual weight, no depth contrast |
+| Mustard top + any trouser | Mustard is high-saturation — reads garish on most Indian skin tones, especially medium to deep |
+| Olive top + camel/tan trouser | Two warm mid-tones — muddy, no anchor, no contrast |
+| Blue top + rust/terracotta trouser | Cross-temperature clash — warm accent bottom with cool top |
+| Two accent colours in same outfit | No anchor — outfit has no grounding piece |
+| Monochrome head-to-toe in any accent colour | Emerald suit, rust suit, olive suit — single-colour accent outfits are prohibited unless the client is Cool Deep in black or navy |
+
+### Correct Combination Examples
+
+| Top (Accent) | Bottom (Anchor) | Why It Works |
+|---|---|---|
+| Muted rust Oxford shirt | Dark indigo slim denim | Warm accent top, dark cool-neutral anchor — clear depth contrast |
+| Burnt sienna slim polo | Dark olive flat-front chino | Both warm family, but clear light-dark contrast |
+| Deep terracotta fitted tee | Chocolate brown straight trousers | Warm family, accent on top, anchor on bottom |
+| Warm ivory Oxford shirt | Dark brown tailored trousers | Classic light-dark neutral pairing |
+| Forest green knit crewneck | Dark navy slim trousers | Both deep tones but different families — contrast via hue, not just depth |
+| Navy slim blazer (layer) | Stone chino + rust polo (top) | Accent colour on top, neutral anchor on bottom, deep neutral layer |
 
 ---
 
@@ -330,7 +381,7 @@ Generate exactly 4 outfits per context. 16 outfits total.
 - No waistcoats
 - Trousers: Chinos, smart trousers, dark clean denim on 1–2 outfits acceptable
 - Footwear: Loafers, clean white leather sneakers, suede Chelsea boots
-- Colour: Expand from power neutrals into accent colours here
+- Colour: Expand from power neutrals into accent colours here — always following the Colour Hierarchy Rule in Section 02B
 - Apply body shape and undertone rules
 
 ---
@@ -366,7 +417,7 @@ Generate exactly 4 outfits per context. 16 outfits total.
 - Footwear: White leather low-top sneakers or white leather chunky-sole sneakers only
 - Accessories: Minimal — one item max (watch or chain)
 - Apply body shape camouflage rules even in casual context
-- Colour palette: Accent colours appropriate here; more relaxed combinations acceptable
+- Colour palette: Accent colours appropriate here; always follow Colour Hierarchy Rule — anchor bottom, accent top
 
 **STREETWEAR OUTFIT RULE:** If the client selected "Off Duty" or "Urban Wear" under Q21 (Style Tribes), one of the 4 Relaxed Casual outfits must be a streetwear-adjacent look. Use: heavyweight graphic-free oversized tee or boxy crewneck + either oversized wide-leg denim (dark wash) OR black heavy-duty cargo trousers (relaxed fit) + white leather chunky-sole sneakers. Keep colours within the client's season palette. This replaces one of the standard 4 Relaxed Casual outfits. No layer on the streetwear outfit.
 
@@ -596,6 +647,17 @@ STYLE POLES:
 COLOUR PALETTE:
 [Paste the full colour season palette from Section 02 — Power Neutrals, Accent, Avoid]
 
+COLOUR HIERARCHY RULE (non-negotiable — apply to every outfit):
+Every outfit must have one Anchor piece and one Accent piece only.
+- Anchor = dominant neutral or dark tone (dark brown, navy, charcoal, olive, dark indigo, black, dark khaki)
+- Accent = the single colour piece, always in a muted earthy register (muted rust, burnt sienna, deep terracotta, forest green)
+- NEVER two accent colours in the same outfit
+- NEVER two mid-tones of equal weight (e.g. rust top + brown trouser — prohibited)
+- NEVER mustard or high-saturation yellow-adjacent tones for any client
+- Accent piece goes on the TOP. Anchor goes on the BOTTOM. Exception: when a deep neutral blazer is the layer, the trouser can carry a muted accent only.
+- Every outfit must have depth contrast — one clearly lighter piece and one clearly darker piece
+- One temperature family per outfit — warm accents pair only with warm or dark neutral anchors; cool accents pair only with cool or dark neutral anchors
+
 ANTI-PREFERENCES:
 [List hard exclusions from ANTI_PREFS, or state "None"]
 
@@ -647,6 +709,9 @@ RULES — MUST FOLLOW ALL:
 18. "Why It Works For You" must reference at least one specific client variable — never generic
 19. No two outfits within the same context should feel similar — vary tops, layers, bottoms, footwear
 20. Never use a blazer in Relaxed Casual context
+21. COLOUR HIERARCHY — every outfit must have one anchor (neutral/dark) and one accent (muted colour). Never two accent-toned pieces in the same outfit. Never two mid-tones of equal visual weight. Accent on top, anchor on bottom. Depth contrast mandatory in every outfit.
+22. NEVER use mustard or any high-saturation yellow-adjacent colour for any client regardless of season
+23. NEVER pair a warm-toned accent top with cool-toned trousers or vice versa — one temperature family per outfit
 ```
 
 ---
@@ -678,6 +743,11 @@ Before finalising output, check every outfit against this list:
 - [ ] No two outfits within the same context are too similar
 - [ ] Streetwear outfit included if Off Duty / Urban Wear selected (no layer on that outfit)
 - [ ] Indian-context support included if Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe signals are present
+- [ ] ⚡ COLOUR HIERARCHY: Every outfit has one anchor + one accent only — no two accent pieces in the same outfit
+- [ ] ⚡ DEPTH CONTRAST: Every outfit has at least one clearly light piece and one clearly dark piece
+- [ ] ⚡ NO MUSTARD: Zero mustard or high-saturation yellow-adjacent tones in any of the 16 outfits
+- [ ] ⚡ TEMPERATURE MATCH: Warm accent paired only with warm or dark neutral anchor; cool accent with cool or dark neutral anchor
+- [ ] ⚡ PROHIBITED COMBINATIONS: Rust top + brown trouser, olive top + camel trouser, two accent colours together — none of these appear in any outfit
 
 ---
 
@@ -696,19 +766,19 @@ BOTTOM: Flat-front slim-fit olive wool trousers, slight taper, ankle-clean hem
 FOOTWEAR: Tan suede Chelsea boots, slim toe
 ACCESSORY: Gold minimalist watch
 
-WHY IT WORKS FOR YOU: The open blazer creates a deliberate vertical channel through your midsection rather than widening it horizontally — a direct function of your Oval Geometric Silhouette profile. Camel and warm olive are core Warm Medium palette pairings that produce chromatic harmony with your golden undertone depth.
+WHY IT WORKS FOR YOU: The open blazer creates a deliberate vertical channel through your midsection rather than widening it horizontally — a direct function of your Oval Geometric Silhouette profile. Warm ivory top against olive trousers gives clear depth contrast while staying in the warm family — chromatic harmony with your golden undertone depth.
 ```
 
 ```
 OUTFIT 5 — SMART CASUAL
 
-TOP: Fine merino long-sleeve crewneck in rust, slim-fit
-LAYER: Quarter-zip pullover, warm tan fine merino — worn over crewneck, collar visible above zip
-BOTTOM: Flat-front slim chino in khaki cotton twill, slim-straight, ankle-clean
-FOOTWEAR: Tan suede penny loafers
+TOP: Slim-fit Oxford button-down shirt, muted rust, spread collar — worn open at collar, untucked
+LAYER: None
+BOTTOM: Flat-front slim chino in dark olive cotton twill, slim-straight, ankle-clean
+FOOTWEAR: Dark brown suede loafers
 ACCESSORY: Slim dark brown leather belt
 
-WHY IT WORKS FOR YOU: Layering the quarter-zip over a contrasting crewneck adds vertical depth and draws the eye upward rather than across the midsection. Rust and warm tan are an accent-to-neutral pairing within your Warm Medium palette — chromatic harmony without tonal repetition.
+WHY IT WORKS FOR YOU: Muted rust on top against dark olive on the bottom follows the anchor-accent hierarchy your Warm Medium palette requires — one piece leads, one piece grounds. The untucked spread-collar shirt skims the midsection cleanly, preserving the vertical line your Oval geometry needs.
 ```
 
 ```
@@ -720,24 +790,24 @@ BOTTOM: Slim-straight clean denim, dark indigo, ankle-clean
 FOOTWEAR: Black leather Chelsea boots, slim toe
 ACCESSORY: Thin gold chain
 
-WHY IT WORKS FOR YOU: Black outerwear anchors the evening look regardless of colour season — the warm ivory tee underneath prevents a cold flat read and sits within your Warm Medium palette. The open biker jacket preserves the vertical line your Oval geometry requires rather than closing across the midsection.
+WHY IT WORKS FOR YOU: Black outerwear anchors the evening look regardless of colour season — the warm ivory tee underneath is the single accent piece, sitting cleanly within your Warm Medium palette. The open biker jacket preserves the vertical line your Oval geometry requires rather than closing across the midsection.
 ```
 
 ```
 OUTFIT 13 — RELAXED CASUAL
 
-TOP: Fitted Henley shirt, full sleeve, washed cotton in warm olive — two-button placket, worn untucked
+TOP: Fitted Henley shirt, full sleeve, washed cotton in burnt sienna — two-button placket, worn untucked
 LAYER: None
 BOTTOM: Relaxed straight-leg denim, dark indigo, full length
 FOOTWEAR: White clean leather low-top sneakers
 ACCESSORY: Gold minimalist watch
 
-WHY IT WORKS FOR YOU: The untucked Henley in warm olive skims the midsection cleanly — relaxed in fit but geometrically intentional. Straight-leg denim rather than a tapered cut prevents the trouser from pulling focus toward the lower midsection, keeping the silhouette balanced from waist to ankle.
+WHY IT WORKS FOR YOU: Burnt sienna on top against dark indigo denim below — one warm accent, one deep cool-neutral anchor — clear depth contrast and chromatic balance. The untucked Henley skims the midsection cleanly, keeping the Oval silhouette geometrically intentional rather than shapeless.
 ```
 
 ---
 
-*ICONIK Men's Blueprint Outfit Recommendation Engine — SKILL.md v2.1*  
+*ICONIK Men's Blueprint Outfit Recommendation Engine — SKILL.md v2.2*  
 *For use in automated Blueprint generation pipeline only.*  
 *All constraint logic is derived from ICONIK's proprietary three-pillar methodology:*  
 *Geometric Silhouette Profiling™ · Chromatic Harmony Mapping™ · Facial Architecture Analysis™*
