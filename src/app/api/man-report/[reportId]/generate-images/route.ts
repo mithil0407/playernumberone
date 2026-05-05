@@ -19,7 +19,7 @@ import {
   mergeManReportImagePathsForReport,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
-import type { ClassificationResult, ReportData } from '@/lib/manReportGenerator';
+import { repairSection4OutfitsUntilQaPass, type ClassificationResult, type ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
@@ -27,6 +27,7 @@ import { withManReportSection4Qa } from '@/lib/manReportQa';
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
 const INITIAL_PROGRESS_STAGE = 'generating_images';
+const REPAIR_PROGRESS_STAGE = 'repairing_section4';
 
 export const maxDuration = 300;
 
@@ -228,13 +229,113 @@ export async function POST(
 
   const reportData       = report.report_data as ReportData;
   const existingImageUrls = report.image_urls as ManReportImagePaths | null;
-  const reportDataWithQa = withManReportSection4Qa(reportData);
-  const blockingQaIssues = reportDataWithQa.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];
+  let reportDataWithQa = withManReportSection4Qa(reportData);
+  let blockingQaIssues = reportDataWithQa.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];
 
   if (blockingQaIssues.length > 0) {
+    const { data: repairLease, error: repairLeaseErr } = await supabaseAdmin
+      .from('man_reports')
+      .update({
+        progress_stage: REPAIR_PROGRESS_STAGE,
+        error_message: null,
+        report_data: reportDataWithQa,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId)
+      .is('progress_stage', null)
+      .select('image_urls, share_token')
+      .maybeSingle();
+
+    if (repairLeaseErr) {
+      return NextResponse.json({ error: repairLeaseErr.message }, { status: 500 });
+    }
+
+    if (!repairLease) {
+      const { data: current } = await supabaseAdmin
+        .from('man_reports')
+        .select('progress_stage, image_urls')
+        .eq('id', reportId)
+        .single();
+
+      return NextResponse.json({
+        status: 'already_running',
+        progressStage: current?.progress_stage ?? REPAIR_PROGRESS_STAGE,
+        imageCounts: getImageCounts(current?.image_urls as ManReportImagePaths | null),
+      });
+    }
+
+    await revalidateManReportCache(reportId, repairLease.share_token ?? report.share_token ?? null);
+
+    try {
+      const repaired = await repairSection4OutfitsUntilQaPass(
+        reportDataWithQa.classification,
+        reportDataWithQa.sections.s4_outfits ?? '',
+      );
+
+      reportDataWithQa = withManReportSection4Qa({
+        ...reportDataWithQa,
+        sections: {
+          ...reportDataWithQa.sections,
+          s4_outfits: repaired.section4,
+        },
+      });
+      blockingQaIssues = reportDataWithQa.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];
+    } catch (repairErr) {
+      const message = repairErr instanceof Error ? repairErr.message : String(repairErr);
+      await supabaseAdmin
+        .from('man_reports')
+        .update({
+          progress_stage: null,
+          error_message: `Section 4 repair failed before images: ${message}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', reportId);
+
+      await revalidateManReportCache(reportId, report.share_token ?? null);
+
+      return NextResponse.json({
+        error: 'Section 4 repair failed before image generation.',
+        issues: blockingQaIssues,
+      }, { status: 400 });
+    }
+
+    if (blockingQaIssues.length === 0) {
+      await supabaseAdmin
+        .from('man_reports')
+        .update({
+          progress_stage: INITIAL_PROGRESS_STAGE,
+          error_message: null,
+          report_data: reportDataWithQa,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', reportId);
+
+      await revalidateManReportCache(reportId, report.share_token ?? null);
+
+      after(async () => {
+        await runImagePipeline(
+          reportId,
+          report.share_token ?? null,
+          submission as ManIntakeSubmission,
+          reportDataWithQa.classification,
+          reportDataWithQa.sections,
+          imageModel,
+          existingImageUrls,
+        );
+      });
+
+      return NextResponse.json({
+        status: 'started',
+        progressStage: INITIAL_PROGRESS_STAGE,
+        repairedSection4: true,
+        imageCounts: getImageCounts(existingImageUrls),
+      });
+    }
+
     await supabaseAdmin
       .from('man_reports')
       .update({
+        progress_stage: null,
         report_data: reportDataWithQa,
         error_message: `Fix Section 4 before images: ${blockingQaIssues[0].message}`,
         updated_at: new Date().toISOString(),

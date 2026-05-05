@@ -14,10 +14,10 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
+import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, repairSection4OutfitsUntilQaPass, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
-import { validateManReportSection4, type ManReportQaResult } from '@/lib/manReportQa';
+import type { ManReportQaResult } from '@/lib/manReportQa';
 
 // Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
 // at concurrency 4 (~80s) fits comfortably within this limit.
@@ -77,7 +77,9 @@ async function runPipeline(reportId: string, submission: ManIntakeSubmission, sh
     await writePartialData(reportId, shareToken, classification, sections, 'generating_s4');
 
     sections.s4_outfits = await runSection4(classification, submission);
-    const qa: { section4?: ManReportQaResult } = { section4: validateManReportSection4(sections.s4_outfits, classification) };
+    const section4Repair = await repairSection4OutfitsUntilQaPass(classification, sections.s4_outfits);
+    sections.s4_outfits = section4Repair.section4;
+    const qa: { section4?: ManReportQaResult } = { section4: section4Repair.qa };
     await writePartialData(reportId, shareToken, classification, sections, 'generating_s5', qa);
 
     sections.s5_rules = await runSection5(classification, submission);

@@ -80,6 +80,7 @@ const STAGE_LABELS: Record<string, string> = {
   generating_s5:     'Writing Style Rules…',
   generating_s6:     'Writing Identity Statement…',
   generating_images:       'Generating images…',
+  repairing_section4:      'Repairing outfit text…',
   generating_base_model:   'Generating base model…',
   generating_outfit_images:'Generating outfit images…',
   finalising:              'Finalising…',

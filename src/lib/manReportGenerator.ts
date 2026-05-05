@@ -7,7 +7,11 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import type { ManIntakeSubmission } from './supabaseMan';
-import type { ManReportQaResult } from './manReportQa';
+import {
+  validateManReportSection4,
+  type ManReportQaIssue,
+  type ManReportQaResult,
+} from './manReportQa';
 
 const OUTFIT_SKILL = readFileSync(
   join(process.cwd(), 'src/lib/outfitrecommendationskill.md'), 'utf-8'
@@ -976,6 +980,84 @@ function stripSection4Preamble(text: string): string {
 export async function runSection4(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
   const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission), 65536);
   return stripSection4Preamble(raw);
+}
+
+function buildSection4RepairPrompt(
+  classification: ClassificationResult,
+  currentSection4: string,
+  issues: ManReportQaIssue[],
+): string {
+  const climateZone = deriveClimateZone(classification.client.location_region);
+  return `${OUTFIT_SKILL}
+
+DERIVED VARIABLES (use these — do not re-derive):
+CLIMATE_ZONE = ${climateZone}
+
+You are repairing Section 4 of an ICONIK Men's Blueprint before outfit images are generated.
+
+Return ONLY the corrected Section 4 outfit text. Do not include explanations, QA notes, markdown fences, or any text before the first outfit.
+
+Repair goal:
+- Fix every blocking QA issue listed below.
+- Preserve the client's profile, body logic, colour season, climate rules, style direction, and outfit contexts.
+- You may rewrite any outfit needed to make the full section valid.
+- If one outfit has a hot-climate restricted garment or fabric, replace the restricted item with a permitted HOT-climate equivalent and check the entire section for the same problem.
+
+Blocking QA issues:
+${JSON.stringify(issues, null, 2)}
+
+Client classification JSON:
+${JSON.stringify(classification, null, 2)}
+
+Current Section 4 text:
+${currentSection4}
+
+Mandatory corrected output:
+- Exactly 16 outfits.
+- Outfits 1–4: FORMAL.
+- Outfits 5–8: SMART CASUAL.
+- Outfits 9–12: EVENING WEAR.
+- Outfits 13–16: RELAXED CASUAL.
+- Every outfit must include TOP, LAYER, BOTTOM, FOOTWEAR, ACCESSORY, WHY IT WORKS FOR YOU, SHOPPING TRANSLATION, ACCEPTABLE SUBSTITUTES, and DO NOT BUY.
+- No skinny or spray-on cuts.
+- No blazer in RELAXED CASUAL.
+- If CLIMATE_ZONE = HOT: no turtlenecks, no wool, no wool-blend, no flannel, no heavy knits, no merino, no thick tweed, no velvet. Blazers must be unlined linen-cotton or lightweight cotton only.
+- Use the exact outfit header format: OUTFIT [NUMBER] — [CONTEXT NAME].
+- Use the exact field labels: TOP:, LAYER:, BOTTOM:, FOOTWEAR:, ACCESSORY:, WHY IT WORKS FOR YOU:, SHOPPING TRANSLATION:, ACCEPTABLE SUBSTITUTES:, DO NOT BUY:`;
+}
+
+export async function repairSection4Outfits(
+  classification: ClassificationResult,
+  currentSection4: string,
+  issues: ManReportQaIssue[],
+): Promise<string> {
+  const raw = await callGeminiText(
+    REPORT_SYSTEM_PROMPT,
+    buildSection4RepairPrompt(classification, currentSection4, issues),
+    65536,
+  );
+  return stripSection4Preamble(raw);
+}
+
+export async function repairSection4OutfitsUntilQaPass(
+  classification: ClassificationResult,
+  currentSection4: string,
+  maxRepairAttempts = 2,
+): Promise<{ section4: string; qa: ManReportQaResult; repaired: boolean }> {
+  let section4 = currentSection4;
+  let qa = validateManReportSection4(section4, classification);
+  let repaired = false;
+
+  for (let attempt = 0; attempt < maxRepairAttempts; attempt++) {
+    const blockingIssues = qa.issues.filter(issue => issue.severity === 'error');
+    if (blockingIssues.length === 0) break;
+
+    section4 = await repairSection4Outfits(classification, section4, blockingIssues);
+    qa = validateManReportSection4(section4, classification);
+    repaired = true;
+  }
+
+  return { section4, qa, repaired };
 }
 
 export async function runSection5(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
