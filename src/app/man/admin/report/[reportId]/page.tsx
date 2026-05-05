@@ -547,6 +547,17 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       });
       const data = await res.json();
       if (!res.ok) {
+        const issueMessages = Array.isArray(data.issues)
+          ? data.issues
+              .map((issue: { message?: string }) => issue.message)
+              .filter(Boolean)
+              .slice(0, 4)
+          : [];
+        if (issueMessages.length > 0) {
+          setError(`Fix Section 4 before images: ${issueMessages.join(' · ')}`);
+          await load({ fresh: true, force: true });
+          return;
+        }
         if (res.status === 409 && data.progress_stage) {
           setImageGenerationPending(true);
           setReport(prev => prev ? {
