@@ -395,6 +395,7 @@ function FaceSection({
   eyewearUrls,
   adminMode,
   onRegenerateFaceImage,
+  onRetryMissingImages,
 }: {
   cls: ClassificationResult;
   text: string;
@@ -405,6 +406,7 @@ function FaceSection({
     kind: FaceImageKind,
     optionIndex: number,
   ) => Promise<FaceImageRegenerationResult | null>;
+  onRetryMissingImages?: () => Promise<void>;
 }) {
   const { face } = cls;
   const [retryingSlots, setRetryingSlots] = useState<Set<string>>(new Set());
@@ -414,10 +416,16 @@ function FaceSection({
   const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
 
   const handleRetryFaceImage = async (kind: FaceImageKind, optionIndex: number) => {
-    if (!onRegenerateFaceImage) return;
+    if (!onRetryMissingImages && !onRegenerateFaceImage) return;
     const slotKey = `${kind}-${optionIndex}`;
     setRetryingSlots(prev => new Set(prev).add(slotKey));
     try {
+      if (onRetryMissingImages) {
+        await onRetryMissingImages();
+        return;
+      }
+
+      if (!onRegenerateFaceImage) return;
       const result = await onRegenerateFaceImage(kind, optionIndex);
       if (!result) return;
       if (kind === 'hairstyle') {
@@ -438,7 +446,7 @@ function FaceSection({
     const effectiveUrl = kind === 'hairstyle'
       ? hairstyleOverrides[optionIndex] ?? url
       : eyewearOverrides[optionIndex] ?? url;
-    const canRetry = adminMode && !!onRegenerateFaceImage;
+    const canRetry = adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage);
     const slotKey = `${kind}-${optionIndex}`;
     const isRetrying = retryingSlots.has(slotKey);
 
@@ -516,7 +524,7 @@ function FaceSection({
         </div>
 
         {/* Hairstyle images — two headshots side by side */}
-        {(hasHairstyleImages || (adminMode && !!onRegenerateFaceImage)) && (
+        {(hasHairstyleImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
           <div className="mb-10">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
               Hairstyle options
@@ -530,7 +538,7 @@ function FaceSection({
         )}
 
         {/* Eyewear images — two headshots side by side */}
-        {(hasEyewearImages || (adminMode && !!onRegenerateFaceImage)) && (
+        {(hasEyewearImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
           <div className="mb-10">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
               Eyewear options
@@ -849,7 +857,7 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
 // ─────────────────────────────────────────────────────────────
 
 function OutfitsSection({
-  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, qaPassedOutfits,
+  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onRetryMissingImages, qaPassedOutfits,
 }: {
   cls: ClassificationResult;
   text: string;
@@ -859,6 +867,7 @@ function OutfitsSection({
     outfitNumber: number,
     newText: string,
   ) => Promise<{ imageUrl: string; updatedS4Outfits: string } | null>;
+  onRetryMissingImages?: () => Promise<void>;
   qaPassedOutfits?: Set<number>; // outfit numbers without QA errors
 }) {
   const [editingNumber, setEditingNumber] = useState<number | null>(null);
@@ -886,12 +895,18 @@ function OutfitsSection({
     }
   };
 
-  // Quick retry for failed images — no editing, just re-fires generation with current outfit text.
-  // Multiple retries can run simultaneously — each outfit tracks its own loading state.
+  // Quick retry for failed images. In admin report view this starts the resumable
+  // missing-image pipeline; completed images are preserved.
   const handleQuickRetry = async (outfitNumber: number) => {
-    if (!onRegenerateOutfit) return;
+    if (!onRetryMissingImages && !onRegenerateOutfit) return;
     setRetryingSet(prev => new Set(prev).add(outfitNumber));
     try {
+      if (onRetryMissingImages) {
+        await onRetryMissingImages();
+        return;
+      }
+
+      if (!onRegenerateOutfit) return;
       const outfitBlock = extractOutfitBlock(text, outfitNumber);
       const result = await onRegenerateOutfit(outfitNumber, outfitBlock);
       if (result) setImageOverrides(prev => ({ ...prev, [outfitNumber]: result.imageUrl }));
@@ -921,6 +936,7 @@ function OutfitsSection({
     const isEditing   = editingNumber === outfit.number;
     const isRegenning = regenerating && isEditing;
     const canEdit     = adminMode && !!onRegenerateOutfit;
+    const canRetryImage = adminMode && (!!onRetryMissingImages || !!onRegenerateOutfit);
     const prioritiseImage = outfit.number <= 2;
     const isVerified  = qaPassedOutfits?.has(outfit.number) ?? false;
 
@@ -947,7 +963,7 @@ function OutfitsSection({
               style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
               onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
             />
-          ) : canEdit ? (
+          ) : canRetryImage ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
               <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
               <div className="flex flex-col items-center gap-1">
@@ -1390,6 +1406,7 @@ interface ManReportProps {
     kind: FaceImageKind,
     optionIndex: number,
   ) => Promise<FaceImageRegenerationResult | null>;
+  onRetryMissingImages?: () => Promise<void>;
 }
 
 function DeferredSection({
@@ -1542,6 +1559,7 @@ function ManReport({
   adminMode,
   onRegenerateOutfit,
   onRegenerateFaceImage,
+  onRetryMissingImages,
 }: ManReportProps) {
   const { classification: cls, sections } = data;
   const isAdminViewer = viewerMode === 'admin' || adminMode === true;
@@ -1610,6 +1628,7 @@ function ManReport({
           eyewearUrls={imageUrls?.eyewearCards ?? undefined}
           adminMode={isAdminViewer}
           onRegenerateFaceImage={onRegenerateFaceImage}
+          onRetryMissingImages={onRetryMissingImages}
         />
       ),
     },
@@ -1640,6 +1659,7 @@ function ManReport({
           outfitImageUrls={imageUrls?.outfitCards ?? undefined}
           adminMode={isAdminViewer}
           onRegenerateOutfit={onRegenerateOutfit}
+          onRetryMissingImages={onRetryMissingImages}
           qaPassedOutfits={qaPassedOutfits}
         />
       ),

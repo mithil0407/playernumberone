@@ -608,6 +608,15 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
   const expectedOutfitCount = report.report_data?.classification?.outfit_split?.total ?? 16;
+  const imageCounts = {
+    hairstyleDone: (report.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
+    eyewearDone:   (report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
+    outfitDone:    (report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
+  };
+  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.eyewearDone + imageCounts.outfitDone > 0 ||
+    report.error_message?.startsWith('Image generation');
+  const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
+  const imageProgressText = `${imageCounts.hairstyleDone}/2 hairstyle · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits`;
   const section4Qa = report.report_data?.qa?.section4 ?? null;
   const section4Issues = section4Qa?.issues ?? [];
   const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
@@ -615,9 +624,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   // True only when hairstyle, eyewear AND every expected outfit image are present
   const hasAllImages = (
-    (report.image_urls?.hairstyleCards ?? []).filter(Boolean).length >= 2 &&
-    (report.image_urls?.eyewearCards   ?? []).filter(Boolean).length >= 2 &&
-    (report.image_urls?.outfitCards    ?? []).filter(Boolean).length >= expectedOutfitCount
+    imageCounts.hairstyleDone >= 2 &&
+    imageCounts.eyewearDone >= 2 &&
+    imageCounts.outfitDone >= expectedOutfitCount
   );
 
   const elapsedLabel = (() => {
@@ -673,6 +682,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             deferSections
             onRegenerateFaceImage={regenerateFaceImage}
             onRegenerateOutfit={regenerateOutfit}
+            onRetryMissingImages={handleGenerateImages}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3">
@@ -971,18 +981,23 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               )}
               {/* Generate images — shown when text is ready but images are missing or partial */}
               {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
-                <motion.button
-                  onClick={handleGenerateImages}
-                  disabled={generatingImages}
-                  className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 disabled:opacity-40"
-                  style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={SPRING}
-                >
-                  {generatingImages ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-                  {generatingImages ? 'Starting…' : 'Generate Images'}
-                </motion.button>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-center" style={{ color: '#6b5f4a' }}>
+                    {imageProgressText}
+                  </p>
+                  <motion.button
+                    onClick={handleGenerateImages}
+                    disabled={generatingImages}
+                    className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 disabled:opacity-40"
+                    style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={SPRING}
+                  >
+                    {generatingImages ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                    {generatingImages ? 'Starting…' : imageButtonLabel}
+                  </motion.button>
+                </div>
               )}
               {/* Images in progress */}
               {report.progress_stage && !isGenerating && (
@@ -999,6 +1014,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                       }
                     </span>
                   </div>
+                  <p className="text-[10px]" style={{ color: '#6b5f4a' }}>
+                    {imageProgressText}
+                  </p>
                   {isImageStuck && (
                     <button
                       onClick={handleGenerateImages}

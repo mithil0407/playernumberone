@@ -20,6 +20,8 @@ const ai     = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MODEL  = 'gemini-3.1-flash-image-preview';
 const BUCKET = 'man-report-images';
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 days — refreshed on every fetch
+const GEMINI_IMAGE_TIMEOUT_MS = 45_000;
+const OUTFIT_IMAGE_CONCURRENCY = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public types
@@ -341,7 +343,10 @@ async function callGeminiImageEdit(
   const response = await ai.models.generateContent({
     model,
     contents: [{ parts }],
-    config: { responseModalities: ['IMAGE'] },
+    config: {
+      responseModalities: ['IMAGE'],
+      httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
+    },
   });
 
   const allParts = response.candidates?.[0]?.content?.parts ?? [];
@@ -402,11 +407,13 @@ async function getSignedUrl(path: string, ttl = SIGNED_URL_TTL): Promise<string>
 async function runWithConcurrency<T>(
   tasks: (() => Promise<T>)[],
   limit: number,
+  shouldStart: () => boolean = () => true,
 ): Promise<T[]> {
   const results = new Array<T>(tasks.length);
   let next = 0;
   const worker = async () => {
     while (next < tasks.length) {
+      if (!shouldStart()) break;
       const i = next++;
       results[i] = await tasks[i]();
     }
@@ -437,7 +444,10 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5, baseDelayMs =
         msg.includes('quota') ||
         msg.includes('rate limit') ||
         msg.includes('too many requests') ||
-        msg.includes('overloaded');
+        msg.includes('overloaded') ||
+        msg.includes('timeout') ||
+        msg.includes('timed out') ||
+        msg.includes('aborted');
       if (!isTransient || attempt === maxAttempts - 1) throw err;
       const delayMs = baseDelayMs * Math.pow(2, attempt); // 8s → 16s → 32s → 64s
       const errSnippet = (err instanceof Error ? err.message : String(err)).slice(0, 200);
@@ -627,6 +637,7 @@ export async function generateAllOutfitImages(
   _eyewearPaths:  (string | null)[],   // preserved by merge-safe writes at route level
   imageModel:     string = MODEL,
   existingOutfitPaths: (string | null)[] = [], // already-generated slots — skip on resume
+  softDeadlineMs: number = Date.now() + 260_000,
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
 
@@ -708,10 +719,17 @@ export async function generateAllOutfitImages(
   const tasks = toGenerate.map((outfit) => {
     const taskIdx = outfit.index - 1;
     return async () => {
+      if (Date.now() >= softDeadlineMs) {
+        console.warn(`[manImageGenerator] Soft deadline reached before outfit ${outfit.index} — leaving slot for next retry`);
+        return null;
+      }
+
       console.log(`[manImageGenerator] Starting outfit ${outfit.index}/${outfits.length} "${outfit.label}" (model: ${imageModel})`);
       try {
         const outputBase64 = await withRetry(() =>
-          callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef)
+          callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef),
+          3,
+          4_000,
         );
         const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
         partialPaths[taskIdx] = path;
@@ -732,7 +750,7 @@ export async function generateAllOutfitImages(
     };
   });
 
-  await runWithConcurrency(tasks, 8);
+  await runWithConcurrency(tasks, OUTFIT_IMAGE_CONCURRENCY, () => Date.now() < softDeadlineMs);
   await progressWriteQueue;
   return partialPaths;
 }

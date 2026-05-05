@@ -26,6 +26,33 @@ import { withManReportSection4Qa } from '@/lib/manReportQa';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
+const INITIAL_PROGRESS_STAGE = 'generating_images';
+
+export const maxDuration = 300;
+
+function getImageCounts(paths: ManReportImagePaths | null | undefined) {
+  return {
+    hairstyleDone: (paths?.hairstyleCards ?? []).filter(Boolean).length,
+    eyewearDone:   (paths?.eyewearCards   ?? []).filter(Boolean).length,
+    outfitDone:    (paths?.outfitCards    ?? []).filter(Boolean).length,
+  };
+}
+
+function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount: number): string | null {
+  const missingHairstyle = Math.max(0, 2 - paths.hairstyleCards.filter(Boolean).length);
+  const missingEyewear   = Math.max(0, 2 - paths.eyewearCards.filter(Boolean).length);
+  const missingOutfits   = Math.max(0, expectedOutfitCount - paths.outfitCards.filter(Boolean).length);
+
+  if (missingHairstyle === 0 && missingEyewear === 0 && missingOutfits === 0) return null;
+
+  const parts = [
+    missingHairstyle ? `${missingHairstyle} hairstyle` : null,
+    missingEyewear ? `${missingEyewear} eyewear` : null,
+    missingOutfits ? `${missingOutfits} outfit` : null,
+  ].filter(Boolean);
+
+  return `Image generation incomplete: ${parts.join(', ')} image${parts.length === 1 ? '' : 's'} still missing. Retry missing images when Gemini capacity is available.`;
+}
 
 async function runImagePipeline(
   reportId:       string,
@@ -37,6 +64,7 @@ async function runImagePipeline(
   existingImageUrls: ManReportImagePaths | null,
 ) {
   try {
+    const softDeadlineMs = Date.now() + 260_000;
     const latestImageUrls = (await getStoredManReportImagePaths(reportId)) ?? existingImageUrls ?? null;
 
     // ── Hairstyle + eyewear ───────────────────────────────────────────────────
@@ -96,13 +124,24 @@ async function runImagePipeline(
       reportId, fullBodyUrl, classification, sections,
       hairstylePaths, eyewearPaths, imageModel,
       existingOutfitPaths,
+      softDeadlineMs,
     );
 
     // ── Done ──────────────────────────────────────────────────────────────────
     const mergedImagePaths = await mergeManReportImagePathsForReport(
       reportId,
       { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths },
-      { progress_stage: null, error_message: null },
+      {
+        progress_stage: null,
+        error_message: getMissingImageSummary(
+          {
+            hairstyleCards: hairstylePaths,
+            eyewearCards: eyewearPaths,
+            outfitCards: outfitPaths,
+          },
+          classification.outfit_split?.total ?? outfitPaths.length,
+        ),
+      },
     );
 
     const doneOutfits = mergedImagePaths.outfitCards.filter(Boolean).length;
@@ -161,10 +200,11 @@ export async function POST(
       : Infinity;
 
     if (ageMs < STALE_MS) {
-      return NextResponse.json(
-        { error: 'Image generation already in progress', progress_stage: report.progress_stage },
-        { status: 409 }
-      );
+      return NextResponse.json({
+        status: 'already_running',
+        progressStage: report.progress_stage,
+        imageCounts: getImageCounts(report.image_urls as ManReportImagePaths | null),
+      });
     }
 
     console.log(`[generate-images] Stale progress_stage "${report.progress_stage}" detected (${Math.round(ageMs / 60000)}m old) — clearing and restarting`);
@@ -209,19 +249,38 @@ export async function POST(
     }, { status: 400 });
   }
 
-  const initialProgressStage = 'generating_images';
-
-  await supabaseAdmin
+  const { data: lease, error: leaseErr } = await supabaseAdmin
     .from('man_reports')
     .update({
-      progress_stage: initialProgressStage,
+      progress_stage: INITIAL_PROGRESS_STAGE,
       error_message: null,
       report_data: reportDataWithQa,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', reportId);
+    .eq('id', reportId)
+    .is('progress_stage', null)
+    .select('image_urls, share_token')
+    .maybeSingle();
 
-  await revalidateManReportCache(reportId, report.share_token ?? null);
+  if (leaseErr) {
+    return NextResponse.json({ error: leaseErr.message }, { status: 500 });
+  }
+
+  if (!lease) {
+    const { data: current } = await supabaseAdmin
+      .from('man_reports')
+      .select('progress_stage, image_urls')
+      .eq('id', reportId)
+      .single();
+
+    return NextResponse.json({
+      status: 'already_running',
+      progressStage: current?.progress_stage ?? INITIAL_PROGRESS_STAGE,
+      imageCounts: getImageCounts(current?.image_urls as ManReportImagePaths | null),
+    });
+  }
+
+  await revalidateManReportCache(reportId, lease.share_token ?? report.share_token ?? null);
 
   after(async () => {
     await runImagePipeline(
@@ -235,5 +294,9 @@ export async function POST(
     );
   });
 
-  return NextResponse.json({ status: 'generating_images', progressStage: initialProgressStage });
+  return NextResponse.json({
+    status: 'started',
+    progressStage: INITIAL_PROGRESS_STAGE,
+    imageCounts: getImageCounts(existingImageUrls),
+  });
 }
