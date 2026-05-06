@@ -422,18 +422,16 @@ function FaceSection({
     const slotKey = `${kind}-${optionIndex}`;
     setRetryingSlots(prev => new Set(prev).add(slotKey));
     try {
-      if (onRetryMissingImages) {
-        await onRetryMissingImages();
-        return;
-      }
-
-      if (!onRegenerateFaceImage) return;
-      const result = await onRegenerateFaceImage(kind, optionIndex);
-      if (!result) return;
-      if (kind === 'hairstyle') {
-        setHairstyleOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+      if (onRegenerateFaceImage) {
+        const result = await onRegenerateFaceImage(kind, optionIndex);
+        if (!result) return;
+        if (kind === 'hairstyle') {
+          setHairstyleOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+        } else {
+          setEyewearOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+        }
       } else {
-        setEyewearOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+        await onRetryMissingImages?.();
       }
     } finally {
       setRetryingSlots(prev => {

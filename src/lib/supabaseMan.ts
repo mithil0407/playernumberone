@@ -68,13 +68,21 @@ export const uploadManIntakePhoto = async (
     file: File,
     fileName: string
 ): Promise<string> => {
+    if (file.size === 0) {
+        throw new Error('Cannot upload an empty photo file');
+    }
+    if (file.type && !file.type.startsWith('image/')) {
+        throw new Error('Only image files can be uploaded');
+    }
+
     const storagePath = `public/${fileName}`;
+    const contentType = file.type || 'application/octet-stream';
 
     const { data, error } = await supabaseMain.storage
         .from('man-intake-photos')
         .upload(storagePath, file, {
             upsert: true,
-            contentType: 'image/jpeg',
+            contentType,
         });
 
     if (error) throw error;

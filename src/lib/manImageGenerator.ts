@@ -11,6 +11,7 @@
 // resolveManReportImageUrls() converts paths → fresh signed URLs at serve time.
 
 import { GoogleGenAI } from '@google/genai';
+import sharp from 'sharp';
 import { supabaseAdmin } from './supabase';
 import type { ClassificationResult, ReportSections } from './manReportGenerator';
 import type { ManIntakeSubmission } from './supabaseMan';
@@ -22,6 +23,15 @@ const BUCKET = 'man-report-images';
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 days — refreshed on every fetch
 const GEMINI_IMAGE_TIMEOUT_MS = 45_000;
 const OUTFIT_IMAGE_CONCURRENCY = 3;
+const GEMINI_INLINE_IMAGE_MAX_BYTES = 18 * 1024 * 1024;
+const GEMINI_SOURCE_IMAGE_MAX_DIMENSION = 1800;
+const SUPPORTED_GEMINI_INPUT_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public types
@@ -332,22 +342,32 @@ async function callGeminiImageEdit(
   model: string = MODEL,
   extraImage?: { data: string; mimeType: string }, // optional second reference image (e.g. hairstyle headshot)
 ): Promise<string> {
+  const primaryBytes = Buffer.byteLength(imageBase64, 'base64');
+  const extraBytes = extraImage ? Buffer.byteLength(extraImage.data, 'base64') : 0;
   const parts: object[] = [
     { inlineData: { mimeType, data: imageBase64 } },
     ...(extraImage ? [{ inlineData: { mimeType: extraImage.mimeType, data: extraImage.data } }] : []),
     { text: prompt },
   ];
 
-  console.log(`[callGeminiImageEdit] Calling model=${model}, hasExtraImage=${!!extraImage}`);
+  console.log(`[callGeminiImageEdit] Calling model=${model}, mimeType=${mimeType}, bytes=${primaryBytes}, hasExtraImage=${!!extraImage}, extraBytes=${extraBytes}`);
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: [{ parts }],
-    config: {
-      responseModalities: ['IMAGE'],
-      httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
-    },
-  });
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model,
+      contents: [{ parts }],
+      config: {
+        responseModalities: ['IMAGE'],
+        httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
+      },
+    });
+  } catch (err) {
+    const errorLike = err as { code?: unknown; status?: unknown; message?: unknown };
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[callGeminiImageEdit] Gemini request failed. model=${model} mimeType=${mimeType} bytes=${primaryBytes} code=${String(errorLike.code ?? 'unknown')} status=${String(errorLike.status ?? 'unknown')} message="${message.slice(0, 500)}"`);
+    throw err;
+  }
 
   const allParts = response.candidates?.[0]?.content?.parts ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -370,14 +390,99 @@ async function callGeminiImageEdit(
 // Storage helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+function cleanMimeType(contentType: string | null): string | null {
+  const mimeType = contentType?.split(';')[0]?.trim().toLowerCase();
+  return mimeType || null;
+}
+
+async function normaliseImageForGemini(
+  buffer: Buffer,
+  sourceMimeType: string | null,
+  url: string,
+): Promise<{ data: string; mimeType: string }> {
+  try {
+    const image = sharp(buffer, { failOn: 'none' }).rotate();
+    const metadata = await image.metadata();
+    const needsResize =
+      (metadata.width ?? 0) > GEMINI_SOURCE_IMAGE_MAX_DIMENSION ||
+      (metadata.height ?? 0) > GEMINI_SOURCE_IMAGE_MAX_DIMENSION;
+
+    const output = await image
+      .resize({
+        width: GEMINI_SOURCE_IMAGE_MAX_DIMENSION,
+        height: GEMINI_SOURCE_IMAGE_MAX_DIMENSION,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 88, mozjpeg: true })
+      .toBuffer();
+
+    const sourceHost = (() => {
+      try { return new URL(url).host; } catch { return 'unknown-host'; }
+    })();
+
+    console.log(
+      `[fetchAsBase64] Prepared Gemini image host=${sourceHost} sourceMime=${sourceMimeType ?? 'unknown'} ` +
+      `sourceFormat=${metadata.format ?? 'unknown'} sourceBytes=${buffer.length} outputBytes=${output.length} ` +
+      `width=${metadata.width ?? 'unknown'} height=${metadata.height ?? 'unknown'} resized=${needsResize}`,
+    );
+
+    if (output.length > GEMINI_INLINE_IMAGE_MAX_BYTES) {
+      throw new Error(`Prepared image is too large for inline Gemini request (${output.length} bytes)`);
+    }
+
+    return {
+      data: output.toString('base64'),
+      mimeType: 'image/jpeg',
+    };
+  } catch (err) {
+    const fallbackMimeType = SUPPORTED_GEMINI_INPUT_MIME_TYPES.has(sourceMimeType ?? '')
+      ? sourceMimeType!
+      : 'image/jpeg';
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[fetchAsBase64] Could not normalise source image; falling back to original bytes with mimeType=${fallbackMimeType}. error="${message.slice(0, 300)}"`);
+
+    if (buffer.length > GEMINI_INLINE_IMAGE_MAX_BYTES) {
+      throw new Error(`Source image is too large for inline Gemini request (${buffer.length} bytes) and could not be normalised: ${message}`);
+    }
+
+    return {
+      data: buffer.toString('base64'),
+      mimeType: fallbackMimeType,
+    };
+  }
+}
+
 async function fetchAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Image fetch failed: ${url} (${res.status})`);
-  const buffer = await res.arrayBuffer();
-  return {
-    data:     Buffer.from(buffer).toString('base64'),
-    mimeType: res.headers.get('content-type') ?? 'image/jpeg',
-  };
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (buffer.length === 0) {
+    throw new Error(`Image fetch returned an empty file: ${url}`);
+  }
+  return normaliseImageForGemini(buffer, cleanMimeType(res.headers.get('content-type')), url);
+}
+
+async function fetchFirstUsableImageAsBase64(
+  candidates: Array<{ label: string; url?: string | null }>,
+): Promise<{ data: string; mimeType: string }> {
+  const errors: string[] = [];
+
+  for (const candidate of candidates) {
+    if (!candidate.url) continue;
+
+    try {
+      const image = await fetchAsBase64(candidate.url);
+      console.log(`[fetchFirstUsableImageAsBase64] Using ${candidate.label} source for Gemini image edit`);
+      return image;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${candidate.label}: ${message}`);
+      console.warn(`[fetchFirstUsableImageAsBase64] ${candidate.label} source unusable, trying fallback if available. error="${message.slice(0, 300)}"`);
+    }
+  }
+
+  throw new Error(`No usable source photo found for Gemini image edit (${errors.join(' | ') || 'no URLs available'})`);
 }
 
 async function uploadToStorage(reportId: string, base64Data: string, filename: string): Promise<string> {
@@ -469,11 +574,21 @@ function isSafetyBlock(err: unknown): boolean {
   return msg.includes('safety') || msg.includes('recitation') || msg.includes('prohibited') || msg.includes('blocked');
 }
 
+function isFaceFallbackCandidate(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    isSafetyBlock(err) ||
+    msg.includes('unable to process input image') ||
+    msg.includes('invalid_argument') ||
+    msg.includes('returned no image data')
+  );
+}
+
 /**
  * Run a face-image generation attempt with three layers of fallback:
  *   1. primary prompt + requested model
  *   2. soft prompt + requested model        (handles safety blocks on real faces)
- *   3. soft prompt + the other allowed model (handles model-specific refusals)
+ *   3. soft prompt + the other allowed model (handles model-specific refusals/input handling)
  * Each layer wraps `withRetry` so transient quota/503 errors still backoff.
  *
  * Lower base delay (3s) so the worst-case retry chain still fits inside the
@@ -493,8 +608,9 @@ async function generateFaceSlotWithFallback(
       3_000,  // 3s → 6s → 12s
     );
   } catch (err) {
-    if (!isSafetyBlock(err)) throw err;
-    console.warn('[generateFaceSlotWithFallback] Safety block — retrying with soft prompt');
+    if (!isFaceFallbackCandidate(err)) throw err;
+    const reason = isSafetyBlock(err) ? 'Safety block' : 'Face image edit failed';
+    console.warn(`[generateFaceSlotWithFallback] ${reason} — retrying with soft prompt`);
   }
 
   try {
@@ -504,9 +620,9 @@ async function generateFaceSlotWithFallback(
       3_000,
     );
   } catch (err) {
-    if (!isSafetyBlock(err)) throw err;
+    if (!isFaceFallbackCandidate(err)) throw err;
     const fallbackModel = FALLBACK_IMAGE_MODELS.find(m => m !== imageModel) ?? imageModel;
-    console.warn(`[generateFaceSlotWithFallback] Soft prompt blocked too — falling back to model ${fallbackModel}`);
+    console.warn(`[generateFaceSlotWithFallback] Soft prompt failed too — falling back to model ${fallbackModel}`);
     return await withRetry(
       () => callGeminiImageEdit(imageBase64, mimeType, softPrompt, fallbackModel),
       2,
@@ -537,7 +653,10 @@ export async function regenerateMissingFaceSlots(
     throw new Error(`No headshot or full-body photo on submission — cannot generate ${kind} images`);
   }
 
-  const { data, mimeType } = await fetchAsBase64(photoUrl);
+  const { data, mimeType } = await fetchFirstUsableImageAsBase64([
+    { label: 'headshot', url: submission.photo_headshot_url },
+    { label: 'full-body', url: submission.photo_fullbody_url },
+  ]);
   const { face } = classification;
   const options = kind === 'hairstyle' ? face.hairstyle_recommendations : face.eyewear_shapes;
 
@@ -601,7 +720,10 @@ export async function regenerateSingleFaceImage(
     throw new Error('No headshot or full-body photo on submission — cannot regenerate face image');
   }
 
-  const { data, mimeType } = await fetchAsBase64(photoUrl);
+  const { data, mimeType } = await fetchFirstUsableImageAsBase64([
+    { label: 'headshot', url: submission.photo_headshot_url },
+    { label: 'full-body', url: submission.photo_fullbody_url },
+  ]);
   const { face } = classification;
   const selectedOption = kind === 'hairstyle'
     ? face.hairstyle_recommendations[optionIndex - 1]
@@ -611,13 +733,14 @@ export async function regenerateSingleFaceImage(
     throw new Error(`No ${kind} recommendation found for option ${optionIndex}`);
   }
 
-  const prompt = kind === 'hairstyle'
+  const primaryPrompt = kind === 'hairstyle'
     ? buildHairstylePrompt(selectedOption, face.face_shape)
     : buildEyewearPrompt(selectedOption, face.face_shape);
+  const softPrompt = kind === 'hairstyle'
+    ? buildHairstylePromptSoft(selectedOption, face.face_shape)
+    : buildEyewearPromptSoft(selectedOption, face.face_shape);
 
-  const outputBase64 = await withRetry(() =>
-    callGeminiImageEdit(data, mimeType, prompt, imageModel),
-  );
+  const outputBase64 = await generateFaceSlotWithFallback(data, mimeType, primaryPrompt, softPrompt, imageModel);
 
   return uploadToStorage(reportId, outputBase64, `${kind}_${optionIndex}.jpg`);
 }
