@@ -161,10 +161,13 @@ export default function ManSubmissionsDashboard() {
     errors:        submissions.filter(s => s.latest_report?.status === 'error').length,
   };
 
-  const handleGenerate = async (submissionId: string) => {
+  const handleGenerate = async (submissionId: string, reportId?: string) => {
     setGeneratingIds(prev => new Set(prev).add(submissionId));
     try {
-      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const res  = await fetch(
+        reportId ? `/api/man-report/${reportId}/resume-text` : `/api/man-report/generate/${submissionId}`,
+        { method: 'POST' },
+      );
       const data = await res.json();
       if (res.ok && data.reportId) {
         router.push(`/man/admin/report/${data.reportId}`);
@@ -353,7 +356,7 @@ export default function ManSubmissionsDashboard() {
                         const stuck = (Date.now() - new Date(sub.latest_report.created_at).getTime()) > 10 * 60 * 1000;
                         return stuck ? (
                           <button
-                            onClick={() => handleGenerate(sub.id)}
+                            onClick={() => handleGenerate(sub.id, sub.latest_report?.id)}
                             disabled={generatingIds.has(sub.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
                             style={{ background: '#2a1500', color: '#fb923c', border: '1px solid #3a2000' }}
@@ -376,7 +379,7 @@ export default function ManSubmissionsDashboard() {
                       {/* Error — Retry inline */}
                       {sub.latest_report?.status === 'error' && (
                         <button
-                          onClick={() => handleGenerate(sub.id)}
+                          onClick={() => handleGenerate(sub.id, sub.latest_report?.id)}
                           disabled={generatingIds.has(sub.id)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
                           style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}

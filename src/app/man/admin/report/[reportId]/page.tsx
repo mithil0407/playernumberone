@@ -532,26 +532,25 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report?.status, report?.created_at]);
 
-  // ── Retry (regenerate from scratch) ───────────────────────────────────
+  // ── Retry failed text generation in-place ─────────────────────────────
   const handleRetry = async () => {
     if (!report || retrying) return;
-    const submissionId = report.submission_id;
-    if (!submissionId) { setError('Missing submission ID — cannot retry.'); return; }
     setRetrying(true);
     setError('');
     try {
-      const res  = await fetch(`/api/man-report/generate/${submissionId}`, {
+      const res  = await fetch(`/api/man-report/${reportId}/resume-text`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageModel }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Retry failed'); return; }
-      if (data.reportId && data.reportId !== reportId) {
-        router.push(`/man/admin/report/${data.reportId}`);
-      } else {
-        await load();
-      }
+      setReport(prev => prev ? {
+        ...prev,
+        status: data.status === 'completed' ? 'draft_ready' : 'generating',
+        progress_stage: data.progressStage ?? null,
+        error_message: null,
+      } : prev);
+      await load({ fresh: true, force: true });
     } catch {
       setError('Retry failed. Please try again.');
     } finally {
@@ -657,6 +656,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const section4Issues = section4Qa?.issues ?? [];
   const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
   const section4WarningCount = section4Issues.length - section4ErrorCount;
+  const hasPartialText = !!report.report_data?.classification ||
+    Object.values(report.report_data?.sections ?? {}).some(value => typeof value === 'string' && value.trim().length > 0);
 
   // True only when hairstyle, eyewear AND every expected outfit image are present
   const hasAllImages = (
@@ -979,7 +980,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 transition={SPRING}
               >
                 {retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-                {retrying ? 'Starting…' : 'Retry Generation'}
+                {retrying ? 'Starting…' : (hasPartialText ? 'Resume Generation' : 'Retry Generation')}
               </motion.button>
             </>
           ) : (

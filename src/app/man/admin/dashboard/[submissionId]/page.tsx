@@ -229,7 +229,11 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
     setGenerating(true);
     setGenError('');
     try {
-      const res  = await fetch(`/api/man-report/generate/${submissionId}`, { method: 'POST' });
+      const latest = reports[0] ?? null;
+      const res  = await fetch(
+        latest?.id ? `/api/man-report/${latest.id}/resume-text` : `/api/man-report/generate/${submissionId}`,
+        { method: 'POST' },
+      );
       const data = await res.json();
       if (!res.ok) { setGenError(data.error ?? 'Generation failed'); return; }
       if (data.reportId) router.push(`/man/admin/report/${data.reportId}`);

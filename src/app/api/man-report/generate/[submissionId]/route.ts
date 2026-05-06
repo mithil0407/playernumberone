@@ -14,112 +14,12 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { runClassification, runSection1, runSection2, runSection3, runSection4, runSection5, runSection6, repairSection4OutfitsUntilQaPass, type ReportData, type ClassificationResult } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
-import { revalidateManReportCache } from '@/lib/manReportCache';
-import type { ManReportQaResult } from '@/lib/manReportQa';
+import { runManReportTextPipeline } from '@/lib/manReportTextPipeline';
 
 // Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
 // at concurrency 4 (~80s) fits comfortably within this limit.
 export const maxDuration = 300;
-
-// ── Helper: update report progress stage ──────────────────────────────────
-
-async function updateStage(reportId: string, stage: string, shareToken: string | null) {
-  await supabaseAdmin
-    .from('man_reports')
-    .update({ progress_stage: stage, updated_at: new Date().toISOString() })
-    .eq('id', reportId);
-
-  await revalidateManReportCache(reportId, shareToken);
-}
-
-// ── Pipeline: runs after response is sent ─────────────────────────────────
-
-async function writePartialData(
-  reportId: string,
-  shareToken: string | null,
-  classification: ClassificationResult,
-  sections: Record<string, string>,
-  nextStage: string,
-  qa?: ReportData['qa'],
-) {
-  await supabaseAdmin
-    .from('man_reports')
-    .update({
-      report_data:    { classification, sections: { ...sections }, generated_at: new Date().toISOString(), ...(qa ? { qa } : {}) },
-      progress_stage: nextStage,
-      updated_at:     new Date().toISOString(),
-    })
-    .eq('id', reportId);
-
-  await revalidateManReportCache(reportId, shareToken);
-}
-
-async function runPipeline(reportId: string, submission: ManIntakeSubmission, shareToken: string | null) {
-  try {
-    // Phase 1 — Classification
-    await updateStage(reportId, 'classifying', shareToken);
-    const classification = await runClassification(submission);
-
-    // Write classification to DB so admin can navigate to review page immediately
-    const sections: Record<string, string> = {};
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s1');
-
-    // Phase 2 — Sections (one Gemini call per section, DB write after each)
-    sections.s1_face = await runSection1(classification, submission);
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s2');
-
-    sections.s2_body = await runSection2(classification, submission);
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s3');
-
-    sections.s3_colour = await runSection3(classification, submission);
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s4');
-
-    sections.s4_outfits = await runSection4(classification, submission);
-    const section4Repair = await repairSection4OutfitsUntilQaPass(classification, sections.s4_outfits);
-    sections.s4_outfits = section4Repair.section4;
-    const qa: { section4?: ManReportQaResult } = { section4: section4Repair.qa };
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s5', qa);
-
-    sections.s5_rules = await runSection5(classification, submission);
-    await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa);
-
-    sections.s6_identity = await runSection6(classification, submission);
-
-    // Text pipeline complete — mark draft_ready immediately.
-    // Images are generated separately via POST /api/man-report/[reportId]/generate-images.
-    await supabaseAdmin
-      .from('man_reports')
-      .update({
-        status:         'draft_ready',
-        progress_stage: null,
-        report_data:    { classification, sections, generated_at: new Date().toISOString(), qa } as unknown as ReportData,
-        generated_at:   new Date().toISOString(),
-        updated_at:     new Date().toISOString(),
-      })
-      .eq('id', reportId);
-
-    await revalidateManReportCache(reportId, shareToken);
-
-    console.log(`[man-report] Pipeline complete for reportId=${reportId}`);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[man-report] Pipeline failed for reportId=${reportId}:`, message);
-
-    await supabaseAdmin
-      .from('man_reports')
-      .update({
-        status:         'error',
-        progress_stage: null,
-        error_message:  message,
-        updated_at:     new Date().toISOString(),
-      })
-      .eq('id', reportId);
-
-    await revalidateManReportCache(reportId, shareToken);
-  }
-}
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
@@ -197,7 +97,7 @@ export async function POST(
 
   // 4. Schedule the pipeline to run after this response is sent
   after(async () => {
-    await runPipeline(reportId, submission as ManIntakeSubmission, report.share_token ?? null);
+    await runManReportTextPipeline(reportId, submission as ManIntakeSubmission, report.share_token ?? null, null);
   });
 
   // 5. Return immediately — admin dashboard starts polling
