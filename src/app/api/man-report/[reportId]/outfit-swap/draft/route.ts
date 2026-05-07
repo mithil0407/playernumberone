@@ -10,6 +10,7 @@ import {
 } from '@/lib/manOutfitSection';
 import {
   generateOutfitSwapDraft,
+  getLiteralSwapBlockingIssues,
   imageFileToGeminiInlineData,
 } from '@/lib/manOutfitSwap';
 
@@ -78,7 +79,7 @@ export async function POST(
       candidateBlock: draft.candidateBlock,
       parsedPreview,
       qaIssues: draft.qaIssues,
-      blockingIssues: draft.qaIssues.filter(issue => issue.severity === 'error'),
+      blockingIssues: getLiteralSwapBlockingIssues(draft.qaIssues),
       baseUpdatedAt: report.updated_at,
       currentOutfitHash: hashOutfitBlock(currentBlock),
     });

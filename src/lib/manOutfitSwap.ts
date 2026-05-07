@@ -1,5 +1,3 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import type { ClassificationResult } from './manReportGenerator';
 import {
@@ -11,14 +9,15 @@ import {
 } from './manOutfitSection';
 import { validateManReportSection4, type ManReportQaIssue } from './manReportQa';
 
-const OUTFIT_SKILL = readFileSync(
-  join(process.cwd(), 'src/lib/outfitrecommendationskill.md'),
-  'utf-8',
-);
-
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const TEXT_MODEL = 'gemini-3-flash-preview';
 const MAX_INSPIRATION_IMAGE_BYTES = 8 * 1024 * 1024;
+const LITERAL_SWAP_BLOCKING_CODES = new Set([
+  'outfit_count',
+  'context_split',
+  'duplicate_outfit_number',
+  'missing_required_field',
+]);
 
 interface InspirationImage {
   data: string;
@@ -41,12 +40,6 @@ export interface OutfitSwapDraftResult {
   qaIssues: ManReportQaIssue[];
 }
 
-function deriveClimateZone(locationRegion: string): 'HOT' | 'TEMPERATE' {
-  const loc = locationRegion.toLowerCase();
-  if (/india|uae|middle\s*east|dubai|mumbai|delhi|bangalore|hyderabad|chennai|kolkata/.test(loc)) return 'HOT';
-  return 'TEMPERATE';
-}
-
 function stripFences(text: string): string {
   return text
     .replace(/^```(?:markdown|md|text)?\n?/i, '')
@@ -54,15 +47,12 @@ function stripFences(text: string): string {
     .trim();
 }
 
+export function getLiteralSwapBlockingIssues(issues: ManReportQaIssue[]): ManReportQaIssue[] {
+  return issues.filter(issue => issue.severity === 'error' && LITERAL_SWAP_BLOCKING_CODES.has(issue.code));
+}
+
 function buildDraftPrompt(input: OutfitSwapDraftInput, currentBlock: string, context: string): string {
-  const climateZone = deriveClimateZone(input.classification.client.location_region);
-
-  return `${OUTFIT_SKILL}
-
-DERIVED VARIABLES:
-CLIMATE_ZONE = ${climateZone}
-
-You are replacing ONE rejected outfit inside an ICONIK Men's Blueprint.
+  return `You are a literal outfit extraction assistant for ICONIK's men's report editor.
 
 Return ONLY one corrected outfit block. Do not include explanations, markdown fences, or any text before/after the block.
 
@@ -78,23 +68,33 @@ ${input.notes || 'Not provided'}
 Inspiration text:
 ${input.inspirationText || 'Not provided'}
 
-Rules for the replacement:
+LITERAL COPY RULES:
+- Do NOT redesign the outfit.
+- Do NOT improve the outfit.
+- Do NOT add your own twist.
+- Do NOT adapt the outfit to the client's colour season, body type, climate, style brief, anti-preferences, current wardrobe variety, or occasion logic.
+- Do NOT substitute garments unless the source explicitly names that substitute.
+- Do NOT make the outfit more formal, more wearable, more ICONIK, or more stylistically correct.
+- Your only job is to extract the outfit from the admin's text and/or image and convert it into the report's outfit block format.
+- If text and image conflict, follow the admin text first and use the image only for missing visible details.
+- If the admin text already describes garments, preserve the garment types, colours, fabrics, fits, styling details, accessories, and footwear as literally as possible.
+- If an inspiration image is provided, describe only the visible outfit: top, layer, bottom, footwear, accessories, colours, fit, and styling. Do not infer hidden garments.
+- If a detail is not visible or not specified, write "Not visible in reference" or "Not specified by admin" instead of inventing it.
 - Keep the same outfit number and same context.
-- Treat the inspiration image/text as style direction, not a literal copy.
-- Adapt the inspiration to the client's body geometry, colour season, climate, style brief, anti-preferences, and existing Section 4 variety.
-- Do not use banned garments or hot-climate restricted fabrics.
-- The replacement must be visually distinct from the rejected outfit.
-- Output the same field structure used by the report.
+- Output the same field structure used by the report so image generation can apply this exact outfit to the person.
 - Include TOP, LAYER, BOTTOM, FOOTWEAR, ACCESSORIES or ACCESSORY, FIT NOTE, COLOUR LOGIC, OCCASION ANCHOR, SHOPPING TRANSLATION, ACCEPTABLE SUBSTITUTES, and DO NOT BUY.
 
-Client classification JSON:
-${JSON.stringify(input.classification, null, 2)}
+Field-writing rules:
+- TOP/BOTTOM/LAYER/FOOTWEAR/ACCESSORIES must be literal extraction fields.
+- FIT NOTE may say how the visible/source garment fits, but must not recommend a different fit.
+- COLOUR LOGIC may name the copied colours, but must not justify or change them for the client.
+- OCCASION ANCHOR may be copied from admin text if supplied; otherwise write "Not specified by admin."
+- SHOPPING TRANSLATION may name the copied key items only.
+- ACCEPTABLE SUBSTITUTES must be "Not specified by admin" unless admin gave substitutes.
+- DO NOT BUY must be "Not specified by admin" unless admin gave avoid instructions.
 
 Rejected current outfit block:
 ${currentBlock}
-
-Full current Section 4 for variety context:
-${input.currentSection4}
 
 Required output header:
 OUTFIT ${input.outfitNumber} — ${context.toUpperCase()}`;

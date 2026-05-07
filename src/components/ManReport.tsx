@@ -1442,7 +1442,7 @@ function OutfitsSection({
                     Reject / Swap outfit {swapNumber}
                   </p>
                   <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
-                    Generate a replacement before changing the report.
+                    Copy your text or image into the report before changing anything.
                   </p>
                 </div>
                 <button
@@ -1521,7 +1521,7 @@ function OutfitsSection({
                         setSwapInspirationText(e.target.value);
                         setSwapDraft(null);
                       }}
-                      placeholder="Describe what to borrow from the inspiration: silhouette, colour, mood, key garment, or what to avoid."
+                      placeholder="Paste the exact outfit to apply. The system will preserve the garments, colours, fit, styling, footwear, and accessories as literally as possible."
                       className="w-full min-h-[120px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
                       style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
                     />
@@ -1605,7 +1605,7 @@ function OutfitsSection({
 
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  Apply only commits after the replacement image is generated successfully.
+                  Apply commits only after the copied outfit image is generated successfully.
                 </p>
                 <div className="flex items-center justify-end gap-2">
                   <button
@@ -1625,7 +1625,7 @@ function OutfitsSection({
                     whileTap={!draftingSwap && !applyingSwap ? { scale: 0.98 } : undefined}
                     transition={SPRING}
                   >
-                    {draftingSwap ? <><Loader2 size={13} className="animate-spin" /> Drafting…</> : 'Generate draft'}
+                    {draftingSwap ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : 'Extract outfit'}
                   </motion.button>
                   <motion.button
                     onClick={handleApplySwap}
@@ -1636,7 +1636,7 @@ function OutfitsSection({
                     whileTap={!applyingSwap ? { scale: 0.98 } : undefined}
                     transition={SPRING}
                   >
-                    {applyingSwap ? <><Loader2 size={13} className="animate-spin" /> Applying + generating image…</> : 'Apply replacement'}
+                    {applyingSwap ? <><Loader2 size={13} className="animate-spin" /> Applying + generating image…</> : 'Apply copied outfit'}
                   </motion.button>
                 </div>
               </div>

@@ -16,6 +16,7 @@ import {
 } from '@/lib/manImageGenerator';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
+import { getLiteralSwapBlockingIssues } from '@/lib/manOutfitSwap';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 
@@ -108,7 +109,7 @@ export async function POST(
     ],
   } as ReportData & { outfit_swap_history?: unknown[] }) as ReportData & { outfit_swap_history?: unknown[] };
 
-  const blockingQaIssues = nextReportData.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];
+  const blockingQaIssues = getLiteralSwapBlockingIssues(nextReportData.qa?.section4?.issues ?? []);
   if (blockingQaIssues.length > 0) {
     return NextResponse.json({
       error: `Replacement has blocking QA issues: ${blockingQaIssues[0].message}`,
