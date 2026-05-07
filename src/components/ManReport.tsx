@@ -12,6 +12,7 @@ import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 import { SPRING } from '@/lib/reportAnimations';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { FaceImageKind } from '@/lib/manImageGenerator';
+import type { ManReportQaIssue } from '@/lib/manReportQa';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens — modern editorial palette (refresh 2026-05)
@@ -42,6 +43,7 @@ const SERIF      = "var(--font-playfair, 'Fraunces'), 'Tiempos Headline', 'Cormo
 interface ParsedOutfit {
   number:      number;
   label:       string;
+  context:     string;
   top:         string;
   bottom:      string;
   layer:       string;
@@ -86,6 +88,18 @@ function toTitleCase(str: string): string {
 
 // Known context names from new format — used to detect if label IS the category
 const KNOWN_CONTEXTS = new Set(['FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
+
+function inferContextName(rawLabel: string, outfitNumber: number): string {
+  if (/\bformal\b/i.test(rawLabel)) return 'Formal';
+  if (/\bsmart\s+casual\b/i.test(rawLabel)) return 'Smart Casual';
+  if (/\bevening\b/i.test(rawLabel)) return 'Evening Wear';
+  if (/\brelaxed\s+casual\b|\bcasual\b/i.test(rawLabel)) return 'Relaxed Casual';
+  if (outfitNumber >= 1 && outfitNumber <= 4) return 'Formal';
+  if (outfitNumber >= 5 && outfitNumber <= 8) return 'Smart Casual';
+  if (outfitNumber >= 9 && outfitNumber <= 12) return 'Evening Wear';
+  if (outfitNumber >= 13 && outfitNumber <= 16) return 'Relaxed Casual';
+  return 'Outfits';
+}
 
 function parseOutfitCategories(text: string): OutfitCategory[] {
   // Supports both formats:
@@ -133,6 +147,7 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
     const outfit: ParsedOutfit = {
       number:      outfitNum,
       label:       rawLabel,
+      context:     inferContextName(rawLabel, outfitNum),
       top:         getField(block, 'Top'),
       bottom:      getField(block, 'Bottom'),
       layer:       getField(block, 'Layer(?:\\/Outerwear)?(?:\\/Layer)?'),
@@ -863,8 +878,23 @@ interface OutfitEditResult {
   error?: string;
 }
 
+interface OutfitSwapDraftResult {
+  candidateBlock: string;
+  parsedPreview: ParsedOutfit | null;
+  qaIssues: ManReportQaIssue[];
+  blockingIssues: ManReportQaIssue[];
+  baseUpdatedAt: string;
+  currentOutfitHash: string;
+}
+
+interface OutfitSwapApplyResult {
+  imageUrl: string | null;
+  updatedS4Outfits: string;
+  qa?: ReportData['qa'];
+}
+
 function OutfitsSection({
-  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onRetryMissingImages, qaPassedOutfits,
+  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onDraftOutfitSwap, onApplyOutfitSwap, onRetryMissingImages, qaPassedOutfits,
 }: {
   cls: ClassificationResult;
   text: string;
@@ -874,6 +904,21 @@ function OutfitsSection({
     outfitNumber: number,
     newText: string,
   ) => Promise<OutfitEditResult | null>;
+  onDraftOutfitSwap?: (input: {
+    outfitNumber: number;
+    reason: string;
+    notes: string;
+    inspirationText: string;
+    inspirationImage: File | null;
+  }) => Promise<OutfitSwapDraftResult | null>;
+  onApplyOutfitSwap?: (input: {
+    outfitNumber: number;
+    candidateBlock: string;
+    baseUpdatedAt: string;
+    currentOutfitHash: string;
+    reason: string;
+    notes: string;
+  }) => Promise<OutfitSwapApplyResult | null>;
   onRetryMissingImages?: () => Promise<void>;
   qaPassedOutfits?: Set<number>; // outfit numbers without QA errors
 }) {
@@ -884,6 +929,108 @@ function OutfitsSection({
   const [regenerating, setRegenerating]   = useState(false);
   const [retryingSet, setRetryingSet]     = useState<Set<number>>(new Set());
   const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
+  const [swapNumber, setSwapNumber] = useState<number | null>(null);
+  const [swapReason, setSwapReason] = useState('');
+  const [swapNotes, setSwapNotes] = useState('');
+  const [swapInspirationText, setSwapInspirationText] = useState('');
+  const [swapImageFile, setSwapImageFile] = useState<File | null>(null);
+  const [swapImagePreview, setSwapImagePreview] = useState<string | null>(null);
+  const [swapDraft, setSwapDraft] = useState<OutfitSwapDraftResult | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
+  const [draftingSwap, setDraftingSwap] = useState(false);
+  const [applyingSwap, setApplyingSwap] = useState(false);
+
+  const closeSwap = () => {
+    if (draftingSwap || applyingSwap) return;
+    setSwapNumber(null);
+    setSwapReason('');
+    setSwapNotes('');
+    setSwapInspirationText('');
+    setSwapImageFile(null);
+    setSwapImagePreview(null);
+    setSwapDraft(null);
+    setSwapError(null);
+  };
+
+  const startSwap = (outfitNumber: number) => {
+    if (regenerating || draftingSwap || applyingSwap) return;
+    setSwapNumber(outfitNumber);
+    setSwapReason('');
+    setSwapNotes('');
+    setSwapInspirationText('');
+    setSwapImageFile(null);
+    setSwapImagePreview(null);
+    setSwapDraft(null);
+    setSwapError(null);
+  };
+
+  const handleSwapImageChange = (file: File | null) => {
+    setSwapImageFile(file);
+    setSwapDraft(null);
+    setSwapError(null);
+    if (swapImagePreview) URL.revokeObjectURL(swapImagePreview);
+    setSwapImagePreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const handleDraftSwap = async () => {
+    if (!swapNumber || !onDraftOutfitSwap) return;
+    setDraftingSwap(true);
+    setSwapError(null);
+    setSwapDraft(null);
+    try {
+      const result = await onDraftOutfitSwap({
+        outfitNumber: swapNumber,
+        reason: swapReason,
+        notes: swapNotes,
+        inspirationText: swapInspirationText,
+        inspirationImage: swapImageFile,
+      });
+      if (!result) {
+        setSwapError('Could not draft a replacement. Please try again.');
+        return;
+      }
+      setSwapDraft(result);
+    } finally {
+      setDraftingSwap(false);
+    }
+  };
+
+  const handleApplySwap = async () => {
+    if (!swapNumber || !swapDraft || !onApplyOutfitSwap) return;
+    setApplyingSwap(true);
+    setSwapError(null);
+    try {
+      const result = await onApplyOutfitSwap({
+        outfitNumber: swapNumber,
+        candidateBlock: swapDraft.candidateBlock,
+        baseUpdatedAt: swapDraft.baseUpdatedAt,
+        currentOutfitHash: swapDraft.currentOutfitHash,
+        reason: swapReason,
+        notes: swapNotes,
+      });
+      if (!result) {
+        setSwapError('Could not apply the replacement. Please try again.');
+        return;
+      }
+      setImageOverrides(prev => {
+        const next = { ...prev };
+        if (result.imageUrl) next[swapNumber] = result.imageUrl;
+        return next;
+      });
+      setSwapNumber(null);
+      setSwapReason('');
+      setSwapNotes('');
+      setSwapInspirationText('');
+      setSwapImageFile(null);
+      if (swapImagePreview) URL.revokeObjectURL(swapImagePreview);
+      setSwapImagePreview(null);
+      setSwapDraft(null);
+      setSwapError(null);
+      setSectionNotice(`Outfit ${swapNumber} was replaced and its image was regenerated.`);
+    } finally {
+      setApplyingSwap(false);
+    }
+  };
 
   const startEdit = (outfitNumber: number) => {
     if (regenerating) return;
@@ -985,6 +1132,7 @@ function OutfitsSection({
     const isEditing   = editingNumber === outfit.number;
     const isRegenning = regenerating && isEditing;
     const canEdit     = adminMode && !!onRegenerateOutfit;
+    const canSwap     = adminMode && !!onDraftOutfitSwap && !!onApplyOutfitSwap;
     const canRetryImage = adminMode && (!!onRetryMissingImages || !!onRegenerateOutfit);
     const prioritiseImage = outfit.number <= 2;
     const isVerified  = qaPassedOutfits?.has(outfit.number) ?? false;
@@ -1068,7 +1216,7 @@ function OutfitsSection({
               disabled={regenerating}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full"
               style={{ background: 'rgba(27,24,21,0.7)', color: '#fff', backdropFilter: 'blur(6px)' }}
-              title={isEditing ? 'Cancel edit' : 'Edit outfit'}
+              title={isEditing ? 'Cancel edit' : 'Advanced edit'}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               transition={SPRING}
@@ -1176,6 +1324,33 @@ function OutfitsSection({
                   </div>
                 )}
               </div>
+              {(canSwap || canEdit) && (
+                <div className="mt-7 flex flex-wrap items-center gap-2">
+                  {canSwap && (
+                    <motion.button
+                      onClick={() => startSwap(outfit.number)}
+                      disabled={draftingSwap || applyingSwap || regenerating}
+                      className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                      style={{ background: ACCENT, color: '#fff' }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={SPRING}
+                    >
+                      Reject / Swap
+                    </motion.button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => startEdit(outfit.number)}
+                      disabled={regenerating}
+                      className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                      style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                    >
+                      Advanced edit
+                    </button>
+                  )}
+                </div>
+              )}
             </motion.div>
         </AnimatePresence>
       </div>
@@ -1242,6 +1417,233 @@ function OutfitsSection({
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {swapNumber && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: 'rgba(27,24,21,0.58)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            <motion.div
+              className="w-full max-w-5xl rounded-3xl overflow-hidden flex flex-col"
+              style={{ background: IVORY, maxHeight: '90vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={SPRING}
+            >
+              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
+                    Reject / Swap outfit {swapNumber}
+                  </p>
+                  <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                    Generate a replacement before changing the report.
+                  </p>
+                </div>
+                <button
+                  onClick={closeSwap}
+                  disabled={draftingSwap || applyingSwap}
+                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
+                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="p-6 flex-1 min-h-0 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="space-y-4">
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Rejection reason</DataLabel>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {['Too basic', 'Wrong vibe', 'Bad colour', 'Too formal', 'Too casual', 'Not wearable'].map(reason => (
+                        <button
+                          key={reason}
+                          onClick={() => {
+                            setSwapReason(reason);
+                            setSwapDraft(null);
+                          }}
+                          className="px-3 py-1.5 rounded-full text-[11px] font-medium"
+                          style={{
+                            background: swapReason === reason ? ACCENT : SHELL,
+                            color: swapReason === reason ? '#fff' : INK_SOFT,
+                            border: `1px solid ${swapReason === reason ? ACCENT : BORDER}`,
+                          }}
+                        >
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      value={swapReason}
+                      onChange={e => {
+                        setSwapReason(e.target.value);
+                        setSwapDraft(null);
+                      }}
+                      placeholder="Custom reason"
+                      className="w-full rounded-xl px-3 py-2 text-[12px] outline-none"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Inspiration image</DataLabel>
+                    <label
+                      className="block rounded-2xl overflow-hidden cursor-pointer"
+                      style={{ background: SHELL, border: `1px dashed ${ACCENT}66`, aspectRatio: '4/3' }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => handleSwapImageChange(e.target.files?.[0] ?? null)}
+                      />
+                      {swapImagePreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={swapImagePreview} alt="Outfit inspiration" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="h-full flex items-center justify-center px-5 text-center">
+                          <span className="text-[12px]" style={{ color: INK_SOFT }}>Upload a screenshot or reference outfit</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Inspiration text / notes</DataLabel>
+                    <textarea
+                      value={swapInspirationText}
+                      onChange={e => {
+                        setSwapInspirationText(e.target.value);
+                        setSwapDraft(null);
+                      }}
+                      placeholder="Describe what to borrow from the inspiration: silhouette, colour, mood, key garment, or what to avoid."
+                      className="w-full min-h-[120px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
+                    />
+                    <textarea
+                      value={swapNotes}
+                      onChange={e => {
+                        setSwapNotes(e.target.value);
+                        setSwapDraft(null);
+                      }}
+                      placeholder="Internal notes, optional"
+                      className="w-full mt-3 min-h-[80px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl p-4 min-h-[420px]" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <DataLabel>Replacement preview</DataLabel>
+                    {swapDraft && (
+                      <span className="text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: SAGE }}>
+                        Replacement ready
+                      </span>
+                    )}
+                  </div>
+
+                  {swapError && (
+                    <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-4" style={{ background: '#fff2f2', color: OXBLOOD }}>
+                      <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                      <p className="text-[11px] leading-relaxed">{swapError}</p>
+                    </div>
+                  )}
+
+                  {draftingSwap ? (
+                    <div className="h-full min-h-[300px] flex flex-col items-center justify-center gap-3">
+                      <Loader2 size={22} className="animate-spin" style={{ color: ACCENT }} />
+                      <p className="text-[12px]" style={{ color: INK_SOFT }}>Drafting replacement…</p>
+                    </div>
+                  ) : swapDraft?.parsedPreview ? (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-2xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                          {swapDraft.parsedPreview.label}
+                        </p>
+                        <p className="text-[11px] mt-1" style={{ color: INK_SOFT }}>
+                          {swapDraft.parsedPreview.context} · Outfit {swapDraft.parsedPreview.number}
+                        </p>
+                      </div>
+                      {[
+                        ['Top', swapDraft.parsedPreview.top],
+                        ['Bottom', swapDraft.parsedPreview.bottom],
+                        ['Layer', swapDraft.parsedPreview.layer],
+                        ['Footwear', swapDraft.parsedPreview.footwear],
+                        ['Accessories', swapDraft.parsedPreview.accessories],
+                        ['Fit note', swapDraft.parsedPreview.fitNote],
+                        ['Colour logic', swapDraft.parsedPreview.colourLogic],
+                      ].map(([label, value]) => value && value !== '—' ? (
+                        <div key={label}>
+                          <DataLabel>{label}</DataLabel>
+                          <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{value}</p>
+                        </div>
+                      ) : null)}
+                      {swapDraft.blockingIssues.length > 0 && (
+                        <div className="rounded-xl px-3 py-2" style={{ background: '#fff2f2', color: OXBLOOD }}>
+                          <p className="text-[11px] font-medium mb-1">Blocking QA issue</p>
+                          {swapDraft.blockingIssues.slice(0, 3).map((issue, index) => (
+                            <p key={`${issue.code}-${index}`} className="text-[11px] leading-relaxed">{issue.message}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-full min-h-[300px] flex items-center justify-center px-6 text-center">
+                      <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>
+                        Add inspiration and generate a replacement. The report will not change until you apply it.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
+                  Apply only commits after the replacement image is generated successfully.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={closeSwap}
+                    disabled={draftingSwap || applyingSwap}
+                    className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    onClick={handleDraftSwap}
+                    disabled={draftingSwap || applyingSwap || (!swapReason && !swapNotes && !swapInspirationText && !swapImageFile)}
+                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
+                    whileHover={!draftingSwap && !applyingSwap ? { scale: 1.02 } : undefined}
+                    whileTap={!draftingSwap && !applyingSwap ? { scale: 0.98 } : undefined}
+                    transition={SPRING}
+                  >
+                    {draftingSwap ? <><Loader2 size={13} className="animate-spin" /> Drafting…</> : 'Generate draft'}
+                  </motion.button>
+                  <motion.button
+                    onClick={handleApplySwap}
+                    disabled={applyingSwap || draftingSwap || !swapDraft || swapDraft.blockingIssues.length > 0}
+                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: ACCENT, color: '#fff' }}
+                    whileHover={!applyingSwap ? { scale: 1.02 } : undefined}
+                    whileTap={!applyingSwap ? { scale: 0.98 } : undefined}
+                    transition={SPRING}
+                  >
+                    {applyingSwap ? <><Loader2 size={13} className="animate-spin" /> Applying + generating image…</> : 'Apply replacement'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {editingNumber && editingOutfit && (
@@ -1514,6 +1916,21 @@ interface ManReportProps {
     outfitNumber: number,
     newText: string,
   ) => Promise<OutfitEditResult | null>;
+  onDraftOutfitSwap?: (input: {
+    outfitNumber: number;
+    reason: string;
+    notes: string;
+    inspirationText: string;
+    inspirationImage: File | null;
+  }) => Promise<OutfitSwapDraftResult | null>;
+  onApplyOutfitSwap?: (input: {
+    outfitNumber: number;
+    candidateBlock: string;
+    baseUpdatedAt: string;
+    currentOutfitHash: string;
+    reason: string;
+    notes: string;
+  }) => Promise<OutfitSwapApplyResult | null>;
   onRegenerateFaceImage?: (
     kind: FaceImageKind,
     optionIndex: number,
@@ -1670,6 +2087,8 @@ function ManReport({
   deferSections = false,
   adminMode,
   onRegenerateOutfit,
+  onDraftOutfitSwap,
+  onApplyOutfitSwap,
   onRegenerateFaceImage,
   onRetryMissingImages,
 }: ManReportProps) {
@@ -1771,6 +2190,8 @@ function ManReport({
           outfitImageUrls={imageUrls?.outfitCards ?? undefined}
           adminMode={isAdminViewer}
           onRegenerateOutfit={onRegenerateOutfit}
+          onDraftOutfitSwap={onDraftOutfitSwap}
+          onApplyOutfitSwap={onApplyOutfitSwap}
           onRetryMissingImages={onRetryMissingImages}
           qaPassedOutfits={qaPassedOutfits}
         />

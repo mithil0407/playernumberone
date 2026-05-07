@@ -55,6 +55,36 @@ interface OutfitRegenerationResult {
   error?: string;
 }
 
+interface OutfitSwapDraftResult {
+  candidateBlock: string;
+  parsedPreview: {
+    number: number;
+    label: string;
+    context: string;
+    top: string;
+    bottom: string;
+    layer: string;
+    footwear: string;
+    accessories: string;
+    fitNote: string;
+    colourLogic: string;
+    whyItWorks: string;
+    shoppingTranslation: string;
+    acceptableSubstitutes: string;
+    doNotBuy: string;
+  } | null;
+  qaIssues: NonNullable<NonNullable<ReportData['qa']>['section4']>['issues'];
+  blockingIssues: NonNullable<NonNullable<ReportData['qa']>['section4']>['issues'];
+  baseUpdatedAt: string;
+  currentOutfitHash: string;
+}
+
+interface OutfitSwapApplyResult {
+  imageUrl: string | null;
+  updatedS4Outfits: string;
+  qa?: ReportData['qa'];
+}
+
 interface FaceImageRegenerationResult {
   kind: FaceImageKind;
   optionIndex: number;
@@ -394,6 +424,89 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return { imageUrl, updatedS4Outfits, imageStatus, error };
   }, [reportId, imageModel]);
 
+  const draftOutfitSwap = useCallback(async (input: {
+    outfitNumber: number;
+    reason: string;
+    notes: string;
+    inspirationText: string;
+    inspirationImage: File | null;
+  }): Promise<OutfitSwapDraftResult | null> => {
+    const fd = new FormData();
+    fd.append('outfitNumber', String(input.outfitNumber));
+    fd.append('reason', input.reason);
+    fd.append('notes', input.notes);
+    fd.append('inspirationText', input.inspirationText);
+    if (input.inspirationImage) fd.append('inspirationImage', input.inspirationImage);
+
+    const res = await fetch(`/api/man-report/${reportId}/outfit-swap/draft`, {
+      method: 'POST',
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not draft replacement outfit.');
+      return null;
+    }
+    return data as OutfitSwapDraftResult;
+  }, [reportId]);
+
+  const applyOutfitSwap = useCallback(async (input: {
+    outfitNumber: number;
+    candidateBlock: string;
+    baseUpdatedAt: string;
+    currentOutfitHash: string;
+    reason: string;
+    notes: string;
+  }): Promise<OutfitSwapApplyResult | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/outfit-swap/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...input, imageModel }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not apply replacement outfit.');
+      return null;
+    }
+
+    const imageUrl = data.imageUrl as string | null;
+    const updatedS4Outfits = data.updatedS4Outfits as string | null;
+    const qa = data.qa as ReportData['qa'] | undefined;
+    if (!updatedS4Outfits) return null;
+
+    setReport(prev => {
+      if (!prev?.report_data) return prev;
+      const existingImageUrls = prev.image_urls ?? {
+        hairstyleCards: [],
+        eyewearCards: [],
+        outfitCards: [],
+        baseModel: null,
+      };
+      const nextOutfitCards = [...(existingImageUrls.outfitCards ?? [])];
+      while (nextOutfitCards.length < input.outfitNumber) nextOutfitCards.push(null);
+      nextOutfitCards[input.outfitNumber - 1] = imageUrl;
+
+      return {
+        ...prev,
+        error_message: null,
+        image_urls: {
+          ...existingImageUrls,
+          outfitCards: nextOutfitCards,
+        },
+        report_data: {
+          ...prev.report_data,
+          qa: qa ?? prev.report_data.qa,
+          sections: {
+            ...prev.report_data.sections,
+            s4_outfits: updatedS4Outfits,
+          } as ReportSections,
+        },
+      };
+    });
+
+    return { imageUrl, updatedS4Outfits, qa };
+  }, [reportId, imageModel]);
+
   const regenerateFaceImage = useCallback(async (
     kind: FaceImageKind,
     optionIndex: number,
@@ -719,6 +832,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             deferSections
             onRegenerateFaceImage={regenerateFaceImage}
             onRegenerateOutfit={regenerateOutfit}
+            onDraftOutfitSwap={draftOutfitSwap}
+            onApplyOutfitSwap={applyOutfitSwap}
             onRetryMissingImages={handleGenerateImages}
           />
         ) : (

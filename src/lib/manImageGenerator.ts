@@ -16,6 +16,7 @@ import { supabaseAdmin } from './supabase';
 import type { ClassificationResult, ReportSections } from './manReportGenerator';
 import type { ManIntakeSubmission } from './supabaseMan';
 import { revalidateManReportCache } from './manReportCache';
+import { parseManOutfitsFromSection } from './manOutfitSection';
 
 const ai     = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MODEL  = 'gemini-3.1-flash-image-preview';
@@ -183,53 +184,18 @@ interface ParsedOutfit {
   colourLogic: string | null;
 }
 
-function stripHex(text: string): string {
-  return text.replace(/\s*\(#?[0-9A-Fa-f]{3,6}\)/g, '').trim();
-}
-
 function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
-  const outfits: ParsedOutfit[] = [];
-  // Split on either bold format "**Outfit N" or plain uppercase "OUTFIT N"
-  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
-
-  for (const block of blocks) {
-    const boldMatch  = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
-    const plainMatch = block.match(/^OUTFIT\s+(\d+)\s*[—–-]\s*(.+)/im);
-    const header     = boldMatch ?? plainMatch;
-    if (!header) continue;
-
-    // Field extractor handles all known formats:
-    //   Old: "- Label: value" or "• Label: value"
-    //   New: "LABEL: value" (plain uppercase, no dash)
-    //   Edited: "**Label:** value" / "- **Label:** value"
-    const field = (label: string): string => {
-      const pattern = new RegExp(
-        `(?:^|\\n)[ \\t]*[-•]?[ \\t]*\\*{0,2}${label}\\*{0,2}[ \\t]*:[ \\t]*\\*{0,2}(.+?)\\*{0,2}(?=\\n[ \\t]*[-•]?[ \\t]*\\*{0,2}[A-Za-z]|\\n\\n|\\n\\*\\*Outfit|\\nOUTFIT|$)`,
-        'is',
-      );
-      const raw = block.match(pattern)?.[1]?.replace(/\n/g, ' ').trim() ?? '';
-      return stripHex(raw);
-    };
-
-    const layerRaw       = field('Layer(?:/Outerwear)?');
-    const accessoriesRaw = field('Accessory(?:ies)?');
-    const fitNoteRaw     = field('Fit note');
-    const colourLogicRaw = field('Colour logic');
-
-    outfits.push({
-      index:       parseInt(header[1], 10),
-      label:       header[2].trim(),
-      top:         field('Top'),
-      bottom:      field('Bottom'),
-      layer:       layerRaw && !/no layer/i.test(layerRaw) ? layerRaw : null,
-      footwear:    field('Footwear'),
-      accessories: accessoriesRaw || null,
-      fitNote:     fitNoteRaw || null,
-      colourLogic: colourLogicRaw || null,
-    });
-  }
-
-  return outfits.sort((a, b) => a.index - b.index);
+  return parseManOutfitsFromSection(s4Text).map(outfit => ({
+    index: outfit.number,
+    label: outfit.label,
+    top: outfit.top === '—' ? '' : outfit.top,
+    bottom: outfit.bottom === '—' ? '' : outfit.bottom,
+    layer: outfit.layer && outfit.layer !== '—' && !/no layer/i.test(outfit.layer) ? outfit.layer : null,
+    footwear: outfit.footwear === '—' ? '' : outfit.footwear,
+    accessories: outfit.accessories && outfit.accessories !== '—' ? outfit.accessories : null,
+    fitNote: outfit.fitNote && outfit.fitNote !== '—' ? outfit.fitNote : null,
+    colourLogic: outfit.colourLogic && outfit.colourLogic !== '—' ? outfit.colourLogic : null,
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -892,6 +858,7 @@ export async function regenerateSingleOutfitImage(
   classification:      ClassificationResult,
   imageModel:          string = MODEL,
   hairstyleHeadshotUrl?: string | null, // optional hairstyle headshot for face/hair reference
+  storageFilename?:     string,
 ): Promise<string> {
   const parsed = parseOutfitsFromSection(outfitText);
   if (parsed.length === 0) throw new Error(`Could not parse outfit from text block`);
@@ -908,7 +875,7 @@ export async function regenerateSingleOutfitImage(
   const prompt       = buildOutfitPrompt(outfit, classification);
   const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel, hairstyleRef ?? undefined);
 
-  return uploadToStorage(reportId, outputBase64, `outfit_${outfitNumber}.jpg`);
+  return uploadToStorage(reportId, outputBase64, storageFilename ?? `outfit_${outfitNumber}.jpg`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

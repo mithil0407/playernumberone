@@ -1,4 +1,5 @@
 import type { ClassificationResult, ReportData } from './manReportGenerator';
+import { inferOutfitContext, parseManOutfitsFromSection } from './manOutfitSection';
 
 export interface ManReportQaIssue {
   code: string;
@@ -60,16 +61,6 @@ function issue(code: string, severity: ManReportQaIssue['severity'], message: st
   return { code, severity, message };
 }
 
-function contextFromLabel(rawLabel: string, outfitNumber: number): string {
-  const fromLabel = CONTEXT_ALIASES.find(([pattern]) => pattern.test(rawLabel))?.[1];
-  if (fromLabel) return fromLabel;
-  if (outfitNumber >= 1 && outfitNumber <= 4) return 'Formal';
-  if (outfitNumber >= 5 && outfitNumber <= 8) return 'Smart Casual';
-  if (outfitNumber >= 9 && outfitNumber <= 12) return 'Evening Wear';
-  if (outfitNumber >= 13 && outfitNumber <= 16) return 'Relaxed Casual';
-  return 'Unknown';
-}
-
 function extractField(block: string, labels: string[]): string {
   const labelPattern = labels
     .map(label => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'))
@@ -88,31 +79,21 @@ function extractField(block: string, labels: string[]): string {
 }
 
 export function parseManReportOutfitsForQa(s4Text: string): ParsedQaOutfit[] {
-  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
-
-  return blocks
-    .map(block => {
-      const boldMatch = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
-      const plainMatch = block.match(/^OUTFIT\s+(\d+)\s*[—–-]\s*(.+)/im);
-      const header = boldMatch ?? plainMatch;
-      if (!header) return null;
-
-      const number = parseInt(header[1], 10);
-      const rawLabel = header[2].replace(/\*+/g, '').trim();
+  return parseManOutfitsFromSection(s4Text)
+    .map(outfit => {
       const fields: Record<string, string> = {};
       for (const [key, labels] of Object.entries(FIELD_ALIASES)) {
-        fields[key] = extractField(block, labels);
+        fields[key] = extractField(outfit.block, labels);
       }
 
       return {
-        number,
-        rawLabel,
-        context: contextFromLabel(rawLabel, number),
-        block,
+        number: outfit.number,
+        rawLabel: outfit.label,
+        context: inferOutfitContext(outfit.label, outfit.number),
+        block: outfit.block,
         fields,
       };
     })
-    .filter((outfit): outfit is ParsedQaOutfit => !!outfit)
     .sort((a, b) => a.number - b.number);
 }
 
