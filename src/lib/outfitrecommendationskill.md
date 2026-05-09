@@ -1,6 +1,6 @@
 # ICONIK Men's Blueprint — Outfit Recommendation Engine
 
-**Version:** 3.0
+**Version:** 3.1
 **Scope:** Automated Blueprint report generation — outfit recommendation section only
 **Output:** 16 outfits across 4 lifestyle contexts (4 per context)
 **Geography:** Western clothing by default, with lightweight Indian-context support only when the intake explicitly signals Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe needs
@@ -73,6 +73,47 @@ Thin chain necklace at the neck. Belt visible at waist (black or dark brown). Th
 ### FORMULA 12 — THE FITTED DARK TEE + WIDE-LEG DENIM (Relaxed Casual)
 Fitted black or dark navy long-sleeve crewneck tee + light-wash relaxed wide-leg denim + white or black high-top canvas sneaker.
 The contrast between the fitted dark top and the wide-leg light bottom is the entire outfit. Maximum depth contrast with minimum pieces. The tee must be fitted — if it is oversized, the outfit fails.
+
+### FORMULA 13 — THE TEXTURED OPEN SHIRT + WIDE-LEG TROUSER (Smart Casual / Relaxed Casual)
+A shirt with visual texture — washed denim shirt, chambray, or linen in a mid-tone (slate blue, washed indigo, light denim) — worn open 2–3 buttons, sleeves rolled to mid-forearm, untucked. Paired with wide-leg or relaxed straight trousers in a warm neutral (tan, stone, warm beige, khaki). Dark brown penny loafer or dark brown leather boot. Silver or gold watch. No layer needed.
+**The depth contrast rule:** The shirt must be lighter or cooler than the trouser. The trouser is always the warm anchor. The loafer matches the trouser's warmth tone.
+**This formula directly replaces any no-layer smart casual or formal outfit where the engine would otherwise reach for a band-collar shirt in a flat grey/teal/slate register with no depth contrast.**
+*Ideal for:* Athletic, Slim, Rectangle. Average to tall height. Cool Medium or Neutral undertone.
+
+### FORMULA 14 — THE CHECK / PLAID SHIRT + DARK DENIM (Relaxed Casual)
+A muted check or plaid overshirt (sage green + white check, slate blue + white check, warm beige + brown check) — relaxed fit, worn open-collar, untucked. Paired with dark indigo wide-leg or relaxed straight denim. White clean leather sneakers. Silver watch.
+**The check shirt IS the accent piece** — it carries all the visual interest a jacket or layer would otherwise provide. The dark denim is the unambiguous deep anchor. The check must always be muted and tonal — never bold primary colours. Never pair a check shirt with a light-wash trouser — the dark denim anchor is non-negotiable for this formula.
+**This formula directly replaces any casual outfit where the engine would generate a bright or saturated single-colour tee under a jacket in competing mid-tones (e.g., mustard + olive, teal + grey).**
+*Ideal for:* Athletic, Slim, Rectangle. Any undertone — the check tones are calibrated to the client's season. Tall-average to tall.
+
+### FORMULA 15 — THE STRIPE SHIRT + WHITE DENIM + DARK LOAFER (Smart Casual / Relaxed Casual, HOT Climate)
+Fine-stripe Oxford shirt (muted pink + white stripe, blue + white stripe, sage + white stripe) — slim-fit, open collar, sleeves rolled, untucked or half-tucked. White or off-white straight-leg or relaxed denim. Dark wine, dark burgundy, or dark brown leather penny loafer or loafer.
+**Rule:** The loafer must be the darkest piece in the outfit — it does all the depth contrast work when both top and bottom are light. If the loafer is also light, the outfit has no anchor.
+**Cool-undertone version of Formula 06.** Pink stripe and blue stripe are the correct accent tones for Cool Light and Cool Medium clients — not forest green or deep burgundy which read warm.
+*Ideal for:* Athletic, Slim. Cool Light or Cool Medium undertone. Average to tall. HOT climate.
+
+### FORMULA 16 — THE LEATHER JACKET + STRIPE SHIRT + CREAM TROUSER (Evening Casual / Party)
+Black faux leather or leather zip jacket (trucker/harrington collar profile) + vertical stripe shirt worn underneath (cream + beige stripe, white + navy stripe) — collar visible above jacket. Cream or off-white wide-leg relaxed trousers. Black high-top canvas sneakers or black leather Chelsea boot.
+**Rule:** When the jacket is black and the trouser is cream/light — the shoe must be black. The black shoe closes the colour loop: black jacket at top, black shoe at bottom, light trouser in between. This is the only formula where black sneakers pair with a cream trouser.
+**This is a variant of Formula 09** — the stripe shirt replaces the plain white Oxford for clients who lean expressive on the style poles.
+*Ideal for:* Athletic, Slim, Rectangle. Cool Deep or Neutral undertone. Tall-average to tall. Fashion-forward style pole.
+
+### FORMULA 17 — THE QUARTER-ZIP + DARK TAILORED TROUSER (Formal / Smart Casual, TEMPERATE Climate)
+Camel, warm tan, or dark olive fine merino or cotton quarter-zip — worn with white tee collar visible at the neck above the zip. Dark navy pinstripe or charcoal flat-front tailored trouser. Tan leather penny loafer or dark brown Derby shoe. Brown leather watch.
+**The white tee collar peek is mandatory** — it adds a third clean element and prevents the quarter-zip from reading as casualwear when paired with tailored trousers. Without it, the look loses register.
+**The shoe bridges the temperature:** camel quarter-zip (warm) + navy trouser (cool) = tan loafer that bridges both. Never use a black shoe here — it doubles down on the cool bottom and loses the warm bridge.
+**This formula directly replaces any formal or smart casual blazer outfit** when the style poles lean relaxed or the client wants structure without stiffness.
+*Ideal for:* Rectangle, Athletic, Slim. Warm Medium or Neutral undertone. Average to tall. TEMPERATE climate only — merino quarter-zip is not appropriate for HOT climate.
+
+---
+
+### BAND-COLLAR SHIRT — PROHIBITION RULE
+**The band-collar shirt is removed from the active vocabulary entirely.**
+It generates flat, tonally dead outfits (grey band-collar + charcoal chino, teal band-collar + charcoal trouser) with no depth contrast and no anchor-accent logic. Every context where the skill would previously reach for a band-collar shirt now has a better formula replacement:
+- No-layer smart casual with depth contrast → Formula 13 (textured open shirt + wide-leg trouser)
+- No-layer HOT climate shirt look → Formula 01, 05, 06, or 15
+- Elevated casual evening with no blazer → Formula 13 or Formula 17
+Do not generate a band-collar shirt in any outfit under any circumstances.
 
 ---
 
@@ -300,6 +341,7 @@ In Formulas 05, 06, 11 — white or off-white linen trousers or chinos act as th
 **Formula restrictions for HOT climate:**
 - Formula 04 (warm three-tone stack with corduroy) — PROHIBITED. Use Formula 06 or 05 instead.
 - Formula 10 (dark corduroy overshirt solo) — PROHIBITED.
+- Formula 17 (quarter-zip + dark tailored trouser) — PROHIBITED. Quarter-zip merino is not appropriate for HOT climate.
 - Formulas 05, 06, 01 are the primary casual formulas for HOT climate clients.
 
 **Layer frequency for HOT climate:**
@@ -573,6 +615,10 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 
 - Slim-fit Oxford button-down shirt (spread collar / club collar / button-down collar)
 - Slim-fit camp collar shirt (smart casual / casual — HOT climate appropriate)
+- Washed denim shirt, relaxed-fit, point collar — worn open 2–3 buttons, sleeves rolled (Formula 13)
+- Muted check / plaid overshirt shirt, relaxed-fit, point collar — sage+white, slate+white, beige+brown only — worn open-collar, untucked (Formula 14)
+- Fine-stripe Oxford shirt, slim-fit, open collar — muted pink+white, blue+white, sage+white only (Formula 15)
+- Vertical stripe shirt — slim-fit, open collar (Cuban/revere collar or regular) — worn open-collar (Formulas 05, 16)
 - Fitted crew-neck T-shirt (long sleeve and short sleeve)
 - Fitted V-neck T-shirt
 - Polo shirt, slim-fit, long sleeve
@@ -580,8 +626,9 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 - Fitted Henley shirt, full sleeve, two or three-button placket
 - Slim merino turtleneck (TEMPERATE only)
 - Slim-fit crewneck knit sweater (TEMPERATE only)
-- Fine merino long-sleeve crewneck (TEMPERATE only)
-- Vertical stripe shirt — slim-fit, open collar (Cuban/revere collar or regular) — worn open-collar
+- Fine merino or cotton quarter-zip pullover — camel, warm tan, dark olive only (Formula 17 — TEMPERATE only)
+
+**NEVER SUGGEST:** Band-collar shirts in any form, any colour, any context — permanently removed from vocabulary. Waistcoats. Turtlenecks for HOT climate clients.
 
 ### LAYERS / OUTERWEAR
 
@@ -659,7 +706,7 @@ Never use "fabric" or "material" generically. Always name the fabric.
 ## SECTION 18 — FULL GENERATION PROMPT TEMPLATE
 
 ```
-You are the ICONIK Men's Blueprint Outfit Engine v3.0. Generate 16 outfit recommendations for a male client. You are operating within strict constraint rules. Output must be precise, scientific in tone, and personal to this client.
+You are the ICONIK Men's Blueprint Outfit Engine v3.1. Generate 16 outfit recommendations for a male client. You are operating within strict constraint rules. Output must be precise, scientific in tone, and personal to this client.
 
 CLIENT PROFILE:
 - Height: [HEIGHT]
@@ -749,7 +796,7 @@ RULES — APPLY ALL:
 23. Sandals only in HOT climate Relaxed Casual and Evening Casual
 24. White/off-white linen trousers only in HOT climate
 25. COLOUR HIERARCHY: every outfit has one anchor + one accent only. Depth contrast mandatory. Temperature family consistent per outfit. Never mustard.
-26. The 12 reference formulas in Section Visual DNA are the creative guardrails — every outfit must be traceable back to one of them.
+26. The 17 reference formulas in Section Visual DNA are the creative guardrails — every outfit must be traceable back to one of them.
 ```
 
 ---
@@ -775,6 +822,7 @@ Before finalising output, verify every outfit:
 - [ ] No sneakers in Formal. No Oxfords/Derbys in Relaxed Casual.
 - [ ] Sandals only in HOT climate casual / evening
 - [ ] White/off-white linen trousers only in HOT climate
+- [ ] Band-collar shirts: zero instances in any of the 16 outfits
 - [ ] No item from ANTI_PREFS
 - [ ] Fabric named specifically in every line
 - [ ] Fit language matches FIT_PREF with body shape overrides applied
