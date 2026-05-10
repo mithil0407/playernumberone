@@ -1,5 +1,6 @@
 import {
   runClassification,
+  runGroomingImageClassification,
   runSection1,
   runSection2,
   runSection3,
@@ -127,7 +128,8 @@ export async function runManReportTextPipeline(
     if (!classification) {
       currentStage = 'classifying';
       await updateStage(reportId, currentStage, shareToken);
-      classification = await runClassification(submission);
+      const groomingProfile = await runGroomingImageClassification(submission);
+      classification = await runClassification(submission, groomingProfile);
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s1', qa);
     }
 

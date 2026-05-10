@@ -11,6 +11,7 @@ import {
 } from '@/lib/manOutfitSection';
 import {
   regenerateSingleOutfitImage,
+  isBeardFocusedClassification,
   resolveManReportImageUrls,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
@@ -70,6 +71,7 @@ export async function POST(
   const reportData = report.report_data as ReportData & { outfit_swap_history?: unknown[] };
   const imagePaths = (report.image_urls as ManReportImagePaths | null) ?? {
     hairstyleCards: [],
+    beardCards: [],
     eyewearCards: [],
     outfitCards: [],
   };
@@ -127,13 +129,15 @@ export async function POST(
     return NextResponse.json({ error: 'No full-body photo found on submission — replacement was not applied' }, { status: 400 });
   }
 
-  let hairstyleHeadshotUrl: string | null = null;
-  const hairstylePath = imagePaths.hairstyleCards?.[0];
-  if (hairstylePath) {
+  let groomingHeadshotUrl: string | null = null;
+  const groomingPath = isBeardFocusedClassification(reportData.classification)
+    ? imagePaths.beardCards?.[0]
+    : imagePaths.hairstyleCards?.[0];
+  if (groomingPath) {
     const { data: signed } = await supabaseAdmin.storage
       .from('man-report-images')
-      .createSignedUrl(hairstylePath, 300);
-    hairstyleHeadshotUrl = signed?.signedUrl ?? null;
+      .createSignedUrl(groomingPath, 300);
+    groomingHeadshotUrl = signed?.signedUrl ?? null;
   }
 
   let newPath: string;
@@ -145,7 +149,7 @@ export async function POST(
       submission.photo_fullbody_url,
       reportData.classification,
       imageModel,
-      hairstyleHeadshotUrl,
+      groomingHeadshotUrl,
       `outfit_${outfitNumber}_${Date.now()}.jpg`,
     );
   } catch (err) {
@@ -159,6 +163,7 @@ export async function POST(
 
   const nextImagePaths: ManReportImagePaths = {
     hairstyleCards: [...(imagePaths.hairstyleCards ?? [])],
+    beardCards: [...(imagePaths.beardCards ?? [])],
     eyewearCards: [...(imagePaths.eyewearCards ?? [])],
     outfitCards: nextOutfitCards,
     ...(imagePaths.baseModel ? { baseModel: imagePaths.baseModel } : {}),

@@ -31,6 +31,7 @@ export async function GET(
 
   const imageUrls = data.image_urls as {
     hairstyleCards?: (string | null)[];
+    beardCards?: (string | null)[];
     eyewearCards?: (string | null)[];
     outfitCards?: (string | null)[];
   } | null;
@@ -45,6 +46,7 @@ export async function GET(
     updatedAt:     data.updated_at,
     imageCounts: {
       hairstyleDone: (imageUrls?.hairstyleCards ?? []).filter(Boolean).length,
+      beardDone:     (imageUrls?.beardCards     ?? []).filter(Boolean).length,
       eyewearDone:   (imageUrls?.eyewearCards   ?? []).filter(Boolean).length,
       outfitDone:    (imageUrls?.outfitCards    ?? []).filter(Boolean).length,
     },

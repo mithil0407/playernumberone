@@ -409,6 +409,7 @@ function FaceSection({
   cls,
   text,
   hairstyleUrls,
+  beardUrls,
   eyewearUrls,
   adminMode,
   onRegenerateFaceImage,
@@ -417,6 +418,7 @@ function FaceSection({
   cls: ClassificationResult;
   text: string;
   hairstyleUrls?: (string | null)[];
+  beardUrls?: (string | null)[];
   eyewearUrls?: (string | null)[];
   adminMode?: boolean;
   onRegenerateFaceImage?: (
@@ -428,8 +430,15 @@ function FaceSection({
   const { face } = cls;
   const [retryingSlots, setRetryingSlots] = useState<Set<string>>(new Set());
   const [hairstyleOverrides, setHairstyleOverrides] = useState<Record<number, string>>({});
+  const [beardOverrides, setBeardOverrides] = useState<Record<number, string>>({});
   const [eyewearOverrides, setEyewearOverrides] = useState<Record<number, string>>({});
+  const usesBeardCards = face.grooming_focus === 'beard';
+  const groomingUrls = usesBeardCards ? beardUrls : hairstyleUrls;
+  const groomingKind: FaceImageKind = usesBeardCards ? 'beard' : 'hairstyle';
+  const groomingTitle = usesBeardCards ? 'Beard style options' : 'Hairstyle options';
   const hasHairstyleImages = hairstyleUrls && hairstyleUrls.some(Boolean);
+  const hasBeardImages = beardUrls && beardUrls.some(Boolean);
+  const hasGroomingImages = usesBeardCards ? hasBeardImages : hasHairstyleImages;
   const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
 
   const handleRetryFaceImage = async (kind: FaceImageKind, optionIndex: number) => {
@@ -442,6 +451,8 @@ function FaceSection({
         if (!result) return;
         if (kind === 'hairstyle') {
           setHairstyleOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+        } else if (kind === 'beard') {
+          setBeardOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
         } else {
           setEyewearOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
         }
@@ -460,6 +471,8 @@ function FaceSection({
   const renderFaceImageSlot = (kind: FaceImageKind, url: string | null | undefined, optionIndex: number) => {
     const effectiveUrl = kind === 'hairstyle'
       ? hairstyleOverrides[optionIndex] ?? url
+      : kind === 'beard'
+        ? beardOverrides[optionIndex] ?? url
       : eyewearOverrides[optionIndex] ?? url;
     const canRetry = adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage);
     const slotKey = `${kind}-${optionIndex}`;
@@ -538,15 +551,15 @@ function FaceSection({
           </span>
         </div>
 
-        {/* Hairstyle images — two headshots side by side */}
-        {(hasHairstyleImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
+        {/* Grooming images — two headshots side by side */}
+        {(hasGroomingImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
           <div className="mb-10">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
-              Hairstyle options
+              {groomingTitle}
             </p>
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               {[1, 2].map(optionIndex =>
-                renderFaceImageSlot('hairstyle', hairstyleUrls?.[optionIndex - 1] ?? null, optionIndex),
+                renderFaceImageSlot(groomingKind, groomingUrls?.[optionIndex - 1] ?? null, optionIndex),
               )}
             </div>
           </div>
@@ -2156,6 +2169,7 @@ function ManReport({
           cls={cls}
           text={sections.s1_face}
           hairstyleUrls={imageUrls?.hairstyleCards ?? undefined}
+          beardUrls={imageUrls?.beardCards ?? undefined}
           eyewearUrls={imageUrls?.eyewearCards ?? undefined}
           adminMode={isAdminViewer}
           onRegenerateFaceImage={onRegenerateFaceImage}

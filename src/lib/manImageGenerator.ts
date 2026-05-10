@@ -41,6 +41,7 @@ const SUPPORTED_GEMINI_INPUT_MIME_TYPES = new Set([
 /** Shape stored in image_urls JSONB column — storage paths, not URLs */
 export interface ManReportImagePaths {
   hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
+  beardCards:     (string | null)[]; // 2 headshot beard/grooming variants for bald clients
   eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
   outfitCards:    (string | null)[];
   baseModel?:     string;            // legacy — kept for backward compat with old reports
@@ -49,15 +50,17 @@ export interface ManReportImagePaths {
 /** Shape returned to clients — signed URLs ready for <img> tags */
 export interface ResolvedImageUrls {
   hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
+  beardCards:     (string | null)[]; // 2 headshot beard/grooming variants for bald clients
   eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
   outfitCards:    (string | null)[];
   baseModel?:     string | null;     // legacy
 }
 
-export type FaceImageKind = 'hairstyle' | 'eyewear';
+export type FaceImageKind = 'hairstyle' | 'beard' | 'eyewear';
 
 interface PartialImagePathPatch {
   hairstyleCards?: (string | null | undefined)[];
+  beardCards?: (string | null | undefined)[];
   eyewearCards?: (string | null | undefined)[];
   outfitCards?: (string | null | undefined)[];
   baseModel?: string | null;
@@ -88,6 +91,7 @@ function mergeImagePathArrays(
 function normaliseImagePaths(paths: ManReportImagePaths | null | undefined): ManReportImagePaths {
   return {
     hairstyleCards: (paths?.hairstyleCards ?? []).map(normaliseImagePath),
+    beardCards:     (paths?.beardCards     ?? []).map(normaliseImagePath),
     eyewearCards:   (paths?.eyewearCards   ?? []).map(normaliseImagePath),
     outfitCards:    (paths?.outfitCards    ?? []).map(normaliseImagePath),
     ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
@@ -102,6 +106,7 @@ export function mergeManReportImagePaths(
 
   return {
     hairstyleCards: mergeImagePathArrays(base.hairstyleCards, incoming?.hairstyleCards),
+    beardCards:     mergeImagePathArrays(base.beardCards, incoming?.beardCards),
     eyewearCards:   mergeImagePathArrays(base.eyewearCards, incoming?.eyewearCards),
     outfitCards:    mergeImagePathArrays(base.outfitCards, incoming?.outfitCards),
     ...(normaliseImagePath(incoming?.baseModel) ?? base.baseModel
@@ -202,6 +207,10 @@ function parseOutfitsFromSection(s4Text: string): ParsedOutfit[] {
 // Prompt builders
 // ─────────────────────────────────────────────────────────────────────────────
 
+export function isBeardFocusedClassification(classification: Pick<ClassificationResult, 'face'> | null | undefined): boolean {
+  return classification?.face?.grooming_focus === 'beard';
+}
+
 function buildEyewearPrompt(eyewearShape: string, faceShape: string): string {
   return `You are editing a headshot photo. Your only task is to add a pair of glasses to the subject's face.
 
@@ -235,6 +244,23 @@ Do not alter the background in any way. Do not change the lighting. Do not refra
 Portrait format, tightly framed on the head and upper shoulders.`;
 }
 
+function buildBeardPrompt(beardStyle: string, faceShape: string): string {
+  return `You are editing a headshot photo. Your only task is to adjust the subject's facial hair grooming.
+
+PRESERVE EVERYTHING EXCEPT FACIAL HAIR:
+- Background: keep it exactly as it appears in the uploaded photo — same colour, same setting, same objects
+- Head and scalp: preserve the subject's bald, shaved, or closely cropped scalp exactly; do not add scalp hair
+- Face: same skin tone, same features, same expression, same lighting on face
+- Clothing: unchanged
+- Framing and composition: unchanged
+
+ONLY CHANGE: Apply this facial hair style — ${beardStyle} — shaped naturally and intentionally for a ${faceShape} face shape. The beard, stubble, moustache, cheek line, and neckline should look realistic, premium, and well-groomed.
+
+Do not add hair to the scalp. Do not alter the background in any way. Do not change the lighting. Do not reframe or crop differently.
+
+Portrait format, tightly framed on the head and upper shoulders.`;
+}
+
 // Softer prompt used as a safety-block fallback. Drops "preserve real face features"
 // language that frequently triggers Gemini's image-safety filter on portraits.
 function buildHairstylePromptSoft(hairstyle: string, faceShape: string): string {
@@ -243,6 +269,16 @@ function buildHairstylePromptSoft(hairstyle: string, faceShape: string): string 
 The hair is styled in this exact style: ${hairstyle}. The hair should look polished, well-groomed, and realistic, with a natural texture.
 
 The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a styling reference, not as identity preservation.
+
+Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
+}
+
+function buildBeardPromptSoft(beardStyle: string, faceShape: string): string {
+  return `Editorial men's grooming reference photo. A bald or closely shaved man with a ${faceShape} face shape, photographed in soft studio light, head and shoulders only.
+
+The scalp remains bald or closely shaved with no added scalp hair. The facial hair is styled in this exact style: ${beardStyle}. The grooming should look polished, realistic, and natural.
+
+The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a grooming reference, not as identity preservation.
 
 Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
 }
@@ -268,13 +304,21 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
 
   const fitNote = outfit.fitNote ? `\nFit context: ${outfit.fitNote}` : '';
 
+  const groomingReferenceInstruction = isBeardFocusedClassification(c)
+    ? 'Extract the subject\'s face, bald or closely shaved scalp, and beard grooming from the HEADSHOT (second image) — use this as the definitive face and grooming reference. Do not add scalp hair.'
+    : 'Extract the subject\'s face and hairstyle from the HEADSHOT (second image) — use this as the definitive face and hair reference.';
+
+  const groomingApplicationInstruction = isBeardFocusedClassification(c)
+    ? 'Apply polished grooming — clean, fresh, well-kept. Carry the bald or closely shaved scalp and beard grooming from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.'
+    : 'Apply polished grooming — clean, fresh, well-kept. Carry the hairstyle from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.';
+
   return `Professional editorial fashion catalogue photography.
 
-Two reference photos are provided: the first is a full-body photo, the second is a styled headshot showing the subject's recommended hairstyle.
+Two reference photos are provided: the first is a full-body photo, the second is a styled headshot showing the subject's recommended grooming.
 
 STERNLY IGNORE and COMPLETELY DISCARD the original background from both reference photos.
 
-Extract the subject's face and hairstyle from the HEADSHOT (second image) — use this as the definitive face and hair reference. Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
+${groomingReferenceInstruction} Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
 
 CRITICAL CLOTHING INSTRUCTION:
 - Remove and discard the original clothing from BOTH reference photos
@@ -283,7 +327,7 @@ CRITICAL CLOTHING INSTRUCTION:
 
 Place the subject against our brand studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient.
 
-Apply polished grooming — clean, fresh, well-kept. Carry the hairstyle from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.
+${groomingApplicationInstruction}
 
 Dress the subject in this specific outfit:
 ${garmentLines}${fitNote}
@@ -624,7 +668,11 @@ export async function regenerateMissingFaceSlots(
     { label: 'full-body', url: submission.photo_fullbody_url },
   ]);
   const { face } = classification;
-  const options = kind === 'hairstyle' ? face.hairstyle_recommendations : face.eyewear_shapes;
+  const options = kind === 'hairstyle'
+    ? face.hairstyle_recommendations
+    : kind === 'beard'
+      ? face.beard_style_recommendations ?? []
+      : face.eyewear_shapes;
 
   const tasks = slots.map((slot) => {
     const optionText = options[slot - 1];
@@ -635,10 +683,14 @@ export async function regenerateMissingFaceSlots(
 
     const primaryPrompt = kind === 'hairstyle'
       ? buildHairstylePrompt(optionText, face.face_shape)
-      : buildEyewearPrompt(optionText, face.face_shape);
+      : kind === 'beard'
+        ? buildBeardPrompt(optionText, face.face_shape)
+        : buildEyewearPrompt(optionText, face.face_shape);
     const softPrompt = kind === 'hairstyle'
       ? buildHairstylePromptSoft(optionText, face.face_shape)
-      : buildEyewearPromptSoft(optionText, face.face_shape);
+      : kind === 'beard'
+        ? buildBeardPromptSoft(optionText, face.face_shape)
+        : buildEyewearPromptSoft(optionText, face.face_shape);
 
     console.log(`[regenerateMissingFaceSlots] Starting ${kind} ${slot}: "${optionText}" (model: ${imageModel})`);
 
@@ -652,7 +704,7 @@ export async function regenerateMissingFaceSlots(
         void supabaseAdmin
           .from('man_reports')
           .update({
-            error_message: `${kind === 'hairstyle' ? 'Hairstyle' : 'Eyewear'} ${slot} failed: ${errMsg.slice(0, 400)}`,
+            error_message: `${kind === 'hairstyle' ? 'Hairstyle' : kind === 'beard' ? 'Beard' : 'Eyewear'} ${slot} failed: ${errMsg.slice(0, 400)}`,
             updated_at: new Date().toISOString(),
           })
           .eq('id', reportId)
@@ -693,7 +745,9 @@ export async function regenerateSingleFaceImage(
   const { face } = classification;
   const selectedOption = kind === 'hairstyle'
     ? face.hairstyle_recommendations[optionIndex - 1]
-    : face.eyewear_shapes[optionIndex - 1];
+    : kind === 'beard'
+      ? face.beard_style_recommendations?.[optionIndex - 1]
+      : face.eyewear_shapes[optionIndex - 1];
 
   if (!selectedOption) {
     throw new Error(`No ${kind} recommendation found for option ${optionIndex}`);
@@ -701,10 +755,14 @@ export async function regenerateSingleFaceImage(
 
   const primaryPrompt = kind === 'hairstyle'
     ? buildHairstylePrompt(selectedOption, face.face_shape)
-    : buildEyewearPrompt(selectedOption, face.face_shape);
+    : kind === 'beard'
+      ? buildBeardPrompt(selectedOption, face.face_shape)
+      : buildEyewearPrompt(selectedOption, face.face_shape);
   const softPrompt = kind === 'hairstyle'
     ? buildHairstylePromptSoft(selectedOption, face.face_shape)
-    : buildEyewearPromptSoft(selectedOption, face.face_shape);
+    : kind === 'beard'
+      ? buildBeardPromptSoft(selectedOption, face.face_shape)
+      : buildEyewearPromptSoft(selectedOption, face.face_shape);
 
   const outputBase64 = await generateFaceSlotWithFallback(data, mimeType, primaryPrompt, softPrompt, imageModel);
 
@@ -787,22 +845,23 @@ export async function generateAllOutfitImages(
       });
   };
 
-  // Fetch base photo and hairstyle reference concurrently — they're independent
-  const fetchHairstyleRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
-    const hairstylePath = hairstylePaths[0];
-    if (!hairstylePath) return undefined;
+  // Fetch base photo and grooming reference concurrently — they're independent.
+  // For beard-focused reports, the caller passes beardCards as this reference.
+  const fetchGroomingRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
+    const groomingPath = hairstylePaths[0];
+    if (!groomingPath) return undefined;
     try {
-      const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(hairstylePath, 300);
+      const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(groomingPath, 300);
       if (signedData?.signedUrl) return fetchAsBase64(signedData.signedUrl);
     } catch {
-      console.warn('[manImageGenerator] Could not fetch hairstyle reference — proceeding without it');
+      console.warn('[manImageGenerator] Could not fetch grooming reference — proceeding without it');
     }
     return undefined;
   };
 
-  const [{ data: baseData, mimeType: baseMime }, hairstyleRef] = await Promise.all([
+  const [{ data: baseData, mimeType: baseMime }, groomingRef] = await Promise.all([
     fetchAsBase64(basePhotoUrl),
-    fetchHairstyleRef(),
+    fetchGroomingRef(),
   ]);
 
   const tasks = toGenerate.map((outfit) => {
@@ -816,7 +875,7 @@ export async function generateAllOutfitImages(
       console.log(`[manImageGenerator] Starting outfit ${outfit.index}/${outfits.length} "${outfit.label}" (model: ${imageModel})`);
       try {
         const outputBase64 = await withRetry(() =>
-          callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, hairstyleRef),
+          callGeminiImageEdit(baseData, baseMime, buildOutfitPrompt(outfit, classification), imageModel, groomingRef),
           3,
           4_000,
         );
@@ -900,10 +959,12 @@ export async function resolveManReportImageUrls(
   const hairstylePaths: (string | null)[] = paths.hairstyleCards !== undefined
     ? paths.hairstyleCards
     : paths.baseModel ? [paths.baseModel] : [];
+  const beardPaths: (string | null)[] = paths.beardCards ?? [];
 
   // Collect every non-null path in a single flat list for one batch signing call
   const allPaths = [
     ...hairstylePaths,
+    ...beardPaths,
     ...(paths.eyewearCards ?? []),
     ...(paths.outfitCards  ?? []),
     paths.baseModel ?? null,
@@ -945,6 +1006,7 @@ export async function resolveManReportImageUrls(
 
   return {
     hairstyleCards: hairstylePaths.map(resolve),
+    beardCards:     beardPaths.map(resolve),
     eyewearCards:   (paths.eyewearCards ?? []).map(resolve),
     outfitCards:    (paths.outfitCards  ?? []).map(resolve),
     baseModel:      resolve(paths.baseModel),

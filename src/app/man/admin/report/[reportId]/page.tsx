@@ -43,6 +43,7 @@ interface ReportStatusSnapshot {
   updatedAt: string | null;
   imageCounts: {
     hairstyleDone: number;
+    beardDone: number;
     eyewearDone: number;
     outfitDone: number;
   };
@@ -180,6 +181,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       latestStatusUpdatedAtRef.current = data.report.updated_at ?? null;
       latestImageCountSigRef.current = JSON.stringify({
         hairstyleDone: (data.report.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
+        beardDone:     (data.report.image_urls?.beardCards     ?? []).filter(Boolean).length,
         eyewearDone:   (data.report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
         outfitDone:    (data.report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
       });
@@ -393,6 +395,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       if (!prev?.report_data) return prev;
       const existingImageUrls = prev.image_urls ?? {
         hairstyleCards: [],
+        beardCards: [],
         eyewearCards: [],
         outfitCards: [],
         baseModel: null,
@@ -478,6 +481,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       if (!prev?.report_data) return prev;
       const existingImageUrls = prev.image_urls ?? {
         hairstyleCards: [],
+        beardCards: [],
         eyewearCards: [],
         outfitCards: [],
         baseModel: null,
@@ -530,6 +534,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
       const existingImageUrls = prev.image_urls ?? {
         hairstyleCards: [],
+        beardCards: [],
         eyewearCards: [],
         outfitCards: [],
         baseModel: null,
@@ -537,6 +542,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       const nextImageUrls: ResolvedImageUrls = {
         ...existingImageUrls,
         hairstyleCards: [...(existingImageUrls.hairstyleCards ?? [])],
+        beardCards: [...(existingImageUrls.beardCards ?? [])],
         eyewearCards: [...(existingImageUrls.eyewearCards ?? [])],
         outfitCards: [...(existingImageUrls.outfitCards ?? [])],
         baseModel: existingImageUrls.baseModel ?? null,
@@ -544,6 +550,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
       if (responseKind === 'hairstyle') {
         nextImageUrls.hairstyleCards[responseOptionIndex - 1] = imageUrl;
+      } else if (responseKind === 'beard') {
+        nextImageUrls.beardCards[responseOptionIndex - 1] = imageUrl;
       } else {
         nextImageUrls.eyewearCards[responseOptionIndex - 1] = imageUrl;
       }
@@ -756,15 +764,19 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
   const expectedOutfitCount = report.report_data?.classification?.outfit_split?.total ?? 16;
+  const usesBeardCards = report.report_data?.classification?.face?.grooming_focus === 'beard';
   const imageCounts = {
     hairstyleDone: (report.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
+    beardDone:     (report.image_urls?.beardCards     ?? []).filter(Boolean).length,
     eyewearDone:   (report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
     outfitDone:    (report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
   };
-  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.eyewearDone + imageCounts.outfitDone > 0 ||
+  const activeGroomingDone = usesBeardCards ? imageCounts.beardDone : imageCounts.hairstyleDone;
+  const activeGroomingLabel = usesBeardCards ? 'beard' : 'hairstyle';
+  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone > 0 ||
     report.error_message?.startsWith('Image generation');
   const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
-  const imageProgressText = `${imageCounts.hairstyleDone}/2 hairstyle · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits`;
+  const imageProgressText = `${activeGroomingDone}/2 ${activeGroomingLabel} · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits`;
   const section4Qa = report.report_data?.qa?.section4 ?? null;
   const section4Issues = section4Qa?.issues ?? [];
   const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
@@ -774,7 +786,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   // True only when hairstyle, eyewear AND every expected outfit image are present
   const hasAllImages = (
-    imageCounts.hairstyleDone >= 2 &&
+    activeGroomingDone >= 2 &&
     imageCounts.eyewearDone >= 2 &&
     imageCounts.outfitDone >= expectedOutfitCount
   );

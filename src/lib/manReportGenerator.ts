@@ -6,6 +6,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
+import sharp from 'sharp';
 import type { ManIntakeSubmission } from './supabaseMan';
 import {
   validateManReportSection4,
@@ -18,6 +19,28 @@ const OUTFIT_SKILL = readFileSync(
 );
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+
+export type HairPresence = 'full_hair' | 'thinning_or_receding' | 'closely_shaved' | 'bald' | 'unclear';
+export type FacialHairPresence = 'clean_shaven' | 'stubble' | 'short_beard' | 'full_beard' | 'moustache' | 'unclear';
+export type GroomingFocus = 'hairstyle' | 'beard';
+
+export interface GroomingImageProfile {
+  hair_presence: HairPresence;
+  facial_hair_presence: FacialHairPresence;
+  confidence: number;
+  evidence: string;
+}
+
+const CONFIDENT_GROOMING_THRESHOLD = 0.68;
+const GROOMING_IMAGE_MAX_BYTES = 18 * 1024 * 1024;
+const GROOMING_IMAGE_MAX_DIMENSION = 1600;
+
+const DEFAULT_GROOMING_PROFILE: GroomingImageProfile = {
+  hair_presence: 'unclear',
+  facial_hair_presence: 'unclear',
+  confidence: 0,
+  evidence: 'No confident image-derived grooming profile available.',
+};
 
 // ─────────────────────────────────────────────────────────────
 // PROMPT 1 — CLASSIFICATION ENGINE
@@ -37,6 +60,10 @@ Rules:
 - Style brief is derived from Free Note (primary), then Style Tribes, then Style Goal.
   If Free Note contains substantive content, it governs aesthetic direction.
   Tribe aesthetics and Style Goal inform secondary parameters only.
+- Image-derived grooming profile is source-of-truth when confidence is 0.68 or higher.
+- If the image-derived hair_presence is "bald" or "closely_shaved", set grooming_focus to "beard", never recommend adding scalp hair, and never recommend hairstyles requiring volume, density, fringe, quiff, crops with visible fullness, or fuller hair.
+- If hair_presence is "thinning_or_receding", keep grooming_focus as "hairstyle" but recommend only realistic low-density grooming: buzz cut, close crop, clean shave transition, or beard-balancing options. Do not recommend full-volume hair.
+- If grooming profile confidence is below 0.68 or hair_presence is "unclear", use the existing hairstyle flow.
 
 HEX CODE ACCURACY — CRITICAL:
 Every hex code you produce must be visually accurate. The rendered colour swatch MUST match what a human expects when reading the colour name.
@@ -95,6 +122,10 @@ Anti-Pref: {{anti_pref}}
 Free Note: {{free_note}}
 --- END FORM DATA ---
 
+--- IMAGE-DERIVED GROOMING PROFILE ---
+{{grooming_profile}}
+--- END GROOMING PROFILE ---
+
 Return ONLY the following JSON object, fully populated:
 
 {
@@ -116,7 +147,13 @@ Return ONLY the following JSON object, fully populated:
   "face": {
     "face_shape": "",
     "feature_type": "",
+    "hair_presence": "",
+    "facial_hair_presence": "",
+    "grooming_focus": "",
+    "grooming_image_confidence": 0,
+    "grooming_image_evidence": "",
     "hairstyle_recommendations": ["", ""],
+    "beard_style_recommendations": ["", ""],
     "facial_hair_recommendations": "",
     "eyewear_shapes": ["", ""]
   },
@@ -226,7 +263,7 @@ State the face shape and feature type. Explain what this means structurally — 
 One paragraph (2-3 sentences) on facial hair. Be specific — not "keep it neat."
 
 ### Grooming & Collar Direction
-3 bullets maximum. Cover hairstyle direction, neckline/collar shape, and watch/accessory metal direction. Tie every recommendation to face geometry, feature type, undertone, or register.
+3 bullets maximum. If grooming_focus is "beard", rename this subheading to exactly "### Beard Style & Collar Direction" and cover beard style direction instead of hairstyle direction; otherwise keep this subheading and cover hairstyle direction. Also cover neckline/collar shape and watch/accessory metal direction. Tie every recommendation to face geometry, feature type, undertone, or register. For bald or closely shaved clients, do not mention growing scalp hair or adding hair volume.
 
 ### Eyewear Guide
 List 2-3 eyewear frame shapes that suit this face. One sentence each on why.
@@ -593,7 +630,13 @@ export interface ClassificationResult {
   face: {
     face_shape: string;
     feature_type: string;
+    hair_presence?: HairPresence;
+    facial_hair_presence?: FacialHairPresence;
+    grooming_focus?: GroomingFocus;
+    grooming_image_confidence?: number;
+    grooming_image_evidence?: string;
     hairstyle_recommendations: string[];
+    beard_style_recommendations?: string[];
     facial_hair_recommendations: string;
     eyewear_shapes: string[];
   };
@@ -755,7 +798,11 @@ function fillTemplate(template: string, vars: Record<string, string>): string {
   );
 }
 
-function buildTemplateVars(sub: ManIntakeSubmission): Record<string, string> {
+function buildTemplateVars(
+  sub: ManIntakeSubmission,
+  groomingProfile: GroomingImageProfile = DEFAULT_GROOMING_PROFILE,
+): Record<string, string> {
+  const confidentProfile = groomingProfile.confidence >= CONFIDENT_GROOMING_THRESHOLD;
   return {
     email:              sub.customer_email          ?? 'Not provided',
     location:           mapField('location_tier',      sub.location_tier),
@@ -787,7 +834,84 @@ function buildTemplateVars(sub: ManIntakeSubmission): Record<string, string> {
     style_blocker:      mapField('style_blocker',        sub.style_blocker),
     anti_pref:          mapField('style_anti_pref',      sub.style_anti_pref),
     free_note:          sub.free_text_note              ?? 'Not provided',
+    grooming_profile:   confidentProfile
+      ? JSON.stringify(groomingProfile, null, 2)
+      : JSON.stringify({
+          ...DEFAULT_GROOMING_PROFILE,
+          evidence: groomingProfile.evidence || DEFAULT_GROOMING_PROFILE.evidence,
+        }, null, 2),
   };
+}
+
+function isConfidentBaldOrShaved(profile: GroomingImageProfile | null | undefined): boolean {
+  return !!profile &&
+    profile.confidence >= CONFIDENT_GROOMING_THRESHOLD &&
+    ['bald', 'closely_shaved'].includes(profile.hair_presence);
+}
+
+function isConfidentThinning(profile: GroomingImageProfile | null | undefined): boolean {
+  return !!profile &&
+    profile.confidence >= CONFIDENT_GROOMING_THRESHOLD &&
+    profile.hair_presence === 'thinning_or_receding';
+}
+
+function fallbackBeardStyles(facialHairPresence: FacialHairPresence | undefined): string[] {
+  if (facialHairPresence === 'moustache') {
+    return ['Short moustache with light designer stubble', 'Defined goatee with clean cheek lines'];
+  }
+  if (facialHairPresence === 'full_beard') {
+    return ['Short boxed beard with a defined neckline', 'Tapered full beard with clean cheek lines'];
+  }
+  if (facialHairPresence === 'short_beard') {
+    return ['Short boxed beard with sharp cheek lines', 'Medium stubble beard with a tapered neckline'];
+  }
+  return ['Defined designer stubble', 'Short boxed beard with a clean neckline'];
+}
+
+function normaliseClassification(
+  result: ClassificationResult,
+  groomingProfile: GroomingImageProfile = DEFAULT_GROOMING_PROFILE,
+): ClassificationResult {
+  const face = result.face;
+  const confidentBaldOrShaved = isConfidentBaldOrShaved(groomingProfile);
+  const confidentThinning = isConfidentThinning(groomingProfile);
+
+  const next: ClassificationResult = {
+    ...result,
+    face: {
+      ...face,
+      hair_presence: groomingProfile.confidence >= CONFIDENT_GROOMING_THRESHOLD
+        ? groomingProfile.hair_presence
+        : face.hair_presence ?? 'unclear',
+      facial_hair_presence: groomingProfile.confidence >= CONFIDENT_GROOMING_THRESHOLD
+        ? groomingProfile.facial_hair_presence
+        : face.facial_hair_presence ?? 'unclear',
+      grooming_focus: confidentBaldOrShaved ? 'beard' : 'hairstyle',
+      grooming_image_confidence: groomingProfile.confidence,
+      grooming_image_evidence: groomingProfile.evidence,
+      hairstyle_recommendations: Array.isArray(face.hairstyle_recommendations)
+        ? face.hairstyle_recommendations.slice(0, 2)
+        : [],
+      beard_style_recommendations: Array.isArray(face.beard_style_recommendations)
+        ? face.beard_style_recommendations.slice(0, 2)
+        : [],
+      facial_hair_recommendations: face.facial_hair_recommendations || 'Keep facial hair intentionally shaped to support the face geometry.',
+      eyewear_shapes: Array.isArray(face.eyewear_shapes) ? face.eyewear_shapes.slice(0, 2) : [],
+    },
+  };
+
+  if (confidentBaldOrShaved) {
+    next.face.grooming_focus = 'beard';
+    if ((next.face.beard_style_recommendations ?? []).length < 2) {
+      next.face.beard_style_recommendations = fallbackBeardStyles(next.face.facial_hair_presence);
+    }
+  }
+
+  if (confidentThinning && next.face.hairstyle_recommendations.length < 2) {
+    next.face.hairstyle_recommendations = ['Low buzz cut with a clean hairline', 'Short close crop with minimal top volume'];
+  }
+
+  return next;
 }
 
 function parseReportSections(text: string): ReportSections {
@@ -865,17 +989,133 @@ async function callGeminiText(systemPrompt: string, userPrompt: string, maxOutpu
   });
 }
 
+function cleanMimeType(contentType: string | null): string {
+  const mimeType = contentType?.split(';')[0]?.trim().toLowerCase();
+  return mimeType?.startsWith('image/') ? mimeType : 'image/jpeg';
+}
+
+function normaliseHairPresence(value: unknown): HairPresence {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw === 'full_hair') return 'full_hair';
+  if (raw === 'thinning_or_receding') return 'thinning_or_receding';
+  if (raw === 'closely_shaved') return 'closely_shaved';
+  if (raw === 'bald') return 'bald';
+  return 'unclear';
+}
+
+function normaliseFacialHairPresence(value: unknown): FacialHairPresence {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw === 'clean_shaven') return 'clean_shaven';
+  if (raw === 'stubble') return 'stubble';
+  if (raw === 'short_beard') return 'short_beard';
+  if (raw === 'full_beard') return 'full_beard';
+  if (raw === 'moustache') return 'moustache';
+  return 'unclear';
+}
+
+function normaliseGroomingImageProfile(value: unknown): GroomingImageProfile {
+  const raw = (value ?? {}) as Record<string, unknown>;
+  const confidence = Number(raw.confidence);
+  return {
+    hair_presence: normaliseHairPresence(raw.hair_presence),
+    facial_hair_presence: normaliseFacialHairPresence(raw.facial_hair_presence),
+    confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0,
+    evidence: String(raw.evidence ?? '').slice(0, 240) || 'No visual evidence returned.',
+  };
+}
+
+async function fetchImageForGemini(url: string): Promise<{ data: string; mimeType: string }> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Image fetch failed (${res.status})`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (buffer.length === 0) throw new Error('Image fetch returned an empty file');
+  const sourceMimeType = cleanMimeType(res.headers.get('content-type'));
+
+  try {
+    const output = await sharp(buffer, { failOn: 'none' })
+      .rotate()
+      .resize({
+        width: GROOMING_IMAGE_MAX_DIMENSION,
+        height: GROOMING_IMAGE_MAX_DIMENSION,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 86, mozjpeg: true })
+      .toBuffer();
+
+    if (output.length <= GROOMING_IMAGE_MAX_BYTES) {
+      return { data: output.toString('base64'), mimeType: 'image/jpeg' };
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[manReportGenerator] Could not normalise grooming source image: ${message.slice(0, 200)}`);
+  }
+
+  if (buffer.length > GROOMING_IMAGE_MAX_BYTES) {
+    throw new Error(`Grooming source image is too large for inline analysis (${buffer.length} bytes)`);
+  }
+
+  return { data: buffer.toString('base64'), mimeType: sourceMimeType };
+}
+
+export async function runGroomingImageClassification(
+  submission: ManIntakeSubmission,
+): Promise<GroomingImageProfile> {
+  const imageUrl = submission.photo_headshot_url ?? submission.photo_fullbody_url;
+  if (!imageUrl) return DEFAULT_GROOMING_PROFILE;
+
+  try {
+    const image = await fetchImageForGemini(imageUrl);
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{
+        parts: [
+          { inlineData: { mimeType: image.mimeType, data: image.data } },
+          {
+            text: `Inspect only the visible grooming state of the man in this image.
+Return ONLY valid JSON with this exact shape:
+{
+  "hair_presence": "full_hair | thinning_or_receding | closely_shaved | bald | unclear",
+  "facial_hair_presence": "clean_shaven | stubble | short_beard | full_beard | moustache | unclear",
+  "confidence": 0.0,
+  "evidence": ""
+}
+
+Definitions:
+- "bald": no usable scalp hair visible across most of the top/crown.
+- "closely_shaved": scalp hair is present but shaved very close with no meaningful styling length.
+- "thinning_or_receding": visible recession or low density but some scalp hair remains styleable.
+- "full_hair": enough scalp hair exists to recommend normal hairstyles.
+
+Do not identify the person. Do not infer age, ethnicity, attractiveness, or sensitive traits. Keep evidence to one short visual sentence.`,
+          },
+        ],
+      }],
+    });
+    const cleaned = cleanJson(response.text ?? '');
+    return normaliseGroomingImageProfile(JSON.parse(cleaned));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`[manReportGenerator] Grooming image classification failed; falling back to hairstyle flow: ${message.slice(0, 300)}`);
+    return {
+      ...DEFAULT_GROOMING_PROFILE,
+      evidence: `Image grooming classification unavailable: ${message.slice(0, 180)}`,
+    };
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // Public API
 // ─────────────────────────────────────────────────────────────
 
 export async function runClassification(
-  submission: ManIntakeSubmission
+  submission: ManIntakeSubmission,
+  groomingProfile: GroomingImageProfile = DEFAULT_GROOMING_PROFILE,
 ): Promise<ClassificationResult> {
-  const vars       = buildTemplateVars(submission);
+  const vars       = buildTemplateVars(submission, groomingProfile);
   const userPrompt = fillTemplate(CLASSIFICATION_USER_TEMPLATE, vars);
   const result     = await callGeminiJSON(CLASSIFICATION_SYSTEM_PROMPT, userPrompt);
-  return result as ClassificationResult;
+  return normaliseClassification(result as ClassificationResult, groomingProfile);
 }
 
 export async function runReportGeneration(

@@ -16,8 +16,10 @@ import {
   regenerateMissingFaceSlots,
   generateAllOutfitImages,
   getStoredManReportImagePaths,
+  isBeardFocusedClassification,
   mergeManReportImagePathsForReport,
   type ManReportImagePaths,
+  type FaceImageKind,
 } from '@/lib/manImageGenerator';
 import { repairSection4OutfitsUntilQaPass, type ClassificationResult, type ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
@@ -34,20 +36,24 @@ export const maxDuration = 300;
 function getImageCounts(paths: ManReportImagePaths | null | undefined) {
   return {
     hairstyleDone: (paths?.hairstyleCards ?? []).filter(Boolean).length,
+    beardDone:     (paths?.beardCards     ?? []).filter(Boolean).length,
     eyewearDone:   (paths?.eyewearCards   ?? []).filter(Boolean).length,
     outfitDone:    (paths?.outfitCards    ?? []).filter(Boolean).length,
   };
 }
 
-function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount: number): string | null {
-  const missingHairstyle = Math.max(0, 2 - paths.hairstyleCards.filter(Boolean).length);
+function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount: number, groomingKind: FaceImageKind): string | null {
+  const groomingPaths = groomingKind === 'beard'
+    ? paths.beardCards ?? []
+    : paths.hairstyleCards ?? [];
+  const missingGrooming = Math.max(0, 2 - groomingPaths.filter(Boolean).length);
   const missingEyewear   = Math.max(0, 2 - paths.eyewearCards.filter(Boolean).length);
   const missingOutfits   = Math.max(0, expectedOutfitCount - paths.outfitCards.filter(Boolean).length);
 
-  if (missingHairstyle === 0 && missingEyewear === 0 && missingOutfits === 0) return null;
+  if (missingGrooming === 0 && missingEyewear === 0 && missingOutfits === 0) return null;
 
   const parts = [
-    missingHairstyle ? `${missingHairstyle} hairstyle` : null,
+    missingGrooming ? `${missingGrooming} ${groomingKind === 'beard' ? 'beard' : 'hairstyle'}` : null,
     missingEyewear ? `${missingEyewear} eyewear` : null,
     missingOutfits ? `${missingOutfits} outfit` : null,
   ].filter(Boolean);
@@ -73,11 +79,14 @@ async function runImagePipeline(
     // (Old logic only regenerated when ALL hairstyle OR ALL eyewear slots were
     //  empty — partial failures from a previous run were never picked up.)
     let hairstylePaths = [...(latestImageUrls?.hairstyleCards ?? [])];
+    let beardPaths     = [...(latestImageUrls?.beardCards     ?? [])];
     let eyewearPaths   = [...(latestImageUrls?.eyewearCards   ?? [])];
+    const groomingKind: FaceImageKind = isBeardFocusedClassification(classification) ? 'beard' : 'hairstyle';
+    const groomingPaths = groomingKind === 'beard' ? beardPaths : hairstylePaths;
 
-    const missingHairstyle = [1, 2].filter(i => !hairstylePaths[i - 1]);
+    const missingGrooming = [1, 2].filter(i => !groomingPaths[i - 1]);
     const missingEyewear   = [1, 2].filter(i => !eyewearPaths[i - 1]);
-    const needsHeadshots   = missingHairstyle.length > 0 || missingEyewear.length > 0;
+    const needsHeadshots   = missingGrooming.length > 0 || missingEyewear.length > 0;
 
     if (needsHeadshots) {
       await supabaseAdmin
@@ -87,19 +96,25 @@ async function runImagePipeline(
 
       await revalidateManReportCache(reportId, shareToken);
 
-      const [newHairstyle, newEyewear] = await Promise.all([
-        regenerateMissingFaceSlots(reportId, submission, classification, 'hairstyle', missingHairstyle, imageModel),
+      const [newGrooming, newEyewear] = await Promise.all([
+        regenerateMissingFaceSlots(reportId, submission, classification, groomingKind, missingGrooming, imageModel),
         regenerateMissingFaceSlots(reportId, submission, classification, 'eyewear',   missingEyewear,   imageModel),
       ]);
 
       // Merge regenerated slots back into the path arrays without clobbering existing successes.
-      missingHairstyle.forEach((slot, idx) => { hairstylePaths[slot - 1] = newHairstyle[idx]; });
+      missingGrooming.forEach((slot, idx) => {
+        if (groomingKind === 'beard') {
+          beardPaths[slot - 1] = newGrooming[idx];
+        } else {
+          hairstylePaths[slot - 1] = newGrooming[idx];
+        }
+      });
       missingEyewear.forEach((slot, idx)   => { eyewearPaths[slot - 1]   = newEyewear[idx]; });
 
       // Persist immediately before starting outfit images
       await mergeManReportImagePathsForReport(
         reportId,
-        { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths },
+        { hairstyleCards: hairstylePaths, beardCards: beardPaths, eyewearCards: eyewearPaths },
         { progress_stage: 'generating_outfit_images' },
       );
     } else {
@@ -119,11 +134,13 @@ async function runImagePipeline(
     const currentBeforeOutfits = await getStoredManReportImagePaths(reportId);
     const existingOutfitPaths = currentBeforeOutfits?.outfitCards ?? [];
     hairstylePaths = currentBeforeOutfits?.hairstyleCards ?? hairstylePaths;
+    beardPaths = currentBeforeOutfits?.beardCards ?? beardPaths;
     eyewearPaths = currentBeforeOutfits?.eyewearCards ?? eyewearPaths;
+    const activeGroomingPaths = groomingKind === 'beard' ? beardPaths : hairstylePaths;
 
     const outfitPaths = await generateAllOutfitImages(
       reportId, fullBodyUrl, classification, sections,
-      hairstylePaths, eyewearPaths, imageModel,
+      activeGroomingPaths, eyewearPaths, imageModel,
       existingOutfitPaths,
       softDeadlineMs,
     );
@@ -131,22 +148,27 @@ async function runImagePipeline(
     // ── Done ──────────────────────────────────────────────────────────────────
     const mergedImagePaths = await mergeManReportImagePathsForReport(
       reportId,
-      { hairstyleCards: hairstylePaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths },
+      { hairstyleCards: hairstylePaths, beardCards: beardPaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths },
       {
         progress_stage: null,
         error_message: getMissingImageSummary(
           {
             hairstyleCards: hairstylePaths,
+            beardCards: beardPaths,
             eyewearCards: eyewearPaths,
             outfitCards: outfitPaths,
           },
           classification.outfit_split?.total ?? outfitPaths.length,
+          groomingKind,
         ),
       },
     );
 
     const doneOutfits = mergedImagePaths.outfitCards.filter(Boolean).length;
-    console.log(`[generate-images] Done for ${reportId} — ${mergedImagePaths.hairstyleCards.filter(Boolean).length}/2 hairstyles, ${mergedImagePaths.eyewearCards.filter(Boolean).length}/2 eyewear, ${doneOutfits}/${mergedImagePaths.outfitCards.length} outfits`);
+    const doneGrooming = groomingKind === 'beard'
+      ? mergedImagePaths.beardCards.filter(Boolean).length
+      : mergedImagePaths.hairstyleCards.filter(Boolean).length;
+    console.log(`[generate-images] Done for ${reportId} — ${doneGrooming}/2 ${groomingKind === 'beard' ? 'beard' : 'hairstyle'}, ${mergedImagePaths.eyewearCards.filter(Boolean).length}/2 eyewear, ${doneOutfits}/${mergedImagePaths.outfitCards.length} outfits`);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[generate-images] Pipeline failed for ${reportId}:`, message);

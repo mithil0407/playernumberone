@@ -4,6 +4,7 @@ import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAu
 import { cookies } from 'next/headers';
 import {
   regenerateSingleOutfitImage,
+  isBeardFocusedClassification,
   mergeManReportImagePathsForReport,
   resolveManReportImageUrls,
   type ManReportImagePaths,
@@ -35,6 +36,7 @@ function clearOutfitImageSlot(
 
   return {
     hairstyleCards: [...(paths?.hairstyleCards ?? [])],
+    beardCards: [...(paths?.beardCards ?? [])],
     eyewearCards: [...(paths?.eyewearCards ?? [])],
     outfitCards,
     ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
@@ -150,14 +152,16 @@ export async function POST(
     });
   }
 
-  // Resolve hairstyle headshot signed URL for face/hair reference (best effort)
-  let hairstyleHeadshotUrl: string | null = null;
-  const hairstylePath = imagePaths?.hairstyleCards?.[0];
-  if (hairstylePath) {
+  // Resolve grooming headshot signed URL for face/hair or face/beard reference (best effort)
+  let groomingHeadshotUrl: string | null = null;
+  const groomingPath = isBeardFocusedClassification(classification)
+    ? imagePaths?.beardCards?.[0]
+    : imagePaths?.hairstyleCards?.[0];
+  if (groomingPath) {
     const { data: signed } = await supabaseAdmin.storage
       .from('man-report-images')
-      .createSignedUrl(hairstylePath, 300);
-    hairstyleHeadshotUrl = signed?.signedUrl ?? null;
+      .createSignedUrl(groomingPath, 300);
+    groomingHeadshotUrl = signed?.signedUrl ?? null;
   }
 
   let newPath: string;
@@ -169,7 +173,7 @@ export async function POST(
       submission.photo_fullbody_url,
       classification,
       imageModel ?? 'gemini-3.1-flash-image-preview',
-      hairstyleHeadshotUrl,
+      groomingHeadshotUrl,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

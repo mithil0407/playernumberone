@@ -9,7 +9,7 @@ import {
   type FaceImageKind,
 } from '@/lib/manImageGenerator';
 
-const VALID_FACE_IMAGE_KINDS: FaceImageKind[] = ['hairstyle', 'eyewear'];
+const VALID_FACE_IMAGE_KINDS: FaceImageKind[] = ['hairstyle', 'beard', 'eyewear'];
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +30,7 @@ export async function POST(
   };
 
   if (!kind || !VALID_FACE_IMAGE_KINDS.includes(kind) || !optionIndex || ![1, 2].includes(optionIndex)) {
-    return NextResponse.json({ error: 'kind must be hairstyle|eyewear and optionIndex must be 1 or 2' }, { status: 400 });
+    return NextResponse.json({ error: 'kind must be hairstyle|beard|eyewear and optionIndex must be 1 or 2' }, { status: 400 });
   }
 
   const { data: report, error } = await supabaseAdmin
@@ -79,13 +79,17 @@ export async function POST(
       reportId,
       kind === 'hairstyle'
         ? { hairstyleCards: slotPatch }
-        : { eyewearCards: slotPatch },
+        : kind === 'beard'
+          ? { beardCards: slotPatch }
+          : { eyewearCards: slotPatch },
     );
 
     const resolved = await resolveManReportImageUrls(newImagePaths);
     const imageUrl = kind === 'hairstyle'
       ? resolved?.hairstyleCards?.[optionIndex - 1] ?? null
-      : resolved?.eyewearCards?.[optionIndex - 1] ?? null;
+      : kind === 'beard'
+        ? resolved?.beardCards?.[optionIndex - 1] ?? null
+        : resolved?.eyewearCards?.[optionIndex - 1] ?? null;
 
     if (!imageUrl) {
       return NextResponse.json({ error: 'Failed to resolve regenerated image URL' }, { status: 500 });
