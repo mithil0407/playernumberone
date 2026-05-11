@@ -79,6 +79,8 @@ LITERAL COPY RULES:
 - If text and image conflict, follow the admin text first and use the image only for missing visible details.
 - If the admin text already describes garments, preserve the garment types, colours, fabrics, fits, styling details, accessories, and footwear as literally as possible.
 - If an inspiration image is provided, describe only the visible outfit: top, layer, bottom, footwear, accessories, colours, fit, and styling. Do not infer hidden garments.
+- If admin text or the inspiration image includes accessories, output an Accessories line and preserve those accessories literally.
+- Do not drop watches, belts, jewellery, bags, sunglasses, pocket squares, chains, bracelets, rings, or other named accessories.
 - If a detail is not visible or not specified, write "Not visible in reference" or "Not specified by admin" instead of inventing it.
 - Keep the same outfit number and same context.
 - Output the same field structure used by the report so image generation can apply this exact outfit to the person.

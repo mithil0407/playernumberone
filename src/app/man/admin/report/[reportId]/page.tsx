@@ -92,6 +92,21 @@ interface FaceImageRegenerationResult {
   imageUrl: string;
 }
 
+interface FaceStyleSwapDraftResult {
+  candidateStyle: string;
+  currentStyle: string;
+  baseUpdatedAt: string;
+  currentStyleHash: string;
+}
+
+interface FaceStyleSwapApplyResult {
+  kind: FaceImageKind;
+  optionIndex: number;
+  imageUrl: string | null;
+  candidateStyle: string;
+  updatedFace: ReportData['classification']['face'];
+}
+
 const SECTIONS = [
   { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
   { key: 's2', label: 'Body Geometry',       field: 's2_body'     },
@@ -569,6 +584,106 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     };
   }, [reportId, imageModel]);
 
+  const draftFaceStyleSwap = useCallback(async (input: {
+    kind: FaceImageKind;
+    optionIndex: number;
+    reason: string;
+    notes: string;
+    replacementText: string;
+    inspirationImage: File | null;
+  }): Promise<FaceStyleSwapDraftResult | null> => {
+    const fd = new FormData();
+    fd.append('kind', input.kind);
+    fd.append('optionIndex', String(input.optionIndex));
+    fd.append('reason', input.reason);
+    fd.append('notes', input.notes);
+    fd.append('replacementText', input.replacementText);
+    if (input.inspirationImage) fd.append('inspirationImage', input.inspirationImage);
+
+    const res = await fetch(`/api/man-report/${reportId}/face-style-swap/draft`, {
+      method: 'POST',
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not draft replacement style.');
+      return null;
+    }
+    return data as FaceStyleSwapDraftResult;
+  }, [reportId]);
+
+  const applyFaceStyleSwap = useCallback(async (input: {
+    kind: FaceImageKind;
+    optionIndex: number;
+    candidateStyle: string;
+    baseUpdatedAt: string;
+    currentStyleHash: string;
+    reason: string;
+    notes: string;
+  }): Promise<FaceStyleSwapApplyResult | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/face-style-swap/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...input, imageModel }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not apply replacement style.');
+      return null;
+    }
+
+    const kind = data.kind as FaceImageKind;
+    const optionIndex = data.optionIndex as number;
+    const imageUrl = data.imageUrl as string | null;
+    const candidateStyle = data.candidateStyle as string;
+    const updatedFace = data.updatedFace as ReportData['classification']['face'];
+
+    setReport(prev => {
+      if (!prev?.report_data) return prev;
+      const existingImageUrls = prev.image_urls ?? {
+        hairstyleCards: [],
+        beardCards: [],
+        eyewearCards: [],
+        outfitCards: [],
+        baseModel: null,
+      };
+      const nextImageUrls: ResolvedImageUrls = {
+        ...existingImageUrls,
+        hairstyleCards: [...(existingImageUrls.hairstyleCards ?? [])],
+        beardCards: [...(existingImageUrls.beardCards ?? [])],
+        eyewearCards: [...(existingImageUrls.eyewearCards ?? [])],
+        outfitCards: [...(existingImageUrls.outfitCards ?? [])],
+        baseModel: existingImageUrls.baseModel ?? null,
+      };
+
+      if (kind === 'hairstyle') {
+        while (nextImageUrls.hairstyleCards.length < optionIndex) nextImageUrls.hairstyleCards.push(null);
+        nextImageUrls.hairstyleCards[optionIndex - 1] = imageUrl;
+      } else if (kind === 'beard') {
+        while (nextImageUrls.beardCards.length < optionIndex) nextImageUrls.beardCards.push(null);
+        nextImageUrls.beardCards[optionIndex - 1] = imageUrl;
+      } else {
+        while (nextImageUrls.eyewearCards.length < optionIndex) nextImageUrls.eyewearCards.push(null);
+        nextImageUrls.eyewearCards[optionIndex - 1] = imageUrl;
+      }
+
+      return {
+        ...prev,
+        error_message: null,
+        image_urls: nextImageUrls,
+        report_data: {
+          ...prev.report_data,
+          classification: {
+            ...prev.report_data.classification,
+            face: updatedFace,
+          },
+        },
+      };
+    });
+
+    return { kind, optionIndex, imageUrl, candidateStyle, updatedFace };
+  }, [reportId, imageModel]);
+
   // Stable reference — only recomputes when report_data changes (not on approval toggles)
   const reportData = report?.report_data ?? null;
   const safeData   = useMemo(
@@ -843,6 +958,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             motionMode="reduced"
             deferSections
             onRegenerateFaceImage={regenerateFaceImage}
+            onDraftFaceStyleSwap={draftFaceStyleSwap}
+            onApplyFaceStyleSwap={applyFaceStyleSwap}
             onRegenerateOutfit={regenerateOutfit}
             onDraftOutfitSwap={draftOutfitSwap}
             onApplyOutfitSwap={applyOutfitSwap}

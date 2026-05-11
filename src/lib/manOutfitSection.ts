@@ -101,7 +101,7 @@ export function parseManOutfitBlock(block: string): ParsedManOutfit | null {
     bottom: getOutfitField(block, 'Bottom'),
     layer: getOutfitField(block, 'Layer(?:\\/Outerwear)?(?:\\/Layer)?'),
     footwear: getOutfitField(block, 'Footwear'),
-    accessories: getOutfitField(block, 'Accessorys?'),
+    accessories: getOutfitField(block, 'Accessor(?:y|ies)'),
     fitNote: getOutfitField(block, 'Fit note'),
     colourLogic: getOutfitField(block, 'Colour logic'),
     whyItWorks: (() => {

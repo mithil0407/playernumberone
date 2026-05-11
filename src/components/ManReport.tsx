@@ -152,7 +152,7 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       bottom:      getField(block, 'Bottom'),
       layer:       getField(block, 'Layer(?:\\/Outerwear)?(?:\\/Layer)?'),
       footwear:    getField(block, 'Footwear'),
-      accessories: getField(block, 'Accessorys?'),  // handles ACCESSORY and Accessories
+      accessories: getField(block, 'Accessor(?:y|ies)'),  // handles Accessory and Accessories
       fitNote:     getField(block, 'Fit note'),
       colourLogic: getField(block, 'Colour logic'),
       // "Occasion anchor" is the current prompt field; "Why it works" is the legacy field
@@ -405,6 +405,21 @@ interface FaceImageRegenerationResult {
   imageUrl: string;
 }
 
+interface FaceStyleSwapDraftResult {
+  candidateStyle: string;
+  currentStyle: string;
+  baseUpdatedAt: string;
+  currentStyleHash: string;
+}
+
+interface FaceStyleSwapApplyResult {
+  kind: FaceImageKind;
+  optionIndex: number;
+  imageUrl: string | null;
+  candidateStyle: string;
+  updatedFace: ReportData['classification']['face'];
+}
+
 function FaceSection({
   cls,
   text,
@@ -413,6 +428,8 @@ function FaceSection({
   eyewearUrls,
   adminMode,
   onRegenerateFaceImage,
+  onDraftFaceStyleSwap,
+  onApplyFaceStyleSwap,
   onRetryMissingImages,
 }: {
   cls: ClassificationResult;
@@ -425,6 +442,23 @@ function FaceSection({
     kind: FaceImageKind,
     optionIndex: number,
   ) => Promise<FaceImageRegenerationResult | null>;
+  onDraftFaceStyleSwap?: (input: {
+    kind: FaceImageKind;
+    optionIndex: number;
+    reason: string;
+    notes: string;
+    replacementText: string;
+    inspirationImage: File | null;
+  }) => Promise<FaceStyleSwapDraftResult | null>;
+  onApplyFaceStyleSwap?: (input: {
+    kind: FaceImageKind;
+    optionIndex: number;
+    candidateStyle: string;
+    baseUpdatedAt: string;
+    currentStyleHash: string;
+    reason: string;
+    notes: string;
+  }) => Promise<FaceStyleSwapApplyResult | null>;
   onRetryMissingImages?: () => Promise<void>;
 }) {
   const { face } = cls;
@@ -432,6 +466,16 @@ function FaceSection({
   const [hairstyleOverrides, setHairstyleOverrides] = useState<Record<number, string>>({});
   const [beardOverrides, setBeardOverrides] = useState<Record<number, string>>({});
   const [eyewearOverrides, setEyewearOverrides] = useState<Record<number, string>>({});
+  const [styleSwapTarget, setStyleSwapTarget] = useState<{ kind: FaceImageKind; optionIndex: number } | null>(null);
+  const [styleSwapReason, setStyleSwapReason] = useState('');
+  const [styleSwapNotes, setStyleSwapNotes] = useState('');
+  const [styleSwapText, setStyleSwapText] = useState('');
+  const [styleSwapFile, setStyleSwapFile] = useState<File | null>(null);
+  const [styleSwapPreview, setStyleSwapPreview] = useState<string | null>(null);
+  const [styleSwapDraft, setStyleSwapDraft] = useState<FaceStyleSwapDraftResult | null>(null);
+  const [styleSwapError, setStyleSwapError] = useState<string | null>(null);
+  const [draftingStyleSwap, setDraftingStyleSwap] = useState(false);
+  const [applyingStyleSwap, setApplyingStyleSwap] = useState(false);
   const usesBeardCards = face.grooming_focus === 'beard';
   const groomingUrls = usesBeardCards ? beardUrls : hairstyleUrls;
   const groomingKind: FaceImageKind = usesBeardCards ? 'beard' : 'hairstyle';
@@ -440,6 +484,103 @@ function FaceSection({
   const hasBeardImages = beardUrls && beardUrls.some(Boolean);
   const hasGroomingImages = usesBeardCards ? hasBeardImages : hasHairstyleImages;
   const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
+  const canStyleSwap = adminMode && !!onDraftFaceStyleSwap && !!onApplyFaceStyleSwap;
+
+  const getCurrentFaceStyle = (kind: FaceImageKind, optionIndex: number): string => {
+    if (kind === 'hairstyle') return face.hairstyle_recommendations?.[optionIndex - 1] ?? '';
+    if (kind === 'beard') return face.beard_style_recommendations?.[optionIndex - 1] ?? '';
+    return face.eyewear_shapes?.[optionIndex - 1] ?? '';
+  };
+
+  const closeStyleSwap = (force = false) => {
+    if (!force && (draftingStyleSwap || applyingStyleSwap)) return;
+    setStyleSwapTarget(null);
+    setStyleSwapReason('');
+    setStyleSwapNotes('');
+    setStyleSwapText('');
+    setStyleSwapFile(null);
+    if (styleSwapPreview) URL.revokeObjectURL(styleSwapPreview);
+    setStyleSwapPreview(null);
+    setStyleSwapDraft(null);
+    setStyleSwapError(null);
+  };
+
+  const startStyleSwap = (kind: FaceImageKind, optionIndex: number) => {
+    if (!canStyleSwap || draftingStyleSwap || applyingStyleSwap) return;
+    setStyleSwapTarget({ kind, optionIndex });
+    setStyleSwapReason('');
+    setStyleSwapNotes('');
+    setStyleSwapText(getCurrentFaceStyle(kind, optionIndex));
+    setStyleSwapFile(null);
+    if (styleSwapPreview) URL.revokeObjectURL(styleSwapPreview);
+    setStyleSwapPreview(null);
+    setStyleSwapDraft(null);
+    setStyleSwapError(null);
+  };
+
+  const handleStyleSwapImageChange = (file: File | null) => {
+    setStyleSwapFile(file);
+    setStyleSwapDraft(null);
+    setStyleSwapError(null);
+    if (styleSwapPreview) URL.revokeObjectURL(styleSwapPreview);
+    setStyleSwapPreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const handleDraftStyleSwap = async () => {
+    if (!styleSwapTarget || !onDraftFaceStyleSwap) return;
+    setDraftingStyleSwap(true);
+    setStyleSwapDraft(null);
+    setStyleSwapError(null);
+    try {
+      const result = await onDraftFaceStyleSwap({
+        ...styleSwapTarget,
+        reason: styleSwapReason,
+        notes: styleSwapNotes,
+        replacementText: styleSwapText,
+        inspirationImage: styleSwapFile,
+      });
+      if (!result) {
+        setStyleSwapError('Could not draft a replacement style. Please try again.');
+        return;
+      }
+      setStyleSwapDraft(result);
+    } finally {
+      setDraftingStyleSwap(false);
+    }
+  };
+
+  const handleApplyStyleSwap = async () => {
+    if (!styleSwapTarget || !styleSwapDraft || !onApplyFaceStyleSwap) return;
+    setApplyingStyleSwap(true);
+    setStyleSwapError(null);
+    try {
+      const result = await onApplyFaceStyleSwap({
+        ...styleSwapTarget,
+        candidateStyle: styleSwapDraft.candidateStyle,
+        baseUpdatedAt: styleSwapDraft.baseUpdatedAt,
+        currentStyleHash: styleSwapDraft.currentStyleHash,
+        reason: styleSwapReason,
+        notes: styleSwapNotes,
+      });
+      if (!result) {
+        setStyleSwapError('Could not apply the replacement style. Please try again.');
+        return;
+      }
+
+      if (result.imageUrl) {
+        if (result.kind === 'hairstyle') {
+          setHairstyleOverrides(prev => ({ ...prev, [result.optionIndex]: result.imageUrl! }));
+        } else if (result.kind === 'beard') {
+          setBeardOverrides(prev => ({ ...prev, [result.optionIndex]: result.imageUrl! }));
+        } else {
+          setEyewearOverrides(prev => ({ ...prev, [result.optionIndex]: result.imageUrl! }));
+        }
+      }
+      closeStyleSwap(true);
+    } finally {
+      setApplyingStyleSwap(false);
+    }
+  };
 
   const handleRetryFaceImage = async (kind: FaceImageKind, optionIndex: number) => {
     if (!onRetryMissingImages && !onRegenerateFaceImage) return;
@@ -477,6 +618,7 @@ function FaceSection({
     const canRetry = adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage);
     const slotKey = `${kind}-${optionIndex}`;
     const isRetrying = retryingSlots.has(slotKey);
+    const currentStyle = getCurrentFaceStyle(kind, optionIndex);
 
     return (
       <div key={optionIndex} className="flex flex-col gap-3">
@@ -530,12 +672,30 @@ function FaceSection({
             </div>
           )}
         </div>
+        {currentStyle && (
+          <p
+            className="text-center text-[12px] leading-snug px-1"
+            style={{ color: INK_SOFT }}
+          >
+            {currentStyle}
+          </p>
+        )}
         <span
           className="text-center text-[12px] italic"
           style={{ fontFamily: SERIF, color: ACCENT_INK, fontWeight: 400 }}
         >
           Option {optionIndex}
         </span>
+        {canStyleSwap && (
+          <button
+            onClick={() => startStyleSwap(kind, optionIndex)}
+            disabled={draftingStyleSwap || applyingStyleSwap}
+            className="mx-auto px-3 py-1.5 rounded-full text-[11px] font-medium disabled:opacity-40"
+            style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
+          >
+            Edit / Swap
+          </button>
+        )}
       </div>
     );
   };
@@ -599,6 +759,199 @@ function FaceSection({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {styleSwapTarget && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: 'rgba(27,24,21,0.58)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            <motion.div
+              className="w-full max-w-4xl rounded-3xl overflow-hidden flex flex-col"
+              style={{ background: IVORY, maxHeight: '90vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={SPRING}
+            >
+              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
+                    Edit / Swap {styleSwapTarget.kind} option {styleSwapTarget.optionIndex}
+                  </p>
+                  <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                    Replace the recommendation text and regenerate this one image.
+                  </p>
+                </div>
+                <button
+                  onClick={() => closeStyleSwap()}
+                  disabled={draftingStyleSwap || applyingStyleSwap}
+                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
+                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="p-6 flex-1 min-h-0 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="space-y-4">
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Rejection reason</DataLabel>
+                    <input
+                      value={styleSwapReason}
+                      onChange={e => {
+                        setStyleSwapReason(e.target.value);
+                        setStyleSwapDraft(null);
+                      }}
+                      placeholder="Wrong style, too close to original, needs stronger direction..."
+                      className="w-full rounded-xl px-3 py-2 text-[12px] outline-none"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Replacement style text</DataLabel>
+                    <textarea
+                      value={styleSwapText}
+                      onChange={e => {
+                        setStyleSwapText(e.target.value);
+                        setStyleSwapDraft(null);
+                      }}
+                      placeholder="Describe the exact beard, hairstyle, or eyewear frame to apply."
+                      className="w-full min-h-[110px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
+                    />
+                  </div>
+
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Inspiration image</DataLabel>
+                    <label
+                      className="block rounded-2xl overflow-hidden cursor-pointer"
+                      style={{ background: SHELL, border: `1px dashed ${ACCENT}66`, aspectRatio: '4/3' }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => handleStyleSwapImageChange(e.target.files?.[0] ?? null)}
+                      />
+                      {styleSwapPreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={styleSwapPreview} alt="Style inspiration" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="h-full flex items-center justify-center px-5 text-center">
+                          <span className="text-[12px]" style={{ color: INK_SOFT }}>Upload a reference image</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Internal notes</DataLabel>
+                    <textarea
+                      value={styleSwapNotes}
+                      onChange={e => {
+                        setStyleSwapNotes(e.target.value);
+                        setStyleSwapDraft(null);
+                      }}
+                      placeholder="Optional"
+                      className="w-full min-h-[80px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl p-4 min-h-[360px]" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <DataLabel>Replacement preview</DataLabel>
+                    {styleSwapDraft && (
+                      <span className="text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: SAGE }}>
+                        Ready
+                      </span>
+                    )}
+                  </div>
+
+                  {styleSwapError && (
+                    <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-4" style={{ background: '#fff2f2', color: OXBLOOD }}>
+                      <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                      <p className="text-[11px] leading-relaxed">{styleSwapError}</p>
+                    </div>
+                  )}
+
+                  {draftingStyleSwap ? (
+                    <div className="h-full min-h-[260px] flex flex-col items-center justify-center gap-3">
+                      <Loader2 size={22} className="animate-spin" style={{ color: ACCENT }} />
+                      <p className="text-[12px]" style={{ color: INK_SOFT }}>Drafting replacement…</p>
+                    </div>
+                  ) : styleSwapDraft ? (
+                    <div className="space-y-4">
+                      <div>
+                        <DataLabel>Current style</DataLabel>
+                        <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{styleSwapDraft.currentStyle}</p>
+                      </div>
+                      <HairRule />
+                      <div>
+                        <DataLabel>Replacement style</DataLabel>
+                        <p className="text-xl italic leading-snug" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                          {styleSwapDraft.candidateStyle}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-full min-h-[260px] flex items-center justify-center px-6 text-center">
+                      <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>
+                        Draft a replacement first. The report will not change until you apply it.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
+                  Apply commits only after the replacement image is generated successfully.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => closeStyleSwap()}
+                    disabled={draftingStyleSwap || applyingStyleSwap}
+                    className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    onClick={handleDraftStyleSwap}
+                    disabled={draftingStyleSwap || applyingStyleSwap || (!styleSwapReason && !styleSwapNotes && !styleSwapText && !styleSwapFile)}
+                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
+                    whileHover={!draftingStyleSwap && !applyingStyleSwap ? { scale: 1.02 } : undefined}
+                    whileTap={!draftingStyleSwap && !applyingStyleSwap ? { scale: 0.98 } : undefined}
+                    transition={SPRING}
+                  >
+                    {draftingStyleSwap ? <><Loader2 size={13} className="animate-spin" /> Drafting…</> : 'Draft style'}
+                  </motion.button>
+                  <motion.button
+                    onClick={handleApplyStyleSwap}
+                    disabled={applyingStyleSwap || draftingStyleSwap || !styleSwapDraft}
+                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: ACCENT, color: '#fff' }}
+                    whileHover={!applyingStyleSwap ? { scale: 1.02 } : undefined}
+                    whileTap={!applyingStyleSwap ? { scale: 0.98 } : undefined}
+                    transition={SPRING}
+                  >
+                    {applyingStyleSwap ? <><Loader2 size={13} className="animate-spin" /> Applying + generating…</> : 'Apply replacement'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1948,6 +2301,23 @@ interface ManReportProps {
     kind: FaceImageKind,
     optionIndex: number,
   ) => Promise<FaceImageRegenerationResult | null>;
+  onDraftFaceStyleSwap?: (input: {
+    kind: FaceImageKind;
+    optionIndex: number;
+    reason: string;
+    notes: string;
+    replacementText: string;
+    inspirationImage: File | null;
+  }) => Promise<FaceStyleSwapDraftResult | null>;
+  onApplyFaceStyleSwap?: (input: {
+    kind: FaceImageKind;
+    optionIndex: number;
+    candidateStyle: string;
+    baseUpdatedAt: string;
+    currentStyleHash: string;
+    reason: string;
+    notes: string;
+  }) => Promise<FaceStyleSwapApplyResult | null>;
   onRetryMissingImages?: () => Promise<void>;
 }
 
@@ -2103,6 +2473,8 @@ function ManReport({
   onDraftOutfitSwap,
   onApplyOutfitSwap,
   onRegenerateFaceImage,
+  onDraftFaceStyleSwap,
+  onApplyFaceStyleSwap,
   onRetryMissingImages,
 }: ManReportProps) {
   const { classification: cls, sections } = data;
@@ -2173,6 +2545,8 @@ function ManReport({
           eyewearUrls={imageUrls?.eyewearCards ?? undefined}
           adminMode={isAdminViewer}
           onRegenerateFaceImage={onRegenerateFaceImage}
+          onDraftFaceStyleSwap={onDraftFaceStyleSwap}
+          onApplyFaceStyleSwap={onApplyFaceStyleSwap}
           onRetryMissingImages={onRetryMissingImages}
         />
       ),

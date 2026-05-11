@@ -303,6 +303,9 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
   ].filter(Boolean).join('\n');
 
   const fitNote = outfit.fitNote ? `\nFit context: ${outfit.fitNote}` : '';
+  const accessoryInstruction = outfit.accessories
+    ? `\nAccessory rendering is mandatory: the accessories listed in the outfit specification must be visibly included where naturally visible (${outfit.accessories}). Do not omit them as optional styling hints.`
+    : '';
 
   const groomingReferenceInstruction = isBeardFocusedClassification(c)
     ? 'Extract the subject\'s face, bald or closely shaved scalp, and beard grooming from the HEADSHOT (second image) — use this as the definitive face and grooming reference. Do not add scalp hair.'
@@ -331,6 +334,7 @@ ${groomingApplicationInstruction}
 
 Dress the subject in this specific outfit:
 ${garmentLines}${fitNote}
+${accessoryInstruction}
 
 Garment rendering: Clothes should look pressed, tailored, and naturally worn on this body — not floating, not distorted. Colour accuracy is critical — match the described colours precisely. No logos or brand markings visible. Garments must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}. If there is any conflict between the reference photos and the outfit specification, the outfit specification wins.
 
@@ -728,6 +732,8 @@ export async function regenerateSingleFaceImage(
   kind:           FaceImageKind,
   optionIndex:    number, // 1-indexed
   imageModel:     string = MODEL,
+  styleOverride?:  string,
+  storageFilename?: string,
 ): Promise<string> {
   if (![1, 2].includes(optionIndex)) {
     throw new Error(`Invalid ${kind} option index: ${optionIndex}`);
@@ -743,11 +749,11 @@ export async function regenerateSingleFaceImage(
     { label: 'full-body', url: submission.photo_fullbody_url },
   ]);
   const { face } = classification;
-  const selectedOption = kind === 'hairstyle'
+  const selectedOption = styleOverride?.trim() || (kind === 'hairstyle'
     ? face.hairstyle_recommendations[optionIndex - 1]
     : kind === 'beard'
       ? face.beard_style_recommendations?.[optionIndex - 1]
-      : face.eyewear_shapes[optionIndex - 1];
+      : face.eyewear_shapes[optionIndex - 1]);
 
   if (!selectedOption) {
     throw new Error(`No ${kind} recommendation found for option ${optionIndex}`);
@@ -766,7 +772,7 @@ export async function regenerateSingleFaceImage(
 
   const outputBase64 = await generateFaceSlotWithFallback(data, mimeType, primaryPrompt, softPrompt, imageModel);
 
-  return uploadToStorage(reportId, outputBase64, `${kind}_${optionIndex}.jpg`);
+  return uploadToStorage(reportId, outputBase64, storageFilename ?? `${kind}_${optionIndex}.jpg`);
 }
 
 /**
