@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "How much does a personal stylist cost in India?",
-    a: "In-person personal stylists in India charge ₹5,000–25,000+ for a consultation, depending on city and experience level. Shopping accompaniment adds ₹5,000–15,000 per session. Online styling services like Iconik's Style Blueprint start at ₹2,499 for a full body analysis, colour palette, and outfit formula document. The cost differential is significant — the question is whether the in-person format is necessary for what you specifically need.",
+    a: "In-person personal stylists in India charge ₹5,000–25,000+ for a consultation, depending on city and experience level. Shopping accompaniment adds ₹5,000–15,000 per session. Online styling services like Iconik's Style Blueprint start at ₹3,299 for a full body analysis, colour palette, and outfit formula document. The cost differential is significant — the question is whether the in-person format is necessary for what you specifically need.",
   },
   {
     q: "What does a personal stylist actually change about how you dress?",
@@ -25,11 +25,11 @@ const faqs = [
   },
   {
     q: "Is a personal stylist only for wealthy or celebrity women?",
-    a: "That was true ten years ago. Online styling has democratised the service. At ₹2,499, Iconik's Style Blueprint is within the budget of anyone who buys more than one garment per month — and it reduces wasted spend by a multiple of its cost. The demographic shift is significant: the majority of Iconik clients are working professionals, not celebrities.",
+    a: "That was true ten years ago. Online styling has democratised the service. At ₹3,299, Iconik's Style Blueprint is within the budget of anyone who buys more than one garment per month — and it reduces wasted spend by a multiple of its cost. The demographic shift is significant: the majority of Iconik clients are working professionals, not celebrities.",
   },
   {
     q: "What is the ROI of hiring a personal stylist?",
-    a: "The most direct ROI: reducing wasted clothing purchases. The average Indian woman buys 3–5 garments per year that she never wears — items that looked good in the store but do not work with the rest of her wardrobe, or that do not flatter her body type. At ₹1,500–3,000 per garment, this is ₹4,500–15,000 per year in wasted spend. A styling service that costs ₹2,499 and reduces this waste pays for itself in the first avoided mistake.",
+    a: "The most direct ROI: reducing wasted clothing purchases. The average Indian woman buys 3–5 garments per year that she never wears — items that looked good in the store but do not work with the rest of her wardrobe, or that do not flatter her body type. At ₹1,500–3,000 per garment, this is ₹4,500–15,000 per year in wasted spend. A styling service that costs ₹3,299 and reduces this waste pays for itself in the first avoided mistake.",
   },
 ];
 
@@ -159,10 +159,10 @@ export default function IsPersonalStylistWorthItPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Try it for ₹2,499</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Try it for ₹3,299</h2>
             <p className="text-gray-600 mb-6">Body analysis, colour palette, and 16+ outfit formulas — delivered in 48 hours. Less than the cost of one garment you&apos;ll never wear.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

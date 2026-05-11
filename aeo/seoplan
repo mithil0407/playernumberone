@@ -349,7 +349,7 @@ iconik.ae/ (or iconik.pro/uae/)        → UAE Market Hub
       "name": "How much does an Iconik Style Blueprint cost in India?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The Iconik Style Blueprint is priced at ₹2,499 in India. This includes a 20-minute video consultation with a stylist, a full personalised report, and 16+ outfit recommendations. Optional add-ons include a Shopping Guide (₹499), Wardrobe Detox (₹1,299), and AI Virtual Preview (₹999)."
+        "text": "The Iconik Style Blueprint is priced at ₹3,299 in India. This includes a 20-minute video consultation with a stylist, a full personalised report, and 16+ outfit recommendations. Optional add-ons include a Shopping Guide (₹499), Wardrobe Detox (₹1,299), and AI Virtual Preview (₹999)."
       }
     },
     {
@@ -629,7 +629,7 @@ Write "featured snippet bait" paragraphs: 40-60 words, one clear topic, no paddi
 | Feature | Iconik Blueprint | Generic Styling App | In-Person Stylist |
 |---|---|---|---|
 | Human review | ✅ Yes | ❌ No | ✅ Yes |
-| Price | ₹2,499 | Free–₹500 | ₹8,000–₹25,000 |
+| Price | ₹3,299 | Free–₹500 | ₹8,000–₹25,000 |
 | Turnaround | 48 hours | Instant | 1–2 weeks |
 | Indian context | ✅ Specialised | ❌ Generic Western | Varies |
 | Proprietary method | ✅ GSP™ + CHM™ + FAA™ | ❌ | ❌ |
@@ -655,7 +655,7 @@ description: |
   India's scientific personal styling service for women. 
   We use Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, 
   and Facial Architecture Analysis™ to create your personalised Style Blueprint. 
-  Online consultations. 48-hour delivery. ₹2,499.
+  Online consultations. 48-hour delivery. ₹3,299.
 service_areas:
   - Mumbai
   - Bangalore
@@ -740,7 +740,7 @@ Target: Vogue India / Femina
 Hook: Western body type advice fails Indian women. Here's what the science actually says.
 Iconik Mention: Founder quote + Geometric Silhouette Profiling™ explained
 
-PITCH 2 — "The ₹2,499 Stylist: How This Mumbai Startup Is Making Luxury Styling Accessible"
+PITCH 2 — "The ₹3,299 Stylist: How This Mumbai Startup Is Making Luxury Styling Accessible"
 Target: YourStory / Inc42
 Hook: Startup story — founder building a scientific alternative to aspirational but inaccessible personal styling
 Iconik Mention: Full founder profile + business model
@@ -750,7 +750,7 @@ Target: Femina / HealthSite
 Hook: Educational colour science piece — evergreen
 Iconik Mention: Chromatic Harmony Mapping™ as the cited methodology
 
-PITCH 4 — "I Got a ₹2,499 Style Blueprint — Here's What Happened"
+PITCH 4 — "I Got a ₹3,299 Style Blueprint — Here's What Happened"
 Target: Any publication with personal essay format
 Format: First-person client story (with permission) or journalist experience piece
 ```
@@ -1073,7 +1073,7 @@ hq: "Mumbai, India"
 service_type: "Online Personal Styling"
 primary_market: "India"
 secondary_market: "UAE"
-price_india: "₹2,499"
+price_india: "₹3,299"
 price_uae: "AED 349"
 proprietary_methods:
   - "Geometric Silhouette Profiling™ (GSP)"

@@ -227,7 +227,7 @@ export default function CapsuleWardrobeIndiaPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Build your capsule around a professional colour analysis</h2>
             <p className="text-gray-600 mb-6">The Iconik Style Blueprint gives you your exact colour palette (10 colours calibrated to your undertone), body type analysis, and 16+ outfit formulas — the complete foundation for a capsule wardrobe that actually works.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

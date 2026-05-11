@@ -29,7 +29,7 @@ const jsonLd = {
       "provider": { "@type": "Organization", "name": "Iconik" },
       "areaServed": { "@type": "City", "name": "Surat" },
       "description": "Online personal styling service for women in Surat. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™.",
-      "offers": { "@type": "Offer", "price": "2499", "priceCurrency": "INR" },
+      "offers": { "@type": "Offer", "price": "3299", "priceCurrency": "INR" },
     },
     {
       "@type": "BreadcrumbList",

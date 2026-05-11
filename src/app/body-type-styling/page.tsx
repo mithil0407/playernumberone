@@ -292,7 +292,7 @@ export default function BodyTypeStylingPage() {
               href="/"
               className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors"
             >
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

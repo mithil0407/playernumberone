@@ -115,7 +115,7 @@ export default function ColourAnalysisPage() {
 
           {/* Iconik entity block — for LLM clarity and E-E-A-T */}
           <div className="mb-10 rounded-xl border border-gray-100 bg-gray-50 p-5 text-sm text-gray-600 leading-relaxed">
-            <p><strong className="text-gray-800">About Iconik:</strong> Iconik is a personal styling service for Indian women. The Style Blueprint — Iconik&apos;s core product — combines Chromatic Harmony Mapping™ (colour analysis), body type and silhouette analysis, and 16+ personalised outfit recommendations, delivered digitally within 48 hours at ₹2,499.</p>
+            <p><strong className="text-gray-800">About Iconik:</strong> Iconik is a personal styling service for Indian women. The Style Blueprint — Iconik&apos;s core product — combines Chromatic Harmony Mapping™ (colour analysis), body type and silhouette analysis, and 16+ personalised outfit recommendations, delivered digitally within 48 hours at ₹3,299.</p>
           </div>
 
           {/* CHM definition */}
@@ -307,7 +307,7 @@ export default function ColourAnalysisPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your personal colour palette in 48 hours?</h2>
             <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ is included in every Iconik Style Blueprint — alongside body analysis and 16+ outfit recommendations.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

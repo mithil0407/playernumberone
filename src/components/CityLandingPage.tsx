@@ -134,7 +134,7 @@ export default function CityLandingPage({ city, cityContext, testimonial }: City
             8 slots open for {city} women this week
           </h2>
           <p className="text-gray-600 mb-6">
-            Science-backed styling. Delivered in 48 hours. ₹2,499.
+            Science-backed styling. Delivered in 48 hours. ₹3,299.
           </p>
           <Link
             href="/"

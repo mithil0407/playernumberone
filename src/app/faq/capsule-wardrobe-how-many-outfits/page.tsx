@@ -130,7 +130,7 @@ export default function CapsuleWardrobeHowManyOutfitsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get a capsule that actually maximises your outfit count</h2>
             <p className="text-gray-600 mb-6">Your Iconik Style Blueprint builds your capsule from a coordinated colour palette and body-type-specific silhouettes — every piece guaranteed to work with every other piece.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

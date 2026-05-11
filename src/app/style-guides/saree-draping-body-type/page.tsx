@@ -195,7 +195,7 @@ export default function SareeDrapingBodyTypePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your complete saree formula?</h2>
             <p className="text-gray-600 mb-6">Your Iconik Style Blueprint includes body-type-specific saree draping guidance, blouse neckline formulas, and undertone-matched colour recommendations.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

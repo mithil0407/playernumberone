@@ -277,7 +277,7 @@ export default function ColoursLookSlimmerPage() {
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
-            Get Your Style Blueprint — ₹2,499
+            Get Your Style Blueprint — ₹3,299
           </Link>
         </section>
 

@@ -131,7 +131,7 @@ export default function IconikVsStylingAppsPage() {
                   <tr><td className="py-3 pr-4 font-medium">Indian ethnic wear</td><td className="py-3 pr-4">Full integration</td><td className="py-3">Not included</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Output format</td><td className="py-3 pr-4">Documented PDF blueprint</td><td className="py-3">In-app only</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Human review</td><td className="py-3 pr-4">Yes</td><td className="py-3">Algorithm only</td></tr>
-                  <tr><td className="py-3 pr-4 font-medium">Cost</td><td className="py-3 pr-4">₹2,499 one-time</td><td className="py-3">Free–₹999/month</td></tr>
+                  <tr><td className="py-3 pr-4 font-medium">Cost</td><td className="py-3 pr-4">₹3,299 one-time</td><td className="py-3">Free–₹999/month</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Lifestyle context</td><td className="py-3 pr-4">Indian professional + occasion</td><td className="py-3">Western default</td></tr>
                 </tbody>
               </table>
@@ -164,7 +164,7 @@ export default function IconikVsStylingAppsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">See the methodology in action</h2>
             <p className="text-gray-600 mb-6">Body analysis, Indian-calibrated colour palette, and 16+ outfit formulas built for your specific silhouette — delivered in 48 hours.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

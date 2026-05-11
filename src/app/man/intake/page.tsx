@@ -610,7 +610,7 @@ function ManIntakePageInner() {
             };
 
             // Move to confirmation immediately — save + notify fire-and-forget
-            trackCompleteRegistration(2499, 'ICONIK Blueprint Man — Intake Submitted', 'INR');
+            trackCompleteRegistration(3299, 'ICONIK Blueprint Man — Intake Submitted', 'INR');
             setDirection(1);
             setStep(CONFIRMATION_STEP);
 

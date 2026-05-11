@@ -42,7 +42,7 @@ const faqs = [
   {
     question: "How much does an Iconik Style Blueprint cost in India?",
     answer:
-      "The Iconik Style Blueprint is priced at ₹2,499 in India. This includes a 20-minute consultation with a stylist, a full personalised report covering all three analyses, and 16+ lifestyle-specific outfit recommendations.",
+      "The Iconik Style Blueprint is priced at ₹3,299 in India. This includes a 20-minute consultation with a stylist, a full personalised report covering all three analyses, and 16+ lifestyle-specific outfit recommendations.",
   },
   {
     question: "How is Iconik different from other styling apps or services?",
@@ -57,7 +57,7 @@ const faqs = [
   {
     question: "Is Iconik's styling service available outside India?",
     answer:
-      "Yes. Iconik currently serves clients in India (₹2,499), the UAE (AED 349), and Australia. The service is fully online, so it is accessible from anywhere in the world.",
+      "Yes. Iconik currently serves clients in India (₹3,299), the UAE (AED 349), and Australia. The service is fully online, so it is accessible from anywhere in the world.",
   },
   {
     question: "How do I find my skin undertone at home?",
@@ -170,7 +170,7 @@ export default function FAQPage() {
               href="/"
               className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors"
             >
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

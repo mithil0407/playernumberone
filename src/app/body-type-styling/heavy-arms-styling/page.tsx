@@ -191,7 +191,7 @@ export default function HeavyArmsStylingPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you in 48 hours?</h2>
             <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint includes arm and sleeve recommendations specific to your silhouette profile — plus 16+ complete outfit formulas.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

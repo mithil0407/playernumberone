@@ -75,10 +75,10 @@ export default function PersonalStylistCostIndiaPage() {
           },
           {
             "@type": "Question",
-            "name": "Is ₹2,499 a reasonable price for a personal stylist in India?",
+            "name": "Is ₹3,299 a reasonable price for a personal stylist in India?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes — ₹2,499 is at the lower end of the online style blueprint category (₹1,500–₹5,000). For that price, a comprehensive online blueprint like Iconik's covers body type analysis, colour palette, and 16+ outfit recommendations including Indian ethnic wear. An equivalent in-person consultation covering the same depth would typically cost ₹5,000–₹12,000.",
+              "text": "Yes — ₹3,299 is at the lower end of the online style blueprint category (₹1,500–₹5,000). For that price, a comprehensive online blueprint like Iconik's covers body type analysis, colour palette, and 16+ outfit recommendations including Indian ethnic wear. An equivalent in-person consultation covering the same depth would typically cost ₹5,000–₹12,000.",
             },
           },
           {
@@ -147,7 +147,7 @@ export default function PersonalStylistCostIndiaPage() {
                   <p className="text-sm text-gray-600 mb-2 leading-relaxed">{s.what}</p>
                   <p className="text-sm text-gray-500"><span className="font-medium text-gray-700">Best for:</span> {s.bestFor}</p>
                   {s.iconik && (
-                    <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">Iconik&apos;s Style Blueprint is in this category — at ₹2,499, it covers body type, colour palette, and 16+ outfit recommendations including ethnic wear.</p>
+                    <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">Iconik&apos;s Style Blueprint is in this category — at ₹3,299, it covers body type, colour palette, and 16+ outfit recommendations including ethnic wear.</p>
                   )}
                 </div>
               ))}
@@ -173,7 +173,7 @@ export default function PersonalStylistCostIndiaPage() {
                 { situation: "You have a full wardrobe and want to know what to keep and what to remove", recommendation: "Wardrobe audit — a stylist reviews what you have in person" },
                 { situation: "You are preparing for a major event or season", recommendation: "Personal shopping or a one-time in-person consultation" },
                 { situation: "You are in a high-visibility role and need ongoing support", recommendation: "Monthly retainer" },
-                { situation: "You want maximum value for a complete framework — body, colour, outfits", recommendation: "Iconik's Style Blueprint — covers all three at ₹2,499" },
+                { situation: "You want maximum value for a complete framework — body, colour, outfits", recommendation: "Iconik's Style Blueprint — covers all three at ₹3,299" },
               ].map((item) => (
                 <div key={item.situation} className="border border-gray-200 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-900 mb-1">{item.situation}</p>
@@ -194,10 +194,10 @@ export default function PersonalStylistCostIndiaPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Complete body + colour + outfit analysis — ₹2,499</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Complete body + colour + outfit analysis — ₹3,299</h2>
             <p className="text-gray-600 mb-6">Iconik&apos;s Style Blueprint covers everything: Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and 16+ personalised outfit recommendations including Indian ethnic wear. Delivered in 48 hours.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

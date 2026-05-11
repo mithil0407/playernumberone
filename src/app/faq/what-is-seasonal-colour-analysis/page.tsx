@@ -132,7 +132,7 @@ export default function WhatIsSeasonalColourAnalysisPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get colour analysis built for Indian skin</h2>
             <p className="text-gray-600 mb-6">CHM™ replaces seasonal categories with a methodology calibrated for Indian undertone ranges — your exact 10-colour palette in 48 hours.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹2,499
+              Get My Style Blueprint — ₹3,299
             </Link>
           </div>
 

@@ -23,7 +23,7 @@ const jsonLd = {
       "provider": { "@type": "Organization", "name": "Iconik" },
       "areaServed": { "@type": "City", "name": "Delhi" },
       "description": "Online personal styling service for women in Delhi NCR.",
-      "offers": { "@type": "Offer", "price": "2499", "priceCurrency": "INR" },
+      "offers": { "@type": "Offer", "price": "3299", "priceCurrency": "INR" },
     },
     {
       "@type": "BreadcrumbList",

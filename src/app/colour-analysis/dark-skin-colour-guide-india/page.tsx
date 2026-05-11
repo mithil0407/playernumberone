@@ -289,7 +289,7 @@ export default function DarkSkinColourGuidePage() {
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
-            Get Your Colour Palette — ₹2,499
+            Get Your Colour Palette — ₹3,299
           </Link>
         </section>
 
