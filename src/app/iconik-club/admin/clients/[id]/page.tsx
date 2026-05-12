@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Save, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, CheckCircle, Sparkles, Upload, X } from 'lucide-react';
 import type { ClientProfile, BudgetLevel } from '@/lib/supabase';
 
 const RESTRICTION_OPTIONS = [
@@ -40,6 +40,12 @@ export default function AdminClientEditPage() {
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [generatingPreferenceProfile, setGeneratingPreferenceProfile] = useState(false);
   const [preferenceProfileGenError, setPreferenceProfileGenError] = useState('');
+  const [headshotFile, setHeadshotFile] = useState<File | null>(null);
+  const [bodyPhotoFile, setBodyPhotoFile] = useState<File | null>(null);
+  const [headshotPreview, setHeadshotPreview] = useState('');
+  const [bodyPhotoPreview, setBodyPhotoPreview] = useState('');
+  const headshotInputRef = useRef<HTMLInputElement>(null);
+  const bodyInputRef = useRef<HTMLInputElement>(null);
 
   const populate = useCallback((c: ClientProfile) => {
     setClient(c);
@@ -58,6 +64,10 @@ export default function AdminClientEditPage() {
     setRestrictions(c.style_restrictions ?? []);
     setBudgetLevel(c.budget_level ?? '');
     setOnboardingComplete(c.onboarding_complete ?? false);
+    setHeadshotPreview(c.headshot_url ?? '');
+    setBodyPhotoPreview(c.body_photo_url ?? '');
+    setHeadshotFile(null);
+    setBodyPhotoFile(null);
   }, []);
 
   useEffect(() => {
@@ -72,6 +82,23 @@ export default function AdminClientEditPage() {
       prev.includes(val) ? prev.filter(r => r !== val) : [...prev, val]
     );
   };
+
+  const handlePhoto = useCallback((file: File, type: 'headshot' | 'body') => {
+    if (!file.type.startsWith('image/')) {
+      setError('Only image files are supported.');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    if (type === 'headshot') {
+      setHeadshotFile(file);
+      setHeadshotPreview(url);
+    } else {
+      setBodyPhotoFile(file);
+      setBodyPhotoPreview(url);
+    }
+    setSaved(false);
+    setError('');
+  }, []);
 
   const handleGenerateProfile = async () => {
     setProfileGenError('');
@@ -133,13 +160,31 @@ export default function AdminClientEditPage() {
     };
 
     try {
-      const res  = await fetch(`/api/iconik-club/admin/clients/${id}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
+      const hasPhotoChanges = !!headshotFile || !!bodyPhotoFile;
+      const requestInit: RequestInit = hasPhotoChanges
+        ? {
+            method: 'PATCH',
+            body: (() => {
+              const formData = new FormData();
+              for (const [key, value] of Object.entries(body)) {
+                if (Array.isArray(value)) formData.append(key, JSON.stringify(value));
+                else if (typeof value === 'boolean') formData.append(key, String(value));
+                else formData.append(key, value == null ? '' : String(value));
+              }
+              if (headshotFile) formData.append('headshot', headshotFile);
+              if (bodyPhotoFile) formData.append('body_photo', bodyPhotoFile);
+              return formData;
+            })(),
+          }
+        : {
+            method:  'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(body),
+          };
+
+      const res  = await fetch(`/api/iconik-club/admin/clients/${id}`, requestInit);
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Save failed'); return; }
+      if (!res.ok) { setError(data.detail ?? data.error ?? 'Save failed'); return; }
       populate(data.client);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -199,6 +244,111 @@ export default function AdminClientEditPage() {
       </div>
 
       <div className="space-y-6">
+
+        {/* ── Photos ─────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
+          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-5">Photos</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Headshot</label>
+              <div className="relative">
+                {headshotPreview ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={headshotPreview} alt="Client headshot" className="w-full aspect-square object-cover rounded-xl border border-[#ffb3d1]/60" />
+                    <button
+                      type="button"
+                      onClick={() => headshotInputRef.current?.click()}
+                      className="absolute bottom-3 left-3 px-3 py-1.5 rounded-lg bg-white text-[#4a2c3e] text-[11px] font-semibold border border-[#ffb3d1] shadow-sm hover:bg-[#fff0f5]"
+                    >
+                      Replace
+                    </button>
+                    {headshotFile && (
+                      <button
+                        type="button"
+                        onClick={() => { setHeadshotFile(null); setHeadshotPreview(client.headshot_url ?? ''); }}
+                        className="absolute top-3 right-3 w-7 h-7 rounded-full bg-[#4a2c3e] text-white flex items-center justify-center"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => headshotInputRef.current?.click()}
+                    className="w-full aspect-square rounded-xl border-2 border-dashed border-[#ffb3d1] bg-[#fff9f5] flex flex-col items-center justify-center gap-2 hover:border-[#ff6b9d] hover:bg-[#fff0f5] transition-colors"
+                  >
+                    <Upload size={18} className="text-[#4a2c3e]/30" />
+                    <span className="text-[10px] text-[#4a2c3e]/40 font-medium">Upload</span>
+                  </button>
+                )}
+              </div>
+              <input
+                ref={headshotInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhoto(file, 'headshot');
+                }}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Full-body photo</label>
+              <div className="relative">
+                {bodyPhotoPreview ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={bodyPhotoPreview} alt="Client full body" className="w-full aspect-square object-cover rounded-xl border border-[#ffb3d1]/60" />
+                    <button
+                      type="button"
+                      onClick={() => bodyInputRef.current?.click()}
+                      className="absolute bottom-3 left-3 px-3 py-1.5 rounded-lg bg-white text-[#4a2c3e] text-[11px] font-semibold border border-[#ffb3d1] shadow-sm hover:bg-[#fff0f5]"
+                    >
+                      Replace
+                    </button>
+                    {bodyPhotoFile && (
+                      <button
+                        type="button"
+                        onClick={() => { setBodyPhotoFile(null); setBodyPhotoPreview(client.body_photo_url ?? ''); }}
+                        className="absolute top-3 right-3 w-7 h-7 rounded-full bg-[#4a2c3e] text-white flex items-center justify-center"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => bodyInputRef.current?.click()}
+                    className="w-full aspect-square rounded-xl border-2 border-dashed border-[#ffb3d1] bg-[#fff9f5] flex flex-col items-center justify-center gap-2 hover:border-[#ff6b9d] hover:bg-[#fff0f5] transition-colors"
+                  >
+                    <Upload size={18} className="text-[#4a2c3e]/30" />
+                    <span className="text-[10px] text-[#4a2c3e]/40 font-medium">Upload</span>
+                  </button>
+                )}
+              </div>
+              <input
+                ref={bodyInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhoto(file, 'body');
+                }}
+              />
+            </div>
+          </div>
+          {(headshotFile || bodyPhotoFile) && (
+            <p className="text-[11px] text-[#4a2c3e]/40 mt-3">
+              Replacement photos will be uploaded when you save changes.
+            </p>
+          )}
+        </div>
 
         {/* ── Basic info ──────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">

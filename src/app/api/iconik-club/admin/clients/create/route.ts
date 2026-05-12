@@ -17,17 +17,6 @@ function parseExamples(raw: string | null): string[] {
   }
 }
 
-/*
-  Run this SQL migration in Supabase before using this route:
-
-  ALTER TABLE client_profiles
-    ADD COLUMN IF NOT EXISTS preview_token UUID DEFAULT gen_random_uuid(),
-    ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMPTZ;
-
-  CREATE INDEX IF NOT EXISTS idx_client_profiles_preview_token
-    ON client_profiles(preview_token);
-*/
-
 export async function POST(request: NextRequest) {
   if (!isAdminAuthenticated(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

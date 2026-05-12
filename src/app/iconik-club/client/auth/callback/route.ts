@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         const { data: profile } = await supabase
           .from('client_profiles')
           .select('onboarding_complete')
-          .eq('id', user.id)
+          .eq('user_id', user.id)
           .single();
         const destination = profile?.onboarding_complete
           ? '/iconik-club/client/outfits'

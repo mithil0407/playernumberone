@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
-import { LogOut, Sparkles } from 'lucide-react';
+import { LogOut, Sparkles, UserRound, Shirt } from 'lucide-react';
 
 export default function IconikClubClientShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -32,13 +32,37 @@ export default function IconikClubClientShell({ children }: { children: React.Re
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-[#4a2c3e]/50 hover:text-[#4a2c3e] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#fff0f5]"
-          >
-            <LogOut size={13} />
-            Sign out
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => router.push('/iconik-club/client/outfits')}
+              className={`flex items-center gap-1.5 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-[#fff0f5] ${
+                pathname.startsWith('/iconik-club/client/outfits')
+                  ? 'text-[#ff6b9d] bg-[#fff0f5]'
+                  : 'text-[#4a2c3e]/50 hover:text-[#4a2c3e]'
+              }`}
+            >
+              <Shirt size={13} />
+              <span className="hidden sm:inline">Outfits</span>
+            </button>
+            <button
+              onClick={() => router.push('/iconik-club/client/profile')}
+              className={`flex items-center gap-1.5 text-xs transition-colors px-3 py-1.5 rounded-lg hover:bg-[#fff0f5] ${
+                pathname.startsWith('/iconik-club/client/profile')
+                  ? 'text-[#ff6b9d] bg-[#fff0f5]'
+                  : 'text-[#4a2c3e]/50 hover:text-[#4a2c3e]'
+              }`}
+            >
+              <UserRound size={13} />
+              <span className="hidden sm:inline">Profile</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-xs text-[#4a2c3e]/50 hover:text-[#4a2c3e] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#fff0f5]"
+            >
+              <LogOut size={13} />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
         </header>
       )}
 
