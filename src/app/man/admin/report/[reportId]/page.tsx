@@ -185,8 +185,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [imageGenerationPending, setImageGenerationPending] = useState(false);
   const [imageModel, setImageModel]         = useState<'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image'>('gemini-3.1-flash-image-preview');
   const [elapsedSecs, setElapsedSecs]       = useState(0);
+  const [imageProgressNow, setImageProgressNow] = useState(() => Date.now());
   const latestStatusUpdatedAtRef = useRef<string | null>(null);
   const latestImageCountSigRef = useRef<string>('');
+  const autoImageRetryUpdatedAtRef = useRef<string | null>(null);
 
   const load = useCallback(async (options?: { fresh?: boolean; force?: boolean }) => {
     const suffix = options?.fresh ? '?fresh=1' : '';
@@ -294,6 +296,19 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
   }, [report?.status, report?.created_at]);
+
+  // Image stale-state ticker. Polling only re-renders when the DB changes, so
+  // this local clock lets stale progress surface and auto-retry without refresh.
+  useEffect(() => {
+    if (!report?.progress_stage || report.status === 'generating') {
+      setImageProgressNow(Date.now());
+      return;
+    }
+    const tick = () => setImageProgressNow(Date.now());
+    tick();
+    const t = setInterval(tick, 10_000);
+    return () => clearInterval(t);
+  }, [report?.progress_stage, report?.status, report?.updated_at]);
 
   // ── Section approval ──────────────────────────────────────────────────
 
@@ -691,6 +706,46 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     [reportData],
   );
 
+  const approvals    = report?.section_approvals ?? { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false };
+  const ready        = allApproved(approvals);
+  const isGenerating = report?.status === 'generating';
+  const isError      = report?.status === 'error';
+  const isStuck      = isGenerating && elapsedSecs > 600;
+
+  // Image pipeline stale detection: progress_stage set but updated_at hasn't changed in >10 min.
+  const imageProgressAgeMs = report?.progress_stage && !isGenerating && report.updated_at
+    ? imageProgressNow - new Date(report.updated_at).getTime()
+    : 0;
+  const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
+
+  const expectedOutfitCount = report?.report_data?.classification?.outfit_split?.total ?? 16;
+  const usesBeardCards = report?.report_data?.classification?.face?.grooming_focus === 'beard';
+  const imageCounts = {
+    hairstyleDone: (report?.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
+    beardDone:     (report?.image_urls?.beardCards     ?? []).filter(Boolean).length,
+    eyewearDone:   (report?.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
+    outfitDone:    (report?.image_urls?.outfitCards    ?? []).filter(Boolean).length,
+  };
+  const activeGroomingDone = usesBeardCards ? imageCounts.beardDone : imageCounts.hairstyleDone;
+  const activeGroomingLabel = usesBeardCards ? 'beard' : 'hairstyle';
+  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone > 0 ||
+    Boolean(report?.error_message?.startsWith('Image generation'));
+  const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
+  const imageProgressText = `${activeGroomingDone}/2 ${activeGroomingLabel} · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits`;
+  const section4Qa = report?.report_data?.qa?.section4 ?? null;
+  const section4Issues = section4Qa?.issues ?? [];
+  const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
+  const section4WarningCount = section4Issues.length - section4ErrorCount;
+  const hasPartialText = !!report?.report_data?.classification ||
+    Object.values(report?.report_data?.sections ?? {}).some(value => typeof value === 'string' && value.trim().length > 0);
+
+  // True only when hairstyle, eyewear AND every expected outfit image are present.
+  const hasAllImages = (
+    activeGroomingDone >= 2 &&
+    imageCounts.eyewearDone >= 2 &&
+    imageCounts.outfitDone >= expectedOutfitCount
+  );
+
   // ── Reject & retry (discard current report, start fresh) ─────────────
   const handleRejectAndRetry = async () => {
     if (!report || rejecting) return;
@@ -795,8 +850,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   };
 
   // ── Generate images (decoupled from text pipeline) ───────────────────
-  const handleGenerateImages = async () => {
-    if (!report || generatingImages) return;
+  const handleGenerateImages = useCallback(async (options?: { automatic?: boolean }) => {
+    if (!report || generatingImages || isGenerating || hasAllImages || !report.report_data) return;
+
     setGeneratingImages(true);
     setError('');
     try {
@@ -818,11 +874,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
           await load({ fresh: true, force: true });
           return;
         }
-        if (res.status === 409 && data.progress_stage) {
+        const runningProgressStage = data.progressStage ?? data.progress_stage;
+        if (runningProgressStage) {
           setImageGenerationPending(true);
           setReport(prev => prev ? {
             ...prev,
-            progress_stage: data.progress_stage,
+            progress_stage: runningProgressStage,
             error_message: null,
           } : prev);
           await load({ fresh: true, force: true });
@@ -831,19 +888,42 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         setError(data.error ?? 'Failed to start image generation');
         return;
       }
+      const nextProgressStage = data.progressStage ?? data.progress_stage ?? 'generating_images';
       setImageGenerationPending(true);
       setReport(prev => prev ? {
         ...prev,
-        progress_stage: data.progressStage ?? 'generating_images',
+        progress_stage: nextProgressStage,
         error_message: null,
       } : prev);
       await load({ fresh: true, force: true });
     } catch {
-      setError('Failed to start image generation. Please try again.');
+      setError(options?.automatic
+        ? 'Auto-retry failed to start image generation. Use Force Restart Images to try again.'
+        : 'Failed to start image generation. Please try again.');
     } finally {
       setGeneratingImages(false);
     }
-  };
+  }, [report, generatingImages, isGenerating, hasAllImages, reportId, imageModel, load]);
+
+  useEffect(() => {
+    if (!report?.progress_stage || !report.report_data || isGenerating || hasAllImages || !isImageStuck || generatingImages) return;
+
+    const retryKey = report.updated_at ?? `${report.id}:missing-updated-at`;
+    if (autoImageRetryUpdatedAtRef.current === retryKey) return;
+
+    autoImageRetryUpdatedAtRef.current = retryKey;
+    void handleGenerateImages({ automatic: true });
+  }, [
+    report?.id,
+    report?.progress_stage,
+    report?.report_data,
+    report?.updated_at,
+    isGenerating,
+    hasAllImages,
+    isImageStuck,
+    generatingImages,
+    handleGenerateImages,
+  ]);
 
   // ── Loading / error states ─────────────────────────────────────────────
 
@@ -865,46 +945,6 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       </div>
     );
   }
-
-  const approvals    = report.section_approvals ?? { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false };
-  const ready        = allApproved(approvals);
-  const isGenerating = report.status === 'generating';
-  const isError      = report.status === 'error';
-  const isStuck      = isGenerating && elapsedSecs > 600;
-
-  // Image pipeline stale detection: progress_stage set but updated_at hasn't changed in >10 min
-  const imageProgressAgeMs = report.progress_stage && !isGenerating && report.updated_at
-    ? Date.now() - new Date(report.updated_at).getTime()
-    : 0;
-  const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
-
-  const expectedOutfitCount = report.report_data?.classification?.outfit_split?.total ?? 16;
-  const usesBeardCards = report.report_data?.classification?.face?.grooming_focus === 'beard';
-  const imageCounts = {
-    hairstyleDone: (report.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
-    beardDone:     (report.image_urls?.beardCards     ?? []).filter(Boolean).length,
-    eyewearDone:   (report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
-    outfitDone:    (report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
-  };
-  const activeGroomingDone = usesBeardCards ? imageCounts.beardDone : imageCounts.hairstyleDone;
-  const activeGroomingLabel = usesBeardCards ? 'beard' : 'hairstyle';
-  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone > 0 ||
-    report.error_message?.startsWith('Image generation');
-  const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
-  const imageProgressText = `${activeGroomingDone}/2 ${activeGroomingLabel} · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits`;
-  const section4Qa = report.report_data?.qa?.section4 ?? null;
-  const section4Issues = section4Qa?.issues ?? [];
-  const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
-  const section4WarningCount = section4Issues.length - section4ErrorCount;
-  const hasPartialText = !!report.report_data?.classification ||
-    Object.values(report.report_data?.sections ?? {}).some(value => typeof value === 'string' && value.trim().length > 0);
-
-  // True only when hairstyle, eyewear AND every expected outfit image are present
-  const hasAllImages = (
-    activeGroomingDone >= 2 &&
-    imageCounts.eyewearDone >= 2 &&
-    imageCounts.outfitDone >= expectedOutfitCount
-  );
 
   const elapsedLabel = (() => {
     if (elapsedSecs < 60) return `${elapsedSecs}s`;
@@ -1267,7 +1307,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                     {imageProgressText}
                   </p>
                   <motion.button
-                    onClick={handleGenerateImages}
+                    onClick={() => { void handleGenerateImages(); }}
                     disabled={generatingImages}
                     className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 disabled:opacity-40"
                     style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
@@ -1290,7 +1330,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                     }
                     <span className="text-[10px]" style={{ color: isImageStuck ? '#fb923c' : '#6b5f4a' }}>
                       {isImageStuck
-                        ? `Stuck — pipeline died (${Math.round(imageProgressAgeMs / 60000)}m ago)`
+                        ? generatingImages
+                          ? 'Stuck — auto-retrying missing images…'
+                          : `Stuck — auto-retry will restart missing images (${Math.round(imageProgressAgeMs / 60000)}m stale)`
                         : (STAGE_LABELS[report.progress_stage] ?? 'Generating images…')
                       }
                     </span>
@@ -1300,7 +1342,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                   </p>
                   {isImageStuck && (
                     <button
-                      onClick={handleGenerateImages}
+                      onClick={() => { void handleGenerateImages(); }}
                       disabled={generatingImages}
                       className="w-full py-1.5 rounded-md text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80 disabled:opacity-40"
                       style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
