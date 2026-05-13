@@ -4,6 +4,16 @@ import { sendManConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
 
+type CustomerRelation =
+  | { name?: string | null; email?: string | null; phone?: string | null }
+  | { name?: string | null; email?: string | null; phone?: string | null }[]
+  | null
+  | undefined;
+
+function firstCustomer(customers: CustomerRelation) {
+  return Array.isArray(customers) ? customers[0] : customers;
+}
+
 // Called client-side after Razorpay's handler fires for international USD /man payments.
 // Updates the order status and sends the confirmation email with USD currency symbol.
 // Mirrors the pattern of /api/globe-confirm-payment.
@@ -31,7 +41,7 @@ export async function POST(request: NextRequest) {
         .from('orders')
         .update({ status: 'paid', razorpay_payment_id })
         .eq('id', db_order_id)
-        .select()
+        .select('*, customers(name,email,phone)')
         .single();
 
       if (!error) updatedOrder = data;
@@ -42,7 +52,7 @@ export async function POST(request: NextRequest) {
         .from('orders')
         .update({ status: 'paid', razorpay_payment_id })
         .eq('razorpay_order_id', razorpay_order_id)
-        .select()
+        .select('*, customers(name,email,phone)')
         .single();
 
       if (error) {
@@ -53,6 +63,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const relatedCustomer = firstCustomer(updatedOrder?.customers as CustomerRelation);
+
     if (updatedOrder && (db_order_id || razorpay_order_id)) {
       await recordRevenueEvent({
         eventKey: `orders:${String(updatedOrder.id ?? (db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id))}:payment:${razorpay_payment_id}`,
@@ -62,8 +74,9 @@ export async function POST(request: NextRequest) {
         revenueKind: 'one_time',
         eventType: 'one_time_payment',
         productType: 'man_blueprint_intl',
-        customerEmail: customer_email || String(updatedOrder.customer_email ?? ''),
-        customerPhone: customer_phone || String(updatedOrder.customer_phone ?? ''),
+        customerEmail: customer_email || String(updatedOrder.customer_email ?? relatedCustomer?.email ?? ''),
+        customerName: relatedCustomer?.name ?? null,
+        customerPhone: customer_phone || String(updatedOrder.customer_phone ?? relatedCustomer?.phone ?? ''),
         amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
         currency: 'USD',
         status: 'paid',
@@ -75,15 +88,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Send confirmation email with USD symbol
-    const emailTo = customer_email || String(updatedOrder?.customer_email ?? '');
+    const emailTo = customer_email || String(updatedOrder?.customer_email ?? relatedCustomer?.email ?? '');
     if (emailTo) {
-      const phone = customer_phone || String(updatedOrder?.customer_phone ?? '');
+      const phone = customer_phone || String(updatedOrder?.customer_phone ?? relatedCustomer?.phone ?? '');
       const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);
       const addOns = has_outfit_preview ? 'Outfit Preview on You' : String(updatedOrder?.add_ons ?? '');
+      const customerName = String(relatedCustomer?.name ?? emailTo.split('@')[0]);
 
       try {
         const result = await sendManConfirmationEmail({
-          customer_name: emailTo.split('@')[0],
+          customer_name: customerName,
           customer_email: emailTo,
           customer_phone: phone,
           order_amount: orderAmount,

@@ -5,8 +5,8 @@ import Razorpay from 'razorpay';
 
 // Handles USD payment order creation for the /man funnel (international users).
 // Mirrors the pattern of /api/globe-payment but saves to the main orders table
-// with product_type 'man_blueprint_intl' so the webhook skips it
-// (confirmation is handled client-side via /api/man-confirm-payment).
+// with product_type 'man_blueprint_intl'. The client-side confirm route sends
+// the immediate email, and the Razorpay webhook remains the fallback.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
 
       const order = await saveOrder({
         customer_id: customer.id!,
-        customer_email,
         amount,
         product_type: 'man_blueprint_intl',
         status: 'pending',
@@ -64,7 +63,11 @@ export async function POST(request: NextRequest) {
       });
       dbOrderId = order.id!;
     } catch (err) {
-      console.log('Man INTL Supabase error, using mock IDs:', err);
+      console.error('Man INTL Supabase order creation failed:', err);
+      return NextResponse.json(
+        { success: false, error: 'Could not create your order. Please try again or contact support.' },
+        { status: 500 }
+      );
     }
 
     try {
