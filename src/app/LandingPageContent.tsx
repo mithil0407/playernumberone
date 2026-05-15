@@ -29,22 +29,38 @@ interface LandingPageContentProps {
   headline: ReactNode;
   subheadline: ReactNode;
   headlineClassName?: string;
+  checkoutHref?: string;
+  basePrice?: number;
+  originalPrice?: number;
+  displayBasePrice?: string;
+  displayOriginalPrice?: string;
 }
 
-export default function LandingPageContent({ headline, subheadline, headlineClassName }: LandingPageContentProps) {
+export default function LandingPageContent({
+  headline,
+  subheadline,
+  headlineClassName,
+  checkoutHref = '/checkout',
+  basePrice = 3299,
+  originalPrice = 5999,
+  displayBasePrice,
+  displayOriginalPrice,
+}: LandingPageContentProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState({
     minutes: 5,
     seconds: 0
   });
+  const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
+  const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
 
 
   // Track page view and product view on mount
   useEffect(() => {
     trackPageView('India');
-    trackViewContent('ICONIK Style Consultation', 3299, ['iconik_style_consultation'], 'INR', 'India');
-  }, []);
+    trackViewContent('ICONIK Style Consultation', basePrice, ['iconik_style_consultation'], 'INR', 'India');
+  }, [basePrice]);
 
   // Transformation images data
   const transformationImages = useMemo(() => [
@@ -151,7 +167,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                 <a href="#pricing" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Investment</a>
                 <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">FAQ</a>
                 <Link
-                  href="/checkout"
+                  href={checkoutHref}
                   className="bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
                 >
                   Begin Journey
@@ -182,7 +198,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                 <a href="#pricing" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Investment</a>
                 <a href="#faq" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
                 <Link
-                  href="/checkout"
+                  href={checkoutHref}
                   className="block bg-luxury-accent text-luxury-warm-white px-8 py-4 rounded-full luxury-body text-center mt-6 transition-all duration-300"
                 >
                   Begin Journey
@@ -324,10 +340,10 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                 transition={{ duration: 0.8, delay: 0.5 }}
               >
                 <Link
-                  href="/checkout"
+                  href={checkoutHref}
                   onClick={() => {
                     // Track CTA click with Meta Pixel
-                    trackCTAClick('Begin Your Transformation', 'Hero Section', undefined, 'INR', 'India');
+                    trackCTAClick('Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India');
                   }}
                   className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
                 >
@@ -881,7 +897,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                   <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
                     ICONIK Style Consultation
                   </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">₹3,299</div>
+                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">{formattedBasePrice}</div>
                   <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
                     Complete personal style transformation
                   </p>
@@ -937,9 +953,9 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
 
                 <div className="text-center">
                   <Link
-                    href="/checkout"
+                    href={checkoutHref}
                     onClick={() => {
-                      trackCTAClick('Style Consultation', 'Pricing Section', 3299, 'INR', 'India');
+                      trackCTAClick('Style Consultation', 'Pricing Section', basePrice, 'INR', 'India');
                     }}
                     className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
@@ -1145,10 +1161,10 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
               </p>
               <div className="space-y-8">
                 <Link
-                  href="/checkout"
+                  href={checkoutHref}
                   onClick={() => {
                     // Track final CTA click with Meta Pixel
-                    trackCTAClick('Final CTA', 'Bottom Section', 3299, 'INR', 'India');
+                    trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', 'India');
                   }}
                   className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
                 >
@@ -1176,7 +1192,7 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
                   </div>
                 </div>
 
-                <p className="luxury-body opacity-75 text-center">₹3,299 + GST • Limited slots available</p>
+                <p className="luxury-body opacity-75 text-center">{formattedBasePrice} + GST • Limited slots available</p>
               </div>
             </motion.div>
           </div>
@@ -1326,8 +1342,8 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
               <div className="flex-1">
                 <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-base font-semibold text-luxury-green">₹3,299</span>
-                  <span className="line-through text-luxury-charcoal/40 text-xs">₹5,999</span>
+                  <span className="text-base font-semibold text-luxury-green">{formattedBasePrice}</span>
+                  <span className="line-through text-luxury-charcoal/40 text-xs">{formattedOriginalPrice}</span>
                 </div>
               </div>
               <div className="text-right ml-2">
@@ -1338,10 +1354,10 @@ export default function LandingPageContent({ headline, subheadline, headlineClas
               </div>
             </div>
             <Link
-              href="/checkout"
+              href={checkoutHref}
               onClick={() => {
                 // Track CTA click with Meta Pixel
-                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', 3299, 'INR', 'India');
+                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', 'India');
               }}
               className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
             >

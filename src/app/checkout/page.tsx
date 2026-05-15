@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
@@ -59,7 +60,12 @@ interface FormData {
   phone: string;
 }
 
+const formatINR = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
+
 export default function CheckoutPage() {
+  const pathname = usePathname();
+  const isOffer2699Checkout = pathname.startsWith('/offer-2699/checkout');
+  const landingHref = isOffer2699Checkout ? '/offer-2699' : '/';
   const [formData, setFormData] = useState<FormData>({
     email: '',
     phone: ''
@@ -91,7 +97,7 @@ export default function CheckoutPage() {
 
   // Product pricing
   const originalPrice = 5999;
-  const discountedPrice = 3299;
+  const discountedPrice = isOffer2699Checkout ? 2699 : 3299;
   const savings = originalPrice - discountedPrice;
 
   // Track PageView and ViewContent on checkout page load
@@ -124,7 +130,7 @@ export default function CheckoutPage() {
     (wardrobeDetoxAddon ? wardrobeDetoxPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
     (outfitPreviewAddon ? outfitPreviewPrice : 0),
-    [wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
+    [discountedPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
   const totalValue = useMemo(() =>
@@ -132,7 +138,7 @@ export default function CheckoutPage() {
     (wardrobeDetoxAddon ? wardrobeDetoxPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
     (outfitPreviewAddon ? outfitPreviewPrice : 0),
-    [wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
+    [originalPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
   // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
@@ -444,7 +450,7 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, iconikClubAddon, iconikClubPlan, razorpayLoaded]);
+  }, [formData, totalAmount, discountedPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, iconikClubAddon, iconikClubPlan, razorpayLoaded]);
 
   // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -475,7 +481,7 @@ export default function CheckoutPage() {
       {/* Header */}
       <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
+          <Link href={landingHref} className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
             <ArrowLeft className="w-5 h-5" />
             Back to ICONIK
           </Link>
@@ -516,12 +522,12 @@ export default function CheckoutPage() {
           </h1>
 
           <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
-            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-            <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
+            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{formatINR(originalPrice)}</span>
+            <span className="text-luxury-green font-semibold">{formatINR(discountedPrice)}</span>
           </div>
 
           <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
-            YOU SAVE ₹{savings} TODAY!
+            YOU SAVE {formatINR(savings)} TODAY!
           </div>
         </motion.div>
 
@@ -650,8 +656,8 @@ export default function CheckoutPage() {
                 </p>
 
                 <div className="text-2xl md:text-3xl mb-4">
-                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">₹{originalPrice}</span>
-                  <span className="text-luxury-green font-semibold">₹{discountedPrice}</span>
+                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{formatINR(originalPrice)}</span>
+                  <span className="text-luxury-green font-semibold">{formatINR(discountedPrice)}</span>
                 </div>
               </div>
 
@@ -718,7 +724,7 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="luxury-heading text-luxury-charcoal text-base">👗 Outfit Preview on You</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{outfitPreviewPrice}</span>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{formatINR(outfitPreviewPrice)}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
                         See how the outfits we recommend will actually look on YOUR body.
@@ -752,7 +758,7 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="luxury-heading text-luxury-charcoal text-base">👗 Wardrobe Detox</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{wardrobeDetoxPrice}</span>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{formatINR(wardrobeDetoxPrice)}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
                         Let us audit your closet and create a curated wardrobe for you
@@ -786,7 +792,7 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper&apos;s Guide</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">₹{smartShoppersGuidePrice}</span>
+                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{formatINR(smartShoppersGuidePrice)}</span>
                       </div>
                       <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
                         A ready-to-wear capsule wardrobe curated for your body type, lifestyle & budget — pieces that work together effortlessly.
@@ -872,27 +878,27 @@ export default function CheckoutPage() {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
                   <span>Style Consultation</span>
-                  <span>₹{discountedPrice}</span>
+                  <span>{formatINR(discountedPrice)}</span>
                 </div>
 
                 {wardrobeDetoxAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
                     <span>+ Wardrobe Detox</span>
-                    <span>₹{wardrobeDetoxPrice}</span>
+                    <span>{formatINR(wardrobeDetoxPrice)}</span>
                   </div>
                 )}
 
                 {smartShoppersGuideAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
                     <span>+ Smart Shopper&apos;s Guide</span>
-                    <span>₹{smartShoppersGuidePrice}</span>
+                    <span>{formatINR(smartShoppersGuidePrice)}</span>
                   </div>
                 )}
 
                 {outfitPreviewAddon && (
                   <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
                     <span>+ Outfit Preview</span>
-                    <span>₹{outfitPreviewPrice}</span>
+                    <span>{formatINR(outfitPreviewPrice)}</span>
                   </div>
                 )}
                 {iconikClubAddon && (
@@ -909,11 +915,11 @@ export default function CheckoutPage() {
               <div className="border-t-2 border-luxury-charcoal/10 pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">You Pay:</span>
-                  <span className="text-3xl md:text-4xl text-luxury-green font-bold">₹{totalAmount.toLocaleString()}</span>
+                  <span className="text-3xl md:text-4xl text-luxury-green font-bold">{formatINR(totalAmount)}</span>
                 </div>
                 <div className="text-center">
                   <p className="text-xs luxury-body text-luxury-charcoal/60">
-                    Total value: <span className="line-through">₹{totalValue.toLocaleString()}</span>
+                    Total value: <span className="line-through">{formatINR(totalValue)}</span>
                   </p>
                   <div className="flex items-center justify-center gap-1 mt-1">
                     <Clock className="w-3 h-3 text-luxury-accent" />
@@ -1034,7 +1040,7 @@ export default function CheckoutPage() {
                         👗 Wardrobe Detox
                       </h4>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">₹{wardrobeDetoxPrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">{formatINR(wardrobeDetoxPrice)}</span>
                       </div>
                     </div>
                     <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
@@ -1078,7 +1084,7 @@ export default function CheckoutPage() {
                         🛍️ Smart Shopper&apos;s Guide
                       </h4>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">₹{smartShoppersGuidePrice}</span>
+                        <span className="text-luxury-green font-semibold text-base">{formatINR(smartShoppersGuidePrice)}</span>
                       </div>
                     </div>
                     <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
@@ -1118,7 +1124,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-white py-3 md:py-3.5 rounded-full luxury-body font-semibold transition-all duration-300 disabled:opacity-50 hover:scale-[1.01] transform text-sm md:text-base shadow-lg"
               >
-                {isProcessing ? 'Processing...' : `Add & Pay ₹${totalAmount.toLocaleString()}`}
+                {isProcessing ? 'Processing...' : `Add & Pay ${formatINR(totalAmount)}`}
               </button>
 
               <button

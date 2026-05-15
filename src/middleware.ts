@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
 
 // Pages that belong to the India-only root funnel
-const INDIA_ONLY_PATHS = ['/', '/checkout', '/checkout-monthly', '/monthly'];
+const INDIA_ONLY_PATHS = ['/', '/checkout', '/checkout-monthly', '/monthly', '/offer-2699', '/offer-2699/checkout'];
 
 // Client paths that don't need auth
 const CLIENT_PUBLIC = [

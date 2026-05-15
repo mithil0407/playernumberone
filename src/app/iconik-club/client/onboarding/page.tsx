@@ -7,18 +7,85 @@ import { ImagePlus, X, ArrowRight, ArrowLeft, Loader2, CheckCircle, Sparkles } f
 type Step = 1 | 2 | 3 | 4;
 
 const STEP_LABELS = ['Headshot', 'Full body', 'Measurements', 'Done'];
+const TARGET_UPLOAD_BYTES = 1.2 * 1024 * 1024;
+const IMAGE_DIMENSION_STEPS = [1600, 1400, 1200, 1000];
+const IMAGE_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.52];
+
+async function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error('Could not prepare image for upload.'));
+    }, 'image/jpeg', quality);
+  });
+}
+
+async function prepareImageForUpload(file: File): Promise<File> {
+  if (file.size <= TARGET_UPLOAD_BYTES && file.type === 'image/jpeg') return file;
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error(`We could not process ${file.name}. Please upload a JPEG, PNG, or WebP image.`);
+  }
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    bitmap.close();
+    throw new Error('Could not prepare image for upload.');
+  }
+
+  let blob: Blob | null = null;
+  for (const maxDimension of IMAGE_DIMENSION_STEPS) {
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    for (const quality of IMAGE_QUALITY_STEPS) {
+      blob = await canvasToBlob(canvas, quality);
+      if (blob.size <= TARGET_UPLOAD_BYTES) break;
+    }
+    if (blob && blob.size <= TARGET_UPLOAD_BYTES) break;
+  }
+  bitmap.close();
+
+  if (!blob) throw new Error('Could not prepare image for upload.');
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {
+    type: 'image/jpeg',
+    lastModified: Date.now(),
+  });
+}
+
+async function parseSubmitError(res: Response): Promise<string> {
+  const contentType = res.headers.get('content-type') ?? '';
+
+  if (contentType.includes('application/json')) {
+    const data = await res.json().catch(() => null);
+    if (data?.error) return data.error;
+  }
+
+  const fallback = await res.text().catch(() => '');
+  if (res.status === 413 || fallback.includes('FUNCTION_PAYLOAD_TOO_LARGE')) {
+    return 'Your photos are too large to upload. Please choose smaller photos and try again.';
+  }
+
+  return fallback || 'Something went wrong.';
+}
 
 function PhotoUploader({
   label,
   hint,
-  file,
   preview,
   onFile,
   onClear,
 }: {
   label: string;
   hint: string;
-  file: File | null;
   preview: string;
   onFile: (f: File) => void;
   onClear: () => void;
@@ -121,9 +188,14 @@ export default function OnboardingPage() {
     setSubmitting(true);
 
     try {
+      const [preparedHeadshot, preparedBodyPhoto] = await Promise.all([
+        prepareImageForUpload(headshot),
+        prepareImageForUpload(bodyPhoto),
+      ]);
+
       const fd = new FormData();
-      fd.append('headshot',   headshot);
-      fd.append('body_photo', bodyPhoto);
+      fd.append('headshot',   preparedHeadshot);
+      fd.append('body_photo', preparedBodyPhoto);
       fd.append('name',       '');
       if (height)     fd.append('height_cm',    height);
       if (weight)     fd.append('weight_kg',    weight);
@@ -137,14 +209,17 @@ export default function OnboardingPage() {
       if (examples.length) fd.append('liked_outfit_examples', JSON.stringify(examples));
       if (styleNotes) fd.append('style_notes',  styleNotes);
 
-      const res  = await fetch('/api/iconik-club/clients/onboard', { method: 'POST', body: fd });
-      const data = await res.json();
+      const res = await fetch('/api/iconik-club/clients/onboard', { method: 'POST', body: fd });
 
-      if (!res.ok) { setError(data.error ?? 'Something went wrong.'); setSubmitting(false); return; }
+      if (!res.ok) {
+        setError(await parseSubmitError(res));
+        setSubmitting(false);
+        return;
+      }
 
       setStep(4);
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error. Please try again.');
       setSubmitting(false);
     }
   };
@@ -205,7 +280,6 @@ export default function OnboardingPage() {
             <PhotoUploader
               label="Headshot photo"
               hint="Face visible, natural lighting, plain background preferred"
-              file={headshot}
               preview={headshotPrev}
               onFile={setHeadshotFile}
               onClear={() => { setHeadshot(null); setHeadshotPrev(''); }}
@@ -239,7 +313,6 @@ export default function OnboardingPage() {
             <PhotoUploader
               label="Full body photo"
               hint="Full length, arms at sides, fitted clothing, good lighting"
-              file={bodyPhoto}
               preview={bodyPrev}
               onFile={setBodyFile}
               onClear={() => { setBodyPhoto(null); setBodyPrev(''); }}
