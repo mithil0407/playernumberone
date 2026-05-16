@@ -15,8 +15,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/what-is-iconik`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/who-is-iconik-for`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/iconik-methodology`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/globe`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/uae`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/au`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${BASE}/us`, lastModified: NOW, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}/man`, lastModified: NOW, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}/iconik-club/join`, lastModified: NOW, changeFrequency: "monthly", priority: 0.6 },
 
     // ─── Variant landing pages ───────────────────────────────────
     { url: `${BASE}/arms`, lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },

@@ -12,8 +12,13 @@ const CLIENT_PUBLIC = [
   '/iconik-club/client/auth/callback',
 ];
 
+const SEARCH_BOT_PATTERN =
+  /(Googlebot|Google-InspectionTool|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|facebookexternalhit|LinkedInBot|Twitterbot)/i;
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const userAgent = request.headers.get('user-agent') ?? '';
+  const isSearchBot = SEARCH_BOT_PATTERN.test(userAgent);
 
   // ── 1. Admin routes: simple cookie check ────────────────────────────────
   if (pathname.startsWith('/iconik-club/admin')) {
@@ -94,7 +99,7 @@ export async function middleware(request: NextRequest) {
          request.headers.get('x-vercel-ip-country'))
       : request.headers.get('x-vercel-ip-country');
 
-  if (!country) return NextResponse.next();
+  if (!country || isSearchBot) return NextResponse.next();
 
   if (country !== 'IN') {
     if (INDIA_ONLY_PATHS.includes(pathname)) {

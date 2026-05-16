@@ -5,6 +5,7 @@ export const metadata = buildMetadata({
   description:
     "Iconik's global Blueprint offer for clients outside the primary India, UAE, and Australia flows.",
   path: "/global",
+  noIndex: true,
 });
 
 export default function GlobalLayout({ children }: { children: React.ReactNode }) {

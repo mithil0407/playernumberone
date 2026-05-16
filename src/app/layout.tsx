@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.iconik.pro"),
   title: {
     default: "Iconik — Scientific Personal Styling for Indian Women",
-    template: "%s | Iconik",
+    template: "%s",
   },
   description: "India's scientific personal styling service. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — delivered in your personalised Style Blueprint in 48 hours.",
   keywords: "personal stylist India, online personal styling India, body type styling India, colour analysis Indian skin tone, style blueprint India, personal stylist online, Indian women fashion",

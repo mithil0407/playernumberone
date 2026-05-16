@@ -21,6 +21,10 @@ export function absoluteUrl(path: string) {
   return `${SITE_URL}${path}`;
 }
 
+export function withSiteTitle(title: string) {
+  return /\biconik\b/i.test(title) ? title : `${title} | ${SITE_NAME}`;
+}
+
 export function buildMetadata({
   title,
   description,
@@ -31,10 +35,10 @@ export function buildMetadata({
   noIndex = false,
 }: BuildMetadataOptions): Metadata {
   const url = absoluteUrl(path);
-  const fullTitle = `${title} | ${SITE_NAME}`;
+  const fullTitle = withSiteTitle(title);
 
   return {
-    title,
+    title: fullTitle,
     description,
     keywords,
     alternates: {
