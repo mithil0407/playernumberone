@@ -20,10 +20,10 @@ This runbook moves the AU/Globe secondary Supabase project into the primary Supa
 ## Required Environment Variables
 
 ```bash
-export SOURCE_SUPABASE_URL="https://SECONDARY_PROJECT.supabase.co"
-export SOURCE_SUPABASE_SERVICE_ROLE_KEY="secondary-service-role-key"
-export TARGET_SUPABASE_URL="https://PRIMARY_PROJECT.supabase.co"
-export TARGET_SUPABASE_SERVICE_ROLE_KEY="primary-service-role-key"
+export SOURCE_SUPABASE_URL="https://oczdqomlcmlrqmeaklrr.supabase.co"
+export SOURCE_SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jemRxb21sY21scnFtZWFrbHJyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTY3MDU4MiwiZXhwIjoyMDg3MjQ2NTgyfQ.8rKujIvkhH6B4K6JU_zG3aB9GNoyVy3kAwdA9nSe7Ac"
+export TARGET_SUPABASE_URL="https://igluqrlzulvzbieuslcd.supabase.co"
+export TARGET_SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnbHVxcmx6dWx2emJpZXVzbGNkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTYyNDg1MCwiZXhwIjoyMDcxMjAwODUwfQ.sVKi1HWB8_Vrivi_KHcFp57m1gHJwNEww-Si_Xlj3Zg"
 ```
 
 Optional:

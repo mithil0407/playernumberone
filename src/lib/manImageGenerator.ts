@@ -434,7 +434,7 @@ Customisation rules:
 
 Scene: clean premium studio lookbook, seamless cool slate grey backdrop (#94a6ad), even high-key lighting.
 
-Composition: wide horizontal image, aspect ratio 3:1 or 16:9, one row, three columns. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet.`;
+Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

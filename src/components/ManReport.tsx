@@ -265,12 +265,29 @@ function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolea
     // Skip the outfit section confirmation line (e.g. "Total: 20 outfits confirmed…")
     if (/^total.*\d+.*outfits?\s+(confirmed|=)/i.test(line.trim())) continue;
 
-    if (line.startsWith('### ')) {
+    if (line.startsWith('#### ')) {
       flushList();
       elements.push(
-        <p key={key++} className="text-[14px] mt-7 mb-2 italic" style={{ fontFamily: SERIF, color: INK, fontWeight: 500 }}>
-          {line.slice(4).replace(/\*\*/g, '')}
+        <p
+          key={key++}
+          className="text-[10px] font-semibold uppercase tracking-[0.16em] mt-6 mb-3 pl-3 py-1.5"
+          style={{ color: ACCENT_INK, borderLeft: `2px solid ${ACCENT}66` }}
+        >
+          {line.slice(5).replace(/\*\*/g, '')}
         </p>
+      );
+    } else if (line.startsWith('### ')) {
+      flushList();
+      elements.push(
+        <div
+          key={key++}
+          className="mt-8 mb-4 pt-6"
+          style={{ borderTop: `1px solid ${BORDER}` }}
+        >
+          <p className="text-[18px] md:text-[20px] italic leading-snug" style={{ fontFamily: SERIF, color: INK, fontWeight: 400 }}>
+          {line.slice(4).replace(/\*\*/g, '')}
+          </p>
+        </div>
       );
     } else if (line.startsWith('## ')) {
       flushList();
@@ -764,7 +781,12 @@ function FaceSection({
         {/* Narrative */}
         {text && (
           <div className="mt-10 pt-8" style={{ borderTop: `1px solid ${BORDER}` }}>
-            <RenderMarkdown text={text} />
+            <div
+              className="rounded-3xl p-6 md:p-8"
+              style={{ background: '#fff', border: `1px solid ${BORDER}`, boxShadow: '0 22px 50px -42px rgba(27,24,21,0.25)' }}
+            >
+              <RenderMarkdown text={text} />
+            </div>
           </div>
         )}
       </div>
@@ -1102,7 +1124,12 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
 
         {text && (
           <div className="mt-10 pt-8" style={{ borderTop: `1px solid ${BORDER}` }}>
-            <RenderMarkdown text={text} />
+            <div
+              className="rounded-3xl p-6 md:p-8"
+              style={{ background: '#fff', border: `1px solid ${BORDER}`, boxShadow: '0 22px 50px -42px rgba(27,24,21,0.25)' }}
+            >
+              <RenderMarkdown text={text} />
+            </div>
           </div>
         )}
       </div>
@@ -2157,13 +2184,17 @@ function ComboGridSection({
               </p>
               <div
                 className="overflow-hidden rounded-3xl"
-                style={{ background: SHELL, border: `1px solid ${BORDER}`, aspectRatio: '3/1' }}
+                style={{
+                  background: SHELL,
+                  border: `1px solid ${BORDER}`,
+                  aspectRatio: grid.url ? undefined : '16/9',
+                }}
               >
                 {grid.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={grid.url} alt={grid.label} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <img src={grid.url} alt={grid.label} loading="lazy" decoding="async" className="block w-full h-auto" />
                 ) : (
-                  <div className="h-full min-h-[160px] flex items-center justify-center px-6 text-center">
+                  <div className="h-full min-h-[220px] md:min-h-[320px] flex items-center justify-center px-6 text-center">
                     <span className="text-[12px]" style={{ color: INK_SOFT }}>Grid image pending</span>
                   </div>
                 )}
@@ -2325,11 +2356,17 @@ function TextReportSection({
   background?: string;
 }) {
   if (!text) return null;
+  const panelBackground = background === '#fff' || background === '#ffffff' ? SHELL : '#fff';
   return (
     <div style={{ background }}>
       <SectionHeader number={number} label={label} />
       <div className="px-6 md:px-12 pb-14">
-        <RenderMarkdown text={text} />
+        <div
+          className="rounded-3xl p-6 md:p-8"
+          style={{ background: panelBackground, border: `1px solid ${BORDER}` }}
+        >
+          <RenderMarkdown text={text} />
+        </div>
       </div>
     </div>
   );
