@@ -34,7 +34,7 @@ export async function POST(
   const inspirationText = String(formData.get('inspirationText') ?? '').trim();
   const inspirationFile = formData.get('inspirationImage');
 
-  if (!Number.isInteger(outfitNumber) || outfitNumber < 1 || outfitNumber > 16) {
+  if (!Number.isInteger(outfitNumber) || outfitNumber < 1 || outfitNumber > 20) {
     return NextResponse.json({ error: 'Valid outfitNumber is required' }, { status: 400 });
   }
   if (!reason && !notes && !inspirationText && !(inspirationFile instanceof File && inspirationFile.size > 0)) {

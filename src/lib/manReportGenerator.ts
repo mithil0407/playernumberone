@@ -154,8 +154,15 @@ Return ONLY the following JSON object, fully populated:
     "grooming_image_evidence": "",
     "hairstyle_recommendations": ["", ""],
     "beard_style_recommendations": ["", ""],
+    "beard_maintenance": "",
     "facial_hair_recommendations": "",
-    "eyewear_shapes": ["", ""]
+    "eyewear_shapes": ["", ""],
+    "skincare_routine": {
+      "morning": ["", "", ""],
+      "evening": ["", ""],
+      "shaving_or_beard_area": "",
+      "skin_adjustment": ""
+    }
   },
   "colour": {
     "season": "",
@@ -198,18 +205,24 @@ Return ONLY the following JSON object, fully populated:
     "key_aspiration": ""
   },
   "outfit_split": {
-    "total": 16,
+    "total": 20,
     "categories": [
-      {"category": "Formal", "count": 4, "rationale": "Corporate office, client-facing, formal events"},
-      {"category": "Smart Casual", "count": 4, "rationale": "Business casual, startup office, client lunches"},
-      {"category": "Evening Wear", "count": 4, "rationale": "Dinner, parties, dates, evening events"},
-      {"category": "Relaxed Casual", "count": 4, "rationale": "Weekends, coffee, travel, errands, social hangouts"}
+      {"category": "Office / Formal", "count": 6, "rationale": "Office, formal workplace, client-facing, presentations, polished professional presence"},
+      {"category": "Smart Casual", "count": 4, "rationale": "Business casual, startup office, client lunches, elevated day-to-evening dressing"},
+      {"category": "Evening Wear", "count": 5, "rationale": "Dinner, parties, dates, social evenings, stronger personality dressing"},
+      {"category": "Relaxed Casual", "count": 5, "rationale": "Weekends, coffee, travel, errands, social hangouts, practical off-duty dressing"}
     ]
   }
 }
 
 OUTFIT SPLIT — always use this exact fixed split regardless of dressing context:
-  Formal: 4 | Smart Casual: 4 | Evening Wear: 4 | Relaxed Casual: 4 = 16 total`;
+  Office / Formal: 6 | Smart Casual: 4 | Evening Wear: 5 | Relaxed Casual: 5 = 20 total
+
+SKINCARE ROUTINE — keep it basic, non-medical, and product-type only:
+  Morning must cover cleanser, moisturiser, sunscreen.
+  Evening must cover cleanser and moisturiser.
+  Shaving/beard-area guidance must be practical and tied to visible/self-reported grooming, without diagnosing skin conditions.
+  Do not name brands, actives, treatments, prescriptions, acne protocols, or medical claims.`;
 
 // ─────────────────────────────────────────────────────────────
 // PROMPT 2 — REPORT GENERATION ENGINE
@@ -248,9 +261,22 @@ Primary Goal: {{primary_goal}}
 Style Blocker: {{style_blocker}}
 --- END FORM DATA ---
 
-Generate the following 6 sections in order.
+Generate the following sections in order.
 Use the exact section headers provided.
 Each section must be complete, specific, and personalised — no filler sentences.
+
+---
+
+## SECTION 0: YOUR PERSONAL STYLE SNAPSHOT
+
+Opening paragraph (3-4 sentences):
+Summarise this man's style direction, body priority, colour direction, grooming direction, and what the wardrobe must do for him now.
+
+### Your Top 3 Priorities
+3 bullets exactly. Each bullet must be specific, actionable, and tied to his intake.
+
+### What Changes First
+One paragraph explaining the highest-return change across clothes, grooming, and shopping behaviour.
 
 ---
 
@@ -259,8 +285,8 @@ Each section must be complete, specific, and personalised — no filler sentence
 Opening paragraph (3-4 sentences):
 State the face shape and feature type. Explain what this means structurally — what proportions are at play. Set up why the recommendations below work for this specific geometry.
 
-### Facial Hair Guide
-One paragraph (2-3 sentences) on facial hair. Be specific — not "keep it neat."
+### Beard & Facial Hair Guide
+One paragraph (3-4 sentences) on facial hair for this client, even if he is currently clean-shaven. Include best beard/stubble length, cheek line, neckline, moustache direction when relevant, what to avoid, and maintenance frequency. Do not force a full beard; clean-shaven can be the answer if it is best.
 
 ### Grooming & Collar Direction
 3 bullets maximum. If grooming_focus is "beard", rename this subheading to exactly "### Beard Style & Collar Direction" and cover beard style direction instead of hairstyle direction; otherwise keep this subheading and cover hairstyle direction. Also cover neckline/collar shape and watch/accessory metal direction. Tie every recommendation to face geometry, feature type, undertone, or register. For bald or closely shaved clients, do not mention growing scalp hair or adding hair volume.
@@ -280,8 +306,8 @@ One sentence: name the silhouette type and the single most important clothing pr
 ### Fit Blueprint
 4-5 bullet points. Each bullet: one rule stated clearly in bold, then a dash, then one sentence of geometric logic. No sub-bullets, no examples.
 
-### Fit Diagnostics
-6 bullets exactly. Cover shirt length, trouser rise, sleeve fit, shoulder seam, trouser break, and jacket length. Make each bullet a practical shopping or tailoring diagnostic the client can use in a fitting room.
+### Ready-To-Wear Fit Diagnostics
+7 bullets exactly. Cover shirt length, shoulder fit, sleeve width, trouser rise, trouser break, shoe shape, and fabric weight for India/UAE climates. Make each bullet a practical off-the-rack shopping diagnostic; do not make tailoring the main solution.
 
 ### Cuts to Avoid
 3 bullet points maximum. Each: cut name in bold, dash, one sentence on why it conflicts. No shame language.
@@ -325,15 +351,15 @@ One paragraph (3-4 sentences): pattern scale, contrast level, and fabric texture
 
 ---
 
-## SECTION 4: YOUR 16 OUTFITS
+## SECTION 4: YOUR 20 OUTFITS
 
 The ICONIK Outfit Recommendation Skill has been injected above. Follow it exactly — all constraint rules, format, and context splits are defined there.
 
-Generate all 16 outfits now using the format from Section 13 of the skill:
-- Outfits 1–4: FORMAL
-- Outfits 5–8: SMART CASUAL
-- Outfits 9–12: EVENING WEAR
-- Outfits 13–16: RELAXED CASUAL
+Generate all 20 outfits now using the format from Section 13 of the skill:
+- Outfits 1–6: OFFICE / FORMAL
+- Outfits 7–10: SMART CASUAL
+- Outfits 11–15: EVENING WEAR
+- Outfits 16–20: RELAXED CASUAL
 
 ---
 BANNED GARMENTS \u2014 INTERNAL INSTRUCTION, DO NOT OUTPUT THIS SECTION HEADER
@@ -345,7 +371,7 @@ Everything else is permitted \u2014 slim-fit trousers, tapered chinos, fitted te
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 GARMENT VOCABULARY \u2014 DIVERSITY IS MANDATORY
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-BOTTOMS \u2014 use at least 4 different types across 16 outfits, no single type should dominate:
+BOTTOMS \u2014 use at least 5 different types across 20 outfits, no single type should dominate:
   \u2022 Straight-leg jeans (raw denim, washed, or lightly distressed \u2014 vary the wash)
   \u2022 Slim-straight jeans (fitted through thigh, straight below knee)
   \u2022 Wide-leg trousers (relaxed through thigh and leg)
@@ -357,7 +383,7 @@ BOTTOMS \u2014 use at least 4 different types across 16 outfits, no single type 
   \u2022 Corduroy trousers
   \u2022 Jogger-style trousers in structured fabric (casual only)
 
-TOPS \u2014 use at least 5 different types across 16 outfits. Avoid repeating the same type more than 3 times:
+TOPS \u2014 use at least 6 different types across 20 outfits. Avoid repeating the same type more than 4 times:
   \u2022 Dress shirt (any fit)
   \u2022 Casual button-down / Oxford shirt
   \u2022 Linen shirt (relaxed or camp collar)
@@ -371,7 +397,7 @@ TOPS \u2014 use at least 5 different types across 16 outfits. Avoid repeating th
   \u2022 Printed / patterned shirt (geometric, abstract, stripes \u2014 NO floral prints)
   \u2022 Kurta (Indian occasion)
 
-LAYERS & OUTERWEAR \u2014 use at least 4 different layer types across the 16 outfits:
+LAYERS & OUTERWEAR \u2014 use at least 4 different layer types across the 20 outfits:
   \u2022 Structured blazer (single or double breasted)
   \u2022 Unstructured / deconstructed blazer
   \u2022 Leather jacket (biker, caf\u00e9 racer, or classic)
@@ -388,7 +414,7 @@ LAYERS & OUTERWEAR \u2014 use at least 4 different layer types across the 16 out
   \u2022 Nehru jacket / bandh-gala (Indian occasion)
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-FOOTWEAR \u2014 use at least 4 different types across 16 outfits
+FOOTWEAR \u2014 use at least 5 different types across 20 outfits
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 Formal:
   \u2022 Oxford (cap-toe, plain, brogue) \u2014 closed lacing, most formal
@@ -465,7 +491,7 @@ COLOUR RULES
 RULE 1 \u2014 COLOUR FREEDOM WITH PURPOSE:
 Any colour family is permitted in any outfit. The client's primary palette colours are NOT a default — do NOT cluster outfits around the palette colours just because they are listed there. Treat the palette as one data source among many, not as the outfit colour guide.
 The ONLY hard block: the classification colours_to_avoid list. Everything else is open.
-The client's primary palette already covers his signature colours — the 16 outfits should go BEYOND that narrow range and demonstrate the full breadth of a well-built wardrobe.
+The client's primary palette already covers his signature colours — the 20 outfits should go BEYOND that narrow range and demonstrate the full breadth of a well-built wardrobe.
 
 RULE 2 \u2014 UNDERTONE SHAPES SHADE, NOT COLOUR FAMILY:
 The client's undertone determines WHICH SHADE to pick within a colour family — it does NOT restrict which families are available.
@@ -483,28 +509,28 @@ Every outfit must follow one of these four named pairing strategies. State the s
 
 RULE 4 \u2014 OCCASION COLOUR TEMPERATURE:
 Colour choice must respect the context of each category:
-  FORMAL (outfits 1\u20134): Dominant colour must be a sober, authoritative tone \u2014 navy, charcoal, dark grey, stone, ivory, dark burgundy, dark forest green, mid-blue, chocolate brown, or black. A creative or fashion-forward primary_brief may introduce one structured bold colour, but in no more than 1 of the 4 formal looks.
-  SMART CASUAL (outfits 5\u20138): Polished but easy. Expand from power neutrals into accents, textured shirts, elevated polos, relaxed tailoring, and client-lunch outfits.
-  EVENING WEAR (outfits 9\u201312): Rich, confident, sophisticated. Jewel tones, bold monochromes, deep saturated shades. Avoid safe neutrals here \u2014 evening is the correct context for the palette's accent colours and for maximum colour impact.
-  RELAXED CASUAL (outfits 13\u201316): Practical, repeatable off-duty dressing. This is where denim, tees, Henleys, lightweight casual layers, and streetwear-adjacent signals can appear when the client selected them.
+  OFFICE / FORMAL (outfits 1\u20136): Dominant colour must be a sober, authoritative tone \u2014 navy, charcoal, dark grey, stone, ivory, dark burgundy, dark forest green, mid-blue, chocolate brown, or black. A creative or fashion-forward primary_brief may introduce one structured bold colour, but in no more than 1 of the 6 office/formal looks.
+  SMART CASUAL (outfits 7\u201310): Polished but easy. Expand from power neutrals into accents, textured shirts, elevated polos, relaxed tailoring, and client-lunch outfits.
+  EVENING WEAR (outfits 11\u201315): Rich, confident, sophisticated. Jewel tones, bold monochromes, deep saturated shades. Avoid safe neutrals here \u2014 evening is the correct context for the palette's accent colours and for maximum colour impact.
+  RELAXED CASUAL (outfits 16\u201320): Practical, repeatable off-duty dressing. This is where denim, tees, Henleys, lightweight casual layers, and streetwear-adjacent signals can appear when the client selected them.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 DIVERSITY MANDATE \u2014 THE MOST IMPORTANT RULE IN THIS ENTIRE PROMPT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-The 16 outfits must feel like 16 DIFFERENT outfits, not variations of the same look.
+The 20 outfits must feel like 20 DIFFERENT outfits, not variations of the same look.
 
 GARMENT DIVERSITY (hard requirements):
-- Use at least 4 different bottom types across 16 outfits (e.g. jeans, chinos, tailored trousers, linen trousers)
-- Use at least 5 different top types across 16 outfits (e.g. dress shirt, t-shirt, polo, knit, linen shirt)
+- Use at least 5 different bottom types across 20 outfits (e.g. jeans, chinos, tailored trousers, linen trousers)
+- Use at least 6 different top types across 20 outfits (e.g. dress shirt, t-shirt, polo, knit, linen shirt)
 - Use at least 4 different layer/outerwear types (e.g. blazer, leather jacket, bomber, overshirt)
-- Use at least 4 different footwear types across 16 outfits
+- Use at least 5 different footwear types across 20 outfits
 
 COLOUR DIVERSITY (hard requirements):
-- No single dominant colour should appear in more than 4 of 16 outfits (this includes navy, white, black, grey)
+- No single dominant colour should appear in more than 5 of 20 outfits (this includes navy, white, black, grey)
 - At least 4 outfits must feature a bold or unexpected colour as the dominant note (not a neutral or earth tone)
 - At least 2 outfits must be fully tonal (head-to-toe in shades of one colour family)
 - No more than 3 consecutive outfits within the same colour family
-- All 6 of the following colour families MUST appear across the 16 outfits \u2014 if any are missing the output fails:
+- All 6 of the following colour families MUST appear across the 20 outfits \u2014 if any are missing the output fails:
     \u2713 Warm earth (camel, rust, tan, terracotta, tobacco, warm brown, warm olive)
     \u2713 Cool neutral (charcoal, slate, cool grey, true navy, stone, off-white, black)
     \u2713 Jewel tone (deep teal, emerald, burgundy, cobalt, plum, rich olive, sapphire)
@@ -520,14 +546,14 @@ SILHOUETTE DIVERSITY:
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 FREE NOTE TRANSLATION \u2014 INTERNAL PLANNING STEP (DO NOT OUTPUT)
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Before generating any outfit, internally translate the client's Free Note aspiration into specific garment types, colour names, and occasion terms. Do NOT output this translation \u2014 use it only to inform \u22653 outfits that directly embody the client's aesthetic.
+Before generating any outfit, internally translate the client's Free Note aspiration into specific garment types, colour names, and occasion terms. Do NOT output this translation \u2014 use it only to inform \u22654 outfits that directly embody the client's aesthetic.
 
 If Free Note is absent or vague, default to the style brief's aesthetic_direction from classification.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 OUTFIT ORDERING
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-Present outfits in this order: Formal (4), then Smart Casual (4), then Evening Wear (4), then Relaxed Casual (4).
+Present outfits in this order: Office / Formal (6), then Smart Casual (4), then Evening Wear (5), then Relaxed Casual (5).
 Within each category, order from highest-stakes to most relaxed.
 The first outfit sets the quality benchmark \u2014 make it the strongest look.
 
@@ -535,19 +561,19 @@ The first outfit sets the quality benchmark \u2014 make it the strongest look.
 PRE-GENERATION CHECKLIST \u2014 INTERNAL ONLY, DO NOT OUTPUT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 Before writing the first category header, silently verify:
-- Outfit split: 4 Formal + 4 Smart Casual + 4 Evening Wear + 4 Relaxed Casual = 16
-- colours_to_avoid confirmed and hard-blocked in all 16 outfits
-- Diversity: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 footwear types planned
-- No single dominant colour in more than 4 outfits
+- Outfit split: 6 Office / Formal + 4 Smart Casual + 5 Evening Wear + 5 Relaxed Casual = 20
+- colours_to_avoid confirmed and hard-blocked in all 20 outfits
+- Diversity: \u22655 bottom types, \u22656 top types, \u22654 layer types, \u22655 footwear types planned
+- No single dominant colour in more than 5 outfits
 - No two outfits share the same dominant colour story
 - All 6 colour families covered: warm earth, cool neutral, jewel tone, pastel/muted, monochrome/tonal, bright/bold
 - Occasion colour temperature applied: formal=sober, casual=open, evening=rich
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-OUTFIT FORMAT \u2014 REQUIRED FOR ALL 16
+OUTFIT FORMAT \u2014 REQUIRED FOR ALL 20
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-For each outfit category (Formal, Smart Casual, Evening Wear, Relaxed Casual), open with:
+For each outfit category (Office / Formal, Smart Casual, Evening Wear, Relaxed Casual), open with:
 Category intro (2 sentences): Objective of this category for this specific client \u2014 what role these outfits play in his life.
 
 Then for each outfit, use this exact structure:
@@ -569,36 +595,70 @@ Then for each outfit, use this exact structure:
 If the original intake includes Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe signals, include lightweight Indian-context support in at least 2 outfits. Use Western-first styling unless the signal is strong; acceptable Indian-context pieces include kurta, band-collar shirt, Nehru jacket, bandh-gala, and festive loafers/sandals where climate-appropriate.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-FULL GENERATION CHECKLIST \u2014 ALL 16 MUST PASS BEFORE OUTPUT
+FULL GENERATION CHECKLIST \u2014 ALL 20 MUST PASS BEFORE OUTPUT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 \u2713 BANNED GARMENTS: No skinny jeans in any outfit.
-\u2713 COLOUR BLOCK: colours_to_avoid absent from all 16.
-\u2713 DIVERSITY: \u22654 bottom types, \u22655 top types, \u22654 layer types, \u22654 shoe types used.
-\u2713 COLOUR DIVERSITY: No dominant colour in >4 outfits. \u22654 bold/unexpected colours. \u22652 tonal builds. All 6 colour families present.
+\u2713 COLOUR BLOCK: colours_to_avoid absent from all 20.
+\u2713 DIVERSITY: \u22655 bottom types, \u22656 top types, \u22654 layer types, \u22655 shoe types used.
+\u2713 COLOUR DIVERSITY: No dominant colour in >5 outfits. \u22654 bold/unexpected colours. \u22652 tonal builds. All 6 colour families present.
 \u2713 UNIQUENESS: No two outfits share the same top+bottom combination or colour story.
 \u2713 FABRIC CLIMATE: Correct matrix applied for client's location.
 \u2713 FIT NOTE: Every outfit references client's body geometry.
 \u2713 OCCASION ANCHOR: Every outfit has a specific wear-to scenario.
-\u2713 CATEGORY SPLIT: 4 Formal, 4 Smart Casual, 4 Evening Wear, 4 Relaxed Casual \u2014 all present.
+\u2713 CATEGORY SPLIT: 6 Office / Formal, 4 Smart Casual, 5 Evening Wear, 5 Relaxed Casual \u2014 all present.
 
 ---
 
-## SECTION 5: YOUR STYLE RULES
+## SECTION 5: YOUR COMBINATION GRID GUIDE
 
-### 3 Always Rules
-Three rules specific to this client's body + colour + style brief combination. Not generic advice. Each must be traceable to the classification.
-Format: - **[Rule title]** — one sentence, specific application only. No filler.
+Write copy for three custom 1-row x 3-column image grids that will be generated after the 20 outfit images. Each grid should define three related looks that show the client in the same visual system, not generic flat-lays.
 
-### 3 Never Rules
-Three rules specific to what this client must avoid based on his profile.
-Same format. No shame language — frame as optimisation, not restriction.
+### Office Basic Combinations
+3 columns exactly. For each column: name, full outfit summary, why it suits this client, and which Office / Formal outfit it is derived from.
 
-### First 5 Purchases
-Five numbered items the client should buy or tailor first. Each item must include: exact garment, colour/fabric direction, why it unlocks multiple outfits, and one caution about the wrong version to avoid.
+### Evening Outfit Combinations
+3 columns exactly. For each column: name, full outfit summary, why it suits this client, and which Evening Wear outfit it is derived from.
+
+### Relaxed Casual Combinations
+3 columns exactly. For each column: name, full outfit summary, why it suits this client, and which Relaxed Casual outfit it is derived from.
 
 ---
 
-## SECTION 6: YOUR STYLE IDENTITY STATEMENT
+## SECTION 6: YOUR SHOPPING & READY-TO-WEAR FIT SYSTEM
+
+### Shopping Roadmap
+Use these subheadings exactly:
+#### Buy First
+#### Upgrade Next
+#### Skip For Now
+#### Never Buy
+
+Under each subheading, give 3-5 bullets. Each bullet must name the garment/category, colour/fabric/fit direction, why it suits him, and the common wrong version to avoid.
+
+### Ready-To-Wear Fit Guide
+Give practical off-the-rack checks for Indian men. Cover shirt length, shoulder fit, sleeve width, trouser rise, trouser break, shoe shape, and fabric weight for India/UAE climates. Do not make tailoring the main solution.
+
+---
+
+## SECTION 7: YOUR GROOMING & BASIC SKINCARE SYSTEM
+
+### Beard & Facial Hair System
+Give a dedicated facial-hair plan for this client: best length, cheek line, neckline, moustache direction, what to avoid, and maintenance frequency. Clean-shaven is allowed, but still explain how to maintain the shave line and skin around it.
+
+### Basic Skincare Routine
+Keep this practical and non-medical. Use these subheadings exactly:
+#### Morning
+List cleanser, moisturiser, sunscreen.
+#### Evening
+List cleanser and moisturiser.
+#### Shaving / Beard Area
+Give 2-3 practical rules for irritation control, neckline care, and beard-area neatness without medical claims.
+#### Adjustment
+Give one basic adjustment for oily, dry, or sensitive-looking skin if visible from the image or implied by shaving/beard state; otherwise give a neutral routine note.
+
+---
+
+## SECTION 8: YOUR STYLE IDENTITY STATEMENT
 
 One paragraph, 5-7 sentences.
 Write directly to the client about who he is stylistically — what his profile says about him, what his aspiration tells you about his self-concept, and what his wardrobe can do for him.
@@ -637,8 +697,15 @@ export interface ClassificationResult {
     grooming_image_evidence?: string;
     hairstyle_recommendations: string[];
     beard_style_recommendations?: string[];
+    beard_maintenance?: string;
     facial_hair_recommendations: string;
     eyewear_shapes: string[];
+    skincare_routine?: {
+      morning: string[];
+      evening: string[];
+      shaving_or_beard_area: string;
+      skin_adjustment: string;
+    };
   };
   colour: {
     season: string;
@@ -669,11 +736,15 @@ export interface ClassificationResult {
 }
 
 export interface ReportSections {
+  s0_snapshot?: string;
   s1_face: string;
   s2_body: string;
   s3_colour: string;
   s4_outfits: string;
-  s5_rules: string;
+  s4_combo_grids?: string;
+  s5_rules?: string;
+  s5_shopping?: string;
+  s5_grooming_skin?: string;
   s6_identity: string;
 }
 
@@ -895,16 +966,28 @@ function normaliseClassification(
       beard_style_recommendations: Array.isArray(face.beard_style_recommendations)
         ? face.beard_style_recommendations.slice(0, 2)
         : [],
+      beard_maintenance: face.beard_maintenance || 'Keep cheek lines intentional and clean the neckline every 3-5 days so facial hair reads groomed, not accidental.',
       facial_hair_recommendations: face.facial_hair_recommendations || 'Keep facial hair intentionally shaped to support the face geometry.',
       eyewear_shapes: Array.isArray(face.eyewear_shapes) ? face.eyewear_shapes.slice(0, 2) : [],
+      skincare_routine: {
+        morning: Array.isArray(face.skincare_routine?.morning) && face.skincare_routine.morning.length
+          ? face.skincare_routine.morning.slice(0, 3)
+          : ['Gentle cleanser', 'Light moisturiser', 'Broad-spectrum sunscreen'],
+        evening: Array.isArray(face.skincare_routine?.evening) && face.skincare_routine.evening.length
+          ? face.skincare_routine.evening.slice(0, 2)
+          : ['Gentle cleanser', 'Light moisturiser'],
+        shaving_or_beard_area: face.skincare_routine?.shaving_or_beard_area || 'Use a clean shave line or beard edge, then moisturise the beard area so the skin does not look dry around the grooming line.',
+        skin_adjustment: face.skincare_routine?.skin_adjustment || 'Keep the routine simple and consistent; adjust product texture lighter or richer depending on how the skin feels through the day.',
+      },
     },
   };
 
   if (confidentBaldOrShaved) {
     next.face.grooming_focus = 'beard';
-    if ((next.face.beard_style_recommendations ?? []).length < 2) {
-      next.face.beard_style_recommendations = fallbackBeardStyles(next.face.facial_hair_presence);
-    }
+  }
+
+  if ((next.face.beard_style_recommendations ?? []).length < 2) {
+    next.face.beard_style_recommendations = fallbackBeardStyles(next.face.facial_hair_presence);
   }
 
   if (confidentThinning && next.face.hairstyle_recommendations.length < 2) {
@@ -930,12 +1013,15 @@ function parseReportSections(text: string): ReportSections {
   }
 
   return {
+    s0_snapshot:  sectionMap['0'] ?? '',
     s1_face:     sectionMap['1'] ?? '',
     s2_body:     sectionMap['2'] ?? '',
     s3_colour:   sectionMap['3'] ?? '',
     s4_outfits:  sectionMap['4'] ?? '',
-    s5_rules:    sectionMap['5'] ?? '',
-    s6_identity: sectionMap['6'] ?? '',
+    s4_combo_grids: sectionMap['5'] ?? '',
+    s5_shopping: sectionMap['6'] ?? '',
+    s5_grooming_skin: sectionMap['7'] ?? '',
+    s6_identity: sectionMap['8'] ?? sectionMap['6'] ?? '',
   };
 }
 
@@ -1185,9 +1271,21 @@ function buildSectionUserPrompt(
   let prompt = preamble + _SECTION_BLOCKS[sectionIndex];
 
   // Inject the outfit recommendation skill for Section 4, with explicit CLIMATE_ZONE.
-  if (sectionIndex === 3) {
+  if (sectionIndex === 4) {
     const climateZone = deriveClimateZone(classification.client.location_region);
-    const climateHeader = `DERIVED VARIABLES (use these — do not re-derive):\nCLIMATE_ZONE = ${climateZone}\n\n`;
+    const climateHeader = `DERIVED VARIABLES (use these — do not re-derive):
+CLIMATE_ZONE = ${climateZone}
+
+20-OUTFIT OVERRIDE — this supersedes any older 16-outfit instruction in the injected skill:
+- Generate exactly 20 outfits.
+- Outfits 1-6: OFFICE / FORMAL.
+- Outfits 7-10: SMART CASUAL.
+- Outfits 11-15: EVENING WEAR.
+- Outfits 16-20: RELAXED CASUAL.
+- Use at least 5 bottom types, 6 top types, 4 layer types, and 5 shoe types.
+- Use the exact header format: OUTFIT [NUMBER] — [CONTEXT NAME].
+
+`;
     prompt = OUTFIT_SKILL + '\n\n' + climateHeader + prompt;
   }
 
@@ -1195,15 +1293,19 @@ function buildSectionUserPrompt(
 }
 
 export async function runSection1(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(0, classification, submission));
-}
-
-export async function runSection2(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
   return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(1, classification, submission));
 }
 
-export async function runSection3(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+export async function runSection2(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
   return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(2, classification, submission));
+}
+
+export async function runSection3(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission));
+}
+
+export async function runSection0(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(0, classification, submission));
 }
 
 /** Safety net: strip any planning/meta text the model may output before the actual outfits.
@@ -1218,7 +1320,7 @@ function stripSection4Preamble(text: string): string {
 }
 
 export async function runSection4(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(3, classification, submission), 65536);
+  const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(4, classification, submission), 65536);
   return stripSection4Preamble(raw);
 }
 
@@ -1253,11 +1355,11 @@ Current Section 4 text:
 ${currentSection4}
 
 Mandatory corrected output:
-- Exactly 16 outfits.
-- Outfits 1–4: FORMAL.
-- Outfits 5–8: SMART CASUAL.
-- Outfits 9–12: EVENING WEAR.
-- Outfits 13–16: RELAXED CASUAL.
+- Exactly 20 outfits.
+- Outfits 1–6: OFFICE / FORMAL.
+- Outfits 7–10: SMART CASUAL.
+- Outfits 11–15: EVENING WEAR.
+- Outfits 16–20: RELAXED CASUAL.
 - Every outfit must include TOP, LAYER, BOTTOM, FOOTWEAR, ACCESSORY, WHY IT WORKS FOR YOU, SHOPPING TRANSLATION, ACCEPTABLE SUBSTITUTES, and DO NOT BUY.
 - No skinny or spray-on cuts.
 - No blazer in RELAXED CASUAL.
@@ -1301,9 +1403,17 @@ export async function repairSection4OutfitsUntilQaPass(
 }
 
 export async function runSection5(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(4, classification, submission));
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(5, classification, submission));
+}
+
+export async function runSection6Shopping(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(6, classification, submission));
+}
+
+export async function runSection7GroomingSkin(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(7, classification, submission));
 }
 
 export async function runSection6(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(5, classification, submission));
+  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(8, classification, submission));
 }

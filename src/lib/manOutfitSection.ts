@@ -17,7 +17,7 @@ export interface ParsedManOutfit {
 }
 
 const CONTEXT_ALIASES: Array<[RegExp, string]> = [
-  [/\bformal\b/i, 'Formal'],
+  [/\boffice\b|\bformal\b/i, 'Office / Formal'],
   [/\bsmart\s+casual\b/i, 'Smart Casual'],
   [/\bevening\b/i, 'Evening Wear'],
   [/\brelaxed\s+casual\b|\bcasual\b/i, 'Relaxed Casual'],
@@ -36,10 +36,10 @@ export function toOutfitTitleCase(str: string): string {
 export function inferOutfitContext(rawLabel: string, outfitNumber: number): string {
   const fromLabel = CONTEXT_ALIASES.find(([pattern]) => pattern.test(rawLabel))?.[1];
   if (fromLabel) return fromLabel;
-  if (outfitNumber >= 1 && outfitNumber <= 4) return 'Formal';
-  if (outfitNumber >= 5 && outfitNumber <= 8) return 'Smart Casual';
-  if (outfitNumber >= 9 && outfitNumber <= 12) return 'Evening Wear';
-  if (outfitNumber >= 13 && outfitNumber <= 16) return 'Relaxed Casual';
+  if (outfitNumber >= 1 && outfitNumber <= 6) return 'Office / Formal';
+  if (outfitNumber >= 7 && outfitNumber <= 10) return 'Smart Casual';
+  if (outfitNumber >= 11 && outfitNumber <= 15) return 'Evening Wear';
+  if (outfitNumber >= 16 && outfitNumber <= 20) return 'Relaxed Casual';
   return 'Unknown';
 }
 

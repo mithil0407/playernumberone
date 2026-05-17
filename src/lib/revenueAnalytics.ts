@@ -1,7 +1,6 @@
 import 'server-only';
 
 import { createSupabaseAdminServerClient } from '@/lib/supabaseServer';
-import { supabaseGlobeServer } from '@/lib/serverSupabaseGlobe';
 import type { RevenueCurrency, RevenueMarket, RevenueKind, RevenueStatus } from '@/lib/revenueEvents';
 import { normalizeCurrency, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
@@ -416,19 +415,6 @@ async function safeSelect(
   return (data ?? []) as unknown as Array<Record<string, unknown>>;
 }
 
-async function safeSelectGlobe(table: string, select: string, warnings: QueryWarning[]) {
-  const { data, error } = await supabaseGlobeServer.from(table).select(select).order('created_at', { ascending: false });
-  if (error) {
-    if (isMissingTableError(error)) {
-      warnings.push({ table, message: `${table} is not available in the AU/Globe Supabase project.` });
-      return [];
-    }
-    console.error(`Revenue analytics query failed for ${table}:`, error);
-    return [];
-  }
-  return (data ?? []) as unknown as Array<Record<string, unknown>>;
-}
-
 export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {}) {
   const primary = createSupabaseAdminServerClient();
   const queryWarnings: QueryWarning[] = [];
@@ -449,12 +435,12 @@ export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {
     safeSelect(primary, 'orders', '*, customers(name,email,phone)', queryWarnings),
     safeSelect(primary, 'subscriptions', '*', queryWarnings),
     safeSelect(primary, 'customers', '*', queryWarnings),
-    safeSelectGlobe('au_orders', '*', queryWarnings),
-    safeSelectGlobe('au_subscriptions', '*', queryWarnings),
-    safeSelectGlobe('au_customers', '*', queryWarnings),
-    safeSelectGlobe('globe_orders', '*', queryWarnings),
-    safeSelectGlobe('globe_subscriptions', '*', queryWarnings),
-    safeSelectGlobe('globe_customers', '*', queryWarnings),
+    safeSelect(primary, 'au_orders', '*', queryWarnings),
+    safeSelect(primary, 'au_subscriptions', '*', queryWarnings),
+    safeSelect(primary, 'au_customers', '*', queryWarnings),
+    safeSelect(primary, 'globe_orders', '*', queryWarnings),
+    safeSelect(primary, 'globe_subscriptions', '*', queryWarnings),
+    safeSelect(primary, 'globe_customers', '*', queryWarnings),
   ]);
 
   const ledgerEvents = ledgerRows.map(normalizeLedgerEvent);

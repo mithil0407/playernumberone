@@ -45,7 +45,7 @@ export async function POST(
     ? body.imageModel
     : 'gemini-3.1-flash-image-preview';
 
-  if (!Number.isInteger(outfitNumber) || outfitNumber < 1 || outfitNumber > 16 || !candidateBlock || !baseUpdatedAt || !currentOutfitHash) {
+  if (!Number.isInteger(outfitNumber) || outfitNumber < 1 || outfitNumber > 20 || !candidateBlock || !baseUpdatedAt || !currentOutfitHash) {
     return NextResponse.json({ error: 'outfitNumber, candidateBlock, baseUpdatedAt, and currentOutfitHash are required' }, { status: 400 });
   }
 
@@ -74,6 +74,7 @@ export async function POST(
     beardCards: [],
     eyewearCards: [],
     outfitCards: [],
+    comboGridCards: {},
   };
   const currentSection4 = reportData.sections?.s4_outfits ?? '';
   const currentBlock = extractOutfitBlock(currentSection4, outfitNumber);
@@ -166,6 +167,7 @@ export async function POST(
     beardCards: [...(imagePaths.beardCards ?? [])],
     eyewearCards: [...(imagePaths.eyewearCards ?? [])],
     outfitCards: nextOutfitCards,
+    comboGridCards: { ...(imagePaths.comboGridCards ?? {}) },
     ...(imagePaths.baseModel ? { baseModel: imagePaths.baseModel } : {}),
   };
 

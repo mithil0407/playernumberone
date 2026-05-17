@@ -22,16 +22,16 @@ interface ParsedQaOutfit {
   fields: Record<string, string>;
 }
 
-const EXPECTED_CONTEXTS = ['Formal', 'Smart Casual', 'Evening Wear', 'Relaxed Casual'] as const;
+const EXPECTED_CONTEXTS = ['Office / Formal', 'Smart Casual', 'Evening Wear', 'Relaxed Casual'] as const;
 const EXPECTED_CONTEXT_COUNTS: Record<string, number> = {
-  Formal: 4,
+  'Office / Formal': 6,
   'Smart Casual': 4,
-  'Evening Wear': 4,
-  'Relaxed Casual': 4,
+  'Evening Wear': 5,
+  'Relaxed Casual': 5,
 };
 
 const CONTEXT_ALIASES: Array<[RegExp, string]> = [
-  [/\bformal\b/i, 'Formal'],
+  [/\boffice\b|\bformal\b/i, 'Office / Formal'],
   [/\bsmart\s+casual\b/i, 'Smart Casual'],
   [/\bevening\b/i, 'Evening Wear'],
   [/\brelaxed\s+casual\b|\bcasual\b/i, 'Relaxed Casual'],
@@ -127,8 +127,9 @@ export function validateManReportSection4(
     contextCounts[outfit.context] = (contextCounts[outfit.context] ?? 0) + 1;
   }
 
-  if (outfits.length !== 16) {
-    issues.push(issue('outfit_count', 'error', `Expected 16 parsed outfits, found ${outfits.length}.`));
+  const expectedTotal = Object.values(EXPECTED_CONTEXT_COUNTS).reduce((sum, count) => sum + count, 0);
+  if (outfits.length !== expectedTotal) {
+    issues.push(issue('outfit_count', 'error', `Expected ${expectedTotal} parsed outfits, found ${outfits.length}.`));
   }
 
   for (const [context, expected] of Object.entries(EXPECTED_CONTEXT_COUNTS)) {

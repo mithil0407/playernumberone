@@ -126,12 +126,14 @@ export async function POST(
     beardCards: [],
     eyewearCards: [],
     outfitCards: [],
+    comboGridCards: {},
   };
   const nextImagePaths: ManReportImagePaths = {
     hairstyleCards: [...(imagePaths.hairstyleCards ?? [])],
     beardCards: [...(imagePaths.beardCards ?? [])],
     eyewearCards: [...(imagePaths.eyewearCards ?? [])],
     outfitCards: [...(imagePaths.outfitCards ?? [])],
+    comboGridCards: { ...(imagePaths.comboGridCards ?? {}) },
     ...(imagePaths.baseModel ? { baseModel: imagePaths.baseModel } : {}),
   };
 

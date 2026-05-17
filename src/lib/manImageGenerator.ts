@@ -5,7 +5,7 @@
 //   Client's HEADSHOT → 2 hairstyle variants applied, background kept as-is
 //
 // Phase 4 — Outfit images (16 calls, fully parallel):
-//   Client's FULL-BODY PHOTO → each of the 16 outfits applied
+//   Client's FULL-BODY PHOTO → each of the 20 outfits applied + 3 combo grids
 //
 // image_urls in the DB stores storage paths (not signed URLs).
 // resolveManReportImageUrls() converts paths → fresh signed URLs at serve time.
@@ -44,6 +44,11 @@ export interface ManReportImagePaths {
   beardCards:     (string | null)[]; // 2 headshot beard/grooming variants for bald clients
   eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
   outfitCards:    (string | null)[];
+  comboGridCards?: {
+    office?: string | null;
+    evening?: string | null;
+    relaxed?: string | null;
+  };
   baseModel?:     string;            // legacy — kept for backward compat with old reports
 }
 
@@ -53,6 +58,11 @@ export interface ResolvedImageUrls {
   beardCards:     (string | null)[]; // 2 headshot beard/grooming variants for bald clients
   eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
   outfitCards:    (string | null)[];
+  comboGridCards?: {
+    office?: string | null;
+    evening?: string | null;
+    relaxed?: string | null;
+  };
   baseModel?:     string | null;     // legacy
 }
 
@@ -63,6 +73,7 @@ interface PartialImagePathPatch {
   beardCards?: (string | null | undefined)[];
   eyewearCards?: (string | null | undefined)[];
   outfitCards?: (string | null | undefined)[];
+  comboGridCards?: ManReportImagePaths['comboGridCards'];
   baseModel?: string | null;
 }
 interface StoredImagePathState {
@@ -94,6 +105,11 @@ function normaliseImagePaths(paths: ManReportImagePaths | null | undefined): Man
     beardCards:     (paths?.beardCards     ?? []).map(normaliseImagePath),
     eyewearCards:   (paths?.eyewearCards   ?? []).map(normaliseImagePath),
     outfitCards:    (paths?.outfitCards    ?? []).map(normaliseImagePath),
+    comboGridCards: {
+      office: normaliseImagePath(paths?.comboGridCards?.office),
+      evening: normaliseImagePath(paths?.comboGridCards?.evening),
+      relaxed: normaliseImagePath(paths?.comboGridCards?.relaxed),
+    },
     ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
   };
 }
@@ -109,6 +125,11 @@ export function mergeManReportImagePaths(
     beardCards:     mergeImagePathArrays(base.beardCards, incoming?.beardCards),
     eyewearCards:   mergeImagePathArrays(base.eyewearCards, incoming?.eyewearCards),
     outfitCards:    mergeImagePathArrays(base.outfitCards, incoming?.outfitCards),
+    comboGridCards: {
+      office: normaliseImagePath(incoming?.comboGridCards?.office) ?? base.comboGridCards?.office ?? null,
+      evening: normaliseImagePath(incoming?.comboGridCards?.evening) ?? base.comboGridCards?.evening ?? null,
+      relaxed: normaliseImagePath(incoming?.comboGridCards?.relaxed) ?? base.comboGridCards?.relaxed ?? null,
+    },
     ...(normaliseImagePath(incoming?.baseModel) ?? base.baseModel
       ? { baseModel: normaliseImagePath(incoming?.baseModel) ?? base.baseModel! }
       : {}),
@@ -174,7 +195,7 @@ export async function mergeManReportImagePathsForReport(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Outfit parser
-// Extracts the 16 structured outfits from Section 4 markdown text
+// Extracts the structured outfits from Section 4 markdown text
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ParsedOutfit {
@@ -343,6 +364,77 @@ Pose: Standing upright, confident, arms relaxed at sides, facing the camera dire
 The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, soft, no harsh shadows, no blown highlights.
 
 Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the vertical frame from head to toe with minimal headroom and no cropping at the feet.`;
+}
+
+type ComboGridKind = 'office' | 'evening' | 'relaxed';
+
+function selectComboGridOutfits(outfits: ParsedOutfit[], kind: ComboGridKind): ParsedOutfit[] {
+  const ranges: Record<ComboGridKind, [number, number][]> = {
+    office: [[1, 1], [3, 3], [6, 6]],
+    evening: [[11, 11], [13, 13], [15, 15]],
+    relaxed: [[16, 16], [18, 18], [20, 20]],
+  };
+  const selected = ranges[kind]
+    .map(([start]) => outfits.find(outfit => outfit.index === start))
+    .filter((outfit): outfit is ParsedOutfit => !!outfit);
+
+  if (selected.length >= 3) return selected.slice(0, 3);
+
+  const fallback = outfits.filter(outfit => {
+    if (kind === 'office') return outfit.index >= 1 && outfit.index <= 6;
+    if (kind === 'evening') return outfit.index >= 11 && outfit.index <= 15;
+    return outfit.index >= 16 && outfit.index <= 20;
+  });
+
+  return [...selected, ...fallback.filter(outfit => !selected.some(row => row.index === outfit.index))].slice(0, 3);
+}
+
+function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: ClassificationResult): string {
+  const title: Record<ComboGridKind, string> = {
+    office: 'Office basic combinations',
+    evening: 'Evening outfit combinations',
+    relaxed: 'Relaxed casual combinations',
+  };
+  const outfitLines = outfits.map((outfit, index) => {
+    const pieces = [
+      `Top: ${outfit.top}`,
+      `Bottom: ${outfit.bottom}`,
+      outfit.layer ? `Layer: ${outfit.layer}` : 'Layer: No layer',
+      `Footwear: ${outfit.footwear}`,
+      outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
+      outfit.fitNote ? `Fit context: ${outfit.fitNote}` : null,
+      outfit.colourLogic ? `Colour logic: ${outfit.colourLogic}` : null,
+    ].filter(Boolean).join('; ');
+    return `Column ${index + 1} / Outfit ${outfit.index}: ${pieces}`;
+  }).join('\n');
+
+  const groomingReferenceInstruction = isBeardFocusedClassification(c)
+    ? 'Use the second reference image as the definitive face, bald/closely shaved scalp, and beard grooming reference. Do not add scalp hair.'
+    : 'Use the second reference image as the definitive face and hairstyle reference.';
+
+  return `Create one customised editorial styling grid image for ICONIK.
+
+Two reference photos are provided: the first is the client's full-body photo and the second is the client's styled grooming headshot.
+${groomingReferenceInstruction}
+
+The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client standing full-body, facing camera, in a different outfit combination. No text, no labels, no product cards, no flat-lay items.
+
+Grid theme: ${title[kind]}.
+
+Use these three outfit combinations exactly:
+${outfitLines}
+
+Customisation rules:
+- Preserve the client's body proportions, skin tone, face, and grooming reference.
+- Dress the client in the specified clothing only; do not borrow garments from the source photo.
+- Each column should feel related as one styling system, but the three looks must be visibly different.
+- Clothes must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}.
+- Colours and accessories must match the outfit descriptions precisely.
+- No logos or brand markings.
+
+Scene: clean premium studio lookbook, seamless cool slate grey backdrop (#94a6ad), even high-key lighting.
+
+Composition: wide horizontal image, aspect ratio 3:1 or 16:9, one row, three columns. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -909,6 +1001,76 @@ export async function generateAllOutfitImages(
   return partialPaths;
 }
 
+export async function generateComboGridImages(
+  reportId: string,
+  basePhotoUrl: string,
+  classification: ClassificationResult,
+  sections: ReportSections,
+  groomingPaths: (string | null)[],
+  imageModel: string = MODEL,
+  existingComboGridPaths: ManReportImagePaths['comboGridCards'] = {},
+): Promise<NonNullable<ManReportImagePaths['comboGridCards']>> {
+  const outfits = parseOutfitsFromSection(sections.s4_outfits);
+  const result: NonNullable<ManReportImagePaths['comboGridCards']> = {
+    office: existingComboGridPaths?.office ?? null,
+    evening: existingComboGridPaths?.evening ?? null,
+    relaxed: existingComboGridPaths?.relaxed ?? null,
+  };
+
+  if (outfits.length === 0) {
+    console.warn('[manImageGenerator] No outfits parsed from s4_outfits — skipping combo grids');
+    return result;
+  }
+
+  const fetchGroomingRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
+    const groomingPath = groomingPaths[0];
+    if (!groomingPath) return undefined;
+    try {
+      const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(groomingPath, 300);
+      if (signedData?.signedUrl) return fetchAsBase64(signedData.signedUrl);
+    } catch {
+      console.warn('[manImageGenerator] Could not fetch grooming reference for combo grids — proceeding without it');
+    }
+    return undefined;
+  };
+
+  const [{ data: baseData, mimeType: baseMime }, groomingRef] = await Promise.all([
+    fetchAsBase64(basePhotoUrl),
+    fetchGroomingRef(),
+  ]);
+
+  for (const kind of ['office', 'evening', 'relaxed'] as const) {
+    if (result[kind]) continue;
+    const selected = selectComboGridOutfits(outfits, kind);
+    if (selected.length < 3) {
+      console.warn(`[manImageGenerator] Not enough outfits for ${kind} combo grid`);
+      continue;
+    }
+
+    try {
+      const outputBase64 = await withRetry(() =>
+        callGeminiImageEdit(baseData, baseMime, buildComboGridPrompt(kind, selected, classification), imageModel, groomingRef),
+        3,
+        4_000,
+      );
+      const path = await uploadToStorage(reportId, outputBase64, `combo_grid_${kind}.jpg`);
+      result[kind] = path;
+      await mergeManReportImagePathsForReport(reportId, { comboGridCards: { [kind]: path } });
+      console.log(`[manImageGenerator] Combo grid ${kind} saved: ${path}`);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error(`[manImageGenerator] Combo grid ${kind} FAILED (model: ${imageModel}): ${errMsg}`);
+      void supabaseAdmin
+        .from('man_reports')
+        .update({ error_message: `Combo grid ${kind} failed: ${errMsg.slice(0, 500)}`, updated_at: new Date().toISOString() })
+        .eq('id', reportId)
+        .then(null, () => {});
+    }
+  }
+
+  return result;
+}
+
 /**
  * Regenerate a single outfit image from an edited outfit text block.
  * Overwrites the existing outfit_N.jpg in storage.
@@ -973,6 +1135,9 @@ export async function resolveManReportImageUrls(
     ...beardPaths,
     ...(paths.eyewearCards ?? []),
     ...(paths.outfitCards  ?? []),
+    paths.comboGridCards?.office ?? null,
+    paths.comboGridCards?.evening ?? null,
+    paths.comboGridCards?.relaxed ?? null,
     paths.baseModel ?? null,
   ];
   const uniquePaths = [...new Set(allPaths.filter((p): p is string => !!p))];
@@ -1015,6 +1180,11 @@ export async function resolveManReportImageUrls(
     beardCards:     beardPaths.map(resolve),
     eyewearCards:   (paths.eyewearCards ?? []).map(resolve),
     outfitCards:    (paths.outfitCards  ?? []).map(resolve),
+    comboGridCards: {
+      office: resolve(paths.comboGridCards?.office),
+      evening: resolve(paths.comboGridCards?.evening),
+      relaxed: resolve(paths.comboGridCards?.relaxed),
+    },
     baseModel:      resolve(paths.baseModel),
   };
 }

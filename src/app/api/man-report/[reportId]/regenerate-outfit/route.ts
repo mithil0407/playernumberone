@@ -39,6 +39,7 @@ function clearOutfitImageSlot(
     beardCards: [...(paths?.beardCards ?? [])],
     eyewearCards: [...(paths?.eyewearCards ?? [])],
     outfitCards,
+    comboGridCards: { ...(paths?.comboGridCards ?? {}) },
     ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
   };
 }

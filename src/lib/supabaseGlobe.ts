@@ -1,9 +1,10 @@
-// supabaseGlobe.ts — uses the same Supabase project as AU but with globe_* tables
+// supabaseGlobe.ts — uses the primary Supabase project with globe_* tables.
 
-import { supabaseAU } from '@/lib/supabaseAU';
+import { supabase as primarySupabase, supabaseAdmin } from '@/lib/supabase';
 
-// Re-export for convenience — globe shares the same Supabase instance as AU
-export { supabaseAU as supabaseGlobe };
+const activeSupabaseGlobe = typeof window === 'undefined' ? supabaseAdmin : primarySupabase;
+
+export { activeSupabaseGlobe as supabaseGlobe };
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ export interface GlobeIntakeSubmission {
 // ── Database operations ────────────────────────────────────────────────────
 
 export const saveGlobeCustomer = async (customer: GlobeCustomer) => {
-    const { data, error } = await supabaseAU
+    const { data, error } = await activeSupabaseGlobe
         .from('globe_customers')
         .upsert([customer], { onConflict: 'email', ignoreDuplicates: false })
         .select()
@@ -151,14 +152,14 @@ export const saveGlobeCustomer = async (customer: GlobeCustomer) => {
 
 export const saveGlobeOrder = async (order: GlobeOrder) => {
     if (order.razorpay_order_id) {
-        const { data: existing } = await supabaseAU
+        const { data: existing } = await activeSupabaseGlobe
             .from('globe_orders')
             .select('id')
             .eq('razorpay_order_id', order.razorpay_order_id)
             .single();
 
         if (existing) {
-            const { data, error } = await supabaseAU
+            const { data, error } = await activeSupabaseGlobe
                 .from('globe_orders')
                 .update(order)
                 .eq('razorpay_order_id', order.razorpay_order_id)
@@ -169,7 +170,7 @@ export const saveGlobeOrder = async (order: GlobeOrder) => {
         }
     }
 
-    const { data, error } = await supabaseAU
+    const { data, error } = await activeSupabaseGlobe
         .from('globe_orders')
         .insert([order])
         .select()
@@ -181,14 +182,14 @@ export const saveGlobeOrder = async (order: GlobeOrder) => {
 
 export const saveGlobeSubscription = async (subscription: GlobeSubscription) => {
     if (subscription.razorpay_subscription_id) {
-        const { data: existing } = await supabaseAU
+        const { data: existing } = await activeSupabaseGlobe
             .from('globe_subscriptions')
             .select('id')
             .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
             .single();
 
         if (existing) {
-            const { data, error } = await supabaseAU
+            const { data, error } = await activeSupabaseGlobe
                 .from('globe_subscriptions')
                 .update({ ...subscription, updated_at: new Date().toISOString() })
                 .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
@@ -199,7 +200,7 @@ export const saveGlobeSubscription = async (subscription: GlobeSubscription) => 
         }
     }
 
-    const { data, error } = await supabaseAU
+    const { data, error } = await activeSupabaseGlobe
         .from('globe_subscriptions')
         .insert([subscription])
         .select()
@@ -210,17 +211,15 @@ export const saveGlobeSubscription = async (subscription: GlobeSubscription) => 
 };
 
 export const saveGlobeIntakeSubmission = async (submission: GlobeIntakeSubmission) => {
-    const { data, error } = await supabaseAU
+    const { error } = await activeSupabaseGlobe
         .from('globe_intake_submissions')
-        .insert([submission])
-        .select()
-        .single();
+        .insert([submission]);
 
     if (error) throw error;
 
     // Mark quiz reminder no longer needed
     if (submission.customer_email) {
-        await supabaseAU
+        await activeSupabaseGlobe
             .from('globe_orders')
             .update({ quiz_reminder_sent: true })
             .eq('customer_email', submission.customer_email)
@@ -228,7 +227,7 @@ export const saveGlobeIntakeSubmission = async (submission: GlobeIntakeSubmissio
             .eq('quiz_reminder_sent', false);
     }
 
-    return data;
+    return null;
 };
 
 export const uploadGlobeIntakePhoto = async (
@@ -237,7 +236,7 @@ export const uploadGlobeIntakePhoto = async (
 ): Promise<string> => {
     const storagePath = `public/${fileName}`;
 
-    const { data, error } = await supabaseAU.storage
+    const { data, error } = await activeSupabaseGlobe.storage
         .from('globe-intake-photos')
         .upload(storagePath, file, {
             upsert: true,
@@ -246,7 +245,7 @@ export const uploadGlobeIntakePhoto = async (
 
     if (error) throw error;
 
-    const { data: publicData } = supabaseAU.storage
+    const { data: publicData } = activeSupabaseGlobe.storage
         .from('globe-intake-photos')
         .getPublicUrl(data.path);
 

@@ -1,12 +1,15 @@
 import {
   runClassification,
   runGroomingImageClassification,
+  runSection0,
   runSection1,
   runSection2,
   runSection3,
   runSection4,
   runSection5,
   runSection6,
+  runSection6Shopping,
+  runSection7GroomingSkin,
   repairSection4OutfitsUntilQaPass,
   type ClassificationResult,
   type ReportData,
@@ -20,11 +23,14 @@ type SectionField = keyof ReportSections;
 type PartialSections = Partial<Record<SectionField, string>>;
 
 const SECTION_FIELDS: SectionField[] = [
+  's0_snapshot',
   's1_face',
   's2_body',
   's3_colour',
   's4_outfits',
-  's5_rules',
+  's4_combo_grids',
+  's5_shopping',
+  's5_grooming_skin',
   's6_identity',
 ];
 
@@ -62,11 +68,14 @@ export function getCompletedManReportTextSections(reportData: ReportData | null 
 
 export function getNextManReportTextProgressStage(reportData: ReportData | null | undefined): string | null {
   if (!reportData?.classification) return 'classifying';
+  if (!hasText(reportData.sections?.s0_snapshot)) return 'generating_s0';
   if (!hasText(reportData.sections?.s1_face)) return 'generating_s1';
   if (!hasText(reportData.sections?.s2_body)) return 'generating_s2';
   if (!hasText(reportData.sections?.s3_colour)) return 'generating_s3';
   if (!hasText(reportData.sections?.s4_outfits) || section4NeedsQa(reportData)) return 'generating_s4';
-  if (!hasText(reportData.sections?.s5_rules)) return 'generating_s5';
+  if (!hasText(reportData.sections?.s4_combo_grids)) return 'generating_s4_combo_grids';
+  if (!hasText(reportData.sections?.s5_shopping) && !hasText(reportData.sections?.s5_rules)) return 'generating_s5_shopping';
+  if (!hasText(reportData.sections?.s5_grooming_skin)) return 'generating_s5_grooming_skin';
   if (!hasText(reportData.sections?.s6_identity)) return 'generating_s6';
   return null;
 }
@@ -130,6 +139,13 @@ export async function runManReportTextPipeline(
       await updateStage(reportId, currentStage, shareToken);
       const groomingProfile = await runGroomingImageClassification(submission);
       classification = await runClassification(submission, groomingProfile);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s0', qa);
+    }
+
+    if (!hasText(sections.s0_snapshot)) {
+      currentStage = 'generating_s0';
+      await updateStage(reportId, currentStage, shareToken);
+      sections.s0_snapshot = await runSection0(classification, submission);
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s1', qa);
     }
 
@@ -163,13 +179,27 @@ export async function runManReportTextPipeline(
       const section4Repair = await repairSection4OutfitsUntilQaPass(classification, sections.s4_outfits);
       sections.s4_outfits = section4Repair.section4;
       qa = { ...(qa ?? {}), section4: section4Repair.qa };
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5', qa);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s4_combo_grids', qa);
     }
 
-    if (!hasText(sections.s5_rules)) {
-      currentStage = 'generating_s5';
+    if (!hasText(sections.s4_combo_grids)) {
+      currentStage = 'generating_s4_combo_grids';
       await updateStage(reportId, currentStage, shareToken);
-      sections.s5_rules = await runSection5(classification, submission);
+      sections.s4_combo_grids = await runSection5(classification, submission);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_shopping', qa);
+    }
+
+    if (!hasText(sections.s5_shopping) && !hasText(sections.s5_rules)) {
+      currentStage = 'generating_s5_shopping';
+      await updateStage(reportId, currentStage, shareToken);
+      sections.s5_shopping = await runSection6Shopping(classification, submission);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_grooming_skin', qa);
+    }
+
+    if (!hasText(sections.s5_grooming_skin)) {
+      currentStage = 'generating_s5_grooming_skin';
+      await updateStage(reportId, currentStage, shareToken);
+      sections.s5_grooming_skin = await runSection7GroomingSkin(classification, submission);
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa);
     }
 
@@ -180,11 +210,15 @@ export async function runManReportTextPipeline(
     }
 
     const completeSections: ReportSections = {
+      s0_snapshot: sections.s0_snapshot,
       s1_face: sections.s1_face!,
       s2_body: sections.s2_body!,
       s3_colour: sections.s3_colour!,
       s4_outfits: sections.s4_outfits!,
-      s5_rules: sections.s5_rules!,
+      s4_combo_grids: sections.s4_combo_grids,
+      s5_rules: sections.s5_rules,
+      s5_shopping: sections.s5_shopping ?? sections.s5_rules,
+      s5_grooming_skin: sections.s5_grooming_skin,
       s6_identity: sections.s6_identity!,
     };
 

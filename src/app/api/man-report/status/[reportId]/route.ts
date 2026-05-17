@@ -34,6 +34,7 @@ export async function GET(
     beardCards?: (string | null)[];
     eyewearCards?: (string | null)[];
     outfitCards?: (string | null)[];
+    comboGridCards?: { office?: string | null; evening?: string | null; relaxed?: string | null };
   } | null;
 
   return NextResponse.json({
@@ -49,6 +50,7 @@ export async function GET(
       beardDone:     (imageUrls?.beardCards     ?? []).filter(Boolean).length,
       eyewearDone:   (imageUrls?.eyewearCards   ?? []).filter(Boolean).length,
       outfitDone:    (imageUrls?.outfitCards    ?? []).filter(Boolean).length,
+      comboGridDone: Object.values(imageUrls?.comboGridCards ?? {}).filter(Boolean).length,
     },
   });
 }

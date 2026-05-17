@@ -2,7 +2,7 @@
 //
 // Creates a man_reports row and fires the two-phase text pipeline:
 //   Phase 1 — Classification JSON          (classifying)
-//   Phase 2 — Report copy (6 sections)     (generating_s1 … generating_s6)
+//   Phase 2 — Report copy (expanded sections) (generating_s0 … generating_s6)
 //
 // Image generation is intentionally decoupled. Once text is draft_ready,
 // trigger POST /api/man-report/[reportId]/generate-images separately.
@@ -17,8 +17,7 @@ import { cookies } from 'next/headers';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { runManReportTextPipeline } from '@/lib/manReportTextPipeline';
 
-// Vercel Hobby plan cap is 300s. Text pipeline (~60s) + base model (~20s) + 16 images
-// at concurrency 4 (~80s) fits comfortably within this limit.
+// Vercel Hobby plan cap is 300s. Text and image generation are decoupled.
 export const maxDuration = 300;
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -83,7 +82,10 @@ export async function POST(
       submission_id:     submissionId,
       status:            'generating',
       progress_stage:    'classifying',
-      section_approvals: { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false },
+      section_approvals: {
+        s0: false, s1: false, s2: false, s3: false, s4: false,
+        s4g: false, s5s: false, s5g: false, s5: false, s6: false,
+      },
     })
     .select('id, share_token')
     .single();

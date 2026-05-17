@@ -2,7 +2,7 @@
 
 **Version:** 3.1
 **Scope:** Automated Blueprint report generation — outfit recommendation section only
-**Output:** 16 outfits across 4 lifestyle contexts (4 per context)
+**Output:** 20 outfits across 4 lifestyle contexts (6 Office/Formal, 4 Smart Casual, 5 Evening, 5 Relaxed Casual)
 **Geography:** Western clothing by default, with lightweight Indian-context support only when the intake explicitly signals Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe needs
 **Logic:** Hybrid — rule-based constraints define what is correct, AI generates the outfit copy
 **Visual Reference Standard:** All outfits must be executable at the quality level of the reference image library. If an outfit would not look at home in that library, do not generate it.
@@ -15,7 +15,7 @@ When generating outfit recommendations for an ICONIK Men's Blueprint, you will:
 
 1. **Read all form inputs** — body shape, undertone, colour season, face shape, lifestyle contexts, style poles, fat storage zone, highlight zone, minimise zone, fit preference
 2. **Apply the constraint rules** in this file to determine WHAT is appropriate for this client
-3. **Generate 16 outfit descriptions** — 4 per context — using those constraints
+3. **Generate 20 outfit descriptions** — 6 Office/Formal, 4 Smart Casual, 5 Evening, 5 Relaxed Casual — using those constraints
 4. **Format each outfit** as: Top + Layer + Bottom + Footwear + Accessory (max 2) + Why It Works + Shopping Translation + Acceptable Substitutes + Do Not Buy
 
 Never generate an outfit that violates a constraint rule. The constraints are the science. The language is yours.
@@ -169,7 +169,7 @@ Derive the client's colour season from Q12 + Q13 + Q14 + Q15 + Q16 before genera
 
 ### Step 3 — Palette Per Season
 
-**CRITICAL COLOUR VARIETY RULE:** Never repeat the same specific colour in more than 2 outfits across all 16. The goal is a complete varied wardrobe.
+**CRITICAL COLOUR VARIETY RULE:** Never repeat the same specific colour in more than 3 outfits across all 20. The goal is a complete varied wardrobe.
 
 **BLACK JACKET RULE:** A black jacket, blazer, or outerwear piece is always permitted regardless of colour season. At least one other piece in that outfit must sit within the client's palette.
 
@@ -345,7 +345,7 @@ In Formulas 05, 06, 11 — white or off-white linen trousers or chinos act as th
 - Formulas 05, 06, 01 are the primary casual formulas for HOT climate clients.
 
 **Layer frequency for HOT climate:**
-- Maximum 7 layers total across all 16 outfits
+- Maximum 8 layers total across all 20 outfits
 - A layer must be genuinely necessary — a single top + clean trouser + footwear is a complete outfit in hot climates
 - When a layer is used: lightweight, worn open only, airflow-appropriate
 - Preferred HOT climate layers: unlined linen-cotton blazer, lightweight cotton overshirt (open), lightweight nylon or cotton harrington, unstructured cotton sport coat
@@ -408,7 +408,7 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 
 ## SECTION 09 — ANTI-PREFERENCE RULES
 
-`ANTI_PREFS` is a hard block. If the client has listed a colour, silhouette, or style category — that item is excluded from all 16 outfits. If `ANTI_PREFS` = "No" or "Never thought about this" → no exclusions apply.
+`ANTI_PREFS` is a hard block. If the client has listed a colour, silhouette, or style category — that item is excluded from all 20 outfits. If `ANTI_PREFS` = "No" or "Never thought about this" → no exclusions apply.
 
 ---
 
@@ -506,7 +506,7 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 
 ## SECTION 11 — LAYERING VARIETY RULE
 
-**Blazers maximum 5 times across all 16 outfits.**
+**Blazers maximum 6 times across all 20 outfits.**
 
 **Overall layer count: 10 maximum, 8 minimum (TEMPERATE). 7 maximum (HOT).**
 
@@ -755,30 +755,30 @@ COLOUR HIERARCHY (non-negotiable — every outfit):
 ANTI-PREFERENCES:
 [List hard exclusions or state "None"]
 
-FORMULA ASSIGNMENT — Use these reference formulas to build the 16 outfits:
+FORMULA ASSIGNMENT — Use these reference formulas to build the 20 outfits:
 [List the 4–6 formulas most appropriate for this client's body shape, climate, and style poles. Reference Section Visual DNA. Specify which formulas to use for which contexts.]
 
 STREETWEAR:
 [If STYLE_TRIBES includes Off Duty or Urban Wear: "Include one streetwear outfit in Relaxed Casual using Formula 08 or Formula 12." Otherwise: "Not applicable."]
 
 OUTPUT REQUIREMENTS:
-Generate exactly 16 outfits:
-- Outfits 1–4: FORMAL
-- Outfits 5–8: SMART CASUAL
-- Outfits 9–12: EVENING WEAR
-- Outfits 13–16: RELAXED CASUAL
+Generate exactly 20 outfits:
+- Outfits 1–6: OFFICE / FORMAL
+- Outfits 7–10: SMART CASUAL
+- Outfits 11–15: EVENING WEAR
+- Outfits 16–20: RELAXED CASUAL
 
 Use the exact output format from Section 16.
 
 RULES — APPLY ALL:
 1. Never include any item from ANTI_PREFS
-2. All colours from the client's Colour Season palette — never repeat the same colour more than twice across 16 outfits
+2. All colours from the client's Colour Season palette — never repeat the same colour more than three times across 20 outfits
 3. Black outerwear always permitted — balance with a palette-correct piece in the same outfit
 4. Every silhouette complies with body shape rules
 5. Height proportion rules followed — no wide-leg denim for under 5'6"
 6. Camouflage zone addressed in every outfit
 7. NEVER skinny jeans. NEVER cropped or ankle-cut trousers.
-8. Blazers maximum 5 times total across all 16 outfits
+8. Blazers maximum 6 times total across all 20 outfits
 9. NEVER waistcoats
 10. HOT climate: no turtlenecks, no wool, no corduroy, all blazers linen-cotton unlined, max 7 layers total
 11. TEMPERATE climate: full vocabulary, max 10 layers total
@@ -806,7 +806,7 @@ RULES — APPLY ALL:
 Before finalising output, verify every outfit:
 
 - [ ] Colour within the client's Colour Season palette
-- [ ] No tone repeated more than twice across 16 outfits
+- [ ] No tone repeated more than three times across 20 outfits
 - [ ] Black outerwear balanced with a palette-correct piece
 - [ ] Silhouette complies with body shape rule
 - [ ] Height proportion rules followed — wide-leg denim prohibited under 5'6"
@@ -822,7 +822,7 @@ Before finalising output, verify every outfit:
 - [ ] No sneakers in Formal. No Oxfords/Derbys in Relaxed Casual.
 - [ ] Sandals only in HOT climate casual / evening
 - [ ] White/off-white linen trousers only in HOT climate
-- [ ] Band-collar shirts: zero instances in any of the 16 outfits
+- [ ] Band-collar shirts: zero instances in any of the 20 outfits
 - [ ] No item from ANTI_PREFS
 - [ ] Fabric named specifically in every line
 - [ ] Fit language matches FIT_PREF with body shape overrides applied

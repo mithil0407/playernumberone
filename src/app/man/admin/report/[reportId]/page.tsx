@@ -13,8 +13,10 @@ import type { ResolvedImageUrls, FaceImageKind } from '@/lib/manImageGenerator';
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface SectionApprovals {
+  s0?: boolean;
   s1: boolean; s2: boolean; s3: boolean;
-  s4: boolean; s5: boolean; s6: boolean;
+  s4: boolean; s4g?: boolean; s5s?: boolean; s5g?: boolean;
+  s5?: boolean; s6: boolean;
 }
 
 interface Report {
@@ -46,6 +48,7 @@ interface ReportStatusSnapshot {
     beardDone: number;
     eyewearDone: number;
     outfitDone: number;
+    comboGridDone?: number;
   };
 }
 
@@ -108,10 +111,14 @@ interface FaceStyleSwapApplyResult {
 }
 
 const SECTIONS = [
+  { key: 's0',  label: 'Style Snapshot',       field: 's0_snapshot'       },
   { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
   { key: 's2', label: 'Body Geometry',       field: 's2_body'     },
   { key: 's3', label: 'Chromatic Harmony',   field: 's3_colour'   },
-  { key: 's4', label: '16 Outfits',          field: 's4_outfits'  },
+  { key: 's4', label: '20 Outfits',          field: 's4_outfits'  },
+  { key: 's4g', label: 'Combination Grids', field: 's4_combo_grids' },
+  { key: 's5s', label: 'Shopping & Fit',    field: 's5_shopping' },
+  { key: 's5g', label: 'Grooming & Skin',   field: 's5_grooming_skin' },
   { key: 's5', label: 'Style Rules',         field: 's5_rules'    },
   { key: 's6', label: 'Identity Statement',  field: 's6_identity' },
 ] as const;
@@ -121,11 +128,15 @@ type SectionField = typeof SECTIONS[number]['field'];
 
 const STAGE_LABELS: Record<string, string> = {
   classifying:       'Classifying profile…',
+  generating_s0:     'Writing Style Snapshot…',
   generating_s1:     'Writing Face Architecture…',
   generating_s2:     'Writing Body Geometry…',
   generating_s3:     'Writing Chromatic Harmony…',
-  generating_s4:     'Writing 16 Outfits…',
-  generating_s5:     'Writing Style Rules…',
+  generating_s4:     'Writing 20 Outfits…',
+  generating_s4_combo_grids: 'Writing Combination Grids…',
+  generating_s5:     'Writing Combination Grids…',
+  generating_s5_shopping: 'Writing Shopping & Fit System…',
+  generating_s5_grooming_skin: 'Writing Grooming & Skincare…',
   generating_s6:     'Writing Identity Statement…',
   generating_images:       'Generating images…',
   repairing_section4:      'Repairing outfit text…',
@@ -135,25 +146,34 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const SECTION_FIELD_MAP: Record<SectionKey, SectionField> = {
+  s0: 's0_snapshot',
   s1: 's1_face', s2: 's2_body', s3: 's3_colour',
-  s4: 's4_outfits', s5: 's5_rules', s6: 's6_identity',
+  s4: 's4_outfits', s4g: 's4_combo_grids', s5s: 's5_shopping',
+  s5g: 's5_grooming_skin', s5: 's5_rules', s6: 's6_identity',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function allApproved(approvals: SectionApprovals): boolean {
-  return Object.values(approvals).every(Boolean);
+  const keys = approvals.s0 === undefined
+    ? (['s1', 's2', 's3', 's4', 's5', 's6'] as const)
+    : (['s0', 's1', 's2', 's3', 's4', 's4g', 's5s', 's5g', 's6'] as const);
+  return keys.every(key => approvals[key] === true);
 }
 
 function buildSafeReportData(reportData: ReportData): ReportData {
   return {
     classification: reportData.classification,
     sections: {
+      s0_snapshot:  reportData.sections?.s0_snapshot  ?? '',
       s1_face:     reportData.sections?.s1_face     ?? '',
       s2_body:     reportData.sections?.s2_body     ?? '',
       s3_colour:   reportData.sections?.s3_colour   ?? '',
       s4_outfits:  reportData.sections?.s4_outfits  ?? '',
+      s4_combo_grids: reportData.sections?.s4_combo_grids ?? '',
       s5_rules:    reportData.sections?.s5_rules    ?? '',
+      s5_shopping: reportData.sections?.s5_shopping ?? reportData.sections?.s5_rules ?? '',
+      s5_grooming_skin: reportData.sections?.s5_grooming_skin ?? '',
       s6_identity: reportData.sections?.s6_identity ?? '',
     } as ReportSections,
     generated_at: reportData.generated_at,
@@ -201,6 +221,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         beardDone:     (data.report.image_urls?.beardCards     ?? []).filter(Boolean).length,
         eyewearDone:   (data.report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
         outfitDone:    (data.report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
+        comboGridDone: Object.values(data.report.image_urls?.comboGridCards ?? {}).filter(Boolean).length,
       });
       // Only re-render when DB actually changed — suppress polling jank
       setReport(prev => {
@@ -328,7 +349,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   const approveAll = async () => {
     if (!report) return;
-    const next: SectionApprovals = { s1: true, s2: true, s3: true, s4: true, s5: true, s6: true };
+    const next: SectionApprovals = {
+      s0: true, s1: true, s2: true, s3: true, s4: true,
+      s4g: true, s5s: true, s5g: true, s5: true, s6: true,
+    };
     setReport(r => r ? { ...r, section_approvals: next } : r);
     await fetch(`/api/man-report/${reportId}`, {
       method: 'PATCH',
@@ -428,6 +452,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         beardCards: [],
         eyewearCards: [],
         outfitCards: [],
+        comboGridCards: {},
         baseModel: null,
       };
       const nextOutfitCards = [...(existingImageUrls.outfitCards ?? [])];
@@ -514,6 +539,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         beardCards: [],
         eyewearCards: [],
         outfitCards: [],
+        comboGridCards: {},
         baseModel: null,
       };
       const nextOutfitCards = [...(existingImageUrls.outfitCards ?? [])];
@@ -567,6 +593,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         beardCards: [],
         eyewearCards: [],
         outfitCards: [],
+        comboGridCards: {},
         baseModel: null,
       };
       const nextImageUrls: ResolvedImageUrls = {
@@ -660,6 +687,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         beardCards: [],
         eyewearCards: [],
         outfitCards: [],
+        comboGridCards: {},
         baseModel: null,
       };
       const nextImageUrls: ResolvedImageUrls = {
@@ -706,7 +734,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     [reportData],
   );
 
-  const approvals    = report?.section_approvals ?? { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false };
+  const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
   const ready        = allApproved(approvals);
   const isGenerating = report?.status === 'generating';
   const isError      = report?.status === 'error';
@@ -718,20 +746,21 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     : 0;
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
-  const expectedOutfitCount = report?.report_data?.classification?.outfit_split?.total ?? 16;
+  const expectedOutfitCount = report?.report_data?.classification?.outfit_split?.total ?? 20;
   const usesBeardCards = report?.report_data?.classification?.face?.grooming_focus === 'beard';
   const imageCounts = {
     hairstyleDone: (report?.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
     beardDone:     (report?.image_urls?.beardCards     ?? []).filter(Boolean).length,
     eyewearDone:   (report?.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
     outfitDone:    (report?.image_urls?.outfitCards    ?? []).filter(Boolean).length,
+    comboGridDone: Object.values(report?.image_urls?.comboGridCards ?? {}).filter(Boolean).length,
   };
   const activeGroomingDone = usesBeardCards ? imageCounts.beardDone : imageCounts.hairstyleDone;
   const activeGroomingLabel = usesBeardCards ? 'beard' : 'hairstyle';
-  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone > 0 ||
+  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone > 0 ||
     Boolean(report?.error_message?.startsWith('Image generation'));
   const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
-  const imageProgressText = `${activeGroomingDone}/2 ${activeGroomingLabel} · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits`;
+  const imageProgressText = `${activeGroomingDone}/2 ${activeGroomingLabel} · ${imageCounts.beardDone}/2 beard · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids`;
   const section4Qa = report?.report_data?.qa?.section4 ?? null;
   const section4Issues = section4Qa?.issues ?? [];
   const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
@@ -742,8 +771,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // True only when hairstyle, eyewear AND every expected outfit image are present.
   const hasAllImages = (
     activeGroomingDone >= 2 &&
+    imageCounts.beardDone >= 2 &&
     imageCounts.eyewearDone >= 2 &&
-    imageCounts.outfitDone >= expectedOutfitCount
+    imageCounts.outfitDone >= expectedOutfitCount &&
+    imageCounts.comboGridDone >= 3
   );
 
   // ── Reject & retry (discard current report, start fresh) ─────────────

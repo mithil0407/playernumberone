@@ -1,44 +1,6 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
-const supabaseAUUrl = process.env.NEXT_PUBLIC_SUPABASE_URL_AU || 'https://placeholder.supabase.co';
-const supabaseAUAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_AU || 'placeholder-key';
-
-// Create a mock client for build time
-const mockSupabaseClient = {
-    from: () => ({
-        select: () => ({ order: () => ({ data: [], error: null }) }),
-        insert: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }),
-        update: () => ({ eq: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }) }),
-        upsert: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }),
-        eq: () => ({ single: () => ({ data: null, error: null }) })
-    }),
-    storage: {
-        from: () => ({
-            upload: () => ({ data: null, error: null }),
-            getPublicUrl: () => ({ data: { publicUrl: '' } })
-        })
-    }
-} as unknown as SupabaseClient;
-
-const hasValidAUEnvVars =
-    process.env.NEXT_PUBLIC_SUPABASE_URL_AU &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_AU &&
-    process.env.NEXT_PUBLIC_SUPABASE_URL_AU !== 'https://placeholder.supabase.co' &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_AU !== 'placeholder-key';
-
-let supabaseAU: SupabaseClient = mockSupabaseClient;
-
-if (hasValidAUEnvVars) {
-    try {
-        supabaseAU = createClient(supabaseAUUrl, supabaseAUAnonKey);
-        console.log('AU Supabase client created successfully');
-    } catch (error) {
-        console.error('Failed to create AU Supabase client:', error);
-        supabaseAU = mockSupabaseClient;
-    }
-} else {
-    console.warn('AU Supabase environment variables not configured, using mock client');
-}
+const supabaseAU = typeof window === 'undefined' ? supabaseAdmin : supabase;
 
 export { supabaseAU };
 
@@ -214,11 +176,9 @@ export const saveAUSubscription = async (subscription: AUSubscription) => {
 };
 
 export const saveAUIntakeSubmission = async (submission: AUIntakeSubmission) => {
-    const { data, error } = await supabaseAU
+    const { error } = await supabaseAU
         .from('au_intake_submissions')
-        .insert([submission])
-        .select()
-        .single();
+        .insert([submission]);
 
     if (error) throw error;
 
@@ -235,7 +195,7 @@ export const saveAUIntakeSubmission = async (submission: AUIntakeSubmission) => 
         // Fire-and-forget: don't throw if this update fails
     }
 
-    return data;
+    return null;
 };
 
 export const uploadAUIntakePhoto = async (

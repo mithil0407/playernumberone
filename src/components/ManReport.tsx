@@ -87,17 +87,17 @@ function toTitleCase(str: string): string {
 }
 
 // Known context names from new format — used to detect if label IS the category
-const KNOWN_CONTEXTS = new Set(['FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
+const KNOWN_CONTEXTS = new Set(['OFFICE / FORMAL', 'FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
 
 function inferContextName(rawLabel: string, outfitNumber: number): string {
-  if (/\bformal\b/i.test(rawLabel)) return 'Formal';
+  if (/\boffice\b|\bformal\b/i.test(rawLabel)) return 'Office / Formal';
   if (/\bsmart\s+casual\b/i.test(rawLabel)) return 'Smart Casual';
   if (/\bevening\b/i.test(rawLabel)) return 'Evening Wear';
   if (/\brelaxed\s+casual\b|\bcasual\b/i.test(rawLabel)) return 'Relaxed Casual';
-  if (outfitNumber >= 1 && outfitNumber <= 4) return 'Formal';
-  if (outfitNumber >= 5 && outfitNumber <= 8) return 'Smart Casual';
-  if (outfitNumber >= 9 && outfitNumber <= 12) return 'Evening Wear';
-  if (outfitNumber >= 13 && outfitNumber <= 16) return 'Relaxed Casual';
+  if (outfitNumber >= 1 && outfitNumber <= 6) return 'Office / Formal';
+  if (outfitNumber >= 7 && outfitNumber <= 10) return 'Smart Casual';
+  if (outfitNumber >= 11 && outfitNumber <= 15) return 'Evening Wear';
+  if (outfitNumber >= 16 && outfitNumber <= 20) return 'Relaxed Casual';
   return 'Outfits';
 }
 
@@ -262,7 +262,7 @@ function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolea
 
     if (!line.trim()) { flushList(); continue; }
     if (line.startsWith('## ') && skipH2) continue;
-    // Skip the outfit section confirmation line (e.g. "Total: 16 outfits confirmed…")
+    // Skip the outfit section confirmation line (e.g. "Total: 20 outfits confirmed…")
     if (/^total.*\d+.*outfits?\s+(confirmed|=)/i.test(line.trim())) continue;
 
     if (line.startsWith('### ')) {
@@ -476,13 +476,8 @@ function FaceSection({
   const [styleSwapError, setStyleSwapError] = useState<string | null>(null);
   const [draftingStyleSwap, setDraftingStyleSwap] = useState(false);
   const [applyingStyleSwap, setApplyingStyleSwap] = useState(false);
-  const usesBeardCards = face.grooming_focus === 'beard';
-  const groomingUrls = usesBeardCards ? beardUrls : hairstyleUrls;
-  const groomingKind: FaceImageKind = usesBeardCards ? 'beard' : 'hairstyle';
-  const groomingTitle = usesBeardCards ? 'Beard style options' : 'Hairstyle options';
   const hasHairstyleImages = hairstyleUrls && hairstyleUrls.some(Boolean);
   const hasBeardImages = beardUrls && beardUrls.some(Boolean);
-  const hasGroomingImages = usesBeardCards ? hasBeardImages : hasHairstyleImages;
   const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
   const canStyleSwap = adminMode && !!onDraftFaceStyleSwap && !!onApplyFaceStyleSwap;
 
@@ -711,15 +706,29 @@ function FaceSection({
           </span>
         </div>
 
-        {/* Grooming images — two headshots side by side */}
-        {(hasGroomingImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
+        {/* Hairstyle images — two headshots side by side when applicable */}
+        {(hasHairstyleImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage) && face.grooming_focus !== 'beard')) && (
           <div className="mb-10">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
-              {groomingTitle}
+              Hairstyle options
             </p>
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               {[1, 2].map(optionIndex =>
-                renderFaceImageSlot(groomingKind, groomingUrls?.[optionIndex - 1] ?? null, optionIndex),
+                renderFaceImageSlot('hairstyle', hairstyleUrls?.[optionIndex - 1] ?? null, optionIndex),
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Beard images — generated for every report */}
+        {(hasBeardImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
+          <div className="mb-10">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+              Beard & facial hair options
+            </p>
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
+              {[1, 2].map(optionIndex =>
+                renderFaceImageSlot('beard', beardUrls?.[optionIndex - 1] ?? null, optionIndex),
               )}
             </div>
           </div>
@@ -1233,8 +1242,25 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
   );
 }
 
+function SnapshotSection({ text }: { text?: string }) {
+  if (!text) return null;
+  return (
+    <div style={{ background: '#fff' }}>
+      <SectionHeader number="00" label="Personal Style Snapshot" />
+      <div className="px-6 md:px-12 pb-12">
+        <div
+          className="rounded-3xl p-7 md:p-9"
+          style={{ background: SHELL, border: `1px solid ${BORDER}` }}
+        >
+          <RenderMarkdown text={text} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
-// Section 04 — 16 Outfits
+// Section 04 — 20 Outfits
 // ─────────────────────────────────────────────────────────────
 
 interface OutfitEditResult {
@@ -2104,6 +2130,57 @@ function OutfitsSection({
   );
 }
 
+function ComboGridSection({
+  text,
+  comboGridCards,
+}: {
+  text?: string;
+  comboGridCards?: ResolvedImageUrls['comboGridCards'];
+}) {
+  const grids = [
+    { key: 'office' as const, label: 'Office basic combinations', url: comboGridCards?.office },
+    { key: 'evening' as const, label: 'Evening outfit combinations', url: comboGridCards?.evening },
+    { key: 'relaxed' as const, label: 'Relaxed casual combinations', url: comboGridCards?.relaxed },
+  ];
+  const hasContent = !!text || grids.some(grid => !!grid.url);
+  if (!hasContent) return null;
+
+  return (
+    <div style={{ background: '#fff' }}>
+      <SectionHeader number="05" label="Combination Grids" />
+      <div className="px-6 md:px-12 pb-14 space-y-8">
+        <div className="space-y-7">
+          {grids.map(grid => (
+            <div key={grid.key}>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-4" style={{ color: ACCENT_INK }}>
+                {grid.label}
+              </p>
+              <div
+                className="overflow-hidden rounded-3xl"
+                style={{ background: SHELL, border: `1px solid ${BORDER}`, aspectRatio: '3/1' }}
+              >
+                {grid.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={grid.url} alt={grid.label} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="h-full min-h-[160px] flex items-center justify-center px-6 text-center">
+                    <span className="text-[12px]" style={{ color: INK_SOFT }}>Grid image pending</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        {text && (
+          <div className="pt-6" style={{ borderTop: `1px solid ${BORDER}` }}>
+            <RenderMarkdown text={text} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Section 05 — Style Rules
 // ─────────────────────────────────────────────────────────────
@@ -2236,6 +2313,28 @@ function StyleRulesSection({ text }: { text: string }) {
   );
 }
 
+function TextReportSection({
+  number,
+  label,
+  text,
+  background = '#fff',
+}: {
+  number: string;
+  label: string;
+  text?: string;
+  background?: string;
+}) {
+  if (!text) return null;
+  return (
+    <div style={{ background }}>
+      <SectionHeader number={number} label={label} />
+      <div className="px-6 md:px-12 pb-14">
+        <RenderMarkdown text={text} />
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Section 06 — Style Identity Statement
 // ─────────────────────────────────────────────────────────────
@@ -2247,7 +2346,7 @@ function IdentitySection({ text }: { text: string }) {
 
   return (
     <div style={{ background: SHELL }}>
-      <SectionHeader number="06" label="Your Style Identity" />
+      <SectionHeader number="08" label="Your Style Identity" />
       <div className="px-6 md:px-12 pb-16">
         <div
           className="rounded-3xl p-8 md:p-12 max-w-3xl"
@@ -2425,7 +2524,7 @@ function BlueprintCard({ cls }: { cls: ClassificationResult }) {
           The blueprint
         </p>
         <p className="text-[11px]" style={{ color: INK_SOFT }}>
-          {cls.outfit_split.total} outfits · 6 chapters
+          {cls.outfit_split.total} outfits · 9 chapters
         </p>
       </div>
 
@@ -2531,6 +2630,13 @@ function ManReport({
 
   const sectionConfigs = [
     {
+      key: 's0',
+      label: 'Personal Style Snapshot',
+      estimatedHeight: 420,
+      background: '#ffffff',
+      node: <SnapshotSection key="s0" text={sections.s0_snapshot} />,
+    },
+    {
       key: 's1',
       label: 'Facial Architecture',
       estimatedHeight: 980,
@@ -2586,11 +2692,35 @@ function ManReport({
       ),
     },
     {
-      key: 's5',
-      label: 'Your Style Rules',
-      estimatedHeight: 560,
+      key: 's4g',
+      label: 'Combination Grids',
+      estimatedHeight: 900,
       background: '#ffffff',
-      node: <StyleRulesSection key="s5" text={sections.s5_rules} />,
+      node: (
+        <ComboGridSection
+          key="s4g"
+          text={sections.s4_combo_grids}
+          comboGridCards={imageUrls?.comboGridCards}
+        />
+      ),
+    },
+    {
+      key: 's5s',
+      label: 'Shopping & Fit System',
+      estimatedHeight: 720,
+      background: SHELL,
+      node: sections.s5_shopping ? (
+        <TextReportSection key="s5s" number="06" label="Shopping & Ready-To-Wear Fit System" text={sections.s5_shopping} background={SHELL} />
+      ) : (
+        <StyleRulesSection key="s5s" text={sections.s5_rules ?? ''} />
+      ),
+    },
+    {
+      key: 's5g',
+      label: 'Grooming & Basic Skincare',
+      estimatedHeight: 680,
+      background: '#ffffff',
+      node: <TextReportSection key="s5g" number="07" label="Grooming & Basic Skincare" text={sections.s5_grooming_skin} />,
     },
     {
       key: 's6',
