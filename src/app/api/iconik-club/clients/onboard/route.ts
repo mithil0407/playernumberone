@@ -16,6 +16,31 @@ function parseExamples(raw: string | null): string[] {
   }
 }
 
+function parseStringArray(raw: string | null): string[] {
+  if (!raw?.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(entry => typeof entry === 'string' ? entry.trim() : '')
+      .filter(Boolean);
+  } catch {
+    return raw
+      .split('\n')
+      .map(entry => entry.trim())
+      .filter(Boolean);
+  }
+}
+
+function errorDetail(error: { message?: string; code?: string; details?: string | null; hint?: string | null }) {
+  return {
+    message: error.message ?? 'Unknown error',
+    code: error.code,
+    details: error.details,
+    hint: error.hint,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Auth: must be a signed-in client
@@ -36,9 +61,7 @@ export async function POST(request: NextRequest) {
     const waist_cm     = parseFloat(formData.get('waist_cm')   as string) || null;
     const hips_cm      = parseFloat(formData.get('hips_cm')    as string) || null;
     const styleRestrictionsRaw = formData.get('style_restrictions') as string | null;
-    const style_restrictions: string[] = styleRestrictionsRaw
-      ? JSON.parse(styleRestrictionsRaw)
-      : [];
+    const style_restrictions = parseStringArray(styleRestrictionsRaw);
     const likedOutfitExamplesRaw = formData.get('liked_outfit_examples') as string | null;
     const liked_outfit_examples = parseExamples(likedOutfitExamplesRaw);
     const style_notes = (formData.get('style_notes') as string | null)?.trim() || null;
@@ -69,7 +92,7 @@ export async function POST(request: NextRequest) {
       .upload(headshotKey, headshotBuf, { contentType: resolveType(headshot), upsert: true });
     if (hsErr) {
       console.error('Headshot upload error:', hsErr);
-      return NextResponse.json({ error: 'Headshot upload failed', detail: hsErr.message }, { status: 500 });
+      return NextResponse.json({ error: 'Headshot upload failed', detail: errorDetail(hsErr) }, { status: 500 });
     }
 
     const bodyKey = `${user.id}/body.jpg`;
@@ -78,7 +101,7 @@ export async function POST(request: NextRequest) {
       .upload(bodyKey, bodyBuf, { contentType: resolveType(bodyPhoto), upsert: true });
     if (bpErr) {
       console.error('Body photo upload error:', bpErr);
-      return NextResponse.json({ error: 'Body photo upload failed', detail: bpErr.message }, { status: 500 });
+      return NextResponse.json({ error: 'Body photo upload failed', detail: errorDetail(bpErr) }, { status: 500 });
     }
 
     // Enhance photos to studio quality in the background after the response is sent.
@@ -132,10 +155,19 @@ export async function POST(request: NextRequest) {
     });
 
     // Get signed URLs (private bucket — 1-year expiry for internal use)
-    const { data: hsUrl } = await supabaseAdmin.storage
+    const { data: hsUrl, error: hsSignErr } = await supabaseAdmin.storage
       .from('client-photos').createSignedUrl(headshotKey, 60 * 60 * 24 * 365);
-    const { data: bpUrl } = await supabaseAdmin.storage
+    if (hsSignErr) {
+      console.error('Headshot signed URL error:', hsSignErr);
+      return NextResponse.json({ error: 'Headshot URL creation failed', detail: errorDetail(hsSignErr) }, { status: 500 });
+    }
+
+    const { data: bpUrl, error: bpSignErr } = await supabaseAdmin.storage
       .from('client-photos').createSignedUrl(bodyKey, 60 * 60 * 24 * 365);
+    if (bpSignErr) {
+      console.error('Body photo signed URL error:', bpSignErr);
+      return NextResponse.json({ error: 'Body photo URL creation failed', detail: errorDetail(bpSignErr) }, { status: 500 });
+    }
 
     // Upsert client_profiles (re-onboarding overwrites previous data)
     const { data: profile, error: dbError } = await supabaseAdmin
@@ -165,7 +197,7 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('Profile upsert error:', dbError);
-      return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to save profile', detail: errorDetail(dbError) }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, profile });
