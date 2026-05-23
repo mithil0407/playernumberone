@@ -5,6 +5,12 @@ import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
 import "./globals.css";
 
+const GA_MEASUREMENT_IDS = [
+  "G-LHX425PH4B",
+  "G-V4126JH4EJ",
+  "G-94CVS6PDTF",
+] as const;
+
 const inter = Inter({
   subsets: ["latin"],
   display: 'swap',
@@ -111,7 +117,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${playfair.variable} ${inter.className}`}>
         {/* Google Analytics — single gtag init shared across both properties */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-V4126JH4EJ"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`}
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -119,9 +125,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-V4126JH4EJ');
-            gtag('config', 'G-94CVS6PDTF');
-            gtag('config', 'G-LHX425PH4B');
+            ${GA_MEASUREMENT_IDS.map((id) => `gtag('config', '${id}');`).join("\n            ")}
           `}
         </Script>
 
