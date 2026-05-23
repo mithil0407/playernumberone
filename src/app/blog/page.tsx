@@ -31,6 +31,12 @@ const posts = [
     description: "How Iconik's face shape profiling method produces neckline, earring, and hairstyle recommendations from facial geometry.",
     date: "2025-01-15",
   },
+  {
+    slug: "is-personal-stylist-worth-it-india",
+    title: "Is a Personal Stylist Worth It in India?",
+    description: "A practical breakdown of when personal styling is worth paying for, what it should include, and how to compare it with apps or quizzes.",
+    date: "2025-01-22",
+  },
 ];
 
 export default function BlogPage() {

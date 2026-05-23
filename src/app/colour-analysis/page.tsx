@@ -299,6 +299,11 @@ export default function ColourAnalysisPage() {
               <li>→ <Link href="/colour-analysis/best-colours-dusky-skin" className="underline hover:opacity-70">Best Colours for Dusky Skin</Link></li>
               <li>→ <Link href="/colour-analysis/best-colours-wheatish-skin-india" className="underline hover:opacity-70">Best Colours for Wheatish Skin</Link></li>
               <li>→ <Link href="/colour-analysis/best-colours-fair-skin-india" className="underline hover:opacity-70">Best Colours for Fair Skin</Link></li>
+              <li>→ <Link href="/colour-analysis/saree-colours-by-undertone" className="underline hover:opacity-70">Saree Colours by Undertone</Link></li>
+              <li>→ <Link href="/colour-analysis/seasonal-colour-analysis-india" className="underline hover:opacity-70">Seasonal Colour Analysis for Indian Women</Link></li>
+              <li>→ <Link href="/colour-analysis/olive-skin-india" className="underline hover:opacity-70">Olive Skin Colour Guide for India</Link></li>
+              <li>→ <Link href="/colour-analysis/colour-analysis-for-indian-weddings" className="underline hover:opacity-70">Colour Analysis for Indian Weddings</Link></li>
+              <li>→ <Link href="/colour-analysis/dark-skin-colour-guide-india" className="underline hover:opacity-70">Dark Skin Colour Guide for India</Link></li>
             </ul>
           </section>
 

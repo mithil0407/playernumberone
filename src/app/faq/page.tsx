@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { faqLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = {
   title: "FAQ — Iconik Style Blueprint",
@@ -157,6 +158,22 @@ export default function FAQPage() {
               </div>
             ))}
           </div>
+
+          <section className="mt-14">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Related FAQ Guides</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {faqLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-xl border border-gray-200 p-5 hover:bg-gray-50 transition-colors"
+                >
+                  <p className="font-semibold text-gray-900 mb-2">{link.title}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">{link.description}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
 
           {/* CTA */}
           <div className="mt-16 rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center">

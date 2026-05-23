@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { bodyTypeLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = {
   title: "How to Dress for Your Body Type in India — Complete Guide",
@@ -265,6 +266,24 @@ export default function BodyTypeStylingPage() {
             <p className="text-gray-600 leading-relaxed">
               Iconik&apos;s <Link href="/colour-analysis" className="underline font-medium">Chromatic Harmony Mapping™</Link> identifies your skin undertone (warm, cool, or neutral) and maps it to a curated palette of 10 exact colours — including shades for Indian ethnic wear, western wear, and occasion dressing. Every Style Blueprint includes both analyses.
             </p>
+          </section>
+
+          <section className="mb-14">
+            <h2 className="text-2xl font-bold text-gray-900 mb-5">All Body Type Styling Guides</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {bodyTypeLinks
+                .filter((link) => link.href !== "/body-type-styling")
+                .map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-xl border border-gray-200 p-5 hover:bg-gray-50 transition-colors"
+                  >
+                    <p className="font-semibold text-gray-900 mb-2">{link.title}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">{link.description}</p>
+                  </Link>
+                ))}
+            </div>
           </section>
 
           {/* FAQ */}
