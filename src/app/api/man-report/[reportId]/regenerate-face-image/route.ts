@@ -29,8 +29,8 @@ export async function POST(
     imageModel?: string;
   };
 
-  if (!kind || !VALID_FACE_IMAGE_KINDS.includes(kind) || !optionIndex || ![1, 2].includes(optionIndex)) {
-    return NextResponse.json({ error: 'kind must be hairstyle|beard|eyewear and optionIndex must be 1 or 2' }, { status: 400 });
+  if (!kind || !VALID_FACE_IMAGE_KINDS.includes(kind) || !optionIndex || ![1, 2, 3, 4].includes(optionIndex)) {
+    return NextResponse.json({ error: 'kind must be hairstyle|beard|eyewear and optionIndex must be 1, 2, 3, or 4' }, { status: 400 });
   }
 
   const { data: report, error } = await supabaseAdmin
@@ -73,7 +73,7 @@ export async function POST(
     );
 
     const slotPatch: (string | null | undefined)[] = [];
-    slotPatch[optionIndex - 1] = newPath;
+    slotPatch[0] = newPath;
 
     const newImagePaths = await mergeManReportImagePathsForReport(
       reportId,
@@ -86,10 +86,10 @@ export async function POST(
 
     const resolved = await resolveManReportImageUrls(newImagePaths);
     const imageUrl = kind === 'hairstyle'
-      ? resolved?.hairstyleCards?.[optionIndex - 1] ?? null
+      ? resolved?.hairstyleCards?.[0] ?? null
       : kind === 'beard'
-        ? resolved?.beardCards?.[optionIndex - 1] ?? null
-        : resolved?.eyewearCards?.[optionIndex - 1] ?? null;
+        ? resolved?.beardCards?.[0] ?? null
+        : resolved?.eyewearCards?.[0] ?? null;
 
     if (!imageUrl) {
       return NextResponse.json({ error: 'Failed to resolve regenerated image URL' }, { status: 500 });

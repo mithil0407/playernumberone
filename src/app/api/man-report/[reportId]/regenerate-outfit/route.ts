@@ -4,7 +4,6 @@ import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAu
 import { cookies } from 'next/headers';
 import {
   regenerateSingleOutfitImage,
-  isBeardFocusedClassification,
   mergeManReportImagePathsForReport,
   resolveManReportImageUrls,
   type ManReportImagePaths,
@@ -127,7 +126,7 @@ export async function POST(
   // Fetch full-body photo URL from the submission after the text has been saved.
   const { data: submission, error: subErr } = await supabaseAdmin
     .from('man_intake_submissions')
-    .select('photo_fullbody_url')
+    .select('photo_headshot_url, photo_fullbody_url')
     .eq('id', report.submission_id)
     .single();
 
@@ -153,17 +152,7 @@ export async function POST(
     });
   }
 
-  // Resolve grooming headshot signed URL for face/hair or face/beard reference (best effort)
-  let groomingHeadshotUrl: string | null = null;
-  const groomingPath = isBeardFocusedClassification(classification)
-    ? imagePaths?.beardCards?.[0]
-    : imagePaths?.hairstyleCards?.[0];
-  if (groomingPath) {
-    const { data: signed } = await supabaseAdmin.storage
-      .from('man-report-images')
-      .createSignedUrl(groomingPath, 300);
-    groomingHeadshotUrl = signed?.signedUrl ?? null;
-  }
+  const groomingHeadshotUrl = submission.photo_headshot_url ?? null;
 
   let newPath: string;
   try {

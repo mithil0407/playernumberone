@@ -581,11 +581,11 @@ function FaceSection({
 
       if (result.imageUrl) {
         if (result.kind === 'hairstyle') {
-          setHairstyleOverrides(prev => ({ ...prev, [result.optionIndex]: result.imageUrl! }));
+          setHairstyleOverrides(prev => ({ ...prev, 0: result.imageUrl!, [result.optionIndex]: result.imageUrl! }));
         } else if (result.kind === 'beard') {
-          setBeardOverrides(prev => ({ ...prev, [result.optionIndex]: result.imageUrl! }));
+          setBeardOverrides(prev => ({ ...prev, 0: result.imageUrl!, [result.optionIndex]: result.imageUrl! }));
         } else {
-          setEyewearOverrides(prev => ({ ...prev, [result.optionIndex]: result.imageUrl! }));
+          setEyewearOverrides(prev => ({ ...prev, 0: result.imageUrl!, [result.optionIndex]: result.imageUrl! }));
         }
       }
       closeStyleSwap(true);
@@ -603,11 +603,11 @@ function FaceSection({
         const result = await onRegenerateFaceImage(kind, optionIndex);
         if (!result) return;
         if (kind === 'hairstyle') {
-          setHairstyleOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+          setHairstyleOverrides(prev => ({ ...prev, 0: result.imageUrl, [optionIndex]: result.imageUrl }));
         } else if (kind === 'beard') {
-          setBeardOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+          setBeardOverrides(prev => ({ ...prev, 0: result.imageUrl, [optionIndex]: result.imageUrl }));
         } else {
-          setEyewearOverrides(prev => ({ ...prev, [optionIndex]: result.imageUrl }));
+          setEyewearOverrides(prev => ({ ...prev, 0: result.imageUrl, [optionIndex]: result.imageUrl }));
         }
       } else {
         await onRetryMissingImages?.();
@@ -712,6 +712,108 @@ function FaceSection({
     );
   };
 
+  const getGridUrl = (kind: FaceImageKind, urls: (string | null)[] | undefined): string | null | undefined => {
+    if (kind === 'hairstyle') return hairstyleOverrides[0] ?? urls?.[0];
+    if (kind === 'beard') return beardOverrides[0] ?? urls?.[0];
+    return eyewearOverrides[0] ?? urls?.[0];
+  };
+
+  const getFaceOptions = (kind: FaceImageKind): string[] => {
+    if (kind === 'hairstyle') return face.hairstyle_recommendations ?? [];
+    if (kind === 'beard') return face.beard_style_recommendations ?? [];
+    return face.eyewear_shapes ?? [];
+  };
+
+  const renderFaceGrid = (
+    kind: FaceImageKind,
+    urls: (string | null)[] | undefined,
+    title: string,
+  ) => {
+    const gridUrl = getGridUrl(kind, urls);
+    const canRetry = adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage);
+    const slotKey = `${kind}-1`;
+    const isRetrying = retryingSlots.has(slotKey);
+    const options = getFaceOptions(kind).slice(0, 4);
+    const labels = kind === 'eyewear'
+      ? ['Top left optical frame', 'Top right optical frame', 'Bottom left sunglasses', 'Bottom right sunglasses']
+      : ['Top left', 'Top right', 'Bottom left', 'Bottom right'];
+
+    return (
+      <div className="mb-10">
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+          {title}
+        </p>
+        <div
+          className="w-full overflow-hidden relative rounded-2xl"
+          style={{
+            aspectRatio: '1/1',
+            background: SHELL,
+            boxShadow: '0 24px 60px -36px rgba(27,24,21,0.35)',
+          }}
+        >
+          {gridUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={gridUrl}
+              alt={`${kind} 2x2 recommendation grid`}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+              style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
+              onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+            />
+          ) : canRetry ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: SHELL }}>
+              <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-[12px] font-medium" style={{ color: OXBLOOD }}>Grid failed</p>
+                <p className="text-[11px]" style={{ color: INK_SOFT }}>Generation did not complete</p>
+              </div>
+              <motion.button
+                onClick={() => handleRetryFaceImage(kind, 1)}
+                disabled={isRetrying}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-[11px] font-medium disabled:opacity-40"
+                style={{ background: ACCENT, color: '#fff' }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={SPRING}
+              >
+                {isRetrying
+                  ? <><Loader2 size={12} className="animate-spin" /> Retrying…</>
+                  : <><RefreshCw size={12} /> Retry grid</>
+                }
+              </motion.button>
+            </div>
+          ) : (
+            <div className="w-full h-full skeleton-shimmer flex items-center justify-center">
+              <span className="text-[11px]" style={{ color: INK_SOFT }}>Generating…</span>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+          {[0, 1, 2, 3].map(index => (
+            <div key={index} className="rounded-2xl p-4" style={{ background: SHELL, border: `1px solid ${BORDER}` }}>
+              <DataLabel>{labels[index]}</DataLabel>
+              <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>
+                {options[index] || 'Recommendation pending'}
+              </p>
+              {canStyleSwap && (
+                <button
+                  onClick={() => startStyleSwap(kind, index + 1)}
+                  disabled={draftingStyleSwap || applyingStyleSwap}
+                  className="mt-3 px-3 py-1.5 rounded-full text-[11px] font-medium disabled:opacity-40"
+                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                >
+                  Edit / Swap
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ background: '#fff' }}>
       <SectionHeader number="01" label="Facial Architecture" />
@@ -723,47 +825,51 @@ function FaceSection({
           </span>
         </div>
 
-        {/* Hairstyle images — two headshots side by side when applicable */}
-        {(hasHairstyleImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage) && face.grooming_focus !== 'beard')) && (
-          <div className="mb-10">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
-              Hairstyle options
-            </p>
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
-              {[1, 2].map(optionIndex =>
-                renderFaceImageSlot('hairstyle', hairstyleUrls?.[optionIndex - 1] ?? null, optionIndex),
-              )}
+        {/* New reports store one 2x2 grid at index 0; old reports with multiple cards use the legacy card layout. */}
+        {(face.hairstyle_recommendations?.length ?? 0) >= 4 || ((hairstyleUrls?.length ?? 0) === 1 && !!hairstyleUrls?.[0])
+          ? renderFaceGrid('hairstyle', hairstyleUrls, 'Hairstyle options')
+          : hasHairstyleImages && (
+            <div className="mb-10">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+                Hairstyle options
+              </p>
+              <div className="grid grid-cols-2 gap-4 md:gap-6">
+                {[1, 2].map(optionIndex =>
+                  renderFaceImageSlot('hairstyle', hairstyleUrls?.[optionIndex - 1] ?? null, optionIndex),
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Beard images — generated for every report */}
-        {(hasBeardImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
-          <div className="mb-10">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
-              Beard & facial hair options
-            </p>
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
-              {[1, 2].map(optionIndex =>
-                renderFaceImageSlot('beard', beardUrls?.[optionIndex - 1] ?? null, optionIndex),
-              )}
+        {(face.beard_style_recommendations?.length ?? 0) >= 4 || ((beardUrls?.length ?? 0) === 1 && !!beardUrls?.[0])
+          ? renderFaceGrid('beard', beardUrls, 'Beard & facial hair options')
+          : hasBeardImages && (
+            <div className="mb-10">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+                Beard & facial hair options
+              </p>
+              <div className="grid grid-cols-2 gap-4 md:gap-6">
+                {[1, 2].map(optionIndex =>
+                  renderFaceImageSlot('beard', beardUrls?.[optionIndex - 1] ?? null, optionIndex),
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Eyewear images — two headshots side by side */}
-        {(hasEyewearImages || (adminMode && (!!onRetryMissingImages || !!onRegenerateFaceImage))) && (
-          <div className="mb-10">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
-              Eyewear options
-            </p>
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
-              {[1, 2].map(optionIndex =>
-                renderFaceImageSlot('eyewear', eyewearUrls?.[optionIndex - 1] ?? null, optionIndex),
-              )}
+        {(face.eyewear_shapes?.length ?? 0) >= 4 || ((eyewearUrls?.length ?? 0) === 1 && !!eyewearUrls?.[0])
+          ? renderFaceGrid('eyewear', eyewearUrls, 'Eyewear options')
+          : hasEyewearImages && (
+            <div className="mb-10">
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+                Eyewear options
+              </p>
+              <div className="grid grid-cols-2 gap-4 md:gap-6">
+                {[1, 2].map(optionIndex =>
+                  renderFaceImageSlot('eyewear', eyewearUrls?.[optionIndex - 1] ?? null, optionIndex),
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Eyewear & Facial Hair */}
         <HairRule className="mb-6" />

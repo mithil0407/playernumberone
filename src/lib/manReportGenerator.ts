@@ -64,6 +64,12 @@ Rules:
 - If the image-derived hair_presence is "bald" or "closely_shaved", set grooming_focus to "beard", never recommend adding scalp hair, and never recommend hairstyles requiring volume, density, fringe, quiff, crops with visible fullness, or fuller hair.
 - If hair_presence is "thinning_or_receding", keep grooming_focus as "hairstyle" but recommend only realistic low-density grooming: buzz cut, close crop, clean shave transition, or beard-balancing options. Do not recommend full-volume hair.
 - If grooming profile confidence is below 0.68 or hair_presence is "unclear", use the existing hairstyle flow.
+- Generate exactly 4 hairstyle recommendations, 4 beard style recommendations, and 4 eyewear recommendations.
+- Recommendation order is visual grid order: option 1 = top-left, option 2 = top-right, option 3 = bottom-left, option 4 = bottom-right.
+- Option 1 must always be the safest, most achievable, highest-confidence recommendation for the client.
+- Grooming recommendations must be conservative, realistic, barber-executable, and compatible with visible/self-reported hair density and facial hair density.
+- Never recommend unrealistic hair volume, dramatic identity changes, fantasy density, sharp trend cuts, or beard growth the client cannot plausibly execute.
+- Eyewear recommendations must include exactly 2 optical eyeglass frames first, then exactly 2 sunglasses options.
 
 HEX CODE ACCURACY — CRITICAL:
 Every hex code you produce must be visually accurate. The rendered colour swatch MUST match what a human expects when reading the colour name.
@@ -152,11 +158,11 @@ Return ONLY the following JSON object, fully populated:
     "grooming_focus": "",
     "grooming_image_confidence": 0,
     "grooming_image_evidence": "",
-    "hairstyle_recommendations": ["", ""],
-    "beard_style_recommendations": ["", ""],
+    "hairstyle_recommendations": ["", "", "", ""],
+    "beard_style_recommendations": ["", "", "", ""],
     "beard_maintenance": "",
     "facial_hair_recommendations": "",
-    "eyewear_shapes": ["", ""],
+    "eyewear_shapes": ["", "", "", ""],
     "skincare_routine": {
       "morning": ["", "", ""],
       "evening": ["", ""],
@@ -289,10 +295,10 @@ State the face shape and feature type. Explain what this means structurally — 
 One paragraph (3-4 sentences) on facial hair for this client, even if he is currently clean-shaven. Include best beard/stubble length, cheek line, neckline, moustache direction when relevant, what to avoid, and maintenance frequency. Do not force a full beard; clean-shaven can be the answer if it is best.
 
 ### Grooming & Collar Direction
-3 bullets maximum. If grooming_focus is "beard", rename this subheading to exactly "### Beard Style & Collar Direction" and cover beard style direction instead of hairstyle direction; otherwise keep this subheading and cover hairstyle direction. Also cover neckline/collar shape and watch/accessory metal direction. Tie every recommendation to face geometry, feature type, undertone, or register. For bald or closely shaved clients, do not mention growing scalp hair or adding hair volume.
+3 bullets maximum. If grooming_focus is "beard", rename this subheading to exactly "### Beard Style & Collar Direction" and cover beard style direction instead of hairstyle direction; otherwise keep this subheading and cover hairstyle direction. Also cover neckline/collar shape and watch/accessory metal direction. Tie every recommendation to face geometry, feature type, undertone, or register. For bald or closely shaved clients, do not mention growing scalp hair or adding hair volume. The image grid labels are rendered separately by the report UI; do not write corner-label copy here.
 
 ### Eyewear Guide
-List 2-3 eyewear frame shapes that suit this face. One sentence each on why.
+List exactly 4 eyewear recommendations in this order: top-left optical frame, top-right optical frame, bottom-left sunglasses, bottom-right sunglasses. One sentence each on why. Do not describe these as embedded image labels; the report UI handles the corner labels.
 
 ---
 
@@ -920,23 +926,71 @@ function isConfidentBaldOrShaved(profile: GroomingImageProfile | null | undefine
     ['bald', 'closely_shaved'].includes(profile.hair_presence);
 }
 
-function isConfidentThinning(profile: GroomingImageProfile | null | undefined): boolean {
-  return !!profile &&
-    profile.confidence >= CONFIDENT_GROOMING_THRESHOLD &&
-    profile.hair_presence === 'thinning_or_receding';
-}
-
 function fallbackBeardStyles(facialHairPresence: FacialHairPresence | undefined): string[] {
   if (facialHairPresence === 'moustache') {
-    return ['Short moustache with light designer stubble', 'Defined goatee with clean cheek lines'];
+    return [
+      'Short moustache with light designer stubble',
+      'Defined moustache with clean-shaved cheeks',
+      'Short moustache with a neat chin patch',
+      'Soft moustache with 3-day stubble and a clean neckline',
+    ];
   }
   if (facialHairPresence === 'full_beard') {
-    return ['Short boxed beard with a defined neckline', 'Tapered full beard with clean cheek lines'];
+    return [
+      'Short boxed beard with a defined neckline',
+      'Tapered full beard with clean cheek lines',
+      'Medium stubble beard with a natural cheek line',
+      'Short full beard with slightly faded sideburns',
+    ];
   }
   if (facialHairPresence === 'short_beard') {
-    return ['Short boxed beard with sharp cheek lines', 'Medium stubble beard with a tapered neckline'];
+    return [
+      'Short boxed beard with sharp cheek lines',
+      'Medium stubble beard with a tapered neckline',
+      'Heavy stubble with clean cheeks and a low neckline',
+      'Short beard with a softer natural cheek line',
+    ];
   }
-  return ['Defined designer stubble', 'Short boxed beard with a clean neckline'];
+  return [
+    'Defined designer stubble',
+    'Short boxed beard with a clean neckline',
+    'Clean-shaven finish with precise sideburn edges',
+    'Light moustache and chin stubble with clean cheeks',
+  ];
+}
+
+function fallbackHairstyles(hairPresence: HairPresence | undefined): string[] {
+  if (hairPresence === 'bald' || hairPresence === 'closely_shaved') {
+    return [
+      'Clean close shave with a crisp hairline edge',
+      'Uniform zero-guard buzz with polished scalp grooming',
+      'Very close shadow buzz with tidy temple edges',
+      'Clean-shaven scalp with softly blended sideburns',
+    ];
+  }
+  if (hairPresence === 'thinning_or_receding') {
+    return [
+      'Low buzz cut with a clean hairline',
+      'Short close crop with minimal top volume',
+      'Soft Caesar crop kept short and low-density',
+      'Clean shave transition with stronger beard balance',
+    ];
+  }
+  return [
+    'Short textured crop with natural volume',
+    'Classic side part with low taper',
+    'Short crew cut with soft taper',
+    'Natural brushed-back short cut with controlled sides',
+  ];
+}
+
+function fallbackEyewearShapes(): string[] {
+  return [
+    'Rectangular acetate optical frames in dark brown with clear lenses',
+    'Soft square metal optical frames in brushed gunmetal with clear lenses',
+    'Wayfarer sunglasses in black acetate with smoke lenses',
+    'Aviator sunglasses in thin metal with softly tinted brown lenses',
+  ];
 }
 
 function normaliseClassification(
@@ -945,7 +999,8 @@ function normaliseClassification(
 ): ClassificationResult {
   const face = result.face;
   const confidentBaldOrShaved = isConfidentBaldOrShaved(groomingProfile);
-  const confidentThinning = isConfidentThinning(groomingProfile);
+  const confidentThinning = groomingProfile.confidence >= CONFIDENT_GROOMING_THRESHOLD &&
+    groomingProfile.hair_presence === 'thinning_or_receding';
 
   const next: ClassificationResult = {
     ...result,
@@ -961,14 +1016,14 @@ function normaliseClassification(
       grooming_image_confidence: groomingProfile.confidence,
       grooming_image_evidence: groomingProfile.evidence,
       hairstyle_recommendations: Array.isArray(face.hairstyle_recommendations)
-        ? face.hairstyle_recommendations.slice(0, 2)
+        ? face.hairstyle_recommendations.slice(0, 4)
         : [],
       beard_style_recommendations: Array.isArray(face.beard_style_recommendations)
-        ? face.beard_style_recommendations.slice(0, 2)
+        ? face.beard_style_recommendations.slice(0, 4)
         : [],
       beard_maintenance: face.beard_maintenance || 'Keep cheek lines intentional and clean the neckline every 3-5 days so facial hair reads groomed, not accidental.',
       facial_hair_recommendations: face.facial_hair_recommendations || 'Keep facial hair intentionally shaped to support the face geometry.',
-      eyewear_shapes: Array.isArray(face.eyewear_shapes) ? face.eyewear_shapes.slice(0, 2) : [],
+      eyewear_shapes: Array.isArray(face.eyewear_shapes) ? face.eyewear_shapes.slice(0, 4) : [],
       skincare_routine: {
         morning: Array.isArray(face.skincare_routine?.morning) && face.skincare_routine.morning.length
           ? face.skincare_routine.morning.slice(0, 3)
@@ -984,14 +1039,32 @@ function normaliseClassification(
 
   if (confidentBaldOrShaved) {
     next.face.grooming_focus = 'beard';
+    next.face.hairstyle_recommendations = fallbackHairstyles(next.face.hair_presence);
   }
 
-  if ((next.face.beard_style_recommendations ?? []).length < 2) {
-    next.face.beard_style_recommendations = fallbackBeardStyles(next.face.facial_hair_presence);
+  if (confidentThinning) {
+    next.face.hairstyle_recommendations = fallbackHairstyles(next.face.hair_presence);
   }
 
-  if (confidentThinning && next.face.hairstyle_recommendations.length < 2) {
-    next.face.hairstyle_recommendations = ['Low buzz cut with a clean hairline', 'Short close crop with minimal top volume'];
+  if (next.face.hairstyle_recommendations.length < 4) {
+    next.face.hairstyle_recommendations = [
+      ...next.face.hairstyle_recommendations,
+      ...fallbackHairstyles(next.face.hair_presence),
+    ].filter(Boolean).slice(0, 4);
+  }
+
+  if ((next.face.beard_style_recommendations ?? []).length < 4) {
+    next.face.beard_style_recommendations = [
+      ...(next.face.beard_style_recommendations ?? []),
+      ...fallbackBeardStyles(next.face.facial_hair_presence),
+    ].filter(Boolean).slice(0, 4);
+  }
+
+  if (next.face.eyewear_shapes.length < 4) {
+    next.face.eyewear_shapes = [
+      ...next.face.eyewear_shapes,
+      ...fallbackEyewearShapes(),
+    ].filter(Boolean).slice(0, 4);
   }
 
   return next;

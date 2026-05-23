@@ -217,9 +217,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     if (data.report) {
       latestStatusUpdatedAtRef.current = data.report.updated_at ?? null;
       latestImageCountSigRef.current = JSON.stringify({
-        hairstyleDone: (data.report.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
-        beardDone:     (data.report.image_urls?.beardCards     ?? []).filter(Boolean).length,
-        eyewearDone:   (data.report.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
+        hairstyleDone: data.report.image_urls?.hairstyleCards?.[0] ? 1 : 0,
+        beardDone:     data.report.image_urls?.beardCards?.[0] ? 1 : 0,
+        eyewearDone:   data.report.image_urls?.eyewearCards?.[0] ? 1 : 0,
         outfitDone:    (data.report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
         comboGridDone: Object.values(data.report.image_urls?.comboGridCards ?? {}).filter(Boolean).length,
       });
@@ -606,11 +606,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       };
 
       if (responseKind === 'hairstyle') {
-        nextImageUrls.hairstyleCards[responseOptionIndex - 1] = imageUrl;
+        nextImageUrls.hairstyleCards[0] = imageUrl;
       } else if (responseKind === 'beard') {
-        nextImageUrls.beardCards[responseOptionIndex - 1] = imageUrl;
+        nextImageUrls.beardCards[0] = imageUrl;
       } else {
-        nextImageUrls.eyewearCards[responseOptionIndex - 1] = imageUrl;
+        nextImageUrls.eyewearCards[0] = imageUrl;
       }
 
       return {
@@ -700,14 +700,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       };
 
       if (kind === 'hairstyle') {
-        while (nextImageUrls.hairstyleCards.length < optionIndex) nextImageUrls.hairstyleCards.push(null);
-        nextImageUrls.hairstyleCards[optionIndex - 1] = imageUrl;
+        nextImageUrls.hairstyleCards[0] = imageUrl;
       } else if (kind === 'beard') {
-        while (nextImageUrls.beardCards.length < optionIndex) nextImageUrls.beardCards.push(null);
-        nextImageUrls.beardCards[optionIndex - 1] = imageUrl;
+        nextImageUrls.beardCards[0] = imageUrl;
       } else {
-        while (nextImageUrls.eyewearCards.length < optionIndex) nextImageUrls.eyewearCards.push(null);
-        nextImageUrls.eyewearCards[optionIndex - 1] = imageUrl;
+        nextImageUrls.eyewearCards[0] = imageUrl;
       }
 
       return {
@@ -747,20 +744,19 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
   const expectedOutfitCount = report?.report_data?.classification?.outfit_split?.total ?? 20;
-  const usesBeardCards = report?.report_data?.classification?.face?.grooming_focus === 'beard';
   const imageCounts = {
-    hairstyleDone: (report?.image_urls?.hairstyleCards ?? []).filter(Boolean).length,
-    beardDone:     (report?.image_urls?.beardCards     ?? []).filter(Boolean).length,
-    eyewearDone:   (report?.image_urls?.eyewearCards   ?? []).filter(Boolean).length,
+    hairstyleDone: report?.image_urls?.hairstyleCards?.[0] ? 1 : 0,
+    beardDone:     report?.image_urls?.beardCards?.[0] ? 1 : 0,
+    eyewearDone:   report?.image_urls?.eyewearCards?.[0] ? 1 : 0,
     outfitDone:    (report?.image_urls?.outfitCards    ?? []).filter(Boolean).length,
     comboGridDone: Object.values(report?.image_urls?.comboGridCards ?? {}).filter(Boolean).length,
   };
-  const activeGroomingDone = usesBeardCards ? imageCounts.beardDone : imageCounts.hairstyleDone;
-  const activeGroomingLabel = usesBeardCards ? 'beard' : 'hairstyle';
+  const activeGroomingDone = imageCounts.hairstyleDone;
+  const activeGroomingLabel = 'hairstyle grid';
   const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone > 0 ||
     Boolean(report?.error_message?.startsWith('Image generation'));
   const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
-  const imageProgressText = `${activeGroomingDone}/2 ${activeGroomingLabel} · ${imageCounts.beardDone}/2 beard · ${imageCounts.eyewearDone}/2 eyewear · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids`;
+  const imageProgressText = `${activeGroomingDone}/1 ${activeGroomingLabel} · ${imageCounts.beardDone}/1 beard grid · ${imageCounts.eyewearDone}/1 eyewear grid · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids`;
   const section4Qa = report?.report_data?.qa?.section4 ?? null;
   const section4Issues = section4Qa?.issues ?? [];
   const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
@@ -770,9 +766,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   // True only when hairstyle, eyewear AND every expected outfit image are present.
   const hasAllImages = (
-    activeGroomingDone >= 2 &&
-    imageCounts.beardDone >= 2 &&
-    imageCounts.eyewearDone >= 2 &&
+    activeGroomingDone >= 1 &&
+    imageCounts.beardDone >= 1 &&
+    imageCounts.eyewearDone >= 1 &&
     imageCounts.outfitDone >= expectedOutfitCount &&
     imageCounts.comboGridDone >= 3
   );

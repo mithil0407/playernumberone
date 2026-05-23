@@ -44,7 +44,7 @@ export async function POST(
     ? body.imageModel
     : 'gemini-3.1-flash-image-preview';
 
-  if (!VALID_FACE_IMAGE_KINDS.includes(kind) || ![1, 2].includes(optionIndex) || !candidateStyle || !baseUpdatedAt || !currentStyleHash) {
+  if (!VALID_FACE_IMAGE_KINDS.includes(kind) || ![1, 2, 3, 4].includes(optionIndex) || !candidateStyle || !baseUpdatedAt || !currentStyleHash) {
     return NextResponse.json({
       error: 'kind, optionIndex, candidateStyle, baseUpdatedAt, and currentStyleHash are required',
     }, { status: 400 });
@@ -99,7 +99,7 @@ export async function POST(
         replacementStyle: candidateStyle,
         previousImagePath: (report.image_urls as ManReportImagePaths | null | undefined)?.[
           kind === 'hairstyle' ? 'hairstyleCards' : kind === 'beard' ? 'beardCards' : 'eyewearCards'
-        ]?.[optionIndex - 1] ?? null,
+        ]?.[0] ?? null,
       },
     ],
   } as ReportData & { face_style_swap_history?: unknown[] };
@@ -114,7 +114,7 @@ export async function POST(
       optionIndex,
       imageModel,
       candidateStyle,
-      `${kind}_${optionIndex}_${Date.now()}.jpg`,
+      `${kind}_grid_${Date.now()}.jpg`,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -142,8 +142,7 @@ export async function POST(
     : kind === 'beard'
       ? nextImagePaths.beardCards
       : nextImagePaths.eyewearCards;
-  while (targetCards.length < optionIndex) targetCards.push(null);
-  targetCards[optionIndex - 1] = newPath;
+  targetCards[0] = newPath;
 
   const auditHistory = Array.isArray(nextReportData.face_style_swap_history)
     ? nextReportData.face_style_swap_history
@@ -175,10 +174,10 @@ export async function POST(
 
   const resolved = await resolveManReportImageUrls(saved.image_urls as ManReportImagePaths);
   const imageUrl = kind === 'hairstyle'
-    ? resolved?.hairstyleCards?.[optionIndex - 1] ?? null
+    ? resolved?.hairstyleCards?.[0] ?? null
     : kind === 'beard'
-      ? resolved?.beardCards?.[optionIndex - 1] ?? null
-      : resolved?.eyewearCards?.[optionIndex - 1] ?? null;
+      ? resolved?.beardCards?.[0] ?? null
+      : resolved?.eyewearCards?.[0] ?? null;
 
   return NextResponse.json({
     kind,

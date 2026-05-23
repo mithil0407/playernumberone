@@ -34,8 +34,8 @@ export async function POST(
   const replacementText = String(formData.get('replacementText') ?? '').trim();
   const inspirationFile = formData.get('inspirationImage');
 
-  if (!VALID_FACE_IMAGE_KINDS.includes(kind) || ![1, 2].includes(optionIndex)) {
-    return NextResponse.json({ error: 'kind must be hairstyle|beard|eyewear and optionIndex must be 1 or 2' }, { status: 400 });
+  if (!VALID_FACE_IMAGE_KINDS.includes(kind) || ![1, 2, 3, 4].includes(optionIndex)) {
+    return NextResponse.json({ error: 'kind must be hairstyle|beard|eyewear and optionIndex must be 1, 2, 3, or 4' }, { status: 400 });
   }
   if (!reason && !notes && !replacementText && !(inspirationFile instanceof File && inspirationFile.size > 0)) {
     return NextResponse.json({ error: 'Add a reason, replacement text, note, or inspiration image first' }, { status: 400 });

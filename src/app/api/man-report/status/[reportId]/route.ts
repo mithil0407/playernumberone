@@ -46,9 +46,9 @@ export async function GET(
     shareToken:    data.share_token,
     updatedAt:     data.updated_at,
     imageCounts: {
-      hairstyleDone: (imageUrls?.hairstyleCards ?? []).filter(Boolean).length,
-      beardDone:     (imageUrls?.beardCards     ?? []).filter(Boolean).length,
-      eyewearDone:   (imageUrls?.eyewearCards   ?? []).filter(Boolean).length,
+      hairstyleDone: imageUrls?.hairstyleCards?.[0] ? 1 : 0,
+      beardDone:     imageUrls?.beardCards?.[0] ? 1 : 0,
+      eyewearDone:   imageUrls?.eyewearCards?.[0] ? 1 : 0,
       outfitDone:    (imageUrls?.outfitCards    ?? []).filter(Boolean).length,
       comboGridDone: Object.values(imageUrls?.comboGridCards ?? {}).filter(Boolean).length,
     },

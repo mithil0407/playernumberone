@@ -11,7 +11,6 @@ import {
 } from '@/lib/manOutfitSection';
 import {
   regenerateSingleOutfitImage,
-  isBeardFocusedClassification,
   resolveManReportImageUrls,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
@@ -122,7 +121,7 @@ export async function POST(
 
   const { data: submission, error: subErr } = await supabaseAdmin
     .from('man_intake_submissions')
-    .select('photo_fullbody_url')
+    .select('photo_headshot_url, photo_fullbody_url')
     .eq('id', report.submission_id)
     .single();
 
@@ -130,16 +129,7 @@ export async function POST(
     return NextResponse.json({ error: 'No full-body photo found on submission — replacement was not applied' }, { status: 400 });
   }
 
-  let groomingHeadshotUrl: string | null = null;
-  const groomingPath = isBeardFocusedClassification(reportData.classification)
-    ? imagePaths.beardCards?.[0]
-    : imagePaths.hairstyleCards?.[0];
-  if (groomingPath) {
-    const { data: signed } = await supabaseAdmin.storage
-      .from('man-report-images')
-      .createSignedUrl(groomingPath, 300);
-    groomingHeadshotUrl = signed?.signedUrl ?? null;
-  }
+  const groomingHeadshotUrl = submission.photo_headshot_url ?? null;
 
   let newPath: string;
   try {

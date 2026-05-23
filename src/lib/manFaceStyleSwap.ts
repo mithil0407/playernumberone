@@ -164,8 +164,8 @@ export async function imageFileToFaceStyleInlineData(file: File | null): Promise
 export async function generateFaceStyleSwapDraft(
   input: FaceStyleSwapDraftInput,
 ): Promise<FaceStyleSwapDraftResult> {
-  if (![1, 2].includes(input.optionIndex)) {
-    throw new Error('optionIndex must be 1 or 2');
+  if (![1, 2, 3, 4].includes(input.optionIndex)) {
+    throw new Error('optionIndex must be 1, 2, 3, or 4');
   }
 
   const currentStyle = getFaceStyleOption(input.classification, input.kind, input.optionIndex);

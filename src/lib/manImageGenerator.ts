@@ -1,8 +1,8 @@
 // manImageGenerator.ts
 // Phase 3 & 4 of the /man report pipeline: image generation via Gemini.
 //
-// Phase 3 — Hairstyle images (2 calls, parallel):
-//   Client's HEADSHOT → 2 hairstyle variants applied, background kept as-is
+// Phase 3 — Face option grids (3 calls, parallel):
+//   Client's HEADSHOT → 2x2 hairstyle, beard, and eyewear grids
 //
 // Phase 4 — Outfit images (16 calls, fully parallel):
 //   Client's FULL-BODY PHOTO → each of the 20 outfits applied + 3 combo grids
@@ -40,9 +40,9 @@ const SUPPORTED_GEMINI_INPUT_MIME_TYPES = new Set([
 
 /** Shape stored in image_urls JSONB column — storage paths, not URLs */
 export interface ManReportImagePaths {
-  hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
-  beardCards:     (string | null)[]; // 2 headshot beard/grooming variants for bald clients
-  eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
+  hairstyleCards: (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
+  beardCards:     (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
+  eyewearCards:   (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
   outfitCards:    (string | null)[];
   comboGridCards?: {
     office?: string | null;
@@ -54,9 +54,9 @@ export interface ManReportImagePaths {
 
 /** Shape returned to clients — signed URLs ready for <img> tags */
 export interface ResolvedImageUrls {
-  hairstyleCards: (string | null)[]; // 2 headshot hairstyle variants
-  beardCards:     (string | null)[]; // 2 headshot beard/grooming variants for bald clients
-  eyewearCards:   (string | null)[]; // 2 headshot eyewear variants
+  hairstyleCards: (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
+  beardCards:     (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
+  eyewearCards:   (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
   outfitCards:    (string | null)[];
   comboGridCards?: {
     office?: string | null;
@@ -232,86 +232,94 @@ export function isBeardFocusedClassification(classification: Pick<Classification
   return classification?.face?.grooming_focus === 'beard';
 }
 
-function buildEyewearPrompt(eyewearShape: string, faceShape: string): string {
-  return `You are editing a headshot photo. Your only task is to add a pair of glasses to the subject's face.
+const GRID_POSITIONS = ['Top left', 'Top right', 'Bottom left', 'Bottom right'] as const;
 
-PRESERVE EVERYTHING EXCEPT THE EYEWEAR:
-- Background: keep it exactly as it appears in the uploaded photo — same colour, same setting, same objects
-- Face: same skin tone, same features, same expression, same lighting on face
-- Hair: unchanged
-- Clothing: unchanged
-- Framing and composition: unchanged
+function getFaceStyleOptions(
+  classification: ClassificationResult,
+  kind: FaceImageKind,
+  override?: { optionIndex: number; style: string },
+): string[] {
+  const { face } = classification;
+  const base = kind === 'hairstyle'
+    ? [...(face.hairstyle_recommendations ?? [])]
+    : kind === 'beard'
+      ? [...(face.beard_style_recommendations ?? [])]
+      : [...(face.eyewear_shapes ?? [])];
 
-ONLY CHANGE: Place a pair of ${eyewearShape} eyeglass frames on the subject's face. The glasses should sit naturally on the nose bridge, fit the face proportions of a ${faceShape} face shape, and look like premium, realistic eyewear — not cartoonish or digital-looking. The lenses should be clear (not tinted).
+  if (override?.style.trim() && override.optionIndex >= 1 && override.optionIndex <= 4) {
+    while (base.length < override.optionIndex) base.push('');
+    base[override.optionIndex - 1] = override.style.trim();
+  }
 
-Do not alter the background in any way. Do not change the lighting. Do not reframe or crop differently.
-
-Portrait format, tightly framed on the head and upper shoulders.`;
+  return base.slice(0, 4);
 }
 
-function buildHairstylePrompt(hairstyle: string, faceShape: string): string {
-  return `You are editing a headshot photo. Your only task is to change the subject's hairstyle.
-
-PRESERVE EVERYTHING EXCEPT THE HAIR:
-- Background: keep it exactly as it appears in the uploaded photo — same colour, same setting, same objects
-- Face: same skin tone, same features, same expression, same lighting on face
-- Clothing: unchanged
-- Framing and composition: unchanged
-
-ONLY CHANGE: Apply this hairstyle — ${hairstyle} — styled naturally and intentionally for a ${faceShape} face shape. The hair should look polished, well-groomed, and realistic. Match the natural hair texture of the subject.
-
-Do not alter the background in any way. Do not change the lighting. Do not reframe or crop differently.
-
-Portrait format, tightly framed on the head and upper shoulders.`;
+function formatGridOptions(options: string[]): string {
+  return GRID_POSITIONS
+    .map((position, index) => `${position}: ${options[index] || 'Conservative, realistic option matching the client'}`)
+    .join('\n');
 }
 
-function buildBeardPrompt(beardStyle: string, faceShape: string): string {
-  return `You are editing a headshot photo. Your only task is to adjust the subject's facial hair grooming.
+function buildHairstyleGridPrompt(options: string[], faceShape: string, hairPresence: string | undefined): string {
+  return `Create a realistic men's grooming recommendation grid from the uploaded headshot.
 
-PRESERVE EVERYTHING EXCEPT FACIAL HAIR:
-- Background: keep it exactly as it appears in the uploaded photo — same colour, same setting, same objects
-- Head and scalp: preserve the subject's bald, shaved, or closely cropped scalp exactly; do not add scalp hair
-- Face: same skin tone, same features, same expression, same lighting on face
-- Clothing: unchanged
-- Framing and composition: unchanged
+Output: one clean 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. No text, no labels, no captions, no watermarks.
 
-ONLY CHANGE: Apply this facial hair style — ${beardStyle} — shaped naturally and intentionally for a ${faceShape} face shape. The beard, stubble, moustache, cheek line, and neckline should look realistic, premium, and well-groomed.
+Grid mapping:
+${formatGridOptions(options)}
 
-Do not add hair to the scalp. Do not alter the background in any way. Do not change the lighting. Do not reframe or crop differently.
+Rules:
+- Preserve the client's facial features, skin tone, expression, and general headshot framing.
+- Each quadrant must show only its mapped hairstyle/grooming option.
+- The top-left option is the safest and most achievable default.
+- Recommendations must look conservative, realistic, barber-executable, and suitable for a ${faceShape} face.
+- Hair presence: ${hairPresence ?? 'unclear'}. Do not add unrealistic density, volume, fringe, quiff, or fullness beyond what the source hair can support.
+- If the client is bald or closely shaved, show scalp/close-shave grooming variants only; do not add scalp hair.
+- Keep clothing and background simple and consistent enough that the grooming differences are easy to compare.
 
-Portrait format, tightly framed on the head and upper shoulders.`;
+Professional editorial lighting, natural grooming, premium but understated finish.`;
 }
 
-// Softer prompt used as a safety-block fallback. Drops "preserve real face features"
-// language that frequently triggers Gemini's image-safety filter on portraits.
-function buildHairstylePromptSoft(hairstyle: string, faceShape: string): string {
-  return `Editorial men's grooming reference photo. A young man with a ${faceShape} face shape, photographed in soft studio light, head and shoulders only.
+function buildBeardGridPrompt(options: string[], faceShape: string, facialHairPresence: string | undefined): string {
+  return `Create a realistic men's beard and facial-hair recommendation grid from the uploaded headshot.
 
-The hair is styled in this exact style: ${hairstyle}. The hair should look polished, well-groomed, and realistic, with a natural texture.
+Output: one clean 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. No text, no labels, no captions, no watermarks.
 
-The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a styling reference, not as identity preservation.
+Grid mapping:
+${formatGridOptions(options)}
 
-Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
+Rules:
+- Preserve the client's facial features, skin tone, scalp hair, expression, and general headshot framing.
+- Each quadrant must show only its mapped beard/facial-hair option.
+- The top-left option is the safest and most achievable default.
+- Recommendations must look conservative, realistic, barber-executable, and suitable for a ${faceShape} face.
+- Visible facial hair state: ${facialHairPresence ?? 'unclear'}. Do not invent impossible beard density or coverage.
+- Beard, moustache, stubble, cheek line, and neckline must look natural, clean, and maintainable.
+- Keep clothing and background simple and consistent enough that the grooming differences are easy to compare.
+
+Professional editorial lighting, natural grooming, premium but understated finish.`;
 }
 
-function buildBeardPromptSoft(beardStyle: string, faceShape: string): string {
-  return `Editorial men's grooming reference photo. A bald or closely shaved man with a ${faceShape} face shape, photographed in soft studio light, head and shoulders only.
+function buildEyewearGridPrompt(options: string[], faceShape: string): string {
+  return `Create a realistic men's eyewear recommendation grid from the uploaded headshot.
 
-The scalp remains bald or closely shaved with no added scalp hair. The facial hair is styled in this exact style: ${beardStyle}. The grooming should look polished, realistic, and natural.
+Output: one clean 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. No text, no labels, no captions, no watermarks.
 
-The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a grooming reference, not as identity preservation.
+Grid mapping:
+Top left optical frame: ${options[0] || 'Conservative optical eyeglass frame with clear lenses'}
+Top right optical frame: ${options[1] || 'Second conservative optical eyeglass frame with clear lenses'}
+Bottom left sunglasses: ${options[2] || 'Classic sunglasses with softly tinted lenses'}
+Bottom right sunglasses: ${options[3] || 'Second classic sunglasses option with tinted lenses'}
 
-Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
-}
+Rules:
+- Preserve the client's facial features, skin tone, hair, beard, expression, and general headshot framing.
+- The top row must be optical eyeglasses with clear, untinted lenses.
+- The bottom row must be sunglasses with realistic tinted lenses.
+- Frames must sit naturally on the nose bridge and suit a ${faceShape} face.
+- Eyewear should look premium, realistic, and wearable, not cartoonish or costume-like.
+- Keep clothing and background simple and consistent enough that the frame differences are easy to compare.
 
-function buildEyewearPromptSoft(eyewearShape: string, faceShape: string): string {
-  return `Editorial men's eyewear reference photo. A young man with a ${faceShape} face shape, photographed in soft studio light, head and shoulders only.
-
-The subject is wearing ${eyewearShape} eyeglass frames that sit naturally on the nose bridge and suit the face proportions. Frames should look like premium, realistic eyewear with clear (not tinted) lenses.
-
-The image should match the upload as closely as is reasonable in skin tone, build, and framing — interpret this as a styling reference, not as identity preservation.
-
-Portrait format. Tightly framed on the head and upper shoulders. Clean neutral background.`;
+Professional editorial lighting, clean realistic eyewear rendering.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
@@ -328,21 +336,20 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
     ? `\nAccessory rendering is mandatory: the accessories listed in the outfit specification must be visibly included where naturally visible (${outfit.accessories}). Do not omit them as optional styling hints.`
     : '';
 
-  const groomingReferenceInstruction = isBeardFocusedClassification(c)
-    ? 'Extract the subject\'s face, bald or closely shaved scalp, and beard grooming from the HEADSHOT (second image) — use this as the definitive face and grooming reference. Do not add scalp hair.'
-    : 'Extract the subject\'s face and hairstyle from the HEADSHOT (second image) — use this as the definitive face and hair reference.';
-
-  const groomingApplicationInstruction = isBeardFocusedClassification(c)
-    ? 'Apply polished grooming — clean, fresh, well-kept. Carry the bald or closely shaved scalp and beard grooming from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.'
-    : 'Apply polished grooming — clean, fresh, well-kept. Carry the hairstyle from the headshot reference exactly into this full-body render. No changes to facial features or skin tone.';
+  const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
+  const defaultBeard = c.face.beard_style_recommendations?.[0];
+  const groomingTextInstruction = [
+    defaultHairstyle ? `Default hairstyle/scalp grooming: ${defaultHairstyle}` : null,
+    defaultBeard ? `Default beard/facial-hair grooming: ${defaultBeard}` : null,
+  ].filter(Boolean).join('\n');
 
   return `Professional editorial fashion catalogue photography.
 
-Two reference photos are provided: the first is a full-body photo, the second is a styled headshot showing the subject's recommended grooming.
+Two reference photos are provided: the first is a full-body photo, the second is the client's original headshot.
 
 STERNLY IGNORE and COMPLETELY DISCARD the original background from both reference photos.
 
-${groomingReferenceInstruction} Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
+Extract the subject's face, skin tone, facial features, and current hair/facial-hair constraints from the HEADSHOT (second image). Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
 
 CRITICAL CLOTHING INSTRUCTION:
 - Remove and discard the original clothing from BOTH reference photos
@@ -351,7 +358,9 @@ CRITICAL CLOTHING INSTRUCTION:
 
 Place the subject against our brand studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient.
 
-${groomingApplicationInstruction}
+Apply polished grooming using these TEXT recommendations as the only grooming styling direction:
+${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
+Do not use any generated grooming grid as reference. Do not blend multiple hairstyle or beard options. No changes to facial features or skin tone.
 
 Dress the subject in this specific outfit:
 ${garmentLines}${fitNote}
@@ -408,14 +417,19 @@ function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: C
     return `Column ${index + 1} / Outfit ${outfit.index}: ${pieces}`;
   }).join('\n');
 
-  const groomingReferenceInstruction = isBeardFocusedClassification(c)
-    ? 'Use the second reference image as the definitive face, bald/closely shaved scalp, and beard grooming reference. Do not add scalp hair.'
-    : 'Use the second reference image as the definitive face and hairstyle reference.';
+  const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
+  const defaultBeard = c.face.beard_style_recommendations?.[0];
+  const groomingTextInstruction = [
+    defaultHairstyle ? `Default hairstyle/scalp grooming: ${defaultHairstyle}` : null,
+    defaultBeard ? `Default beard/facial-hair grooming: ${defaultBeard}` : null,
+  ].filter(Boolean).join('\n');
 
   return `Create one customised editorial styling grid image for ICONIK.
 
-Two reference photos are provided: the first is the client's full-body photo and the second is the client's styled grooming headshot.
-${groomingReferenceInstruction}
+Two reference photos are provided: the first is the client's full-body photo and the second is the client's original headshot.
+Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply these TEXT grooming directions consistently in all three columns:
+${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
+Do not use a generated grooming grid as reference and do not blend multiple grooming options.
 
 The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client standing full-body, facing camera, in a different outfit combination. No text, no labels, no product cards, no flat-lay items.
 
@@ -673,76 +687,24 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5, baseDelayMs =
 // Public API — generation
 // ─────────────────────────────────────────────────────────────────────────────
 
-const FALLBACK_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
-
-function isSafetyBlock(err: unknown): boolean {
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-  return msg.includes('safety') || msg.includes('recitation') || msg.includes('prohibited') || msg.includes('blocked');
-}
-
-function isFaceFallbackCandidate(err: unknown): boolean {
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-  return (
-    isSafetyBlock(err) ||
-    msg.includes('unable to process input image') ||
-    msg.includes('invalid_argument') ||
-    msg.includes('returned no image data')
-  );
+function buildFaceGridPrompt(classification: ClassificationResult, kind: FaceImageKind, override?: { optionIndex: number; style: string }): string {
+  const options = getFaceStyleOptions(classification, kind, override);
+  const { face } = classification;
+  if (kind === 'hairstyle') {
+    return buildHairstyleGridPrompt(options, face.face_shape, face.hair_presence);
+  }
+  if (kind === 'beard') {
+    return buildBeardGridPrompt(options, face.face_shape, face.facial_hair_presence);
+  }
+  return buildEyewearGridPrompt(options, face.face_shape);
 }
 
 /**
- * Run a face-image generation attempt with three layers of fallback:
- *   1. primary prompt + requested model
- *   2. soft prompt + requested model        (handles safety blocks on real faces)
- *   3. soft prompt + the other allowed model (handles model-specific refusals/input handling)
- * Each layer wraps `withRetry` so transient quota/503 errors still backoff.
+ * Regenerate the face grid for a kind when the grid slot is missing.
  *
- * Lower base delay (3s) so the worst-case retry chain still fits inside the
- * 5-minute Vercel `after()` budget when this runs across 4 face slots in parallel.
- */
-async function generateFaceSlotWithFallback(
-  imageBase64: string,
-  mimeType:    string,
-  primaryPrompt: string,
-  softPrompt:    string,
-  imageModel:    string,
-): Promise<string> {
-  try {
-    return await withRetry(
-      () => callGeminiImageEdit(imageBase64, mimeType, primaryPrompt, imageModel),
-      3,      // attempts
-      3_000,  // 3s → 6s → 12s
-    );
-  } catch (err) {
-    if (!isFaceFallbackCandidate(err)) throw err;
-    const reason = isSafetyBlock(err) ? 'Safety block' : 'Face image edit failed';
-    console.warn(`[generateFaceSlotWithFallback] ${reason} — retrying with soft prompt`);
-  }
-
-  try {
-    return await withRetry(
-      () => callGeminiImageEdit(imageBase64, mimeType, softPrompt, imageModel),
-      2,
-      3_000,
-    );
-  } catch (err) {
-    if (!isFaceFallbackCandidate(err)) throw err;
-    const fallbackModel = FALLBACK_IMAGE_MODELS.find(m => m !== imageModel) ?? imageModel;
-    console.warn(`[generateFaceSlotWithFallback] Soft prompt failed too — falling back to model ${fallbackModel}`);
-    return await withRetry(
-      () => callGeminiImageEdit(imageBase64, mimeType, softPrompt, fallbackModel),
-      2,
-      3_000,
-    );
-  }
-}
-
-/**
- * Regenerate a list of missing face slots (hairstyle or eyewear) for a report.
- *
- * Returns an array aligned to `slots`: each entry is either the storage path
- * for that slot or `null` if generation ultimately failed. On any null, an
- * `error_message` is persisted to `man_reports` so the UI can surface it.
+ * New reports store exactly one 2x2 grid at index 0 for hairstyle, beard, and
+ * eyewear. The `slots` argument is kept for API compatibility with the old
+ * per-card flow; any non-empty slot list regenerates the single grid.
  */
 export async function regenerateMissingFaceSlots(
   reportId:       string,
@@ -763,59 +725,36 @@ export async function regenerateMissingFaceSlots(
     { label: 'headshot', url: submission.photo_headshot_url },
     { label: 'full-body', url: submission.photo_fullbody_url },
   ]);
-  const { face } = classification;
-  const options = kind === 'hairstyle'
-    ? face.hairstyle_recommendations
-    : kind === 'beard'
-      ? face.beard_style_recommendations ?? []
-      : face.eyewear_shapes;
 
-  const tasks = slots.map((slot) => {
-    const optionText = options[slot - 1];
-    if (!optionText) {
-      console.warn(`[regenerateMissingFaceSlots] No ${kind} recommendation for slot ${slot}`);
-      return Promise.resolve<string | null>(null);
-    }
-
-    const primaryPrompt = kind === 'hairstyle'
-      ? buildHairstylePrompt(optionText, face.face_shape)
-      : kind === 'beard'
-        ? buildBeardPrompt(optionText, face.face_shape)
-        : buildEyewearPrompt(optionText, face.face_shape);
-    const softPrompt = kind === 'hairstyle'
-      ? buildHairstylePromptSoft(optionText, face.face_shape)
-      : kind === 'beard'
-        ? buildBeardPromptSoft(optionText, face.face_shape)
-        : buildEyewearPromptSoft(optionText, face.face_shape);
-
-    console.log(`[regenerateMissingFaceSlots] Starting ${kind} ${slot}: "${optionText}" (model: ${imageModel})`);
-
-    return generateFaceSlotWithFallback(data, mimeType, primaryPrompt, softPrompt, imageModel)
-      .then(outputBase64 => uploadToStorage(reportId, outputBase64, `${kind}_${slot}.jpg`))
-      .then(path => { console.log(`[regenerateMissingFaceSlots] ${kind} ${slot} saved: ${path}`); return path as string | null; })
-      .catch(err => {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[regenerateMissingFaceSlots] ${kind} ${slot} FAILED (model: ${imageModel}): ${errMsg}`);
-        // Fire-and-forget — surface the failure on the report so the admin sees it.
-        void supabaseAdmin
-          .from('man_reports')
-          .update({
-            error_message: `${kind === 'hairstyle' ? 'Hairstyle' : kind === 'beard' ? 'Beard' : 'Eyewear'} ${slot} failed: ${errMsg.slice(0, 400)}`,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', reportId)
-          .then(null, () => {});
-        return null;
-      });
-  });
-
-  return Promise.all(tasks);
+  try {
+    console.log(`[regenerateMissingFaceSlots] Starting ${kind} grid (model: ${imageModel})`);
+    const outputBase64 = await withRetry(
+      () => callGeminiImageEdit(data, mimeType, buildFaceGridPrompt(classification, kind), imageModel),
+      3,
+      3_000,
+    );
+    const path = await uploadToStorage(reportId, outputBase64, `${kind}_grid.jpg`);
+    console.log(`[regenerateMissingFaceSlots] ${kind} grid saved: ${path}`);
+    return [path];
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[regenerateMissingFaceSlots] ${kind} grid FAILED (model: ${imageModel}): ${errMsg}`);
+    void supabaseAdmin
+      .from('man_reports')
+      .update({
+        error_message: `${kind === 'hairstyle' ? 'Hairstyle' : kind === 'beard' ? 'Beard' : 'Eyewear'} grid failed: ${errMsg.slice(0, 400)}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId)
+      .then(null, () => {});
+    return [null];
+  }
 }
 
 /**
- * Regenerate a single face image slot (hairstyle or eyewear).
+ * Regenerate the full 2x2 face grid for a kind.
  * Uses the submission headshot when present, otherwise falls back to the full-body photo.
- * Overwrites the existing slot file in storage.
+ * Overwrites the grid slot file in storage unless a unique filename is passed.
  */
 export async function regenerateSingleFaceImage(
   reportId:       string,
@@ -827,7 +766,7 @@ export async function regenerateSingleFaceImage(
   styleOverride?:  string,
   storageFilename?: string,
 ): Promise<string> {
-  if (![1, 2].includes(optionIndex)) {
+  if (![1, 2, 3, 4].includes(optionIndex)) {
     throw new Error(`Invalid ${kind} option index: ${optionIndex}`);
   }
 
@@ -840,31 +779,24 @@ export async function regenerateSingleFaceImage(
     { label: 'headshot', url: submission.photo_headshot_url },
     { label: 'full-body', url: submission.photo_fullbody_url },
   ]);
-  const { face } = classification;
-  const selectedOption = styleOverride?.trim() || (kind === 'hairstyle'
-    ? face.hairstyle_recommendations[optionIndex - 1]
-    : kind === 'beard'
-      ? face.beard_style_recommendations?.[optionIndex - 1]
-      : face.eyewear_shapes[optionIndex - 1]);
 
-  if (!selectedOption) {
+  const selectedOption = styleOverride?.trim() || getFaceStyleOptions(classification, kind)[optionIndex - 1];
+  if (!selectedOption?.trim()) {
     throw new Error(`No ${kind} recommendation found for option ${optionIndex}`);
   }
 
-  const primaryPrompt = kind === 'hairstyle'
-    ? buildHairstylePrompt(selectedOption, face.face_shape)
-    : kind === 'beard'
-      ? buildBeardPrompt(selectedOption, face.face_shape)
-      : buildEyewearPrompt(selectedOption, face.face_shape);
-  const softPrompt = kind === 'hairstyle'
-    ? buildHairstylePromptSoft(selectedOption, face.face_shape)
-    : kind === 'beard'
-      ? buildBeardPromptSoft(selectedOption, face.face_shape)
-      : buildEyewearPromptSoft(selectedOption, face.face_shape);
+  const outputBase64 = await withRetry(
+    () => callGeminiImageEdit(
+      data,
+      mimeType,
+      buildFaceGridPrompt(classification, kind, styleOverride?.trim() ? { optionIndex, style: styleOverride } : undefined),
+      imageModel,
+    ),
+    3,
+    3_000,
+  );
 
-  const outputBase64 = await generateFaceSlotWithFallback(data, mimeType, primaryPrompt, softPrompt, imageModel);
-
-  return uploadToStorage(reportId, outputBase64, storageFilename ?? `${kind}_${optionIndex}.jpg`);
+  return uploadToStorage(reportId, outputBase64, storageFilename ?? `${kind}_grid.jpg`);
 }
 
 /**
@@ -878,7 +810,7 @@ export async function generateAllOutfitImages(
   basePhotoUrl:   string,              // direct URL to the full-body photo
   classification: ClassificationResult,
   sections:       ReportSections,
-  hairstylePaths: (string | null)[],   // preserved in every partial DB write
+  groomingReferenceUrl: string | null | undefined, // original headshot preferred; never a generated grooming grid
   _eyewearPaths:  (string | null)[],   // preserved by merge-safe writes at route level
   imageModel:     string = MODEL,
   existingOutfitPaths: (string | null)[] = [], // already-generated slots — skip on resume
@@ -943,16 +875,14 @@ export async function generateAllOutfitImages(
       });
   };
 
-  // Fetch base photo and grooming reference concurrently — they're independent.
-  // For beard-focused reports, the caller passes beardCards as this reference.
+  // Fetch base photo and original headshot reference concurrently — they're independent.
+  // Do not use generated face grids here; outfit renders use the original headshot plus top-left text recommendations.
   const fetchGroomingRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
-    const groomingPath = hairstylePaths[0];
-    if (!groomingPath) return undefined;
+    if (!groomingReferenceUrl) return undefined;
     try {
-      const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(groomingPath, 300);
-      if (signedData?.signedUrl) return fetchAsBase64(signedData.signedUrl);
+      return fetchAsBase64(groomingReferenceUrl);
     } catch {
-      console.warn('[manImageGenerator] Could not fetch grooming reference — proceeding without it');
+      console.warn('[manImageGenerator] Could not fetch original headshot grooming reference — proceeding without it');
     }
     return undefined;
   };
@@ -1006,7 +936,7 @@ export async function generateComboGridImages(
   basePhotoUrl: string,
   classification: ClassificationResult,
   sections: ReportSections,
-  groomingPaths: (string | null)[],
+  groomingReferenceUrl: string | null | undefined,
   imageModel: string = MODEL,
   existingComboGridPaths: ManReportImagePaths['comboGridCards'] = {},
 ): Promise<NonNullable<ManReportImagePaths['comboGridCards']>> {
@@ -1023,13 +953,11 @@ export async function generateComboGridImages(
   }
 
   const fetchGroomingRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
-    const groomingPath = groomingPaths[0];
-    if (!groomingPath) return undefined;
+    if (!groomingReferenceUrl) return undefined;
     try {
-      const { data: signedData } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(groomingPath, 300);
-      if (signedData?.signedUrl) return fetchAsBase64(signedData.signedUrl);
+      return fetchAsBase64(groomingReferenceUrl);
     } catch {
-      console.warn('[manImageGenerator] Could not fetch grooming reference for combo grids — proceeding without it');
+      console.warn('[manImageGenerator] Could not fetch original headshot grooming reference for combo grids — proceeding without it');
     }
     return undefined;
   };
@@ -1084,7 +1012,7 @@ export async function regenerateSingleOutfitImage(
   basePhotoUrl:        string,          // direct URL to full-body photo
   classification:      ClassificationResult,
   imageModel:          string = MODEL,
-  hairstyleHeadshotUrl?: string | null, // optional hairstyle headshot for face/hair reference
+  hairstyleHeadshotUrl?: string | null, // optional original headshot for face/grooming reference
   storageFilename?:     string,
 ): Promise<string> {
   const parsed = parseOutfitsFromSection(outfitText);
