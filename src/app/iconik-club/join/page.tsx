@@ -460,10 +460,10 @@ function JoinPageContent() {
             <p className="luxury-body text-center text-xs text-luxury-charcoal/40">
               Questions?{' '}
               <a
-                href="mailto:support@iconik.pro"
+                href="mailto:help.iconikfashion@gmail.com"
                 className="text-luxury-accent hover:text-luxury-accent/70 transition-colors"
               >
-                support@iconik.pro
+                help.iconikfashion@gmail.com
               </a>
             </p>
 

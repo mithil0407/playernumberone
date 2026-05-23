@@ -128,7 +128,7 @@ export default function RefundPolicyPage() {
                 <ol className="space-y-3">
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
-                    <p className="text-gray-700">Email us at <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a> with subject &quot;Cancel Subscription&quot;</p>
+                    <p className="text-gray-700">Email us at <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a> with subject &quot;Cancel Subscription&quot;</p>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
@@ -155,7 +155,7 @@ export default function RefundPolicyPage() {
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Contact Our Support Team</h4>
-                      <p className="text-gray-700">Reply to your delivery email or write to <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a> with your order details.</p>
+                      <p className="text-gray-700">Reply to your delivery email or write to <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a> with your order details.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
@@ -232,7 +232,7 @@ export default function RefundPolicyPage() {
               </p>
               <div className="space-y-2">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">support@iconik.pro</a>
+                  <strong>Email:</strong> <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a>
                 </p>
                 <p className="text-gray-700">
                   <strong>Response Time:</strong> Within 24 hours

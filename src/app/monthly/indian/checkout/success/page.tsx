@@ -256,7 +256,7 @@ function SuccessContent() {
                         </a>
                         <span className="text-luxury-charcoal/30">•</span>
                         <a
-                            href="mailto:support@iconik.pro"
+                            href="mailto:help.iconikfashion@gmail.com"
                             className="text-luxury-charcoal/60 hover:text-luxury-accent transition-colors"
                         >
                             Email

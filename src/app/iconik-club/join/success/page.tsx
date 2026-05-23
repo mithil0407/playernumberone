@@ -88,8 +88,8 @@ export default function IconikClubJoinSuccessPage() {
 
         <p className="mt-6 text-sm" style={{ color: '#9b7090' }}>
           Questions? WhatsApp us or email{' '}
-          <a href="mailto:support@iconik.pro" style={{ color: '#ff6b9d' }}>
-            support@iconik.pro
+          <a href="mailto:help.iconikfashion@gmail.com" style={{ color: '#ff6b9d' }}>
+            help.iconikfashion@gmail.com
           </a>
         </p>
       </motion.div>

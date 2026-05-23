@@ -89,8 +89,8 @@ export default function BasicSuccessPage() {
                   <h3 className="font-semibold text-gray-900 mb-2">Email Support</h3>
                   <p className="text-gray-600 text-sm">
                     Have questions about your guide? Email us at{' '}
-                    <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline font-medium">
-                      bramhaan.ai@gmail.com
+                    <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline font-medium">
+                      help.iconikfashion@gmail.com
                     </a>
                     {' '}for assistance
                   </p>
@@ -180,7 +180,7 @@ export default function BasicSuccessPage() {
             </Link>
             
             <a
-              href="mailto:bramhaan.ai@gmail.com"
+              href="mailto:help.iconikfashion@gmail.com"
               className="inline-flex items-center gap-2 bg-white text-gray-700 px-8 py-4 rounded-xl font-bold text-lg border-2 border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300"
             >
               <Mail className="w-5 h-5" />
@@ -199,8 +199,8 @@ export default function BasicSuccessPage() {
               Check your email (including spam folder) for your Iconik Basic Guide within 24 hours.
               <br />
               Need immediate help? Email us at{' '}
-              <a href="mailto:bramhaan.ai@gmail.com" className="text-blue-600 hover:underline">
-                bramhaan.ai@gmail.com
+              <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">
+                help.iconikfashion@gmail.com
               </a>
             </p>
           </motion.div>

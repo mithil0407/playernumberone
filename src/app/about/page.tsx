@@ -124,8 +124,8 @@ export default function AboutPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
                     <p className="text-gray-700">
-                      <a href="mailto:support@iconik.pro" className="text-blue-600 hover:underline">
-                        support@iconik.pro
+                      <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">
+                        help.iconikfashion@gmail.com
                       </a>
                     </p>
                   </div>

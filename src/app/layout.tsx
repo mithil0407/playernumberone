@@ -182,7 +182,7 @@ export default function RootLayout({
                   "serviceType": "Personal Styling",
                   "contactPoint": {
                     "@type": "ContactPoint",
-                    "email": "support@iconik.pro",
+                    "email": "help.iconikfashion@gmail.com",
                     "contactType": "customer service",
                     "availableLanguage": ["English", "Hindi"],
                   },

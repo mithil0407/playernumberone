@@ -341,7 +341,7 @@ function GlobalIntakePageInner() {
 
         } catch (err) {
             console.error('Global intake submit error:', err);
-            setSubmitError('Something went wrong. Please try again or email hello@iconik.pro');
+            setSubmitError('Something went wrong. Please try again or email help.iconikfashion@gmail.com');
         } finally {
             setSubmitting(false);
         }

@@ -122,7 +122,7 @@ function SuccessPageContent() {
 
                 <div className="mt-8 text-sm text-gray-500">
                     <p>Check your email/WhatsApp for your order confirmation and booking link.</p>
-                    <p>Questions? Contact us at support@iconik.pro</p>
+                    <p>Questions? Contact us at help.iconikfashion@gmail.com</p>
                 </div>
             </motion.div>
         </div>

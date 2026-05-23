@@ -982,7 +982,7 @@ export default function ManLandingPage() {
                             <Link href="/privacy-policy" className="hover:text-luxury-green transition-colors">Privacy Policy</Link>
                             <Link href="/refund-policy" className="hover:text-luxury-green transition-colors">Refund Policy</Link>
                             <Link href="/terms" className="hover:text-luxury-green transition-colors">Terms of Service</Link>
-                            <a href="mailto:support@iconik.pro" className="hover:text-luxury-green transition-colors">support@iconik.pro</a>
+                            <a href="mailto:help.iconikfashion@gmail.com" className="hover:text-luxury-green transition-colors">help.iconikfashion@gmail.com</a>
                         </div>
                     </div>
                     <div className="mt-8 pt-6 border-t border-luxury-cream text-center">
