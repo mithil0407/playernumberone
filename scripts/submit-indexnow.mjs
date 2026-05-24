@@ -2,7 +2,7 @@
 
 const DEFAULT_SITE_URL = "https://www.iconik.pro";
 const DEFAULT_ENDPOINT = "https://api.indexnow.org/indexnow";
-const DEFAULT_KEY = "57eeefa763f74162b49a3024ee31d814";
+const DEFAULT_KEY = "e991f1e1ee93484486ae4f47071e99a8";
 
 const args = process.argv.slice(2);
 
