@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICONIK /stylist — Revised PRD + USD Pricing + Admin OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #2d2d2d;
+  --ink-muted: #6b6b6b;
+  --ink-light: #999;
+  --paper: #faf7f2;
+  --paper-warm: #f3ede3;
+  --paper-deep: #ede5d6;
+  --slate: #94a6ad;
+  --slate-deep: #6d8088;
+  --accent: #c84d4d;
+  --accent-soft: #d97070;
+  --gold: #b08d57;
+  --line: rgba(26, 26, 26, 0.12);
+  --line-soft: rgba(26, 26, 26, 0.06);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ HERO COVER ============ */
+.cover {
+  min-height: 100vh;
+  background: linear-gradient(160deg, var(--paper) 0%, var(--paper-warm) 60%, var(--paper-deep) 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 30%, rgba(148, 166, 173, 0.15), transparent 40%),
+    radial-gradient(circle at 85% 70%, rgba(176, 141, 87, 0.1), transparent 40%);
+  pointer-events: none;
+}
+
+.cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.cover-nav {
+  padding: 28px 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.brand {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: 0.28em;
+  color: var(--ink);
+}
+
+.cover-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.cover-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 0 56px;
+  position: relative;
+  z-index: 2;
+  gap: 80px;
+}
+
+.cover-left {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.cover-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 96px;
+  line-height: 0.95;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.cover-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.cover-title .slash {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 0.8em;
+  color: var(--gold);
+  margin-right: -8px;
+}
+
+.cover-subtitle {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-soft);
+  font-weight: 400;
+  line-height: 1.4;
+  max-width: 480px;
+}
+
+.cover-stats {
+  display: flex;
+  gap: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.cover-right {
+  position: relative;
+  height: 600px;
+}
+
+.cover-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--line);
+  padding: 28px;
+  font-size: 12px;
+}
+
+.cover-card-1 {
+  top: 40px;
+  right: 20px;
+  width: 280px;
+  transform: rotate(2deg);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+}
+
+.cover-card-2 {
+  top: 240px;
+  left: 40px;
+  width: 260px;
+  transform: rotate(-3deg);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+  background: var(--slate);
+  color: var(--paper);
+  border-color: var(--slate-deep);
+}
+
+.cover-card-3 {
+  bottom: 60px;
+  right: 80px;
+  width: 240px;
+  transform: rotate(1.5deg);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+}
+
+.card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+
+.cover-card-2 .card-label {
+  color: rgba(250, 247, 242, 0.7);
+}
+
+.card-content {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.cover-card-2 .card-content {
+  color: var(--paper);
+}
+
+.card-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--ink-muted);
+  margin: 14px 0;
+}
+
+.cover-card-2 .card-divider {
+  background: var(--paper);
+  opacity: 0.4;
+}
+
+.card-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--ink-muted);
+}
+
+.cover-card-2 .card-meta {
+  color: rgba(250, 247, 242, 0.7);
+}
+
+.cover-footer {
+  padding: 24px 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line-soft);
+  position: relative;
+  z-index: 2;
+}
+
+.cover-footer-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* ============ SECTION FRAMEWORK ============ */
+.section {
+  padding: 120px 56px;
+  position: relative;
+  border-top: 1px solid var(--line);
+}
+
+.section-alt {
+  background: var(--paper-warm);
+}
+
+.section-dark {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.section-slate {
+  background: var(--slate);
+  color: var(--paper);
+}
+
+.section-header {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 80px;
+  margin-bottom: 80px;
+  align-items: start;
+}
+
+.section-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  font-weight: 500;
+  color: var(--accent);
+  position: sticky;
+  top: 32px;
+}
+
+.section-number::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: var(--accent);
+  margin-top: 8px;
+}
+
+.section-dark .section-number,
+.section-slate .section-number {
+  color: var(--gold);
+}
+
+.section-dark .section-number::after,
+.section-slate .section-number::after {
+  background: var(--gold);
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 64px;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+.section-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.section-dark .section-title em,
+.section-slate .section-title em {
+  color: var(--gold);
+}
+
+.section-lede {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 720px;
+  font-weight: 400;
+}
+
+.section-dark .section-lede,
+.section-slate .section-lede {
+  color: rgba(250, 247, 242, 0.85);
+}
+
+.section-body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 80px;
+}
+
+.section-body-content {
+  max-width: 820px;
+}
+
+/* ============ PROSE ============ */
+.prose p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  margin-bottom: 24px;
+}
+
+.section-dark .prose p,
+.section-slate .prose p {
+  color: rgba(250, 247, 242, 0.85);
+}
+
+.prose p strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.section-dark .prose p strong,
+.section-slate .prose p strong {
+  color: var(--paper);
+}
+
+.prose h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 500;
+  margin-top: 56px;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+.prose h3:first-child { margin-top: 0; }
+
+.prose h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 40px;
+  margin-bottom: 16px;
+}
+
+.section-dark .prose h4,
+.section-slate .prose h4 { color: var(--gold); }
+
+/* ============ PRINCIPLE CARDS ============ */
+.principles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  margin-top: 56px;
+  border: 1px solid var(--line);
+}
+
+.principle {
+  background: var(--paper);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-alt .principle { background: var(--paper-warm); }
+
+.principle-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.principle-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.principle-body {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ============ SPEC TABLES ============ */
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 32px;
+  font-size: 14px;
+}
+
+.spec-table th {
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 500;
+  padding: 14px 16px;
+  border-bottom: 2px solid var(--ink);
+  background: transparent;
+}
+
+.section-dark .spec-table th,
+.section-slate .spec-table th {
+  color: rgba(250, 247, 242, 0.7);
+  border-bottom-color: var(--paper);
+}
+
+.spec-table td {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.section-dark .spec-table td,
+.section-slate .spec-table td {
+  border-bottom-color: rgba(250, 247, 242, 0.15);
+}
+
+.spec-table td:first-child {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  width: 30%;
+}
+
+.section-dark .spec-table td:first-child,
+.section-slate .spec-table td:first-child {
+  color: var(--paper);
+}
+
+.spec-table td code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: rgba(200, 77, 77, 0.08);
+  color: var(--accent);
+  padding: 2px 8px;
+}
+
+/* ============ USER FLOW ============ */
+.flow {
+  display: flex;
+  gap: 0;
+  margin-top: 56px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.flow-step {
+  flex: 1;
+  padding: 32px 28px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+.flow-step:last-child { border-right: none; }
+
+.flow-step-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+}
+
+.flow-step-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.flow-step-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.flow-step-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ============ FEATURE GRID ============ */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 56px;
+  border: 1px solid rgba(250, 247, 242, 0.15);
+}
+
+.feature {
+  padding: 40px;
+  border-right: 1px solid rgba(250, 247, 242, 0.15);
+  border-bottom: 1px solid rgba(250, 247, 242, 0.15);
+}
+
+.feature:nth-child(3n) { border-right: none; }
+.feature:nth-last-child(-n+3) { border-bottom: none; }
+
+.feature-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+
+.feature-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.feature-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(250, 247, 242, 0.75);
+}
+
+/* ============ PRICING ============ */
+.pricing-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 56px;
+  margin-top: 56px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.pricing-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 84px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.pricing-headline em {
+  font-size: 32px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--accent);
+  vertical-align: super;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pricing-period {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-muted);
+  margin-top: 12px;
+}
+
+.pricing-includes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pricing-includes-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+
+.pricing-item {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pricing-item:last-child { border-bottom: none; }
+
+.pricing-bullet {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ============ ARCHITECTURE DIAGRAM ============ */
+.arch {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 48px;
+  margin-top: 56px;
+}
+
+.arch-layer {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line-soft);
+  align-items: start;
+}
+
+.arch-layer:last-child { border-bottom: none; }
+
+.arch-layer-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.arch-layer-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.arch-layer-detail {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.arch-layer-detail code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--paper-deep);
+  padding: 2px 8px;
+  color: var(--ink);
+}
+
+/* ============ METRICS ============ */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--line);
+  margin-top: 56px;
+}
+
+.metric {
+  padding: 36px 28px;
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.metric:last-child { border-right: none; }
+
+.section-alt .metric { background: var(--paper-warm); }
+
+.metric-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+
+.metric-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.metric-detail {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* ============ ROADMAP ============ */
+.roadmap {
+  margin-top: 56px;
+  position: relative;
+}
+
+.roadmap-phase {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 56px;
+  padding: 32px 0;
+  border-top: 1px solid var(--line);
+  position: relative;
+}
+
+.roadmap-phase:last-child { border-bottom: 1px solid var(--line); }
+
+.roadmap-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roadmap-weeks {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.roadmap-phase-name {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--ink-muted);
+}
+
+.roadmap-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.roadmap-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roadmap-items li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  padding-left: 28px;
+  position: relative;
+}
+
+.roadmap-items li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 16px;
+  height: 1px;
+  background: var(--accent);
+}
+
+/* ============ SYSTEM PROMPT BLOCK ============ */
+.prompt-block {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 40px;
+  margin-top: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.85;
+  position: relative;
+  overflow-x: auto;
+}
+
+.prompt-block::before {
+  content: 'SYSTEM PROMPT';
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+}
+
+.prompt-block .prompt-section {
+  color: var(--gold);
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.prompt-block .prompt-section:first-child { margin-top: 0; }
+
+/* ============ RISK CARDS ============ */
+.risks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: rgba(250, 247, 242, 0.15);
+  margin-top: 56px;
+  border: 1px solid rgba(250, 247, 242, 0.15);
+}
+
+.risk {
+  background: var(--ink);
+  padding: 32px;
+}
+
+.risk-level {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  margin-bottom: 16px;
+  border: 1px solid currentColor;
+}
+
+.risk-critical { color: var(--accent-soft); }
+.risk-high { color: var(--gold); }
+.risk-medium { color: var(--slate); }
+
+.risk-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--paper);
+}
+
+.risk-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(250, 247, 242, 0.7);
+}
+
+.risk-mitigation {
+  font-size: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(250, 247, 242, 0.15);
+  color: rgba(250, 247, 242, 0.85);
+}
+
+.risk-mitigation strong {
+  color: var(--gold);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* ============ PULL QUOTE ============ */
+.pull-quote {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 38px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--ink);
+  border-left: 2px solid var(--accent);
+  padding: 8px 0 8px 40px;
+  margin: 64px 0;
+  max-width: 800px;
+}
+
+.section-dark .pull-quote,
+.section-slate .pull-quote {
+  color: var(--paper);
+  border-left-color: var(--gold);
+}
+
+/* ============ CLOSING ============ */
+.closing {
+  padding: 160px 56px 80px;
+  background: var(--paper-deep);
+  text-align: center;
+  position: relative;
+  border-top: 1px solid var(--line);
+}
+
+.closing-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 32px;
+}
+
+.closing-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 80px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+.closing-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.closing-tagline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--ink-soft);
+  margin-bottom: 80px;
+}
+
+.closing-meta {
+  display: flex;
+  justify-content: center;
+  gap: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ============ TWO-COL ============ */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  margin-top: 40px;
+}
+
+.col-box {
+  padding: 32px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.section-alt .col-box { background: var(--paper); }
+
+.col-box-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.col-box h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.col-box p, .col-box li {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.col-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.col-box ul li {
+  padding-left: 20px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.col-box ul li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1100px) {
+  .cover-content { grid-template-columns: 1fr; gap: 40px; padding: 40px; }
+  .cover-right { display: none; }
+  .cover-title { font-size: 64px; }
+  .section { padding: 80px 32px; }
+  .section-header, .section-body { grid-template-columns: 1fr; gap: 32px; }
+  .section-title { font-size: 44px; }
+  .principles { grid-template-columns: 1fr; }
+  .flow { flex-direction: column; }
+  .flow-step { border-right: none; border-bottom: 1px solid var(--line); }
+  .features { grid-template-columns: 1fr; }
+  .feature { border-right: none; }
+  .pricing-card { grid-template-columns: 1fr; padding: 40px; }
+  .pricing-headline { font-size: 64px; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .roadmap-phase { grid-template-columns: 1fr; }
+  .risks { grid-template-columns: 1fr; }
+  .closing { padding: 80px 32px; }
+  .closing-title { font-size: 48px; }
+  .pull-quote { font-size: 24px; padding-left: 24px; }
+  .arch-layer { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+}
+
+
+
+/* ============ REVISED PRD ADDITIONS ============ */
+.badge-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
+.badge { font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase; padding:8px 12px; border:1px solid var(--line); color:var(--ink-muted); background:rgba(255,255,255,.45); }
+.section-dark .badge, .section-slate .badge { border-color:rgba(250,247,242,.18); color:rgba(250,247,242,.75); background:rgba(255,255,255,.05); }
+.decision-box { border:1px solid var(--line); background:var(--paper); padding:32px; margin-top:32px; }
+.section-alt .decision-box { background:var(--paper-warm); }
+.section-dark .decision-box { background:rgba(255,255,255,.04); border-color:rgba(250,247,242,.15); }
+.decision-title { font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+.section-dark .decision-title, .section-slate .decision-title { color:var(--gold); }
+.decision-copy { font-family:'Playfair Display', serif; font-size:28px; line-height:1.25; font-style:italic; }
+.pipeline { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:44px; }
+.pipe-card { background:var(--paper); padding:26px; min-height:160px; }
+.section-alt .pipe-card { background:var(--paper-warm); }
+.pipe-num { font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--accent); margin-bottom:10px; }
+.pipe-title { font-family:'Playfair Display', serif; font-size:22px; line-height:1.15; margin-bottom:10px; }
+.pipe-body { font-size:13px; color:var(--ink-muted); line-height:1.6; }
+.module-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:44px; }
+.module { background:var(--paper); padding:34px; }
+.section-alt .module { background:var(--paper-warm); }
+.module-tag { font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+.module-title { font-family:'Playfair Display', serif; font-size:25px; line-height:1.2; margin-bottom:12px; }
+.module-body { font-size:13px; color:var(--ink-soft); line-height:1.65; }
+.checklist { list-style:none; margin-top:12px; }
+.checklist li { font-size:13px; color:var(--ink-soft); line-height:1.6; padding-left:22px; position:relative; margin-bottom:8px; }
+.checklist li::before { content:'—'; position:absolute; left:0; color:var(--accent); }
+.event-table td:first-child { font-family:'JetBrains Mono', monospace; font-size:12px; width:25%; }
+.kpi-strip { display:grid; grid-template-columns:repeat(5,1fr); border:1px solid var(--line); margin-top:42px; }
+.kpi { padding:28px; border-right:1px solid var(--line); background:var(--paper); }
+.kpi:last-child { border-right:none; }
+.kpi-label { font-family:'JetBrains Mono', monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:12px; }
+.kpi-value { font-family:'Playfair Display', serif; font-size:34px; line-height:1; }
+.kpi-note { margin-top:8px; font-size:12px; color:var(--ink-muted); line-height:1.45; }
+.status-pill { display:inline-block; font-family:'JetBrains Mono', monospace; font-size:9px; letter-spacing:.16em; text-transform:uppercase; padding:4px 8px; border:1px solid var(--line); margin:2px 4px 2px 0; color:var(--ink-muted); }
+@media (max-width: 1100px) { .pipeline, .module-grid, .kpi-strip { grid-template-columns:1fr; } .kpi { border-right:none; border-bottom:1px solid var(--line); } }
+
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <nav class="cover-nav">
+    <div class="brand">I C O N I K</div>
+    <div class="cover-meta">Revised PRD · USD Pricing · v2.1</div>
+  </nav>
+
+  <div class="cover-content">
+    <div class="cover-left">
+      <div class="eyebrow">Product Requirements Document</div>
+      <h1 class="cover-title"><span class="slash">/</span>stylist <em>OS</em></h1>
+      <p class="cover-subtitle">A leaner, measurable version of the ICONIK global stylist membership: built around a free diagnostic funnel, annual-first monetisation, and an admin system that tracks every client from Reel view to renewal.</p>
+
+      <div class="cover-stats">
+        <div class="stat">
+          <div class="stat-value">$399</div>
+          <div class="stat-label">Annual · Standard</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">50–100</div>
+          <div class="stat-label">Paid Beta Gate</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">2,000</div>
+          <div class="stat-label">First Valuation Milestone</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-right">
+      <div class="cover-card cover-card-1">
+        <div class="card-label">Funnel · Reel</div>
+        <div class="card-content">“Your clothes are not the problem. Your stopping points are. Comment BLUEPRINT for your free body geometry quiz.”</div>
+        <div class="card-divider"></div>
+        <div class="card-meta">CTA → ManyChat → Quiz</div>
+      </div>
+      <div class="cover-card cover-card-2">
+        <div class="card-label">Admin · Live</div>
+        <div class="card-content">Lead score: 82. Quiz complete. Soft Apple Frame. Checkout opened twice. Needs Day 2 case study email.</div>
+        <div class="card-divider"></div>
+        <div class="card-meta">Client state machine</div>
+      </div>
+      <div class="cover-card cover-card-3">
+        <div class="card-label">Retention</div>
+        <div class="card-content">Letter opened. 2 chats used. 1 photo check uploaded. Health score: green. Renewal probability: high.</div>
+        <div class="card-divider"></div>
+        <div class="card-meta">Relationship > chatbot</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="cover-footer">
+    <div class="cover-footer-text">Prepared for Mithil Navalakha · ICONIK LLP · May 2026</div>
+    <div class="tagline">Same body. Different science.</div>
+  </footer>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">01 · Decision</div>
+    <div>
+      <h2 class="section-title">What changes from <em>v1</em>.</h2>
+      <p class="section-lede">The original concept is strong. The change is sequencing. We do not build the full membership first. We prove that people return to the relationship after the Blueprint.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content prose">
+      <p>The original PRD correctly identifies the core insight: the product is not the Blueprint; the Blueprint is the onboarding ritual. The product is the ongoing relationship with a stylist that remembers the member’s body geometry, colour profile, facial architecture, preferences, wardrobe, and past questions.</p>
+      <p>The revision keeps that insight but removes the operational overbuild. Version 1 should not launch as a complete “nine-feature platform.” It should launch as a <strong>retention experiment wrapped in a premium annual membership</strong>.</p>
+      <div class="decision-box">
+        <div class="decision-title">Founder Decision</div>
+        <div class="decision-copy">Build the smallest product that can prove weekly retention, not the biggest product that can impress a pitch deck.</div>
+      </div>
+      <div class="badge-row">
+        <div class="badge">Annual-first</div>
+        <div class="badge">Limited usage</div>
+        <div class="badge">Admin-tracked</div>
+        <div class="badge">Beta before scale</div>
+        <div class="badge">No unlimited chat</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <header class="section-header">
+    <div class="section-number">02 · Funnel</div>
+    <div>
+      <h2 class="section-title">The funnel is not a landing page. It is a <em>diagnostic loop</em>.</h2>
+      <p class="section-lede">Every Reel should sell one micro-realisation. The quiz captures the identity. The email sequence builds trust. The membership sells continued personalisation.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-step-number">STEP · 01</div>
+          <div class="flow-step-title">Reel</div>
+          <div class="flow-step-body">Pain-point Reel: heavy arms, tummy, modest dressing, office polish, colour washout, face-shape styling. CTA: “Comment BLUEPRINT.”</div>
+          <div class="flow-step-time">Cold attention</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-number">STEP · 02</div>
+          <div class="flow-step-title">DM</div>
+          <div class="flow-step-body">ManyChat sends quiz link with UTM, reel ID, angle tag, country tag, and campaign source.</div>
+          <div class="flow-step-time">Intent captured</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-number">STEP · 03</div>
+          <div class="flow-step-title">Quiz</div>
+          <div class="flow-step-body">3-minute Style Archetype Quiz. No generic “fashion personality.” It must diagnose body geometry, colour risk, and style pain.</div>
+          <div class="flow-step-time">Self-diagnosis</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-number">STEP · 04</div>
+          <div class="flow-step-title">Email Gate</div>
+          <div class="flow-step-body">Partial result is visible. Full free breakdown unlocks after email. This creates a lead with an archetype attached.</div>
+          <div class="flow-step-time">Lead created</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-number">STEP · 05</div>
+          <div class="flow-step-title">Nurture</div>
+          <div class="flow-step-body">5-day sequence: result, mistake, case study, visual framework, founding cohort offer.</div>
+          <div class="flow-step-time">Trust built</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-number">STEP · 06</div>
+          <div class="flow-step-title">Member</div>
+          <div class="flow-step-body">Annual-first checkout. Full intake. Blueprint delivered. Weekly Style Letter and limited stylist access begin.</div>
+          <div class="flow-step-time">Revenue + retention</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:80px;">The offer ladder</h3>
+      <table class="spec-table">
+        <thead><tr><th>Stage</th><th>What user gets</th><th>Business goal</th></tr></thead>
+        <tbody>
+          <tr><td>Free Reel</td><td>One sharp insight: “the sleeve ends at the wrong point,” “the print scale is wrong,” “the colour temperature is fighting your face.”</td><td>High-intent comments and shares.</td></tr>
+          <tr><td>Free Quiz</td><td>Body/style archetype + one specific rule. Enough value to create trust, not enough to solve the whole problem.</td><td>Email capture with segmentation.</td></tr>
+          <tr><td>Free Result</td><td>Short breakdown: archetype, main mistake, one outfit principle, one avoid rule.</td><td>Show methodology and create open loop.</td></tr>
+          <tr><td>Paid Membership</td><td>Full Blueprint, weekly personalised Style Letter, stylist questions, photo checks, quarterly refresh.</td><td>Annual cash collection + retention proof.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">03 · 100K Reel</div>
+    <div>
+      <h2 class="section-title">What happens when a Reel gets <em>100,000 views</em>.</h2>
+      <p class="section-lede">The Reel is not judged by views. It is judged by how many segmented leads and annual members it creates.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <table class="spec-table">
+        <thead><tr><th>Stage</th><th>Weak</th><th>Base</th><th>Strong</th></tr></thead>
+        <tbody>
+          <tr><td>Views</td><td>100,000</td><td>100,000</td><td>100,000</td></tr>
+          <tr><td>Comment / DM / bio intent</td><td>600 · 0.6%</td><td>1,500 · 1.5%</td><td>3,000 · 3.0%</td></tr>
+          <tr><td>Quiz starts</td><td>300 · 50%</td><td>1,050 · 70%</td><td>2,250 · 75%</td></tr>
+          <tr><td>Quiz completions</td><td>180 · 60%</td><td>735 · 70%</td><td>1,800 · 80%</td></tr>
+          <tr><td>Email captured</td><td>126 · 70%</td><td>625 · 85%</td><td>1,620 · 90%</td></tr>
+          <tr><td>Paid members in 14 days</td><td>3–5 · 2–4%</td><td>19–31 · 3–5%</td><td>65–100 · 4–6%</td></tr>
+          <tr><td>First cash collected</td><td>$900–$2K</td><td>$6K–$10K</td><td>$20K–$35K</td></tr>
+          <tr><td>ARR created</td><td>$1.2K–$2K</td><td>$7.5K–$12.5K</td><td>$26K–$40K</td></tr>
+        </tbody>
+      </table>
+      <div class="decision-box">
+        <div class="decision-title">Success Rule</div>
+        <div class="decision-copy">A 100K-view Reel should produce at least 500 emails and 20 paid members before we call it scalable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <header class="section-header">
+    <div class="section-number">04 · Monetisation</div>
+    <div>
+      <h2 class="section-title">Annual-first. <em>Usage-limited</em>. No lifetime discounts.</h2>
+      <p class="section-lede">The original $399/year idea is directionally correct. The change: remove unlimited chat and stop giving beta users lifetime low pricing.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content prose">
+      <div class="pricing-card">
+        <div>
+          <div class="pricing-headline"><em>USD</em>$399<div class="pricing-period">per year · standard</div></div>
+          <p style="margin-top:32px;font-size:14px;color:var(--ink-muted);line-height:1.6;">Charged directly in USD for US, UK, Canada, Australia, and other global markets. Annual is the default checkout. Monthly is shown as a secondary option only.</p>
+        </div>
+        <div class="pricing-includes">
+          <div class="pricing-includes-label">Membership includes</div>
+          <div class="pricing-item"><span class="pricing-bullet">01</span><span>Full ICONIK Blueprint in 24–48 hours</span></div>
+          <div class="pricing-item"><span class="pricing-bullet">02</span><span>Weekly personalised Style Letter</span></div>
+          <div class="pricing-item"><span class="pricing-bullet">03</span><span>20 stylist questions per month</span></div>
+          <div class="pricing-item"><span class="pricing-bullet">04</span><span>5 photo checks per month</span></div>
+          <div class="pricing-item"><span class="pricing-bullet">05</span><span>Quarterly seasonal refresh</span></div>
+          <div class="pricing-item"><span class="pricing-bullet">06</span><span>Permanent access to Blueprint and letters</span></div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--paper);">Pricing table</h3>
+      <table class="spec-table">
+        <thead><tr><th>Plan</th><th>Price</th><th>Rule</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Beta Cohort</td><td>$199 first year</td><td>First 50–100 members only. Not locked forever.</td><td>Gets proof without creating a permanently low-ARPU support burden.</td></tr>
+          <tr><td>Founding Cohort</td><td>$299 first year</td><td>First 500 public members. Renews at $399.</td><td>Creates urgency while protecting Year 2 revenue.</td></tr>
+          <tr><td>Standard Annual</td><td>$399/year</td><td>Default plan.</td><td>Best cash flow, best retention signal, best valuation story.</td></tr>
+          <tr><td>Monthly</td><td>$49/month</td><td>Secondary option. Optional 3-month minimum.</td><td>Expensive enough that annual looks obvious.</td></tr>
+          <tr><td>Premium Later</td><td>$799/year</td><td>Launch only after 2,000+ active members.</td><td>Add quarterly human stylist calls without polluting v1 economics.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="decision-box">
+        <div class="decision-title">Do Not Promise</div>
+        <div class="decision-copy">Do not sell unlimited chat. It sounds premium, but it makes cost, QA, abuse, and support unpredictable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">05 · Product V1</div>
+    <div>
+      <h2 class="section-title">The member product should feel complete, but be <em>operationally small</em>.</h2>
+      <p class="section-lede">The goal of v1 is to prove: they complete the intake, they open the letter, they ask questions, they upload photos, and they want to renew.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="features" style="border-color:var(--line);">
+        <div class="feature" style="border-color:var(--line);">
+          <div class="feature-tag">V1 · 01</div>
+          <div class="feature-title" style="color:var(--ink);">Free Style Archetype Quiz</div>
+          <div class="feature-body" style="color:var(--ink-muted);">15–18 questions. Segments by body geometry, colour risk, modesty preference, work/social lifestyle, budget, climate, and frustration.</div>
+        </div>
+        <div class="feature" style="border-color:var(--line);">
+          <div class="feature-tag">V1 · 02</div>
+          <div class="feature-title" style="color:var(--ink);">Full Blueprint</div>
+          <div class="feature-body" style="color:var(--ink-muted);">Paid member receives full diagnostic: silhouette, colour, facial architecture, 10–15 outfit rules, avoid list, and starter formulas.</div>
+        </div>
+        <div class="feature" style="border-color:var(--line);">
+          <div class="feature-tag">V1 · 03</div>
+          <div class="feature-title" style="color:var(--ink);">Sunday Style Letter</div>
+          <div class="feature-body" style="color:var(--ink-muted);">Weekly personalised drop with visual outfit ideas, one trend filter, one wardrobe gap, and one rule tied to her profile.</div>
+        </div>
+        <div class="feature" style="border-color:var(--line);">
+          <div class="feature-tag">V1 · 04</div>
+          <div class="feature-title" style="color:var(--ink);">Stylist Questions</div>
+          <div class="feature-body" style="color:var(--ink-muted);">20 monthly text questions. Designed for specific use cases: “what do I wear to X,” “does this suit me,” “which colour works?”</div>
+        </div>
+        <div class="feature" style="border-color:var(--line);">
+          <div class="feature-tag">V1 · 05</div>
+          <div class="feature-title" style="color:var(--ink);">Photo Checks</div>
+          <div class="feature-body" style="color:var(--ink-muted);">5 monthly outfit/photo checks. All images handled discreetly and analysed only through styling methodology.</div>
+        </div>
+        <div class="feature" style="border-color:var(--line);">
+          <div class="feature-tag">V1 · 06</div>
+          <div class="feature-title" style="color:var(--ink);">Admin Tracking</div>
+          <div class="feature-body" style="color:var(--ink-muted);">Every user has a status, owner, source, health score, pending tasks, usage count, and renewal risk.</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:80px;">Explicitly not v1</h3>
+      <table class="spec-table">
+        <thead><tr><th>Deferred</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Full wardrobe inventory</td><td>High operational load. Start with “upload what you need help with,” not full closet mapping.</td></tr>
+          <tr><td>Native mobile app</td><td>Responsive web is enough until retention is proven.</td></tr>
+          <tr><td>Affiliate shopping layer</td><td>Useful later, but can corrupt trust if launched before recommendations feel premium.</td></tr>
+          <tr><td>Community</td><td>Breaks the private stylist relationship and adds moderation load.</td></tr>
+          <tr><td>Premium calls</td><td>Add only once automated/asynchronous retention is proven.</td></tr>
+          <tr><td>Men’s product on same funnel</td><td>Keep global women’s product clean until one engine works.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <header class="section-header">
+    <div class="section-number">06 · Admin OS</div>
+    <div>
+      <h2 class="section-title">Admin side: what ICONIK needs to track <em>everything</em>.</h2>
+      <p class="section-lede">The admin dashboard is not a back-office tool. It is the control room for funnel conversion, client delivery, quality, retention, and enterprise value.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="module-grid">
+        <div class="module">
+          <div class="module-tag">Admin · 01</div>
+          <div class="module-title">Executive Dashboard</div>
+          <div class="module-body">Top-level view for founder: revenue, ARR, MRR, new members, CAC, refunds, overdue Blueprints, open support tickets, churn risk, and funnel leak by source.</div>
+          <ul class="checklist"><li>Today / 7-day / 30-day filters</li><li>Revenue by plan and country</li><li>Organic vs paid member split</li><li>At-risk members and renewal pipeline</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 02</div>
+          <div class="module-title">Funnel Analytics</div>
+          <div class="module-body">Tracks every conversion step from Reel source to paid member. Must show where each content angle leaks.</div>
+          <ul class="checklist"><li>Reel ID, hook, angle, CTA, country</li><li>DM clicks, quiz starts, quiz completions</li><li>Email capture and checkout started</li><li>Purchase rate by archetype and pain point</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 03</div>
+          <div class="module-title">Lead CRM</div>
+          <div class="module-body">Every quiz taker becomes a lead profile with source, archetype, intent score, emails opened, result viewed, checkout activity, and last touch.</div>
+          <ul class="checklist"><li>Lead score 0–100</li><li>Segment tags: apple, pear, modest, office, colour</li><li>Abandoned checkout queue</li><li>Manual note field for founder/ops</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 04</div>
+          <div class="module-title">Member Profile</div>
+          <div class="module-body">Single source of truth for each paid member. This is what support, stylist QA, and retention teams open before acting.</div>
+          <ul class="checklist"><li>Plan, payment, renewal date, country</li><li>Blueprint summary and images</li><li>Usage: questions, photo checks, letters opened</li><li>Health score and risk reason</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 05</div>
+          <div class="module-title">Intake + Photo Review Queue</div>
+          <div class="module-body">Tracks whether the customer submitted usable photos and completed all required inputs. Prevents broken Blueprints.</div>
+          <ul class="checklist"><li>Status: missing, submitted, rejected, approved</li><li>Photo quality checklist</li><li>Auto-email for bad/missing images</li><li>Side-profile request template</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 06</div>
+          <div class="module-title">Blueprint Production Queue</div>
+          <div class="module-body">Kanban-style delivery queue for paid Blueprints with SLA timers and human review states.</div>
+          <ul class="checklist"><li>Pending generation</li><li>Generated draft</li><li>Stylist review needed</li><li>Approved, delivered, revised</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 07</div>
+          <div class="module-title">Sunday Letter Engine</div>
+          <div class="module-body">Shows upcoming letters by timezone, member cohort, archetype, delivery status, open rate, click rate, and chat follow-through.</div>
+          <ul class="checklist"><li>Preview each generated letter</li><li>Hold/rewrite if generic</li><li>Delivery failure alerts</li><li>Letter format rotation tracking</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 08</div>
+          <div class="module-title">Chat + Escalation Review</div>
+          <div class="module-body">Monitors chat quality, memory recall, photo responses, usage limits, and any messages requiring human review.</div>
+          <ul class="checklist"><li>Flagged response queue</li><li>Low-confidence answer alerts</li><li>Body-sensitive language review</li><li>Random QA sample audit</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 09</div>
+          <div class="module-title">Retention Dashboard</div>
+          <div class="module-body">Identifies members likely to cancel before they cancel. Uses behaviour, not vibes.</div>
+          <ul class="checklist"><li>No login in 14 days</li><li>No letter opens in 3 weeks</li><li>No chat/photo usage in 30 days</li><li>Cancellation intent and win-back state</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 10</div>
+          <div class="module-title">Billing + Refunds</div>
+          <div class="module-body">Stripe-connected view for payment status, failed payments, dunning, refunds, plan changes, coupons, and renewal dates.</div>
+          <ul class="checklist"><li>Payment failed queue</li><li>Refund reason codes</li><li>Coupon attribution</li><li>MRR/ARR movement log</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 11</div>
+          <div class="module-title">Support Inbox</div>
+          <div class="module-body">A lightweight ticketing layer connected to member profile and delivery status. No customer should get lost in Gmail/DMs.</div>
+          <ul class="checklist"><li>Ticket owner and priority</li><li>SLA timer</li><li>Template replies</li><li>Escalation to founder/stylist</li></ul>
+        </div>
+        <div class="module">
+          <div class="module-tag">Admin · 12</div>
+          <div class="module-title">QA + Voice Audit</div>
+          <div class="module-body">Ensures the product does not sound like a generic chatbot and does not give unsafe or unhelpful styling feedback.</div>
+          <ul class="checklist"><li>Score responses 1–5</li><li>Track AI-tell phrases</li><li>Memory recall pass/fail</li><li>Stylist specificity score</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">07 · Client States</div>
+    <div>
+      <h2 class="section-title">Every client needs a <em>status</em>.</h2>
+      <p class="section-lede">If the team cannot answer “where is this person in the journey?” in five seconds, the admin system has failed.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="pipeline">
+        <div class="pipe-card"><div class="pipe-num">01</div><div class="pipe-title">Anonymous Visitor</div><div class="pipe-body">UTM known. Source known. No email yet.</div></div>
+        <div class="pipe-card"><div class="pipe-num">02</div><div class="pipe-title">Quiz Started</div><div class="pipe-body">Session created. Drop-off can be tracked question by question.</div></div>
+        <div class="pipe-card"><div class="pipe-num">03</div><div class="pipe-title">Quiz Completed</div><div class="pipe-body">Archetype assigned. Result pending email capture.</div></div>
+        <div class="pipe-card"><div class="pipe-num">04</div><div class="pipe-title">Lead Captured</div><div class="pipe-body">Email added. Enters welcome sequence with archetype tag.</div></div>
+        <div class="pipe-card"><div class="pipe-num">05</div><div class="pipe-title">Checkout Intent</div><div class="pipe-body">Clicked pricing or opened checkout. High-intent segment.</div></div>
+        <div class="pipe-card"><div class="pipe-num">06</div><div class="pipe-title">Paid Member</div><div class="pipe-body">Stripe success. Account created. Intake unlocked.</div></div>
+        <div class="pipe-card"><div class="pipe-num">07</div><div class="pipe-title">Intake Complete</div><div class="pipe-body">Questions + images received. Ready for review/generation.</div></div>
+        <div class="pipe-card"><div class="pipe-num">08</div><div class="pipe-title">Photos Approved</div><div class="pipe-body">Images usable. If not, client enters image-resubmission queue.</div></div>
+        <div class="pipe-card"><div class="pipe-num">09</div><div class="pipe-title">Blueprint In Review</div><div class="pipe-body">Draft generated. Human QA pending.</div></div>
+        <div class="pipe-card"><div class="pipe-num">10</div><div class="pipe-title">Blueprint Delivered</div><div class="pipe-body">Client has received the core asset. Activation clock begins.</div></div>
+        <div class="pipe-card"><div class="pipe-num">11</div><div class="pipe-title">Activated</div><div class="pipe-body">Opened Blueprint + first letter or first chat/photo check.</div></div>
+        <div class="pipe-card"><div class="pipe-num">12</div><div class="pipe-title">At Risk / Renewed</div><div class="pipe-body">Health score determines intervention, win-back, or renewal path.</div></div>
+      </div>
+
+      <h3 style="margin-top:80px;">Status tags visible on every member</h3>
+      <p>
+        <span class="status-pill">New Lead</span>
+        <span class="status-pill">Quiz Dropoff</span>
+        <span class="status-pill">Checkout Abandoned</span>
+        <span class="status-pill">Payment Failed</span>
+        <span class="status-pill">Intake Pending</span>
+        <span class="status-pill">Photo Issue</span>
+        <span class="status-pill">Blueprint Overdue</span>
+        <span class="status-pill">Activated</span>
+        <span class="status-pill">Healthy</span>
+        <span class="status-pill">At Risk</span>
+        <span class="status-pill">Cancellation Intent</span>
+        <span class="status-pill">Renewed</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <header class="section-header">
+    <div class="section-number">08 · Data</div>
+    <div>
+      <h2 class="section-title">The database must be designed for <em>memory and metrics</em>.</h2>
+      <p class="section-lede">Do not treat this like a simple user table. The moat is structured memory plus behavioural analytics.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <table class="spec-table">
+        <thead><tr><th>Table</th><th>Purpose</th><th>Critical fields</th></tr></thead>
+        <tbody>
+          <tr><td>users</td><td>Account identity.</td><td>user_id, email, name, country, timezone, role, created_at.</td></tr>
+          <tr><td>leads</td><td>Pre-purchase CRM record.</td><td>lead_id, email, source, reel_id, angle, archetype, lead_score, status.</td></tr>
+          <tr><td>quiz_sessions</td><td>Quiz analytics and drop-off.</td><td>session_id, anonymous_id, started_at, completed_at, result_type, device, country.</td></tr>
+          <tr><td>quiz_answers</td><td>Diagnostic inputs.</td><td>session_id, question_id, answer_value, answer_label, answer_weight.</td></tr>
+          <tr><td>style_profiles</td><td>Structured Blueprint memory.</td><td>body_geometry, undertone, colour_family, face_shape, modesty_level, lifestyle, budget.</td></tr>
+          <tr><td>subscriptions</td><td>Plan and renewal data.</td><td>stripe_customer_id, plan, price, status, renewal_date, cancel_at, cohort.</td></tr>
+          <tr><td>payments</td><td>Cash tracking.</td><td>amount, currency, plan, coupon, payment_status, refund_status, source.</td></tr>
+          <tr><td>intakes</td><td>Full paid questionnaire.</td><td>member_id, answers_json, completed_at, missing_fields, review_status.</td></tr>
+          <tr><td>assets</td><td>Uploaded photos and documents.</td><td>asset_url, asset_type, quality_status, rejection_reason, approved_by.</td></tr>
+          <tr><td>blueprints</td><td>Core deliverable.</td><td>version, draft_html, pdf_url, status, generated_at, approved_at, delivered_at.</td></tr>
+          <tr><td>conversations</td><td>Chat sessions.</td><td>member_id, topic, started_at, last_message_at, status, escalation_flag.</td></tr>
+          <tr><td>messages</td><td>Chat memory and QA.</td><td>role, content, model_used, confidence, qa_score, flagged_reason, embedding_id.</td></tr>
+          <tr><td>letters</td><td>Weekly Style Letters.</td><td>member_id, issue_date, format_type, subject, body, delivered_at, opened_at, clicked_at.</td></tr>
+          <tr><td>usage_limits</td><td>Controls cost and abuse.</td><td>questions_used, photo_checks_used, reset_date, plan_limits, overage_status.</td></tr>
+          <tr><td>health_scores</td><td>Retention risk model.</td><td>score, reason, last_open, last_chat, last_photo, risk_state, intervention_needed.</td></tr>
+          <tr><td>support_tickets</td><td>Customer support.</td><td>ticket_id, member_id, priority, owner, status, issue_type, sla_due.</td></tr>
+          <tr><td>audit_logs</td><td>Admin accountability.</td><td>actor_id, action_type, object_type, object_id, old_value, new_value, timestamp.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">09 · Tracking</div>
+    <div>
+      <h2 class="section-title">Event tracking plan.</h2>
+      <p class="section-lede">If an action can affect CAC, LTV, churn, support load, or delivery quality, it needs an event.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <table class="spec-table event-table">
+        <thead><tr><th>Event</th><th>Triggered when</th><th>Required properties</th></tr></thead>
+        <tbody>
+          <tr><td>dm_link_clicked</td><td>User clicks quiz link from ManyChat or bio.</td><td>source, reel_id, angle, platform, country, utm_campaign.</td></tr>
+          <tr><td>quiz_started</td><td>First quiz question loads.</td><td>anonymous_id, source, device, country.</td></tr>
+          <tr><td>quiz_question_answered</td><td>Each quiz answer is submitted.</td><td>question_id, answer_value, session_id.</td></tr>
+          <tr><td>quiz_completed</td><td>All quiz answers submitted.</td><td>result_type, archetype, completion_time, dropoff_count.</td></tr>
+          <tr><td>email_captured</td><td>Email entered to unlock result.</td><td>lead_id, archetype, source, consent_status.</td></tr>
+          <tr><td>result_viewed</td><td>Free result page opened.</td><td>lead_id, result_type, time_on_page.</td></tr>
+          <tr><td>checkout_started</td><td>Stripe checkout opened.</td><td>plan, price, coupon, source, lead_id.</td></tr>
+          <tr><td>payment_succeeded</td><td>Stripe confirms payment.</td><td>amount, currency, plan, member_id, coupon, source.</td></tr>
+          <tr><td>intake_started</td><td>Member opens full intake.</td><td>member_id, plan, source.</td></tr>
+          <tr><td>intake_completed</td><td>All required paid intake fields submitted.</td><td>member_id, missing_fields, completion_time.</td></tr>
+          <tr><td>photos_uploaded</td><td>Member uploads images.</td><td>member_id, asset_count, asset_type, upload_context.</td></tr>
+          <tr><td>photo_rejected</td><td>Ops rejects image quality or angle.</td><td>member_id, rejection_reason, requested_image_type.</td></tr>
+          <tr><td>blueprint_delivered</td><td>Approved Blueprint is sent.</td><td>member_id, delivery_time_hours, reviewer_id.</td></tr>
+          <tr><td>letter_opened</td><td>Member opens weekly Style Letter.</td><td>member_id, issue_date, letter_format, cohort.</td></tr>
+          <tr><td>chat_message_sent</td><td>Member asks stylist question.</td><td>member_id, topic, usage_count, has_photo.</td></tr>
+          <tr><td>cancellation_started</td><td>Member opens cancel flow.</td><td>member_id, plan, days_since_join, reason_selected.</td></tr>
+          <tr><td>subscription_renewed</td><td>Annual renewal succeeds.</td><td>member_id, plan, renewal_number, revenue.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <header class="section-header">
+    <div class="section-number">10 · SLAs</div>
+    <div>
+      <h2 class="section-title">Operational rules and <em>service levels</em>.</h2>
+      <p class="section-lede">The admin system should not only show data. It should create the next required action for the team.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <table class="spec-table">
+        <thead><tr><th>Workflow</th><th>Owner</th><th>SLA</th><th>Admin action</th></tr></thead>
+        <tbody>
+          <tr><td>New paid member</td><td>Ops</td><td>Immediate</td><td>Create member profile, unlock intake, send welcome instructions.</td></tr>
+          <tr><td>Intake not started</td><td>Automation</td><td>12 hours</td><td>Reminder email + dashboard banner.</td></tr>
+          <tr><td>Photo quality issue</td><td>Stylist QA</td><td>6 hours</td><td>Reject photo with specific template: front, side, full-body, lighting, angle.</td></tr>
+          <tr><td>Blueprint draft generated</td><td>Stylist QA</td><td>24 hours</td><td>Review diagnosis, language, outfit logic, and body-sensitive wording.</td></tr>
+          <tr><td>Blueprint overdue</td><td>Ops lead</td><td>36 hours</td><td>Red alert on dashboard and apology/ETA email if needed.</td></tr>
+          <tr><td>Weekly letter generic score low</td><td>Voice QA</td><td>Before send</td><td>Hold and regenerate/rewrite.</td></tr>
+          <tr><td>Support ticket high priority</td><td>Support</td><td>4 business hours</td><td>Reply or escalate to founder.</td></tr>
+          <tr><td>No engagement 14 days</td><td>Retention automation</td><td>Daily scan</td><td>Send personalised nudge tied to her archetype.</td></tr>
+          <tr><td>Cancellation intent</td><td>Founder/Ops</td><td>24 hours</td><td>Trigger pause offer, feedback capture, or save sequence.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">11 · Tech Stack</div>
+    <div>
+      <h2 class="section-title">Recommended architecture.</h2>
+      <p class="section-lede">Keep the stack simple. The complexity should live in the product logic and admin workflows, not infrastructure.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="arch">
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 01</span><div class="arch-layer-name">Frontend</div></div><div class="arch-layer-detail">Next.js app on Vercel. Routes: <code>/stylist/quiz</code>, <code>/stylist/result/[id]</code>, <code>/stylist</code>, <code>/stylist/intake</code>, <code>/stylist/chat</code>, <code>/stylist/admin</code>.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 02</span><div class="arch-layer-name">Auth + Billing</div></div><div class="arch-layer-detail">Supabase Auth with magic links. Stripe for annual/monthly plans, coupons, failed payment webhooks, refunds, and renewal events.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 03</span><div class="arch-layer-name">Database</div></div><div class="arch-layer-detail">Supabase Postgres. Structured member profile is the master document. pgvector for chat and letter memory retrieval.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 04</span><div class="arch-layer-name">Admin Dashboard</div></div><div class="arch-layer-detail">Build native inside <code>/stylist/admin</code> or use Retool for beta. Must include role-based access, audit logs, queues, filters, and exports.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 05</span><div class="arch-layer-name">Email + DM</div></div><div class="arch-layer-detail">Resend/Postmark for email. ManyChat for Instagram comment-to-DM. All links use UTMs and reel IDs.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 06</span><div class="arch-layer-name">Analytics</div></div><div class="arch-layer-detail">PostHog or Segment-style event tracking. Meta Pixel + CAPI for paid attribution. Admin dashboard uses internal event tables as source of truth.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 07</span><div class="arch-layer-name">Generation + QA</div></div><div class="arch-layer-detail">Model-generated drafts for Blueprint, chat, and letters. Human review for beta Blueprints and flagged interactions. Voice post-processing layer before user-facing output.</div></div>
+        <div class="arch-layer"><div><span class="arch-layer-tag">Layer 08</span><div class="arch-layer-name">Storage</div></div><div class="arch-layer-detail">Supabase Storage for photos and PDFs. Strict access controls. Signed URLs. Assets linked to member ID and usage context.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-slate">
+  <header class="section-header">
+    <div class="section-number">12 · Gates</div>
+    <div>
+      <h2 class="section-title">Do not scale until these numbers are <em>real</em>.</h2>
+      <p class="section-lede">This is the difference between a 100 crore business path and a complex product that consumes founder bandwidth.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="kpi-strip">
+        <div class="kpi"><div class="kpi-label">Quiz → Email</div><div class="kpi-value">70%+</div><div class="kpi-note">Below this, the quiz/result page is weak.</div></div>
+        <div class="kpi"><div class="kpi-label">Email → Paid</div><div class="kpi-value">3%+</div><div class="kpi-note">Below this, the offer/nurture is weak.</div></div>
+        <div class="kpi"><div class="kpi-label">Activation</div><div class="kpi-value">50%+</div><div class="kpi-note">Open Blueprint + first letter/chat/photo.</div></div>
+        <div class="kpi"><div class="kpi-label">Refunds</div><div class="kpi-value">&lt;5%</div><div class="kpi-note">Higher means expectation mismatch.</div></div>
+        <div class="kpi"><div class="kpi-label">CAC</div><div class="kpi-value">&lt;$100</div><div class="kpi-note">Paid acquisition remains viable.</div></div>
+      </div>
+
+      <h3 style="margin-top:80px;">Scale milestones</h3>
+      <table class="spec-table">
+        <thead><tr><th>Milestone</th><th>Members</th><th>ARR</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Proof</td><td>100</td><td>$39.9K</td><td>People are paying and using the relationship.</td></tr>
+          <tr><td>Real business</td><td>500</td><td>$199.5K</td><td>Enough volume to see churn, support load, and acquisition quality.</td></tr>
+          <tr><td>Valuation story</td><td>2,000</td><td>$798K</td><td>At 8–15× ARR, this can support a serious valuation narrative.</td></tr>
+          <tr><td>Scale engine</td><td>5,000</td><td>$1.995M</td><td>Premium tier, affiliate layer, and B2B conversations become worth exploring.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section section-dark">
+  <header class="section-header">
+    <div class="section-number">13 · Risks</div>
+    <div>
+      <h2 class="section-title">What could kill this version.</h2>
+      <p class="section-lede">The revised model reduces build risk, but the business still dies if retention is fake, tracking is poor, or the product feels generic.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="risks">
+        <div class="risk"><span class="risk-level risk-critical">Critical</span><h4 class="risk-title">People buy the Blueprint, not the membership</h4><p class="risk-body">If usage drops after the first diagnostic, annual renewal will be weak.</p><div class="risk-mitigation"><strong>Mitigation</strong>Measure first 30-day activation before public scale. Weekly letters must create fresh value, not repeat the Blueprint.</div></div>
+        <div class="risk"><span class="risk-level risk-critical">Critical</span><h4 class="risk-title">Admin tracking is incomplete</h4><p class="risk-body">If source, status, usage, and health score are missing, you cannot manage CAC or retention.</p><div class="risk-mitigation"><strong>Mitigation</strong>Build admin states and event tracking before scaling paid ads.</div></div>
+        <div class="risk"><span class="risk-level risk-high">High</span><h4 class="risk-title">Chat sounds generic</h4><p class="risk-body">Members churn if answers feel like generic internet styling advice.</p><div class="risk-mitigation"><strong>Mitigation</strong>Voice QA, memory recall tests, and mandatory methodology references.</div></div>
+        <div class="risk"><span class="risk-level risk-high">High</span><h4 class="risk-title">Too much human review</h4><p class="risk-body">Margins collapse if every chat and letter needs manual editing.</p><div class="risk-mitigation"><strong>Mitigation</strong>100% review only in beta; later review flagged items and random samples.</div></div>
+        <div class="risk"><span class="risk-level risk-medium">Medium</span><h4 class="risk-title">Content attracts wrong geography</h4><p class="risk-body">A viral Reel in India does not validate a US/UK/Canada price point.</p><div class="risk-mitigation"><strong>Mitigation</strong>Track country at every step and judge funnel metrics by target geography.</div></div>
+        <div class="risk"><span class="risk-level risk-medium">Medium</span><h4 class="risk-title">Usage limits feel restrictive</h4><p class="risk-body">Some users may object to limits.</p><div class="risk-mitigation"><strong>Mitigation</strong>Frame limits as “stylist questions/photo checks” not credits. Allow soft grace for high-value members.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <header class="section-header">
+    <div class="section-number">14 · Roadmap</div>
+    <div>
+      <h2 class="section-title">Build order.</h2>
+      <p class="section-lede">Validation first, product second, scale third.</p>
+    </div>
+  </header>
+  <div class="section-body">
+    <div></div>
+    <div class="section-body-content">
+      <div class="roadmap">
+        <div class="roadmap-phase"><div class="roadmap-meta"><div class="roadmap-weeks">Weeks 1–2</div><div class="roadmap-phase-name">Phase 01</div></div><div><h3 class="roadmap-title">Concierge Beta Setup</h3><ul class="roadmap-items"><li>Build quiz and result page.</li><li>Set up ManyChat CTA flow.</li><li>Create Airtable/Retool admin CRM if native admin is not ready.</li><li>Write 5-day nurture sequence.</li><li>Sell 50 beta memberships manually.</li></ul></div></div>
+        <div class="roadmap-phase"><div class="roadmap-meta"><div class="roadmap-weeks">Weeks 3–6</div><div class="roadmap-phase-name">Phase 02</div></div><div><h3 class="roadmap-title">Payment + Intake + Admin</h3><ul class="roadmap-items"><li>Stripe checkout live.</li><li>Paid intake and photo upload live.</li><li>Member profile and production queue live.</li><li>Blueprint delivery workflow live.</li><li>Event tracking verified end-to-end.</li></ul></div></div>
+        <div class="roadmap-phase"><div class="roadmap-meta"><div class="roadmap-weeks">Weeks 7–10</div><div class="roadmap-phase-name">Phase 03</div></div><div><h3 class="roadmap-title">Member Dashboard + Letter Engine</h3><ul class="roadmap-items"><li>Dashboard with Blueprint, letters, and chat.</li><li>Weekly letter generation and delivery queue.</li><li>Usage limits and retention health score.</li><li>Support inbox connected to member profile.</li></ul></div></div>
+        <div class="roadmap-phase"><div class="roadmap-meta"><div class="roadmap-weeks">Weeks 11–14</div><div class="roadmap-phase-name">Phase 04</div></div><div><h3 class="roadmap-title">Retention Validation</h3><ul class="roadmap-items"><li>Track first 4 weekly letters.</li><li>Measure chat/photo usage.</li><li>Survey willingness to renew at standard price.</li><li>Fix activation leaks before scaling ads.</li></ul></div></div>
+        <div class="roadmap-phase"><div class="roadmap-meta"><div class="roadmap-weeks">Months 4–6</div><div class="roadmap-phase-name">Phase 05</div></div><div><h3 class="roadmap-title">Public Launch</h3><ul class="roadmap-items"><li>Founding cohort offer at $299 first year.</li><li>Paid ads only after funnel events are reliable.</li><li>5 creative angles tested weekly.</li><li>Goal: 500 paid members with clean retention data.</li></ul></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="closing-eyebrow">— End of revised document —</div>
+  <h2 class="closing-title">Track the <em>relationship</em>,<br>not just the sale.</h2>
+  <p class="closing-tagline">Same body. Different science.</p>
+  <div class="closing-meta">
+    <div>ICONIK LLP · 2026</div>
+    <div>PRD v2.0 · /stylist OS</div>
+    <div>Funnel · Product · Admin</div>
+  </div>
+</section>
+
+</body>
+</html>
