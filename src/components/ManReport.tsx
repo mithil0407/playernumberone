@@ -746,7 +746,7 @@ function FaceSection({
         <div
           className="w-full overflow-hidden relative rounded-2xl"
           style={{
-            aspectRatio: '1/1',
+            ...(gridUrl ? {} : { aspectRatio: '1/1' }),
             background: SHELL,
             boxShadow: '0 24px 60px -36px rgba(27,24,21,0.35)',
           }}
@@ -758,7 +758,7 @@ function FaceSection({
               alt={`${kind} 2x2 recommendation grid`}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover"
+              className="w-full h-auto block"
               style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
               onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
             />

@@ -377,32 +377,41 @@ Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the 
 
 type ComboGridKind = 'office' | 'evening' | 'relaxed';
 
-function selectComboGridOutfits(outfits: ParsedOutfit[], kind: ComboGridKind): ParsedOutfit[] {
-  const ranges: Record<ComboGridKind, [number, number][]> = {
-    office: [[1, 1], [3, 3], [6, 6]],
-    evening: [[11, 11], [13, 13], [15, 15]],
-    relaxed: [[16, 16], [18, 18], [20, 20]],
-  };
-  const selected = ranges[kind]
-    .map(([start]) => outfits.find(outfit => outfit.index === start))
-    .filter((outfit): outfit is ParsedOutfit => !!outfit);
-
-  if (selected.length >= 3) return selected.slice(0, 3);
-
-  const fallback = outfits.filter(outfit => {
+function buildMixedComboOutfits(outfits: ParsedOutfit[], kind: ComboGridKind): ParsedOutfit[] {
+  const pool = outfits.filter(outfit => {
     if (kind === 'office') return outfit.index >= 1 && outfit.index <= 6;
     if (kind === 'evening') return outfit.index >= 11 && outfit.index <= 15;
     return outfit.index >= 16 && outfit.index <= 20;
   });
 
-  return [...selected, ...fallback.filter(outfit => !selected.some(row => row.index === outfit.index))].slice(0, 3);
+  if (pool.length < 2) return pool.slice(0, 3);
+
+  const n = pool.length;
+
+  // Build 3 new outfits where each garment piece is drawn from a different source outfit,
+  // using a step-2 rotation so no combo matches any original outfit.
+  return [0, 1, 2].map(comboIdx => {
+    const base = comboIdx * 2;
+    const at = (offset: number) => pool[(base + offset) % n];
+    return {
+      index: comboIdx + 1,
+      label: `Mix ${comboIdx + 1}`,
+      top:         at(0).top,
+      bottom:      at(1).bottom,
+      layer:       at(2).layer,
+      footwear:    at(3).footwear,
+      accessories: at(1).accessories,
+      fitNote:     null,
+      colourLogic: null,
+    };
+  });
 }
 
 function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: ClassificationResult): string {
   const title: Record<ComboGridKind, string> = {
-    office: 'Office basic combinations',
-    evening: 'Evening outfit combinations',
-    relaxed: 'Relaxed casual combinations',
+    office: 'Office mix-and-match combinations',
+    evening: 'Evening mix-and-match combinations',
+    relaxed: 'Relaxed mix-and-match combinations',
   };
   const outfitLines = outfits.map((outfit, index) => {
     const pieces = [
@@ -411,10 +420,8 @@ function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: C
       outfit.layer ? `Layer: ${outfit.layer}` : 'Layer: No layer',
       `Footwear: ${outfit.footwear}`,
       outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
-      outfit.fitNote ? `Fit context: ${outfit.fitNote}` : null,
-      outfit.colourLogic ? `Colour logic: ${outfit.colourLogic}` : null,
     ].filter(Boolean).join('; ');
-    return `Column ${index + 1} / Outfit ${outfit.index}: ${pieces}`;
+    return `Column ${index + 1}: ${pieces}`;
   }).join('\n');
 
   const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
@@ -969,7 +976,7 @@ export async function generateComboGridImages(
 
   for (const kind of ['office', 'evening', 'relaxed'] as const) {
     if (result[kind]) continue;
-    const selected = selectComboGridOutfits(outfits, kind);
+    const selected = buildMixedComboOutfits(outfits, kind);
     if (selected.length < 3) {
       console.warn(`[manImageGenerator] Not enough outfits for ${kind} combo grid`);
       continue;
