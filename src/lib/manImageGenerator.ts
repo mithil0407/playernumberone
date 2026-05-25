@@ -452,10 +452,11 @@ Customisation rules:
 - Clothes must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}.
 - Colours and accessories must match the outfit descriptions precisely.
 - No logos or brand markings.
+- FOOTWEAR IS MANDATORY: Every column must show the specified footwear rendered visibly and completely on both feet. Do not omit, blur, or crop the shoes. Do not leave the subject barefoot. The footwear must match the exact description given (colour, style, material).
 
-Scene: clean premium studio lookbook, seamless cool slate grey backdrop (#94a6ad), even high-key lighting.
+Scene: clean premium studio lookbook, seamless cool slate grey cyclorama backdrop and floor (#94a6ad). The cyclorama sweep continues under the subject's feet — the floor is the same seamless cool slate grey as the backdrop. No mats, no rugs, no wooden floor, no tiles, no studio floor markings, no shadow gradient under the feet. Even high-key studio lighting.
 
-Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet.`;
+Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet. The subject's feet and footwear must be fully visible at the bottom of each column.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # ICONIK Men's Blueprint — Outfit Recommendation Engine
 
-**Version:** 3.1
+**Version:** 3.2
 **Scope:** Automated Blueprint report generation — outfit recommendation section only
 **Output:** 20 outfits across 4 lifestyle contexts (6 Office/Formal, 4 Smart Casual, 5 Evening, 5 Relaxed Casual)
 **Geography:** Western clothing by default, with lightweight Indian-context support only when the intake explicitly signals Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe needs
@@ -104,6 +104,40 @@ Camel, warm tan, or dark olive fine merino or cotton quarter-zip — worn with w
 **The shoe bridges the temperature:** camel quarter-zip (warm) + navy trouser (cool) = tan loafer that bridges both. Never use a black shoe here — it doubles down on the cool bottom and loses the warm bridge.
 **This formula directly replaces any formal or smart casual blazer outfit** when the style poles lean relaxed or the client wants structure without stiffness.
 *Ideal for:* Rectangle, Athletic, Slim. Warm Medium or Neutral undertone. Average to tall. TEMPERATE climate only — merino quarter-zip is not appropriate for HOT climate.
+
+### FORMULA 18 — THE CABLE KNIT OVER STRIPE SHIRT (Smart Casual / Relaxed Casual, TEMPERATE)
+Navy, charcoal, or forest green cable-knit crewneck sweater + fine-stripe Oxford shirt underneath (collar visible above sweater neckline, shirt cuffs visible below sweater sleeve cuffs) + light-wash relaxed straight denim + white clean leather low-top sneakers.
+The stripe shirt collar and cuff peek are what elevate this above a plain sweater-and-jeans look — they signal intention. The dark cable knit against the light-wash denim delivers mandatory depth contrast. The cable texture itself carries all the visual interest — no outer layer needed beyond a watch and sunglasses.
+**Rule:** The Oxford shirt underneath must be a fine stripe — not a solid — so the collar and cuff peek reads as a deliberate layering detail, not an afterthought. Never substitute a plain white tee underneath; the collar structure is the formula's key element.
+ACCESSORY: Silver or steel chronograph watch + tortoiseshell or amber round-frame sunglasses.
+*Ideal for:* Athletic, Slim, Rectangle. Cool Medium or Neutral undertone. Average to tall. TEMPERATE only.
+
+### FORMULA 19 — THE OPEN-COLLAR KNIT POLO + CREAM WIDE-LEG (Smart Casual / Relaxed Casual, TEMPERATE)
+Taupe, warm stone, camel, or soft warm grey fine-knit long-sleeve open-collar polo (Johnny collar / revere collar — no buttons) over a white fitted crewneck tee (collar and hem both visible) + off-white or cream wide-leg relaxed cotton denim or chino + black chunky-sole penny loafer.
+The black loafer is the sole dark anchor in an otherwise warm-neutral, tonal, light-to-mid-tone outfit. The white tee peeking at the collar and hem creates clean layered depth without adding visual bulk. This is the TEMPERATE equivalent of Formula 05's light-dominant elegance.
+**Rule:** The knit polo must be a mid-tone warm neutral — not a saturated accent colour. The tonal contrast comes from the slight depth difference between the knit (mid-tone) and the cream trouser (lighter). The black loafer must be chunky-sole — it is the sole weight in the outfit and a slim-sole loafer will look underpowered against the light tonal stack above it.
+ACCESSORY: Silver minimalist watch.
+*Ideal for:* Athletic, Slim, Rectangle. Warm Light, Warm Medium, or Neutral undertone. Average to tall. TEMPERATE only.
+
+### FORMULA 20 — THE PUFFER VEST OVER KNIT SWEATER (Smart Casual / Relaxed Casual, TEMPERATE)
+Slate blue, steel blue, or warm grey fitted merino or cotton crewneck sweater + dark grey or charcoal quilted puffer vest (zip-front, worn open or partially zipped) layered over the sweater + black or dark indigo slim-straight denim + dark brown leather Chelsea boots.
+The puffer vest adds functional warmth and a clean vertical structure without the bulk of a full jacket. Wearing it open — with the knit sleeves fully visible — keeps the proportions light and intentional. The dark brown Chelsea boot is the warm bridge in an otherwise cool-dark outfit — never use black boots here, as the brown provides the temperature resolution the formula requires.
+ACCESSORY: Silver watch + tortoiseshell or clear-frame fashion glasses (optional — works as a deliberate style accessory, not only for vision correction).
+*Ideal for:* Athletic, Rectangle, Slim. Cool Medium or Neutral undertone. Average to tall. TEMPERATE only.
+
+### FORMULA 21 — THE LONG WOOL OVERCOAT TONAL STACK (Formal / Smart Casual, TEMPERATE)
+Dark grey or charcoal fitted merino crewneck sweater + black single-breasted full-length wool overcoat (below-knee length, worn open) + dark charcoal or near-black relaxed straight wool trousers + black leather Oxford or Derby shoes + slim black leather belt.
+The overcoat is the architectural statement — its below-knee length creates an unbroken vertical line from shoulder to shin. The slight tonal difference between the charcoal sweater and the black coat creates depth within the monochrome register without breaking it. The belt, visible beneath the open coat, is the only waist definition in the outfit and is mandatory.
+**Rule:** The trouser must be the same or slightly lighter tone than the sweater — never darker than the coat. The belt is mandatory — without it, the waistline disappears beneath the open overcoat. The coat must be worn open — closing it removes the tonal layering depth and reduces it to a flat monochrome block.
+ACCESSORY: Slim black leather belt (mandatory).
+*Ideal for:* Athletic, Slim, Rectangle. Cool Deep, Cool Medium, or Neutral undertone. Average to tall. TEMPERATE only.
+
+### FORMULA 22 — THE WOOL OVERCOAT + TURTLENECK + SCARF (Formal / Evening, TEMPERATE)
+Black or dark navy slim-fit turtleneck sweater (merino or fine wool-blend) + dark brown, chocolate, or camel single-breasted full-length wool overcoat (worn open or one button fastened at the chest) + dark grey or slate slim-fit tailored trousers + black leather Chelsea boots or Oxford shoes.
+ACCESSORY: Camel, tobacco brown, or warm grey fringed wool scarf — draped loosely and asymmetrically over one shoulder, not tied or knotted. Slim black leather belt worn beneath the coat at the waist.
+The scarf is the sole warm accent in an otherwise cool-to-neutral dark outfit — it echoes the warmth of the overcoat tone and adds rich texture at the collar. The turtleneck fills the neckline cleanly beneath both coat and scarf, eliminating any gap.
+**Rule:** Scarf colour must match or sit within the overcoat's temperature family — warm scarf with warm-tone overcoat only. Never a cool or grey-toned scarf with a dark brown coat. This formula is specific to dark brown and camel overcoats — never apply a scarf to a black overcoat, which has no warm tone to echo.
+*Ideal for:* Athletic, Slim, Rectangle, Oval. Cool Medium, Cool Deep, or Neutral undertone. Average to tall. TEMPERATE only.
 
 ---
 
@@ -358,6 +392,7 @@ In Formulas 05, 06, 11 — white or off-white linen trousers or chinos act as th
 
 ### TEMPERATE CLIMATE RULES
 Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All formulas available.
+Formulas 18–22 are TEMPERATE-exclusive — include at least 1–2 of these in any TEMPERATE client Blueprint to reflect the full cold/moderate climate wardrobe range. Formula 21 and 22 (wool overcoat) are Formal/Evening only. Formulas 18, 19, 20 are Smart Casual/Relaxed Casual.
 
 ---
 
@@ -603,9 +638,14 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 - Thin silver chain → cool undertone, casual / evening
 - Slim dark brown leather belt → warm undertone
 - Slim black leather belt → cool undertone
-- Aviator sunglasses → casual / outdoor only
+- Aviator sunglasses → casual / smart casual (HOT and TEMPERATE — city and outdoor settings)
+- Tortoiseshell or amber round-frame sunglasses → smart casual / relaxed casual (TEMPERATE — adds warmth and character to a dark or cool-toned outfit; ideal in Formulas 18 and 20)
+- Wayfarer or square-frame dark sunglasses → relaxed casual (cool undertone clients — city use)
 - Camel or dark brown leather tote / briefcase → formal / smart casual
 - Black crossbody or tote bag → evening casual
+- Camel, tobacco brown, or warm grey fringed wool scarf → formal / evening (TEMPERATE only — warm accent layer; used exclusively in Formula 22)
+
+**SUNGLASSES RULE:** At least 2 outfits in any TEMPERATE client Blueprint must include sunglasses as an accessory (Smart Casual or Relaxed Casual context). Sunglasses are a city-appropriate style accessory, not only for outdoor use. They count toward the accessory maximum (max 1 in non-evening contexts).
 
 ---
 
@@ -627,6 +667,9 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 - Slim merino turtleneck (TEMPERATE only)
 - Slim-fit crewneck knit sweater (TEMPERATE only)
 - Fine merino or cotton quarter-zip pullover — camel, warm tan, dark olive only (Formula 17 — TEMPERATE only)
+- Cable-knit crewneck sweater, fitted — navy, charcoal, forest green, camel (Formula 18 — TEMPERATE only)
+- Fine-knit open-collar polo sweater, long sleeve, no buttons (Johnny collar / revere collar) — taupe, warm stone, soft warm grey, camel (Formula 19 — TEMPERATE only)
+- Slim-fit turtleneck sweater, merino or fine wool-blend — black, dark navy (Formula 22 — TEMPERATE only)
 
 **NEVER SUGGEST:** Band-collar shirts in any form, any colour, any context — permanently removed from vocabulary. Waistcoats. Turtlenecks for HOT climate clients.
 
@@ -646,8 +689,10 @@ Full vocabulary applies. No restrictions on wool, merino, flannel, corduroy. All
 - Cotton overshirt, worn open
 - Open Oxford shirt used as casual layer
 - Denim jacket, dark wash, clean (Relaxed Casual only)
+- Quilted puffer vest, zip-front — dark grey, charcoal, navy (worn over a knit sweater, not a shirt — Formula 20, TEMPERATE only)
+- Full-length single-breasted wool overcoat — black, dark brown, camel (below-knee length, worn open — Formulas 21 and 22, Formal / Evening / Smart Casual, TEMPERATE only)
 
-**NEVER SUGGEST:** Waistcoats. Turtlenecks for HOT climate clients.
+**NEVER SUGGEST:** Waistcoats. Turtlenecks for HOT climate clients. Puffer vest in HOT climate under any circumstances.
 
 ### BOTTOMS
 
@@ -706,7 +751,7 @@ Never use "fabric" or "material" generically. Always name the fabric.
 ## SECTION 18 — FULL GENERATION PROMPT TEMPLATE
 
 ```
-You are the ICONIK Men's Blueprint Outfit Engine v3.1. Generate 16 outfit recommendations for a male client. You are operating within strict constraint rules. Output must be precise, scientific in tone, and personal to this client.
+You are the ICONIK Men's Blueprint Outfit Engine v3.2. Generate 20 outfit recommendations for a male client. You are operating within strict constraint rules. Output must be precise, scientific in tone, and personal to this client.
 
 CLIENT PROFILE:
 - Height: [HEIGHT]
@@ -781,7 +826,10 @@ RULES — APPLY ALL:
 8. Blazers maximum 6 times total across all 20 outfits
 9. NEVER waistcoats
 10. HOT climate: no turtlenecks, no wool, no corduroy, all blazers linen-cotton unlined, max 7 layers total
-11. TEMPERATE climate: full vocabulary, max 10 layers total
+11. TEMPERATE climate: full vocabulary, max 10 layers total — include at least 1–2 outfits from Formulas 18–22
+11a. TEMPERATE client sunglasses rule: include sunglasses in at least 2 outfits (Smart Casual or Relaxed Casual)
+11b. TEMPERATE client scarf rule: maximum 1 scarf outfit (Formula 22, Formal or Evening context only)
+11c. TEMPERATE client overcoat rule: maximum 2 overcoat outfits across the full 20; puffer vest maximum 1 outfit
 12. Layer count by context: Formal 3/4 | Smart Casual 2/4 | Evening 3/4 | Relaxed Casual 2/4 (HOT: reduce each by 1)
 13. Sneakers are white only, except black high-top canvas in Formula 12 only
 14. No sneakers in Formal. No Oxford/Derby shoes in Relaxed Casual.
@@ -833,12 +881,17 @@ Before finalising output, verify every outfit:
 - [ ] Oval client: zero tucked shirts, zero overshirt-skin formulas, zero fitted tee + wide-leg combos
 - [ ] Streetwear outfit included if Off Duty / Urban Wear selected
 - [ ] Indian-context support included if ethnic wardrobe signals present
-- [ ] Every outfit is traceable to one of the 12 reference formulas in Section Visual DNA
+- [ ] Every outfit is traceable to one of the 22 reference formulas in Section Visual DNA
 - [ ] ⚡ COLOUR HIERARCHY: one anchor + one accent only per outfit
 - [ ] ⚡ DEPTH CONTRAST: one clearly light piece + one clearly dark piece in every outfit
 - [ ] ⚡ NO MUSTARD: zero mustard or high-saturation yellow-adjacent tones
 - [ ] ⚡ TEMPERATURE MATCH: warm accent with warm or dark neutral anchor only
 - [ ] ⚡ FOOTWEAR: dark brown/tan leather for warm-family formulas; white sneaker for dark tonal formula
+- [ ] TEMPERATE client: Sunglasses included in at least 2 outfits (Smart Casual or Relaxed Casual)
+- [ ] TEMPERATE client: At least 1 outfit uses a Formula 18–22 (TEMPERATE-exclusive formula)
+- [ ] TEMPERATE client: Scarf used in maximum 1 outfit (Formula 22, Formal or Evening only)
+- [ ] TEMPERATE client: Puffer vest (Formula 20) maximum 1 outfit; wool overcoat (Formula 21 or 22) maximum 2 outfits
+- [ ] Puffer vest: never used in HOT climate, never used in Formal context
 
 ---
 
@@ -908,7 +961,7 @@ DO NOT BUY: Narrow or tapered linen trousers — the wide straight leg is what c
 
 ---
 
-*ICONIK Men's Blueprint Outfit Recommendation Engine — SKILL.md v3.0*
+*ICONIK Men's Blueprint Outfit Recommendation Engine — SKILL.md v3.2*
 *For use in automated Blueprint generation pipeline only.*
 *All constraint logic is derived from ICONIK's proprietary three-pillar methodology:*
 *Geometric Silhouette Profiling™ · Chromatic Harmony Mapping™ · Facial Architecture Analysis™*

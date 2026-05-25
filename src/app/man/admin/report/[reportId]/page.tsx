@@ -59,6 +59,10 @@ interface OutfitRegenerationResult {
   error?: string;
 }
 
+interface OutfitSaveTextResult {
+  updatedS4Outfits: string;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
   parsedPreview: {
@@ -481,6 +485,45 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
     return { imageUrl, updatedS4Outfits, imageStatus, error };
   }, [reportId, imageModel]);
+
+  const saveOutfitText = useCallback(async (
+    outfitNumber: number,
+    newText: string,
+  ): Promise<OutfitSaveTextResult | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/save-outfit-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outfitNumber, outfitText: newText }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not save outfit text.');
+      return null;
+    }
+    const updatedS4Outfits = data.updatedS4Outfits as string;
+    const qa = data.qa as ReportData['qa'] | undefined;
+
+    if (!updatedS4Outfits) return null;
+
+    // Update local state — text and QA only, image_urls intentionally untouched
+    setReport(prev => {
+      if (!prev?.report_data) return prev;
+      return {
+        ...prev,
+        error_message: null,
+        report_data: {
+          ...prev.report_data,
+          qa: qa ?? prev.report_data.qa,
+          sections: {
+            ...prev.report_data.sections,
+            s4_outfits: updatedS4Outfits,
+          } as ReportSections,
+        },
+      };
+    });
+
+    return { updatedS4Outfits };
+  }, [reportId]);
 
   const draftOutfitSwap = useCallback(async (input: {
     outfitNumber: number;
@@ -1028,6 +1071,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             onDraftFaceStyleSwap={draftFaceStyleSwap}
             onApplyFaceStyleSwap={applyFaceStyleSwap}
             onRegenerateOutfit={regenerateOutfit}
+            onSaveOutfitText={saveOutfitText}
             onDraftOutfitSwap={draftOutfitSwap}
             onApplyOutfitSwap={applyOutfitSwap}
             onRetryMissingImages={handleGenerateImages}

@@ -1403,6 +1403,10 @@ interface OutfitEditResult {
   error?: string;
 }
 
+interface OutfitSaveTextResult {
+  updatedS4Outfits: string;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
   parsedPreview: ParsedOutfit | null;
@@ -1419,7 +1423,7 @@ interface OutfitSwapApplyResult {
 }
 
 function OutfitsSection({
-  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onDraftOutfitSwap, onApplyOutfitSwap, onRetryMissingImages, qaPassedOutfits,
+  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onSaveOutfitText, onDraftOutfitSwap, onApplyOutfitSwap, onRetryMissingImages, qaPassedOutfits,
 }: {
   cls: ClassificationResult;
   text: string;
@@ -1429,6 +1433,10 @@ function OutfitsSection({
     outfitNumber: number,
     newText: string,
   ) => Promise<OutfitEditResult | null>;
+  onSaveOutfitText?: (
+    outfitNumber: number,
+    newText: string,
+  ) => Promise<OutfitSaveTextResult | null>;
   onDraftOutfitSwap?: (input: {
     outfitNumber: number;
     reason: string;
@@ -1452,6 +1460,7 @@ function OutfitsSection({
   const [editError, setEditError]         = useState<string | null>(null);
   const [sectionNotice, setSectionNotice] = useState<string | null>(null);
   const [regenerating, setRegenerating]   = useState(false);
+  const [savingText, setSavingText]       = useState(false);
   const [retryingSet, setRetryingSet]     = useState<Set<number>>(new Set());
   const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
   const [swapNumber, setSwapNumber] = useState<number | null>(null);
@@ -1605,6 +1614,28 @@ function OutfitsSection({
       cancelEdit(true);
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  const handleSaveTextOnly = async () => {
+    if (!editingNumber || !onSaveOutfitText) return;
+    if (!editText.trim()) {
+      setEditError('Outfit text cannot be empty.');
+      return;
+    }
+    setSavingText(true);
+    setEditError(null);
+    setSectionNotice(null);
+    try {
+      const result = await onSaveOutfitText(editingNumber, editText);
+      if (!result) {
+        setEditError('Could not save outfit text. Please try again.');
+        return;
+      }
+      setSectionNotice(`Outfit ${editingNumber} text saved. The existing image was not changed.`);
+      cancelEdit(true);
+    } finally {
+      setSavingText(false);
     }
   };
 
@@ -2228,24 +2259,43 @@ function OutfitsSection({
 
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  Saves this outfit text first, then regenerates only this outfit image.
+                  {onSaveOutfitText
+                    ? 'Save text only keeps the current image intact. Save + regenerate replaces it.'
+                    : 'Saves this outfit text first, then regenerates only this outfit image.'
+                  }
                 </p>
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => cancelEdit()}
-                    disabled={regenerating}
+                    disabled={regenerating || savingText}
                     className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                     style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
                   >
                     Cancel
                   </button>
+                  {onSaveOutfitText && (
+                    <motion.button
+                      onClick={handleSaveTextOnly}
+                      disabled={savingText || regenerating || !editText.trim()}
+                      className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                      style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
+                      whileHover={!savingText && !regenerating ? { scale: 1.02 } : undefined}
+                      whileTap={!savingText && !regenerating ? { scale: 0.98 } : undefined}
+                      transition={SPRING}
+                    >
+                      {savingText
+                        ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
+                        : 'Save text only'
+                      }
+                    </motion.button>
+                  )}
                   <motion.button
                     onClick={handleRegenerate}
-                    disabled={regenerating || !editText.trim()}
+                    disabled={regenerating || savingText || !editText.trim()}
                     className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                     style={{ background: ACCENT, color: '#fff' }}
-                    whileHover={!regenerating ? { scale: 1.02 } : undefined}
-                    whileTap={!regenerating ? { scale: 0.98 } : undefined}
+                    whileHover={!regenerating && !savingText ? { scale: 1.02 } : undefined}
+                    whileTap={!regenerating && !savingText ? { scale: 0.98 } : undefined}
                     transition={SPRING}
                   >
                     {regenerating
@@ -2524,6 +2574,10 @@ interface ManReportProps {
     outfitNumber: number,
     newText: string,
   ) => Promise<OutfitEditResult | null>;
+  onSaveOutfitText?: (
+    outfitNumber: number,
+    newText: string,
+  ) => Promise<OutfitSaveTextResult | null>;
   onDraftOutfitSwap?: (input: {
     outfitNumber: number;
     reason: string;
@@ -2712,6 +2766,7 @@ function ManReport({
   deferSections = false,
   adminMode,
   onRegenerateOutfit,
+  onSaveOutfitText,
   onDraftOutfitSwap,
   onApplyOutfitSwap,
   onRegenerateFaceImage,
@@ -2827,6 +2882,7 @@ function ManReport({
           outfitImageUrls={imageUrls?.outfitCards ?? undefined}
           adminMode={isAdminViewer}
           onRegenerateOutfit={onRegenerateOutfit}
+          onSaveOutfitText={onSaveOutfitText}
           onDraftOutfitSwap={onDraftOutfitSwap}
           onApplyOutfitSwap={onApplyOutfitSwap}
           onRetryMissingImages={onRetryMissingImages}
