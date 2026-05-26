@@ -9,33 +9,133 @@ import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
 
-interface RazorpayResponse {
+interface RazorpayOrderResponse {
     razorpay_payment_id: string;
     razorpay_order_id: string;
     razorpay_signature: string;
 }
 
-interface RazorpayOptions {
+interface RazorpayOrderOptions {
     key: string;
     amount: number;
     currency: string;
     name: string;
     description: string;
     order_id: string;
-    handler: (response: RazorpayResponse) => void;
+    handler: (response: RazorpayOrderResponse) => void;
+    prefill: { name: string; email: string; contact: string };
+    theme: { color: string };
+}
+
+interface RazorpaySubOptions {
+    key: string;
+    subscription_id: string;
+    name: string;
+    description: string;
+    handler: () => void;
     prefill: { name: string; email: string; contact: string };
     theme: { color: string };
 }
 
 interface RazorpayInstance { open(): void; }
 
+declare const window: Window & {
+    Razorpay?: new (opts: RazorpayOrderOptions | RazorpaySubOptions) => RazorpayInstance;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fbq?: (...args: any[]) => void;
+};
+
 const BLUEPRINT_PRICE = 149;
+const EDIT_PRICE = 39;
+
+// ── Edit Card ────────────────────────────────────────────────────────────────
+
+function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => void }) {
+    const editBullets = [
+        'Weekly personalized style edit built on your Blueprint',
+        '6 new outfit formulas every month',
+        'Access to your ICONIK stylist — ask anything, anytime',
+        'Shopping intelligence matched to your palette and geometry',
+    ];
+
+    return (
+        <div className="mb-2">
+            <div
+                className={`relative border rounded-2xl p-5 transition-all duration-200 cursor-pointer ${
+                    selected
+                        ? 'border-luxury-accent bg-luxury-pink-bg shadow-md border-l-[3px]'
+                        : 'border-luxury-cream bg-white shadow-sm border-l-[3px] border-l-luxury-accent/30 hover:border-l-luxury-accent/70 hover:shadow-md'
+                }`}
+                style={{ borderLeftColor: selected ? '#C9A96E' : 'rgba(201,169,110,0.3)' }}
+                onClick={onToggle}
+            >
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-luxury-charcoal/50 mb-1">THE ICONIK EDIT</p>
+                        <p className="luxury-body text-luxury-charcoal/60 text-xs font-semibold">
+                            Add — <span className="text-luxury-accent">${EDIT_PRICE}/mo</span>
+                        </p>
+                    </div>
+                    {/* Checkbox */}
+                    <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); onToggle(); }}
+                        className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                            selected
+                                ? 'bg-luxury-accent border-luxury-accent'
+                                : 'bg-white border-luxury-charcoal/25 hover:border-luxury-accent/60'
+                        }`}
+                    >
+                        {selected && (
+                            <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                                <path d="M1 4L4.5 7.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        )}
+                    </button>
+                </div>
+
+                {/* Social proof */}
+                <p className="luxury-body text-luxury-charcoal/50 text-xs mb-3">
+                    86% of Blueprint buyers add this.
+                </p>
+
+                {/* Value prop */}
+                <p className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed mb-4">
+                    Your Blueprint tells you what works.<br />
+                    Your Edit puts it to work — every week.
+                </p>
+
+                {/* Bullets */}
+                <div className="space-y-2 mb-4">
+                    {editBullets.map((b, i) => (
+                        <div key={i} className="flex items-start gap-2.5">
+                            <span className="text-luxury-accent text-xs mt-0.5 flex-shrink-0">→</span>
+                            <span className="luxury-body text-luxury-charcoal/70 text-xs leading-relaxed">{b}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Pricing footnote */}
+                <p className="luxury-body text-luxury-charcoal/40 text-[10px]">
+                    ${EDIT_PRICE}/month · Billed monthly · Cancel anytime
+                </p>
+            </div>
+
+            {/* Timing note */}
+            <p className="luxury-body text-luxury-charcoal/40 text-xs text-center mt-2">
+                Your Edit begins the day your Blueprint is delivered.
+            </p>
+        </div>
+    );
+}
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
 export default function StylistCheckoutPage() {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [editSelected, setEditSelected] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
@@ -44,12 +144,9 @@ export default function StylistCheckoutPage() {
     useEffect(() => {
         trackPageView('Stylist Checkout');
         trackInitiateCheckout(BLUEPRINT_PRICE, 1, 'ICONIK Style Blueprint', 'USD', 'Style Scan Funnel');
-        if (typeof window !== 'undefined') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).fbq?.('trackCustom', 'checkout_started', { funnel: 'style_scan', amount: BLUEPRINT_PRICE });
-            const savedEmail = localStorage.getItem('stylist_customerEmail') || '';
-            if (savedEmail) setEmail(savedEmail);
-        }
+        window.fbq?.('trackCustom', 'checkout_started', { funnel: 'style_scan', amount: BLUEPRINT_PRICE });
+        const savedEmail = localStorage.getItem('stylist_customerEmail') || '';
+        if (savedEmail) setEmail(savedEmail);
     }, []);
 
     useEffect(() => {
@@ -107,15 +204,16 @@ export default function StylistCheckoutPage() {
             if (!data.success) throw new Error(data.error || 'Payment initialisation failed');
 
             const initRazorpay = () => {
-                const options: RazorpayOptions = {
+                const options: RazorpayOrderOptions = {
                     key: data.key,
                     amount: data.amount,
                     currency: 'USD',
                     name: 'ICONIK Style Intelligence',
                     description: 'ICONIK Style Blueprint',
                     order_id: data.razorpay_order_id,
-                    handler: async (rzpResponse: RazorpayResponse) => {
+                    handler: async (rzpResponse: RazorpayOrderResponse) => {
                         sessionStorage.setItem('stylist_purchaseTracked', rzpResponse.razorpay_payment_id);
+
                         try {
                             await fetch('/api/stylist-confirm-payment', {
                                 method: 'POST',
@@ -135,32 +233,58 @@ export default function StylistCheckoutPage() {
                             console.warn('Could not confirm stylist payment in DB:', err);
                         }
 
-                        if (typeof window !== 'undefined') {
-                            localStorage.setItem('stylist_purchaseAmount', BLUEPRINT_PRICE.toString());
-                            localStorage.setItem('stylist_customerEmail', email);
-                            localStorage.setItem('stylist_customerPhone', phone);
+                        localStorage.setItem('stylist_purchaseAmount', BLUEPRINT_PRICE.toString());
+                        localStorage.setItem('stylist_customerEmail', email);
+                        localStorage.setItem('stylist_customerPhone', phone);
+                        localStorage.setItem('stylist_editSelected', editSelected.toString());
+
+                        // If Edit selected, create subscription and store ID for success page to authorize
+                        if (editSelected) {
+                            try {
+                                const subRes = await fetch('/api/stylist-edit-subscribe', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        customer_email: email,
+                                        customer_phone: phone,
+                                        customer_name: email.split('@')[0],
+                                        lead_id: leadId,
+                                        order_id: data.db_order_id,
+                                        source: 'checkout',
+                                        attribution: getAttributionPayload(),
+                                    }),
+                                });
+                                const subData = await subRes.json();
+                                if (subData.success && subData.subscription_id) {
+                                    localStorage.setItem('stylist_editSubscriptionId', subData.subscription_id);
+                                    localStorage.setItem('stylist_editKey', subData.key);
+                                    window.fbq?.('trackCustom', 'edit_checkout_added', { funnel: 'style_scan' });
+                                }
+                            } catch (err) {
+                                console.warn('Edit subscription creation failed (non-fatal):', err);
+                            }
                         }
 
                         window.location.href = `/stylist/checkout/success?payment_id=${rzpResponse.razorpay_payment_id}&email=${encodeURIComponent(email)}`;
                     },
                     prefill: { name: email.split('@')[0], email, contact: phone },
-                    theme: { color: '#ff6b9d' },
+                    theme: { color: '#C9A96E' },
                 };
 
-                const rzp = new (window as unknown as { Razorpay: new (opts: RazorpayOptions) => RazorpayInstance }).Razorpay(options);
+                const rzp = new window.Razorpay!(options);
                 rzp.open();
                 setIsProcessing(false);
             };
 
-            if (razorpayLoaded && (window as unknown as { Razorpay?: unknown }).Razorpay) {
+            if (razorpayLoaded && window.Razorpay) {
                 initRazorpay();
             } else {
                 const check = setInterval(() => {
-                    if ((window as unknown as { Razorpay?: unknown }).Razorpay) { clearInterval(check); initRazorpay(); }
+                    if (window.Razorpay) { clearInterval(check); initRazorpay(); }
                 }, 100);
                 setTimeout(() => {
                     clearInterval(check);
-                    if (!(window as unknown as { Razorpay?: unknown }).Razorpay) {
+                    if (!window.Razorpay) {
                         setIsProcessing(false);
                         setFormError('Failed to load payment system. Please try again.');
                     }
@@ -171,7 +295,11 @@ export default function StylistCheckoutPage() {
             setIsProcessing(false);
             setFormError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
         }
-    }, [email, phone, razorpayLoaded]);
+    }, [email, phone, editSelected, razorpayLoaded]);
+
+    const totalLabel = editSelected
+        ? `Pay $${BLUEPRINT_PRICE} + $${EDIT_PRICE}/mo — Get My Blueprint & Edit`
+        : `Pay $${BLUEPRINT_PRICE} — Get My Blueprint`;
 
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
@@ -255,13 +383,22 @@ export default function StylistCheckoutPage() {
                     </div>
                 </motion.div>
 
+                {/* ── Edit Add-On Card ────────────────────────────────── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <EditCard selected={editSelected} onToggle={() => setEditSelected(s => !s)} />
+                </motion.div>
+
                 {/* Payment form */}
                 <motion.form
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.25 }}
                     onSubmit={e => { e.preventDefault(); processPayment(); }}
-                    className="bg-white border border-luxury-cream rounded-2xl p-6 space-y-5 mb-6"
+                    className="bg-white border border-luxury-cream rounded-2xl p-6 space-y-5 mb-6 mt-7"
                 >
                     <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Your Details</p>
                     <div>
@@ -290,12 +427,32 @@ export default function StylistCheckoutPage() {
                     {formError && (
                         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body">{formError}</div>
                     )}
+
+                    {/* Order summary */}
+                    {editSelected && (
+                        <div className="bg-luxury-cream/30 rounded-xl p-4 space-y-2">
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-3">Order Summary</p>
+                            <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/70">
+                                <span>ICONIK Style Blueprint</span>
+                                <span className="font-semibold">${BLUEPRINT_PRICE}</span>
+                            </div>
+                            <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/70">
+                                <span>THE ICONIK EDIT</span>
+                                <span className="font-semibold">${EDIT_PRICE}/mo</span>
+                            </div>
+                            <div className="border-t border-luxury-cream pt-2 flex justify-between luxury-body text-sm">
+                                <span className="text-luxury-charcoal/50">Edit starts after Blueprint delivery</span>
+                                <span className="text-luxury-accent text-xs font-semibold">No charge today</span>
+                            </div>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         disabled={isProcessing}
                         className="w-full bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 disabled:cursor-not-allowed text-luxury-warm-white py-4 text-base font-semibold luxury-body rounded-full transition-all duration-300 hover:shadow-lg"
                     >
-                        {isProcessing ? 'Opening payment…' : `Pay $${BLUEPRINT_PRICE} — Get My Blueprint`}
+                        {isProcessing ? 'Opening payment…' : totalLabel}
                     </button>
                     <div className="flex items-center justify-center gap-2 text-xs luxury-body text-luxury-charcoal/40">
                         <Lock className="w-3 h-3" />
@@ -307,7 +464,7 @@ export default function StylistCheckoutPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
+                    transition={{ delay: 0.3 }}
                     className="text-center"
                 >
                     <p className="luxury-body text-luxury-charcoal/50 text-xs leading-relaxed">

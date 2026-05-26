@@ -1415,6 +1415,14 @@ interface ComboGridSaveTextResult {
   updatedComboGridText: string;
 }
 
+interface ComboGridRegenerationResult {
+  updatedComboGridText: string;
+  comboGridCards?: ResolvedImageUrls['comboGridCards'];
+  imageStatus: 'generated' | 'partial' | 'failed';
+  gridErrors?: Partial<Record<'office' | 'evening' | 'relaxed', string>>;
+  error?: string | null;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
   parsedPreview: ParsedOutfit | null;
@@ -2326,17 +2334,20 @@ function ComboGridSection({
   comboGridCards,
   adminMode,
   onSaveComboGridText,
+  onRegenerateComboGrids,
 }: {
   text?: string;
   comboGridCards?: ResolvedImageUrls['comboGridCards'];
   adminMode?: boolean;
   onSaveComboGridText?: (newText: string) => Promise<ComboGridSaveTextResult | null>;
+  onRegenerateComboGrids?: (newText: string) => Promise<ComboGridRegenerationResult | null>;
 }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
   const [sectionNotice, setSectionNotice] = useState<string | null>(null);
   const [savingText, setSavingText] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const parsed = useMemo(() => text ? normaliseComboGridText(text) : null, [text]);
   const parsedGroups = parsed?.ok ? parsed.groups : [];
   const grids = [
@@ -2345,8 +2356,9 @@ function ComboGridSection({
     { key: 'relaxed' as const, label: 'Relaxed casual combinations', url: comboGridCards?.relaxed },
   ];
   const hasContent = !!text || grids.some(grid => !!grid.url);
-  const canEdit = adminMode && !!onSaveComboGridText && !!text;
+  const canEdit = adminMode && (!!onSaveComboGridText || !!onRegenerateComboGrids) && !!text;
   if (!hasContent) return null;
+  const isBusy = savingText || regenerating;
 
   const startEdit = () => {
     if (!text) return;
@@ -2366,6 +2378,7 @@ function ComboGridSection({
 
     setSavingText(true);
     setEditError(null);
+    setSectionNotice(null);
     try {
       const result = await onSaveComboGridText(editText);
       if (!result) {
@@ -2376,6 +2389,42 @@ function ComboGridSection({
       setSectionNotice('Combination grid text saved. Existing images were not changed.');
     } finally {
       setSavingText(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!onRegenerateComboGrids) return;
+    const validation = normaliseComboGridText(editText);
+    if (!validation.ok) {
+      setEditError(validation.error);
+      return;
+    }
+
+    setRegenerating(true);
+    setEditError(null);
+    setSectionNotice(null);
+    try {
+      const result = await onRegenerateComboGrids(editText);
+      if (!result) {
+        setEditError('Could not regenerate combination grid images. Please try again.');
+        return;
+      }
+
+      setEditing(false);
+      if (result.imageStatus === 'generated') {
+        setSectionNotice('Combination grid text saved and all 3 grid images were regenerated.');
+        return;
+      }
+
+      const failedLabels = Object.keys(result.gridErrors ?? {})
+        .map(key => key.charAt(0).toUpperCase() + key.slice(1))
+        .join(', ');
+      setSectionNotice(result.imageStatus === 'partial'
+        ? `Combination grid text saved. Some grid images regenerated, but ${failedLabels || 'some grids'} failed.`
+        : 'Combination grid text saved, but grid images could not be regenerated.'
+      );
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -2502,7 +2551,7 @@ function ComboGridSection({
                 </div>
                 <button
                   onClick={() => setEditing(false)}
-                  disabled={savingText}
+                  disabled={isBusy}
                   className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
                   style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
                 >
@@ -2539,7 +2588,7 @@ function ComboGridSection({
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => setEditing(false)}
-                    disabled={savingText}
+                    disabled={isBusy}
                     className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                     style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
                   >
@@ -2547,15 +2596,31 @@ function ComboGridSection({
                   </button>
                   <motion.button
                     onClick={handleSaveText}
-                    disabled={savingText || !editText.trim()}
+                    disabled={isBusy || !editText.trim() || !onSaveComboGridText}
                     className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: ACCENT, color: '#fff' }}
-                    whileHover={!savingText ? { scale: 1.02 } : undefined}
-                    whileTap={!savingText ? { scale: 0.98 } : undefined}
+                    style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
+                    whileHover={!isBusy ? { scale: 1.02 } : undefined}
+                    whileTap={!isBusy ? { scale: 0.98 } : undefined}
                     transition={SPRING}
                   >
                     {savingText ? <><Loader2 size={13} className="animate-spin" /> Saving...</> : 'Save text only'}
                   </motion.button>
+                  {onRegenerateComboGrids && (
+                    <motion.button
+                      onClick={handleRegenerate}
+                      disabled={isBusy || !editText.trim()}
+                      className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                      style={{ background: ACCENT, color: '#fff' }}
+                      whileHover={!isBusy ? { scale: 1.02 } : undefined}
+                      whileTap={!isBusy ? { scale: 0.98 } : undefined}
+                      transition={SPRING}
+                    >
+                      {regenerating
+                        ? <><Loader2 size={13} className="animate-spin" /> Saving + regenerating...</>
+                        : 'Save + regenerate images'
+                      }
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -2779,6 +2844,9 @@ interface ManReportProps {
   onSaveComboGridText?: (
     newText: string,
   ) => Promise<ComboGridSaveTextResult | null>;
+  onRegenerateComboGrids?: (
+    newText: string,
+  ) => Promise<ComboGridRegenerationResult | null>;
   onDraftOutfitSwap?: (input: {
     outfitNumber: number;
     reason: string;
@@ -2969,6 +3037,7 @@ function ManReport({
   onRegenerateOutfit,
   onSaveOutfitText,
   onSaveComboGridText,
+  onRegenerateComboGrids,
   onDraftOutfitSwap,
   onApplyOutfitSwap,
   onRegenerateFaceImage,
@@ -3104,6 +3173,7 @@ function ManReport({
           comboGridCards={imageUrls?.comboGridCards}
           adminMode={isAdminViewer}
           onSaveComboGridText={onSaveComboGridText}
+          onRegenerateComboGrids={onRegenerateComboGrids}
         />
       ),
     },

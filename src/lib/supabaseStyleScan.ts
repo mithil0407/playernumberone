@@ -124,6 +124,41 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string): Promis
   return publicData.publicUrl;
 };
 
+export interface StyleEditSubscription {
+  id?: string;
+  lead_id?: string | null;
+  order_id?: string | null;
+  customer_email: string;
+  customer_name?: string;
+  customer_phone?: string;
+  plan_id?: string;
+  razorpay_subscription_id?: string;
+  amount?: number;
+  currency?: string;
+  status?: 'pending' | 'active' | 'cancelled' | 'halted';
+  source?: 'checkout' | 'success_page' | 'chat';
+  start_at?: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_content?: string | null;
+  utm_term?: string | null;
+  referrer?: string | null;
+  landing_page?: string | null;
+  attribution_payload?: Record<string, unknown> | null;
+  created_at?: string;
+}
+
+export const saveStyleEditSubscription = async (sub: StyleEditSubscription) => {
+  const { data, error } = await db
+    .from('style_edit_subscriptions')
+    .insert([sub])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
 // ── Score & Derivation Logic ────────────────────────────────────────────────
 
 export interface ScanAnswers {

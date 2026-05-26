@@ -67,6 +67,14 @@ interface ComboGridSaveTextResult {
   updatedComboGridText: string;
 }
 
+interface ComboGridRegenerationResult {
+  updatedComboGridText: string;
+  comboGridCards?: ResolvedImageUrls['comboGridCards'];
+  imageStatus: 'generated' | 'partial' | 'failed';
+  gridErrors?: Partial<Record<'office' | 'evening' | 'relaxed', string>>;
+  error?: string | null;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
   parsedPreview: {
@@ -570,6 +578,67 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
     return { updatedComboGridText };
   }, [reportId]);
+
+  const regenerateComboGrids = useCallback(async (
+    newText: string,
+  ): Promise<ComboGridRegenerationResult | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/regenerate-combo-grids`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comboGridText: newText, imageModel }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not regenerate combination grid images.');
+      return null;
+    }
+
+    const updatedComboGridText = data.updatedComboGridText as string | undefined;
+    const comboGridCards = data.comboGridCards as ResolvedImageUrls['comboGridCards'] | undefined;
+    const imageStatus = data.imageStatus as ComboGridRegenerationResult['imageStatus'] | undefined;
+    const gridErrors = data.gridErrors as ComboGridRegenerationResult['gridErrors'] | undefined;
+    const error = data.error as string | null | undefined;
+
+    if (!updatedComboGridText || !imageStatus) return null;
+
+    setReport(prev => {
+      if (!prev?.report_data) return prev;
+      const existingImageUrls = prev.image_urls ?? {
+        hairstyleCards: [],
+        beardCards: [],
+        eyewearCards: [],
+        outfitCards: [],
+        comboGridCards: {},
+        baseModel: null,
+      };
+
+      return {
+        ...prev,
+        error_message: imageStatus === 'generated' ? null : error ?? 'Combination grid image regeneration failed.',
+        image_urls: {
+          ...existingImageUrls,
+          comboGridCards: comboGridCards ?? { office: null, evening: null, relaxed: null },
+        },
+        report_data: {
+          ...prev.report_data,
+          sections: {
+            ...prev.report_data.sections,
+            s4_combo_grids: updatedComboGridText,
+          } as ReportSections,
+        },
+      };
+    });
+
+    if (imageStatus === 'generated') setError('');
+
+    return {
+      updatedComboGridText,
+      comboGridCards,
+      imageStatus,
+      gridErrors,
+      error,
+    };
+  }, [reportId, imageModel]);
 
   const draftOutfitSwap = useCallback(async (input: {
     outfitNumber: number;
@@ -1119,6 +1188,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             onRegenerateOutfit={regenerateOutfit}
             onSaveOutfitText={saveOutfitText}
             onSaveComboGridText={saveComboGridText}
+            onRegenerateComboGrids={regenerateComboGrids}
             onDraftOutfitSwap={draftOutfitSwap}
             onApplyOutfitSwap={applyOutfitSwap}
             onRetryMissingImages={handleGenerateImages}

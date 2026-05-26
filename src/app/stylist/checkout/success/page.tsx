@@ -1,84 +1,434 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { trackPageView } from '@/lib/metaPixel';
+import { getAttributionPayload } from '@/lib/attribution';
+
+// ── Razorpay types ────────────────────────────────────────────────────────────
+
+interface RazorpaySubOptions {
+    key: string;
+    subscription_id: string;
+    name: string;
+    description: string;
+    handler: () => void;
+    prefill: { name: string; email: string; contact: string };
+    theme: { color: string };
+}
+interface RazorpayInstance { open(): void; }
+
+declare const window: Window & {
+    Razorpay?: new (opts: RazorpaySubOptions) => RazorpayInstance;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fbq?: (...args: any[]) => void;
+};
+
+// ── Edit bullets (reused across states) ──────────────────────────────────────
+
+const EDIT_BULLETS = [
+    'Weekly style intelligence built on your Blueprint',
+    'New outfit formulas every month',
+    'Your ICONIK stylist, on call',
+    'Shopping picks matched to your exact palette',
+];
+
+// ── Inner page component ──────────────────────────────────────────────────────
 
 function StylistSuccessInner() {
     const searchParams = useSearchParams();
     const email = searchParams.get('email') || '';
+    const phone = typeof window !== 'undefined' ? localStorage.getItem('stylist_customerPhone') || '' : '';
+
+    // Edit state
+    const [editPurchased, setEditPurchased] = useState(false);
+    const [editSelected, setEditSelected] = useState(false);
+    const [pendingSubId, setPendingSubId] = useState<string | null>(null);
+    const [pendingSubKey, setPendingSubKey] = useState<string | null>(null);
+    const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError] = useState('');
+    const [noThanks, setNoThanks] = useState(false);
+    const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
     useEffect(() => {
         trackPageView('Stylist Checkout Success');
-        if (typeof window !== 'undefined') {
-            const paymentId = sessionStorage.getItem('stylist_purchaseTracked') || '';
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).fbq?.('trackCustom', 'blueprint_purchased', {
-                funnel: 'style_scan',
-                amount: 149,
-                currency: 'USD',
-                payment_id: paymentId,
-            });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).fbq?.('track', 'Purchase', { value: 149, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
-            sessionStorage.removeItem('stylist_purchaseTracked');
-        }
+        const paymentId = sessionStorage.getItem('stylist_purchaseTracked') || '';
+        window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: 149, currency: 'USD', payment_id: paymentId });
+        window.fbq?.('track', 'Purchase', { value: 149, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
+        sessionStorage.removeItem('stylist_purchaseTracked');
+
+        // Read Edit state from localStorage
+        const purchased = localStorage.getItem('stylist_editPurchased') === 'true';
+        const selected = localStorage.getItem('stylist_editSelected') === 'true';
+        const subId = localStorage.getItem('stylist_editSubscriptionId') || null;
+        const subKey = localStorage.getItem('stylist_editKey') || null;
+
+        setEditPurchased(purchased);
+        setEditSelected(selected);
+        setPendingSubId(subId);
+        setPendingSubKey(subKey);
     }, []);
 
-    return (
-        <div className="min-h-screen bg-luxury-warm-white flex flex-col items-center justify-center px-4 text-center">
-            <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                className="w-24 h-24 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative"
-            >
-                <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
-                <CheckCircle className="w-12 h-12 text-luxury-accent relative z-10" />
-            </motion.div>
+    useEffect(() => {
+        if (document.querySelector('script[src*="razorpay.com"]')) { setRazorpayLoaded(true); return; }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => setRazorpayLoaded(true);
+        document.body.appendChild(script);
+    }, []);
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="max-w-lg"
-            >
-                <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider block mb-6">ICONIK</span>
-                <h1 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-5 leading-tight">
-                    Your Blueprint is on its way.
-                </h1>
-                <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-4">
-                    You&apos;ll receive a link to complete your intake form at{' '}
-                    {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'} shortly.
-                </p>
-                <p className="luxury-body text-luxury-charcoal/60 leading-relaxed mb-8">
-                    Your personalised ICONIK Style Blueprint will be delivered within <strong className="text-luxury-charcoal">72 hours</strong> of completing the intake form.
-                </p>
-                <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
-                    <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
-                    {[
-                        'Check your email for your intake form link',
-                        'Complete the intake form (takes 7 minutes)',
-                        'Receive your personalised Blueprint within 72 hours',
-                    ].map((step, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                            <div className="w-6 h-6 bg-luxury-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-black text-luxury-accent">{i + 1}</span>
+    const openSubscriptionModal = useCallback((subscriptionId: string, key: string) => {
+        const options: RazorpaySubOptions = {
+            key,
+            subscription_id: subscriptionId,
+            name: 'ICONIK Style Intelligence',
+            description: 'THE ICONIK EDIT — $39/month · Starts after Blueprint delivery',
+            handler: () => {
+                localStorage.setItem('stylist_editPurchased', 'true');
+                localStorage.removeItem('stylist_editSubscriptionId');
+                localStorage.removeItem('stylist_editKey');
+                localStorage.setItem('stylist_editSelected', 'false');
+                setEditPurchased(true);
+                window.fbq?.('trackCustom', 'edit_purchased', { funnel: 'style_scan', source: editSelected ? 'checkout_pending' : 'success_page' });
+                setEditLoading(false);
+            },
+            prefill: { name: email.split('@')[0], email, contact: phone },
+            theme: { color: '#C9A96E' },
+        };
+
+        const tryOpen = () => {
+            if (window.Razorpay) {
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            }
+        };
+
+        if (razorpayLoaded && window.Razorpay) {
+            tryOpen();
+        } else {
+            const check = setInterval(() => {
+                if (window.Razorpay) { clearInterval(check); tryOpen(); }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(check);
+                if (!window.Razorpay) {
+                    setEditLoading(false);
+                    setEditError('Failed to load payment system. Please try again.');
+                }
+            }, 10000);
+        }
+    }, [email, phone, razorpayLoaded, editSelected]);
+
+    const handleAddEdit = useCallback(async () => {
+        setEditError('');
+        setEditLoading(true);
+
+        // If subscription was already created at checkout, just open the modal
+        if (pendingSubId && pendingSubKey) {
+            openSubscriptionModal(pendingSubId, pendingSubKey);
+            return;
+        }
+
+        // Otherwise create subscription now
+        try {
+            const leadId = localStorage.getItem('style_scan_lead_id') || null;
+            const orderId = null; // order ID not available on success page path without prior sub creation
+            const res = await fetch('/api/stylist-edit-subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_email: email,
+                    customer_phone: phone,
+                    customer_name: email.split('@')[0],
+                    lead_id: leadId,
+                    order_id: orderId,
+                    source: 'success_page',
+                    attribution: getAttributionPayload(),
+                }),
+            });
+            const data = await res.json();
+            if (!data.success || !data.subscription_id) {
+                throw new Error(data.error || 'Failed to set up your Edit.');
+            }
+            openSubscriptionModal(data.subscription_id, data.key);
+        } catch (err) {
+            setEditLoading(false);
+            setEditError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+        }
+    }, [pendingSubId, pendingSubKey, email, phone, openSubscriptionModal]);
+
+    // ── State A: Edit purchased (Blueprint + Edit confirmed) ─────────────────
+
+    if (editPurchased) {
+        return (
+            <div className="min-h-screen bg-luxury-warm-white flex flex-col items-center justify-center px-4 text-center">
+                <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                    className="w-24 h-24 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative"
+                >
+                    <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
+                    <CheckCircle className="w-12 h-12 text-luxury-accent relative z-10" />
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="max-w-lg"
+                >
+                    <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider block mb-6">ICONIK</span>
+                    <h1 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-5 leading-tight">
+                        Your Blueprint and ICONIK Edit are confirmed.
+                    </h1>
+                    <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-4">
+                        You&apos;ll receive a link to complete your intake form at{' '}
+                        {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'} shortly.
+                    </p>
+                    <p className="luxury-body text-luxury-charcoal/60 leading-relaxed mb-8">
+                        Your Blueprint arrives within <strong className="text-luxury-charcoal">72 hours</strong> of completing the intake form.
+                        Your Edit begins the day it&apos;s delivered.
+                    </p>
+                    <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
+                        <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
+                        {[
+                            'Check your email for your intake form link',
+                            'Complete the intake form (takes 7 minutes)',
+                            'Receive your personalised Blueprint within 72 hours',
+                            'Your ICONIK Edit activates automatically on delivery day',
+                        ].map((step, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <div className="w-6 h-6 bg-luxury-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span className="text-[10px] font-black text-luxury-accent">{i + 1}</span>
+                                </div>
+                                <span className="luxury-body text-luxury-charcoal/80 text-sm">{step}</span>
                             </div>
-                            <span className="luxury-body text-luxury-charcoal/80 text-sm">{step}</span>
-                        </div>
-                    ))}
-                </div>
-                <p className="luxury-body text-luxury-charcoal/40 text-sm">
-                    Questions? Email us at{' '}
-                    <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-accent hover:underline">help.iconikfashion@gmail.com</a>
-                </p>
-            </motion.div>
+                        ))}
+                    </div>
+                    <p className="luxury-body text-luxury-charcoal/40 text-sm">
+                        Questions? Email us at{' '}
+                        <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-accent hover:underline">help.iconikfashion@gmail.com</a>
+                    </p>
+                </motion.div>
+                <footer className="mt-16">
+                    <Link href="/" className="luxury-body text-luxury-charcoal/30 text-xs hover:text-luxury-charcoal transition-colors">
+                        ← Back to ICONIK
+                    </Link>
+                </footer>
+            </div>
+        );
+    }
 
-            <footer className="mt-16">
+    // ── State B: Edit selected at checkout but authorization still pending ────
+
+    if (editSelected && pendingSubId && !noThanks) {
+        return (
+            <div className="min-h-screen bg-luxury-warm-white flex flex-col items-center justify-center px-4 text-center">
+                <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                    className="w-24 h-24 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative"
+                >
+                    <CheckCircle className="w-12 h-12 text-luxury-accent relative z-10" />
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="max-w-lg w-full"
+                >
+                    <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider block mb-4">ICONIK</span>
+                    <h1 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal mb-3 leading-tight">
+                        Blueprint confirmed.
+                    </h1>
+                    <p className="luxury-body text-luxury-charcoal/60 mb-8">
+                        One more step — authorize your Edit to complete your order.
+                    </p>
+
+                    <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-6 text-left mb-6">
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-4">THE ICONIK EDIT — $39/month</p>
+                        <div className="space-y-2.5 mb-5">
+                            {EDIT_BULLETS.map((b, i) => (
+                                <div key={i} className="flex items-start gap-2.5">
+                                    <span className="text-luxury-accent text-xs mt-0.5 flex-shrink-0">→</span>
+                                    <span className="luxury-body text-luxury-charcoal/70 text-sm">{b}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="luxury-body text-luxury-charcoal/40 text-xs">
+                            No charge today. First billing begins the day your Blueprint is delivered.
+                        </p>
+                    </div>
+
+                    {editError && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body mb-4">{editError}</div>
+                    )}
+
+                    <button
+                        onClick={handleAddEdit}
+                        disabled={editLoading}
+                        className="w-full inline-flex items-center justify-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg mb-4"
+                    >
+                        {editLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</> : <>Authorize My Edit <ArrowRight className="w-4 h-4" /></>}
+                    </button>
+
+                    <button
+                        onClick={() => setNoThanks(true)}
+                        className="w-full luxury-body text-luxury-charcoal/40 text-sm hover:text-luxury-charcoal/60 transition-colors"
+                    >
+                        No thanks, just the Blueprint
+                    </button>
+                </motion.div>
+            </div>
+        );
+    }
+
+    // ── State C: Edit upsell (not selected at checkout, or dismissed) ─────────
+
+    return (
+        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
+
+            {/* Hero */}
+            <div className="flex flex-col items-center justify-center px-4 pt-16 pb-10 text-center">
+                <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                    className="w-20 h-20 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 relative"
+                >
+                    <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
+                    <CheckCircle className="w-10 h-10 text-luxury-accent relative z-10" />
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="max-w-md"
+                >
+                    <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider block mb-4">ICONIK</span>
+                    <h1 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal mb-3 leading-tight">
+                        Your Blueprint is confirmed.
+                    </h1>
+                    <p className="luxury-body text-luxury-charcoal/60 leading-relaxed">
+                        It arrives within <strong className="text-luxury-charcoal">72 hours</strong> of completing your intake form.
+                    </p>
+                </motion.div>
+            </div>
+
+            {/* Divider line */}
+            <div className="max-w-2xl mx-auto px-4">
+                <div className="border-t border-luxury-cream mb-10" />
+
+                <AnimatePresence>
+                    {!noThanks ? (
+                        <motion.div
+                            key="upsell"
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ delay: 0.25 }}
+                        >
+                            {/* Bridge */}
+                            <p className="luxury-body text-luxury-charcoal/50 text-center text-sm mb-8">
+                                One thing before you go.
+                            </p>
+
+                            {/* Edit offer */}
+                            <div className="border border-luxury-cream rounded-2xl p-7 mb-6" style={{ borderLeftWidth: '3px', borderLeftColor: '#C9A96E' }}>
+                                <p className="text-[9px] font-black uppercase tracking-[0.35em] text-luxury-charcoal/40 mb-5">THE ICONIK EDIT</p>
+
+                                <p className="luxury-body text-luxury-charcoal/70 text-sm leading-relaxed mb-2">
+                                    Most clients tell us the Blueprint answered every &ldquo;what works for me&rdquo; question.
+                                </p>
+                                <p className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed mb-6">
+                                    The Edit answers what comes next — every week, for as long as you want it.
+                                </p>
+
+                                <div className="space-y-3 mb-6">
+                                    {EDIT_BULLETS.map((b, i) => (
+                                        <div key={i} className="flex items-start gap-2.5">
+                                            <span className="text-luxury-accent text-xs mt-0.5 flex-shrink-0">→</span>
+                                            <span className="luxury-body text-luxury-charcoal/70 text-sm leading-relaxed">{b}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-baseline gap-2 mb-6">
+                                    <span className="luxury-heading text-luxury-charcoal text-3xl">$39</span>
+                                    <span className="luxury-body text-luxury-charcoal/50 text-sm">/month</span>
+                                </div>
+
+                                {editError && (
+                                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body mb-4">{editError}</div>
+                                )}
+
+                                <button
+                                    onClick={handleAddEdit}
+                                    disabled={editLoading}
+                                    className="w-full inline-flex items-center justify-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg mb-5"
+                                >
+                                    {editLoading
+                                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</>
+                                        : <>ADD THE ICONIK EDIT <ArrowRight className="w-4 h-4" /></>
+                                    }
+                                </button>
+
+                                {/* Plain text no-thanks */}
+                                <p className="text-center">
+                                    <button
+                                        onClick={() => setNoThanks(true)}
+                                        className="luxury-body text-luxury-charcoal/35 text-sm hover:text-luxury-charcoal/55 transition-colors"
+                                    >
+                                        No thanks, just the Blueprint
+                                    </button>
+                                </p>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        // After declining — show normal next steps
+                        <motion.div
+                            key="next-steps"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="max-w-lg mx-auto text-center pb-16"
+                        >
+                            <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-4">
+                                You&apos;ll receive a link to complete your intake form at{' '}
+                                {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'} shortly.
+                            </p>
+                            <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
+                                <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
+                                {[
+                                    'Check your email for your intake form link',
+                                    'Complete the intake form (takes 7 minutes)',
+                                    'Receive your personalised Blueprint within 72 hours',
+                                ].map((step, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className="w-6 h-6 bg-luxury-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <span className="text-[10px] font-black text-luxury-accent">{i + 1}</span>
+                                        </div>
+                                        <span className="luxury-body text-luxury-charcoal/80 text-sm">{step}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="luxury-body text-luxury-charcoal/40 text-sm">
+                                Questions? Email us at{' '}
+                                <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-accent hover:underline">help.iconikfashion@gmail.com</a>
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            <footer className="py-6 px-6 text-center border-t border-luxury-cream">
                 <Link href="/" className="luxury-body text-luxury-charcoal/30 text-xs hover:text-luxury-charcoal transition-colors">
                     ← Back to ICONIK
                 </Link>

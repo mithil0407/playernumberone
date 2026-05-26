@@ -17,6 +17,7 @@ import type { ClassificationResult, ReportSections } from './manReportGenerator'
 import type { ManIntakeSubmission } from './supabaseMan';
 import { revalidateManReportCache } from './manReportCache';
 import { parseManOutfitsFromSection } from './manOutfitSection';
+import { normaliseComboGridText, type ParsedComboGridGroup } from './manComboGridSection';
 
 const ai     = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MODEL  = 'gemini-3.1-flash-image-preview';
@@ -377,6 +378,11 @@ Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the 
 
 type ComboGridKind = 'office' | 'evening' | 'relaxed';
 
+export interface ComboGridRegenerationImagesResult {
+  paths: NonNullable<ManReportImagePaths['comboGridCards']>;
+  errors: Partial<Record<ComboGridKind, string>>;
+}
+
 function buildMixedComboOutfits(outfits: ParsedOutfit[], kind: ComboGridKind): ParsedOutfit[] {
   const pool = outfits.filter(outfit => {
     if (kind === 'office') return outfit.index >= 1 && outfit.index <= 6;
@@ -453,6 +459,49 @@ Customisation rules:
 - Colours and accessories must match the outfit descriptions precisely.
 - No logos or brand markings.
 - FOOTWEAR IS MANDATORY: Every column must show the specified footwear rendered visibly and completely on both feet. Do not omit, blur, or crop the shoes. Do not leave the subject barefoot. The footwear must match the exact description given (colour, style, material).
+
+Scene: clean premium studio lookbook, seamless cool slate grey cyclorama backdrop and floor (#94a6ad). The cyclorama sweep continues under the subject's feet — the floor is the same seamless cool slate grey as the backdrop. No mats, no rugs, no wooden floor, no tiles, no studio floor markings, no shadow gradient under the feet. Even high-key studio lighting.
+
+Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet. The subject's feet and footwear must be fully visible at the bottom of each column.`;
+}
+
+function buildEditedComboGridPrompt(group: ParsedComboGridGroup, c: ClassificationResult): string {
+  const lookLines = group.looks.map((look, index) => [
+    `Column ${index + 1}: ${look.name}`,
+    `Outfit summary: ${look.outfitSummary}`,
+    `Styling logic: ${look.logic}`,
+    `Source context: ${look.source}`,
+  ].join('\n')).join('\n\n');
+
+  const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
+  const defaultBeard = c.face.beard_style_recommendations?.[0];
+  const groomingTextInstruction = [
+    defaultHairstyle ? `Default hairstyle/scalp grooming: ${defaultHairstyle}` : null,
+    defaultBeard ? `Default beard/facial-hair grooming: ${defaultBeard}` : null,
+  ].filter(Boolean).join('\n');
+
+  return `Create one customised editorial styling grid image for ICONIK.
+
+Two reference photos are provided: the first is the client's full-body photo and the second is the client's original headshot.
+Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply these TEXT grooming directions consistently in all three columns:
+${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
+Do not use a generated grooming grid as reference and do not blend multiple grooming options.
+
+The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client standing full-body, facing camera, in a different outfit combination. No text, no labels, no product cards, no flat-lay items.
+
+Grid theme: ${group.title}.
+
+Use these three edited combination-grid looks exactly. Treat the outfit summary as the garment specification; use the styling logic and source context only to resolve ambiguity:
+${lookLines}
+
+Customisation rules:
+- Preserve the client's body proportions, skin tone, face, and grooming reference.
+- Dress the client in the specified clothing only; do not borrow garments from the source photo.
+- Each column should feel related as one styling system, but the three looks must be visibly different.
+- Clothes must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}.
+- Colours, accessories, layering, and footwear must match the outfit summaries precisely.
+- No logos or brand markings.
+- FOOTWEAR IS MANDATORY: Every column must show footwear rendered visibly and completely on both feet. Do not omit, blur, or crop the shoes. Do not leave the subject barefoot.
 
 Scene: clean premium studio lookbook, seamless cool slate grey cyclorama backdrop and floor (#94a6ad). The cyclorama sweep continues under the subject's feet — the floor is the same seamless cool slate grey as the backdrop. No mats, no rugs, no wooden floor, no tiles, no studio floor markings, no shadow gradient under the feet. Even high-key studio lighting.
 
@@ -1005,6 +1054,65 @@ export async function generateComboGridImages(
   }
 
   return result;
+}
+
+export async function regenerateComboGridImagesFromText(
+  reportId: string,
+  comboGridText: string,
+  basePhotoUrl: string,
+  classification: ClassificationResult,
+  groomingReferenceUrl: string | null | undefined,
+  imageModel: string = MODEL,
+): Promise<ComboGridRegenerationImagesResult> {
+  const normalised = normaliseComboGridText(comboGridText);
+  if (!normalised.ok) throw new Error(normalised.error);
+
+  const result: NonNullable<ManReportImagePaths['comboGridCards']> = {
+    office: null,
+    evening: null,
+    relaxed: null,
+  };
+  const errors: Partial<Record<ComboGridKind, string>> = {};
+
+  const fetchGroomingRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
+    if (!groomingReferenceUrl) return undefined;
+    try {
+      return fetchAsBase64(groomingReferenceUrl);
+    } catch {
+      console.warn('[regenerateComboGridImagesFromText] Could not fetch original headshot grooming reference — proceeding without it');
+    }
+    return undefined;
+  };
+
+  const [{ data: baseData, mimeType: baseMime }, groomingRef] = await Promise.all([
+    fetchAsBase64(basePhotoUrl),
+    fetchGroomingRef(),
+  ]);
+
+  for (const kind of ['office', 'evening', 'relaxed'] as const) {
+    const group = normalised.groups.find(candidate => candidate.kind === kind);
+    if (!group) {
+      errors[kind] = `No ${kind} combination grid group found`;
+      continue;
+    }
+
+    try {
+      const outputBase64 = await withRetry(() =>
+        callGeminiImageEdit(baseData, baseMime, buildEditedComboGridPrompt(group, classification), imageModel, groomingRef),
+        3,
+        4_000,
+      );
+      const path = await uploadToStorage(reportId, outputBase64, `combo_grid_${kind}.jpg`);
+      result[kind] = path;
+      console.log(`[regenerateComboGridImagesFromText] Combo grid ${kind} saved: ${path}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors[kind] = message;
+      console.error(`[regenerateComboGridImagesFromText] Combo grid ${kind} FAILED (model: ${imageModel}): ${message}`);
+    }
+  }
+
+  return { paths: result, errors };
 }
 
 /**
