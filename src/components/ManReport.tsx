@@ -13,6 +13,10 @@ import { SPRING } from '@/lib/reportAnimations';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { FaceImageKind } from '@/lib/manImageGenerator';
 import type { ManReportQaIssue } from '@/lib/manReportQa';
+import {
+  normaliseComboGridText,
+  stripComboGridTableSeparators,
+} from '@/lib/manComboGridSection';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens — modern editorial palette (refresh 2026-05)
@@ -1407,6 +1411,10 @@ interface OutfitSaveTextResult {
   updatedS4Outfits: string;
 }
 
+interface ComboGridSaveTextResult {
+  updatedComboGridText: string;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
   parsedPreview: ParsedOutfit | null;
@@ -2316,25 +2324,93 @@ function OutfitsSection({
 function ComboGridSection({
   text,
   comboGridCards,
+  adminMode,
+  onSaveComboGridText,
 }: {
   text?: string;
   comboGridCards?: ResolvedImageUrls['comboGridCards'];
+  adminMode?: boolean;
+  onSaveComboGridText?: (newText: string) => Promise<ComboGridSaveTextResult | null>;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [sectionNotice, setSectionNotice] = useState<string | null>(null);
+  const [savingText, setSavingText] = useState(false);
+  const parsed = useMemo(() => text ? normaliseComboGridText(text) : null, [text]);
+  const parsedGroups = parsed?.ok ? parsed.groups : [];
   const grids = [
     { key: 'office' as const, label: 'Office basic combinations', url: comboGridCards?.office },
     { key: 'evening' as const, label: 'Evening outfit combinations', url: comboGridCards?.evening },
     { key: 'relaxed' as const, label: 'Relaxed casual combinations', url: comboGridCards?.relaxed },
   ];
   const hasContent = !!text || grids.some(grid => !!grid.url);
+  const canEdit = adminMode && !!onSaveComboGridText && !!text;
   if (!hasContent) return null;
+
+  const startEdit = () => {
+    if (!text) return;
+    setEditText(text);
+    setEditError(null);
+    setSectionNotice(null);
+    setEditing(true);
+  };
+
+  const handleSaveText = async () => {
+    if (!onSaveComboGridText) return;
+    const validation = normaliseComboGridText(editText);
+    if (!validation.ok) {
+      setEditError(validation.error);
+      return;
+    }
+
+    setSavingText(true);
+    setEditError(null);
+    try {
+      const result = await onSaveComboGridText(editText);
+      if (!result) {
+        setEditError('Could not save combination grid text. Please try again.');
+        return;
+      }
+      setEditing(false);
+      setSectionNotice('Combination grid text saved. Existing images were not changed.');
+    } finally {
+      setSavingText(false);
+    }
+  };
 
   return (
     <div style={{ background: '#fff' }}>
       <SectionHeader number="05" label="Combination Grids" />
       <div className="px-6 md:px-12 pb-14 space-y-8">
+        {(canEdit || sectionNotice) && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            {sectionNotice ? (
+              <div
+                className="flex items-start gap-2 rounded-2xl px-4 py-3"
+                style={{ background: '#f4efe4', border: `1px solid ${BORDER}`, color: INK_SOFT }}
+              >
+                <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                <p className="text-[12px] leading-relaxed">{sectionNotice}</p>
+              </div>
+            ) : <div />}
+            {canEdit && (
+              <button
+                onClick={startEdit}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-[12px] font-medium flex-shrink-0"
+                style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
+              >
+                <Pencil size={12} />
+                Advanced edit
+              </button>
+            )}
+          </div>
+        )}
         <div className="space-y-7">
-          {grids.map(grid => (
-            <div key={grid.key}>
+          {grids.map(grid => {
+            const group = parsedGroups.find(candidate => candidate.kind === grid.key);
+            return (
+            <div key={grid.key} className="space-y-4">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-4" style={{ color: ACCENT_INK }}>
                 {grid.label}
               </p>
@@ -2355,15 +2431,137 @@ function ComboGridSection({
                   </div>
                 )}
               </div>
+              {group && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  {group.looks.map(look => (
+                    <div
+                      key={look.name}
+                      className="rounded-2xl p-5"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}` }}
+                    >
+                      <h4
+                        className="text-lg italic leading-snug mb-4"
+                        style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
+                      >
+                        {look.name}
+                      </h4>
+                      <div className="space-y-4">
+                        <div>
+                          <DataLabel>Outfit summary</DataLabel>
+                          <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{look.outfitSummary}</p>
+                        </div>
+                        <div>
+                          <DataLabel>Logic</DataLabel>
+                          <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{look.logic}</p>
+                        </div>
+                        <div>
+                          <DataLabel>Source</DataLabel>
+                          <p className="text-[11px] leading-relaxed" style={{ color: ACCENT_INK }}>{look.source}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+          )})}
         </div>
-        {text && (
+        {text && !parsed?.ok && (
           <div className="pt-6" style={{ borderTop: `1px solid ${BORDER}` }}>
-            <RenderMarkdown text={text} />
+            <RenderMarkdown text={stripComboGridTableSeparators(text)} />
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {editing && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: 'rgba(27,24,21,0.58)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            <motion.div
+              className="w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
+              style={{ background: IVORY, maxHeight: '90vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={SPRING}
+            >
+              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
+                    Advanced edit
+                  </p>
+                  <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                    Combination grid copy
+                  </p>
+                </div>
+                <button
+                  onClick={() => setEditing(false)}
+                  disabled={savingText}
+                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
+                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="p-6 flex-1 min-h-0 flex flex-col gap-3">
+                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
+                  Each of Office, Evening, and Relaxed Casual must include three looks with Outfit summary, Logic, and Source fields. Markdown tables are converted to this card format on save.
+                </p>
+                {editError && (
+                  <div className="flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: '#fff2f2', color: OXBLOOD }}>
+                    <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                    <p className="text-[11px] leading-relaxed">{editError}</p>
+                  </div>
+                )}
+                <textarea
+                  value={editText}
+                  onChange={event => {
+                    setEditText(event.target.value);
+                    if (editError) setEditError(null);
+                  }}
+                  className="font-mono text-[12px] rounded-2xl p-4 resize-none leading-relaxed focus:outline-none flex-1 min-h-[420px]"
+                  style={{ background: '#fff', border: `1px solid ${BORDER}`, color: INK }}
+                  spellCheck={false}
+                />
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
+                  Save text only keeps the existing generated grid images intact.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setEditing(false)}
+                    disabled={savingText}
+                    className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    onClick={handleSaveText}
+                    disabled={savingText || !editText.trim()}
+                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: ACCENT, color: '#fff' }}
+                    whileHover={!savingText ? { scale: 1.02 } : undefined}
+                    whileTap={!savingText ? { scale: 0.98 } : undefined}
+                    transition={SPRING}
+                  >
+                    {savingText ? <><Loader2 size={13} className="animate-spin" /> Saving...</> : 'Save text only'}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -2578,6 +2776,9 @@ interface ManReportProps {
     outfitNumber: number,
     newText: string,
   ) => Promise<OutfitSaveTextResult | null>;
+  onSaveComboGridText?: (
+    newText: string,
+  ) => Promise<ComboGridSaveTextResult | null>;
   onDraftOutfitSwap?: (input: {
     outfitNumber: number;
     reason: string;
@@ -2767,6 +2968,7 @@ function ManReport({
   adminMode,
   onRegenerateOutfit,
   onSaveOutfitText,
+  onSaveComboGridText,
   onDraftOutfitSwap,
   onApplyOutfitSwap,
   onRegenerateFaceImage,
@@ -2900,6 +3102,8 @@ function ManReport({
           key="s4g"
           text={sections.s4_combo_grids}
           comboGridCards={imageUrls?.comboGridCards}
+          adminMode={isAdminViewer}
+          onSaveComboGridText={onSaveComboGridText}
         />
       ),
     },

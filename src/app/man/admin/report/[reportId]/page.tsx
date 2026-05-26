@@ -63,6 +63,10 @@ interface OutfitSaveTextResult {
   updatedS4Outfits: string;
 }
 
+interface ComboGridSaveTextResult {
+  updatedComboGridText: string;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
   parsedPreview: {
@@ -377,6 +381,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const saveEdit = async () => {
     if (!report?.report_data || !editingSection) return;
     setSaving(true);
+    if (editingSection === 's4g') {
+      const result = await saveComboGridText(editText);
+      setSaving(false);
+      if (result) setEditingSection(null);
+      return;
+    }
+
     const field   = SECTION_FIELD_MAP[editingSection];
     const newData = {
       ...report.report_data,
@@ -523,6 +534,41 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     });
 
     return { updatedS4Outfits };
+  }, [reportId]);
+
+  const saveComboGridText = useCallback(async (
+    newText: string,
+  ): Promise<ComboGridSaveTextResult | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/save-combo-grid-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comboGridText: newText }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not save combination grid text.');
+      return null;
+    }
+
+    const updatedComboGridText = data.updatedComboGridText as string | undefined;
+    if (!updatedComboGridText) return null;
+
+    setReport(prev => {
+      if (!prev?.report_data) return prev;
+      return {
+        ...prev,
+        report_data: {
+          ...prev.report_data,
+          sections: {
+            ...prev.report_data.sections,
+            s4_combo_grids: updatedComboGridText,
+          } as ReportSections,
+        },
+      };
+    });
+    setError('');
+
+    return { updatedComboGridText };
   }, [reportId]);
 
   const draftOutfitSwap = useCallback(async (input: {
@@ -1072,6 +1118,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             onApplyFaceStyleSwap={applyFaceStyleSwap}
             onRegenerateOutfit={regenerateOutfit}
             onSaveOutfitText={saveOutfitText}
+            onSaveComboGridText={saveComboGridText}
             onDraftOutfitSwap={draftOutfitSwap}
             onApplyOutfitSwap={applyOutfitSwap}
             onRetryMissingImages={handleGenerateImages}

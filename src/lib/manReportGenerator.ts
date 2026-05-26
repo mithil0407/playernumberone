@@ -13,6 +13,7 @@ import {
   type ManReportQaIssue,
   type ManReportQaResult,
 } from './manReportQa';
+import { normaliseComboGridText } from './manComboGridSection';
 
 const OUTFIT_SKILL = readFileSync(
   join(process.cwd(), 'src/lib/outfitrecommendationskill.md'), 'utf-8'
@@ -618,15 +619,20 @@ FULL GENERATION CHECKLIST \u2014 ALL 20 MUST PASS BEFORE OUTPUT
 ## SECTION 5: YOUR COMBINATION GRID GUIDE
 
 Write copy for three custom 1-row x 3-column image grids that will be generated after the 20 outfit images. Each grid should define three related looks that show the client in the same visual system, not generic flat-lays.
+Do not use Markdown tables, pipe-delimited rows, or table separator syntax.
 
 ### Office Basic Combinations
-3 columns exactly. For each column: name, full outfit summary, why it suits this client, and which Office / Formal outfit it is derived from.
+Write exactly three looks, using this exact structure for each:
+#### [Look Name]
+- Outfit summary: [full outfit description]
+- Logic: [why it suits this client]
+- Source: Derived from Outfit #[Office / Formal outfit number]
 
 ### Evening Outfit Combinations
-3 columns exactly. For each column: name, full outfit summary, why it suits this client, and which Evening Wear outfit it is derived from.
+Write exactly three looks using the same four-line structure, derived from Evening Wear outfits.
 
 ### Relaxed Casual Combinations
-3 columns exactly. For each column: name, full outfit summary, why it suits this client, and which Relaxed Casual outfit it is derived from.
+Write exactly three looks using the same four-line structure, derived from Relaxed Casual outfits.
 
 ---
 
@@ -1475,8 +1481,47 @@ export async function repairSection4OutfitsUntilQaPass(
   return { section4, qa, repaired };
 }
 
+function buildComboGridRepairPrompt(classification: ClassificationResult, currentText: string): string {
+  return `You are repairing Section 5 of an ICONIK Men's Blueprint before it is shown to a client.
+
+Return ONLY the corrected Section 5 text. Do not include explanations, QA notes, or markdown fences.
+Never use Markdown tables, pipe-delimited rows, or table separator syntax.
+
+Required output:
+## SECTION 5: YOUR COMBINATION GRID GUIDE
+
+### Office Basic Combinations
+Exactly three looks derived from Office / Formal outfits.
+
+### Evening Outfit Combinations
+Exactly three looks derived from Evening Wear outfits.
+
+### Relaxed Casual Combinations
+Exactly three looks derived from Relaxed Casual outfits.
+
+Use this exact structure for every look:
+#### [Look Name]
+- Outfit summary: [full outfit description]
+- Logic: [why it suits this client]
+- Source: Derived from Outfit #[number]
+
+Client classification JSON:
+${JSON.stringify(classification, null, 2)}
+
+Current invalid Section 5 text:
+${currentText}`;
+}
+
 export async function runSection5(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {
-  return callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(5, classification, submission));
+  const raw = await callGeminiText(REPORT_SYSTEM_PROMPT, buildSectionUserPrompt(5, classification, submission));
+  const firstPass = normaliseComboGridText(raw);
+  if (firstPass.ok) return firstPass.text;
+
+  const repaired = await callGeminiText(REPORT_SYSTEM_PROMPT, buildComboGridRepairPrompt(classification, raw));
+  const secondPass = normaliseComboGridText(repaired);
+  if (secondPass.ok) return secondPass.text;
+
+  throw new Error(`Combination Grid text is invalid after repair: ${secondPass.error}`);
 }
 
 export async function runSection6Shopping(classification: ClassificationResult, submission: ManIntakeSubmission): Promise<string> {

@@ -7,6 +7,7 @@ import type { ReportData } from '@/lib/manReportGenerator';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { getAdminManReportById, loadAdminManReportByIdFresh } from '@/lib/manReportLoader';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
+import { normaliseComboGridText } from '@/lib/manComboGridSection';
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
@@ -66,8 +67,27 @@ export async function PATCH(
     if (body[field] !== undefined) update[field] = body[field];
   }
 
-  if (body.report_data?.classification && body.report_data?.sections?.s4_outfits) {
-    update.report_data = withManReportSection4Qa(body.report_data as ReportData);
+  if (body.report_data?.sections) {
+    const incomingComboText = body.report_data.sections.s4_combo_grids;
+    const existingComboText = (existingReport.report_data as ReportData | null)?.sections?.s4_combo_grids ?? '';
+    if (typeof incomingComboText === 'string' && incomingComboText !== existingComboText) {
+      const normalised = normaliseComboGridText(incomingComboText);
+      if (!normalised.ok) {
+        return NextResponse.json({ error: normalised.error }, { status: 400 });
+      }
+      update.report_data = {
+        ...body.report_data,
+        sections: {
+          ...body.report_data.sections,
+          s4_combo_grids: normalised.text,
+        },
+      };
+    }
+  }
+
+  const nextReportData = update.report_data as ReportData | undefined;
+  if (nextReportData?.classification && nextReportData?.sections?.s4_outfits) {
+    update.report_data = withManReportSection4Qa(nextReportData);
   }
 
   // When status transitions to 'sent', stamp sent_at
