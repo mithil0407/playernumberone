@@ -15,6 +15,7 @@ import type { FaceImageKind } from '@/lib/manImageGenerator';
 import type { ManReportQaIssue } from '@/lib/manReportQa';
 import {
   comboGridGroupTitle,
+  getComboGridGroupRawText,
   getComboGridGroupText,
   normaliseComboGridGroupText,
   normaliseComboGridText,
@@ -2361,8 +2362,6 @@ function ComboGridSection({
     { key: 'relaxed' as const, label: 'Relaxed Casual', title: 'Relaxed casual combinations', url: comboGridCards?.relaxed },
     { key: 'evening' as const, label: 'Evening', title: 'Evening outfit combinations', url: comboGridCards?.evening },
   ];
-  const activeGrid = grids.find(grid => grid.key === activeKind) ?? grids[0];
-  const activeGroup = parsedGroups.find(candidate => candidate.kind === activeKind);
   const editingGrid = editingKind ? grids.find(grid => grid.key === editingKind) : null;
   const hasContent = !!text || grids.some(grid => !!grid.url);
   const canEdit = adminMode && (!!onSaveComboGridText || !!onRegenerateComboGrid) && !!text;
@@ -2371,10 +2370,30 @@ function ComboGridSection({
 
   const startEdit = (kind: ComboGridKind) => {
     if (!text) return;
-    const groupText = getComboGridGroupText(text, kind);
+    const groupText = getComboGridGroupText(text, kind) ?? getComboGridGroupRawText(text, kind);
     if (!groupText) {
       setActiveKind(kind);
-      setEditError(`Could not locate ${comboGridGroupTitle(kind)} in the combination grid text.`);
+      setEditText([
+        `### ${comboGridGroupTitle(kind)}`,
+        '',
+        '#### Look 1',
+        '- Outfit summary: ',
+        '- Logic: ',
+        '- Source: ',
+        '',
+        '#### Look 2',
+        '- Outfit summary: ',
+        '- Logic: ',
+        '- Source: ',
+        '',
+        '#### Look 3',
+        '- Outfit summary: ',
+        '- Logic: ',
+        '- Source: ',
+      ].join('\n'));
+      setEditError(null);
+      setSectionNotice(null);
+      setEditingKind(kind);
       return;
     }
 
@@ -2485,16 +2504,18 @@ function ComboGridSection({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        <div className="space-y-7">
           {grids.map(grid => {
             const isRegenning = regeneratingKind === grid.key;
+            const group = parsedGroups.find(candidate => candidate.kind === grid.key);
+            const isActive = activeKind === grid.key;
             return (
-            <div key={grid.key} className="space-y-3">
+            <div key={grid.key} className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: ACCENT_INK }}>
                   {grid.title}
                 </p>
-                {activeKind === grid.key && (
+                {isActive && (
                   <span className="text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: SAGE }}>
                     Selected
                   </span>
@@ -2505,12 +2526,12 @@ function ComboGridSection({
                 style={{
                   background: SHELL,
                   border: `1px solid ${BORDER}`,
-                  aspectRatio: '16/9',
+                  aspectRatio: grid.url ? undefined : '16/9',
                 }}
               >
                 {grid.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={grid.url} alt={grid.title} loading="lazy" decoding="async" className="block w-full h-full object-contain" />
+                  <img src={grid.url} alt={grid.title} loading="lazy" decoding="async" className="block w-full h-auto" />
                 ) : (
                   <div className="h-full min-h-[220px] md:min-h-[320px] flex items-center justify-center px-6 text-center">
                     <span className="text-[12px]" style={{ color: INK_SOFT }}>Grid image pending</span>
@@ -2530,7 +2551,7 @@ function ComboGridSection({
                     setEditError(null);
                   }}
                   className="px-4 py-2 rounded-full text-[12px] font-medium"
-                  style={{ background: activeKind === grid.key ? ACCENT + '18' : SHELL, color: activeKind === grid.key ? ACCENT_INK : INK_SOFT, border: `1px solid ${BORDER}` }}
+                  style={{ background: isActive ? ACCENT + '18' : SHELL, color: isActive ? ACCENT_INK : INK_SOFT, border: `1px solid ${BORDER}` }}
                 >
                   Show text
                 </button>
@@ -2546,52 +2567,41 @@ function ComboGridSection({
                   </button>
                 )}
               </div>
+              {isActive && group && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  {group.looks.map(look => (
+                    <div
+                      key={look.name}
+                      className="rounded-2xl p-5"
+                      style={{ background: IVORY, border: `1px solid ${BORDER}` }}
+                    >
+                      <h4
+                        className="text-lg italic leading-snug mb-4"
+                        style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
+                      >
+                        {look.name}
+                      </h4>
+                      <div className="space-y-4">
+                        <div>
+                          <DataLabel>Outfit summary</DataLabel>
+                          <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{look.outfitSummary}</p>
+                        </div>
+                        <div>
+                          <DataLabel>Logic</DataLabel>
+                          <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{look.logic}</p>
+                        </div>
+                        <div>
+                          <DataLabel>Source</DataLabel>
+                          <p className="text-[11px] leading-relaxed" style={{ color: ACCENT_INK }}>{look.source}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )})}
         </div>
-
-        {activeGroup && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
-                {activeGrid.label}
-              </p>
-              <h3 className="text-2xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
-                {activeGrid.title}
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {activeGroup.looks.map(look => (
-                <div
-                  key={look.name}
-                  className="rounded-2xl p-5"
-                  style={{ background: IVORY, border: `1px solid ${BORDER}` }}
-                >
-                  <h4
-                    className="text-lg italic leading-snug mb-4"
-                    style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
-                  >
-                    {look.name}
-                  </h4>
-                  <div className="space-y-4">
-                    <div>
-                      <DataLabel>Outfit summary</DataLabel>
-                      <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{look.outfitSummary}</p>
-                    </div>
-                    <div>
-                      <DataLabel>Logic</DataLabel>
-                      <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{look.logic}</p>
-                    </div>
-                    <div>
-                      <DataLabel>Source</DataLabel>
-                      <p className="text-[11px] leading-relaxed" style={{ color: ACCENT_INK }}>{look.source}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {text && !parsed?.ok && (
           <div className="pt-6" style={{ borderTop: `1px solid ${BORDER}` }}>
