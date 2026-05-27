@@ -14,8 +14,12 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { FaceImageKind } from '@/lib/manImageGenerator';
 import type { ManReportQaIssue } from '@/lib/manReportQa';
 import {
+  comboGridGroupTitle,
+  getComboGridGroupText,
+  normaliseComboGridGroupText,
   normaliseComboGridText,
   stripComboGridTableSeparators,
+  type ComboGridKind,
 } from '@/lib/manComboGridSection';
 
 // ─────────────────────────────────────────────────────────────
@@ -1421,6 +1425,7 @@ interface ComboGridRegenerationResult {
   imageStatus: 'generated' | 'partial' | 'failed';
   gridErrors?: Partial<Record<'office' | 'evening' | 'relaxed', string>>;
   error?: string | null;
+  kind?: ComboGridKind | null;
 }
 
 interface OutfitSwapDraftResult {
@@ -2334,43 +2339,62 @@ function ComboGridSection({
   comboGridCards,
   adminMode,
   onSaveComboGridText,
-  onRegenerateComboGrids,
+  onRegenerateComboGrid,
 }: {
   text?: string;
   comboGridCards?: ResolvedImageUrls['comboGridCards'];
   adminMode?: boolean;
-  onSaveComboGridText?: (newText: string) => Promise<ComboGridSaveTextResult | null>;
-  onRegenerateComboGrids?: (newText: string) => Promise<ComboGridRegenerationResult | null>;
+  onSaveComboGridText?: (kind: ComboGridKind, newText: string) => Promise<ComboGridSaveTextResult | null>;
+  onRegenerateComboGrid?: (kind: ComboGridKind, newText: string) => Promise<ComboGridRegenerationResult | null>;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [activeKind, setActiveKind] = useState<ComboGridKind>('office');
+  const [editingKind, setEditingKind] = useState<ComboGridKind | null>(null);
   const [editText, setEditText] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
   const [sectionNotice, setSectionNotice] = useState<string | null>(null);
   const [savingText, setSavingText] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
+  const [regeneratingKind, setRegeneratingKind] = useState<ComboGridKind | null>(null);
   const parsed = useMemo(() => text ? normaliseComboGridText(text) : null, [text]);
-  const parsedGroups = parsed?.ok ? parsed.groups : [];
+  const parsedGroups = parsed?.groups ?? [];
   const grids = [
-    { key: 'office' as const, label: 'Office basic combinations', url: comboGridCards?.office },
-    { key: 'evening' as const, label: 'Evening outfit combinations', url: comboGridCards?.evening },
-    { key: 'relaxed' as const, label: 'Relaxed casual combinations', url: comboGridCards?.relaxed },
+    { key: 'office' as const, label: 'Formal', title: 'Formal outfit combinations', url: comboGridCards?.office },
+    { key: 'relaxed' as const, label: 'Relaxed Casual', title: 'Relaxed casual combinations', url: comboGridCards?.relaxed },
+    { key: 'evening' as const, label: 'Evening', title: 'Evening outfit combinations', url: comboGridCards?.evening },
   ];
+  const activeGrid = grids.find(grid => grid.key === activeKind) ?? grids[0];
+  const activeGroup = parsedGroups.find(candidate => candidate.kind === activeKind);
+  const editingGrid = editingKind ? grids.find(grid => grid.key === editingKind) : null;
   const hasContent = !!text || grids.some(grid => !!grid.url);
-  const canEdit = adminMode && (!!onSaveComboGridText || !!onRegenerateComboGrids) && !!text;
+  const canEdit = adminMode && (!!onSaveComboGridText || !!onRegenerateComboGrid) && !!text;
   if (!hasContent) return null;
-  const isBusy = savingText || regenerating;
+  const isBusy = savingText || !!regeneratingKind;
 
-  const startEdit = () => {
+  const startEdit = (kind: ComboGridKind) => {
     if (!text) return;
-    setEditText(text);
+    const groupText = getComboGridGroupText(text, kind);
+    if (!groupText) {
+      setActiveKind(kind);
+      setEditError(`Could not locate ${comboGridGroupTitle(kind)} in the combination grid text.`);
+      return;
+    }
+
+    setActiveKind(kind);
+    setEditText(groupText);
     setEditError(null);
     setSectionNotice(null);
-    setEditing(true);
+    setEditingKind(kind);
+  };
+
+  const closeEdit = () => {
+    if (isBusy) return;
+    setEditingKind(null);
+    setEditText('');
+    setEditError(null);
   };
 
   const handleSaveText = async () => {
-    if (!onSaveComboGridText) return;
-    const validation = normaliseComboGridText(editText);
+    if (!editingKind || !onSaveComboGridText) return;
+    const validation = normaliseComboGridGroupText(editingKind, editText);
     if (!validation.ok) {
       setEditError(validation.error);
       return;
@@ -2380,51 +2404,49 @@ function ComboGridSection({
     setEditError(null);
     setSectionNotice(null);
     try {
-      const result = await onSaveComboGridText(editText);
+      const result = await onSaveComboGridText(editingKind, validation.text);
       if (!result) {
         setEditError('Could not save combination grid text. Please try again.');
         return;
       }
-      setEditing(false);
-      setSectionNotice('Combination grid text saved. Existing images were not changed.');
+      setSectionNotice(`${editingGrid?.label ?? 'Combination grid'} text saved. Existing images were not changed.`);
+      setEditingKind(null);
+      setEditText('');
     } finally {
       setSavingText(false);
     }
   };
 
   const handleRegenerate = async () => {
-    if (!onRegenerateComboGrids) return;
-    const validation = normaliseComboGridText(editText);
+    if (!editingKind || !onRegenerateComboGrid) return;
+    const kind = editingKind;
+    const label = editingGrid?.label ?? 'Combination grid';
+    const validation = normaliseComboGridGroupText(kind, editText);
     if (!validation.ok) {
       setEditError(validation.error);
       return;
     }
 
-    setRegenerating(true);
+    setRegeneratingKind(kind);
     setEditError(null);
     setSectionNotice(null);
     try {
-      const result = await onRegenerateComboGrids(editText);
+      const result = await onRegenerateComboGrid(kind, validation.text);
       if (!result) {
-        setEditError('Could not regenerate combination grid images. Please try again.');
+        setEditError('Could not regenerate this combination grid image. Please try again.');
         return;
       }
 
-      setEditing(false);
+      setEditingKind(null);
+      setEditText('');
       if (result.imageStatus === 'generated') {
-        setSectionNotice('Combination grid text saved and all 3 grid images were regenerated.');
+        setSectionNotice(`${label} text saved and its grid image was regenerated.`);
         return;
       }
 
-      const failedLabels = Object.keys(result.gridErrors ?? {})
-        .map(key => key.charAt(0).toUpperCase() + key.slice(1))
-        .join(', ');
-      setSectionNotice(result.imageStatus === 'partial'
-        ? `Combination grid text saved. Some grid images regenerated, but ${failedLabels || 'some grids'} failed.`
-        : 'Combination grid text saved, but grid images could not be regenerated.'
-      );
+      setSectionNotice(`${label} text saved, but its grid image could not be regenerated.`);
     } finally {
-      setRegenerating(false);
+      setRegeneratingKind(null);
     }
   };
 
@@ -2432,89 +2454,145 @@ function ComboGridSection({
     <div style={{ background: '#fff' }}>
       <SectionHeader number="05" label="Combination Grids" />
       <div className="px-6 md:px-12 pb-14 space-y-8">
-        {(canEdit || sectionNotice) && (
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            {sectionNotice ? (
-              <div
-                className="flex items-start gap-2 rounded-2xl px-4 py-3"
-                style={{ background: '#f4efe4', border: `1px solid ${BORDER}`, color: INK_SOFT }}
-              >
-                <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                <p className="text-[12px] leading-relaxed">{sectionNotice}</p>
-              </div>
-            ) : <div />}
-            {canEdit && (
+        <div className="flex flex-col gap-4">
+          {sectionNotice && (
+            <div
+              className="flex items-start gap-2 rounded-2xl px-4 py-3"
+              style={{ background: '#f4efe4', border: `1px solid ${BORDER}`, color: INK_SOFT }}
+            >
+              <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+              <p className="text-[12px] leading-relaxed">{sectionNotice}</p>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {grids.map(grid => (
               <button
-                onClick={startEdit}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-[12px] font-medium flex-shrink-0"
-                style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                key={grid.key}
+                onClick={() => {
+                  setActiveKind(grid.key);
+                  setEditError(null);
+                }}
+                className="px-4 py-2 rounded-full text-[12px] font-medium"
+                style={{
+                  background: activeKind === grid.key ? ACCENT : SHELL,
+                  color: activeKind === grid.key ? '#fff' : INK_SOFT,
+                  border: `1px solid ${activeKind === grid.key ? ACCENT : BORDER}`,
+                }}
               >
-                <Pencil size={12} />
-                Advanced edit
-              </button>
-            )}
-          </div>
-        )}
-        <div className="space-y-7">
-          {grids.map(grid => {
-            const group = parsedGroups.find(candidate => candidate.kind === grid.key);
-            return (
-            <div key={grid.key} className="space-y-4">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-4" style={{ color: ACCENT_INK }}>
                 {grid.label}
-              </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          {grids.map(grid => {
+            const isRegenning = regeneratingKind === grid.key;
+            return (
+            <div key={grid.key} className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: ACCENT_INK }}>
+                  {grid.title}
+                </p>
+                {activeKind === grid.key && (
+                  <span className="text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: SAGE }}>
+                    Selected
+                  </span>
+                )}
+              </div>
               <div
-                className="overflow-hidden rounded-3xl"
+                className="overflow-hidden rounded-3xl relative"
                 style={{
                   background: SHELL,
                   border: `1px solid ${BORDER}`,
-                  aspectRatio: grid.url ? undefined : '16/9',
+                  aspectRatio: '16/9',
                 }}
               >
                 {grid.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={grid.url} alt={grid.label} loading="lazy" decoding="async" className="block w-full h-auto" />
+                  <img src={grid.url} alt={grid.title} loading="lazy" decoding="async" className="block w-full h-full object-contain" />
                 ) : (
                   <div className="h-full min-h-[220px] md:min-h-[320px] flex items-center justify-center px-6 text-center">
                     <span className="text-[12px]" style={{ color: INK_SOFT }}>Grid image pending</span>
                   </div>
                 )}
+                {isRegenning && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2" style={{ background: 'rgba(27,24,21,0.55)' }}>
+                    <Loader2 size={26} className="animate-spin" style={{ color: '#fff' }} />
+                    <span className="text-[11px] font-medium tracking-wide text-white">Generating...</span>
+                  </div>
+                )}
               </div>
-              {group && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                  {group.looks.map(look => (
-                    <div
-                      key={look.name}
-                      className="rounded-2xl p-5"
-                      style={{ background: IVORY, border: `1px solid ${BORDER}` }}
-                    >
-                      <h4
-                        className="text-lg italic leading-snug mb-4"
-                        style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
-                      >
-                        {look.name}
-                      </h4>
-                      <div className="space-y-4">
-                        <div>
-                          <DataLabel>Outfit summary</DataLabel>
-                          <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{look.outfitSummary}</p>
-                        </div>
-                        <div>
-                          <DataLabel>Logic</DataLabel>
-                          <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{look.logic}</p>
-                        </div>
-                        <div>
-                          <DataLabel>Source</DataLabel>
-                          <p className="text-[11px] leading-relaxed" style={{ color: ACCENT_INK }}>{look.source}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setActiveKind(grid.key);
+                    setEditError(null);
+                  }}
+                  className="px-4 py-2 rounded-full text-[12px] font-medium"
+                  style={{ background: activeKind === grid.key ? ACCENT + '18' : SHELL, color: activeKind === grid.key ? ACCENT_INK : INK_SOFT, border: `1px solid ${BORDER}` }}
+                >
+                  Show text
+                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => startEdit(grid.key)}
+                    disabled={isBusy}
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
+                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                  >
+                    <Pencil size={12} />
+                    Advanced edit
+                  </button>
+                )}
+              </div>
             </div>
           )})}
         </div>
+
+        {activeGroup && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
+                {activeGrid.label}
+              </p>
+              <h3 className="text-2xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                {activeGrid.title}
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {activeGroup.looks.map(look => (
+                <div
+                  key={look.name}
+                  className="rounded-2xl p-5"
+                  style={{ background: IVORY, border: `1px solid ${BORDER}` }}
+                >
+                  <h4
+                    className="text-lg italic leading-snug mb-4"
+                    style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
+                  >
+                    {look.name}
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <DataLabel>Outfit summary</DataLabel>
+                      <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{look.outfitSummary}</p>
+                    </div>
+                    <div>
+                      <DataLabel>Logic</DataLabel>
+                      <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{look.logic}</p>
+                    </div>
+                    <div>
+                      <DataLabel>Source</DataLabel>
+                      <p className="text-[11px] leading-relaxed" style={{ color: ACCENT_INK }}>{look.source}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {text && !parsed?.ok && (
           <div className="pt-6" style={{ borderTop: `1px solid ${BORDER}` }}>
             <RenderMarkdown text={stripComboGridTableSeparators(text)} />
@@ -2523,7 +2601,7 @@ function ComboGridSection({
       </div>
 
       <AnimatePresence>
-        {editing && (
+        {editingKind && editingGrid && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center px-4"
             style={{ background: 'rgba(27,24,21,0.58)' }}
@@ -2546,11 +2624,11 @@ function ComboGridSection({
                     Advanced edit
                   </p>
                   <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
-                    Combination grid copy
+                    {editingGrid.label}
                   </p>
                 </div>
                 <button
-                  onClick={() => setEditing(false)}
+                  onClick={closeEdit}
                   disabled={isBusy}
                   className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
                   style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
@@ -2561,7 +2639,7 @@ function ComboGridSection({
 
               <div className="p-6 flex-1 min-h-0 flex flex-col gap-3">
                 <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  Each of Office, Evening, and Relaxed Casual must include three looks with Outfit summary, Logic, and Source fields. Markdown tables are converted to this card format on save.
+                  This category must include three looks with Outfit summary, Logic, and Source fields. Saving here changes only the {editingGrid.label} grid.
                 </p>
                 {editError && (
                   <div className="flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: '#fff2f2', color: OXBLOOD }}>
@@ -2583,11 +2661,11 @@ function ComboGridSection({
 
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  Save text only keeps the existing generated grid images intact.
+                  Save text only keeps the current image intact. Save + regenerate replaces only this grid image.
                 </p>
                 <div className="flex items-center justify-end gap-2">
                   <button
-                    onClick={() => setEditing(false)}
+                    onClick={closeEdit}
                     disabled={isBusy}
                     className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                     style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
@@ -2605,7 +2683,7 @@ function ComboGridSection({
                   >
                     {savingText ? <><Loader2 size={13} className="animate-spin" /> Saving...</> : 'Save text only'}
                   </motion.button>
-                  {onRegenerateComboGrids && (
+                  {onRegenerateComboGrid && (
                     <motion.button
                       onClick={handleRegenerate}
                       disabled={isBusy || !editText.trim()}
@@ -2615,9 +2693,9 @@ function ComboGridSection({
                       whileTap={!isBusy ? { scale: 0.98 } : undefined}
                       transition={SPRING}
                     >
-                      {regenerating
+                      {!!regeneratingKind
                         ? <><Loader2 size={13} className="animate-spin" /> Saving + regenerating...</>
-                        : 'Save + regenerate images'
+                        : 'Save + regenerate image'
                       }
                     </motion.button>
                   )}
@@ -2842,9 +2920,11 @@ interface ManReportProps {
     newText: string,
   ) => Promise<OutfitSaveTextResult | null>;
   onSaveComboGridText?: (
+    kind: ComboGridKind,
     newText: string,
   ) => Promise<ComboGridSaveTextResult | null>;
-  onRegenerateComboGrids?: (
+  onRegenerateComboGrid?: (
+    kind: ComboGridKind,
     newText: string,
   ) => Promise<ComboGridRegenerationResult | null>;
   onDraftOutfitSwap?: (input: {
@@ -3037,7 +3117,7 @@ function ManReport({
   onRegenerateOutfit,
   onSaveOutfitText,
   onSaveComboGridText,
-  onRegenerateComboGrids,
+  onRegenerateComboGrid,
   onDraftOutfitSwap,
   onApplyOutfitSwap,
   onRegenerateFaceImage,
@@ -3173,7 +3253,7 @@ function ManReport({
           comboGridCards={imageUrls?.comboGridCards}
           adminMode={isAdminViewer}
           onSaveComboGridText={onSaveComboGridText}
-          onRegenerateComboGrids={onRegenerateComboGrids}
+          onRegenerateComboGrid={onRegenerateComboGrid}
         />
       ),
     },

@@ -9,6 +9,7 @@ import { SPRING } from '@/lib/reportAnimations';
 import ManReport from '@/components/ManReport';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, FaceImageKind } from '@/lib/manImageGenerator';
+import type { ComboGridKind } from '@/lib/manComboGridSection';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ interface ComboGridRegenerationResult {
   imageStatus: 'generated' | 'partial' | 'failed';
   gridErrors?: Partial<Record<'office' | 'evening' | 'relaxed', string>>;
   error?: string | null;
+  kind?: ComboGridKind | null;
 }
 
 interface OutfitSwapDraftResult {
@@ -545,12 +547,16 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   }, [reportId]);
 
   const saveComboGridText = useCallback(async (
-    newText: string,
+    kindOrText: ComboGridKind | string,
+    maybeText?: string,
   ): Promise<ComboGridSaveTextResult | null> => {
+    const scoped = maybeText !== undefined;
+    const kind = scoped ? kindOrText as ComboGridKind : null;
+    const newText = scoped ? maybeText! : kindOrText;
     const res = await fetch(`/api/man-report/${reportId}/save-combo-grid-text`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comboGridText: newText }),
+      body: JSON.stringify(kind ? { kind, comboGridText: newText } : { comboGridText: newText }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -579,13 +585,14 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return { updatedComboGridText };
   }, [reportId]);
 
-  const regenerateComboGrids = useCallback(async (
+  const regenerateComboGrid = useCallback(async (
+    kind: ComboGridKind,
     newText: string,
   ): Promise<ComboGridRegenerationResult | null> => {
     const res = await fetch(`/api/man-report/${reportId}/regenerate-combo-grids`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comboGridText: newText, imageModel }),
+      body: JSON.stringify({ kind, comboGridText: newText, imageModel }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -1188,7 +1195,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             onRegenerateOutfit={regenerateOutfit}
             onSaveOutfitText={saveOutfitText}
             onSaveComboGridText={saveComboGridText}
-            onRegenerateComboGrids={regenerateComboGrids}
+            onRegenerateComboGrid={regenerateComboGrid}
             onDraftOutfitSwap={draftOutfitSwap}
             onApplyOutfitSwap={applyOutfitSwap}
             onRetryMissingImages={handleGenerateImages}

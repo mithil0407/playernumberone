@@ -17,6 +17,10 @@ export type ComboGridNormaliseResult =
   | { ok: true; text: string; groups: ParsedComboGridGroup[] }
   | { ok: false; error: string; groups: ParsedComboGridGroup[] };
 
+export type ComboGridGroupNormaliseResult =
+  | { ok: true; text: string; group: ParsedComboGridGroup }
+  | { ok: false; error: string; groups: ParsedComboGridGroup[] };
+
 const COMBO_GRID_GROUPS: Array<{ kind: ComboGridKind; title: string; headingPattern: RegExp }> = [
   { kind: 'office', title: 'Office Basic Combinations', headingPattern: /\boffice\b|\bformal\b/i },
   { kind: 'evening', title: 'Evening Outfit Combinations', headingPattern: /\bevening\b/i },
@@ -43,6 +47,10 @@ function fieldValue(block: string, labels: string[]): string {
 
 function groupDetails(kind: ComboGridKind) {
   return COMBO_GRID_GROUPS.find(group => group.kind === kind)!;
+}
+
+export function comboGridGroupTitle(kind: ComboGridKind): string {
+  return groupDetails(kind).title;
 }
 
 function kindFromHeading(heading: string): ComboGridKind | null {
@@ -146,7 +154,13 @@ export function parseComboGridText(text: string): ParsedComboGridGroup[] {
 
 export function serialiseComboGridText(groups: ParsedComboGridGroup[]): string {
   const orderedGroups = COMBO_GRID_GROUPS.map(({ kind }) => groups.find(group => group.kind === kind)!);
-  const sections = orderedGroups.map(group => [
+  const sections = orderedGroups.map(serialiseComboGridGroup);
+
+  return `## SECTION 5: YOUR COMBINATION GRID GUIDE\n\n${sections.join('\n\n')}`;
+}
+
+export function serialiseComboGridGroup(group: ParsedComboGridGroup): string {
+  return [
     `### ${group.title}`,
     '',
     ...group.looks.flatMap(look => [
@@ -156,9 +170,21 @@ export function serialiseComboGridText(groups: ParsedComboGridGroup[]): string {
       `- Source: ${look.source}`,
       '',
     ]),
-  ].join('\n').trimEnd());
+  ].join('\n').trimEnd();
+}
 
-  return `## SECTION 5: YOUR COMBINATION GRID GUIDE\n\n${sections.join('\n\n')}`;
+function validateGroupCompleteness(group: ParsedComboGridGroup): string | null {
+  if (
+    group.looks.length !== 3 ||
+    group.looks.some(look => REQUIRED_FIELD_NAMES.some(field => {
+      if (field === 'outfit summary') return !look.outfitSummary;
+      return !look[field];
+    }))
+  ) {
+    return `${group.title} must include exactly three complete looks.`;
+  }
+
+  return null;
 }
 
 export function normaliseComboGridText(text: string): ComboGridNormaliseResult {
@@ -181,19 +207,81 @@ export function normaliseComboGridText(text: string): ComboGridNormaliseResult {
     };
   }
 
-  const invalidGroup = groups.find(group =>
-    group.looks.length !== 3 ||
-    group.looks.some(look => REQUIRED_FIELD_NAMES.some(field => {
-      if (field === 'outfit summary') return !look.outfitSummary;
-      return !look[field];
-    })),
-  );
+  const invalidGroup = groups.find(group => validateGroupCompleteness(group));
   if (invalidGroup) {
-    return { ok: false, error: `${invalidGroup.title} must include exactly three complete looks.`, groups };
+    return { ok: false, error: validateGroupCompleteness(invalidGroup)!, groups };
   }
 
   const orderedGroups = COMBO_GRID_GROUPS.map(({ kind }) => groups.find(group => group.kind === kind)!);
   return { ok: true, text: serialiseComboGridText(orderedGroups), groups: orderedGroups };
+}
+
+export function normaliseComboGridGroupText(kind: ComboGridKind, text: string): ComboGridGroupNormaliseResult {
+  const groupText = text.trim();
+  const wrappedText = /^###\s+/im.test(groupText)
+    ? groupText
+    : `### ${groupDetails(kind).title}\n\n${groupText}`;
+  const groups = parseComboGridText(wrappedText);
+  const matchingGroups = groups.filter(group => group.kind === kind);
+  const unexpectedGroup = groups.find(group => group.kind !== kind);
+
+  if (unexpectedGroup) {
+    return {
+      ok: false,
+      error: `This editor only accepts ${groupDetails(kind).title}. Remove the ${unexpectedGroup.title} section.`,
+      groups,
+    };
+  }
+
+  if (matchingGroups.length !== 1) {
+    return {
+      ok: false,
+      error: `${groupDetails(kind).title} must include exactly three complete looks.`,
+      groups,
+    };
+  }
+
+  const error = validateGroupCompleteness(matchingGroups[0]);
+  if (error) return { ok: false, error, groups };
+
+  return {
+    ok: true,
+    text: serialiseComboGridGroup(matchingGroups[0]),
+    group: matchingGroups[0],
+  };
+}
+
+export function getComboGridGroupText(text: string, kind: ComboGridKind): string | null {
+  const group = parseComboGridText(text).find(candidate => candidate.kind === kind);
+  return group ? serialiseComboGridGroup(group) : null;
+}
+
+export function mergeComboGridGroupText(
+  fullText: string,
+  kind: ComboGridKind,
+  groupText: string,
+): ComboGridNormaliseResult {
+  const normalisedFull = normaliseComboGridText(fullText);
+  if (!normalisedFull.ok) return normalisedFull;
+
+  const normalisedGroup = normaliseComboGridGroupText(kind, groupText);
+  if (!normalisedGroup.ok) {
+    return {
+      ok: false,
+      error: normalisedGroup.error,
+      groups: normalisedGroup.groups,
+    };
+  }
+
+  const nextGroups = normalisedFull.groups.map(group =>
+    group.kind === kind ? normalisedGroup.group : group,
+  );
+
+  return {
+    ok: true,
+    text: serialiseComboGridText(nextGroups),
+    groups: nextGroups,
+  };
 }
 
 export function stripComboGridTableSeparators(text: string): string {

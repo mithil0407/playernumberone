@@ -17,7 +17,12 @@ import type { ClassificationResult, ReportSections } from './manReportGenerator'
 import type { ManIntakeSubmission } from './supabaseMan';
 import { revalidateManReportCache } from './manReportCache';
 import { parseManOutfitsFromSection } from './manOutfitSection';
-import { normaliseComboGridText, type ParsedComboGridGroup } from './manComboGridSection';
+import {
+  normaliseComboGridGroupText,
+  normaliseComboGridText,
+  type ComboGridKind,
+  type ParsedComboGridGroup,
+} from './manComboGridSection';
 
 const ai     = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MODEL  = 'gemini-3.1-flash-image-preview';
@@ -375,8 +380,6 @@ The lighting must be professional studio high-key lighting for a clean lookbook 
 
 Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the vertical frame from head to toe with minimal headroom and no cropping at the feet.`;
 }
-
-type ComboGridKind = 'office' | 'evening' | 'relaxed';
 
 export interface ComboGridRegenerationImagesResult {
   paths: NonNullable<ManReportImagePaths['comboGridCards']>;
@@ -1113,6 +1116,43 @@ export async function regenerateComboGridImagesFromText(
   }
 
   return { paths: result, errors };
+}
+
+export async function regenerateSingleComboGridImageFromText(
+  reportId: string,
+  kind: ComboGridKind,
+  comboGridGroupText: string,
+  basePhotoUrl: string,
+  classification: ClassificationResult,
+  groomingReferenceUrl: string | null | undefined,
+  imageModel: string = MODEL,
+): Promise<string> {
+  const normalised = normaliseComboGridGroupText(kind, comboGridGroupText);
+  if (!normalised.ok) throw new Error(normalised.error);
+
+  const fetchGroomingRef = async (): Promise<{ data: string; mimeType: string } | undefined> => {
+    if (!groomingReferenceUrl) return undefined;
+    try {
+      return fetchAsBase64(groomingReferenceUrl);
+    } catch {
+      console.warn('[regenerateSingleComboGridImageFromText] Could not fetch original headshot grooming reference — proceeding without it');
+    }
+    return undefined;
+  };
+
+  const [{ data: baseData, mimeType: baseMime }, groomingRef] = await Promise.all([
+    fetchAsBase64(basePhotoUrl),
+    fetchGroomingRef(),
+  ]);
+
+  const outputBase64 = await withRetry(() =>
+    callGeminiImageEdit(baseData, baseMime, buildEditedComboGridPrompt(normalised.group, classification), imageModel, groomingRef),
+    3,
+    4_000,
+  );
+  const path = await uploadToStorage(reportId, outputBase64, `combo_grid_${kind}.jpg`);
+  console.log(`[regenerateSingleComboGridImageFromText] Combo grid ${kind} saved: ${path}`);
+  return path;
 }
 
 /**

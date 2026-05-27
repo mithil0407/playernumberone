@@ -3,8 +3,20 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
 import type { ReportData } from '@/lib/manReportGenerator';
-import { normaliseComboGridText } from '@/lib/manComboGridSection';
+import {
+  mergeComboGridGroupText,
+  normaliseComboGridText,
+  type ComboGridKind,
+} from '@/lib/manComboGridSection';
 import { revalidateManReportCache } from '@/lib/manReportCache';
+
+const COMBO_GRID_KINDS = new Set<ComboGridKind>(['office', 'evening', 'relaxed']);
+
+function parseComboGridKind(value: unknown): ComboGridKind | null {
+  return typeof value === 'string' && COMBO_GRID_KINDS.has(value as ComboGridKind)
+    ? value as ComboGridKind
+    : null;
+}
 
 export async function POST(
   request: NextRequest,
@@ -19,13 +31,12 @@ export async function POST(
   const { reportId } = await params;
   const body = await request.json();
   const comboGridText = String(body?.comboGridText ?? '').trim();
+  const kind = parseComboGridKind(body?.kind);
+  if (body?.kind !== undefined && !kind) {
+    return NextResponse.json({ error: 'Invalid combo grid kind' }, { status: 400 });
+  }
   if (!comboGridText) {
     return NextResponse.json({ error: 'comboGridText is required' }, { status: 400 });
-  }
-
-  const normalised = normaliseComboGridText(comboGridText);
-  if (!normalised.ok) {
-    return NextResponse.json({ error: normalised.error }, { status: 400 });
   }
 
   const { data: report, error } = await supabaseAdmin
@@ -39,6 +50,14 @@ export async function POST(
   }
 
   const reportData = report.report_data as ReportData;
+  const existingComboText = reportData.sections.s4_combo_grids ?? '';
+  const normalised = kind
+    ? mergeComboGridGroupText(existingComboText, kind, comboGridText)
+    : normaliseComboGridText(comboGridText);
+  if (!normalised.ok) {
+    return NextResponse.json({ error: normalised.error }, { status: 400 });
+  }
+
   const nextReportData: ReportData = {
     ...reportData,
     sections: {
@@ -61,5 +80,5 @@ export async function POST(
 
   await revalidateManReportCache(reportId, report.share_token ?? null);
 
-  return NextResponse.json({ updatedComboGridText: normalised.text });
+  return NextResponse.json({ updatedComboGridText: normalised.text, kind });
 }
