@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
 import { saveManIntakeSubmission, uploadManIntakePhoto } from '@/lib/supabaseMan';
 import { trackPageView, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
+import { MAN_PRICING } from '@/lib/manPricing';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -610,7 +611,7 @@ function ManIntakePageInner() {
             };
 
             // Move to confirmation immediately — save + notify fire-and-forget
-            trackCompleteRegistration(3299, 'ICONIK Blueprint Man — Intake Submitted', 'INR');
+            trackCompleteRegistration(MAN_PRICING.IN.basePrice, 'ICONIK Blueprint Man — Intake Submitted', MAN_PRICING.IN.currency);
             setDirection(1);
             setStep(CONFIRMATION_STEP);
 

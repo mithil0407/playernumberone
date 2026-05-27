@@ -396,7 +396,7 @@ export default function ManCheckoutPage() {
                     'Facial Architecture Analysis™ — collar, eyewear, hair',
                     'Grooming & Hair Blueprint',
                     'Created by an ICONIK Stylist — personally reviewed',
-                    '16 Complete Outfit Formulas — office, casual, occasion',
+                    '20 Complete Outfit Formulas — office, casual, occasion',
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 md:gap-3">
                       <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />

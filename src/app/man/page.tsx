@@ -35,7 +35,7 @@ const blueprintItems = [
     { icon: <Trophy className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Geometric Frame Profile', desc: 'Your exact frame type with technical rationale — what cuts and silhouettes flatter every proportion.' },
     { icon: <Award className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Facial Architecture Profile', desc: 'Your face shape with structure-specific collar, eyewear, and hairstyle recommendations.' },
     { icon: <Sparkles className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Chromatic Harmony Map', desc: 'Your personal colour palette: 10 exact colours that work for your undertone + depth.' },
-    { icon: <Gem className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Outfit Formulas', desc: '16 complete outfits (shirt, trousers, footwear, outerwear) built specifically for your frame — office, casual, Indian occasion, weekend.' },
+    { icon: <Gem className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Outfit Formulas', desc: '20 complete outfits (shirt, trousers, footwear, outerwear) built specifically for your frame — office, casual, Indian occasion, weekend.' },
     { icon: <Shield className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Fit & Proportion Solutions', desc: 'Your specific concern — broad shoulders, narrow frame, belly — addressed with the exact cuts that solve it.' },
     { icon: <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Created by an ICONIK Stylist', desc: 'Your Blueprint is personally reviewed and built by an ICONIK stylist — not a quiz, not an algorithm.' },
     { icon: <Award className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'What to Avoid', desc: 'Cuts, colours, and silhouettes that will never serve you — and exactly why.' },
@@ -175,7 +175,7 @@ export default function ManLandingPage() {
 
                         {/* Subheadline */}
                         <p className="text-sm md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
-                            Get <span className="font-semibold text-luxury-accent">16 personalised outfits</span>, your{' '}
+                            Get <span className="font-semibold text-luxury-accent">20 personalised outfits</span>, your{' '}
                             <span className="font-semibold text-luxury-green">colour palette</span>, and a{' '}
                             <span className="font-semibold text-luxury-accent">created by an ICONIK stylist</span> — built for how men actually dress.{' '}
                             <span className="font-semibold text-luxury-accent">{isLoading ? '...' : pricing.displayBase}.</span>
@@ -318,7 +318,7 @@ export default function ManLandingPage() {
                                 <div className="mt-4 flex flex-wrap gap-3">
                                     <span className="px-4 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Athletic Build</span>
                                     <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">Oval Face</span>
-                                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">16 Ensembles</span>
+                                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">20 Ensembles</span>
                                 </div>
                             </div>
 
@@ -460,7 +460,7 @@ export default function ManLandingPage() {
                             {/* Section 04: Outfit Formulas */}
                             <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] bg-[#faf9f6] flex items-center gap-3">
                                 <div className="h-px flex-1 bg-[#e8e4de]" />
-                                <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 04 — Your 16 Outfit Formulas</span>
+                                <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 04 — Your 20 Outfit Formulas</span>
                                 <div className="h-px flex-1 bg-[#e8e4de]" />
                             </div>
 
@@ -898,7 +898,7 @@ export default function ManLandingPage() {
                         {[
                             { step: '01', title: 'Purchase & Fill In', desc: 'Complete your purchase. Upload two photos — one full body, one headshot. Fill in 8 questions about your lifestyle and goals. Takes 4 minutes.' },
                             { step: '02', title: 'We Analyse', desc: 'Our proprietary ICONIK methodology analyses your frame, colour profile, and facial architecture — built specifically for how men dress.' },
-                            { step: '03', title: 'You Receive', desc: 'Your personalised Blueprint arrives within 72 hours. 16 outfits, your colour palette, your face architecture guide. Yours to keep forever.' },
+                            { step: '03', title: 'You Receive', desc: 'Your personalised Blueprint arrives within 72 hours. 20 outfits, your colour palette, your face architecture guide. Yours to keep forever.' },
                         ].map((s, i) => (
                             <div
                                 key={i}

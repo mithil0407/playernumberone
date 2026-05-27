@@ -5,14 +5,14 @@ export const MAN_PRICING = {
   IN: {
     currency: 'INR',
     symbol: '₹',
-    basePrice: 3299,
+    basePrice: 2699,
     originalPrice: 5999,
     addonPrice: 999,
-    displayBase: '₹3,299',
+    displayBase: '₹2,699',
     displayOriginal: '₹5,999',
     displayAddon: '₹999',
-    savings: 5999 - 3299,
-    displaySavings: '₹2,700',
+    savings: 5999 - 2699,
+    displaySavings: '₹3,300',
   },
   INTL: {
     currency: 'USD',
