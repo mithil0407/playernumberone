@@ -86,7 +86,7 @@ function StylistSuccessInner() {
             key,
             subscription_id: subscriptionId,
             name: 'ICONIK Style Intelligence',
-            description: 'THE ICONIK EDIT — $39/month · Starts after Blueprint delivery',
+            description: 'THE ICONIK EDIT — $39/month',
             handler: () => {
                 localStorage.setItem('stylist_editPurchased', 'true');
                 localStorage.removeItem('stylist_editSubscriptionId');
@@ -192,7 +192,6 @@ function StylistSuccessInner() {
                     </p>
                     <p className="luxury-body text-luxury-charcoal/60 leading-relaxed mb-8">
                         Your Blueprint arrives within <strong className="text-luxury-charcoal">72 hours</strong> of completing the intake form.
-                        Your Edit begins the day it&apos;s delivered.
                     </p>
                     <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
                         <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
@@ -200,7 +199,7 @@ function StylistSuccessInner() {
                             'Check your email for your intake form link',
                             'Complete the intake form (takes 7 minutes)',
                             'Receive your personalised Blueprint within 72 hours',
-                            'Your ICONIK Edit activates automatically on delivery day',
+                            'Your ICONIK Edit is active — your first drop arrives within 72 hours',
                         ].map((step, i) => (
                             <div key={i} className="flex items-center gap-3">
                                 <div className="w-6 h-6 bg-luxury-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -263,7 +262,7 @@ function StylistSuccessInner() {
                             ))}
                         </div>
                         <p className="luxury-body text-luxury-charcoal/40 text-xs">
-                            No charge today. First billing begins the day your Blueprint is delivered.
+                            $39 billed today · Then monthly · Cancel anytime
                         </p>
                     </div>
 

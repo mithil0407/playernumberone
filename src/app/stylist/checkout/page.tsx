@@ -118,14 +118,10 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
 
                 {/* Pricing footnote */}
                 <p className="luxury-body text-luxury-charcoal/40 text-[10px]">
-                    ${EDIT_PRICE}/month · Billed monthly · Cancel anytime
+                    ${EDIT_PRICE} billed today · Then monthly · Cancel anytime
                 </p>
             </div>
 
-            {/* Timing note */}
-            <p className="luxury-body text-luxury-charcoal/40 text-xs text-center mt-2">
-                Your Edit begins the day your Blueprint is delivered.
-            </p>
         </div>
     );
 }
@@ -441,8 +437,8 @@ export default function StylistCheckoutPage() {
                                 <span className="font-semibold">${EDIT_PRICE}/mo</span>
                             </div>
                             <div className="border-t border-luxury-cream pt-2 flex justify-between luxury-body text-sm">
-                                <span className="text-luxury-charcoal/50">Edit starts after Blueprint delivery</span>
-                                <span className="text-luxury-accent text-xs font-semibold">No charge today</span>
+                                <span className="text-luxury-charcoal/50">Today&apos;s total</span>
+                                <span className="text-luxury-charcoal font-semibold">${BLUEPRINT_PRICE + EDIT_PRICE}</span>
                             </div>
                         </div>
                     )}

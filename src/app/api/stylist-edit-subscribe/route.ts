@@ -30,8 +30,6 @@ export async function POST(request: NextRequest) {
             key_secret: process.env.RAZORPAY_KEY_SECRET!,
         });
 
-        // First billing fires 4 days from now — Blueprint delivered in 72h, 1 day buffer
-        const startAt = Math.floor((Date.now() + 4 * 24 * 3600 * 1000) / 1000);
         const name = customer_name || customer_email.split('@')[0];
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,7 +38,6 @@ export async function POST(request: NextRequest) {
             total_count: 120,
             quantity: 1,
             customer_notify: 1,
-            start_at: startAt,
             notes: {
                 customer_name: name,
                 customer_email,
@@ -78,7 +75,6 @@ export async function POST(request: NextRequest) {
                 currency: 'USD',
                 status: 'pending',
                 source: source || 'checkout',
-                start_at: new Date(startAt * 1000).toISOString(),
                 ...attribution,
             });
         } catch (dbErr) {
@@ -91,7 +87,6 @@ export async function POST(request: NextRequest) {
             subscription_id: subscription.id,
             amount: EDIT_AMOUNT_CENTS,
             currency: 'USD',
-            start_at: startAt,
         });
 
     } catch (error) {
