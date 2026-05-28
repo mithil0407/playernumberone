@@ -128,6 +128,11 @@ interface FaceStyleSwapApplyResult {
   updatedFace: ReportData['classification']['face'];
 }
 
+type ManualImageTarget =
+  | { imageType: 'face'; faceKind: FaceImageKind }
+  | { imageType: 'outfit'; outfitNumber: number }
+  | { imageType: 'comboGrid'; comboGridKind: ComboGridKind };
+
 const SECTIONS = [
   { key: 's0',  label: 'Style Snapshot',       field: 's0_snapshot'       },
   { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
@@ -446,6 +451,50 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const copyImagePrompt = useCallback(async (target: ManualImageTarget): Promise<string | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/image-prompt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(target),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not build the image prompt.');
+      return null;
+    }
+    return typeof data.prompt === 'string' ? data.prompt : null;
+  }, [reportId]);
+
+  const uploadManualImage = useCallback(async (
+    target: ManualImageTarget,
+    file: File,
+  ): Promise<string | null> => {
+    const fd = new FormData();
+    fd.append('image', file);
+    fd.append('imageType', target.imageType);
+    if (target.imageType === 'face') fd.append('faceKind', target.faceKind);
+    if (target.imageType === 'outfit') fd.append('outfitNumber', String(target.outfitNumber));
+    if (target.imageType === 'comboGrid') fd.append('comboGridKind', target.comboGridKind);
+
+    const res = await fetch(`/api/man-report/${reportId}/manual-image`, {
+      method: 'POST',
+      body: fd,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? 'Could not upload manual image.');
+      return null;
+    }
+
+    const imageUrls = data.imageUrls as ResolvedImageUrls | null | undefined;
+    const imageUrl = data.imageUrl as string | null | undefined;
+    if (imageUrls) {
+      setReport(prev => prev ? { ...prev, image_urls: imageUrls, error_message: null } : prev);
+    }
+    setError('');
+    return imageUrl ?? null;
+  }, [reportId]);
 
   // ── Outfit image regeneration ─────────────────────────────────────────
   const regenerateOutfit = useCallback(async (
@@ -1199,6 +1248,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             onDraftOutfitSwap={draftOutfitSwap}
             onApplyOutfitSwap={applyOutfitSwap}
             onRetryMissingImages={handleGenerateImages}
+            onCopyImagePrompt={copyImagePrompt}
+            onUploadManualImage={uploadManualImage}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3">

@@ -511,6 +511,56 @@ Scene: clean premium studio lookbook, seamless cool slate grey cyclorama backdro
 Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet. The subject's feet and footwear must be fully visible at the bottom of each column.`;
 }
 
+export function buildOutfitImagePromptFromText(
+  outfitText: string,
+  classification: ClassificationResult,
+  expectedOutfitNumber?: number,
+): string {
+  const parsed = parseOutfitsFromSection(outfitText);
+  const outfit = expectedOutfitNumber
+    ? parsed.find(candidate => candidate.index === expectedOutfitNumber) ?? parsed[0]
+    : parsed[0];
+
+  if (!outfit) {
+    throw new Error('Could not parse outfit text for image prompt');
+  }
+
+  return buildOutfitPrompt(outfit, classification);
+}
+
+export function buildOutfitImagePromptForReport(
+  sections: ReportSections,
+  classification: ClassificationResult,
+  outfitNumber: number,
+): string {
+  const outfits = parseOutfitsFromSection(sections.s4_outfits ?? '');
+  const outfit = outfits.find(candidate => candidate.index === outfitNumber);
+  if (!outfit) {
+    throw new Error(`Could not find Outfit ${outfitNumber} in Section 4 text`);
+  }
+  return buildOutfitPrompt(outfit, classification);
+}
+
+export function buildComboGridImagePromptForReport(
+  kind: ComboGridKind,
+  sections: ReportSections,
+  classification: ClassificationResult,
+): string {
+  const comboText = sections.s4_combo_grids ?? '';
+  const normalised = comboText ? normaliseComboGridText(comboText) : null;
+  if (normalised?.ok) {
+    const group = normalised.groups.find(candidate => candidate.kind === kind);
+    if (group) return buildEditedComboGridPrompt(group, classification);
+  }
+
+  const outfits = parseOutfitsFromSection(sections.s4_outfits ?? '');
+  const selected = buildMixedComboOutfits(outfits, kind);
+  if (selected.length < 3) {
+    throw new Error(`Not enough outfits found to build the ${kind} combination grid prompt`);
+  }
+  return buildComboGridPrompt(kind, selected, classification);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Gemini image edit call
 // ─────────────────────────────────────────────────────────────────────────────
@@ -677,6 +727,29 @@ async function uploadToStorage(reportId: string, base64Data: string, filename: s
   return path;
 }
 
+export async function uploadManualManReportImage(
+  reportId: string,
+  fileBuffer: Buffer,
+  filename: string,
+): Promise<string> {
+  if (fileBuffer.length === 0) {
+    throw new Error('Cannot upload an empty image file');
+  }
+
+  const path = `${reportId}/${filename}`;
+  const output = await sharp(fileBuffer, { failOn: 'none' })
+    .rotate()
+    .jpeg({ quality: 92, mozjpeg: true })
+    .toBuffer();
+
+  const { error } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(path, output, { contentType: 'image/jpeg', upsert: true });
+
+  if (error) throw new Error(`Manual image upload failed [${filename}]: ${error.message}`);
+  return path;
+}
+
 async function getSignedUrl(path: string, ttl = SIGNED_URL_TTL): Promise<string> {
   const { data, error } = await supabaseAdmin.storage.from(BUCKET).createSignedUrl(path, ttl);
   if (error || !data?.signedUrl) throw new Error(`Signed URL failed for ${path}`);
@@ -747,7 +820,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 5, baseDelayMs =
 // Public API — generation
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildFaceGridPrompt(classification: ClassificationResult, kind: FaceImageKind, override?: { optionIndex: number; style: string }): string {
+export function buildFaceGridPrompt(classification: ClassificationResult, kind: FaceImageKind, override?: { optionIndex: number; style: string }): string {
   const options = getFaceStyleOptions(classification, kind, override);
   const { face } = classification;
   if (kind === 'hairstyle') {
@@ -1171,11 +1244,6 @@ export async function regenerateSingleOutfitImage(
   hairstyleHeadshotUrl?: string | null, // optional original headshot for face/grooming reference
   storageFilename?:     string,
 ): Promise<string> {
-  const parsed = parseOutfitsFromSection(outfitText);
-  if (parsed.length === 0) throw new Error(`Could not parse outfit from text block`);
-
-  const outfit = parsed[0];
-
   const [{ data: baseData, mimeType: baseMime }, hairstyleRef] = await Promise.all([
     fetchAsBase64(basePhotoUrl),
     hairstyleHeadshotUrl
@@ -1183,7 +1251,7 @@ export async function regenerateSingleOutfitImage(
       : Promise.resolve(undefined),
   ]);
 
-  const prompt       = buildOutfitPrompt(outfit, classification);
+  const prompt       = buildOutfitImagePromptFromText(outfitText, classification, outfitNumber);
   const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel, hairstyleRef ?? undefined);
 
   return uploadToStorage(reportId, outputBase64, storageFilename ?? `outfit_${outfitNumber}.jpg`);
