@@ -43,13 +43,17 @@ export async function POST(
   const { reportId } = await params;
   const formData = await request.formData();
   const imageType = String(formData.get('imageType') ?? '');
+  const replaceExisting = formData.get('replace') === '1';
   const file = formData.get('image');
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: 'image file is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Select or drop an image file before uploading.' }, { status: 400 });
   }
-  if (file.size === 0 || (file.type && !file.type.startsWith('image/'))) {
-    return NextResponse.json({ error: 'Upload must be a non-empty image file' }, { status: 400 });
+  if (file.size === 0) {
+    return NextResponse.json({ error: 'The selected image is empty. Choose a valid image file.' }, { status: 400 });
+  }
+  if (file.type && !file.type.startsWith('image/')) {
+    return NextResponse.json({ error: `Unsupported file type "${file.type}". Upload a JPG, PNG, WebP, HEIC, or other image file.` }, { status: 400 });
   }
 
   const { data: report, error } = await supabaseAdmin
@@ -67,76 +71,87 @@ export async function POST(
   let patch: Parameters<typeof mergeManReportImagePathsForReport>[1];
   let responseImageUrl: string | null = null;
 
-  if (imageType === 'face') {
-    const faceKind = String(formData.get('faceKind') ?? '') as FaceImageKind;
-    if (!FACE_KINDS.has(faceKind)) {
-      return NextResponse.json({ error: 'faceKind must be hairstyle, beard, or eyewear' }, { status: 400 });
+  try {
+    if (imageType === 'face') {
+      const faceKind = String(formData.get('faceKind') ?? '') as FaceImageKind;
+      if (!FACE_KINDS.has(faceKind)) {
+        return NextResponse.json({ error: 'faceKind must be hairstyle, beard, or eyewear' }, { status: 400 });
+      }
+
+      const key = faceKind === 'hairstyle'
+        ? 'hairstyleCards'
+        : faceKind === 'beard'
+          ? 'beardCards'
+          : 'eyewearCards';
+      if (currentPaths[key]?.[0] && !replaceExisting) {
+        return NextResponse.json({
+          error: 'This image slot already has a stored image. Refresh the report or upload again to replace it.',
+        }, { status: 409 });
+      }
+
+      filename = `${faceKind}_grid.jpg`;
+      const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
+      patch = { [key]: [path] } as Partial<ManReportImagePaths>;
+    } else if (imageType === 'outfit') {
+      const outfitNumber = Number(formData.get('outfitNumber'));
+      if (!Number.isInteger(outfitNumber) || outfitNumber < 1) {
+        return NextResponse.json({ error: 'outfitNumber is required' }, { status: 400 });
+      }
+      if (currentPaths.outfitCards[outfitNumber - 1] && !replaceExisting) {
+        return NextResponse.json({
+          error: 'This outfit slot already has a stored image. Refresh the report or upload again to replace it.',
+        }, { status: 409 });
+      }
+
+      filename = `outfit_${outfitNumber}.jpg`;
+      const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
+      const outfitPatch: (string | null | undefined)[] = [];
+      outfitPatch[outfitNumber - 1] = path;
+      patch = { outfitCards: outfitPatch };
+    } else if (imageType === 'comboGrid') {
+      const comboGridKind = String(formData.get('comboGridKind') ?? '') as ComboGridKind;
+      if (!COMBO_GRID_KINDS.has(comboGridKind)) {
+        return NextResponse.json({ error: 'comboGridKind must be office, evening, or relaxed' }, { status: 400 });
+      }
+      if (currentPaths.comboGridCards?.[comboGridKind] && !replaceExisting) {
+        return NextResponse.json({
+          error: 'This combination grid already has a stored image. Refresh the report or upload again to replace it.',
+        }, { status: 409 });
+      }
+
+      filename = `combo_grid_${comboGridKind}.jpg`;
+      const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
+      patch = { comboGridCards: { [comboGridKind]: path } };
+    } else {
+      return NextResponse.json({ error: 'Unsupported manual image target. Choose a face grid, outfit, or combination grid slot.' }, { status: 400 });
     }
 
-    const key = faceKind === 'hairstyle'
-      ? 'hairstyleCards'
-      : faceKind === 'beard'
-        ? 'beardCards'
-        : 'eyewearCards';
-    if (currentPaths[key]?.[0]) {
-      return NextResponse.json({ error: 'This image slot already has an image' }, { status: 409 });
+    const nextPaths = await mergeManReportImagePathsForReport(reportId, patch, { error_message: null });
+    await revalidateManReportCache(reportId, report.share_token ?? null);
+
+    const resolved = await resolveManReportImageUrls(nextPaths);
+    if (imageType === 'face') {
+      const faceKind = String(formData.get('faceKind')) as FaceImageKind;
+      responseImageUrl = faceKind === 'hairstyle'
+        ? resolved?.hairstyleCards?.[0] ?? null
+        : faceKind === 'beard'
+          ? resolved?.beardCards?.[0] ?? null
+          : resolved?.eyewearCards?.[0] ?? null;
+    } else if (imageType === 'outfit') {
+      const outfitNumber = Number(formData.get('outfitNumber'));
+      responseImageUrl = resolved?.outfitCards?.[outfitNumber - 1] ?? null;
+    } else if (imageType === 'comboGrid') {
+      const comboGridKind = String(formData.get('comboGridKind')) as ComboGridKind;
+      responseImageUrl = resolved?.comboGridCards?.[comboGridKind] ?? null;
     }
 
-    filename = `${faceKind}_grid.jpg`;
-    const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
-    patch = { [key]: [path] } as Partial<ManReportImagePaths>;
-  } else if (imageType === 'outfit') {
-    const outfitNumber = Number(formData.get('outfitNumber'));
-    if (!Number.isInteger(outfitNumber) || outfitNumber < 1) {
-      return NextResponse.json({ error: 'outfitNumber is required' }, { status: 400 });
-    }
-    if (currentPaths.outfitCards[outfitNumber - 1]) {
-      return NextResponse.json({ error: 'This image slot already has an image' }, { status: 409 });
-    }
-
-    filename = `outfit_${outfitNumber}.jpg`;
-    const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
-    const outfitPatch: (string | null | undefined)[] = [];
-    outfitPatch[outfitNumber - 1] = path;
-    patch = { outfitCards: outfitPatch };
-  } else if (imageType === 'comboGrid') {
-    const comboGridKind = String(formData.get('comboGridKind') ?? '') as ComboGridKind;
-    if (!COMBO_GRID_KINDS.has(comboGridKind)) {
-      return NextResponse.json({ error: 'comboGridKind must be office, evening, or relaxed' }, { status: 400 });
-    }
-    if (currentPaths.comboGridCards?.[comboGridKind]) {
-      return NextResponse.json({ error: 'This image slot already has an image' }, { status: 409 });
-    }
-
-    filename = `combo_grid_${comboGridKind}.jpg`;
-    const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
-    patch = { comboGridCards: { [comboGridKind]: path } };
-  } else {
-    return NextResponse.json({ error: 'imageType must be face, outfit, or comboGrid' }, { status: 400 });
+    return NextResponse.json({
+      imageUrl: responseImageUrl,
+      imageUrls: resolved,
+      storagePaths: nextPaths,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Manual image upload failed: ${message}` }, { status: 500 });
   }
-
-  const nextPaths = await mergeManReportImagePathsForReport(reportId, patch, { error_message: null });
-  await revalidateManReportCache(reportId, report.share_token ?? null);
-
-  const resolved = await resolveManReportImageUrls(nextPaths);
-  if (imageType === 'face') {
-    const faceKind = String(formData.get('faceKind')) as FaceImageKind;
-    responseImageUrl = faceKind === 'hairstyle'
-      ? resolved?.hairstyleCards?.[0] ?? null
-      : faceKind === 'beard'
-        ? resolved?.beardCards?.[0] ?? null
-        : resolved?.eyewearCards?.[0] ?? null;
-  } else if (imageType === 'outfit') {
-    const outfitNumber = Number(formData.get('outfitNumber'));
-    responseImageUrl = resolved?.outfitCards?.[outfitNumber - 1] ?? null;
-  } else if (imageType === 'comboGrid') {
-    const comboGridKind = String(formData.get('comboGridKind')) as ComboGridKind;
-    responseImageUrl = resolved?.comboGridCards?.[comboGridKind] ?? null;
-  }
-
-  return NextResponse.json({
-    imageUrl: responseImageUrl,
-    imageUrls: resolved,
-    storagePaths: nextPaths,
-  });
 }

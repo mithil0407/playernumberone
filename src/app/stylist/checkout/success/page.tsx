@@ -15,9 +15,14 @@ interface RazorpaySubOptions {
     subscription_id: string;
     name: string;
     description: string;
-    handler: () => void;
+    handler: (response: RazorpaySubResponse) => void;
     prefill: { name: string; email: string; contact: string };
     theme: { color: string };
+}
+interface RazorpaySubResponse {
+    razorpay_payment_id?: string;
+    razorpay_subscription_id?: string;
+    razorpay_signature?: string;
 }
 interface RazorpayInstance { open(): void; }
 
@@ -36,12 +41,27 @@ const EDIT_BULLETS = [
     'Shopping picks matched to your exact palette',
 ];
 
+function IntakeButton({ href, label = 'Complete My Intake Now' }: { href: string; label?: string }) {
+    return (
+        <Link
+            href={href}
+            className="inline-flex w-full items-center justify-center gap-3 bg-luxury-charcoal hover:bg-luxury-charcoal/85 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg"
+        >
+            {label} <ArrowRight className="w-4 h-4" />
+        </Link>
+    );
+}
+
 // ── Inner page component ──────────────────────────────────────────────────────
 
 function StylistSuccessInner() {
     const searchParams = useSearchParams();
-    const email = searchParams.get('email') || '';
+    const email = searchParams.get('email') || (typeof window !== 'undefined' ? localStorage.getItem('stylist_customerEmail') || '' : '');
     const phone = typeof window !== 'undefined' ? localStorage.getItem('stylist_customerPhone') || '' : '';
+    const intakeParams = new URLSearchParams();
+    if (email) intakeParams.set('email', email);
+    if (phone) intakeParams.set('phone', phone);
+    const intakeHref = `/stylist/intake${intakeParams.toString() ? `?${intakeParams.toString()}` : ''}`;
 
     // Edit state
     const [editPurchased, setEditPurchased] = useState(false);
@@ -87,7 +107,22 @@ function StylistSuccessInner() {
             subscription_id: subscriptionId,
             name: 'ICONIK Style Intelligence',
             description: 'THE ICONIK EDIT — $39/month',
-            handler: () => {
+            handler: async (response: RazorpaySubResponse) => {
+                try {
+                    await fetch('/api/stylist-edit-confirm', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            razorpay_subscription_id: response.razorpay_subscription_id || subscriptionId,
+                            razorpay_payment_id: response.razorpay_payment_id || '',
+                            customer_email: email,
+                            customer_phone: phone,
+                            customer_name: email.split('@')[0],
+                        }),
+                    });
+                } catch (err) {
+                    console.warn('Could not confirm Stylist Edit subscription in DB:', err);
+                }
                 localStorage.setItem('stylist_editPurchased', 'true');
                 localStorage.removeItem('stylist_editSubscriptionId');
                 localStorage.removeItem('stylist_editKey');
@@ -146,6 +181,7 @@ function StylistSuccessInner() {
                     customer_name: email.split('@')[0],
                     lead_id: leadId,
                     order_id: orderId,
+                    plan_type: 'monthly',
                     source: 'success_page',
                     attribution: getAttributionPayload(),
                 }),
@@ -193,11 +229,13 @@ function StylistSuccessInner() {
                     <p className="luxury-body text-luxury-charcoal/60 leading-relaxed mb-8">
                         Your Blueprint arrives within <strong className="text-luxury-charcoal">72 hours</strong> of completing the intake form.
                     </p>
+                    <div className="mb-5">
+                        <IntakeButton href={intakeHref} />
+                    </div>
                     <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
                         <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
                         {[
-                            'Check your email for your intake form link',
-                            'Complete the intake form (takes 7 minutes)',
+                            'Complete the intake form here now, or use the email link later',
                             'Receive your personalised Blueprint within 72 hours',
                             'Your ICONIK Edit is active — your first drop arrives within 72 hours',
                         ].map((step, i) => (
@@ -284,6 +322,10 @@ function StylistSuccessInner() {
                     >
                         No thanks, just the Blueprint
                     </button>
+
+                    <div className="mt-6">
+                        <IntakeButton href={intakeHref} label="Go To Intake Form" />
+                    </div>
                 </motion.div>
             </div>
         );
@@ -389,6 +431,10 @@ function StylistSuccessInner() {
                                         No thanks, just the Blueprint
                                     </button>
                                 </p>
+
+                                <div className="mt-6">
+                                    <IntakeButton href={intakeHref} label="Complete Intake Instead" />
+                                </div>
                             </div>
                         </motion.div>
                     ) : (
@@ -400,14 +446,16 @@ function StylistSuccessInner() {
                             className="max-w-lg mx-auto text-center pb-16"
                         >
                             <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-4">
-                                You&apos;ll receive a link to complete your intake form at{' '}
-                                {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'} shortly.
+                                Complete your intake form now, or use the backup link we sent to{' '}
+                                {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'}.
                             </p>
+                            <div className="mb-5">
+                                <IntakeButton href={intakeHref} />
+                            </div>
                             <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
                                 <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
                                 {[
-                                    'Check your email for your intake form link',
-                                    'Complete the intake form (takes 7 minutes)',
+                                    'Complete the intake form here now, or use the email link later',
                                     'Receive your personalised Blueprint within 72 hours',
                                 ].map((step, i) => (
                                     <div key={i} className="flex items-center gap-3">

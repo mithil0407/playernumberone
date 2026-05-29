@@ -58,7 +58,7 @@ interface NormalizedSubscription {
 }
 
 const CURRENCIES: RevenueCurrency[] = ['INR', 'AUD', 'USD'];
-const MARKETS: RevenueMarket[] = ['india', 'au', 'global', 'globe'];
+const MARKETS: RevenueMarket[] = ['india', 'au', 'global', 'globe', 'stylist'];
 const IST_TIME_ZONE = 'Asia/Kolkata';
 
 export interface RevenueAnalyticsOptions {
@@ -160,6 +160,10 @@ function productLabel(productType: string) {
       return 'Global Blueprint';
     case 'globe_blueprint':
       return 'Globe Blueprint';
+    case 'stylist_blueprint':
+      return 'Stylist Blueprint';
+    case 'stylist_edit':
+      return 'Stylist Edit';
     case 'subscription':
       return 'Subscription';
     case 'consultation':
@@ -178,6 +182,8 @@ function marketLabel(market: RevenueMarket) {
       return 'Global';
     case 'globe':
       return 'Globe';
+    case 'stylist':
+      return 'Stylist';
   }
 }
 
@@ -430,6 +436,8 @@ export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {
     globeOrders,
     globeSubscriptions,
     globeCustomers,
+    stylistOrders,
+    styleEditSubscriptions,
   ] = await Promise.all([
     safeSelect(primary, 'revenue_events', '*', queryWarnings),
     safeSelect(primary, 'orders', '*, customers(name,email,phone)', queryWarnings),
@@ -441,6 +449,8 @@ export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {
     safeSelect(primary, 'globe_orders', '*', queryWarnings),
     safeSelect(primary, 'globe_subscriptions', '*', queryWarnings),
     safeSelect(primary, 'globe_customers', '*', queryWarnings),
+    safeSelect(primary, 'stylist_orders', '*', queryWarnings),
+    safeSelect(primary, 'style_edit_subscriptions', '*', queryWarnings),
   ]);
 
   const ledgerEvents = ledgerRows.map(normalizeLedgerEvent);
@@ -455,6 +465,7 @@ export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {
       const source = String(row.source ?? '').startsWith('global') ? 'global' : 'globe';
       return normalizeSubscription(row, source as RevenueMarket, 'globe_subscriptions', 'USD');
     }),
+    ...styleEditSubscriptions.map(row => normalizeSubscription(row, 'stylist', 'style_edit_subscriptions', 'USD')),
   ];
 
   const syntheticEvents = [
@@ -480,6 +491,14 @@ export async function buildRevenueAnalytics(options: RevenueAnalyticsOptions = {
         ledgerSourceEvents.has(sourceKey('globe_orders', id, 'one_time_payment'))
       );
     }),
+    ...stylistOrders.map(row => normalizeMarketOrder(
+      row,
+      'stylist',
+      'stylist_orders',
+      'USD',
+      'stylist_blueprint',
+      ledgerSourceEvents.has(sourceKey('stylist_orders', String(row.id ?? ''), 'one_time_payment'))
+    )),
     ...subscriptions.map(sub => subscriptionToSyntheticEvent(
       sub,
       ledgerSourceEvents.has(sourceKey(sub.sourceTable, sub.id, 'subscription_initial'))

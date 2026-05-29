@@ -5,7 +5,7 @@ import { attributionToColumns, type AttributionFields } from '@/lib/attribution'
 import { convertMinorToInr } from '@/lib/fxRates';
 
 export type RevenueCurrency = 'INR' | 'AUD' | 'USD';
-export type RevenueMarket = 'india' | 'au' | 'global' | 'globe';
+export type RevenueMarket = 'india' | 'au' | 'global' | 'globe' | 'stylist';
 export type RevenueKind = 'one_time' | 'subscription';
 export type RevenueEventType =
   | 'one_time_payment'

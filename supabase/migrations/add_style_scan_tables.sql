@@ -25,6 +25,7 @@ CREATE TABLE public.style_scan_leads (
   utm_term text,
   referrer text,
   landing_page text,
+  first_touch_at timestamp with time zone,
   attribution_payload jsonb,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT style_scan_leads_pkey PRIMARY KEY (id)
@@ -52,6 +53,7 @@ CREATE TABLE public.stylist_orders (
   utm_term text,
   referrer text,
   landing_page text,
+  first_touch_at timestamp with time zone,
   attribution_payload jsonb,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT stylist_orders_pkey PRIMARY KEY (id),

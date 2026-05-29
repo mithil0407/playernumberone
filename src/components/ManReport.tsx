@@ -4,9 +4,9 @@
 // Renders the full ICONIK Men's Blueprint report.
 // Design matches the embedded report preview on /man landing page exactly.
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pencil, X, Loader2, AlertCircle, Copy } from 'lucide-react';
+import { Pencil, X, Loader2, AlertCircle, Copy, Upload } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
 import { SPRING } from '@/lib/reportAnimations';
@@ -426,11 +426,17 @@ type ManualImageTarget =
   | { imageType: 'outfit'; outfitNumber: number }
   | { imageType: 'comboGrid'; comboGridKind: ComboGridKind };
 
+interface ManualImageUploadOptions {
+  replace?: boolean;
+}
+
 interface ManualImageActionsProps {
   target: ManualImageTarget;
   onCopyImagePrompt?: (target: ManualImageTarget) => Promise<string | null>;
-  onUploadManualImage?: (target: ManualImageTarget, file: File) => Promise<string | null>;
+  onUploadManualImage?: (target: ManualImageTarget, file: File, options?: ManualImageUploadOptions) => Promise<string | null>;
   onUploaded?: (imageUrl: string) => void;
+  title: string;
+  description: string;
   disabled?: boolean;
 }
 
@@ -439,8 +445,11 @@ function ManualImageActions({
   onCopyImagePrompt,
   onUploadManualImage,
   onUploaded,
+  title,
+  description,
   disabled,
 }: ManualImageActionsProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [copying, setCopying] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -467,11 +476,19 @@ function ManualImageActions({
   };
 
   const uploadFile = async (file: File | null | undefined) => {
-    if (!file || !onUploadManualImage || uploading || disabled) return;
+    if (!onUploadManualImage || uploading || disabled) return;
+    if (!file) {
+      setNotice('Drop an image file');
+      return;
+    }
+    if (file.type && !file.type.startsWith('image/')) {
+      setNotice('Only image files can be uploaded');
+      return;
+    }
     setUploading(true);
     setNotice(null);
     try {
-      const imageUrl = await onUploadManualImage(target, file);
+      const imageUrl = await onUploadManualImage(target, file, { replace: true });
       if (!imageUrl) {
         setNotice('Upload failed');
         return;
@@ -489,19 +506,35 @@ function ManualImageActions({
 
   return (
     <div
-      className="flex flex-col items-center gap-2"
+      className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center"
+      style={{
+        background: dragging ? '#F1E7D7' : SHELL,
+        border: dragging ? `2px dashed ${ACCENT}` : undefined,
+      }}
+      onDragEnter={event => {
+        if (!onUploadManualImage || disabled) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
       onDragOver={event => {
         if (!onUploadManualImage || disabled) return;
         event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
         setDragging(true);
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={event => {
         if (!onUploadManualImage || disabled) return;
         event.preventDefault();
+        setDragging(false);
         void uploadFile(event.dataTransfer.files?.[0]);
       }}
     >
+      <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
+      <div className="flex flex-col items-center gap-1">
+        <p className="text-[12px] font-medium" style={{ color: OXBLOOD }}>{title}</p>
+        <p className="text-[11px]" style={{ color: INK_SOFT }}>{description}</p>
+      </div>
       <div className="flex flex-wrap justify-center gap-2">
         {onCopyImagePrompt && (
           <button
@@ -514,14 +547,37 @@ function ManualImageActions({
             Copy prompt
           </button>
         )}
+        {onUploadManualImage && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={event => {
+                void uploadFile(event.target.files?.[0]);
+                event.currentTarget.value = '';
+              }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={copying || uploading || disabled}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-medium disabled:opacity-40"
+              style={{ background: ACCENT, color: '#fff', border: `1px solid ${ACCENT}` }}
+            >
+              {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+              Upload image
+            </button>
+          </>
+        )}
       </div>
       {onUploadManualImage && (
         <p className="text-[10px] leading-snug" style={{ color: dragging ? ACCENT_INK : INK_SOFT }}>
-          {uploading ? 'Uploading image...' : dragging ? 'Release to place image' : 'Drop the downloaded image here'}
+          {uploading ? 'Uploading image...' : dragging ? 'Release to place image' : 'Drop the downloaded image anywhere here'}
         </p>
       )}
       {notice && (
-        <p className="text-[10px] leading-snug" style={{ color: notice.includes('failed') || notice.includes('Could') ? OXBLOOD : SAGE }}>
+        <p className="text-[10px] leading-snug" style={{ color: notice.includes('failed') || notice.includes('Could') || notice.includes('Only') || notice.includes('Drop') ? OXBLOOD : SAGE }}>
           {notice}
         </p>
       )}
@@ -591,12 +647,13 @@ function FaceSection({
   }) => Promise<FaceStyleSwapApplyResult | null>;
   onRetryMissingImages?: () => Promise<void>;
   onCopyImagePrompt?: (target: ManualImageTarget) => Promise<string | null>;
-  onUploadManualImage?: (target: ManualImageTarget, file: File) => Promise<string | null>;
+  onUploadManualImage?: (target: ManualImageTarget, file: File, options?: ManualImageUploadOptions) => Promise<string | null>;
 }) {
   const { face } = cls;
   const [hairstyleOverrides, setHairstyleOverrides] = useState<Record<number, string>>({});
   const [beardOverrides, setBeardOverrides] = useState<Record<number, string>>({});
   const [eyewearOverrides, setEyewearOverrides] = useState<Record<number, string>>({});
+  const [brokenFaceImages, setBrokenFaceImages] = useState<Record<string, boolean>>({});
   const [styleSwapTarget, setStyleSwapTarget] = useState<{ kind: FaceImageKind; optionIndex: number } | null>(null);
   const [styleSwapReason, setStyleSwapReason] = useState('');
   const [styleSwapNotes, setStyleSwapNotes] = useState('');
@@ -709,11 +766,13 @@ function FaceSection({
   };
 
   const renderFaceImageSlot = (kind: FaceImageKind, url: string | null | undefined, optionIndex: number) => {
-    const effectiveUrl = kind === 'hairstyle'
+    const imageKey = `${kind}:${optionIndex}`;
+    const sourceUrl = kind === 'hairstyle'
       ? hairstyleOverrides[optionIndex] ?? url
       : kind === 'beard'
         ? beardOverrides[optionIndex] ?? url
       : eyewearOverrides[optionIndex] ?? url;
+    const effectiveUrl = brokenFaceImages[imageKey] ? null : sourceUrl;
     const canManualRecover = adminMode && (!!onCopyImagePrompt || !!onUploadManualImage);
     const currentStyle = getCurrentFaceStyle(kind, optionIndex);
 
@@ -737,32 +796,26 @@ function FaceSection({
               className="w-full h-full object-cover object-top"
               style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
               onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+              onError={() => setBrokenFaceImages(prev => ({ ...prev, [imageKey]: true }))}
             />
           ) : canManualRecover ? (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center"
-              style={{ background: SHELL }}
-            >
-              <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-[12px] font-medium" style={{ color: OXBLOOD }}>Image failed</p>
-                <p className="text-[11px]" style={{ color: INK_SOFT }}>Generation did not complete</p>
-              </div>
-              <ManualImageActions
-                target={{ imageType: 'face', faceKind: kind }}
-                onCopyImagePrompt={onCopyImagePrompt}
-                onUploadManualImage={onUploadManualImage}
-                onUploaded={imageUrl => {
-                  if (kind === 'hairstyle') {
-                    setHairstyleOverrides(prev => ({ ...prev, 0: imageUrl, [optionIndex]: imageUrl }));
-                  } else if (kind === 'beard') {
-                    setBeardOverrides(prev => ({ ...prev, 0: imageUrl, [optionIndex]: imageUrl }));
-                  } else {
-                    setEyewearOverrides(prev => ({ ...prev, 0: imageUrl, [optionIndex]: imageUrl }));
-                  }
-                }}
-              />
-            </div>
+            <ManualImageActions
+              target={{ imageType: 'face', faceKind: kind }}
+              title="Image failed"
+              description={sourceUrl ? 'Image could not load' : 'Generation did not complete'}
+              onCopyImagePrompt={onCopyImagePrompt}
+              onUploadManualImage={onUploadManualImage}
+              onUploaded={imageUrl => {
+                setBrokenFaceImages(prev => ({ ...prev, [imageKey]: false, [`${kind}:0`]: false }));
+                if (kind === 'hairstyle') {
+                  setHairstyleOverrides(prev => ({ ...prev, 0: imageUrl, [optionIndex]: imageUrl }));
+                } else if (kind === 'beard') {
+                  setBeardOverrides(prev => ({ ...prev, 0: imageUrl, [optionIndex]: imageUrl }));
+                } else {
+                  setEyewearOverrides(prev => ({ ...prev, 0: imageUrl, [optionIndex]: imageUrl }));
+                }
+              }}
+            />
           ) : (
             <div className="w-full h-full skeleton-shimmer flex items-center justify-center">
               <span className="text-[11px]" style={{ color: INK_SOFT }}>Generating…</span>
@@ -814,7 +867,9 @@ function FaceSection({
     urls: (string | null)[] | undefined,
     title: string,
   ) => {
-    const gridUrl = getGridUrl(kind, urls);
+    const imageKey = `${kind}:0`;
+    const sourceGridUrl = getGridUrl(kind, urls);
+    const gridUrl = brokenFaceImages[imageKey] ? null : sourceGridUrl;
     const canManualRecover = adminMode && (!!onCopyImagePrompt || !!onUploadManualImage);
     const options = getFaceOptions(kind).slice(0, 4);
     const labels = kind === 'eyewear'
@@ -844,29 +899,26 @@ function FaceSection({
               className="w-full h-auto block"
               style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
               onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+              onError={() => setBrokenFaceImages(prev => ({ ...prev, [imageKey]: true }))}
             />
           ) : canManualRecover ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: SHELL }}>
-              <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-[12px] font-medium" style={{ color: OXBLOOD }}>Grid failed</p>
-                <p className="text-[11px]" style={{ color: INK_SOFT }}>Generation did not complete</p>
-              </div>
-              <ManualImageActions
-                target={{ imageType: 'face', faceKind: kind }}
-                onCopyImagePrompt={onCopyImagePrompt}
-                onUploadManualImage={onUploadManualImage}
-                onUploaded={imageUrl => {
-                  if (kind === 'hairstyle') {
-                    setHairstyleOverrides(prev => ({ ...prev, 0: imageUrl, 1: imageUrl }));
-                  } else if (kind === 'beard') {
-                    setBeardOverrides(prev => ({ ...prev, 0: imageUrl, 1: imageUrl }));
-                  } else {
-                    setEyewearOverrides(prev => ({ ...prev, 0: imageUrl, 1: imageUrl }));
-                  }
-                }}
-              />
-            </div>
+            <ManualImageActions
+              target={{ imageType: 'face', faceKind: kind }}
+              title="Grid failed"
+              description={sourceGridUrl ? 'Grid image could not load' : 'Generation did not complete'}
+              onCopyImagePrompt={onCopyImagePrompt}
+              onUploadManualImage={onUploadManualImage}
+              onUploaded={imageUrl => {
+                setBrokenFaceImages(prev => ({ ...prev, [imageKey]: false, [`${kind}:1`]: false }));
+                if (kind === 'hairstyle') {
+                  setHairstyleOverrides(prev => ({ ...prev, 0: imageUrl, 1: imageUrl }));
+                } else if (kind === 'beard') {
+                  setBeardOverrides(prev => ({ ...prev, 0: imageUrl, 1: imageUrl }));
+                } else {
+                  setEyewearOverrides(prev => ({ ...prev, 0: imageUrl, 1: imageUrl }));
+                }
+              }}
+            />
           ) : (
             <div className="w-full h-full skeleton-shimmer flex items-center justify-center">
               <span className="text-[11px]" style={{ color: INK_SOFT }}>Generating…</span>
@@ -1549,7 +1601,7 @@ function OutfitsSection({
     notes: string;
   }) => Promise<OutfitSwapApplyResult | null>;
   onCopyImagePrompt?: (target: ManualImageTarget) => Promise<string | null>;
-  onUploadManualImage?: (target: ManualImageTarget, file: File) => Promise<string | null>;
+  onUploadManualImage?: (target: ManualImageTarget, file: File, options?: ManualImageUploadOptions) => Promise<string | null>;
   qaPassedOutfits?: Set<number>; // outfit numbers without QA errors
 }) {
   const [editingNumber, setEditingNumber] = useState<number | null>(null);
@@ -1559,6 +1611,7 @@ function OutfitsSection({
   const [regenerating, setRegenerating]   = useState(false);
   const [savingText, setSavingText]       = useState(false);
   const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
+  const [brokenOutfitImages, setBrokenOutfitImages] = useState<Record<number, boolean>>({});
   const [swapNumber, setSwapNumber] = useState<number | null>(null);
   const [swapReason, setSwapReason] = useState('');
   const [swapNotes, setSwapNotes] = useState('');
@@ -1756,7 +1809,8 @@ function OutfitsSection({
 
   // Render an individual outfit row — image left, details right.
   const renderOutfitCard = (cat: OutfitCategory, outfit: ParsedOutfit) => {
-    const outfitImg   = imageOverrides[outfit.number] ?? outfitImageUrls?.[outfit.number - 1] ?? null;
+    const sourceOutfitImg = imageOverrides[outfit.number] ?? outfitImageUrls?.[outfit.number - 1] ?? null;
+    const outfitImg   = brokenOutfitImages[outfit.number] ? null : sourceOutfitImg;
     const isEditing   = editingNumber === outfit.number;
     const isRegenning = regenerating && isEditing;
     const canEdit     = adminMode && !!onRegenerateOutfit;
@@ -1787,21 +1841,20 @@ function OutfitsSection({
               className="absolute inset-0 w-full h-full object-cover object-top"
               style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
               onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+              onError={() => setBrokenOutfitImages(prev => ({ ...prev, [outfit.number]: true }))}
             />
           ) : canManualRecover ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-              <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-[12px] font-medium" style={{ color: OXBLOOD }}>Image failed</p>
-                <p className="text-[11px]" style={{ color: INK_SOFT }}>Generation did not complete</p>
-              </div>
-              <ManualImageActions
-                target={{ imageType: 'outfit', outfitNumber: outfit.number }}
-                onCopyImagePrompt={onCopyImagePrompt}
-                onUploadManualImage={onUploadManualImage}
-                onUploaded={imageUrl => setImageOverrides(prev => ({ ...prev, [outfit.number]: imageUrl }))}
-              />
-            </div>
+            <ManualImageActions
+              target={{ imageType: 'outfit', outfitNumber: outfit.number }}
+              title="Image failed"
+              description={sourceOutfitImg ? 'Image could not load' : 'Generation did not complete'}
+              onCopyImagePrompt={onCopyImagePrompt}
+              onUploadManualImage={onUploadManualImage}
+              onUploaded={imageUrl => {
+                setBrokenOutfitImages(prev => ({ ...prev, [outfit.number]: false }));
+                setImageOverrides(prev => ({ ...prev, [outfit.number]: imageUrl }));
+              }}
+            />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
               <p className="text-[96px] leading-none select-none italic" style={{ fontFamily: SERIF, color: ACCENT + '22', fontWeight: 300 }}>
@@ -2392,7 +2445,7 @@ function ComboGridSection({
   onSaveComboGridText?: (kind: ComboGridKind, newText: string) => Promise<ComboGridSaveTextResult | null>;
   onRegenerateComboGrid?: (kind: ComboGridKind, newText: string) => Promise<ComboGridRegenerationResult | null>;
   onCopyImagePrompt?: (target: ManualImageTarget) => Promise<string | null>;
-  onUploadManualImage?: (target: ManualImageTarget, file: File) => Promise<string | null>;
+  onUploadManualImage?: (target: ManualImageTarget, file: File, options?: ManualImageUploadOptions) => Promise<string | null>;
 }) {
   const [activeKind, setActiveKind] = useState<ComboGridKind>('office');
   const [editingKind, setEditingKind] = useState<ComboGridKind | null>(null);
@@ -2402,13 +2455,17 @@ function ComboGridSection({
   const [savingText, setSavingText] = useState(false);
   const [regeneratingKind, setRegeneratingKind] = useState<ComboGridKind | null>(null);
   const [gridOverrides, setGridOverrides] = useState<Partial<Record<ComboGridKind, string>>>({});
+  const [brokenGridImages, setBrokenGridImages] = useState<Partial<Record<ComboGridKind, boolean>>>({});
   const parsed = useMemo(() => text ? normaliseComboGridText(text) : null, [text]);
   const parsedGroups = parsed?.groups ?? [];
   const grids = [
-    { key: 'office' as const, label: 'Formal', title: 'Formal outfit combinations', url: gridOverrides.office ?? comboGridCards?.office },
-    { key: 'relaxed' as const, label: 'Relaxed Casual', title: 'Relaxed casual combinations', url: gridOverrides.relaxed ?? comboGridCards?.relaxed },
-    { key: 'evening' as const, label: 'Evening', title: 'Evening outfit combinations', url: gridOverrides.evening ?? comboGridCards?.evening },
-  ];
+    { key: 'office' as const, label: 'Formal', title: 'Formal outfit combinations', sourceUrl: gridOverrides.office ?? comboGridCards?.office },
+    { key: 'relaxed' as const, label: 'Relaxed Casual', title: 'Relaxed casual combinations', sourceUrl: gridOverrides.relaxed ?? comboGridCards?.relaxed },
+    { key: 'evening' as const, label: 'Evening', title: 'Evening outfit combinations', sourceUrl: gridOverrides.evening ?? comboGridCards?.evening },
+  ].map(grid => ({
+    ...grid,
+    url: brokenGridImages[grid.key] ? null : grid.sourceUrl,
+  }));
   const editingGrid = editingKind ? grids.find(grid => grid.key === editingKind) : null;
   const hasContent = !!text || grids.some(grid => !!grid.url);
   const canEdit = adminMode && (!!onSaveComboGridText || !!onRegenerateComboGrid) && !!text;
@@ -2578,23 +2635,28 @@ function ComboGridSection({
               >
                 {grid.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={grid.url} alt={grid.title} loading="lazy" decoding="async" className="block w-full h-auto" />
+                  <img
+                    src={grid.url}
+                    alt={grid.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="block w-full h-auto"
+                    onError={() => setBrokenGridImages(prev => ({ ...prev, [grid.key]: true }))}
+                  />
                 ) : (
                   <div className="h-full min-h-[220px] md:min-h-[320px] flex flex-col items-center justify-center gap-4 px-6 text-center">
                     {adminMode && (onCopyImagePrompt || onUploadManualImage) ? (
-                      <>
-                        <AlertCircle size={26} style={{ color: OXBLOOD, opacity: 0.7 }} />
-                        <div className="flex flex-col items-center gap-1">
-                          <p className="text-[12px] font-medium" style={{ color: OXBLOOD }}>Grid failed</p>
-                          <p className="text-[11px]" style={{ color: INK_SOFT }}>Generation did not complete</p>
-                        </div>
-                        <ManualImageActions
-                          target={{ imageType: 'comboGrid', comboGridKind: grid.key }}
-                          onCopyImagePrompt={onCopyImagePrompt}
-                          onUploadManualImage={onUploadManualImage}
-                          onUploaded={imageUrl => setGridOverrides(prev => ({ ...prev, [grid.key]: imageUrl }))}
-                        />
-                      </>
+                      <ManualImageActions
+                        target={{ imageType: 'comboGrid', comboGridKind: grid.key }}
+                        title="Grid failed"
+                        description={grid.sourceUrl ? 'Grid image could not load' : 'Generation did not complete'}
+                        onCopyImagePrompt={onCopyImagePrompt}
+                        onUploadManualImage={onUploadManualImage}
+                        onUploaded={imageUrl => {
+                          setBrokenGridImages(prev => ({ ...prev, [grid.key]: false }));
+                          setGridOverrides(prev => ({ ...prev, [grid.key]: imageUrl }));
+                        }}
+                      />
                     ) : (
                       <span className="text-[12px]" style={{ color: INK_SOFT }}>Grid image pending</span>
                     )}
@@ -3038,7 +3100,7 @@ interface ManReportProps {
   }) => Promise<FaceStyleSwapApplyResult | null>;
   onRetryMissingImages?: () => Promise<void>;
   onCopyImagePrompt?: (target: ManualImageTarget) => Promise<string | null>;
-  onUploadManualImage?: (target: ManualImageTarget, file: File) => Promise<string | null>;
+  onUploadManualImage?: (target: ManualImageTarget, file: File, options?: ManualImageUploadOptions) => Promise<string | null>;
 }
 
 function DeferredSection({

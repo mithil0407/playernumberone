@@ -1,12 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
+import { saveStyleScanLead, saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 import Razorpay from 'razorpay';
+
+function isInvalidLeadForeignKeyError(error: unknown) {
+    return Boolean(
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === '23503' &&
+        'message' in error &&
+        typeof (error as { message?: unknown }).message === 'string' &&
+        (error as { message: string }).message.includes('stylist_orders_lead_id_fkey')
+    );
+}
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { customer_name, customer_email, customer_phone, amount, lead_id } = body;
+        const { customer_name, customer_email, customer_phone, amount } = body;
+        let { lead_id } = body;
         const incomingAttribution = attributionToColumns(body.attribution);
 
         if (!customer_email || !amount) {
@@ -23,14 +36,46 @@ export async function POST(request: NextRequest) {
         let dbOrderId = 'mock-order-id';
 
         try {
+            let existingLead = null as Record<string, unknown> | null;
+
+            if (!lead_id && body.scan_payload?.email) {
+                const scan = body.scan_payload;
+                const leadAttribution = firstTouchAttribution(null, incomingAttribution);
+                const lead = await saveStyleScanLead({
+                    email: scan.email,
+                    style_struggle: scan.struggle,
+                    body_shape: scan.bodyShape,
+                    undertone: scan.undertone,
+                    aesthetic: scan.aesthetic,
+                    dressing_context: scan.dressingContext,
+                    photo_url: scan.photoUrl,
+                    style_score: Number.isFinite(Number(scan.styleScore)) ? Number(scan.styleScore) : undefined,
+                    colour_direction: scan.colourDirection,
+                    silhouette_direction: scan.silhouetteDirection,
+                    mood_keywords: Array.isArray(scan.moodKeywords) ? scan.moodKeywords.join(',') : scan.moodKeywords,
+                    mood_colours: Array.isArray(scan.moodColours) ? scan.moodColours.join(',') : scan.moodColours,
+                    whats_missing: scan.whatsMissing,
+                    source: 'style_scan_checkout_fallback',
+                    ...leadAttribution,
+                });
+
+                if (lead?.id) {
+                    lead_id = lead.id;
+                    existingLead = lead;
+                }
+            }
+
             // Fetch existing lead for first-touch attribution
-            const { data: existingLead } = lead_id
+            if (!existingLead) {
+                const { data } = lead_id
                 ? await supabaseStyleScan.from('style_scan_leads').select('*').eq('id', lead_id).single()
                 : { data: null };
+                existingLead = data;
+            }
 
             const orderAttribution = firstTouchAttribution(existingLead, incomingAttribution);
 
-            const order = await saveStylistOrder({
+            const orderPayload = {
                 lead_id: lead_id || null,
                 customer_email,
                 customer_name,
@@ -40,7 +85,20 @@ export async function POST(request: NextRequest) {
                 status: 'pending',
                 razorpay_order_id: orderId,
                 ...orderAttribution,
-            });
+            } as const;
+
+            let order;
+            try {
+                order = await saveStylistOrder(orderPayload);
+            } catch (orderErr) {
+                if (!isInvalidLeadForeignKeyError(orderErr)) throw orderErr;
+                console.warn('Ignoring stale style_scan_lead_id for stylist checkout:', lead_id);
+                lead_id = null;
+                order = await saveStylistOrder({
+                    ...orderPayload,
+                    lead_id: null,
+                });
+            }
             dbOrderId = order.id!;
 
             // Mark lead as checkout_started

@@ -1,6 +1,7 @@
 import { supabase as primarySupabase, supabaseAdmin } from '@/lib/supabase';
 
 const db = typeof window === 'undefined' ? supabaseAdmin : primarySupabase;
+const STYLIST_INTAKE_PHOTOS_BUCKET = 'stylist-intake-photos';
 
 export { db as supabaseStyleScan };
 
@@ -32,6 +33,7 @@ export interface StyleScanLead {
   utm_term?: string | null;
   referrer?: string | null;
   landing_page?: string | null;
+  first_touch_at?: string | null;
   attribution_payload?: Record<string, unknown> | null;
   created_at?: string;
 }
@@ -54,18 +56,47 @@ export interface StylistOrder {
   utm_term?: string | null;
   referrer?: string | null;
   landing_page?: string | null;
+  first_touch_at?: string | null;
   attribution_payload?: Record<string, unknown> | null;
   created_at?: string;
 }
 
 // ── Operations ─────────────────────────────────────────────────────────────
 
+function isMissingFirstTouchAtError(error: unknown) {
+  return Boolean(
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: string }).code === 'PGRST204' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string' &&
+    (error as { message: string }).message.includes("'first_touch_at'")
+  );
+}
+
+function withoutFirstTouchAt<T extends { first_touch_at?: string | null }>(payload: T) {
+  const rest = { ...payload };
+  delete rest.first_touch_at;
+  return rest;
+}
+
 export const saveStyleScanLead = async (lead: StyleScanLead) => {
-  const { data, error } = await db
+  let { data, error } = await db
     .from('style_scan_leads')
     .insert([lead])
     .select()
     .single();
+
+  if (isMissingFirstTouchAtError(error)) {
+    const retry = await db
+      .from('style_scan_leads')
+      .insert([withoutFirstTouchAt(lead)])
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw error;
   return data;
@@ -87,22 +118,44 @@ export const saveStylistOrder = async (order: StylistOrder) => {
       .single();
 
     if (existing) {
-      const { data, error } = await db
+      let { data, error } = await db
         .from('stylist_orders')
         .update(order)
         .eq('razorpay_order_id', order.razorpay_order_id)
         .select()
         .single();
+
+      if (isMissingFirstTouchAtError(error)) {
+        const retry = await db
+          .from('stylist_orders')
+          .update(withoutFirstTouchAt(order))
+          .eq('razorpay_order_id', order.razorpay_order_id)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
       return data;
     }
   }
 
-  const { data, error } = await db
+  let { data, error } = await db
     .from('stylist_orders')
     .insert([order])
     .select()
     .single();
+
+  if (isMissingFirstTouchAtError(error)) {
+    const retry = await db
+      .from('stylist_orders')
+      .insert([withoutFirstTouchAt(order)])
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw error;
   return data;
@@ -112,13 +165,13 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string): Promis
   const storagePath = `public/${fileName}`;
 
   const { data, error } = await db.storage
-    .from('globe-intake-photos')
+    .from(STYLIST_INTAKE_PHOTOS_BUCKET)
     .upload(storagePath, file, { upsert: true, contentType: 'image/jpeg' });
 
   if (error) throw error;
 
   const { data: publicData } = db.storage
-    .from('globe-intake-photos')
+    .from(STYLIST_INTAKE_PHOTOS_BUCKET)
     .getPublicUrl(data.path);
 
   return publicData.publicUrl;
@@ -131,12 +184,15 @@ export interface StyleEditSubscription {
   customer_email: string;
   customer_name?: string;
   customer_phone?: string;
+  plan_type?: 'monthly' | 'annual';
   plan_id?: string;
   razorpay_subscription_id?: string;
+  razorpay_payment_id?: string;
   amount?: number;
   currency?: string;
-  status?: 'pending' | 'active' | 'cancelled' | 'halted';
+  status?: 'pending' | 'active' | 'cancelled' | 'halted' | 'completed' | 'expired';
   source?: 'checkout' | 'success_page' | 'chat';
+  notes?: string;
   start_at?: string;
   utm_source?: string | null;
   utm_medium?: string | null;

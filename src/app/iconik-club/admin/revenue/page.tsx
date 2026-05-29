@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 type Currency = 'INR' | 'AUD' | 'USD';
-type Market = 'india' | 'au' | 'global' | 'globe';
+type Market = 'india' | 'au' | 'global' | 'globe' | 'stylist';
 
 interface CurrencyKpis {
   totalRevenueMinor: number;
@@ -161,6 +161,7 @@ const MARKETS: Array<{ value: 'all' | Market; label: string }> = [
   { value: 'au', label: 'AU' },
   { value: 'global', label: 'Global' },
   { value: 'globe', label: 'Globe' },
+  { value: 'stylist', label: 'Stylist' },
 ];
 
 const toneClasses: Record<Tone, { icon: string; accent: string; badge: string }> = {

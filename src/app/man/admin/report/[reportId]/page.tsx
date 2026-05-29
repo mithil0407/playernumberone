@@ -133,6 +133,10 @@ type ManualImageTarget =
   | { imageType: 'outfit'; outfitNumber: number }
   | { imageType: 'comboGrid'; comboGridKind: ComboGridKind };
 
+interface ManualImageUploadOptions {
+  replace?: boolean;
+}
+
 const SECTIONS = [
   { key: 's0',  label: 'Style Snapshot',       field: 's0_snapshot'       },
   { key: 's1', label: 'Face Architecture',  field: 's1_face'     },
@@ -469,10 +473,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const uploadManualImage = useCallback(async (
     target: ManualImageTarget,
     file: File,
+    options?: ManualImageUploadOptions,
   ): Promise<string | null> => {
     const fd = new FormData();
     fd.append('image', file);
     fd.append('imageType', target.imageType);
+    if (options?.replace) fd.append('replace', '1');
     if (target.imageType === 'face') fd.append('faceKind', target.faceKind);
     if (target.imageType === 'outfit') fd.append('outfitNumber', String(target.outfitNumber));
     if (target.imageType === 'comboGrid') fd.append('comboGridKind', target.comboGridKind);
@@ -493,8 +499,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       setReport(prev => prev ? { ...prev, image_urls: imageUrls, error_message: null } : prev);
     }
     setError('');
+    void load({ fresh: true, force: true });
     return imageUrl ?? null;
-  }, [reportId]);
+  }, [reportId, load]);
 
   // ── Outfit image regeneration ─────────────────────────────────────────
   const regenerateOutfit = useCallback(async (

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
-import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
+import { sendStylistOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         if (updatedOrder) {
             await recordRevenueEvent({
                 eventKey: `stylist_orders:${db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id}:payment:${razorpay_payment_id}`,
-                sourceMarket: 'globe',
+                sourceMarket: 'stylist',
                 sourceTable: 'stylist_orders',
                 sourceId: db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id,
                 revenueKind: 'one_time',
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Confirmation email (reuse globe template)
+        // Confirmation email
         const emailTo = customer_email || String(updatedOrder?.customer_email ?? '');
         if (emailTo) {
             const name = customer_name || String(updatedOrder?.customer_name ?? '') || emailTo.split('@')[0];
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
             const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);
 
             try {
-                await sendGlobeOrderConfirmationEmail({
+                await sendStylistOrderConfirmationEmail({
                     customer_name: name,
                     customer_email: emailTo,
                     customer_phone: phone,

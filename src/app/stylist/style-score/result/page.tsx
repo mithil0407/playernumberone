@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle, Sparkles } from 'lucide-react';
 import { trackPageView } from '@/lib/metaPixel';
-import { saveStyleScanLead } from '@/lib/supabaseStyleScan';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -46,13 +45,14 @@ function getScoreRing(score: number): string {
 
 // ── Blueprint CTA ─────────────────────────────────────────────────────────
 
-function BlueprintCTA({ onCTAClick }: { onCTAClick: () => void }) {
+function BlueprintCTA({ onCTAClick, disabled = false }: { onCTAClick: () => void; disabled?: boolean }) {
     return (
         <button
             onClick={onCTAClick}
-            className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-xl hover:-translate-y-0.5 transform"
+            disabled={disabled}
+            className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 disabled:hover:translate-y-0 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-xl hover:-translate-y-0.5 transform"
         >
-            Get My ICONIK Blueprint — $149 <ArrowRight className="ml-3 h-4 w-4" />
+            {disabled ? 'Preparing Checkout...' : 'Get My ICONIK Blueprint — $149'} <ArrowRight className="ml-3 h-4 w-4" />
         </button>
     );
 }
@@ -63,6 +63,7 @@ export default function StyleScoreResultPage() {
     const router = useRouter();
     const [payload, setPayload] = useState<ScanPayload | null>(null);
     const [leadId, setLeadId] = useState<string | null>(null);
+    const [leadSaving, setLeadSaving] = useState(true);
     const [animatedScore, setAnimatedScore] = useState(0);
 
     useEffect(() => {
@@ -88,39 +89,23 @@ export default function StyleScoreResultPage() {
 
         setPayload(parsed);
 
-        // Save lead to Supabase (fire and forget)
+        // Save lead before checkout CTA becomes active. Checkout still has a fallback.
         const attribution = getAttributionPayload();
-        saveStyleScanLead({
-            email: parsed.email,
-            style_struggle: parsed.struggle,
-            body_shape: parsed.bodyShape,
-            undertone: parsed.undertone,
-            aesthetic: parsed.aesthetic,
-            dressing_context: parsed.dressingContext,
-            photo_url: parsed.photoUrl,
-            style_score: parsed.styleScore,
-            colour_direction: parsed.colourDirection,
-            silhouette_direction: parsed.silhouetteDirection,
-            mood_keywords: parsed.moodKeywords.join(','),
-            mood_colours: parsed.moodColours.join(','),
-            whats_missing: parsed.whatsMissing,
-            source: 'style_scan',
-            utm_source: attribution.utm_source,
-            utm_medium: attribution.utm_medium,
-            utm_campaign: attribution.utm_campaign,
-            utm_content: attribution.utm_content,
-            utm_term: attribution.utm_term,
-            referrer: attribution.referrer,
-            landing_page: attribution.landing_page,
-            attribution_payload: attribution.attribution_payload as Record<string, unknown>,
+        fetch('/api/stylist-lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...parsed, attribution }),
         })
-            .then(lead => {
-                if (lead?.id) {
-                    setLeadId(lead.id);
-                    if (typeof window !== 'undefined') localStorage.setItem('style_scan_lead_id', lead.id);
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.error || 'Style scan lead save failed');
+                if (data.lead?.id) {
+                    setLeadId(data.lead.id);
+                    if (typeof window !== 'undefined') localStorage.setItem('style_scan_lead_id', data.lead.id);
                 }
             })
-            .catch(err => console.warn('Style scan lead save failed:', err));
+            .catch(err => console.warn('Style scan lead save failed; checkout fallback will retry:', err))
+            .finally(() => setLeadSaving(false));
 
     }, [router]);
 
@@ -139,6 +124,7 @@ export default function StyleScoreResultPage() {
     }, [payload]);
 
     const handleCTAClick = useCallback(() => {
+        if (leadSaving) return;
         if (typeof window !== 'undefined') {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (window as any).fbq?.('trackCustom', 'blueprint_cta_clicked', { funnel: 'style_scan', score: payload?.styleScore });
@@ -150,7 +136,7 @@ export default function StyleScoreResultPage() {
             localStorage.setItem('stylist_customerEmail', payload.email);
         }
         router.push('/stylist/checkout');
-    }, [leadId, payload, router]);
+    }, [leadId, payload, router, leadSaving]);
 
     if (!payload) {
         return (
@@ -321,7 +307,7 @@ export default function StyleScoreResultPage() {
                         </div>
                     </div>
 
-                    <BlueprintCTA onCTAClick={handleCTAClick} />
+                    <BlueprintCTA onCTAClick={handleCTAClick} disabled={leadSaving} />
                     <p className="luxury-body text-luxury-charcoal/40 text-xs mt-3">72-hour delivery · 30-day money-back guarantee</p>
                 </motion.section>
 
@@ -363,7 +349,7 @@ export default function StyleScoreResultPage() {
                     <p className="luxury-body text-luxury-charcoal/60 text-sm mb-5">
                         Your score shows the gap. The Blueprint closes it.
                     </p>
-                    <BlueprintCTA onCTAClick={handleCTAClick} />
+                    <BlueprintCTA onCTAClick={handleCTAClick} disabled={leadSaving} />
                     <p className="luxury-body text-luxury-charcoal/40 text-xs mt-3">
                         72-hour delivery · 30-day guarantee · Personalised to you
                     </p>
@@ -376,9 +362,10 @@ export default function StyleScoreResultPage() {
                 <div className="max-w-sm mx-auto">
                     <button
                         onClick={handleCTAClick}
+                        disabled={leadSaving}
                         className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
                     >
-                        Get My ICONIK Blueprint — $149
+                        {leadSaving ? 'Preparing Checkout...' : 'Get My ICONIK Blueprint — $149'}
                     </button>
                 </div>
             </div>

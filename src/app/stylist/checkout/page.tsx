@@ -46,7 +46,24 @@ declare const window: Window & {
 };
 
 const BLUEPRINT_PRICE = 149;
+const BLUEPRINT_PRICE_WITH_EDIT = 110;
 const EDIT_PRICE = 39;
+
+const COUNTRY_CODES = [
+    { code: '+1', flag: '🇺🇸', label: 'US / Canada' },
+    { code: '+44', flag: '🇬🇧', label: 'UK' },
+    { code: '+91', flag: '🇮🇳', label: 'India' },
+    { code: '+971', flag: '🇦🇪', label: 'UAE' },
+    { code: '+61', flag: '🇦🇺', label: 'Australia' },
+    { code: '+65', flag: '🇸🇬', label: 'Singapore' },
+    { code: '+60', flag: '🇲🇾', label: 'Malaysia' },
+    { code: '+33', flag: '🇫🇷', label: 'France' },
+    { code: '+49', flag: '🇩🇪', label: 'Germany' },
+    { code: '+39', flag: '🇮🇹', label: 'Italy' },
+    { code: '+31', flag: '🇳🇱', label: 'Netherlands' },
+    { code: '+974', flag: '🇶🇦', label: 'Qatar' },
+    { code: '+966', flag: '🇸🇦', label: 'Saudi Arabia' },
+];
 
 // ── Edit Card ────────────────────────────────────────────────────────────────
 
@@ -95,10 +112,22 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
                     </button>
                 </div>
 
-                {/* Social proof */}
-                <p className="luxury-body text-luxury-charcoal/50 text-xs mb-3">
-                    86% of Blueprint buyers add this.
-                </p>
+                <div className="grid gap-2 mb-4">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-luxury-accent text-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] luxury-body shadow-sm">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        86% add this
+                    </div>
+                    <div className="rounded-xl border border-luxury-accent/35 bg-white p-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-luxury-accent mb-1">Blueprint discount unlocked</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-luxury-charcoal/35 line-through luxury-heading text-xl">${BLUEPRINT_PRICE}</span>
+                            <span className="text-luxury-accent luxury-heading text-3xl">${BLUEPRINT_PRICE_WITH_EDIT}</span>
+                        </div>
+                        <p className="luxury-body text-luxury-charcoal/60 text-xs mt-1">
+                            Add THE ICONIK EDIT and your first month effectively pays for itself.
+                        </p>
+                    </div>
+                </div>
 
                 {/* Value prop */}
                 <p className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed mb-4">
@@ -117,8 +146,8 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
                 </div>
 
                 {/* Pricing footnote */}
-                <p className="luxury-body text-luxury-charcoal/40 text-[10px]">
-                    ${EDIT_PRICE} billed today · Then monthly · Cancel anytime
+                <p className="luxury-body text-luxury-charcoal/55 text-[11px] font-semibold">
+                    You still pay ${BLUEPRINT_PRICE} today: ${BLUEPRINT_PRICE_WITH_EDIT} Blueprint + ${EDIT_PRICE} first month.
                 </p>
             </div>
 
@@ -131,6 +160,7 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
 export default function StylistCheckoutPage() {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [countryCode, setCountryCode] = useState('+1');
     const [editSelected, setEditSelected] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -142,7 +172,17 @@ export default function StylistCheckoutPage() {
         trackInitiateCheckout(BLUEPRINT_PRICE, 1, 'ICONIK Style Blueprint', 'USD', 'Style Scan Funnel');
         window.fbq?.('trackCustom', 'checkout_started', { funnel: 'style_scan', amount: BLUEPRINT_PRICE });
         const savedEmail = localStorage.getItem('stylist_customerEmail') || '';
+        const savedPhone = localStorage.getItem('stylist_customerPhone') || '';
         if (savedEmail) setEmail(savedEmail);
+        if (savedPhone) {
+            const matchedCountry = COUNTRY_CODES.find(country => savedPhone.startsWith(country.code));
+            if (matchedCountry) {
+                setCountryCode(matchedCountry.code);
+                setPhone(savedPhone.slice(matchedCountry.code.length).trim());
+            } else {
+                setPhone(savedPhone);
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -172,15 +212,19 @@ export default function StylistCheckoutPage() {
             setFormError('Please enter a valid email address.');
             return;
         }
-        if (!phone.trim() || phone.length < 7) {
+        const fullPhone = `${countryCode} ${phone}`.trim();
+
+        if (!phone.trim() || phone.replace(/\D/g, '').length < 7) {
             setFormError('Please enter a valid phone number.');
             return;
         }
 
-        updateUserData(email, phone);
+        updateUserData(email, fullPhone);
         setIsProcessing(true);
 
         const leadId = typeof window !== 'undefined' ? localStorage.getItem('style_scan_lead_id') : null;
+        const rawScanPayload = typeof window !== 'undefined' ? localStorage.getItem('style_scan_result') : null;
+        const checkoutBlueprintPrice = editSelected ? BLUEPRINT_PRICE_WITH_EDIT : BLUEPRINT_PRICE;
 
         try {
             const response = await fetch('/api/stylist-payment', {
@@ -189,9 +233,10 @@ export default function StylistCheckoutPage() {
                 body: JSON.stringify({
                     customer_name: email.split('@')[0],
                     customer_email: email,
-                    customer_phone: phone,
-                    amount: BLUEPRINT_PRICE,
+                    customer_phone: fullPhone,
+                    amount: checkoutBlueprintPrice,
                     lead_id: leadId,
+                    scan_payload: rawScanPayload ? JSON.parse(rawScanPayload) : null,
                     attribution: getAttributionPayload(),
                 }),
             });
@@ -219,9 +264,9 @@ export default function StylistCheckoutPage() {
                                     razorpay_payment_id: rzpResponse.razorpay_payment_id,
                                     razorpay_order_id: rzpResponse.razorpay_order_id,
                                     customer_email: email,
-                                    customer_phone: phone,
+                                    customer_phone: fullPhone,
                                     customer_name: email.split('@')[0],
-                                    amount: BLUEPRINT_PRICE,
+                                    amount: checkoutBlueprintPrice,
                                     lead_id: leadId,
                                 }),
                             });
@@ -229,9 +274,9 @@ export default function StylistCheckoutPage() {
                             console.warn('Could not confirm stylist payment in DB:', err);
                         }
 
-                        localStorage.setItem('stylist_purchaseAmount', BLUEPRINT_PRICE.toString());
+                        localStorage.setItem('stylist_purchaseAmount', checkoutBlueprintPrice.toString());
                         localStorage.setItem('stylist_customerEmail', email);
-                        localStorage.setItem('stylist_customerPhone', phone);
+                        localStorage.setItem('stylist_customerPhone', fullPhone);
                         localStorage.setItem('stylist_editSelected', editSelected.toString());
 
                         // If Edit selected, create subscription and store ID for success page to authorize
@@ -242,10 +287,11 @@ export default function StylistCheckoutPage() {
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
                                         customer_email: email,
-                                        customer_phone: phone,
+                                        customer_phone: fullPhone,
                                         customer_name: email.split('@')[0],
                                         lead_id: leadId,
                                         order_id: data.db_order_id,
+                                        plan_type: 'monthly',
                                         source: 'checkout',
                                         attribution: getAttributionPayload(),
                                     }),
@@ -263,7 +309,7 @@ export default function StylistCheckoutPage() {
 
                         window.location.href = `/stylist/checkout/success?payment_id=${rzpResponse.razorpay_payment_id}&email=${encodeURIComponent(email)}`;
                     },
-                    prefill: { name: email.split('@')[0], email, contact: phone },
+                    prefill: { name: email.split('@')[0], email, contact: fullPhone },
                     theme: { color: '#C9A96E' },
                 };
 
@@ -291,10 +337,10 @@ export default function StylistCheckoutPage() {
             setIsProcessing(false);
             setFormError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
         }
-    }, [email, phone, editSelected, razorpayLoaded]);
+    }, [email, phone, countryCode, editSelected, razorpayLoaded]);
 
     const totalLabel = editSelected
-        ? `Pay $${BLUEPRINT_PRICE} + $${EDIT_PRICE}/mo — Get My Blueprint & Edit`
+        ? `Pay $${BLUEPRINT_PRICE} today — Get My Blueprint & Edit`
         : `Pay $${BLUEPRINT_PRICE} — Get My Blueprint`;
 
     return (
@@ -342,8 +388,15 @@ export default function StylistCheckoutPage() {
                     </h1>
                     <div className="flex items-baseline justify-center gap-3 mb-3">
                         <span className="text-xl luxury-heading text-luxury-charcoal/30 line-through">$249</span>
-                        <span className="text-3xl md:text-5xl luxury-heading text-luxury-accent">${BLUEPRINT_PRICE}</span>
+                        <span className="text-3xl md:text-5xl luxury-heading text-luxury-accent">
+                            ${editSelected ? BLUEPRINT_PRICE_WITH_EDIT : BLUEPRINT_PRICE}
+                        </span>
                     </div>
+                    {editSelected && (
+                        <p className="luxury-body text-luxury-charcoal/60 text-sm mb-3">
+                            Add THE ICONIK EDIT and your Blueprint is ${BLUEPRINT_PRICE_WITH_EDIT}. Your first month pays for itself.
+                        </p>
+                    )}
                     <div className="inline-block bg-luxury-accent text-luxury-warm-white px-5 py-1.5 rounded-full luxury-body text-xs font-semibold mb-3">
                         STYLE SCAN EXCLUSIVE PRICE
                     </div>
@@ -411,14 +464,31 @@ export default function StylistCheckoutPage() {
                     </div>
                     <div>
                         <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Phone Number *</label>
-                        <input
-                            type="tel"
-                            value={phone}
-                            onChange={e => setPhone(e.target.value.replace(/[^\d\s+()-]/g, ''))}
-                            className="w-full px-4 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
-                            placeholder="+1 (555) 000-0000"
-                            required
-                        />
+                        <div className="grid grid-cols-[128px_1fr] gap-2">
+                            <select
+                                value={countryCode}
+                                onChange={e => setCountryCode(e.target.value)}
+                                className="w-full px-3 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-sm bg-white luxury-body"
+                                aria-label="Country code"
+                            >
+                                {COUNTRY_CODES.map(country => (
+                                    <option key={country.code} value={country.code}>
+                                        {country.flag} {country.code}
+                                    </option>
+                                ))}
+                            </select>
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value.replace(/[^\d\s()-]/g, ''))}
+                                className="w-full px-4 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
+                                placeholder="555 000 0000"
+                                required
+                            />
+                        </div>
+                        <p className="text-xs text-luxury-charcoal/40 mt-1 luxury-body">
+                            Selected code: {COUNTRY_CODES.find(country => country.code === countryCode)?.flag} {countryCode}
+                        </p>
                     </div>
                     {formError && (
                         <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body">{formError}</div>
@@ -430,7 +500,7 @@ export default function StylistCheckoutPage() {
                             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-3">Order Summary</p>
                             <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/70">
                                 <span>ICONIK Style Blueprint</span>
-                                <span className="font-semibold">${BLUEPRINT_PRICE}</span>
+                                <span className="font-semibold">${BLUEPRINT_PRICE_WITH_EDIT}</span>
                             </div>
                             <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/70">
                                 <span>THE ICONIK EDIT</span>
@@ -438,7 +508,7 @@ export default function StylistCheckoutPage() {
                             </div>
                             <div className="border-t border-luxury-cream pt-2 flex justify-between luxury-body text-sm">
                                 <span className="text-luxury-charcoal/50">Today&apos;s total</span>
-                                <span className="text-luxury-charcoal font-semibold">${BLUEPRINT_PRICE + EDIT_PRICE}</span>
+                                <span className="text-luxury-charcoal font-semibold">${BLUEPRINT_PRICE}</span>
                             </div>
                         </div>
                     )}
