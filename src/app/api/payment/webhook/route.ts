@@ -6,6 +6,8 @@ import { syncToCrm } from '@/lib/crmSupabase';
 import { sendConfirmationEmail, sendManConfirmationEmail, sendIconikClubWelcomeEmail } from '@/lib/email';
 import { recordRevenueEvent } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
+import { MAN_BLUEPRINT_PRODUCT_ID, MAN_OUTFIT_PREVIEW_PRODUCT_ID } from '@/lib/metaPixel';
+import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
 import Razorpay from 'razorpay';
 
 // Helper function to extract add-ons from Razorpay order notes
@@ -589,6 +591,26 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           attribution: attributionFromRow(existingOrder),
           metadata: { webhook_event: 'order.paid' },
         });
+
+        const isMenOrderForCapi = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
+        if (isMenOrderForCapi) {
+          const orderAttribution = attributionFromRow(existingOrder);
+          const hasOutfitPreview = addOnsString.includes('Outfit Preview on You');
+          const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(hasOutfitPreview ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+          await sendMetaPurchaseEvent({
+            eventId: payment.id,
+            eventSourceUrl: orderAttribution.landing_page || 'https://www.iconik.pro/man/checkout',
+            customerEmail: existingOrder.customers?.email,
+            customerName: existingOrder.customers?.name,
+            customerPhone: existingOrder.customers?.phone,
+            amount: Math.round(order.amount / 100),
+            currency: baseProduct === 'Iconik Man Style Blueprint INTL' ? 'USD' : 'INR',
+            contentName: 'ICONIK Man Complete Package',
+            contentIds,
+            numItems: contentIds.length,
+            attribution: orderAttribution,
+          });
+        }
 
         // 1. Add customer data to Google Sheets (independent — failure does NOT block email)
         try {

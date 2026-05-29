@@ -258,18 +258,36 @@ function PhotoUploadCard({
     onChange: (file?: File) => void;
     featured?: boolean;
 }) {
+    const referenceAspect =
+        field.key === 'headshot' ? 'aspect-[4/3]' :
+            field.key === 'front' ? 'aspect-[3/4]' :
+                'aspect-[4/5]';
+
     return (
-        <label className={`group border-2 border-dashed border-luxury-cream rounded-xl overflow-hidden cursor-pointer bg-white transition hover:border-luxury-accent/60 ${featured ? 'md:min-h-[340px]' : ''}`}>
+        <label className="group flex min-h-full cursor-pointer flex-col overflow-hidden rounded-xl border-2 border-dashed border-luxury-cream bg-white transition hover:border-luxury-accent/60">
             {field.referenceImage && (
-                <div className={`relative bg-luxury-cream ${featured ? 'aspect-[5/4]' : 'aspect-[4/3]'}`}>
-                    <Image src={field.referenceImage} alt={field.referenceAlt || field.label} fill className="object-cover" />
+                <div className={`relative bg-[#fde7de] ${referenceAspect}`}>
+                    <Image
+                        src={field.referenceImage}
+                        alt={field.referenceAlt || field.label}
+                        fill
+                        sizes={featured ? '(min-width: 768px) 50vw, 100vw' : '100vw'}
+                        className="object-contain"
+                    />
                 </div>
             )}
-            <div className="p-5">
+            {!field.referenceImage && (
+                <div className="flex aspect-[3/4] items-center justify-center bg-luxury-cream/35 px-6 text-center">
+                    <div className="rounded-full border border-luxury-accent/30 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-luxury-accent">
+                        Upload reference
+                    </div>
+                </div>
+            )}
+            <div className="flex flex-1 flex-col p-5">
                 <Upload className="w-5 h-5 text-luxury-accent mb-2" />
                 <p className="font-semibold luxury-body">{field.label}</p>
                 <p className="text-xs text-luxury-charcoal/50 mt-1">{field.instruction}</p>
-                <p className="text-xs text-luxury-charcoal/45 mt-3 truncate">{fileName || 'Choose file'}</p>
+                <p className="mt-auto pt-4 text-xs text-luxury-charcoal/45 truncate">{fileName || 'Choose file'}</p>
             </div>
             <input type="file" accept="image/*" className="hidden" onChange={e => onChange(e.target.files?.[0])} />
         </label>
@@ -309,6 +327,16 @@ function StylistIntakeInner() {
     const [secondaryElements, setSecondaryElements] = useState<string[]>([]);
 
     const progress = Math.round(((step + 1) / STEPS.length) * 100);
+    const lifestyleReveal = {
+        shopFrequency: Boolean(lifestyle.occupation),
+        budget: Boolean(lifestyle.occupation && lifestyle.shopFrequency),
+        shoppingRelationship: Boolean(lifestyle.occupation && lifestyle.shopFrequency && lifestyle.budget),
+        occasions: Boolean(lifestyle.occupation && lifestyle.shopFrequency && lifestyle.budget && lifestyle.shoppingRelationship),
+        hairTexture: Boolean(lifestyle.occasions.length > 0),
+        hairColour: Boolean(lifestyle.hairTexture.trim()),
+        priorService: Boolean(lifestyle.hairTexture.trim() && lifestyle.hairColour.trim()),
+        priorServiceResult: lifestyle.priorService === 'Yes, I have tried one before',
+    };
 
     const verifyAccess = useCallback(async (email: string, fallbackPhone = '') => {
         if (!email) return;
@@ -372,6 +400,23 @@ function StylistIntakeInner() {
         if (liked.some(v => v.includes('relaxed') || v.includes('soft') || v.includes('knit'))) return [moodBoards[1], moodBoards[0], moodBoards[2]];
         return [moodBoards[2], moodBoards[0], moodBoards[1]];
     }, [preferences]);
+
+    const preferenceCategoryComplete = useMemo(() => {
+        return Object.fromEntries(pieceCategories.map(category => {
+            const state = preferences[category.key];
+            const answeredCount = category.options.filter(([key]) =>
+                state.liked.includes(key) || state.disliked.includes(key) || state.skipped.includes(key)
+            ).length;
+            return [category.key, answeredCount === category.options.length];
+        }));
+    }, [preferences]);
+
+    const visiblePreferenceCategories = pieceCategories.filter((category, index) => {
+        if (index === 0) return true;
+        return Boolean(preferenceCategoryComplete[pieceCategories[index - 1].key]);
+    });
+
+    const preferenceSortingComplete = pieceCategories.every(category => preferenceCategoryComplete[category.key]);
 
     const uploadOne = async (file: File | undefined, key: string) => {
         if (!file) return null;
@@ -530,29 +575,31 @@ function StylistIntakeInner() {
                         <section className="space-y-5">
                             <h1 className="luxury-heading text-3xl">Body photos</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Phone photos are perfect. Headshot and side profile matter most here; the front photo helps complete the body analysis.</p>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                {(['headshot', 'side'] as const).map(key => {
-                                    const field = photoUploadFields.find(item => item.key === key);
-                                    if (!field) return null;
-                                    return (
-                                        <PhotoUploadCard
-                                            key={field.key}
-                                            field={field}
-                                            fileName={photos[field.key]?.name}
-                                            featured
-                                            onChange={file => setPhotos({ ...photos, [field.key]: file })}
-                                        />
-                                    );
-                                })}
+                            <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+                                <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
+                                    {(['headshot', 'front'] as const).map(key => {
+                                        const field = photoUploadFields.find(item => item.key === key);
+                                        if (!field) return null;
+                                        return (
+                                            <PhotoUploadCard
+                                                key={field.key}
+                                                field={field}
+                                                fileName={photos[field.key]?.name}
+                                                featured
+                                                onChange={file => setPhotos({ ...photos, [field.key]: file })}
+                                            />
+                                        );
+                                    })}
+                                </div>
                                 {(() => {
-                                    const field = photoUploadFields.find(item => item.key === 'front');
+                                    const field = photoUploadFields.find(item => item.key === 'side');
                                     if (!field) return null;
                                     return (
-                                        <div className="md:col-span-2">
+                                        <div className="sm:max-w-md lg:max-w-none">
                                             <PhotoUploadCard
                                                 field={field}
-                                                fileName={photos.front?.name}
-                                                onChange={file => setPhotos({ ...photos, front: file })}
+                                                fileName={photos.side?.name}
+                                                onChange={file => setPhotos({ ...photos, side: file })}
                                             />
                                         </div>
                                     );
@@ -624,36 +671,82 @@ function StylistIntakeInner() {
                     {step === 6 && (
                         <section className="space-y-5">
                             <h1 className="luxury-heading text-3xl">Lifestyle and shopping</h1>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={lifestyle.occupation} onChange={e => setLifestyle({ ...lifestyle, occupation: e.target.value })}>
-                                    <option value="">Occupation context</option>
-                                    {['Office / Corporate', 'Business Casual', 'Creative Industry', 'Work From Home', 'Homemaker', 'Student', 'Mixed'].map(item => <option key={item}>{item}</option>)}
-                                </select>
-                                <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={lifestyle.shopFrequency} onChange={e => setLifestyle({ ...lifestyle, shopFrequency: e.target.value })}>
-                                    <option value="">How often do you shop?</option>
-                                    {['Once a month', 'Every few months', 'Seasonally', 'Rarely, mostly wear what I have'].map(item => <option key={item}>{item}</option>)}
-                                </select>
-                                <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={lifestyle.budget} onChange={e => setLifestyle({ ...lifestyle, budget: e.target.value })}>
-                                    <option value="">Budget per outfit</option>
-                                    {['Under $50', '$50-150', '$150-300', '$300+'].map(item => <option key={item}>{item}</option>)}
-                                </select>
-                                <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={lifestyle.shoppingRelationship} onChange={e => setLifestyle({ ...lifestyle, shoppingRelationship: e.target.value })}>
-                                    <option value="">When shopping, I feel...</option>
-                                    {['Overwhelmed', 'Purposeful', 'Excited', 'Anxious', 'I mostly shop online'].map(item => <option key={item}>{item}</option>)}
-                                </select>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-3">{occasionOptions.map(item => <ToggleButton key={item} active={lifestyle.occasions.includes(item)} onClick={() => toggleArray(item, lifestyle.occasions, next => setLifestyle({ ...lifestyle, occasions: next }))}>{item}</ToggleButton>)}</div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <input className="border-2 border-luxury-cream rounded-xl px-4 py-3" placeholder="Natural hair texture" value={lifestyle.hairTexture} onChange={e => setLifestyle({ ...lifestyle, hairTexture: e.target.value })} />
-                                <input className="border-2 border-luxury-cream rounded-xl px-4 py-3" placeholder="Current hair colour" value={lifestyle.hairColour} onChange={e => setLifestyle({ ...lifestyle, hairColour: e.target.value })} />
-                                <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={lifestyle.priorService} onChange={e => setLifestyle({ ...lifestyle, priorService: e.target.value })}>
-                                    <option>No prior colour analysis or styling service</option>
-                                    <option>Yes, I have tried one before</option>
-                                </select>
-                                <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={lifestyle.priorServiceResult} onChange={e => setLifestyle({ ...lifestyle, priorServiceResult: e.target.value })}>
-                                    <option value="">If yes, did it work?</option>
-                                    {['Yes', 'Partially', 'No'].map(item => <option key={item}>{item}</option>)}
-                                </select>
+                            <div className="space-y-5">
+                                <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                    <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">1 of 8</p>
+                                    <select className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" value={lifestyle.occupation} onChange={e => setLifestyle({ ...lifestyle, occupation: e.target.value })}>
+                                        <option value="">Occupation context</option>
+                                        {['Office / Corporate', 'Business Casual', 'Creative Industry', 'Work From Home', 'Homemaker', 'Student', 'Mixed'].map(item => <option key={item}>{item}</option>)}
+                                    </select>
+                                </div>
+
+                                {lifestyleReveal.shopFrequency && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">2 of 8</p>
+                                        <select className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" value={lifestyle.shopFrequency} onChange={e => setLifestyle({ ...lifestyle, shopFrequency: e.target.value })}>
+                                            <option value="">How often do you shop?</option>
+                                            {['Once a month', 'Every few months', 'Seasonally', 'Rarely, mostly wear what I have'].map(item => <option key={item}>{item}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {lifestyleReveal.budget && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">3 of 8</p>
+                                        <select className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" value={lifestyle.budget} onChange={e => setLifestyle({ ...lifestyle, budget: e.target.value })}>
+                                            <option value="">Budget per outfit</option>
+                                            {['Under $50', '$50-150', '$150-300', '$300+'].map(item => <option key={item}>{item}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {lifestyleReveal.shoppingRelationship && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">4 of 8</p>
+                                        <select className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" value={lifestyle.shoppingRelationship} onChange={e => setLifestyle({ ...lifestyle, shoppingRelationship: e.target.value })}>
+                                            <option value="">When shopping, I feel...</option>
+                                            {['Overwhelmed', 'Purposeful', 'Excited', 'Anxious', 'I mostly shop online'].map(item => <option key={item}>{item}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {lifestyleReveal.occasions && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">5 of 8</p>
+                                        <p className="mb-3 font-semibold luxury-body">Where do you most need outfits to work?</p>
+                                        <div className="grid md:grid-cols-2 gap-3">{occasionOptions.map(item => <ToggleButton key={item} active={lifestyle.occasions.includes(item)} onClick={() => toggleArray(item, lifestyle.occasions, next => setLifestyle({ ...lifestyle, occasions: next }))}>{item}</ToggleButton>)}</div>
+                                    </div>
+                                )}
+
+                                {lifestyleReveal.hairTexture && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">6 of 8</p>
+                                        <input className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" placeholder="Natural hair texture" value={lifestyle.hairTexture} onChange={e => setLifestyle({ ...lifestyle, hairTexture: e.target.value })} />
+                                    </div>
+                                )}
+
+                                {lifestyleReveal.hairColour && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">7 of 8</p>
+                                        <input className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" placeholder="Current hair colour" value={lifestyle.hairColour} onChange={e => setLifestyle({ ...lifestyle, hairColour: e.target.value })} />
+                                    </div>
+                                )}
+
+                                {lifestyleReveal.priorService && (
+                                    <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
+                                        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">8 of 8</p>
+                                        <select className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" value={lifestyle.priorService} onChange={e => setLifestyle({ ...lifestyle, priorService: e.target.value, priorServiceResult: e.target.value === 'Yes, I have tried one before' ? lifestyle.priorServiceResult : '' })}>
+                                            <option>No prior colour analysis or styling service</option>
+                                            <option>Yes, I have tried one before</option>
+                                        </select>
+                                        {lifestyleReveal.priorServiceResult && (
+                                            <select className="mt-3 w-full border-2 border-luxury-cream rounded-xl px-4 py-3 bg-white" value={lifestyle.priorServiceResult} onChange={e => setLifestyle({ ...lifestyle, priorServiceResult: e.target.value })}>
+                                                <option value="">If yes, did it work?</option>
+                                                {['Yes', 'Partially', 'No'].map(item => <option key={item}>{item}</option>)}
+                                            </select>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </section>
                     )}
@@ -664,9 +757,30 @@ function StylistIntakeInner() {
                                 <h1 className="luxury-heading text-3xl mb-2">Style preference sorting</h1>
                                 <p className="luxury-body text-luxury-charcoal/60">This is not about what you currently own. Trust your first reaction.</p>
                             </div>
-                            {pieceCategories.map(category => (
-                                <div key={category.key}>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-3">{category.title}</p>
+                            <div className="flex items-center gap-3 rounded-2xl border border-luxury-cream bg-luxury-warm-white/45 p-4">
+                                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-luxury-accent text-white">
+                                    <ArrowRight className="h-4 w-4" />
+                                </div>
+                                <p className="luxury-body text-sm leading-relaxed text-luxury-charcoal/70">
+                                    For each piece, choose <strong className="text-luxury-charcoal">Like</strong>, <strong className="text-luxury-charcoal">No</strong>, or <strong className="text-luxury-charcoal">Skip</strong>. Complete this section to unlock the next one.
+                                </p>
+                            </div>
+                            {visiblePreferenceCategories.map((category, categoryIndex) => {
+                                const answeredCount = category.options.filter(([key]) => {
+                                    const state = preferences[category.key];
+                                    return state.liked.includes(key) || state.disliked.includes(key) || state.skipped.includes(key);
+                                }).length;
+                                return (
+                                <div key={category.key} className="rounded-2xl border border-luxury-cream bg-white p-4">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Section {categoryIndex + 1} of {pieceCategories.length}</p>
+                                            <h2 className="luxury-heading text-2xl text-luxury-charcoal">{category.title}</h2>
+                                        </div>
+                                        <span className="rounded-full bg-luxury-cream/60 px-3 py-1 text-xs font-semibold text-luxury-charcoal/55">
+                                            {answeredCount}/{category.options.length}
+                                        </span>
+                                    </div>
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         {category.options.map(([key, label, image]) => {
                                             const state = preferences[category.key];
@@ -688,8 +802,15 @@ function StylistIntakeInner() {
                                             );
                                         })}
                                     </div>
+                                    {preferenceCategoryComplete[category.key] && categoryIndex < pieceCategories.length - 1 && (
+                                        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-luxury-accent">
+                                            <Check className="h-4 w-4" />
+                                            Next section unlocked
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </section>
                     )}
 
@@ -724,7 +845,7 @@ function StylistIntakeInner() {
                             <ArrowLeft className="w-4 h-4" /> Back
                         </button>
                         {step < STEPS.length - 1 ? (
-                            <button type="button" disabled={saving} onClick={() => setStep(step + 1)} className="inline-flex items-center gap-2 rounded-full bg-luxury-accent text-white px-7 py-3 font-semibold">
+                            <button type="button" disabled={saving || (step === 7 && !preferenceSortingComplete)} onClick={() => setStep(step + 1)} className="inline-flex items-center gap-2 rounded-full bg-luxury-accent text-white px-7 py-3 font-semibold disabled:opacity-50">
                                 Continue <ArrowRight className="w-4 h-4" />
                             </button>
                         ) : (

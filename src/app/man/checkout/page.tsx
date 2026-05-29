@@ -4,7 +4,19 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
+import {
+  MAN_BLUEPRINT_PRODUCT_ID,
+  MAN_FUNNEL_CATEGORY,
+  MAN_OUTFIT_PREVIEW_PRODUCT_ID,
+  trackAddToCart,
+  trackInitiateCheckout,
+  trackPurchase,
+  updateUserData,
+  trackCTAClick,
+  trackRemoveFromCart,
+  trackViewContent,
+  trackPageView
+} from '@/lib/metaPixel';
 import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing } from '@/lib/manPricing';
 import { getAttributionPayload } from '@/lib/attribution';
@@ -49,15 +61,13 @@ export default function ManCheckoutPage() {
   const originalPrice = pricing.originalPrice;
   const discountedPrice = pricing.basePrice;
   const outfitPreviewPrice = pricing.addonPrice;
-  const savings = pricing.savings;
-
   useEffect(() => {
     trackPageView('Man Checkout');
   }, []);
 
   useEffect(() => {
     if (regionLoading) return;
-    trackViewContent('ICONIK Man Style Blueprint - Checkout', discountedPrice, ['iconik_man_style_blueprint'], pricing.currency, 'Man Funnel');
+    trackViewContent('ICONIK Man Style Blueprint - Checkout', discountedPrice, [MAN_BLUEPRINT_PRODUCT_ID], pricing.currency, MAN_FUNNEL_CATEGORY);
   }, [regionLoading, discountedPrice, pricing.currency]);
 
   const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false);
@@ -113,8 +123,8 @@ export default function ManCheckoutPage() {
   }, [formData.phone, formData.email, isIndia]);
 
   const handleAddonChange = useCallback((checked: boolean) => {
-    if (checked) trackAddToCart('Outfit Preview on You', outfitPreviewPrice, 'outfit_preview', pricing.currency, 'Man Funnel');
-    else trackRemoveFromCart('Outfit Preview on You', outfitPreviewPrice, 'outfit_preview', pricing.currency, 'Man Funnel');
+    if (checked) trackAddToCart('Outfit Preview on You', outfitPreviewPrice, MAN_OUTFIT_PREVIEW_PRODUCT_ID, pricing.currency, MAN_FUNNEL_CATEGORY);
+    else trackRemoveFromCart('Outfit Preview on You', outfitPreviewPrice, MAN_OUTFIT_PREVIEW_PRODUCT_ID, pricing.currency, MAN_FUNNEL_CATEGORY);
     setOutfitPreviewAddon(checked);
   }, [outfitPreviewPrice, pricing.currency]);
 
@@ -130,7 +140,8 @@ export default function ManCheckoutPage() {
 
     setIsProcessing(true);
     const itemCount = 1 + (outfitPreviewAddon ? 1 : 0);
-    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Man Style Blueprint', pricing.currency, 'Man Funnel');
+    const checkoutItems = [MAN_BLUEPRINT_PRODUCT_ID, ...(outfitPreviewAddon ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Man Style Blueprint', pricing.currency, MAN_FUNNEL_CATEGORY, checkoutItems);
 
     try {
       let responseData: {
@@ -201,10 +212,10 @@ export default function ManCheckoutPage() {
           image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
           handler: async function (response: RazorpayResponse) {
-            const purchasedItems = ['iconik_man_style_blueprint'];
-            if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
+            const purchasedItems = [MAN_BLUEPRINT_PRODUCT_ID];
+            if (outfitPreviewAddon) purchasedItems.push(MAN_OUTFIT_PREVIEW_PRODUCT_ID);
 
-            trackPurchase(totalAmount, 'ICONIK Man Complete Package', purchasedItems, purchasedItems.length, pricing.currency, 'Man Funnel', response.razorpay_payment_id);
+            trackPurchase(totalAmount, 'ICONIK Man Complete Package', purchasedItems, purchasedItems.length, pricing.currency, MAN_FUNNEL_CATEGORY, response.razorpay_payment_id, response.razorpay_payment_id);
 
             // International: confirm payment server-side and send email
             if (!isIndia) {
@@ -471,7 +482,7 @@ export default function ManCheckoutPage() {
                   const hasAddons = outfitPreviewAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
-                    trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, pricing.currency, 'Man Funnel');
+                    trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, pricing.currency, MAN_FUNNEL_CATEGORY);
                   } else {
                     await processPayment();
                   }

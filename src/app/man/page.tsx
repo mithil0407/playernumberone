@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
-import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { MAN_BLUEPRINT_PRODUCT_ID, MAN_FUNNEL_CATEGORY, trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { captureAttribution } from '@/lib/attribution';
 import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing, type ManPricing } from '@/lib/manPricing';
 
@@ -92,7 +93,7 @@ function CTAButton({ className = '', pricing }: { className?: string; pricing: M
     return (
         <Link
             href="/man/checkout"
-            onClick={() => trackCTAClick('Get My Blueprint', 'Man Landing', pricing.basePrice, pricing.currency, 'Man Funnel')}
+            onClick={() => trackCTAClick('Get My Blueprint', 'Man Landing', pricing.basePrice, pricing.currency, MAN_FUNNEL_CATEGORY)}
             className={`inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
         >
             GET MY BLUEPRINT — {pricing.displayBase} <ArrowRight className="ml-3 h-4 w-4" />
@@ -118,12 +119,13 @@ export default function ManLandingPage() {
     const prevSlide = useCallback(() => setCarouselIndex(i => (i - 1 + heroImages.length) % heroImages.length), [heroImages.length]);
 
     useEffect(() => {
+        captureAttribution();
         trackPageView('Man Landing');
     }, []);
 
     useEffect(() => {
         if (isLoading) return;
-        trackViewContent('ICONIK Blueprint Man', pricing.basePrice, ['iconik_blueprint_man'], pricing.currency, 'Man Funnel');
+        trackViewContent('ICONIK Man Style Blueprint', pricing.basePrice, [MAN_BLUEPRINT_PRODUCT_ID], pricing.currency, MAN_FUNNEL_CATEGORY);
     }, [isLoading, pricing.basePrice, pricing.currency]);
 
     useEffect(() => {
@@ -715,7 +717,7 @@ export default function ManLandingPage() {
                     </div>
                     <Link
                         href="/man/checkout"
-                        onClick={() => trackCTAClick('Get My Blueprint', 'Man Price Section', pricing.basePrice, pricing.currency, 'Man Funnel')}
+                        onClick={() => trackCTAClick('Get My Blueprint', 'Man Price Section', pricing.basePrice, pricing.currency, MAN_FUNNEL_CATEGORY)}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
                     >
                         GET MY BLUEPRINT — {isLoading ? '...' : pricing.displayBase} <ArrowRight className="ml-3 h-4 w-4" />
@@ -958,7 +960,7 @@ export default function ManLandingPage() {
                     </p>
                     <Link
                         href="/man/checkout"
-                        onClick={() => trackCTAClick('Final CTA Man', 'Bottom Section', pricing.basePrice, pricing.currency, 'Man Funnel')}
+                        onClick={() => trackCTAClick('Final CTA Man', 'Bottom Section', pricing.basePrice, pricing.currency, MAN_FUNNEL_CATEGORY)}
                         className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-12 py-5 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold text-base mb-6"
                     >
                         GET MY BLUEPRINT — {isLoading ? '...' : pricing.displayBase} <ArrowRight className="ml-3 h-4 w-4" />

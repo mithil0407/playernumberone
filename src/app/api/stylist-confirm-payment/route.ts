@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
             customer_phone,
             amount,
             lead_id,
+            edit_selected,
         } = await request.json();
 
         if (!razorpay_payment_id) {
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
                 paymentId: razorpay_payment_id,
                 razorpayOrderId: razorpay_order_id,
                 attribution: attributionFromRow(updatedOrder),
-                metadata: { source: 'stylist-confirm-payment', lead_id },
+                metadata: { source: 'stylist-confirm-payment', lead_id, edit_selected: Boolean(edit_selected) },
             });
         }
 
@@ -104,7 +105,8 @@ export async function POST(request: NextRequest) {
                     customer_phone: phone,
                     order_amount: orderAmount,
                     payment_id: razorpay_payment_id,
-                    has_edit_addon: false,
+                    has_edit_addon: Boolean(edit_selected),
+                    edit_authorization_pending: Boolean(edit_selected),
                     delivery_hours: 72,
                 });
             } catch (emailErr) {

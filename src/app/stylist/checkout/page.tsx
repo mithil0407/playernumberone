@@ -49,6 +49,43 @@ const BLUEPRINT_PRICE = 149;
 const BLUEPRINT_PRICE_WITH_EDIT = 110;
 const EDIT_PRICE = 39;
 
+type StylistEditCheckoutState =
+    | 'not_selected'
+    | 'selected_pending_setup'
+    | 'selected_ready_to_authorize'
+    | 'selected_setup_failed'
+    | 'authorized'
+    | 'declined';
+
+interface StylistEditRetryContext {
+    customer_email: string;
+    customer_phone: string;
+    customer_name: string;
+    lead_id: string | null;
+    order_id: string | null;
+    plan_type: 'monthly';
+    source: 'checkout';
+    attribution: ReturnType<typeof getAttributionPayload>;
+}
+
+const EDIT_STATE_KEY = 'stylist_editState';
+const EDIT_RETRY_CONTEXT_KEY = 'stylist_editRetryContext';
+const EDIT_SETUP_ERROR_KEY = 'stylist_editSetupError';
+
+function setStoredEditState(state: StylistEditCheckoutState) {
+    localStorage.setItem(EDIT_STATE_KEY, state);
+}
+
+function editSetupMessage(data: { error?: string; error_code?: string }) {
+    if (data.error_code === 'plan_not_configured') {
+        return 'Your Blueprint is confirmed, but ICONIK Edit needs a payment plan configured before it can be authorized. Please contact support and we will activate it for you.';
+    }
+    if (data.error_code === 'razorpay_plan_invalid') {
+        return 'Your Blueprint is confirmed, but the ICONIK Edit payment plan is not available in this Razorpay mode. Please contact support and we will activate it for you.';
+    }
+    return data.error || 'Your Blueprint is confirmed, but we could not set up ICONIK Edit yet. Please retry from this page.';
+}
+
 const COUNTRY_CODES = [
     { code: '+1', flag: '🇺🇸', label: 'US / Canada' },
     { code: '+44', flag: '🇬🇧', label: 'UK' },
@@ -268,6 +305,7 @@ export default function StylistCheckoutPage() {
                                     customer_name: email.split('@')[0],
                                     amount: checkoutBlueprintPrice,
                                     lead_id: leadId,
+                                    edit_selected: editSelected,
                                 }),
                             });
                         } catch (err) {
@@ -278,33 +316,51 @@ export default function StylistCheckoutPage() {
                         localStorage.setItem('stylist_customerEmail', email);
                         localStorage.setItem('stylist_customerPhone', fullPhone);
                         localStorage.setItem('stylist_editSelected', editSelected.toString());
+                        localStorage.removeItem('stylist_editPurchased');
+                        localStorage.removeItem('stylist_editSubscriptionId');
+                        localStorage.removeItem('stylist_editKey');
+                        localStorage.removeItem(EDIT_SETUP_ERROR_KEY);
 
                         // If Edit selected, create subscription and store ID for success page to authorize
                         if (editSelected) {
+                            const editRetryContext: StylistEditRetryContext = {
+                                customer_email: email,
+                                customer_phone: fullPhone,
+                                customer_name: email.split('@')[0],
+                                lead_id: leadId,
+                                order_id: data.db_order_id && data.db_order_id !== 'mock-order-id' ? data.db_order_id : null,
+                                plan_type: 'monthly',
+                                source: 'checkout',
+                                attribution: getAttributionPayload(),
+                            };
+                            setStoredEditState('selected_pending_setup');
+                            localStorage.setItem(EDIT_RETRY_CONTEXT_KEY, JSON.stringify(editRetryContext));
+
                             try {
                                 const subRes = await fetch('/api/stylist-edit-subscribe', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        customer_email: email,
-                                        customer_phone: fullPhone,
-                                        customer_name: email.split('@')[0],
-                                        lead_id: leadId,
-                                        order_id: data.db_order_id,
-                                        plan_type: 'monthly',
-                                        source: 'checkout',
-                                        attribution: getAttributionPayload(),
-                                    }),
+                                    body: JSON.stringify(editRetryContext),
                                 });
                                 const subData = await subRes.json();
                                 if (subData.success && subData.subscription_id) {
                                     localStorage.setItem('stylist_editSubscriptionId', subData.subscription_id);
                                     localStorage.setItem('stylist_editKey', subData.key);
+                                    setStoredEditState('selected_ready_to_authorize');
                                     window.fbq?.('trackCustom', 'edit_checkout_added', { funnel: 'style_scan' });
+                                } else {
+                                    localStorage.setItem(EDIT_SETUP_ERROR_KEY, editSetupMessage(subData));
+                                    setStoredEditState('selected_setup_failed');
                                 }
                             } catch (err) {
-                                console.warn('Edit subscription creation failed (non-fatal):', err);
+                                const message = err instanceof Error ? err.message : 'Your Blueprint is confirmed, but we could not set up ICONIK Edit yet. Please retry from this page.';
+                                localStorage.setItem(EDIT_SETUP_ERROR_KEY, message);
+                                setStoredEditState('selected_setup_failed');
+                                console.warn('Edit subscription creation failed:', err);
                             }
+                        } else {
+                            setStoredEditState('not_selected');
+                            localStorage.removeItem(EDIT_RETRY_CONTEXT_KEY);
                         }
 
                         window.location.href = `/stylist/checkout/success?payment_id=${rzpResponse.razorpay_payment_id}&email=${encodeURIComponent(email)}`;

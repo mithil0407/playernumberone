@@ -1,5 +1,9 @@
 // Clean Meta Pixel Implementation for ICONIK
 // Pixel ID: 1373360484073939
+export const META_PIXEL_ID = '1373360484073939';
+export const MAN_BLUEPRINT_PRODUCT_ID = 'iconik_man_style_blueprint';
+export const MAN_OUTFIT_PREVIEW_PRODUCT_ID = 'outfit_preview_on_you';
+export const MAN_FUNNEL_CATEGORY = 'Man Funnel';
 
 interface MetaPixelData {
   content_type?: string;
@@ -8,8 +12,11 @@ interface MetaPixelData {
   value?: number;
   currency?: string;
   num_items?: number;
-  event_id?: string;
   [key: string]: string | number | boolean | string[] | undefined;
+}
+
+interface MetaPixelOptions {
+  eventID?: string;
 }
 
 // Meta Pixel function type
@@ -17,8 +24,8 @@ declare global {
   interface Window {
     fbq: {
       (command: 'init', pixelId: string, userData?: { em?: string; ph?: string;[key: string]: string | undefined }): void;
-      (command: 'track', eventName: string, parameters?: MetaPixelData): void;
-      (command: 'trackCustom', eventName: string, parameters?: MetaPixelData): void;
+      (command: 'track', eventName: string, parameters?: MetaPixelData, options?: MetaPixelOptions): void;
+      (command: 'trackCustom', eventName: string, parameters?: MetaPixelData, options?: MetaPixelOptions): void;
       callMethod?: (...args: unknown[]) => void;
       queue?: unknown[];
       loaded?: boolean;
@@ -35,7 +42,7 @@ const isPixelLoaded = (): boolean => {
 // Initialize Meta Pixel with advanced matching
 export const initMetaPixel = (userData?: { em?: string; ph?: string;[key: string]: string | undefined }) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('init', '1373360484073939', userData || {});
+    window.fbq('init', META_PIXEL_ID, userData || {});
     window.fbq.loaded = true;
     console.log('Meta Pixel initialized with advanced matching:', userData ? 'with user data' : 'without user data');
   } else {
@@ -52,20 +59,21 @@ export const updateUserData = (email?: string, phone?: string) => {
     if (phone) userData.ph = phone;
 
     // Re-initialize with user data
-    window.fbq('init', '1373360484073939', userData);
+    window.fbq('init', META_PIXEL_ID, userData);
     console.log('Meta Pixel updated with user data for advanced matching');
   }
 };
 
 // Generic event tracking with deduplication
-const trackEvent = (eventName: string, data?: MetaPixelData) => {
+const trackEvent = (eventName: string, data?: MetaPixelData, options?: MetaPixelOptions & { custom?: boolean }) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    // Add event ID to prevent duplicates
-    const eventId = `${eventName}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const eventData = { ...data, event_id: eventId };
-
-    window.fbq('track', eventName, eventData);
-    console.log(`Meta Pixel: ${eventName} tracked`, eventData);
+    const eventId = options?.eventID || `${eventName}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    if (options?.custom) {
+      window.fbq('trackCustom', eventName, data, { eventID: eventId });
+    } else {
+      window.fbq('track', eventName, data, { eventID: eventId });
+    }
+    console.log(`Meta Pixel: ${eventName} tracked`, { ...data, eventID: eventId });
   } else {
     console.error(`Meta Pixel: Cannot track ${eventName} - pixel not loaded`);
   }
@@ -136,14 +144,15 @@ export const trackInitiateCheckout = (
   numItems: number,
   productName: string = 'ICONIK Style Consultation',
   currency: string = 'INR',
-  contentCategory?: string
+  contentCategory?: string,
+  contentIds: string[] = ['iconik_style_consultation']
 ) => {
   trackEvent('InitiateCheckout', {
     value: value,
     currency: currency,
     content_type: 'product',
     content_name: productName,
-    content_ids: ['iconik_style_consultation'],
+    content_ids: contentIds,
     num_items: numItems,
     content_category: contentCategory
   });
@@ -157,7 +166,8 @@ export const trackPurchase = (
   numItems: number,
   currency: string = 'INR',
   contentCategory?: string,
-  transactionId?: string
+  transactionId?: string,
+  eventId?: string
 ) => {
   trackEvent('Purchase', {
     value: value,
@@ -168,7 +178,7 @@ export const trackPurchase = (
     num_items: numItems,
     content_category: contentCategory,
     transaction_id: transactionId
-  });
+  }, eventId ? { eventID: eventId } : undefined);
 };
 
 // Lead
@@ -198,11 +208,10 @@ export const trackCTAClick = (
   currency: string = 'INR',
   contentCategory?: string
 ) => {
-  trackEvent('Lead', {
+  trackEvent('CTA_Click', {
     content_name: `${buttonName} - ${location}`,
     value: value,
     currency: currency,
     content_category: contentCategory || 'CTA Click'
-  });
+  }, { custom: true });
 };
-

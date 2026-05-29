@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { sendManConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
+import { MAN_BLUEPRINT_PRODUCT_ID, MAN_OUTFIT_PREVIEW_PRODUCT_ID } from '@/lib/metaPixel';
+import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
 
 type CustomerRelation =
   | { name?: string | null; email?: string | null; phone?: string | null }
@@ -64,6 +66,9 @@ export async function POST(request: NextRequest) {
     }
 
     const relatedCustomer = firstCustomer(updatedOrder?.customers as CustomerRelation);
+    const orderAttribution = attributionFromRow(updatedOrder);
+    const emailForTracking = customer_email || String(updatedOrder?.customer_email ?? relatedCustomer?.email ?? '');
+    const phoneForTracking = customer_phone || String(updatedOrder?.customer_phone ?? relatedCustomer?.phone ?? '');
 
     if (updatedOrder && (db_order_id || razorpay_order_id)) {
       await recordRevenueEvent({
@@ -74,21 +79,37 @@ export async function POST(request: NextRequest) {
         revenueKind: 'one_time',
         eventType: 'one_time_payment',
         productType: 'man_blueprint_intl',
-        customerEmail: customer_email || String(updatedOrder.customer_email ?? relatedCustomer?.email ?? ''),
+        customerEmail: emailForTracking,
         customerName: relatedCustomer?.name ?? null,
-        customerPhone: customer_phone || String(updatedOrder.customer_phone ?? relatedCustomer?.phone ?? ''),
+        customerPhone: phoneForTracking,
         amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
         currency: 'USD',
         status: 'paid',
         paymentId: razorpay_payment_id,
         razorpayOrderId: razorpay_order_id,
-        attribution: attributionFromRow(updatedOrder),
+        attribution: orderAttribution,
         metadata: { source: 'man-confirm-payment' },
+      });
+
+      const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(has_outfit_preview ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+      await sendMetaPurchaseEvent({
+        eventId: razorpay_payment_id,
+        eventSourceUrl: orderAttribution.landing_page || 'https://www.iconik.pro/man/checkout',
+        customerEmail: emailForTracking,
+        customerPhone: phoneForTracking,
+        amount: Number(amount ?? updatedOrder.amount ?? 0),
+        currency: 'USD',
+        contentName: 'ICONIK Man Complete Package',
+        contentIds,
+        numItems: contentIds.length,
+        attribution: orderAttribution,
+        userAgent: request.headers.get('user-agent'),
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip'),
       });
     }
 
     // Send confirmation email with USD symbol
-    const emailTo = customer_email || String(updatedOrder?.customer_email ?? relatedCustomer?.email ?? '');
+    const emailTo = emailForTracking;
     if (emailTo) {
       const phone = customer_phone || String(updatedOrder?.customer_phone ?? relatedCustomer?.phone ?? '');
       const orderAmount = amount ?? Number(updatedOrder?.amount ?? 0);

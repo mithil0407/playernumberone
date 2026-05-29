@@ -7,10 +7,16 @@ export interface AttributionFields {
   referrer?: string | null;
   landing_page?: string | null;
   first_touch_at?: string | null;
-  attribution_payload?: Record<string, unknown> | null;
+  attribution_payload?: AttributionPayload | null;
 }
 
 const STORAGE_KEY = 'iconik_first_touch_attribution';
+
+type AttributionPayload = Record<string, unknown> & {
+  fbclid?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+};
 const ATTRIBUTION_KEYS = [
   'utm_source',
   'utm_medium',
@@ -41,8 +47,25 @@ function cleanTimestamp(value: unknown) {
   return Number.isFinite(time) ? new Date(time).toISOString() : null;
 }
 
+function readCookie(name: string) {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function buildFbc(fbclid: string | null) {
+  if (!fbclid) return null;
+  return `fb.1.${Date.now()}.${fbclid}`;
+}
+
 export function normalizeAttribution(input: unknown): AttributionFields {
   const source = typeof input === 'object' && input !== null ? input as Record<string, unknown> : {};
+  const existingPayload = typeof source.attribution_payload === 'object' && source.attribution_payload !== null
+    ? source.attribution_payload as AttributionPayload
+    : {};
+  const fbclid = cleanText(source.fbclid) ?? cleanText(existingPayload.fbclid);
+  const fbp = cleanText(source.fbp) ?? cleanText(source._fbp) ?? cleanText(existingPayload.fbp);
+  const fbc = cleanText(source.fbc) ?? cleanText(source._fbc) ?? cleanText(existingPayload.fbc);
   const normalized: AttributionFields = {
     utm_source: cleanText(source.utm_source),
     utm_medium: cleanText(source.utm_medium),
@@ -57,6 +80,9 @@ export function normalizeAttribution(input: unknown): AttributionFields {
   normalized.attribution_payload = Object.fromEntries(
     ATTRIBUTION_KEYS.map(key => [key, normalized[key] ?? null])
   );
+  normalized.attribution_payload.fbclid = fbclid;
+  normalized.attribution_payload.fbp = fbp;
+  normalized.attribution_payload.fbc = fbc;
 
   return normalized;
 }
@@ -113,6 +139,7 @@ export function getAttributionPayload(): Required<AttributionFields> {
     if (stored) return attributionToColumns(JSON.parse(stored));
 
     const params = new URLSearchParams(window.location.search);
+    const fbclid = params.get('fbclid');
     const payload = attributionToColumns({
       utm_source: params.get('utm_source'),
       utm_medium: params.get('utm_medium'),
@@ -122,6 +149,9 @@ export function getAttributionPayload(): Required<AttributionFields> {
       referrer: document.referrer || null,
       landing_page: window.location.href,
       first_touch_at: new Date().toISOString(),
+      fbclid,
+      fbp: readCookie('_fbp'),
+      fbc: readCookie('_fbc') || buildFbc(fbclid),
     });
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -134,4 +164,3 @@ export function getAttributionPayload(): Required<AttributionFields> {
 export function captureAttribution() {
   return getAttributionPayload();
 }
-

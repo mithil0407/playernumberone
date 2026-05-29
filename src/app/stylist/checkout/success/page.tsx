@@ -41,6 +41,83 @@ const EDIT_BULLETS = [
     'Shopping picks matched to your exact palette',
 ];
 
+type StylistEditCheckoutState =
+    | 'not_selected'
+    | 'selected_pending_setup'
+    | 'selected_ready_to_authorize'
+    | 'selected_setup_failed'
+    | 'authorized'
+    | 'declined';
+
+interface StylistEditRetryContext {
+    customer_email: string;
+    customer_phone: string;
+    customer_name: string;
+    lead_id: string | null;
+    order_id: string | null;
+    plan_type: 'monthly';
+    source: 'checkout' | 'success_page';
+    attribution: ReturnType<typeof getAttributionPayload>;
+}
+
+const EDIT_STATE_KEY = 'stylist_editState';
+const EDIT_RETRY_CONTEXT_KEY = 'stylist_editRetryContext';
+const EDIT_SETUP_ERROR_KEY = 'stylist_editSetupError';
+
+function isEditState(value: string | null): value is StylistEditCheckoutState {
+    return value === 'not_selected' ||
+        value === 'selected_pending_setup' ||
+        value === 'selected_ready_to_authorize' ||
+        value === 'selected_setup_failed' ||
+        value === 'authorized' ||
+        value === 'declined';
+}
+
+function storedEditState() {
+    const state = localStorage.getItem(EDIT_STATE_KEY);
+    if (isEditState(state)) return state;
+    if (localStorage.getItem('stylist_editPurchased') === 'true') return 'authorized';
+    if (localStorage.getItem('stylist_editSelected') === 'true') {
+        return localStorage.getItem('stylist_editSubscriptionId') ? 'selected_ready_to_authorize' : 'selected_setup_failed';
+    }
+    return 'not_selected';
+}
+
+function persistEditState(state: StylistEditCheckoutState) {
+    localStorage.setItem(EDIT_STATE_KEY, state);
+}
+
+function readRetryContext(): StylistEditRetryContext | null {
+    const raw = localStorage.getItem(EDIT_RETRY_CONTEXT_KEY);
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw) as Partial<StylistEditRetryContext>;
+        if (!parsed.customer_email) return null;
+        return {
+            customer_email: parsed.customer_email,
+            customer_phone: parsed.customer_phone || '',
+            customer_name: parsed.customer_name || parsed.customer_email.split('@')[0],
+            lead_id: parsed.lead_id || null,
+            order_id: parsed.order_id || null,
+            plan_type: 'monthly',
+            source: parsed.source === 'checkout' ? 'checkout' : 'success_page',
+            attribution: parsed.attribution || getAttributionPayload(),
+        };
+    } catch {
+        return null;
+    }
+}
+
+function editSetupMessage(data: { error?: string; error_code?: string }) {
+    if (data.error_code === 'plan_not_configured') {
+        return 'Your Blueprint is confirmed, but ICONIK Edit needs a payment plan configured before it can be authorized. Please contact support and we will activate it for you.';
+    }
+    if (data.error_code === 'razorpay_plan_invalid') {
+        return 'Your Blueprint is confirmed, but the ICONIK Edit payment plan is not available in this Razorpay mode. Please contact support and we will activate it for you.';
+    }
+    return data.error || 'Your Blueprint is confirmed, but we could not set up ICONIK Edit yet. Please retry below.';
+}
+
 function IntakeButton({ href, label = 'Complete My Intake Now' }: { href: string; label?: string }) {
     return (
         <Link
@@ -66,6 +143,7 @@ function StylistSuccessInner() {
     // Edit state
     const [editPurchased, setEditPurchased] = useState(false);
     const [editSelected, setEditSelected] = useState(false);
+    const [editState, setEditState] = useState<StylistEditCheckoutState>('not_selected');
     const [pendingSubId, setPendingSubId] = useState<string | null>(null);
     const [pendingSubKey, setPendingSubKey] = useState<string | null>(null);
     const [editLoading, setEditLoading] = useState(false);
@@ -76,20 +154,26 @@ function StylistSuccessInner() {
     useEffect(() => {
         trackPageView('Stylist Checkout Success');
         const paymentId = sessionStorage.getItem('stylist_purchaseTracked') || '';
-        window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: 149, currency: 'USD', payment_id: paymentId });
-        window.fbq?.('track', 'Purchase', { value: 149, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
+        const purchaseAmount = Number(localStorage.getItem('stylist_purchaseAmount') || 149);
+        const trackedAmount = Number.isFinite(purchaseAmount) ? purchaseAmount : 149;
+        window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: trackedAmount, currency: 'USD', payment_id: paymentId });
+        window.fbq?.('track', 'Purchase', { value: trackedAmount, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
         sessionStorage.removeItem('stylist_purchaseTracked');
 
         // Read Edit state from localStorage
         const purchased = localStorage.getItem('stylist_editPurchased') === 'true';
         const selected = localStorage.getItem('stylist_editSelected') === 'true';
+        const state = storedEditState();
         const subId = localStorage.getItem('stylist_editSubscriptionId') || null;
         const subKey = localStorage.getItem('stylist_editKey') || null;
+        const setupError = localStorage.getItem(EDIT_SETUP_ERROR_KEY) || '';
 
-        setEditPurchased(purchased);
+        setEditPurchased(purchased || state === 'authorized');
         setEditSelected(selected);
+        setEditState(state);
         setPendingSubId(subId);
         setPendingSubKey(subKey);
+        setEditError(setupError);
     }, []);
 
     useEffect(() => {
@@ -126,8 +210,11 @@ function StylistSuccessInner() {
                 localStorage.setItem('stylist_editPurchased', 'true');
                 localStorage.removeItem('stylist_editSubscriptionId');
                 localStorage.removeItem('stylist_editKey');
+                localStorage.removeItem(EDIT_SETUP_ERROR_KEY);
                 localStorage.setItem('stylist_editSelected', 'false');
+                persistEditState('authorized');
                 setEditPurchased(true);
+                setEditState('authorized');
                 window.fbq?.('trackCustom', 'edit_purchased', { funnel: 'style_scan', source: editSelected ? 'checkout_pending' : 'success_page' });
                 setEditLoading(false);
             },
@@ -164,38 +251,71 @@ function StylistSuccessInner() {
 
         // If subscription was already created at checkout, just open the modal
         if (pendingSubId && pendingSubKey) {
+            persistEditState('selected_ready_to_authorize');
+            setEditState('selected_ready_to_authorize');
             openSubscriptionModal(pendingSubId, pendingSubKey);
             return;
         }
 
         // Otherwise create subscription now
         try {
-            const leadId = localStorage.getItem('style_scan_lead_id') || null;
-            const orderId = null; // order ID not available on success page path without prior sub creation
-            const res = await fetch('/api/stylist-edit-subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            const storedContext = readRetryContext();
+            const isCheckoutRetry = editState === 'selected_setup_failed' || editState === 'selected_pending_setup';
+            const payload: StylistEditRetryContext = storedContext && isCheckoutRetry
+                ? {
+                    ...storedContext,
+                    attribution: getAttributionPayload(),
+                }
+                : {
                     customer_email: email,
                     customer_phone: phone,
                     customer_name: email.split('@')[0],
-                    lead_id: leadId,
-                    order_id: orderId,
+                    lead_id: localStorage.getItem('style_scan_lead_id') || null,
+                    order_id: null,
                     plan_type: 'monthly',
                     source: 'success_page',
                     attribution: getAttributionPayload(),
-                }),
+                };
+            persistEditState('selected_pending_setup');
+            setEditState('selected_pending_setup');
+            localStorage.setItem(EDIT_RETRY_CONTEXT_KEY, JSON.stringify(payload));
+
+            const res = await fetch('/api/stylist-edit-subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
             });
             const data = await res.json();
             if (!data.success || !data.subscription_id) {
-                throw new Error(data.error || 'Failed to set up your Edit.');
+                const message = editSetupMessage(data);
+                localStorage.setItem(EDIT_SETUP_ERROR_KEY, message);
+                persistEditState('selected_setup_failed');
+                setEditState('selected_setup_failed');
+                throw new Error(message);
             }
+            localStorage.setItem('stylist_editSelected', 'true');
+            localStorage.setItem('stylist_editSubscriptionId', data.subscription_id);
+            localStorage.setItem('stylist_editKey', data.key);
+            localStorage.removeItem(EDIT_SETUP_ERROR_KEY);
+            persistEditState('selected_ready_to_authorize');
+            setEditSelected(true);
+            setEditState('selected_ready_to_authorize');
+            setPendingSubId(data.subscription_id);
+            setPendingSubKey(data.key);
             openSubscriptionModal(data.subscription_id, data.key);
         } catch (err) {
             setEditLoading(false);
             setEditError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
         }
-    }, [pendingSubId, pendingSubKey, email, phone, openSubscriptionModal]);
+    }, [pendingSubId, pendingSubKey, editState, email, phone, openSubscriptionModal]);
+
+    const hasCheckoutEditIntent =
+        editState === 'selected_pending_setup' ||
+        editState === 'selected_ready_to_authorize' ||
+        editState === 'selected_setup_failed' ||
+        (editSelected && editState !== 'declined' && editState !== 'not_selected');
+    const editAuthorizationReady = Boolean(pendingSubId && pendingSubKey);
+    const editActionLabel = editAuthorizationReady ? 'Authorize My Edit' : 'Retry Edit Setup';
 
     // ── State A: Edit purchased (Blueprint + Edit confirmed) ─────────────────
 
@@ -263,7 +383,7 @@ function StylistSuccessInner() {
 
     // ── State B: Edit selected at checkout but authorization still pending ────
 
-    if (editSelected && pendingSubId && !noThanks) {
+    if (hasCheckoutEditIntent && !noThanks) {
         return (
             <div className="min-h-screen bg-luxury-warm-white flex flex-col items-center justify-center px-4 text-center">
                 <motion.div
@@ -286,7 +406,9 @@ function StylistSuccessInner() {
                         Blueprint confirmed.
                     </h1>
                     <p className="luxury-body text-luxury-charcoal/60 mb-8">
-                        One more step — authorize your Edit to complete your order.
+                        {editAuthorizationReady
+                            ? 'One more step: authorize your Edit to complete your order.'
+                            : 'We saved your Edit selection. Retry setup below to authorize it.'}
                     </p>
 
                     <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-6 text-left mb-6">
@@ -313,11 +435,16 @@ function StylistSuccessInner() {
                         disabled={editLoading}
                         className="w-full inline-flex items-center justify-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg mb-4"
                     >
-                        {editLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</> : <>Authorize My Edit <ArrowRight className="w-4 h-4" /></>}
+                        {editLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</> : <>{editActionLabel} <ArrowRight className="w-4 h-4" /></>}
                     </button>
 
                     <button
-                        onClick={() => setNoThanks(true)}
+                        onClick={() => {
+                            setNoThanks(true);
+                            persistEditState('declined');
+                            setEditState('declined');
+                            localStorage.setItem('stylist_editSelected', 'false');
+                        }}
                         className="w-full luxury-body text-luxury-charcoal/40 text-sm hover:text-luxury-charcoal/60 transition-colors"
                     >
                         No thanks, just the Blueprint
@@ -425,7 +552,11 @@ function StylistSuccessInner() {
                                 {/* Plain text no-thanks */}
                                 <p className="text-center">
                                     <button
-                                        onClick={() => setNoThanks(true)}
+                                        onClick={() => {
+                                            setNoThanks(true);
+                                            persistEditState('declined');
+                                            setEditState('declined');
+                                        }}
                                         className="luxury-body text-luxury-charcoal/35 text-sm hover:text-luxury-charcoal/55 transition-colors"
                                     >
                                         No thanks, just the Blueprint

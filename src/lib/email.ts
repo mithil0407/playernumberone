@@ -18,6 +18,7 @@ export interface AUOrderConfirmationEmailData {
   order_amount: number;
   payment_id?: string;
   has_edit_addon?: boolean;
+  edit_authorization_pending?: boolean;
   delivery_hours?: number;
 }
 
@@ -907,7 +908,7 @@ export async function sendStylistOrderConfirmationEmail(
 <div style="background:#faf8f3;border-radius:12px;padding:20px 24px;border:1px solid #eee6d8;">
 <table width="100%" cellpadding="0" cellspacing="0">
 <tr><td style="padding:6px 0;border-bottom:1px solid #eee6d8;color:#555;font-size:14px;"><strong style="color:#333;">Product:</strong> ICONIK Style Blueprint</td></tr>
-${data.has_edit_addon ? `<tr><td style="padding:6px 0;border-bottom:1px solid #eee6d8;color:#555;font-size:14px;"><strong style="color:#333;">Add-on:</strong> THE ICONIK EDIT</td></tr>` : ''}
+${data.has_edit_addon ? `<tr><td style="padding:6px 0;border-bottom:1px solid #eee6d8;color:#555;font-size:14px;">${data.edit_authorization_pending ? '<strong style="color:#333;">Add-on selected:</strong> THE ICONIK EDIT - authorization pending' : '<strong style="color:#333;">Add-on:</strong> THE ICONIK EDIT'}</td></tr>` : ''}
 <tr><td style="padding:6px 0;border-bottom:1px solid #eee6d8;color:#555;font-size:14px;"><strong style="color:#333;">Email:</strong> ${email}</td></tr>
 ${phone ? `<tr><td style="padding:6px 0;border-bottom:1px solid #eee6d8;color:#555;font-size:14px;"><strong style="color:#333;">Phone:</strong> ${phone}</td></tr>` : ''}
 <tr><td style="padding:10px 0 0;color:#16a34a;font-size:16px;font-weight:700;">Total Paid: USD $${amount}</td></tr>

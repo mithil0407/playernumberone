@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
+import { META_PIXEL_ID } from "@/lib/metaPixel";
 import "./globals.css";
 
 const GA_MEASUREMENT_IDS = [
@@ -140,7 +141,7 @@ export default function RootLayout({
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '1373360484073939');
+            fbq('init', '${META_PIXEL_ID}');
           `}
         </Script>
 
@@ -150,7 +151,7 @@ export default function RootLayout({
             height="1"
             width="1"
             style={{ display: 'none' }}
-            src="https://www.facebook.com/tr?id=1373360484073939&ev=PageView&noscript=1"
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
             alt=""
           />
         </noscript>
