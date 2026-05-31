@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { CheckCircle, Lock, Clock, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Lock, Clock, ArrowLeft, Loader2 } from 'lucide-react';
 import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
@@ -25,6 +25,7 @@ interface RazorpayOrderOptions {
     handler: (response: RazorpayOrderResponse) => void;
     prefill: { name: string; email: string; contact: string };
     theme: { color: string };
+    modal?: { ondismiss?: () => void };
 }
 
 interface RazorpaySubResponse {
@@ -207,6 +208,7 @@ export default function StylistCheckoutPage() {
     const [countryCode, setCountryCode] = useState('+1');
     const [editSelected, setEditSelected] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [paymentStage, setPaymentStage] = useState<'creating_order' | 'opening_razorpay' | 'confirming_payment' | 'setting_up_edit' | 'authorizing_edit' | 'redirecting' | null>(null);
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
     const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
     const [formError, setFormError] = useState('');
@@ -265,6 +267,7 @@ export default function StylistCheckoutPage() {
 
         updateUserData(email, fullPhone);
         setIsProcessing(true);
+        setPaymentStage('creating_order');
 
         const leadId = typeof window !== 'undefined' ? localStorage.getItem('style_scan_lead_id') : null;
         const rawScanPayload = typeof window !== 'undefined' ? localStorage.getItem('style_scan_result') : null;
@@ -289,6 +292,7 @@ export default function StylistCheckoutPage() {
             if (!data.success) throw new Error(data.error || 'Payment initialisation failed');
 
             const initRazorpay = () => {
+                setPaymentStage('opening_razorpay');
                 const options: RazorpayOrderOptions = {
                     key: data.key,
                     amount: data.amount,
@@ -297,6 +301,8 @@ export default function StylistCheckoutPage() {
                     description: 'ICONIK Style Blueprint',
                     order_id: data.razorpay_order_id,
                     handler: async (rzpResponse: RazorpayOrderResponse) => {
+                        setIsProcessing(true);
+                        setPaymentStage('confirming_payment');
                         sessionStorage.setItem('stylist_purchaseTracked', rzpResponse.razorpay_payment_id);
 
                         try {
@@ -332,6 +338,7 @@ export default function StylistCheckoutPage() {
 
                         // If Edit selected, create and open the subscription authorization immediately.
                         if (editSelected) {
+                            setPaymentStage('setting_up_edit');
                             const editRetryContext: StylistEditRetryContext = {
                                 customer_email: email,
                                 customer_phone: fullPhone,
@@ -367,6 +374,7 @@ export default function StylistCheckoutPage() {
                                         description: `THE ICONIK EDIT — $${EDIT_PRICE}/month`,
                                         handler: async (subResponse: RazorpaySubResponse) => {
                                             editModalCompleted = true;
+                                            setPaymentStage('confirming_payment');
                                             try {
                                                 await fetch('/api/stylist-edit-confirm', {
                                                     method: 'POST',
@@ -390,6 +398,7 @@ export default function StylistCheckoutPage() {
                                             localStorage.setItem('stylist_editSelected', 'false');
                                             setStoredEditState('authorized');
                                             window.fbq?.('trackCustom', 'edit_purchased', { funnel: 'style_scan', source: 'checkout_immediate' });
+                                            setPaymentStage('redirecting');
                                             window.location.href = successHref;
                                         },
                                         prefill: { name: email.split('@')[0], email, contact: fullPhone },
@@ -397,12 +406,14 @@ export default function StylistCheckoutPage() {
                                         modal: {
                                             ondismiss: () => {
                                                 if (editModalCompleted) return;
+                                                setPaymentStage('redirecting');
                                                 window.location.href = successHref;
                                             },
                                         },
                                     };
 
                                     const editRzp = new window.Razorpay!(subOptions);
+                                    setPaymentStage('authorizing_edit');
                                     editRzp.open();
                                     return;
                                 } else {
@@ -420,10 +431,17 @@ export default function StylistCheckoutPage() {
                             localStorage.removeItem(EDIT_RETRY_CONTEXT_KEY);
                         }
 
+                        setPaymentStage('redirecting');
                         window.location.href = successHref;
                     },
                     prefill: { name: email.split('@')[0], email, contact: fullPhone },
                     theme: { color: '#C9A96E' },
+                    modal: {
+                        ondismiss: () => {
+                            setIsProcessing(false);
+                            setPaymentStage(null);
+                        },
+                    },
                 };
 
                 const rzp = new window.Razorpay!(options);
@@ -441,6 +459,7 @@ export default function StylistCheckoutPage() {
                     clearInterval(check);
                     if (!window.Razorpay) {
                         setIsProcessing(false);
+                        setPaymentStage(null);
                         setFormError('Failed to load payment system. Please try again.');
                     }
                 }, 10000);
@@ -448,6 +467,7 @@ export default function StylistCheckoutPage() {
         } catch (err) {
             console.error('Stylist payment error:', err);
             setIsProcessing(false);
+            setPaymentStage(null);
             setFormError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
         }
     }, [email, phone, countryCode, editSelected, razorpayLoaded]);
@@ -456,8 +476,29 @@ export default function StylistCheckoutPage() {
         ? `Pay $${BLUEPRINT_PRICE_WITH_EDIT} now — then authorize $${EDIT_PRICE} Edit`
         : `Pay $${BLUEPRINT_PRICE} — Get My Blueprint`;
 
+    const paymentStageText: Record<NonNullable<typeof paymentStage>, string> = {
+        creating_order: 'Preparing your secure checkout...',
+        opening_razorpay: 'Opening Razorpay...',
+        confirming_payment: 'Confirming your payment...',
+        setting_up_edit: 'Setting up your ICONIK Edit authorization...',
+        authorizing_edit: 'Opening ICONIK Edit authorization...',
+        redirecting: 'Payment confirmed. Taking you to the next step...',
+    };
+
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
+            {paymentStage && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-luxury-warm-white/92 backdrop-blur-md px-5">
+                    <div className="w-full max-w-sm rounded-2xl border border-luxury-cream bg-white p-7 text-center shadow-2xl">
+                        <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-luxury-accent" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-luxury-charcoal/40">Secure Checkout</p>
+                        <h2 className="mt-3 luxury-heading text-2xl text-luxury-charcoal">{paymentStageText[paymentStage]}</h2>
+                        <p className="mt-3 luxury-body text-sm leading-relaxed text-luxury-charcoal/60">
+                            Please do not refresh or close this page. This usually takes a few seconds.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream py-4 px-6">

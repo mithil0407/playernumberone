@@ -162,6 +162,22 @@ export const saveStylistOrder = async (order: StylistOrder) => {
 };
 
 export const uploadStyleScanPhoto = async (file: File, fileName: string): Promise<string> => {
+  if (typeof window !== 'undefined') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', fileName);
+
+    const res = await fetch('/api/stylist-intake-photo', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || 'Photo upload failed');
+    }
+    return data.url;
+  }
+
   const storagePath = `public/${fileName}`;
 
   const { data, error } = await db.storage
