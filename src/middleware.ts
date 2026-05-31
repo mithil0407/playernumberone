@@ -44,7 +44,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 1c. Globe admin routes: same cookie, separate login page ─────────────
+  // ── 1c. Stylist admin routes: same cookie, separate login page ───────────
+  if (pathname.startsWith('/stylist/admin')) {
+    if (!pathname.startsWith('/stylist/admin/login')) {
+      if (!isAdminAuthenticated(request)) {
+        const loginUrl = new URL('/stylist/admin/login', request.url);
+        loginUrl.searchParams.set('redirectTo', pathname);
+        return NextResponse.redirect(loginUrl, { status: 307 });
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // ── 1d. Globe admin routes: same cookie, separate login page ─────────────
   if (pathname.startsWith('/globe/admin')) {
     if (!pathname.startsWith('/globe/admin/login')) {
       if (!isAdminAuthenticated(request)) {

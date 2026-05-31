@@ -18,6 +18,7 @@ interface RazorpaySubOptions {
     handler: (response: RazorpaySubResponse) => void;
     prefill: { name: string; email: string; contact: string };
     theme: { color: string };
+    modal?: { ondismiss?: () => void };
 }
 interface RazorpaySubResponse {
     razorpay_payment_id?: string;
@@ -220,6 +221,9 @@ function StylistSuccessInner() {
             },
             prefill: { name: email.split('@')[0], email, contact: phone },
             theme: { color: '#C9A96E' },
+            modal: {
+                ondismiss: () => setEditLoading(false),
+            },
         };
 
         const tryOpen = () => {
@@ -244,6 +248,19 @@ function StylistSuccessInner() {
             }, 10000);
         }
     }, [email, phone, razorpayLoaded, editSelected]);
+
+    useEffect(() => {
+        if (!editSelected || editPurchased || editState !== 'selected_ready_to_authorize' || !pendingSubId || !pendingSubKey) {
+            return;
+        }
+
+        const autoOpenKey = `stylist_editAutoOpened_${pendingSubId}`;
+        if (sessionStorage.getItem(autoOpenKey)) return;
+
+        sessionStorage.setItem(autoOpenKey, 'true');
+        setEditLoading(true);
+        openSubscriptionModal(pendingSubId, pendingSubKey);
+    }, [editSelected, editPurchased, editState, pendingSubId, pendingSubKey, openSubscriptionModal]);
 
     const handleAddEdit = useCallback(async () => {
         setEditError('');
@@ -403,16 +420,19 @@ function StylistSuccessInner() {
                 >
                     <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider block mb-4">ICONIK</span>
                     <h1 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal mb-3 leading-tight">
-                        Blueprint confirmed.
+                        Finish authorizing your selected ICONIK Edit.
                     </h1>
                     <p className="luxury-body text-luxury-charcoal/60 mb-8">
                         {editAuthorizationReady
-                            ? 'One more step: authorize your Edit to complete your order.'
+                            ? 'Your Blueprint is confirmed. Complete the $39/month authorization to activate your Edit.'
                             : 'We saved your Edit selection. Retry setup below to authorize it.'}
                     </p>
 
                     <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-6 text-left mb-6">
                         <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-4">THE ICONIK EDIT — $39/month</p>
+                        <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed mb-4">
+                            This was selected at checkout. If the payment popup did not open or was closed, continue here.
+                        </p>
                         <div className="space-y-2.5 mb-5">
                             {EDIT_BULLETS.map((b, i) => (
                                 <div key={i} className="flex items-start gap-2.5">

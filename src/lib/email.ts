@@ -1876,3 +1876,56 @@ export async function sendOutfitsReadyEmail(
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+export async function sendStyleEditIssueEmail(data: {
+  customer_name: string;
+  customer_email: string;
+  issue_url: string;
+  issue_title: string;
+  subtitle?: string;
+  week_label?: string;
+}): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  try {
+    const transporter = getTransporter();
+    const firstName = htmlEscape(data.customer_name.split(' ')[0] || data.customer_email.split('@')[0] || 'there');
+    const title = htmlEscape(data.issue_title);
+    const subtitle = htmlEscape(data.subtitle || 'Your weekly personalized style direction is ready.');
+    const weekLabel = htmlEscape(data.week_label || 'This week');
+    const issueUrl = htmlEscape(data.issue_url);
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>${title}</title></head>
+<body style="margin:0;padding:0;background:#faf8f3;font-family:Georgia,'Times New Roman',serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;padding:32px 16px;"><tr><td align="center">
+<table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#fff;border:1px solid #efe5d4;">
+<tr><td style="padding:36px 40px 18px;text-align:center;background:#111;">
+  <div style="font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:#c9a96e;">THE ICONIK EDIT</div>
+</td></tr>
+<tr><td style="padding:34px 40px 10px;">
+  <p style="margin:0 0 10px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#b58e4d;">${weekLabel}</p>
+  <h1 style="margin:0 0 18px;font-size:34px;line-height:1.12;font-weight:400;color:#111;">Hi ${firstName},<br/>${title}</h1>
+  <p style="margin:0;color:#5a524a;font-size:15px;line-height:1.8;">${subtitle}</p>
+</td></tr>
+<tr><td style="padding:22px 40px 34px;text-align:center;">
+  <a href="${issueUrl}" style="display:inline-block;background:#111;color:#c9a96e;text-decoration:none;padding:15px 30px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;">Open This Week's Edit</a>
+</td></tr>
+<tr><td style="padding:20px 40px;text-align:center;border-top:1px solid #efe5d4;color:#aaa;font-size:11px;letter-spacing:.18em;text-transform:uppercase;">ICONIK Style Intelligence</td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+
+    const info = await transporter.sendMail({
+      from: `"THE ICONIK EDIT" <${process.env.GMAIL_USER}>`,
+      to: data.customer_email,
+      subject: `${data.customer_name.split(' ')[0] || 'Your'} ICONIK Edit is ready`,
+      text: `Hi ${data.customer_name.split(' ')[0] || 'there'},\n\n${data.issue_title}\n\n${data.subtitle || 'Your weekly personalized style direction is ready.'}\n\nOpen your private Edit here:\n${data.issue_url}\n\nThe ICONIK Team`,
+      html,
+    });
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending ICONIK Edit issue email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
