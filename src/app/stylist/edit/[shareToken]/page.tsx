@@ -12,10 +12,10 @@ export default async function PublicStyleEditIssuePage({ params }: PageProps) {
   if (!issue?.page_data) notFound();
 
   return (
-    <div className="min-h-screen" style={{ background: '#FBF8F4' }}>
+    <div className="iconik-theme min-h-screen" style={{ background: 'var(--luxury-warm-white)' }}>
       <StyleEditIssuePage data={issue.page_data} imageUrls={issue.image_urls} />
-      <div className="px-5 md:px-12 py-6 text-center" style={{ background: '#FBF8F4' }}>
-        <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: '#5A524A' }}>Private weekly edit</p>
+      <div className="px-5 md:px-12 py-6 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
+        <p className="iconik-micro" style={{ color: 'var(--luxury-charcoal)', opacity: 0.35 }}>Private weekly edit</p>
       </div>
     </div>
   );

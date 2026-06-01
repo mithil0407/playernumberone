@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { CheckCircle, Lock, Clock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Lock, Clock, ArrowLeft, Loader2 } from 'lucide-react';
 import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
@@ -121,81 +121,67 @@ function EditCard({ selected, onToggle }: { selected: boolean; onToggle: () => v
     ];
 
     return (
-        <div className="mb-2">
-            <div
-                className={`relative border rounded-2xl p-5 transition-all duration-200 cursor-pointer ${
-                    selected
-                        ? 'border-luxury-accent bg-luxury-pink-bg shadow-md border-l-[3px]'
-                        : 'border-luxury-cream bg-white shadow-sm border-l-[3px] border-l-luxury-accent/30 hover:border-l-luxury-accent/70 hover:shadow-md'
-                }`}
-                style={{ borderLeftColor: selected ? '#C9A96E' : 'rgba(201,169,110,0.3)' }}
-                onClick={onToggle}
-            >
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                    <div>
-                        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-luxury-charcoal/50 mb-1">THE ICONIK EDIT</p>
-                        <p className="luxury-body text-luxury-charcoal/60 text-xs font-semibold">
-                            Add — <span className="text-luxury-accent">${EDIT_PRICE}/mo</span>
-                        </p>
-                    </div>
-                    {/* Checkbox */}
-                    <button
-                        type="button"
-                        onClick={e => { e.stopPropagation(); onToggle(); }}
-                        className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                            selected
-                                ? 'bg-luxury-accent border-luxury-accent'
-                                : 'bg-white border-luxury-charcoal/25 hover:border-luxury-accent/60'
-                        }`}
-                    >
-                        {selected && (
-                            <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                                <path d="M1 4L4.5 7.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        )}
-                    </button>
-                </div>
-
-                <div className="grid gap-2 mb-4">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full bg-luxury-accent text-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] luxury-body shadow-sm">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        86% add this
-                    </div>
-                    <div className="rounded-xl border border-luxury-accent/35 bg-white p-4">
-                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-luxury-accent mb-1">Blueprint discount unlocked</p>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-luxury-charcoal/35 line-through luxury-heading text-xl">${BLUEPRINT_PRICE}</span>
-                            <span className="text-luxury-accent luxury-heading text-3xl">${BLUEPRINT_PRICE_WITH_EDIT}</span>
-                        </div>
-                        <p className="luxury-body text-luxury-charcoal/60 text-xs mt-1">
-                            Add THE ICONIK EDIT and your first month effectively pays for itself.
-                        </p>
+        <div
+            className="rounded-2xl p-5 transition-all duration-200 cursor-pointer border"
+            style={{
+                background: selected ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+            }}
+            onClick={onToggle}
+        >
+            {/* Header row */}
+            <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <div className="iconik-micro text-luxury-charcoal/40 mb-1.5">The ICONIK Edit</div>
+                    <div className="iconik-display text-luxury-charcoal" style={{ fontSize: '20px' }}>
+                        ${EDIT_PRICE}<span className="luxury-body text-luxury-charcoal/40" style={{ fontSize: '12px', fontWeight: 300 }}>/mo</span>
                     </div>
                 </div>
+                <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); onToggle(); }}
+                    className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all"
+                    style={{
+                        background: selected ? 'var(--luxury-charcoal)' : 'transparent',
+                        borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                    }}
+                >
+                    {selected && (
+                        <svg width="10" height="8" viewBox="0 0 12 9" fill="none">
+                            <path d="M1 4L4.5 7.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    )}
+                </button>
+            </div>
 
-                {/* Value prop */}
-                <p className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed mb-4">
-                    Your Blueprint tells you what works.<br />
-                    Your Edit puts it to work — every week.
-                </p>
-
-                {/* Bullets */}
-                <div className="space-y-2 mb-4">
-                    {editBullets.map((b, i) => (
-                        <div key={i} className="flex items-start gap-2.5">
-                            <span className="text-luxury-accent text-xs mt-0.5 flex-shrink-0">→</span>
-                            <span className="luxury-body text-luxury-charcoal/70 text-xs leading-relaxed">{b}</span>
-                        </div>
-                    ))}
+            {/* Discount panel */}
+            <div className="rounded-xl p-4 mb-4 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                <div className="iconik-micro text-luxury-accent mb-2">Blueprint discount unlocked</div>
+                <div className="flex items-baseline gap-2">
+                    <span className="iconik-display text-luxury-charcoal/25 line-through" style={{ fontSize: '18px' }}>${BLUEPRINT_PRICE}</span>
+                    <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '32px' }}>${BLUEPRINT_PRICE_WITH_EDIT}</span>
                 </div>
-
-                {/* Pricing footnote */}
-                <p className="luxury-body text-luxury-charcoal/55 text-[11px] font-semibold">
-                    Pay ${BLUEPRINT_PRICE_WITH_EDIT} for your Blueprint now, then authorize ${EDIT_PRICE}/month for your Edit.
+                <p className="luxury-body text-luxury-charcoal/50 text-xs mt-1" style={{ fontWeight: 300 }}>
+                    Add THE ICONIK EDIT and your first month effectively pays for itself.
                 </p>
             </div>
 
+            <div className="iconik-display-it text-luxury-charcoal mb-4" style={{ fontSize: '16px', lineHeight: 1.5, opacity: 0.8 }}>
+                Your Blueprint tells you what works.<br />Your Edit puts it to work — every week.
+            </div>
+
+            <div className="space-y-2 mb-4">
+                {editBullets.map((b, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                        <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--luxury-charcoal)', opacity: 0.35 }} />
+                        <span className="luxury-body text-luxury-charcoal/60 text-xs leading-relaxed" style={{ fontWeight: 300 }}>{b}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="iconik-mono text-luxury-charcoal/35" style={{ fontSize: '10px' }}>
+                Pay ${BLUEPRINT_PRICE_WITH_EDIT} for your Blueprint now, then authorize ${EDIT_PRICE}/month for your Edit.
+            </div>
         </div>
     );
 }
@@ -486,14 +472,14 @@ export default function StylistCheckoutPage() {
     };
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
+        <div className="min-h-screen text-luxury-charcoal overflow-x-hidden" style={{ background: 'var(--luxury-warm-white)' }}>
             {paymentStage && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-luxury-warm-white/92 backdrop-blur-md px-5">
-                    <div className="w-full max-w-sm rounded-2xl border border-luxury-cream bg-white p-7 text-center shadow-2xl">
-                        <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-luxury-accent" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-luxury-charcoal/40">Secure Checkout</p>
-                        <h2 className="mt-3 luxury-heading text-2xl text-luxury-charcoal">{paymentStageText[paymentStage]}</h2>
-                        <p className="mt-3 luxury-body text-sm leading-relaxed text-luxury-charcoal/60">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center px-5" style={{ background: 'rgba(244,239,229,0.92)', backdropFilter: 'blur(20px)' }}>
+                    <div className="w-full max-w-sm rounded-2xl border p-7 text-center shadow-2xl" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                        <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-luxury-charcoal/40" />
+                        <div className="iconik-micro text-luxury-charcoal/35 mb-3">Secure Checkout</div>
+                        <h2 className="iconik-display text-luxury-charcoal" style={{ fontSize: '22px' }}>{paymentStageText[paymentStage]}</h2>
+                        <p className="luxury-body text-luxury-charcoal/50 text-sm leading-relaxed mt-3" style={{ fontWeight: 300 }}>
                             Please do not refresh or close this page. This usually takes a few seconds.
                         </p>
                     </div>
@@ -501,15 +487,15 @@ export default function StylistCheckoutPage() {
             )}
 
             {/* Header */}
-            <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream py-4 px-6">
+            <header className="py-4 px-6" style={{ background: 'rgba(244,239,229,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--luxury-cream)' }}>
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
-                    <Link href="/stylist/style-score/result" className="flex items-center gap-1.5 luxury-body text-luxury-charcoal/60 hover:text-luxury-charcoal transition-colors text-sm">
+                    <Link href="/stylist/style-score/result" className="flex items-center gap-1.5 luxury-body text-luxury-charcoal/50 hover:text-luxury-charcoal transition-colors text-sm">
                         <ArrowLeft className="w-3.5 h-3.5" /> Back
                     </Link>
-                    <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
-                    <div className="flex items-center gap-1.5 luxury-body text-luxury-charcoal/50 text-xs">
+                    <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '16px', letterSpacing: '0.32em' }}>I C O N I K</span>
+                    <div className="flex items-center gap-1.5 text-luxury-charcoal/40 text-xs">
                         <Lock className="w-3 h-3" />
-                        <span>Secure Checkout</span>
+                        <span className="iconik-micro">Secure</span>
                     </div>
                 </div>
             </header>
@@ -520,11 +506,10 @@ export default function StylistCheckoutPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-wrap justify-center gap-3 mb-8"
+                    className="flex flex-wrap justify-center gap-2 mb-10"
                 >
                     {['500+ Happy Clients', '4.9/5 Rating', '30-Day Guarantee', '72h Delivery'].map((t) => (
-                        <div key={t} className="flex items-center gap-2 bg-luxury-cream/40 border border-luxury-cream text-luxury-charcoal/70 px-4 py-1.5 rounded-full text-xs luxury-body">
-                            <CheckCircle className="w-3 h-3 text-luxury-accent" />
+                        <div key={t} className="flex items-center gap-2 px-4 py-1.5 rounded-full border iconik-micro text-luxury-charcoal/45" style={{ borderColor: 'var(--luxury-cream)', background: 'var(--luxury-cream)' }}>
                             {t}
                         </div>
                     ))}
@@ -535,28 +520,28 @@ export default function StylistCheckoutPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="text-center mb-8"
+                    className="text-center mb-10"
                 >
-                    <h1 className="text-xl md:text-4xl luxury-heading text-luxury-charcoal mb-4">
-                        Your ICONIK Style Blueprint
-                    </h1>
+                    <div className="iconik-micro text-luxury-charcoal/35 mb-4">Your ICONIK Style Blueprint</div>
                     <div className="flex items-baseline justify-center gap-3 mb-3">
-                        <span className="text-xl luxury-heading text-luxury-charcoal/30 line-through">$249</span>
-                        <span className="text-3xl md:text-5xl luxury-heading text-luxury-accent">
+                        <span className="iconik-display text-luxury-charcoal/20 line-through" style={{ fontSize: '24px' }}>$249</span>
+                        <span className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(48px, 8vw, 64px)' }}>
                             ${editSelected ? BLUEPRINT_PRICE_WITH_EDIT : BLUEPRINT_PRICE}
                         </span>
                     </div>
                     {editSelected && (
-                        <p className="luxury-body text-luxury-charcoal/60 text-sm mb-3">
+                        <p className="luxury-body text-luxury-charcoal/50 text-sm mb-3" style={{ fontWeight: 300 }}>
                             Pay ${BLUEPRINT_PRICE_WITH_EDIT} for your Blueprint now, then authorize THE ICONIK EDIT at ${EDIT_PRICE}/month.
                         </p>
                     )}
-                    <div className="inline-block bg-luxury-accent text-luxury-warm-white px-5 py-1.5 rounded-full luxury-body text-xs font-semibold mb-3">
-                        STYLE SCAN EXCLUSIVE PRICE
+                    <div className="inline-block px-4 py-1.5 rounded-full iconik-micro text-luxury-warm-white mb-4" style={{ background: 'var(--luxury-accent)' }}>
+                        Style Scan Exclusive Price
                     </div>
-                    <div className="flex items-center justify-center gap-1.5 luxury-body text-luxury-charcoal/50 text-sm">
-                        <Clock className="w-4 h-4 text-luxury-accent" />
-                        <span>Offer expires in {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}</span>
+                    <div className="flex items-center justify-center gap-1.5 luxury-body text-luxury-charcoal/40 text-sm">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="iconik-mono" style={{ fontSize: '11px' }}>
+                            {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+                        </span>
                     </div>
                 </motion.div>
 
@@ -565,9 +550,10 @@ export default function StylistCheckoutPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
-                    className="bg-luxury-cream/20 border border-luxury-cream rounded-2xl p-6 mb-7"
+                    className="rounded-2xl p-6 mb-5 border"
+                    style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}
                 >
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-4">What&apos;s Included</p>
+                    <div className="iconik-micro text-luxury-charcoal/40 mb-5">What&apos;s Included</div>
                     <div className="space-y-3">
                         {[
                             'Detailed colour palette — your exact hex codes and seasonal direction',
@@ -579,18 +565,19 @@ export default function StylistCheckoutPage() {
                             'Shopping rules specific to your frame and palette',
                         ].map((item, i) => (
                             <div key={i} className="flex items-start gap-3">
-                                <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                                <span className="luxury-body text-luxury-charcoal/80 text-sm">{item}</span>
+                                <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--luxury-charcoal)', opacity: 0.35 }} />
+                                <span className="luxury-body text-luxury-charcoal/65 text-sm" style={{ fontWeight: 300 }}>{item}</span>
                             </div>
                         ))}
                     </div>
                 </motion.div>
 
-                {/* ── Edit Add-On Card ────────────────────────────────── */}
+                {/* Edit Add-On Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
+                    className="mb-5"
                 >
                     <EditCard selected={editSelected} onToggle={() => setEditSelected(s => !s)} />
                 </motion.div>
@@ -601,28 +588,31 @@ export default function StylistCheckoutPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
                     onSubmit={e => { e.preventDefault(); processPayment(); }}
-                    className="bg-white border border-luxury-cream rounded-2xl p-6 space-y-5 mb-6 mt-7"
+                    className="rounded-2xl p-6 space-y-5 mb-6 border"
+                    style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}
                 >
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Your Details</p>
+                    <div className="iconik-micro text-luxury-charcoal/40">Your Details</div>
                     <div>
-                        <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Email Address *</label>
+                        <label className="luxury-body text-luxury-charcoal/55 text-xs block mb-2">Email Address *</label>
                         <input
                             type="email"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
-                            className="w-full px-4 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
+                            className="w-full px-4 py-3.5 rounded-xl transition-all text-base luxury-body outline-none"
+                            style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)', color: 'var(--luxury-charcoal)' }}
                             placeholder="your@email.com"
                             required
                         />
-                        <p className="text-xs text-luxury-charcoal/40 mt-1 luxury-body">Your Blueprint will be sent to this address.</p>
+                        <p className="luxury-body text-luxury-charcoal/35 text-xs mt-1" style={{ fontWeight: 300 }}>Your Blueprint will be sent to this address.</p>
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Phone Number *</label>
+                        <label className="luxury-body text-luxury-charcoal/55 text-xs block mb-2">Phone Number *</label>
                         <div className="grid grid-cols-[128px_1fr] gap-2">
                             <select
                                 value={countryCode}
                                 onChange={e => setCountryCode(e.target.value)}
-                                className="w-full px-3 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-sm bg-white luxury-body"
+                                className="w-full px-3 py-3.5 rounded-xl transition-all text-sm luxury-body outline-none"
+                                style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)', color: 'var(--luxury-charcoal)' }}
                                 aria-label="Country code"
                             >
                                 {COUNTRY_CODES.map(country => (
@@ -635,37 +625,38 @@ export default function StylistCheckoutPage() {
                                 type="tel"
                                 value={phone}
                                 onChange={e => setPhone(e.target.value.replace(/[^\d\s()-]/g, ''))}
-                                className="w-full px-4 py-3.5 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
+                                className="w-full px-4 py-3.5 rounded-xl transition-all text-base luxury-body outline-none"
+                                style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)', color: 'var(--luxury-charcoal)' }}
                                 placeholder="555 000 0000"
                                 required
                             />
                         </div>
-                        <p className="text-xs text-luxury-charcoal/40 mt-1 luxury-body">
-                            Selected code: {COUNTRY_CODES.find(country => country.code === countryCode)?.flag} {countryCode}
+                        <p className="luxury-body text-luxury-charcoal/30 text-xs mt-1" style={{ fontWeight: 300 }}>
+                            Selected: {COUNTRY_CODES.find(country => country.code === countryCode)?.flag} {countryCode}
                         </p>
                     </div>
                     {formError && (
-                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body">{formError}</div>
+                        <div className="rounded-xl p-3 text-sm luxury-body" style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>{formError}</div>
                     )}
 
                     {/* Order summary */}
                     {editSelected && (
-                        <div className="bg-luxury-cream/30 rounded-xl p-4 space-y-2">
-                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-3">Order Summary</p>
-                            <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/70">
+                        <div className="rounded-xl p-4 space-y-2 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
+                            <div className="iconik-micro text-luxury-charcoal/40 mb-3">Order Summary</div>
+                            <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/60">
                                 <span>ICONIK Style Blueprint</span>
-                                <span className="font-semibold">${BLUEPRINT_PRICE_WITH_EDIT}</span>
+                                <span className="iconik-mono" style={{ fontSize: '12px' }}>${BLUEPRINT_PRICE_WITH_EDIT}</span>
                             </div>
-                            <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/70">
+                            <div className="flex justify-between luxury-body text-sm text-luxury-charcoal/60">
                                 <span>THE ICONIK EDIT authorization</span>
-                                <span className="font-semibold">${EDIT_PRICE}/mo</span>
+                                <span className="iconik-mono" style={{ fontSize: '12px' }}>${EDIT_PRICE}/mo</span>
                             </div>
-                            <div className="border-t border-luxury-cream pt-2 flex justify-between luxury-body text-sm">
-                                <span className="text-luxury-charcoal/50">First-day total across both steps</span>
-                                <span className="text-luxury-charcoal font-semibold">${BLUEPRINT_PRICE}</span>
+                            <div className="pt-2 flex justify-between luxury-body text-sm" style={{ borderTop: '1px solid var(--luxury-warm-white)' }}>
+                                <span className="text-luxury-charcoal/40" style={{ fontWeight: 300 }}>First-day total</span>
+                                <span className="iconik-mono text-luxury-charcoal" style={{ fontSize: '12px' }}>${BLUEPRINT_PRICE}</span>
                             </div>
-                            <p className="luxury-body text-luxury-charcoal/45 text-[11px] leading-relaxed">
-                                Razorpay will open twice: first for the ${BLUEPRINT_PRICE_WITH_EDIT} Blueprint payment, then for the ${EDIT_PRICE}/month Edit authorization.
+                            <p className="luxury-body text-luxury-charcoal/35 leading-relaxed" style={{ fontSize: '10px', fontWeight: 300 }}>
+                                Razorpay opens twice: first for ${BLUEPRINT_PRICE_WITH_EDIT}, then for ${EDIT_PRICE}/month.
                             </p>
                         </div>
                     )}
@@ -673,13 +664,14 @@ export default function StylistCheckoutPage() {
                     <button
                         type="submit"
                         disabled={isProcessing}
-                        className="w-full bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 disabled:cursor-not-allowed text-luxury-warm-white py-4 text-base font-semibold luxury-body rounded-full transition-all duration-300 hover:shadow-lg"
+                        className="w-full py-4 text-base luxury-body rounded-full transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                     >
                         {isProcessing ? 'Opening payment…' : totalLabel}
                     </button>
-                    <div className="flex items-center justify-center gap-2 text-xs luxury-body text-luxury-charcoal/40">
+                    <div className="flex items-center justify-center gap-2 iconik-micro text-luxury-charcoal/30">
                         <Lock className="w-3 h-3" />
-                        <span>Secured by Razorpay · 256-bit SSL encryption</span>
+                        <span>Secured by Razorpay · 256-bit SSL</span>
                     </div>
                 </motion.form>
 
@@ -690,7 +682,7 @@ export default function StylistCheckoutPage() {
                     transition={{ delay: 0.3 }}
                     className="text-center"
                 >
-                    <p className="luxury-body text-luxury-charcoal/50 text-xs leading-relaxed">
+                    <p className="luxury-body text-luxury-charcoal/35 text-xs leading-relaxed" style={{ fontWeight: 300 }}>
                         30-day money-back guarantee. If you&apos;re not happy with your Blueprint, email us and we&apos;ll refund you in full — no questions asked.
                     </p>
                 </motion.div>

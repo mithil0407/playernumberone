@@ -289,270 +289,250 @@ export default function ManCheckoutPage() {
     else await processPayment();
   }, [processPayment, outfitPreviewAddon, popupDismissed]);
 
+  const INK = '#2C2622';
+  const LIGHT = '#F4EFE5';
+
   return (
-    <div className="man-theme min-h-screen bg-luxury-warm-white text-luxury-charcoal">
+    <div className="man-editorial me-page-wrapper min-h-screen" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+
       {/* Header */}
-      <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/man" className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
-            <ArrowLeft className="w-5 h-5" />
-            Back to ICONIK Man
+      <header className="sticky top-0 z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/man" className="flex items-center gap-2 transition-opacity hover:opacity-60" style={{ color: INK }}>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="iconik-mono" style={{ fontSize: '11px', letterSpacing: '0.15em' }}>Back</span>
           </Link>
+          <span className="iconik-display" style={{ fontSize: '18px', letterSpacing: '0.1em', color: INK }}>ICONIK</span>
+          <div className="w-16" />
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
-        {/* Trust Badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
+
+        {/* Trust strip */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8"
         >
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-            <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">200+ Men Transformed</span>
-          </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-            <Lock className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">100% Secure</span>
-          </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-            <Star className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">4.9/5 Rating</span>
-          </div>
+          {[
+            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '200+ Men Transformed' },
+            { icon: <Lock className="w-3.5 h-3.5" />, text: '100% Secure' },
+            { icon: <Star className="w-3.5 h-3.5" />, text: '4.9 / 5 Rating' },
+          ].map(({ icon, text }) => (
+            <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(148,166,173,0.12)', border: '1px solid rgba(148,166,173,0.2)', color: INK }}>
+              <span style={{ color: '#94A6AD' }}>{icon}</span>
+              <span className="iconik-mono" style={{ fontSize: '11px', opacity: 0.7 }}>{text}</span>
+            </div>
+          ))}
         </motion.div>
 
-        {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-center mb-6 md:mb-8"
-        >
-          <h1 className="text-2xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
+        {/* Hero */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-center mb-10">
+          <div className="iconik-display mb-4" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: INK }}>
             Your Man Style Blueprint Starts Now
-          </h1>
-          <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
-            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{pricing.displayOriginal}</span>
-            <span className="text-luxury-green font-semibold">{pricing.displayBase}</span>
           </div>
-          <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
-            YOU SAVE {pricing.displaySavings} TODAY!
+          <div className="flex items-baseline justify-center gap-4 mb-4">
+            <span className="iconik-display line-through" style={{ fontSize: 'clamp(22px, 4vw, 36px)', color: INK, opacity: 0.3 }}>{pricing.displayOriginal}</span>
+            <span className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 52px)', color: INK }}>{pricing.displayBase}</span>
+          </div>
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full" style={{ background: '#94A6AD', color: LIGHT }}>
+            <span className="iconik-mono" style={{ fontSize: '11px', letterSpacing: '0.2em' }}>YOU SAVE {pricing.displaySavings}</span>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+
           {/* Order Form */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-white border-2 border-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl"
+          <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+            className="rounded-3xl p-6 md:p-8" style={{ background: '#fff', border: '1px solid rgba(44,38,34,0.1)' }}
           >
-            <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-6 text-center">Get Your Blueprint</h2>
-            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
+            <div className="iconik-display mb-6 text-center" style={{ fontSize: '24px', color: INK }}>Get Your Blueprint</div>
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">Email Address *</label>
+                <label htmlFor="email" className="block mb-2 iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.5, letterSpacing: '0.2em' }}>EMAIL ADDRESS *</label>
                 <input
                   type="email" id="email" name="email" value={formData.email}
                   onChange={handleInputChange} required
-                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
-                  placeholder="Enter your email address"
+                  className="w-full px-4 py-3.5 rounded-xl text-base transition-all duration-200 outline-none"
+                  style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: INK, fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#94A6AD')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(44,38,34,0.15)')}
+                  placeholder="your@email.com"
                 />
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">Phone Number *</label>
+                <label htmlFor="phone" className="block mb-2 iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.5, letterSpacing: '0.2em' }}>PHONE NUMBER *</label>
                 <input
                   type="tel" id="phone" name="phone" value={formData.phone}
                   onChange={handleInputChange} required maxLength={isIndia ? 10 : 15}
-                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
-                  placeholder={isIndia ? 'Enter 10-digit phone number' : 'Enter your phone number'}
+                  className="w-full px-4 py-3.5 rounded-xl text-base transition-all duration-200 outline-none"
+                  style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: INK, fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#94A6AD')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(44,38,34,0.15)')}
+                  placeholder={isIndia ? '10-digit number' : 'Your phone number'}
                 />
-                {isIndia && <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>}
+                {isIndia && <p className="mt-1.5 iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.4 }}>Enter exactly 10 digits</p>}
               </div>
-              <div className="text-center text-sm luxury-body text-luxury-charcoal/60 bg-luxury-cream/30 rounded-xl p-4">
-                <p>🔒 Your payment is secure and encrypted</p>
-                <p className="mt-1">By clicking below, you agree to our terms of service and privacy policy</p>
+              <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(44,38,34,0.03)', border: '1px solid rgba(44,38,34,0.06)' }}>
+                <p className="iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.5, letterSpacing: '0.12em' }}>🔒 Secure &amp; encrypted payment via Razorpay</p>
               </div>
             </form>
           </motion.div>
 
           {/* Order Summary */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="space-y-6 md:space-y-8"
-          >
-            {/* Main Product */}
-            <div className="bg-luxury-warm-white border-2 border-luxury-charcoal text-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-2 md:top-4 right-[-30px] bg-luxury-gold text-luxury-charcoal px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
-                BEST SELLER
-              </div>
-              <div className="mb-4">
-                <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Man Style Blueprint</h3>
-                <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3">Delivered 1-on-1 by Certified Style &amp; Image Consultants</p>
-                <div className="text-2xl md:text-3xl mb-4">
-                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{pricing.displayOriginal}</span>
-                  <span className="text-luxury-green font-semibold">{pricing.displayBase}</span>
-                </div>
-              </div>
-              <div className="mb-4">
-                <h4 className="luxury-heading text-luxury-charcoal mb-3">Includes:</h4>
-                <ul className="space-y-2">
-                  {[
-                    'Geometric Frame Profile™ — fits built for your body',
-                    'Personal Colour Palette — 10 that work, 4 to cut',
-                    'Facial Architecture Analysis™ — collar, eyewear, hair',
-                    'Grooming & Hair Blueprint',
-                    'Created by an ICONIK Stylist — personally reviewed',
-                    '20 Complete Outfit Formulas — office, casual, occasion',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 md:gap-3">
-                      <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+          <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="space-y-4">
 
-            {/* Add-ons */}
-            <div className="bg-luxury-pink-bg/30 border-2 border-luxury-accent/20 rounded-3xl p-5 md:p-6">
-              <h3 className="text-lg md:text-xl luxury-heading text-luxury-charcoal mb-1 text-center">💎 Complete Your Blueprint</h3>
-              <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70 mb-4 text-center">Most clients add these for best results</p>
-              <div className="space-y-3">
+            {/* Main product card */}
+            <div className="rounded-3xl p-6 md:p-8 relative overflow-hidden" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <div className="absolute top-3 right-[-28px] px-8 py-1 rotate-45 iconik-mono" style={{ background: '#94A6AD', color: LIGHT, fontSize: '9px', letterSpacing: '0.2em' }}>BEST SELLER</div>
+              <div className="iconik-display mb-1" style={{ fontSize: '20px', color: INK }}>ICONIK Man Style Blueprint</div>
+              <p style={{ fontSize: '13px', color: INK, opacity: 0.55, marginBottom: '16px' }}>Delivered by a certified ICONIK stylist — personally reviewed.</p>
+              <div className="flex items-baseline gap-3 mb-5">
+                <span className="iconik-display line-through" style={{ fontSize: '20px', color: INK, opacity: 0.3 }}>{pricing.displayOriginal}</span>
+                <span className="iconik-display" style={{ fontSize: '28px', color: INK }}>{pricing.displayBase}</span>
+              </div>
+              <div className="space-y-2.5">
                 {[
-                  { label: '👔 Outfit Preview on You', price: outfitPreviewPrice, displayPrice: pricing.displayAddon, checked: outfitPreviewAddon, desc: 'See how the outfits we recommend will actually look on your body.', tags: ['See yourself in the outfits', 'No more guessing', 'Shop with confidence'] },
-                ].map(({ label, displayPrice, checked, desc, tags }) => (
-                  <div
-                    key={label}
-                    onClick={() => handleAddonChange(!checked)}
-                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${checked ? 'border-luxury-accent bg-luxury-warm-white shadow-lg' : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'}`}>
-                        {checked && <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h4 className="luxury-heading text-luxury-charcoal text-base">{label}</h4>
-                          <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{displayPrice}</span>
-                        </div>
-                        <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">{desc}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {tags.map((t, i) => <span key={i} className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">{t}</span>)}
-                        </div>
-                      </div>
-                    </div>
+                  'Geometric Frame Profile™ — fits built for your body',
+                  'Personal Colour Palette — 10 that work, 4 to cut',
+                  'Facial Architecture Analysis™ — collar, eyewear, hair',
+                  'Grooming & Hair Blueprint',
+                  'Created by an ICONIK Stylist — personally reviewed',
+                  '20 Complete Outfit Formulas — office, casual, occasion',
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />
+                    <span style={{ fontSize: '13px', color: INK, opacity: 0.75 }}>{item}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Order Total */}
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-5 md:p-6 border border-luxury-cream">
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
-                  <span>Man Style Blueprint</span><span>{pricing.displayBase}</span>
-                </div>
-                {outfitPreviewAddon && <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70"><span>+ Outfit Preview</span><span>{pricing.displayAddon}</span></div>}
-              </div>
-              <div className="border-t-2 border-luxury-charcoal/10 pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">You Pay:</span>
-                  <span className="text-3xl md:text-4xl text-luxury-green font-bold">{pricing.symbol}{totalAmount.toLocaleString()}</span>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs luxury-body text-luxury-charcoal/60">Total value: <span className="line-through">{pricing.symbol}{totalValue.toLocaleString()}</span></p>
-                  <div className="flex items-center justify-center gap-1 mt-1">
-                    <Clock className="w-3 h-3 text-luxury-accent" />
-                    <span className="text-xs luxury-body text-luxury-accent font-semibold">
-                      Offer expires in {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-                    </span>
+            {/* Add-on */}
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <div className="iconik-display mb-1 text-center" style={{ fontSize: '17px', color: INK }}>Complete Your Blueprint</div>
+              <p className="text-center mb-4 iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.45, letterSpacing: '0.12em' }}>Most clients add this for best results</p>
+              <div
+                onClick={() => handleAddonChange(!outfitPreviewAddon)}
+                className="cursor-pointer rounded-2xl p-4 transition-all duration-200"
+                style={{ border: `1px solid ${outfitPreviewAddon ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`, background: outfitPreviewAddon ? 'rgba(148,166,173,0.08)' : '#FAFAF8' }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all" style={{ border: `2px solid ${outfitPreviewAddon ? '#94A6AD' : 'rgba(44,38,34,0.2)'}`, background: outfitPreviewAddon ? '#94A6AD' : 'transparent' }}>
+                    {outfitPreviewAddon && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <div className="iconik-display" style={{ fontSize: '15px', color: INK }}>Outfit Preview on You</div>
+                      <span className="iconik-display flex-shrink-0" style={{ fontSize: '15px', color: '#94A6AD' }}>{pricing.displayAddon}</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: INK, opacity: 0.55, marginBottom: '10px' }}>See how the outfits we recommend will actually look on your body.</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['See yourself in the outfits', 'No more guessing', 'Shop with confidence'].map((t) => (
+                        <span key={t} className="px-2.5 py-0.5 rounded-full iconik-mono" style={{ fontSize: '9px', background: 'rgba(44,38,34,0.06)', color: INK, opacity: 0.6, letterSpacing: '0.1em' }}>{t}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Order Total + Pay */}
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)', paddingBottom: '8px' }}>
+                  <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.5 }}>Man Style Blueprint</span>
+                  <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.7 }}>{pricing.displayBase}</span>
+                </div>
+                {outfitPreviewAddon && (
+                  <div className="flex justify-between items-center" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)', paddingBottom: '8px' }}>
+                    <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.5 }}>+ Outfit Preview</span>
+                    <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.7 }}>{pricing.displayAddon}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between items-baseline mb-1">
+                <span className="iconik-display" style={{ fontSize: '18px', color: INK }}>You Pay</span>
+                <span className="iconik-display" style={{ fontSize: '32px', color: INK }}>{pricing.symbol}{totalAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 mb-5">
+                <Clock className="w-3 h-3" style={{ color: '#94A6AD' }} />
+                <span className="iconik-mono" style={{ fontSize: '10px', color: '#94A6AD', letterSpacing: '0.1em' }}>
+                  Offer expires in {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+                </span>
+              </div>
               <button
-                type="button"
-                disabled={isProcessing}
+                type="button" disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  const hasAddons = outfitPreviewAddon;
-                  if (!hasAddons && !popupDismissed) {
+                  if (!outfitPreviewAddon && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, pricing.currency, MAN_FUNNEL_CATEGORY);
-                  } else {
-                    await processPayment();
-                  }
+                  } else { await processPayment(); }
                 }}
-                className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mt-4 hover:scale-[1.02] transform font-semibold"
+                className="w-full py-4 rounded-full transition-all duration-300 disabled:opacity-40 hover:-translate-y-0.5 hover:shadow-lg transform"
+                style={{ background: '#2C2622', color: LIGHT }}
               >
-                {isProcessing ? 'Processing...' : '🔥 Build My Blueprint Now →'}
+                <span className="iconik-display" style={{ fontSize: '16px' }}>
+                  {isProcessing ? 'Processing...' : `Build My Blueprint — ${pricing.symbol}${totalAmount.toLocaleString()} →`}
+                </span>
               </button>
-              <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60 mt-3">
-                <p>💳 Secure payment via Razorpay</p>
+            </div>
+
+            {/* Trust indicators */}
+            <div className="rounded-3xl p-5" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(44,38,34,0.06)' }}>
+              <div className="space-y-3">
+                {[
+                  { icon: <Shield className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Secure payment with Razorpay' },
+                  { icon: <Clock className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Blueprint delivered within 72 hours of your intake form' },
+                  { icon: <Users className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: '200+ men who dress with intention' },
+                ].map(({ icon, text }) => (
+                  <div key={text} className="flex items-center gap-3">
+                    {icon}
+                    <span style={{ fontSize: '13px', color: INK, opacity: 0.6 }}>{text}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-5 md:p-6 shadow-lg border border-white/20">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-sm text-gray-600 font-light">
-                  <Shield className="w-5 h-5 text-luxury-accent" />
-                  <span>Secure payment with Razorpay</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600 font-light">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                  <span>Blueprint delivered within 72 hours of your intake form</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600 font-light">
-                  <Users className="w-5 h-5 text-purple-500" />
-                  <span>200+ men who dress with intention</span>
-                </div>
-              </div>
-            </div>
           </motion.div>
         </div>
       </div>
 
       {/* Add-on Popup */}
       {showAddonPopup && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4" style={{ background: 'rgba(44,38,34,0.5)', backdropFilter: 'blur(6px)' }}>
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-luxury-warm-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl"
+            initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="w-full md:max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl md:rounded-3xl shadow-2xl"
+            style={{ background: '#F8F3E9' }}
           >
-            <div className="sticky top-0 bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream p-4 z-10">
+            <div className="sticky top-0 p-5 z-10" style={{ background: 'rgba(248,243,233,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="text-lg md:text-xl luxury-heading text-luxury-charcoal mb-1">🎁 Complete Your Blueprint</h3>
-                  <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70">Add these for the full experience</p>
+                <div>
+                  <div className="iconik-display mb-0.5" style={{ fontSize: '20px', color: INK }}>Complete Your Blueprint</div>
+                  <p className="iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.45 }}>Add the Outfit Preview for the full experience</p>
                 </div>
-                <button
-                  onClick={() => { setShowAddonPopup(false); setPopupDismissed(true); }}
-                  className="p-2 hover:bg-luxury-cream rounded-full transition-colors"
-                >
-                  <span className="text-luxury-charcoal/60 text-xl leading-none">×</span>
+                <button onClick={() => { setShowAddonPopup(false); setPopupDismissed(true); }} className="p-2 rounded-full hover:opacity-60 transition-opacity" style={{ color: INK }}>
+                  <span style={{ fontSize: '20px', lineHeight: 1 }}>×</span>
                 </button>
               </div>
             </div>
-            <div className="p-4 md:p-6 space-y-4">
-              <p className="luxury-body text-luxury-charcoal/70 text-sm text-center">
+            <div className="p-5 space-y-4">
+              <p style={{ fontSize: '14px', color: INK, opacity: 0.65, lineHeight: 1.7, textAlign: 'center' }}>
                 You&apos;re about to check out without any add-ons. Most clients see better results with the full package.
               </p>
               <button
                 onClick={() => { setShowAddonPopup(false); setPopupDismissed(true); }}
-                className="w-full bg-luxury-cream text-luxury-charcoal py-3 px-6 rounded-full luxury-body font-medium hover:bg-luxury-cream/80 transition-colors"
+                className="w-full py-3.5 rounded-full transition-all hover:opacity-80"
+                style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.1)', color: INK }}
               >
-                Add something to my order
+                <span className="iconik-display" style={{ fontSize: '15px' }}>Add something to my order</span>
               </button>
               <button
                 onClick={async () => { setShowAddonPopup(false); await processPayment(); }}
-                className="w-full text-center text-sm luxury-body text-luxury-charcoal/50 hover:text-luxury-charcoal transition-colors underline py-2"
+                className="w-full py-2.5 iconik-mono transition-opacity hover:opacity-70 underline"
+                style={{ fontSize: '11px', color: INK, opacity: 0.45, letterSpacing: '0.1em' }}
               >
                 Continue without add-ons
               </button>

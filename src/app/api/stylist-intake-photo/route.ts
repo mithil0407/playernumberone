@@ -2,18 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const BUCKET = 'stylist-intake-photos';
+let bucketReady = false;
 
 function safeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/^-+/, '') || `upload-${Date.now()}.jpg`;
 }
 
 async function ensureBucket() {
-  const { data } = await supabaseAdmin.storage.getBucket(BUCKET);
-  if (data) {
-    await supabaseAdmin.storage.updateBucket(BUCKET, { public: true }).catch(() => {});
-    return;
-  }
-
   const { error } = await supabaseAdmin.storage.createBucket(BUCKET, {
     public: true,
     fileSizeLimit: 12 * 1024 * 1024,
@@ -23,6 +18,23 @@ async function ensureBucket() {
   if (error && !/already exists/i.test(error.message)) {
     throw error;
   }
+  bucketReady = true;
+}
+
+function isMissingBucket(error: unknown) {
+  const message = error && typeof error === 'object' && 'message' in error
+    ? String((error as { message?: unknown }).message)
+    : String(error ?? '');
+  return /bucket not found|not found/i.test(message);
+}
+
+async function uploadToBucket(path: string, buffer: Buffer, contentType: string) {
+  return supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(path, buffer, {
+      upsert: true,
+      contentType,
+    });
 }
 
 export async function POST(request: NextRequest) {
@@ -39,18 +51,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only image uploads are supported' }, { status: 400 });
     }
 
-    await ensureBucket();
-
     const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
     const path = `public/${Date.now()}_${safeFileName(fileName).replace(/\.[^.]+$/, '')}.${extension}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const { data, error } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(path, buffer, {
-        upsert: true,
-        contentType: file.type || 'image/jpeg',
-      });
+    if (!bucketReady) {
+      const firstAttempt = await uploadToBucket(path, buffer, file.type || 'image/jpeg');
+      if (!firstAttempt.error) {
+        bucketReady = true;
+        const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(firstAttempt.data.path);
+        return NextResponse.json({ url: publicData.publicUrl, path: firstAttempt.data.path });
+      }
+      if (!isMissingBucket(firstAttempt.error)) throw firstAttempt.error;
+      await ensureBucket();
+    }
+
+    const { data, error } = await uploadToBucket(path, buffer, file.type || 'image/jpeg');
 
     if (error) throw error;
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 import { trackPageView } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
@@ -29,20 +29,6 @@ interface ScanPayload {
     completedAt: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-function getScoreColour(score: number): string {
-    if (score < 58) return '#C4645A';
-    if (score < 68) return '#b58e4d';
-    return '#5A8B6A';
-}
-
-function getScoreRing(score: number): string {
-    if (score < 58) return 'border-red-200';
-    if (score < 68) return 'border-[#b58e4d]/40';
-    return 'border-green-200';
-}
-
 // ── Blueprint CTA ─────────────────────────────────────────────────────────
 
 function BlueprintCTA({ onCTAClick, disabled = false }: { onCTAClick: () => void; disabled?: boolean }) {
@@ -50,9 +36,10 @@ function BlueprintCTA({ onCTAClick, disabled = false }: { onCTAClick: () => void
         <button
             onClick={onCTAClick}
             disabled={disabled}
-            className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 disabled:hover:translate-y-0 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-xl hover:-translate-y-0.5 transform"
+            className="inline-flex items-center gap-3 px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
         >
-            {disabled ? 'Preparing Checkout...' : 'Get My ICONIK Blueprint — $149'} <ArrowRight className="ml-3 h-4 w-4" />
+            {disabled ? 'Preparing Checkout…' : 'Get My ICONIK Blueprint — $149'} <ArrowRight className="h-4 w-4" />
         </button>
     );
 }
@@ -74,22 +61,14 @@ export default function StyleScoreResultPage() {
         }
 
         const raw = typeof window !== 'undefined' ? localStorage.getItem('style_scan_result') : null;
-        if (!raw) {
-            router.replace('/stylist/style-score');
-            return;
-        }
+        if (!raw) { router.replace('/stylist/style-score'); return; }
 
         let parsed: ScanPayload;
-        try {
-            parsed = JSON.parse(raw) as ScanPayload;
-        } catch {
-            router.replace('/stylist/style-score');
-            return;
-        }
+        try { parsed = JSON.parse(raw) as ScanPayload; }
+        catch { router.replace('/stylist/style-score'); return; }
 
         setPayload(parsed);
 
-        // Save lead before checkout CTA becomes active. Checkout still has a fallback.
         const attribution = getAttributionPayload();
         fetch('/api/stylist-lead', {
             method: 'POST',
@@ -106,10 +85,8 @@ export default function StyleScoreResultPage() {
             })
             .catch(err => console.warn('Style scan lead save failed; checkout fallback will retry:', err))
             .finally(() => setLeadSaving(false));
-
     }, [router]);
 
-    // Animate score counter
     useEffect(() => {
         if (!payload) return;
         let frame = 0;
@@ -140,92 +117,100 @@ export default function StyleScoreResultPage() {
 
     if (!payload) {
         return (
-            <div className="min-h-screen bg-luxury-warm-white flex items-center justify-center">
-                <div className="text-luxury-charcoal/40 luxury-body">Loading your results…</div>
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--luxury-warm-white)' }}>
+                <div className="luxury-body text-luxury-charcoal/40">Loading your results…</div>
             </div>
         );
     }
 
-    const scoreColour = getScoreColour(payload.styleScore);
-    const scoreRing = getScoreRing(payload.styleScore);
+    const scoreBarColour = payload.styleScore < 58 ? '#C4645A' : payload.styleScore < 68 ? 'var(--iconik-slate)' : '#5A8B6A';
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
+        <div className="min-h-screen text-luxury-charcoal overflow-x-hidden" style={{ background: 'var(--luxury-warm-white)' }}>
 
             {/* Header */}
-            <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
+            <nav
+                className="fixed top-0 w-full z-50"
+                style={{ background: 'rgba(244,239,229,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--luxury-cream)' }}
+            >
                 <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
-                    <div className="flex items-center gap-2 text-xs luxury-body text-luxury-charcoal/50">
-                        <Sparkles className="w-3 h-3 text-luxury-accent" />
-                        Your free Style Score
-                    </div>
+                    <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '16px', letterSpacing: '0.32em' }}>I C O N I K</span>
+                    <div className="iconik-micro text-luxury-charcoal/40">Your Style Score</div>
                 </div>
             </nav>
 
             <div className="pt-20 pb-24 max-w-3xl mx-auto px-4 md:px-6">
 
-                {/* ── Section 1: Score ─────────────────────────────── */}
+                {/* ── Score Panel ──────────────────────────────────── */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="py-12 text-center"
+                    className="py-14"
                 >
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#b58e4d] mb-4">Your Result</p>
-                    <h1 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal mb-8 leading-tight">
-                        ICONIK Style Score
-                    </h1>
-
-                    <div className={`inline-flex flex-col items-center justify-center w-36 h-36 md:w-48 md:h-48 rounded-full border-4 ${scoreRing} bg-white shadow-lg mb-6`}>
-                        <span className="luxury-heading leading-none" style={{ fontSize: '3.5rem', color: scoreColour }}>
-                            {animatedScore}
-                        </span>
-                        <span className="text-sm text-luxury-charcoal/40 luxury-body font-light">/100</span>
-                    </div>
-
-                    <div className="max-w-sm mx-auto mb-3">
-                        <div className="w-full bg-luxury-cream rounded-full h-2">
-                            <div
-                                className="h-2 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${payload.styleScore}%`, backgroundColor: scoreColour }}
-                            />
+                    <div
+                        className="relative rounded-2xl overflow-hidden p-10 text-center"
+                        style={{ background: 'radial-gradient(ellipse 120% 80% at 25% 10%, var(--iconik-slate-light) 0%, var(--iconik-slate) 45%, var(--iconik-slate-deep) 100%)' }}
+                    >
+                        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #F4EFE5 1px, transparent 0)', backgroundSize: '3px 3px' }} />
+                        <div className="relative">
+                            <div className="iconik-micro text-luxury-warm-white/55 mb-6">ICONIK Style Score</div>
+                            <div className="iconik-display text-luxury-warm-white" style={{ fontSize: 'clamp(80px, 14vw, 120px)' }}>
+                                {animatedScore}
+                            </div>
+                            <div className="flex items-center justify-center gap-3 mb-6">
+                                <div className="h-px flex-1" style={{ background: 'rgba(244,239,229,0.2)', maxWidth: '80px' }} />
+                                <span className="iconik-mono text-luxury-warm-white/50" style={{ fontSize: '11px' }}>/100</span>
+                                <div className="h-px flex-1" style={{ background: 'rgba(244,239,229,0.2)', maxWidth: '80px' }} />
+                            </div>
+                            <div className="max-w-xs mx-auto mb-6">
+                                <div className="w-full rounded-full overflow-hidden" style={{ height: '3px', background: 'rgba(244,239,229,0.2)' }}>
+                                    <div
+                                        className="h-full rounded-full transition-all duration-1000 ease-out"
+                                        style={{ width: `${payload.styleScore}%`, background: 'var(--luxury-warm-white)' }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="iconik-display-it text-luxury-warm-white/80" style={{ fontSize: '18px' }}>
+                                &ldquo;{payload.scoreLabel}&rdquo;
+                            </div>
                         </div>
                     </div>
-
-                    <p className="luxury-body text-luxury-charcoal/60 text-sm italic max-w-xs mx-auto leading-relaxed">
-                        &ldquo;{payload.scoreLabel}&rdquo;
-                    </p>
                 </motion.section>
 
-                {/* ── Section 2: Direction Cards ───────────────────── */}
+                {/* ── Direction Cards ──────────────────────────────── */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.15 }}
-                    className="space-y-4 mb-8"
+                    className="space-y-3 mb-8"
                 >
                     {/* Colour Direction */}
-                    <div className="bg-white border border-[#f0ede8] rounded-2xl p-6">
-                        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#b58e4d] mb-3">Colour Direction</p>
-                        <p className="luxury-heading text-luxury-charcoal text-xl mb-4">{payload.colourDirection}</p>
+                    <div className="rounded-2xl p-6 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                        <div className="iconik-micro text-luxury-charcoal/35 mb-4">Colour Direction</div>
+                        <div className="iconik-display text-luxury-charcoal mb-4" style={{ fontSize: '28px' }}>{payload.colourDirection}</div>
                         <div className="flex gap-2 mb-3">
                             {payload.moodColours.map((hex, i) => (
                                 <div
                                     key={i}
-                                    className="flex-1 rounded-lg border border-[#f0ede8] shadow-sm"
-                                    style={{ backgroundColor: hex, aspectRatio: '1/1', maxHeight: '48px' }}
+                                    className="flex-1 rounded-xl border"
+                                    style={{ backgroundColor: hex, aspectRatio: '1/1', maxHeight: '44px', borderColor: 'var(--luxury-cream)' }}
                                 />
                             ))}
                         </div>
-                        <p className="text-[10px] text-luxury-charcoal/40 font-light luxury-body">Your palette direction — expanded with precise hex codes in the full Blueprint</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            {payload.moodColours.map((hex, i) => (
+                                <span key={i} className="iconik-mono text-luxury-charcoal/30" style={{ fontSize: '8px' }}>{hex}</span>
+                            ))}
+                        </div>
+                        <p className="luxury-body text-luxury-charcoal/40 text-xs mt-3" style={{ fontWeight: 300 }}>Your palette direction — expanded with precise hex codes in the full Blueprint</p>
                     </div>
 
                     {/* Silhouette Direction */}
-                    <div className="bg-white border border-[#f0ede8] rounded-2xl p-6">
-                        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#b58e4d] mb-3">Silhouette Direction</p>
-                        <p className="luxury-heading text-luxury-charcoal text-xl mb-2">{payload.silhouetteDirection}</p>
-                        <p className="text-sm text-luxury-charcoal/60 luxury-body">
+                    <div className="rounded-2xl p-6 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                        <div className="iconik-micro text-luxury-charcoal/35 mb-4">Silhouette Direction</div>
+                        <div className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: '28px' }}>{payload.silhouetteDirection}</div>
+                        <p className="luxury-body text-luxury-charcoal/55 text-sm leading-relaxed" style={{ fontWeight: 300 }}>
                             {payload.bodyShape === 'hourglass' && 'Define the natural waist. Avoid boxy, shapeless silhouettes.'}
                             {payload.bodyShape === 'pear' && 'Draw the eye upward. Structured shoulders, A-line skirts, wide-leg trousers.'}
                             {payload.bodyShape === 'apple' && 'Create vertical line. V-necks, empire cuts, structured shoulders.'}
@@ -235,53 +220,64 @@ export default function StyleScoreResultPage() {
                     </div>
 
                     {/* Mood Board */}
-                    <div className="bg-white border border-[#f0ede8] rounded-2xl p-6">
-                        <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#b58e4d] mb-3">Aesthetic Mood Board</p>
+                    <div className="rounded-2xl p-6 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                        <div className="iconik-micro text-luxury-charcoal/35 mb-4">Aesthetic Mood Board</div>
                         <div className="flex flex-wrap gap-2 mb-4">
                             {payload.moodKeywords.map((kw, i) => (
                                 <span
                                     key={i}
-                                    className="px-3 py-1.5 border border-[#f0ede8] text-[10px] font-black uppercase tracking-widest text-luxury-charcoal/60 rounded-full bg-[#faf9f6]"
+                                    className="px-3 py-1.5 rounded-full border iconik-micro text-luxury-charcoal/50"
+                                    style={{ borderColor: 'var(--luxury-cream)', background: 'var(--luxury-cream)' }}
                                 >
                                     {kw}
                                 </span>
                             ))}
                         </div>
-                        <p className="text-[10px] text-luxury-charcoal/40 luxury-body">
+                        <p className="luxury-body text-luxury-charcoal/35 text-xs" style={{ fontWeight: 300 }}>
                             Your aesthetic direction — the full Blueprint builds a complete wardrobe formula around this
                         </p>
                     </div>
                 </motion.section>
 
-                {/* ── Section 3: What's Missing ─────────────────────── */}
+                {/* ── What's Missing ───────────────────────────────── */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.25 }}
-                    className="bg-black rounded-2xl p-7 mb-8"
+                    className="rounded-2xl p-7 mb-8 relative overflow-hidden"
+                    style={{ background: 'var(--iconik-slate-deep)' }}
                 >
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#b58e4d] mb-3">The Gap in Your Style</p>
-                    <p className="luxury-body text-white/80 text-sm leading-relaxed mb-2">
-                        Based on your answers, the biggest missing piece in your style is:
-                    </p>
-                    <p className="luxury-heading text-white text-base md:text-xl leading-snug">
-                        {payload.whatsMissing}
-                    </p>
+                    <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #F4EFE5 1px, transparent 0)', backgroundSize: '3px 3px' }} />
+                    <div className="relative">
+                        <div className="iconik-micro text-luxury-warm-white/45 mb-4">The Gap in Your Style</div>
+                        <p className="luxury-body text-luxury-warm-white/65 text-sm leading-relaxed mb-3" style={{ fontWeight: 300 }}>
+                            Based on your answers, the biggest missing piece in your style is:
+                        </p>
+                        <div className="iconik-display-it text-luxury-warm-white" style={{ fontSize: '22px', lineHeight: 1.4 }}>
+                            {payload.whatsMissing}
+                        </div>
+                    </div>
                 </motion.section>
 
-                {/* ── Section 4: Blueprint Upsell ──────────────────── */}
+                {/* ── Blueprint Upsell ─────────────────────────────── */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.35 }}
-                    className="bg-luxury-cream/30 border border-luxury-cream rounded-2xl p-7 mb-8"
+                    className="rounded-2xl p-7 mb-8 border"
+                    style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}
                 >
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#b58e4d] mb-4">Your Free Result Shows the Direction.</p>
-                    <h2 className="luxury-heading text-luxury-charcoal text-2xl md:text-3xl mb-4 leading-tight">The Blueprint shows the science.</h2>
-                    <p className="luxury-body text-luxury-charcoal/70 text-sm leading-relaxed mb-5">
+                    <div className="iconik-micro text-luxury-charcoal/40 mb-5">Your Free Result Shows the Direction</div>
+                    <h2 className="iconik-display text-luxury-charcoal mb-2" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>The Blueprint</h2>
+                    <h2 className="iconik-display-it text-luxury-charcoal mb-6" style={{ fontSize: 'clamp(28px, 4vw, 40px)', opacity: 0.8 }}>shows the science.</h2>
+
+                    <div className="h-px mb-6" style={{ background: 'rgba(44,38,34,0.1)' }} />
+
+                    <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed mb-6" style={{ fontWeight: 300 }}>
                         Your Style Score reveals where the gaps are. The full ICONIK Blueprint closes them — with exact colour palettes, outfit formulas, body geometry analysis, and everything you need to shop and dress with complete confidence.
                     </p>
-                    <div className="space-y-2.5 mb-7">
+
+                    <div className="space-y-3 mb-7">
                         {[
                             'Your detailed colour palette — precise hex codes for every look',
                             'Body proportion analysis — which cuts flatter every silhouette',
@@ -291,34 +287,32 @@ export default function StyleScoreResultPage() {
                             'Shopping rules specific to your frame and palette',
                         ].map((item, i) => (
                             <div key={i} className="flex items-start gap-3">
-                                <CheckCircle className="w-4 h-4 text-luxury-accent flex-shrink-0 mt-0.5" />
-                                <span className="luxury-body text-luxury-charcoal/80 text-sm">{item}</span>
+                                <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--luxury-charcoal)', opacity: 0.4 }} />
+                                <span className="luxury-body text-luxury-charcoal/65 text-sm" style={{ fontWeight: 300 }}>{item}</span>
                             </div>
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-4 mb-6">
-                        <div>
-                            <span className="luxury-heading text-luxury-charcoal/30 line-through text-lg">$249</span>
-                            <span className="luxury-heading text-luxury-accent text-3xl ml-2">$149</span>
-                        </div>
-                        <div className="bg-luxury-accent text-luxury-warm-white px-3 py-1 rounded-full luxury-body text-xs font-semibold">
-                            LIMITED OFFER
+                    <div className="flex items-baseline gap-3 mb-6">
+                        <span className="iconik-display text-luxury-charcoal/25 line-through" style={{ fontSize: '20px' }}>$249</span>
+                        <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '40px' }}>$149</span>
+                        <div className="px-3 py-1 rounded-full iconik-micro text-luxury-warm-white" style={{ background: 'var(--luxury-accent)' }}>
+                            Limited Offer
                         </div>
                     </div>
 
                     <BlueprintCTA onCTAClick={handleCTAClick} disabled={leadSaving} />
-                    <p className="luxury-body text-luxury-charcoal/40 text-xs mt-3">72-hour delivery · 30-day money-back guarantee</p>
+                    <p className="luxury-body text-luxury-charcoal/35 text-xs mt-3" style={{ fontWeight: 300 }}>72-hour delivery · 30-day money-back guarantee</p>
                 </motion.section>
 
-                {/* ── Section 5: What Clients Say ──────────────────── */}
+                {/* ── Testimonials ─────────────────────────────────── */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.45 }}
-                    className="space-y-4 mb-10"
+                    className="space-y-3 mb-10"
                 >
-                    <p className="text-center text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">What Clients Say</p>
+                    <div className="iconik-micro text-luxury-charcoal/35 text-center mb-5">What Clients Say</div>
                     {[
                         {
                             quote: 'I have been dressing for the wrong body shape my entire life. The Blueprint told me things I had never been told by any stylist.',
@@ -331,10 +325,12 @@ export default function StyleScoreResultPage() {
                             tag: 'Hourglass · Neutral Autumn',
                         },
                     ].map((t, i) => (
-                        <div key={i} className="p-6 bg-white border border-luxury-cream rounded-2xl">
-                            <p className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed mb-3">&ldquo;{t.quote}&rdquo;</p>
-                            <p className="luxury-body text-luxury-charcoal/60 text-xs">{t.name}</p>
-                            <p className="luxury-body text-luxury-accent text-xs">{t.tag}</p>
+                        <div key={i} className="p-6 rounded-2xl border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                            <div className="iconik-display-it text-luxury-charcoal mb-4" style={{ fontSize: '17px', lineHeight: 1.5 }}>
+                                &ldquo;{t.quote}&rdquo;
+                            </div>
+                            <div className="luxury-body text-luxury-charcoal/50 text-xs">{t.name}</div>
+                            <div className="iconik-micro text-luxury-charcoal/30 mt-1">{t.tag}</div>
                         </div>
                     ))}
                 </motion.section>
@@ -346,11 +342,11 @@ export default function StyleScoreResultPage() {
                     transition={{ duration: 0.5, delay: 0.5 }}
                     className="text-center"
                 >
-                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-5">
+                    <p className="luxury-body text-luxury-charcoal/45 text-sm mb-6" style={{ fontWeight: 300 }}>
                         Your score shows the gap. The Blueprint closes it.
                     </p>
                     <BlueprintCTA onCTAClick={handleCTAClick} disabled={leadSaving} />
-                    <p className="luxury-body text-luxury-charcoal/40 text-xs mt-3">
+                    <p className="luxury-body text-luxury-charcoal/30 text-xs mt-3" style={{ fontWeight: 300 }}>
                         72-hour delivery · 30-day guarantee · Personalised to you
                     </p>
                 </motion.div>
@@ -358,20 +354,24 @@ export default function StyleScoreResultPage() {
             </div>
 
             {/* Sticky Mobile CTA */}
-            <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
+            <div
+                className="fixed bottom-0 left-0 right-0 p-3 md:hidden z-50"
+                style={{ background: 'rgba(244,239,229,0.98)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--luxury-cream)' }}
+            >
                 <div className="max-w-sm mx-auto">
                     <button
                         onClick={handleCTAClick}
                         disabled={leadSaving}
-                        className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
+                        className="w-full px-6 py-3.5 text-sm rounded-full transition-all duration-300 luxury-body text-center block shadow-lg disabled:opacity-50"
+                        style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                     >
-                        {leadSaving ? 'Preparing Checkout...' : 'Get My ICONIK Blueprint — $149'}
+                        {leadSaving ? 'Preparing Checkout…' : 'Get My ICONIK Blueprint — $149'}
                     </button>
                 </div>
             </div>
 
             {/* Footer */}
-            <footer className="py-6 px-6 bg-luxury-cream/10 text-center border-t border-luxury-cream">
+            <footer className="py-6 px-6 text-center border-t" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
                 <p className="luxury-body text-luxury-charcoal/30 text-xs">
                     © {new Date().getFullYear()} ICONIK Style Intelligence ·{' '}
                     <Link href="/privacy-policy" className="hover:text-luxury-charcoal transition-colors">Privacy</Link>

@@ -134,6 +134,19 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ── ICONIK stylist theme — scoped to .iconik-theme wrapper, overrides luxury tokens ── */
+.iconik-theme {
+  --luxury-warm-white: #F4EFE5;   /* ivory — main background */
+  --luxury-charcoal: #2C2622;     /* dark warm brown — primary text */
+  --luxury-cream: #EDE5D2;        /* bone — panels, dividers */
+  --luxury-accent: #C9A96E;       /* warm gold — CTAs, accents */
+  --luxury-gold: #C9A96E;         /* warm gold — prices, stars */
+  --luxury-pink-bg: #EDE5D2;      /* bone — subtle panel fills */
+  --iconik-slate: #94A6AD;        /* slate medium */
+  --iconik-slate-deep: #7E9098;   /* slate deep */
+  --iconik-slate-light: #A0B2B9;  /* slate light */
+}
+
 /* ── Man funnel theme — scoped to .man-theme wrapper, overrides luxury tokens ── */
 .man-theme {
   --luxury-warm-white: #f5f3ef;   /* warm ivory — main background */
@@ -143,6 +156,129 @@
   --luxury-gold: #9a7d4a;         /* antique gold — stars, badges */
   --luxury-green: #b45309;        /* warm amber — prices, checkmarks */
   --luxury-pink-bg: #edebe5;      /* warm stone — subtle panel fills */
+}
+
+/* ── Man editorial design system ──────────────────────────────────────────── */
+
+/* Grain on every section and major block — adapts to currentColor */
+.man-editorial section,
+.man-editorial .me-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.man-editorial section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size: 3px 3px;
+  z-index: 0;
+}
+
+/* Grain on the full page wrapper for checkout / intake (no <section> elements) */
+.man-editorial > div.me-page-wrapper::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, #2C2622 1px, transparent 0);
+  background-size: 3px 3px;
+  z-index: 0;
+}
+
+.man-editorial {
+  --me-slate:       #94A6AD;
+  --me-slate-deep:  #6B7F87;
+  --me-slate-light: #A0B2B9;
+  --me-ivory:       #F8F3E9;
+  --me-bone:        #EDE5D2;
+  --me-warm-white:  #F4EFE5;
+  --me-ink:         #2C2622;
+  background: #F8F3E9;
+  color: #2C2622;
+  font-family: var(--font-inter, Inter, sans-serif);
+  font-weight: 300;
+  letter-spacing: -0.005em;
+}
+
+/* Page blocks */
+.me-page {
+  border-radius: 20px;
+  padding: 64px 56px;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .me-page {
+    border-radius: 16px;
+    padding: 48px 24px;
+  }
+}
+
+/* Background variants */
+.me-slate {
+  background: radial-gradient(ellipse 120% 80% at 25% 10%, #A0B2B9 0%, #94A6AD 45%, #7E9098 100%);
+  color: #F4EFE5;
+}
+
+.me-slate-deep {
+  background: linear-gradient(155deg, #7E9098 0%, #6B7F87 100%);
+  color: #F4EFE5;
+}
+
+.me-ivory {
+  background: linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%);
+  color: #2C2622;
+}
+
+.me-bone {
+  background: #EDE5D2;
+  color: #2C2622;
+}
+
+/* Grain texture overlay */
+.me-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size: 3px 3px;
+}
+
+/* Dividers */
+.me-rule {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.18;
+}
+
+.me-rule-thin {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.10;
+}
+
+/* Glass panels */
+.me-glass-light {
+  background: rgba(244, 239, 229, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(244, 239, 229, 0.15);
+  border-radius: 18px;
+}
+
+.me-glass-dark {
+  background: rgba(44, 38, 34, 0.03);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(44, 38, 34, 0.08);
+  border-radius: 18px;
 }
 
 @layer base {
@@ -196,5 +332,37 @@
     font-weight: 400;
     letter-spacing: 0.005em;
     line-height: 1.6;
+  }
+
+  /* ICONIK editorial type scale */
+  .iconik-display {
+    font-family: var(--font-fraunces, 'Fraunces', serif);
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    line-height: 0.95;
+  }
+  .iconik-display-it {
+    font-family: var(--font-fraunces, 'Fraunces', serif);
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: -0.025em;
+    line-height: 0.95;
+  }
+  .iconik-mono {
+    font-family: var(--font-jetbrains-mono, 'JetBrains Mono', monospace);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .iconik-micro {
+    font-size: 9px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .iconik-small-caps {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 400;
   }
 }

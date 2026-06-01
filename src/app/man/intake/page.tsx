@@ -361,10 +361,10 @@ const QUESTION_COUNT = 27;
 function ProgressBar({ step }: { step: number }) {
     const pct = (step / QUESTION_COUNT) * 100;
     return (
-        <div className="w-full bg-luxury-cream rounded-full h-1.5 overflow-hidden">
+        <div className="w-full h-px overflow-hidden" style={{ background: 'rgba(44,38,34,0.1)' }}>
             <div
-                className="bg-luxury-accent h-1.5 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${Math.min(pct, 100)}%` }}
+                className="h-full transition-all duration-500 ease-out"
+                style={{ width: `${Math.min(pct, 100)}%`, background: '#94A6AD' }}
             />
         </div>
     );
@@ -372,7 +372,7 @@ function ProgressBar({ step }: { step: number }) {
 
 function SectionLabel({ label }: { label: string }) {
     return (
-        <p className="text-luxury-charcoal/40 text-xs mb-6 uppercase tracking-widest font-semibold">{label}</p>
+        <p className="iconik-micro mb-5" style={{ color: '#2C2622', opacity: 0.4 }}>{label}</p>
     );
 }
 
@@ -381,14 +381,15 @@ function RadioCard({ selected, onClick, children }: { selected: boolean; onClick
         <button
             type="button"
             onClick={onClick}
-            className={`w-full text-left border-2 rounded-xl px-5 py-4 transition-all duration-200 ${selected
-                ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10 hover:-translate-y-0.5 transform'
-                : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'
-                }`}
+            className="w-full text-left rounded-xl px-5 py-4 transition-all duration-200"
+            style={{
+                border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`,
+                background: selected ? 'rgba(148,166,173,0.08)' : '#FAFAF8',
+            }}
         >
             <div className="flex items-center gap-4">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? 'border-luxury-accent' : 'border-luxury-charcoal/20'}`}>
-                    {selected && <div className="w-2.5 h-2.5 bg-luxury-accent rounded-full" />}
+                <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-all" style={{ border: `2px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.2)'}` }}>
+                    {selected && <div className="w-2 h-2 rounded-full" style={{ background: '#94A6AD' }} />}
                 </div>
                 {children}
             </div>
@@ -401,15 +402,16 @@ function CheckCard({ selected, onClick, children }: { selected: boolean; onClick
         <button
             type="button"
             onClick={onClick}
-            className={`w-full text-left border-2 rounded-xl px-5 py-4 transition-all duration-200 ${selected
-                ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10 hover:-translate-y-0.5 transform'
-                : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'
-                }`}
+            className="w-full text-left rounded-xl px-5 py-4 transition-all duration-200"
+            style={{
+                border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`,
+                background: selected ? 'rgba(148,166,173,0.08)' : '#FAFAF8',
+            }}
         >
             <div className="flex items-center gap-4">
-                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/20 bg-luxury-warm-white'}`}>
+                <div className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all" style={{ border: `2px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.2)'}`, background: selected ? '#94A6AD' : 'transparent' }}>
                     {selected && (
-                        <svg className="w-3.5 h-3.5 text-luxury-warm-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     )}
@@ -425,23 +427,29 @@ function PhotoUploadField({ label, instruction, file, onChange, required }: {
 }) {
     return (
         <label className="block cursor-pointer group">
-            <div className={`border-2 border-dashed rounded-2xl p-8 md:p-12 text-center transition-all duration-200 ${file ? 'border-luxury-accent bg-luxury-pink-bg' : 'border-luxury-cream bg-luxury-warm-white group-hover:border-luxury-accent/50 group-hover:bg-luxury-cream/20'}`}>
+            <div
+                className="rounded-2xl p-8 md:p-10 text-center transition-all duration-200"
+                style={{
+                    border: `1px dashed ${file ? '#94A6AD' : 'rgba(44,38,34,0.2)'}`,
+                    background: file ? 'rgba(148,166,173,0.06)' : '#FAFAF8',
+                }}
+            >
                 {file ? (
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 bg-luxury-accent/10 rounded-full flex items-center justify-center mb-2">
-                            <CheckCircle className="w-8 h-8 text-luxury-accent" />
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-2" style={{ background: 'rgba(148,166,173,0.12)' }}>
+                            <CheckCircle className="w-7 h-7" style={{ color: '#94A6AD' }} />
                         </div>
-                        <div className="font-semibold text-luxury-charcoal luxury-body">{file.name}</div>
-                        <div className="text-xs text-luxury-charcoal/50 luxury-body">Click or drag here to change</div>
+                        <div className="iconik-display" style={{ fontSize: '15px', color: '#2C2622' }}>{file.name}</div>
+                        <div className="iconik-micro opacity-45" style={{ color: '#2C2622' }}>Click or drag to change</div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 bg-luxury-cream/50 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                            <Upload className="w-8 h-8 text-luxury-charcoal/40 group-hover:text-luxury-accent transition-colors" />
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-2 group-hover:scale-105 transition-transform" style={{ background: 'rgba(44,38,34,0.04)' }}>
+                            <Upload className="w-7 h-7 transition-colors" style={{ color: 'rgba(44,38,34,0.3)' }} />
                         </div>
-                        <div className="font-semibold text-luxury-charcoal luxury-body">{label}{required && ' *'}</div>
-                        <div className="text-sm luxury-body text-luxury-charcoal/60 max-w-sm leading-relaxed">{instruction}</div>
-                        <div className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-wider mt-2">JPG · PNG · HEIC · Max 20MB</div>
+                        <div className="iconik-display" style={{ fontSize: '16px', color: '#2C2622' }}>{label}{required && ' *'}</div>
+                        <div style={{ fontSize: '13px', color: '#2C2622', opacity: 0.55, maxWidth: '320px', lineHeight: 1.7 }}>{instruction}</div>
+                        <div className="iconik-micro mt-1 opacity-35" style={{ color: '#2C2622' }}>JPG · PNG · HEIC · Max 20MB</div>
                     </div>
                 )}
                 <input type="file" accept=".jpg,.jpeg,.png,.heic,.heif" className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} required={required} />
@@ -687,15 +695,15 @@ function ManIntakePageInner() {
     const isLastQuestion = step === 27;
 
     return (
-        <div className="man-theme min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden flex flex-col">
+        <div className="man-editorial me-page-wrapper min-h-screen overflow-x-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
 
             {/* Header */}
-            <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream py-4 px-6 sticky top-0 z-20">
-                <div className="max-w-2xl mx-auto">
+            <header className="sticky top-0 z-20 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+                <div className="max-w-2xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between mb-3">
-                        <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+                        <span className="iconik-display" style={{ fontSize: '18px', letterSpacing: '0.1em', color: '#2C2622' }}>ICONIK</span>
                         {step > 0 && step < CONFIRMATION_STEP && (
-                            <span className="text-xs luxury-body text-luxury-charcoal/50 font-semibold tracking-widest uppercase">Step {step} of {QUESTION_COUNT}</span>
+                            <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.2em' }}>Step {step} of {QUESTION_COUNT}</span>
                         )}
                     </div>
                     {step > 0 && step < CONFIRMATION_STEP && <ProgressBar step={step} />}
@@ -713,30 +721,33 @@ function ManIntakePageInner() {
                             animate="center"
                             exit="exit"
                             transition={{ duration: 0.3, ease: 'easeOut' }}
-                            className="bg-luxury-warm-white md:bg-luxury-cream/20 md:backdrop-blur-sm md:border md:border-luxury-cream md:rounded-3xl md:p-10 md:shadow-xl md:shadow-luxury-accent/5"
+                            className="md:rounded-3xl md:p-10"
+                            style={{ background: 'transparent' }}
                         >
 
                             {/* ── Step 0: Opening ──────────────────────────────── */}
                             {step === 0 && (
                                 <div className="text-center">
-                                    <div className="w-20 h-20 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative">
-                                        <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
-                                        <CheckCircle className="w-10 h-10 text-luxury-accent relative z-10" />
+                                    <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8 relative" style={{ background: 'rgba(148,166,173,0.12)' }}>
+                                        <div className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(148,166,173,0.15)' }} />
+                                        <CheckCircle className="w-8 h-8 relative z-10" style={{ color: '#94A6AD' }} />
                                     </div>
-                                    <h1 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-6 leading-tight">Let&apos;s build your Blueprint.</h1>
-                                    <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-6 max-w-lg mx-auto">
-                                        We need two photos and a few key details so our stylists can personalise your report. Takes exactly <strong className="text-luxury-charcoal font-semibold">7 minutes</strong>.
+                                    <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Let&apos;s build your Blueprint.</div>
+                                    <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, marginBottom: '24px', maxWidth: '420px', margin: '0 auto 24px' }}>
+                                        Two photos and a few key details so our stylists can personalise your report. Takes exactly <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>7 minutes</strong>.
                                     </p>
                                     {contactPrefilled && form.email && (
-                                        <div className="bg-luxury-cream/50 border border-luxury-cream rounded-xl px-5 py-3 mb-8 inline-block">
-                                            <p className="luxury-body text-luxury-charcoal/70 text-sm">Continuing as <strong className="text-luxury-charcoal">{form.email}</strong></p>
+                                        <div className="rounded-xl px-5 py-3 mb-8 inline-block" style={{ background: 'rgba(44,38,34,0.04)', border: '1px solid rgba(44,38,34,0.08)' }}>
+                                            <p className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.55 }}>Continuing as <strong style={{ fontWeight: 500 }}>{form.email}</strong></p>
                                         </div>
                                     )}
                                     <button
                                         onClick={goNext}
-                                        className="inline-flex items-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 text-base font-semibold luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                                        className="inline-flex items-center gap-3 px-10 py-4 rounded-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg transform"
+                                        style={{ background: '#2C2622', color: '#F4EFE5' }}
                                     >
-                                        Begin Intake Form <ArrowRight className="w-5 h-5" />
+                                        <span className="iconik-display" style={{ fontSize: '15px' }}>Begin Intake Form</span>
+                                        <ArrowRight className="w-4 h-4 opacity-60" />
                                     </button>
                                 </div>
                             )}
@@ -744,30 +755,30 @@ function ManIntakePageInner() {
                             {/* ── Step 1: Contact ──────────────────────────────── */}
                             {step === 1 && (
                                 <div>
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Your contact details</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">So we can send your Blueprint to you.</p>
+                                    <div className="iconik-display mb-2" style={{ fontSize: 'clamp(24px, 5vw, 36px)', color: '#2C2622' }}>Your contact details</div>
+                                    <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.55, marginBottom: '28px', lineHeight: 1.7 }}>So we can send your Blueprint to you.</p>
                                     {contactPrefilled ? (
-                                        <div className="space-y-4">
+                                        <div className="space-y-3">
                                             {[{ label: 'Email', value: form.email }, { label: 'Phone', value: form.phone }].map(f => (
-                                                <div key={f.label} className="bg-luxury-cream/40 border border-luxury-cream rounded-xl px-5 py-4 flex items-center justify-between">
+                                                <div key={f.label} className="rounded-xl px-5 py-4 flex items-center justify-between" style={{ background: 'rgba(44,38,34,0.04)', border: '1px solid rgba(44,38,34,0.08)' }}>
                                                     <div>
-                                                        <p className="text-xs font-semibold luxury-body text-luxury-charcoal/50 uppercase tracking-wider mb-1">{f.label}</p>
-                                                        <p className="luxury-body text-luxury-charcoal font-medium">{f.value}</p>
+                                                        <p className="iconik-micro mb-1 opacity-40" style={{ color: '#2C2622' }}>{f.label}</p>
+                                                        <p style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{f.value}</p>
                                                     </div>
-                                                    <CheckCircle className="w-5 h-5 text-luxury-accent flex-shrink-0" />
+                                                    <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#94A6AD' }} />
                                                 </div>
                                             ))}
-                                            <p className="text-xs text-center luxury-body text-luxury-charcoal/40 mt-3">Saved from your purchase. <button onClick={() => setContactPrefilled(false)} className="underline hover:text-luxury-accent transition-colors">Edit</button></p>
+                                            <p className="iconik-mono text-center mt-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.4 }}>Saved from your purchase. <button onClick={() => setContactPrefilled(false)} className="underline hover:opacity-70 transition-opacity">Edit</button></p>
                                         </div>
                                     ) : (
                                         <div className="space-y-5">
                                             <div>
-                                                <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Email Address *</label>
-                                                <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body" placeholder="your@email.com" />
+                                                <label className="block iconik-mono mb-2" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.2em' }}>EMAIL ADDRESS *</label>
+                                                <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className="w-full px-4 py-3.5 rounded-xl text-base outline-none transition-all" style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: '#2C2622', fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }} placeholder="your@email.com" />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Phone Number *</label>
-                                                <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value.replace(/[^\d\s+()-]/g, '') }))} className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body" placeholder="+91 98765 43210" />
+                                                <label className="block iconik-mono mb-2" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.2em' }}>PHONE NUMBER *</label>
+                                                <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value.replace(/[^\d\s+()-]/g, '') }))} className="w-full px-4 py-3.5 rounded-xl text-base outline-none transition-all" style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: '#2C2622', fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }} placeholder="+91 98765 43210" />
                                             </div>
                                         </div>
                                     )}
@@ -777,28 +788,28 @@ function ManIntakePageInner() {
                             {/* ── Step 2: Full Body Photo ──────────────────────── */}
                             {step === 2 && (
                                 <div>
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Upload a full-length photo.</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-6">Stand facing the camera. Natural light. Wear fitted clothes — a fitted T-shirt and slim trousers work well. No baggy clothing.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Upload a full-length photo.</h2>
+                                    <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.55, marginBottom: '24px', lineHeight: 1.7 }}>Stand facing the camera. Natural light. Wear fitted clothes — a fitted T-shirt and slim trousers work well. No baggy clothing.</p>
                                     <div className="relative mx-auto w-40 mb-6" style={{ aspectRatio: '3/4' }}>
-                                        <Image src="/fullbody.webp" alt="Example full-body photo" fill className="object-cover rounded-2xl border-2 border-luxury-cream" />
+                                        <Image src="/fullbody.webp" alt="Example full-body photo" fill className="object-cover rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.1)' }} />
                                         <div className="absolute bottom-2 left-0 right-0 text-center">
-                                            <span className="bg-luxury-charcoal/70 text-luxury-warm-white text-xs luxury-body px-2 py-0.5 rounded-full">Example</span>
+                                            <span className="px-2 py-0.5 rounded-full iconik-micro" style={{ background: 'rgba(44,38,34,0.6)', color: '#F4EFE5' }}>Example</span>
                                         </div>
                                     </div>
                                     <PhotoUploadField label="Full body photo" instruction="Stand facing camera · Natural light · Fitted clothes · No baggy fits" file={form.photoFullBody} onChange={f => setForm(p => ({ ...p, photoFullBody: f }))} required />
-                                    {!form.photoFullBody && <p className="text-xs text-luxury-accent mt-3 text-center luxury-body">A full-length photo is required to complete your Blueprint analysis.</p>}
+                                    {!form.photoFullBody && <p className="iconik-micro mt-3 text-center" style={{ color: '#94A6AD' }}>A full-length photo is required to complete your Blueprint analysis.</p>}
                                 </div>
                             )}
 
                             {/* ── Step 3: Headshot ─────────────────────────────── */}
                             {step === 3 && (
                                 <div>
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Upload a clear headshot.</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-6">Face the camera directly. Natural or indoor light. No sunglasses. A simple selfie is fine.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Upload a clear headshot.</h2>
+                                    <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.55, marginBottom: '24px', lineHeight: 1.7 }}>Face the camera directly. Natural or indoor light. No sunglasses. A simple selfie is fine.</p>
                                     <div className="relative mx-auto w-40 mb-6" style={{ aspectRatio: '3/4' }}>
-                                        <Image src="/headshot.webp" alt="Example headshot photo" fill className="object-cover rounded-2xl border-2 border-luxury-cream" />
+                                        <Image src="/headshot.webp" alt="Example headshot photo" fill className="object-cover rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.1)' }} />
                                         <div className="absolute bottom-2 left-0 right-0 text-center">
-                                            <span className="bg-luxury-charcoal/70 text-luxury-warm-white text-xs luxury-body px-2 py-0.5 rounded-full">Example</span>
+                                            <span className="px-2 py-0.5 rounded-full iconik-micro" style={{ background: 'rgba(44,38,34,0.6)', color: '#F4EFE5' }}>Example</span>
                                         </div>
                                     </div>
                                     <PhotoUploadField label="Headshot / selfie" instruction="Face the camera · No sunglasses · Natural or indoor light · Selfie is fine" file={form.photoHeadshot} onChange={f => setForm(p => ({ ...p, photoHeadshot: f }))} required />
@@ -809,12 +820,12 @@ function ManIntakePageInner() {
                             {step === 4 && (
                                 <div>
                                     <SectionLabel label="Section 1 of 5 — The Basics" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What&apos;s your primary goal with ICONIK today?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What&apos;s your primary goal with ICONIK today?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {PRIMARY_GOALS.map(o => (
                                             <RadioCard key={o.value} selected={form.primaryGoal === o.value} onClick={() => setForm(p => ({ ...p, primaryGoal: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -825,12 +836,12 @@ function ManIntakePageInner() {
                             {step === 5 && (
                                 <div>
                                     <SectionLabel label="Section 1 of 5 — The Basics" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">How would you describe your current relationship with getting dressed?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How would you describe your current relationship with getting dressed?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {STYLE_RELATIONSHIPS.map(o => (
                                             <RadioCard key={o.value} selected={form.styleRelationship === o.value} onClick={() => setForm(p => ({ ...p, styleRelationship: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -841,18 +852,18 @@ function ManIntakePageInner() {
                             {step === 6 && (
                                 <div>
                                     <SectionLabel label="Section 1 of 5 — The Basics" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What&apos;s your primary dressing context?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-1">Select up to 2.</p>
-                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">Choose the situations you dress for most</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What&apos;s your primary dressing context?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Select up to 2.</p>
+                                    <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Choose the situations you dress for most</p>
                                     <div className="space-y-3">
                                         {DRESSING_CONTEXTS.map(o => (
                                             <CheckCard key={o.value} selected={form.dressingContext.includes(o.value)} onClick={() => toggleMulti('dressingContext', o.value, 2)}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </CheckCard>
                                         ))}
                                     </div>
                                     {form.dressingContext.length === 2 && (
-                                        <p className="text-xs text-luxury-accent mt-4 luxury-body font-medium">Maximum 2 selections reached.</p>
+                                        <p className="iconik-micro mt-4" style={{ color: '#94A6AD' }}>Maximum 2 selections reached.</p>
                                     )}
                                 </div>
                             )}
@@ -861,12 +872,12 @@ function ManIntakePageInner() {
                             {step === 7 && (
                                 <div>
                                     <SectionLabel label="Section 1 of 5 — The Basics" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Where are you based?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Where are you based?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {LOCATION_TIERS.map(o => (
                                             <RadioCard key={o.value} selected={form.locationTier === o.value} onClick={() => setForm(p => ({ ...p, locationTier: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -877,12 +888,12 @@ function ManIntakePageInner() {
                             {step === 8 && (
                                 <div>
                                     <SectionLabel label="Section 2 of 5 — Your Body" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">How tall are you?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How tall are you?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {HEIGHT_CATEGORIES.map(o => (
                                             <RadioCard key={o.value} selected={form.heightCategory === o.value} onClick={() => setForm(p => ({ ...p, heightCategory: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -893,14 +904,14 @@ function ManIntakePageInner() {
                             {step === 9 && (
                                 <div>
                                     <SectionLabel label="Section 2 of 5 — Your Body" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Which of these body types is closest to yours?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Which of these body types is closest to yours?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {BODY_SHAPES.map(o => (
                                             <RadioCard key={o.value} selected={form.bodyShape === o.value} onClick={() => setForm(p => ({ ...p, bodyShape: o.value }))}>
                                                 <div>
-                                                    <div className="font-semibold text-luxury-charcoal luxury-body">{o.label}</div>
-                                                    <div className="text-sm text-luxury-charcoal/60 luxury-body mt-0.5">{o.sub}</div>
+                                                    <div style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</div>
+                                                    <div style={{ fontSize: '12px', color: '#2C2622', opacity: 0.5, marginTop: '2px' }}>{o.sub}</div>
                                                 </div>
                                             </RadioCard>
                                         ))}
@@ -912,12 +923,12 @@ function ManIntakePageInner() {
                             {step === 10 && (
                                 <div>
                                     <SectionLabel label="Section 2 of 5 — Your Body" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Where does your body carry most of its weight?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Where does your body carry most of its weight?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {FAT_STORAGE_ZONES.map(o => (
                                             <RadioCard key={o.value} selected={form.fatStorageZone === o.value} onClick={() => setForm(p => ({ ...p, fatStorageZone: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -928,22 +939,22 @@ function ManIntakePageInner() {
                             {step === 11 && (
                                 <div>
                                     <SectionLabel label="Section 2 of 5 — Your Body" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">When you look in the mirror, which area do you most want to highlight or minimise?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one for each.</p>
-                                    <p className="text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-3 uppercase tracking-wider">Highlight</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>When you look in the mirror, which area do you most want to highlight or minimise?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one for each.</p>
+                                    <p className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.22em' }}>Highlight</p>
                                     <div className="space-y-3 mb-8">
                                         {HIGHLIGHT_ZONES.map(o => (
                                             <RadioCard key={o.value} selected={form.highlightZone === o.value} onClick={() => setForm(p => ({ ...p, highlightZone: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
-                                    <div className="border-t border-luxury-cream mb-8" />
-                                    <p className="text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-3 uppercase tracking-wider">Minimise</p>
+                                    <div className="mb-8" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }} />
+                                    <p className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.22em' }}>Minimise</p>
                                     <div className="space-y-3">
                                         {MINIMISE_ZONES.map(o => (
                                             <RadioCard key={o.value} selected={form.minimiseZone === o.value} onClick={() => setForm(p => ({ ...p, minimiseZone: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -954,12 +965,12 @@ function ManIntakePageInner() {
                             {step === 12 && (
                                 <div>
                                     <SectionLabel label="Section 2 of 5 — Your Body" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">How do you feel about fitted clothing?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How do you feel about fitted clothing?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {FIT_PREFERENCES.map(o => (
                                             <RadioCard key={o.value} selected={form.fitPreference === o.value} onClick={() => setForm(p => ({ ...p, fitPreference: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -970,18 +981,18 @@ function ManIntakePageInner() {
                             {step === 13 && (
                                 <div>
                                     <SectionLabel label="Section 2 of 5 — Your Body" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What&apos;s your current wardrobe mostly made up of?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-1">Select up to 3.</p>
-                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">Choose all that apply</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What&apos;s your current wardrobe mostly made up of?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Select up to 3.</p>
+                                    <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Choose all that apply</p>
                                     <div className="space-y-3">
                                         {WARDROBE_COMPOSITIONS.map(o => (
                                             <CheckCard key={o.value} selected={form.wardrobeComposition.includes(o.value)} onClick={() => toggleMulti('wardrobeComposition', o.value, 3)}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </CheckCard>
                                         ))}
                                     </div>
                                     {form.wardrobeComposition.length === 3 && (
-                                        <p className="text-xs text-luxury-accent mt-4 luxury-body font-medium">Maximum 3 selections reached.</p>
+                                        <p className="iconik-micro mt-4" style={{ color: '#94A6AD' }}>Maximum 3 selections reached.</p>
                                     )}
                                 </div>
                             )}
@@ -990,12 +1001,12 @@ function ManIntakePageInner() {
                             {step === 14 && (
                                 <div>
                                     <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What is your skin tone?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your skin tone?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {SKIN_TONES.map(o => (
                                             <RadioCard key={o.value} selected={form.skinTone === o.value} onClick={() => setForm(p => ({ ...p, skinTone: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1006,12 +1017,12 @@ function ManIntakePageInner() {
                             {step === 15 && (
                                 <div>
                                     <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What are the veins on your inner wrist closest to?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Hold your wrist under natural light and select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What are the veins on your inner wrist closest to?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Hold your wrist under natural light and select one.</p>
                                     <div className="space-y-3">
                                         {VEIN_UNDERTONES.map(o => (
                                             <RadioCard key={o.value} selected={form.veinUndertone === o.value} onClick={() => setForm(p => ({ ...p, veinUndertone: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1022,12 +1033,12 @@ function ManIntakePageInner() {
                             {step === 16 && (
                                 <div>
                                     <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">When you wear white, which white feels most &ldquo;alive&rdquo; on your face?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>When you wear white, which white feels most &ldquo;alive&rdquo; on your face?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {WHITE_TESTS.map(o => (
                                             <RadioCard key={o.value} selected={form.whiteTest === o.value} onClick={() => setForm(p => ({ ...p, whiteTest: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1038,12 +1049,12 @@ function ManIntakePageInner() {
                             {step === 17 && (
                                 <div>
                                     <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What is your natural hair colour?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your natural hair colour?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {HAIR_COLOURS.map(o => (
                                             <RadioCard key={o.value} selected={form.hairColour === o.value} onClick={() => setForm(p => ({ ...p, hairColour: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1054,12 +1065,12 @@ function ManIntakePageInner() {
                             {step === 18 && (
                                 <div>
                                     <SectionLabel label="Section 3 of 5 — Your Face & Colouring" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What is your eye colour?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your eye colour?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {EYE_COLOURS.map(o => (
                                             <RadioCard key={o.value} selected={form.eyeColour === o.value} onClick={() => setForm(p => ({ ...p, eyeColour: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1070,8 +1081,8 @@ function ManIntakePageInner() {
                             {step === 19 && (
                                 <div>
                                     <SectionLabel label="Section 4 of 5 — Your Face Shape" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Which of these face shapes is closest to yours?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Which of these face shapes is closest to yours?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="grid grid-cols-3 gap-3">
                                         {FACE_SHAPES.map(o => {
                                             const selected = form.faceShape === o.value;
@@ -1081,9 +1092,10 @@ function ManIntakePageInner() {
                                                     type="button"
                                                     onClick={() => setForm(p => ({ ...p, faceShape: o.value }))}
                                                     className={`flex flex-col items-center gap-2 border-2 rounded-xl p-3 transition-all duration-200 ${selected
-                                                        ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10'
-                                                        : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'
+                                                        ? ''
+                                                        : ''
                                                     }`}
+                                                    style={{ border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`, background: selected ? 'rgba(148,166,173,0.08)' : '#FAFAF8' }}
                                                 >
                                                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
                                                         <Image
@@ -1093,7 +1105,7 @@ function ManIntakePageInner() {
                                                             className="object-contain"
                                                         />
                                                     </div>
-                                                    <span className={`text-xs font-semibold luxury-body text-center leading-tight ${selected ? 'text-luxury-accent' : 'text-luxury-charcoal'}`}>{o.label}</span>
+                                                    <span className="iconik-mono text-center" style={{ fontSize: '10px', color: selected ? '#94A6AD' : '#2C2622', letterSpacing: '0.1em' }}>{o.label}</span>
                                                 </button>
                                             );
                                         })}
@@ -1105,12 +1117,12 @@ function ManIntakePageInner() {
                             {step === 20 && (
                                 <div>
                                     <SectionLabel label="Section 4 of 5 — Your Face Shape" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">How would you describe your facial features in general?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>How would you describe your facial features in general?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {FACIAL_FEATURE_TYPES.map(o => (
                                             <RadioCard key={o.value} selected={form.facialFeatureType === o.value} onClick={() => setForm(p => ({ ...p, facialFeatureType: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                <span style={{ fontSize: '14px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1121,12 +1133,12 @@ function ManIntakePageInner() {
                             {step === 21 && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What is your primary style goal right now?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What is your primary style goal right now?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {PRIMARY_STYLE_GOALS.map(o => (
                                             <RadioCard key={o.value} selected={form.primaryStyleGoal === o.value} onClick={() => setForm(p => ({ ...p, primaryStyleGoal: o.value, branchAnswer: '' }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1137,12 +1149,12 @@ function ManIntakePageInner() {
                             {step === 22 && BRANCH_OPTIONS[form.primaryStyleGoal] && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">{BRANCH_OPTIONS[form.primaryStyleGoal].question}</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>{BRANCH_OPTIONS[form.primaryStyleGoal].question}</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {BRANCH_OPTIONS[form.primaryStyleGoal].options.map(o => (
                                             <RadioCard key={o.value} selected={form.branchAnswer === o.value} onClick={() => setForm(p => ({ ...p, branchAnswer: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1153,13 +1165,13 @@ function ManIntakePageInner() {
                             {step === 23 && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Pick up to 2 that feel most like the version of you you&apos;re building toward.</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-1">Select across any context.</p>
-                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">Max 2 total</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Pick up to 2 that feel most like the version of you you&apos;re building toward.</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Select across any context.</p>
+                                    <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Max 2 total</p>
                                     <div className="space-y-8">
                                         {STYLE_TRIBES.map(group => (
                                             <div key={group.context}>
-                                                <p className="text-xs font-semibold luxury-body text-luxury-charcoal/50 uppercase tracking-widest mb-4">{group.context}</p>
+                                                <p className="iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.4 }}>{group.context}</p>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {group.tribes.map(t => {
                                                         const selected = form.styleTribes.includes(t.value);
@@ -1170,16 +1182,17 @@ function ManIntakePageInner() {
                                                                 type="button"
                                                                 onClick={() => { if (!maxed) toggleMulti('styleTribes', t.value, 2); }}
                                                                 className={`flex flex-col items-center gap-2 border-2 rounded-xl p-2 transition-all duration-200 ${selected
-                                                                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10'
+                                                                    ? ''
                                                                     : maxed
-                                                                        ? 'border-luxury-cream bg-luxury-warm-white opacity-40 cursor-not-allowed'
-                                                                        : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'
+                                                                        ? ''
+                                                                        : ''
                                                                 }`}
+                                                                style={{ border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`, background: selected ? 'rgba(148,166,173,0.08)' : '#FAFAF8', opacity: maxed ? 0.35 : 1 }}
                                                             >
                                                                 <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '3/4' }}>
                                                                     <Image src={t.image} alt={t.label} fill className="object-cover" />
                                                                 </div>
-                                                                <span className={`text-xs font-semibold luxury-body text-center leading-tight ${selected ? 'text-luxury-accent' : 'text-luxury-charcoal'}`}>{t.label}</span>
+                                                                <span className="iconik-mono text-center" style={{ fontSize: '10px', color: selected ? '#94A6AD' : '#2C2622', letterSpacing: '0.1em' }}>{t.label}</span>
                                                             </button>
                                                         );
                                                     })}
@@ -1188,7 +1201,7 @@ function ManIntakePageInner() {
                                         ))}
                                     </div>
                                     {form.styleTribes.length === 2 && (
-                                        <p className="text-xs text-luxury-accent mt-6 luxury-body font-medium">Maximum 2 selections reached.</p>
+                                        <p className="iconik-micro mt-4" style={{ color: '#94A6AD' }}>Maximum 2 selections reached.</p>
                                     )}
                                 </div>
                             )}
@@ -1197,13 +1210,13 @@ function ManIntakePageInner() {
                             {step === 24 && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Where do you sit on each of these axes?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-1">Pick one per row.</p>
-                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">Your 4-point style coordinate</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Where do you sit on each of these axes?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}>Pick one per row.</p>
+                                    <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>Your 4-point style coordinate</p>
                                     <div className="space-y-6">
                                         {STYLE_POLES.map(axis => (
                                             <div key={axis.label}>
-                                                <p className="text-xs font-semibold luxury-body text-luxury-charcoal/50 uppercase tracking-widest mb-3">{axis.label}</p>
+                                                <p className="iconik-micro mb-3" style={{ color: '#2C2622', opacity: 0.4 }}>{axis.label}</p>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {[axis.a, axis.b].map(o => {
                                                         const selected = form[axis.field] === o.value;
@@ -1212,10 +1225,8 @@ function ManIntakePageInner() {
                                                                 key={o.value}
                                                                 type="button"
                                                                 onClick={() => setForm(p => ({ ...p, [axis.field]: o.value }))}
-                                                                className={`text-center border-2 rounded-xl px-4 py-3 text-sm font-semibold luxury-body transition-all duration-200 ${selected
-                                                                    ? 'border-luxury-accent bg-luxury-pink-bg text-luxury-accent shadow-sm shadow-luxury-accent/10'
-                                                                    : 'border-luxury-cream bg-luxury-warm-white text-luxury-charcoal hover:border-luxury-accent/40'
-                                                                }`}
+                                                                className="text-center rounded-xl px-4 py-3 transition-all duration-200"
+                                                                style={{ border: `1px solid ${selected ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`, background: selected ? 'rgba(148,166,173,0.1)' : '#FAFAF8', color: selected ? '#94A6AD' : '#2C2622' }}
                                                             >
                                                                 {o.label}
                                                             </button>
@@ -1232,12 +1243,12 @@ function ManIntakePageInner() {
                             {step === 25 && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">What most often stops you from dressing how you want?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>What most often stops you from dressing how you want?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {STYLE_BLOCKERS.map(o => (
                                             <RadioCard key={o.value} selected={form.styleBlocker === o.value} onClick={() => setForm(p => ({ ...p, styleBlocker: o.value }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
@@ -1248,27 +1259,27 @@ function ManIntakePageInner() {
                             {step === 26 && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Has anyone ever told you something looks good on you — but you personally dislike wearing it?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-8">Select one.</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Has anyone ever told you something looks good on you — but you personally dislike wearing it?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '24px' }}>Select one.</p>
                                     <div className="space-y-3">
                                         {ANTI_PREFS.map(o => (
                                             <RadioCard key={o.value} selected={form.styleAntiPref === o.value} onClick={() => setForm(p => ({ ...p, styleAntiPref: o.value, styleAntiPrefNote: o.value.startsWith('yes') ? p.styleAntiPrefNote : '' }))}>
-                                                <span className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</span>
+                                                <span style={{ fontSize: '13px', color: '#2C2622', fontWeight: 400 }}>{o.label}</span>
                                             </RadioCard>
                                         ))}
                                     </div>
                                     {form.styleAntiPref.startsWith('yes') && (
                                         <div className="mt-6">
-                                            <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">What is it, and why don&apos;t you like wearing it?</label>
+                                            <label className="block iconik-mono mb-2" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.45, letterSpacing: '0.2em' }}>What is it, and why don&apos;t you like wearing it?</label>
                                             <textarea
                                                 value={form.styleAntiPrefNote}
                                                 onChange={e => { if (e.target.value.length <= 150) setForm(p => ({ ...p, styleAntiPrefNote: e.target.value })); }}
-                                                className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body resize-none"
+                                                className="w-full px-4 py-3.5 rounded-xl text-base transition-all outline-none resize-none" style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: '#2C2622', fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }}
                                                 placeholder="e.g. Slim fit shirts — they make me feel exposed..."
                                                 rows={3}
                                                 maxLength={150}
                                             />
-                                            <p className="text-xs text-luxury-charcoal/40 mt-2 text-right">{form.styleAntiPrefNote.length}/150</p>
+                                            <p className="iconik-micro mt-2 text-right" style={{ color: '#2C2622', opacity: 0.35 }}>{form.styleAntiPrefNote.length}/150</p>
                                         </div>
                                     )}
                                 </div>
@@ -1278,20 +1289,20 @@ function ManIntakePageInner() {
                             {step === 27 && (
                                 <div>
                                     <SectionLabel label="Section 5 of 5 — Style Identity" />
-                                    <h2 className="text-3xl luxury-heading text-luxury-charcoal mb-3">Anything else you want your stylist to know?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 mb-1"><span className="text-luxury-accent font-medium">Optional.</span></p>
-                                    <p className="text-luxury-charcoal/40 text-xs mb-8 uppercase tracking-widest font-semibold mt-2">No prompt — just space</p>
+                                    <h2 className="iconik-display mb-3" style={{ fontSize: 'clamp(22px, 5vw, 34px)', color: '#2C2622', lineHeight: 1.2 }}>Anything else you want your stylist to know?</h2>
+                                    <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5, marginBottom: '4px' }}><span style={{ color: '#94A6AD' }}>Optional.</span></p>
+                                    <p className="iconik-micro mt-2 mb-6" style={{ color: '#2C2622', opacity: 0.35 }}>No prompt — just space</p>
                                     <textarea
                                         value={form.freeTextNote}
                                         onChange={e => { if (e.target.value.length <= 200) setForm(p => ({ ...p, freeTextNote: e.target.value })); }}
-                                        className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body resize-none"
+                                        className="w-full px-4 py-3.5 rounded-xl text-base transition-all outline-none resize-none" style={{ border: '1px solid rgba(44,38,34,0.15)', background: '#FAFAF8', color: '#2C2622', fontFamily: 'var(--font-inter, Inter, sans-serif)', fontWeight: 300 }}
                                         placeholder=""
                                         rows={4}
                                         maxLength={200}
                                     />
-                                    <p className="text-xs text-luxury-charcoal/40 mt-2 text-right">{form.freeTextNote.length}/200</p>
+                                    <p className="iconik-micro mt-2 text-right" style={{ color: '#2C2622', opacity: 0.35 }}>{form.freeTextNote.length}/200</p>
                                     {submitError && (
-                                        <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm luxury-body">{submitError}</div>
+                                        <div className="mt-6 rounded-xl p-4 text-sm" style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B' }}>{submitError}</div>
                                     )}
                                 </div>
                             )}
@@ -1303,16 +1314,17 @@ function ManIntakePageInner() {
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                                        className="w-24 h-24 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative"
+                                        className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8 relative"
+                                        style={{ background: 'rgba(148,166,173,0.12)' }}
                                     >
-                                        <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
-                                        <CheckCircle className="w-12 h-12 text-luxury-accent relative z-10" />
+                                        <div className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(148,166,173,0.15)' }} />
+                                        <CheckCircle className="w-8 h-8 relative z-10" style={{ color: '#94A6AD' }} />
                                     </motion.div>
-                                    <h2 className="text-4xl md:text-5xl luxury-heading text-luxury-charcoal mb-6">Your intake is complete.</h2>
-                                    <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl leading-relaxed max-w-lg mx-auto mb-6">
-                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong className="font-semibold text-luxury-charcoal">72 hours</strong>.
+                                    <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Your intake is complete.</div>
+                                    <p style={{ fontSize: '16px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, maxWidth: '420px', margin: '0 auto 20px' }}>
+                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>72 hours</strong>.
                                     </p>
-                                    <p className="luxury-body text-sm text-luxury-charcoal/50">Check your spam folder just in case.</p>
+                                    <p className="iconik-micro" style={{ color: '#2C2622', opacity: 0.4 }}>Check your spam folder just in case.</p>
                                 </div>
                             )}
 
@@ -1323,8 +1335,9 @@ function ManIntakePageInner() {
                     {step < CONFIRMATION_STEP && (
                         <div className="flex items-center justify-between mt-8 relative z-10">
                             {step > 0 ? (
-                                <button onClick={goBack} className="flex items-center gap-2 text-luxury-charcoal/50 hover:text-luxury-accent text-sm font-semibold uppercase tracking-wider transition-colors luxury-body p-2 -ml-2">
-                                    <ArrowLeft className="w-4 h-4" /> Back
+                                <button onClick={goBack} className="flex items-center gap-2 transition-opacity hover:opacity-50 p-2 -ml-2" style={{ color: '#2C2622' }}>
+                                    <ArrowLeft className="w-4 h-4" />
+                                    <span className="iconik-mono" style={{ fontSize: '11px', letterSpacing: '0.15em' }}>Back</span>
                                 </button>
                             ) : <div />}
 
@@ -1332,9 +1345,11 @@ function ManIntakePageInner() {
                                 <button
                                     onClick={goNext}
                                     disabled={!stepValid()}
-                                    className="flex items-center gap-2 bg-luxury-charcoal hover:bg-luxury-accent text-luxury-warm-white px-8 py-3.5 rounded-full text-sm font-semibold uppercase tracking-wider transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed hover:-translate-y-0.5 transform luxury-body"
+                                    className="flex items-center gap-2 px-8 py-3.5 rounded-full transition-all duration-300 disabled:opacity-25 disabled:cursor-not-allowed hover:-translate-y-0.5 transform"
+                                    style={{ background: '#2C2622', color: '#F4EFE5' }}
                                 >
-                                    Continue <ArrowRight className="w-4 h-4" />
+                                    <span className="iconik-display" style={{ fontSize: '14px' }}>Continue</span>
+                                    <ArrowRight className="w-4 h-4 opacity-60" />
                                 </button>
                             )}
 
@@ -1342,10 +1357,13 @@ function ManIntakePageInner() {
                                 <button
                                     onClick={handleSubmit}
                                     disabled={!stepValid() || submitting}
-                                    className="flex items-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-4 rounded-full text-base font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 hover:shadow-xl transform luxury-body"
+                                    className="flex items-center gap-3 px-8 py-4 rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 hover:shadow-lg transform"
+                                    style={{ background: '#2C2622', color: '#F4EFE5' }}
                                 >
-                                    {submitting ? 'Submitting...' : 'Submit My Intake'}
-                                    {!submitting && <ArrowRight className="w-5 h-5" />}
+                                    <span className="iconik-display" style={{ fontSize: '15px' }}>
+                                        {submitting ? 'Submitting...' : 'Submit My Intake'}
+                                    </span>
+                                    {!submitting && <ArrowRight className="w-4 h-4 opacity-60" />}
                                 </button>
                             )}
                         </div>
@@ -1358,7 +1376,7 @@ function ManIntakePageInner() {
 
 export default function ManIntakePage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-luxury-warm-white flex items-center justify-center"><div className="w-8 h-8 border-2 border-luxury-accent border-t-transparent rounded-full animate-spin" /></div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ background: '#F8F3E9' }}><div className="w-8 h-8 rounded-full animate-spin" style={{ border: '2px solid #94A6AD', borderTopColor: 'transparent' }} /></div>}>
             <ManIntakePageInner />
         </Suspense>
     );

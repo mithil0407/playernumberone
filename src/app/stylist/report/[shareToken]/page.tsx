@@ -14,12 +14,10 @@ export default async function StylistPublicReportPage({ params }: PageProps) {
   if (!report?.report_data) notFound();
 
   return (
-    <div className="min-h-screen" style={{ background: '#FBF8F4' }}>
+    <div className="iconik-theme min-h-screen" style={{ background: 'var(--luxury-warm-white)' }}>
       <StylistBlueprintReport data={report.report_data} imageUrls={report.image_urls} />
-      <div className="px-5 md:px-12 py-6 text-center" style={{ background: '#FBF8F4' }}>
-        <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: '#5A524A' }}>
-          For your eyes only
-        </p>
+      <div className="px-5 md:px-12 py-6 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
+        <p className="iconik-micro" style={{ color: 'var(--luxury-charcoal)', opacity: 0.35 }}>For your eyes only</p>
       </div>
     </div>
   );

@@ -1,19 +1,31 @@
 import 'server-only';
 
 import { GoogleGenAI } from '@google/genai';
+import OpenAI, { toFile } from 'openai';
 import sharp from 'sharp';
 import { supabaseAdmin } from './supabase';
 import { revalidateStylistBlueprintCache } from './stylistBlueprintCache';
-import type { StylistBlueprintReportData, StylistIntakeSubmission } from './stylistBlueprintGenerator';
+import type { BlueprintPage, StylistBlueprintReportData, StylistIntakeSubmission } from './stylistBlueprintGenerator';
 
 const BUCKET = 'stylist-blueprint-images';
 const SIGNED_URL_TTL = 60 * 60;
 const SLATE = '#94a6ad';
-const IVORY = '#F5F0E8';
-const ROSE = '#D4537E';
 const MODEL = 'gemini-3.1-flash-image-preview';
+const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2';
+const GEMINI_IMAGE_TIMEOUT_MS = 45_000;
+const GEMINI_INLINE_IMAGE_MAX_BYTES = 18 * 1024 * 1024;
+const GEMINI_SOURCE_IMAGE_MAX_DIMENSION = 1800;
+const SUPPORTED_GEMINI_INPUT_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+let bucketReady = false;
 
 export type StylistBlueprintImageGroup =
   | 'cover'
@@ -107,10 +119,6 @@ type MutablePaths = {
   };
 };
 
-function escapeXml(value: string) {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 function emptyPaths(): MutablePaths {
   return {
     cover: { portrait: null },
@@ -177,7 +185,7 @@ async function persistPaths(reportId: string, paths: MutablePaths, shareToken?: 
     .from('stylist_blueprint_reports')
     .update({
       image_urls: paths,
-      progress_stage: progressStage ?? 'generating_images',
+      progress_stage: progressStage === undefined ? 'generating_images' : progressStage,
       updated_at: new Date().toISOString(),
     })
     .eq('id', reportId);
@@ -187,103 +195,36 @@ async function persistPaths(reportId: string, paths: MutablePaths, shareToken?: 
 async function uploadBuffer(reportId: string, fileName: string, buffer: Buffer) {
   const path = `${reportId}/${fileName}.jpg`;
   const jpeg = await sharp(buffer, { failOn: 'none' }).jpeg({ quality: 92 }).toBuffer();
+  const upload = () => supabaseAdmin.storage
+    .from(BUCKET)
+    .upload(path, jpeg, { contentType: 'image/jpeg', upsert: true });
+
+  if (!bucketReady) {
+    const { error } = await upload();
+    if (!error) {
+      bucketReady = true;
+      return path;
+    }
+    if (!/bucket not found|not found/i.test(error.message)) throw error;
+    await ensureBucket();
+  }
+
   const { error } = await supabaseAdmin.storage
     .from(BUCKET)
     .upload(path, jpeg, { contentType: 'image/jpeg', upsert: true });
   if (error) throw error;
+  bucketReady = true;
   return path;
 }
 
-async function uploadSvg(reportId: string, fileName: string, svg: string) {
-  return uploadBuffer(reportId, fileName, Buffer.from(svg));
-}
-
-function svgShell(inner: string, width = 1200, height = 1500) {
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${width}" height="${height}" fill="${SLATE}"/>
-    ${inner}
-  </svg>`;
-}
-
-function analyticalCard(kind: 'front' | 'side' | 'axis' | 'face' | 'ratio' | 'heat' | 'avoid' | 'matrix' | 'portrait') {
-  if (kind === 'portrait') {
-    return svgShell(`
-      <circle cx="600" cy="430" r="180" fill="none" stroke="${IVORY}" stroke-width="4" opacity=".95"/>
-      <path d="M385 900 C430 710 770 710 815 900 C745 1035 455 1035 385 900Z" fill="none" stroke="${IVORY}" stroke-width="4"/>
-      <circle cx="520" cy="425" r="8" fill="${IVORY}"/><circle cx="680" cy="425" r="8" fill="${IVORY}"/>
-      <path d="M480 545 C550 605 650 605 720 545" fill="none" stroke="${IVORY}" stroke-width="3" opacity=".7"/>
-    `);
-  }
-  if (kind === 'avoid') {
-    const cells = Array.from({ length: 6 }, (_, i) => {
-      const x = 120 + (i % 3) * 320;
-      const y = 180 + Math.floor(i / 3) * 360;
-      return `<rect x="${x}" y="${y}" width="240" height="260" rx="10" fill="none" stroke="${IVORY}" stroke-opacity=".3"/>
-        <path d="M${x + 70} ${y + 170} C${x + 110} ${y + 70} ${x + 170} ${y + 70} ${x + 190} ${y + 170}" fill="none" stroke="${IVORY}" stroke-width="4"/>
-        <path d="M${x + 55} ${y + 215} L${x + 205} ${y + 85}" stroke="${ROSE}" stroke-width="9" stroke-opacity=".65"/>`;
-    }).join('');
-    return svgShell(cells, 1200, 900);
-  }
-  if (kind === 'matrix') {
-    const nodes = Array.from({ length: 12 }, (_, i) => {
-      const angle = (Math.PI * 2 * i) / 12;
-      const x = 600 + Math.cos(angle) * 330;
-      const y = 600 + Math.sin(angle) * 330;
-      return `<line x1="600" y1="600" x2="${x}" y2="${y}" stroke="${IVORY}" stroke-width="2" stroke-opacity=".32"/>
-        <circle cx="${x}" cy="${y}" r="22" fill="${IVORY}"/>`;
-    }).join('');
-    return svgShell(`${nodes}<circle cx="600" cy="600" r="54" fill="${IVORY}" opacity=".95"/>`, 1200, 1200);
-  }
-  const silhouette = kind === 'side'
-    ? `<path d="M610 180 C520 250 540 350 590 430 C560 590 555 820 605 1150" fill="none" stroke="${IVORY}" stroke-width="5"/>`
-    : `<path d="M600 160 C500 250 475 420 510 620 C455 800 480 1030 575 1280 M600 160 C700 250 725 420 690 620 C745 800 720 1030 625 1280" fill="none" stroke="${IVORY}" stroke-width="5"/>`;
-  const lines = `<line x1="350" y1="360" x2="850" y2="360" stroke="#fff" stroke-width="3"/><line x1="405" y1="780" x2="795" y2="780" stroke="#fff" stroke-width="3"/><line x1="600" y1="130" x2="600" y2="1320" stroke="#fff" stroke-width="2" stroke-opacity=".7"/>`;
-  if (kind === 'heat') {
-    return svgShell(`${silhouette}<circle cx="600" cy="580" r="115" fill="${ROSE}" opacity=".28"/><circle cx="540" cy="770" r="85" fill="${ROSE}" opacity=".22"/><circle cx="650" cy="380" r="55" fill="${ROSE}" opacity=".2"/>`);
-  }
-  if (kind === 'axis') {
-    return svgShell(`${silhouette}${lines}<circle cx="600" cy="610" r="14" fill="#fff"/><path d="M600 200 L600 150 M570 180 L600 150 L630 180" stroke="#fff" stroke-width="3" fill="none"/>`);
-  }
-  if (kind === 'face' || kind === 'ratio') {
-    return svgShell(`
-      <path d="M600 180 C420 220 390 520 450 760 C500 955 700 955 750 760 C810 520 780 220 600 180Z" fill="none" stroke="${IVORY}" stroke-width="5"/>
-      <line x1="455" y1="360" x2="745" y2="360" stroke="#fff" stroke-width="3"/>
-      <line x1="420" y1="545" x2="780" y2="545" stroke="#fff" stroke-width="3"/>
-      <line x1="470" y1="740" x2="730" y2="740" stroke="#fff" stroke-width="3"/>
-      <line x1="600" y1="180" x2="600" y2="895" stroke="#fff" stroke-width="2" stroke-opacity=".7"/>
-    `, 1200, kind === 'face' ? 1200 : 1500);
-  }
-  return svgShell(`${silhouette}${lines}<circle cx="350" cy="360" r="8" fill="#fff"/><circle cx="850" cy="360" r="8" fill="#fff"/><circle cx="405" cy="780" r="8" fill="#fff"/><circle cx="795" cy="780" r="8" fill="#fff"/>`);
-}
-
-function swatchSvg(hexes: string[], cols: number, width = 1200, height = 800) {
-  const size = cols >= 5 ? 150 : 170;
-  const gap = 28;
-  const rows = Math.ceil(hexes.length / cols);
-  const startX = (width - (cols * size + (cols - 1) * gap)) / 2;
-  const startY = (height - (rows * size + (rows - 1) * gap)) / 2;
-  const rects = hexes.map((hex, i) => {
-    const x = startX + (i % cols) * (size + gap);
-    const y = startY + Math.floor(i / cols) * (size + gap);
-    return `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="8" fill="${escapeXml(hex)}" stroke="${IVORY}" stroke-opacity=".25"/>`;
-  }).join('');
-  return svgShell(`${rects}<line x1="${width * .15}" y1="${height - 85}" x2="${width * .85}" y2="${height - 85}" stroke="${IVORY}" stroke-opacity=".4"/>`, width, height);
-}
-
-function gridLineSvg(count: number, aspect: 'square' | 'wide' | 'strip') {
-  const width = aspect === 'strip' ? 1600 : 1200;
-  const height = aspect === 'wide' ? 800 : aspect === 'strip' ? 420 : 1200;
-  const cols = aspect === 'square' ? 2 : count;
-  const rows = Math.ceil(count / cols);
-  const cellW = width / cols;
-  const cellH = height / rows;
-  const cells = Array.from({ length: count }, (_, i) => {
-    const x = (i % cols) * cellW;
-    const y = Math.floor(i / cols) * cellH;
-    return `<rect x="${x + 30}" y="${y + 30}" width="${cellW - 60}" height="${cellH - 60}" rx="12" fill="none" stroke="${IVORY}" stroke-opacity=".25"/>
-      <path d="M${x + cellW * .3} ${y + cellH * .62} C${x + cellW * .45} ${y + cellH * .32} ${x + cellW * .62} ${y + cellH * .32} ${x + cellW * .72} ${y + cellH * .62}" fill="none" stroke="${IVORY}" stroke-width="4"/>`;
-  }).join('');
-  return svgShell(cells, width, height);
+async function ensureBucket() {
+  const { error } = await supabaseAdmin.storage.createBucket(BUCKET, {
+    public: false,
+    fileSizeLimit: 8 * 1024 * 1024,
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  });
+  if (error && !/already exists|duplicate/i.test(error.message)) throw error;
+  bucketReady = true;
 }
 
 async function callGeminiImage(prompt: string): Promise<Buffer | null> {
@@ -291,26 +232,331 @@ async function callGeminiImage(prompt: string): Promise<Buffer | null> {
     const response = await ai.models.generateContent({
       model: MODEL,
       contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseModalities: ['IMAGE'],
+        httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
+      },
     });
     const parts = (response.candidates?.[0]?.content?.parts ?? []) as Array<{ inlineData?: { data?: string } }>;
     const data = parts.find(part => part.inlineData?.data)?.inlineData?.data;
     return data ? Buffer.from(data, 'base64') : null;
-  } catch {
+  } catch (error) {
+    console.error('[stylist-blueprint-images] Gemini image generation failed:', error instanceof Error ? error.message : error);
     return null;
   }
 }
 
-function outfitPrompt(title: string, detail = false) {
-  return `On flat matte slate background ${SLATE}, create a ${detail ? 'close-up product detail of the hero garment' : 'floating editorial flat-lay of the complete outfit'}: ${title}. No body, no face, no mannequin, no text, no labels. Even soft frontal studio lighting. Hyperrealistic product photography with sharp fabric texture.`;
+function cleanMimeType(contentType: string | null): string | null {
+  const mimeType = contentType?.split(';')[0]?.trim().toLowerCase();
+  return mimeType || null;
 }
 
-async function generatedOrFallback(reportId: string, fileName: string, prompt: string, fallbackSvg: string) {
-  const buffer = await callGeminiImage(prompt);
-  return buffer ? uploadBuffer(reportId, fileName, buffer) : uploadSvg(reportId, fileName, fallbackSvg);
+async function normaliseImageForGemini(
+  buffer: Buffer,
+  sourceMimeType: string | null,
+): Promise<{ data: string; mimeType: string }> {
+  try {
+    const image = sharp(buffer, { failOn: 'none' }).rotate();
+    const metadata = await image.metadata();
+    const output = await image
+      .resize({
+        width: GEMINI_SOURCE_IMAGE_MAX_DIMENSION,
+        height: GEMINI_SOURCE_IMAGE_MAX_DIMENSION,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 88, mozjpeg: true })
+      .toBuffer();
+
+    if (output.length > GEMINI_INLINE_IMAGE_MAX_BYTES) {
+      throw new Error(`Prepared image is too large for inline Gemini request (${output.length} bytes)`);
+    }
+
+    console.log(
+      `[stylist-blueprint-images] Prepared Gemini source image sourceMime=${sourceMimeType ?? 'unknown'} ` +
+      `sourceFormat=${metadata.format ?? 'unknown'} sourceBytes=${buffer.length} outputBytes=${output.length}`,
+    );
+
+    return {
+      data: output.toString('base64'),
+      mimeType: 'image/jpeg',
+    };
+  } catch (error) {
+    const fallbackMimeType = SUPPORTED_GEMINI_INPUT_MIME_TYPES.has(sourceMimeType ?? '')
+      ? sourceMimeType!
+      : 'image/jpeg';
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[stylist-blueprint-images] Could not normalise source image for Gemini; using original bytes. mimeType=${fallbackMimeType} error="${message.slice(0, 300)}"`);
+
+    if (buffer.length > GEMINI_INLINE_IMAGE_MAX_BYTES) {
+      throw new Error(`Source image is too large for inline Gemini request (${buffer.length} bytes) and could not be normalised: ${message}`);
+    }
+
+    return {
+      data: buffer.toString('base64'),
+      mimeType: fallbackMimeType,
+    };
+  }
 }
 
-function pageTitle(data: StylistBlueprintReportData, pageNumber: number) {
-  return data.pages.find(page => page.page_number === pageNumber)?.title || `Page ${pageNumber}`;
+async function fetchGeminiImagePart(url: string): Promise<{ data: string; mimeType: string }> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Source image fetch failed: ${response.status}`);
+  const sourceBuffer = Buffer.from(await response.arrayBuffer());
+  if (sourceBuffer.length === 0) throw new Error('Source image fetch returned an empty file');
+  return normaliseImageForGemini(sourceBuffer, cleanMimeType(response.headers.get('content-type')));
+}
+
+async function callGeminiImageEdit(
+  prompt: string,
+  sourceUrl: string,
+  extraSourceUrl?: string | null,
+): Promise<Buffer | null> {
+  try {
+    const [primary, extra] = await Promise.all([
+      fetchGeminiImagePart(sourceUrl),
+      extraSourceUrl && extraSourceUrl !== sourceUrl ? fetchGeminiImagePart(extraSourceUrl).catch(error => {
+        console.warn('[stylist-blueprint-images] Extra Gemini reference image unavailable:', error instanceof Error ? error.message : error);
+        return null;
+      }) : Promise.resolve(null),
+    ]);
+    const parts: object[] = [
+      { inlineData: { mimeType: primary.mimeType, data: primary.data } },
+      ...(extra ? [{ inlineData: { mimeType: extra.mimeType, data: extra.data } }] : []),
+      { text: prompt },
+    ];
+
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [{ parts }],
+      config: {
+        responseModalities: ['IMAGE'],
+        httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
+      },
+    });
+    const responseParts = (response.candidates?.[0]?.content?.parts ?? []) as Array<{
+      inlineData?: { data?: string; mimeType?: string };
+      text?: string;
+    }>;
+    const data = responseParts.find(part => part.inlineData?.mimeType?.startsWith('image/') && part.inlineData?.data)?.inlineData?.data;
+    if (data) return Buffer.from(data, 'base64');
+
+    const text = responseParts.find(part => typeof part.text === 'string')?.text?.slice(0, 500) ?? '(no text in response)';
+    const finishReason = response.candidates?.[0]?.finishReason ?? 'unknown';
+    throw new Error(`Gemini returned no image data (finishReason=${finishReason}): ${text}`);
+  } catch (error) {
+    console.error('[stylist-blueprint-images] Gemini image edit failed:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+async function callOpenAIImage(prompt: string, size: '1024x1024' | '1024x1536' | '1536x1024' = '1024x1536'): Promise<Buffer | null> {
+  if (!openai) return null;
+  try {
+    const result = await openai.images.generate({
+      model: OPENAI_IMAGE_MODEL,
+      prompt,
+      size,
+      quality: 'medium',
+    } as Parameters<typeof openai.images.generate>[0]);
+    const imageBase64 = (result as { data?: Array<{ b64_json?: string }> }).data?.[0]?.b64_json;
+    return imageBase64 ? Buffer.from(imageBase64, 'base64') : null;
+  } catch (error) {
+    console.error('[stylist-blueprint-images] OpenAI image generation failed:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+async function sourceImageFileFromUrl(url: string, fileName: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Source image fetch failed: ${response.status}`);
+  const sourceBuffer = Buffer.from(await response.arrayBuffer());
+  const jpeg = await sharp(sourceBuffer, { failOn: 'none' })
+    .rotate()
+    .resize({ width: 1536, height: 1536, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+  return toFile(jpeg, `${fileName}.jpg`, { type: 'image/jpeg' });
+}
+
+async function callOpenAIImageEdit(prompt: string, sourceUrl: string, fileName: string, size: '1024x1024' | '1024x1536' | '1536x1024' = '1024x1536'): Promise<Buffer | null> {
+  if (!openai) return null;
+  try {
+    const image = await sourceImageFileFromUrl(sourceUrl, fileName);
+    const result = await openai.images.edit({
+      model: OPENAI_IMAGE_MODEL,
+      image,
+      prompt,
+      size,
+      quality: 'medium',
+      input_fidelity: 'high',
+    } as Parameters<typeof openai.images.edit>[0]);
+    const imageBase64 = (result as { data?: Array<{ b64_json?: string }> }).data?.[0]?.b64_json;
+    return imageBase64 ? Buffer.from(imageBase64, 'base64') : null;
+  } catch (error) {
+    console.error('[stylist-blueprint-images] OpenAI image edit failed:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+async function callEditorialImage(
+  prompt: string,
+  sourceUrl?: string | null,
+  fileName = 'source',
+  size: '1024x1024' | '1024x1536' | '1536x1024' = '1024x1536',
+  extraSourceUrl?: string | null,
+): Promise<Buffer | null> {
+  const geminiBuffer = sourceUrl
+    ? await callGeminiImageEdit(prompt, sourceUrl, extraSourceUrl)
+    : await callGeminiImage(prompt);
+  if (geminiBuffer) return geminiBuffer;
+
+  console.warn(`[stylist-blueprint-images] Falling back to OpenAI image model for ${fileName}`);
+  return sourceUrl
+    ? (await callOpenAIImageEdit(prompt, sourceUrl, fileName, size)) ?? callOpenAIImage(prompt, size)
+    : callOpenAIImage(prompt, size);
+}
+
+function blockText(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(blockText).filter(Boolean).join('; ');
+  if (typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => `${key.replace(/_/g, ' ')}: ${blockText(item)}`)
+      .filter(Boolean)
+      .join('; ');
+  }
+  return String(value);
+}
+
+function pageText(page: BlueprintPage) {
+  return [
+    `Title: ${page.title}`,
+    page.subtitle ? `Context: ${page.subtitle}` : '',
+    ...page.blocks.map(block => [
+      block.label ? `Label: ${block.label}` : '',
+      block.heading ? `Heading: ${block.heading}` : '',
+      block.body ? `Body: ${block.body}` : '',
+      block.reason ? `Reason: ${block.reason}` : '',
+      block.items?.length ? `Items: ${blockText(block.items)}` : '',
+    ].filter(Boolean).join('\n')),
+  ].filter(Boolean).join('\n');
+}
+
+function wornOutfitPrompt(reportData: StylistBlueprintReportData, page: BlueprintPage) {
+  const palette = [
+    ...reportData.classification.colour.base_palette,
+    ...reportData.classification.colour.accent_palette,
+  ].map(colour => `${colour.name} ${colour.hex}`).join(', ');
+  const outfit = pageText(page);
+  return `Professional editorial fashion catalogue photography for the ICONIK women's Style Blueprint.
+
+Reference photos may be provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
+
+Extract the client's face, skin tone, facial features, hair constraints, and identity from the headshot when provided. Extract body proportions, body shape, stance, and scale from the full-body reference. Preserve the client's exact skin tone, facial features, body proportions, and identity. Do not alter, slim, age, or idealise the client.
+
+CRITICAL CLOTHING INSTRUCTION:
+- Remove and discard the original clothing from the reference photos.
+- Do not preserve, copy, blend, reinterpret, or borrow garments, shoes, accessories, colours, collars, sleeves, silhouettes, or prints from the reference photos.
+- The outfit text below is the only authority for what the client wears.
+
+Background and style:
+- Matte ICONIK slate background ${SLATE}.
+- Premium studio cyclorama fashion editorial, clean front/three-quarter pose.
+- Full outfit visible from head to toe.
+- No text, no labels, no watermark, no extra people, no mannequin.
+- Natural realistic fabric behavior and correct garment construction.
+
+Client styling constraints:
+- Body geometry: ${reportData.classification.body.geometry}.
+- Proportion directive: ${reportData.classification.body.proportion_directive}.
+- Coverage rules: ${reportData.classification.body.coverage_rules.join(', ') || 'follow intake coverage preferences'}.
+- Palette direction: ${reportData.classification.colour.palette_name}; use these colours where relevant: ${palette}.
+- Taste direction: ${reportData.classification.taste.style_archetype}; avoid: ${reportData.classification.taste.anti_codes.join(', ') || 'anything outside the stated outfit text'}.
+
+Outfit text to render:
+${outfit}`;
+}
+
+function editTeaserPrompt(reportData: StylistBlueprintReportData) {
+  return `Use the uploaded client photo as the identity and body reference. Create a full-body editorial image of the same client wearing a future ICONIK Edit outfit direction based on this Blueprint. Preserve the client's face, skin tone, body proportions, and identity.
+
+Background and style:
+- Matte ICONIK slate background ${SLATE}.
+- Premium studio fashion editorial, clean full-body pose.
+- No text, no labels, no watermark, no extra people, no mannequin.
+
+Styling direction:
+- Body geometry: ${reportData.classification.body.geometry}.
+- Palette: ${reportData.classification.colour.palette_name}.
+- Taste direction: ${reportData.classification.taste.style_archetype}.
+- Build a polished continuation look that feels aligned with the 12 outfit formulas in this report.`;
+}
+
+async function generatedImage(
+  reportId: string,
+  fileName: string,
+  prompt: string,
+  sourceUrl?: string | null,
+  size: '1024x1024' | '1024x1536' | '1536x1024' = '1024x1536',
+  extraSourceUrl?: string | null,
+) {
+  const buffer = await callEditorialImage(prompt, sourceUrl, fileName, size, extraSourceUrl);
+  if (!buffer) throw new Error(`Image generation returned no image for ${fileName}`);
+  return uploadBuffer(reportId, fileName, buffer);
+}
+
+function sourcePhotos(submission?: StylistIntakeSubmission | null) {
+  const photos = submission?.photo_urls ?? {};
+  return {
+    headshot: photos.headshot || null,
+    front: photos.full_body_front || null,
+    side: photos.full_body_side || null,
+    outfit: photos.one_outfit || submission?.one_outfit_image_url || null,
+  };
+}
+
+function diagnosisPrompt(reportData: StylistBlueprintReportData, slot: keyof MutablePaths['diagnosis']) {
+  const body = reportData.analysis.silhouette_profile;
+  const colour = `${reportData.classification.colour.palette_name}, ${reportData.classification.colour.undertone_direction}, ${reportData.classification.colour.depth} depth, ${reportData.classification.colour.contrast} contrast`;
+  const face = reportData.classification.face_hair_accessories.face_shape;
+  const palette = reportData.classification.colour.base_palette.slice(0, 5).map(c => `${c.name} ${c.hex}`).join(', ');
+  const base = `Create a premium ICONIK clinical-editorial diagnostic image. Preserve the source client's photo where supplied; do not alter identity, facial features, skin tone, or body shape. Add clean warm-white analytical overlays on matte slate #94A6AD: thin measurement lines, small dot terminators, calibrated marks. No labels, no numbers, no readable text. Vogue editorial meets clinical report.`;
+  const prompts: Record<keyof MutablePaths['diagnosis'], string> = {
+    silhouetteFront: `${base} Use the front full-body photo as the underlying image. Overlay shoulder span, hip span, vertical centre line, and natural waist curve for a ${body} silhouette. Crop full body, front-facing, elegant and restrained.`,
+    silhouetteSide: `${base} Use the side/full-body source photo as the underlying image. Create a side-profile proportional overlay with posture line, natural waist marker, torso-to-hip curve, and centre-of-gravity dot for a ${body} silhouette.`,
+    proportionalAxes: `${base} Use the full-body source photo as the underlying image. Overlay three proportional axes: vertical balance, horizontal balance, and focal point indicator. Scientific but editorial.`,
+    undertoneMap: `${base} Use the headshot as the underlying image. Add a subtle horizontal cool-neutral-warm undertone calibration bar and marker beside the face. Chromatic profile: ${colour}.`,
+    depthContrastMatrix: `${base} Use the headshot as the underlying image. Add a refined 5x5 depth/contrast calibration matrix beside the portrait with one highlighted point. Chromatic profile: ${colour}.`,
+    palettePreview: `Create a premium colour palette preview image on matte slate #94A6AD. Show exactly five clean swatches using these colours: ${palette}. No text, no labels, no numbers. Editorial spacing and exact colour emphasis.`,
+    faceShapeDiagram: `${base} Use the headshot as the underlying image. Overlay forehead width, cheekbone width, jaw width, and face length lines for ${face} facial architecture. Keep face natural and recognizable.`,
+    faceRatios: `${base} Use the headshot as the underlying image. Add facial thirds and proportion bars as delicate overlay marks, preserving the client's face. No labels or numbers.`,
+    necklinePreview: `Create a premium neckline geometry reference image on matte slate #94A6AD. Four approved neckline line diagrams for ${face}: ${reportData.classification.face_hair_accessories.approved_necklines.join(', ')}. Warm-white lines, no text, no model.`,
+    combinedAxes: `${base} Use the full-body source photo as the underlying image. Overlay combined vertical, horizontal, and focal axes based on ${body} and focus: ${reportData.analysis.proportional_focus.join(', ')}.`,
+    focalHeatmap: `${base} Use the full-body source photo as the underlying image. Add subtle translucent warm-rose focal heat zones at the recommended focal areas. Keep the image elegant, scientific, and non-invasive.`,
+    avoidanceGrid: `Create a premium six-cell avoidance rule image on matte slate #94A6AD. Icon-like garment diagrams matching these avoid rules: ${reportData.classification.taste.anti_codes.join(', ')}. Warm-white line drawings with subtle rose diagonal avoid strokes. No text.`,
+  };
+  return prompts[slot];
+}
+
+function prescriptionPrompt(reportData: StylistBlueprintReportData, slot: keyof MutablePaths['prescription']) {
+  const base = `Create a premium ICONIK reference image on matte slate #94A6AD. Restrained Vogue editorial meets clinical report. No readable text, no labels, no numbers.`;
+  const basePalette = reportData.classification.colour.base_palette.map(c => `${c.name} ${c.hex}`).join(', ');
+  const accentPalette = reportData.classification.colour.accent_palette.map(c => `${c.name} ${c.hex}`).join(', ');
+  const hairStyles = reportData.classification.face_hair_accessories.hair_styles.join(', ');
+  const eyewearShapes = reportData.classification.face_hair_accessories.eyewear_shapes.join(', ');
+  const prompts: Record<keyof MutablePaths['prescription'], string> = {
+    basePalette: `${base} Show exactly 10 colour swatches in two rows of five. Use these colours exactly: ${basePalette}.`,
+    accentPalette: `${base} Show exactly 5 colour swatches in one centered row. Use these colours exactly: ${accentPalette}.`,
+    necklineGrid: `${base} Show six approved neckline geometry diagrams in a 3x2 grid: ${reportData.classification.face_hair_accessories.approved_necklines.join(', ')}. Warm-white line work.`,
+    sleeveWaistGrid: `${base} Show sleeve and waistline construction geometry diagrams for these silhouette rules: ${reportData.classification.body.silhouette_rules.join(', ')}. Warm-white line work.`,
+    hairDirections: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions. Create a polished head-and-shoulders editorial portrait on matte ICONIK slate #94A6AD showing the client with the recommended hairstyle direction: ${hairStyles}. The hair should look realistic, wearable, and matched to the client's facial architecture: ${reportData.classification.face_hair_accessories.face_shape}. No text, no labels, no before/after split, no collage.`,
+    eyewearFrames: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions. Create a polished head-and-shoulders editorial portrait on matte ICONIK slate #94A6AD showing the client wearing the recommended eyewear frame direction: ${eyewearShapes}. Frames should be realistic, properly scaled, and matched to the client's facial architecture: ${reportData.classification.face_hair_accessories.face_shape}. No text, no labels, no before/after split, no collage.`,
+    approvedFabrics: `${base} Show a 2x2 macro texture grid of approved fabrics: ${reportData.classification.fabrics.approved.map(f => f.name).join(', ')}. Warm ivory fabric texture, photorealistic macro detail.`,
+    avoidedFabrics: `${base} Show avoided fabric macro swatches: ${reportData.classification.fabrics.avoid.map(f => f.name).join(', ')}. Add subtle warm-rose diagonal avoid strokes. Photorealistic macro detail.`,
+  };
+  return prompts[slot];
 }
 
 async function setSlot(input: {
@@ -338,6 +584,7 @@ export async function generateStylistBlueprintImages(
   const group = options.group ?? 'all';
   const force = Boolean(options.force);
   const paths = await getStoredPaths(reportId);
+  const photos = sourcePhotos(options.submission);
 
   await persistPaths(reportId, paths, shareToken, `generating_images_${group}`);
 
@@ -346,55 +593,62 @@ export async function generateStylistBlueprintImages(
       reportId, paths, shareToken, force, fileName: 'cover-portrait',
       getCurrent: () => paths.cover.portrait,
       setCurrent: path => { paths.cover.portrait = path; },
-      create: async () => generatedOrFallback(reportId, 'cover-portrait', `Warm editorial head-and-shoulders portrait treatment on slate background ${SLATE}. Natural luminous skin, no text, Vogue editorial restraint.`, analyticalCard('portrait')),
+      create: async () => generatedImage(
+        reportId,
+        'cover-portrait',
+        `Using the uploaded headshot as source when provided, create a warm editorial head-and-shoulders portrait treatment on slate background ${SLATE}. Preserve identity and facial features. Natural luminous skin, no text, Vogue editorial restraint.`,
+        photos.headshot,
+        '1024x1536',
+      ),
     });
   }
 
   if (group === 'diagnosis' || group === 'all') {
-    const diagnosisSlots: Array<[keyof MutablePaths['diagnosis'], string, string]> = [
-      ['silhouetteFront', 'diagnosis-silhouette-front', analyticalCard('front')],
-      ['silhouetteSide', 'diagnosis-silhouette-side', analyticalCard('side')],
-      ['proportionalAxes', 'diagnosis-proportional-axes', analyticalCard('axis')],
-      ['undertoneMap', 'diagnosis-undertone-map', swatchSvg(['#A8B8C8', '#C8C0B4', '#D4B896'], 3, 1200, 900)],
-      ['depthContrastMatrix', 'diagnosis-depth-contrast', gridLineSvg(25, 'square')],
-      ['palettePreview', 'diagnosis-palette-preview', swatchSvg(reportData.classification.colour.base_palette.slice(0, 5).map(c => c.hex), 5, 1400, 800)],
-      ['faceShapeDiagram', 'diagnosis-face-shape', analyticalCard('face')],
-      ['faceRatios', 'diagnosis-face-ratios', analyticalCard('ratio')],
-      ['necklinePreview', 'diagnosis-neckline-preview', gridLineSvg(4, 'square')],
-      ['combinedAxes', 'diagnosis-combined-axes', analyticalCard('axis')],
-      ['focalHeatmap', 'diagnosis-focal-heatmap', analyticalCard('heat')],
-      ['avoidanceGrid', 'diagnosis-avoidance-grid', analyticalCard('avoid')],
+    const fullBodySource = photos.front || photos.side || null;
+    const diagnosisSlots: Array<[keyof MutablePaths['diagnosis'], string, string | null, '1024x1024' | '1024x1536' | '1536x1024']> = [
+      ['silhouetteFront', 'diagnosis-silhouette-front', photos.front || fullBodySource, '1024x1536'],
+      ['silhouetteSide', 'diagnosis-silhouette-side', photos.side || fullBodySource, '1024x1536'],
+      ['proportionalAxes', 'diagnosis-proportional-axes', fullBodySource, '1024x1536'],
+      ['undertoneMap', 'diagnosis-undertone-map', photos.headshot, '1024x1024'],
+      ['depthContrastMatrix', 'diagnosis-depth-contrast', photos.headshot, '1024x1024'],
+      ['palettePreview', 'diagnosis-palette-preview', null, '1536x1024'],
+      ['faceShapeDiagram', 'diagnosis-face-shape', photos.headshot, '1024x1024'],
+      ['faceRatios', 'diagnosis-face-ratios', photos.headshot, '1024x1024'],
+      ['necklinePreview', 'diagnosis-neckline-preview', null, '1024x1024'],
+      ['combinedAxes', 'diagnosis-combined-axes', fullBodySource, '1024x1536'],
+      ['focalHeatmap', 'diagnosis-focal-heatmap', fullBodySource, '1024x1536'],
+      ['avoidanceGrid', 'diagnosis-avoidance-grid', null, '1536x1024'],
     ];
-    for (const [slot, fileName, svg] of diagnosisSlots) {
+    for (const [slot, fileName, sourceUrl, size] of diagnosisSlots) {
       await setSlot({
         reportId, paths, shareToken, force, fileName,
         getCurrent: () => paths.diagnosis[slot],
         setCurrent: path => { paths.diagnosis[slot] = path; },
-        create: () => uploadSvg(reportId, fileName, svg),
+        create: () => generatedImage(reportId, fileName, diagnosisPrompt(reportData, slot), sourceUrl, size),
       });
     }
   }
 
   if (group === 'prescription' || group === 'all') {
-    const prescriptionSlots: Array<[keyof MutablePaths['prescription'], string, string]> = [
-      ['basePalette', 'prescription-base-palette', swatchSvg(reportData.classification.colour.base_palette.slice(0, 10).map(c => c.hex), 5, 1400, 900)],
-      ['accentPalette', 'prescription-accent-palette', swatchSvg(reportData.classification.colour.accent_palette.slice(0, 5).map(c => c.hex), 5, 1400, 700)],
-      ['necklineGrid', 'prescription-neckline-grid', gridLineSvg(6, 'wide')],
-      ['sleeveWaistGrid', 'prescription-sleeve-waist-grid', gridLineSvg(8, 'wide')],
-      ['hairDirections', 'prescription-hair-directions', gridLineSvg(4, 'strip')],
-      ['eyewearFrames', 'prescription-eyewear-frames', gridLineSvg(4, 'strip')],
-      ['approvedFabrics', 'prescription-approved-fabrics', gridLineSvg(4, 'square')],
-      ['avoidedFabrics', 'prescription-avoided-fabrics', analyticalCard('avoid')],
+    const prescriptionSlots: Array<[keyof MutablePaths['prescription'], string, string | null, '1024x1024' | '1024x1536' | '1536x1024']> = [
+      ['basePalette', 'prescription-base-palette', null, '1536x1024'],
+      ['accentPalette', 'prescription-accent-palette', null, '1536x1024'],
+      ['necklineGrid', 'prescription-neckline-grid', null, '1536x1024'],
+      ['sleeveWaistGrid', 'prescription-sleeve-waist-grid', null, '1536x1024'],
+      ['hairDirections', 'prescription-hair-directions', photos.headshot, '1024x1536'],
+      ['eyewearFrames', 'prescription-eyewear-frames', photos.headshot, '1024x1536'],
+      ['approvedFabrics', 'prescription-approved-fabrics', null, '1024x1024'],
+      ['avoidedFabrics', 'prescription-avoided-fabrics', null, '1536x1024'],
     ];
-    for (const [slot, fileName, svg] of prescriptionSlots) {
-      const isFabric = slot === 'approvedFabrics' || slot === 'avoidedFabrics';
+    for (const [slot, fileName, sourceUrl, size] of prescriptionSlots) {
+      if ((slot === 'hairDirections' || slot === 'eyewearFrames') && !sourceUrl) {
+        throw new Error(`Client headshot is required for ${fileName}`);
+      }
       await setSlot({
         reportId, paths, shareToken, force, fileName,
         getCurrent: () => paths.prescription[slot],
         setCurrent: path => { paths.prescription[slot] = path; },
-        create: () => isFabric
-          ? generatedOrFallback(reportId, fileName, `Macro fabric texture grid on slate ${SLATE}, warm ivory fabrics, no text.`, svg)
-          : uploadSvg(reportId, fileName, svg),
+        create: () => generatedImage(reportId, fileName, prescriptionPrompt(reportData, slot), sourceUrl, size),
       });
     }
   }
@@ -407,26 +661,28 @@ export async function generateStylistBlueprintImages(
   ];
   for (const [capsuleGroup, capsuleIndex, firstPage, lastPage] of capsuleGroups) {
     if (group !== capsuleGroup && group !== 'all') continue;
-    await setSlot({
-      reportId, paths, shareToken, force, fileName: `capsule-${capsuleIndex + 1}-cover`,
-      getCurrent: () => paths.application.capsuleCovers[capsuleIndex],
-      setCurrent: path => { paths.application.capsuleCovers[capsuleIndex] = path; },
-      create: () => generatedOrFallback(reportId, `capsule-${capsuleIndex + 1}-cover`, outfitPrompt(`Capsule ${capsuleIndex + 1} anchor pieces: ${pageTitle(reportData, firstPage)}`), swatchSvg(reportData.classification.colour.base_palette.slice(0, 5).map(c => c.hex), 5)),
-    });
+    paths.application.capsuleCovers[capsuleIndex] = null;
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (!clientSource) {
+      throw new Error('No client photo found for outfit image generation');
+    }
     for (let page = firstPage; page <= lastPage; page++) {
       const index = page - 14;
-      const title = pageTitle(reportData, page);
+      const pageData = reportData.pages.find(item => item.page_number === page);
+      if (!pageData) throw new Error(`Missing outfit page ${page} for image generation`);
+      paths.application.outfitDetails[index] = null;
       await setSlot({
-        reportId, paths, shareToken, force, fileName: `outfit-${index + 1}-flatlay`,
+        reportId, paths, shareToken, force, fileName: `outfit-${index + 1}-client`,
         getCurrent: () => paths.application.outfitFlatlays[index],
         setCurrent: path => { paths.application.outfitFlatlays[index] = path; },
-        create: () => generatedOrFallback(reportId, `outfit-${index + 1}-flatlay`, outfitPrompt(title), swatchSvg(reportData.classification.colour.base_palette.slice(0, 5).map(c => c.hex), 5)),
-      });
-      await setSlot({
-        reportId, paths, shareToken, force, fileName: `outfit-${index + 1}-detail`,
-        getCurrent: () => paths.application.outfitDetails[index],
-        setCurrent: path => { paths.application.outfitDetails[index] = path; },
-        create: () => generatedOrFallback(reportId, `outfit-${index + 1}-detail`, outfitPrompt(title, true), gridLineSvg(1, 'square')),
+        create: () => generatedImage(
+          reportId,
+          `outfit-${index + 1}-client`,
+          wornOutfitPrompt(reportData, pageData),
+          clientSource,
+          '1024x1536',
+          photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+        ),
       });
     }
   }
@@ -436,13 +692,29 @@ export async function generateStylistBlueprintImages(
       reportId, paths, shareToken, force, fileName: 'closing-combination-matrix',
       getCurrent: () => paths.closing.combinationMatrix,
       setCurrent: path => { paths.closing.combinationMatrix = path; },
-      create: () => uploadSvg(reportId, 'closing-combination-matrix', analyticalCard('matrix')),
+      create: () => generatedImage(
+        reportId,
+        'closing-combination-matrix',
+        `Create a premium ICONIK wardrobe system data visualization on matte slate ${SLATE}. Show 12 outfit nodes and shared core piece nodes connected in an elegant constellation web. Warm ivory circles and lines, no text, no labels, no numbers.`,
+        null,
+        '1024x1024',
+      ),
     });
     await setSlot({
       reportId, paths, shareToken, force, fileName: 'closing-edit-teaser',
       getCurrent: () => paths.closing.editTeaser,
       setCurrent: path => { paths.closing.editTeaser = path; },
-      create: () => generatedOrFallback(reportId, 'closing-edit-teaser', outfitPrompt('ICONIK Edit weekly teaser outfit from the client palette'), swatchSvg(reportData.classification.colour.accent_palette.slice(0, 5).map(c => c.hex), 5)),
+      create: () => {
+        const clientSource = photos.front || photos.side || photos.headshot || null;
+        return generatedImage(
+          reportId,
+          'closing-edit-teaser',
+          editTeaserPrompt(reportData),
+          clientSource,
+          '1024x1536',
+          photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+        );
+      },
     });
   }
 
@@ -456,9 +728,7 @@ function collectPaths(paths: StylistBlueprintImagePaths | null | undefined): str
     normalised.cover.portrait,
     ...Object.values(normalised.diagnosis),
     ...Object.values(normalised.prescription),
-    ...normalised.application.capsuleCovers,
     ...normalised.application.outfitFlatlays,
-    ...normalised.application.outfitDetails,
     normalised.closing.combinationMatrix,
     normalised.closing.editTeaser,
     paths?.bodyGeometryCard,
@@ -497,9 +767,9 @@ export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintIm
     diagnosis: Object.fromEntries(Object.entries(resolved.diagnosis).map(([key, value]) => [key, map(value)])),
     prescription: Object.fromEntries(Object.entries(resolved.prescription).map(([key, value]) => [key, map(value)])),
     application: {
-      capsuleCovers: resolved.application.capsuleCovers.map(map),
+      capsuleCovers: resolved.application.capsuleCovers.map(() => null),
       outfitFlatlays: resolved.application.outfitFlatlays.map(map),
-      outfitDetails: resolved.application.outfitDetails.map(map),
+      outfitDetails: resolved.application.outfitDetails.map(() => null),
     },
     closing: {
       combinationMatrix: map(resolved.closing.combinationMatrix),
@@ -519,10 +789,10 @@ export function getStylistBlueprintImageCounts(paths: StylistBlueprintImagePaths
     cover: [normalised.cover.portrait],
     diagnosis: Object.values(normalised.diagnosis),
     prescription: Object.values(normalised.prescription),
-    capsule_1: [normalised.application.capsuleCovers[0], ...normalised.application.outfitFlatlays.slice(0, 3), ...normalised.application.outfitDetails.slice(0, 3)],
-    capsule_2: [normalised.application.capsuleCovers[1], ...normalised.application.outfitFlatlays.slice(3, 6), ...normalised.application.outfitDetails.slice(3, 6)],
-    capsule_3: [normalised.application.capsuleCovers[2], ...normalised.application.outfitFlatlays.slice(6, 9), ...normalised.application.outfitDetails.slice(6, 9)],
-    capsule_4: [normalised.application.capsuleCovers[3], ...normalised.application.outfitFlatlays.slice(9, 12), ...normalised.application.outfitDetails.slice(9, 12)],
+    capsule_1: normalised.application.outfitFlatlays.slice(0, 3),
+    capsule_2: normalised.application.outfitFlatlays.slice(3, 6),
+    capsule_3: normalised.application.outfitFlatlays.slice(6, 9),
+    capsule_4: normalised.application.outfitFlatlays.slice(9, 12),
     closing: [normalised.closing.combinationMatrix, normalised.closing.editTeaser],
   };
   return Object.fromEntries(

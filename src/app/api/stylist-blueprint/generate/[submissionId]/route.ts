@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
 import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
 import { runStylistBlueprintTextPipeline } from '@/lib/stylistBlueprintTextPipeline';
+import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
 import type { StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 
 export const maxDuration = 300;
@@ -64,7 +65,27 @@ export async function POST(
   }
 
   after(async () => {
-    await runStylistBlueprintTextPipeline(report.id, submission as StylistIntakeSubmission, report.share_token ?? null, null);
+    const intake = submission as StylistIntakeSubmission;
+    const reportData = await runStylistBlueprintTextPipeline(report.id, intake, report.share_token ?? null, null);
+    if (reportData) {
+      try {
+        await generateStylistBlueprintImages(report.id, reportData, report.share_token ?? null, {
+          group: 'all',
+          force: false,
+          submission: intake,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Image generation failed';
+        await supabaseAdmin
+          .from('stylist_blueprint_reports')
+          .update({
+            progress_stage: null,
+            error_message: message,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', report.id);
+      }
+    }
   });
 
   return NextResponse.json({ reportId: report.id, status: 'generating' });

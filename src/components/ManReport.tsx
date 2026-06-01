@@ -37,6 +37,13 @@ const BORDER     = '#E8DDC9';   // hairline divider
 const SAGE       = '#8FA088';   // accent for "always do" rules
 const OXBLOOD    = '#8A3A3A';   // accent for "never do" rules
 
+// Blueprint page palette — matches the women's StylistBlueprintReport
+const SLATE      = '#94A6AD';
+const SLATE_LIGHT = '#A0B2B9';
+const SLATE_DEEP = '#7E9098';
+const PAPER      = '#F8F3E9';
+const BONE       = '#EDE5D2';
+
 const SECTION_REVEAL_EASE: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
 // Editorial serif family — preferred order:
@@ -356,26 +363,9 @@ function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolea
 
 // Section header: hairline + section number in serif italic on the left,
 // label in soft caps on the right. Reads like a magazine spread, not a CSV row.
-function SectionHeader({ label, number }: { label: string; number?: string }) {
-  return (
-    <div className="px-6 md:px-12 pt-10 md:pt-14 pb-5 flex items-baseline gap-5">
-      {number && (
-        <span
-          className="italic text-2xl md:text-3xl"
-          style={{ fontFamily: SERIF, color: ACCENT, fontWeight: 300 }}
-        >
-          §&nbsp;{number}
-        </span>
-      )}
-      <span
-        className="text-[11px] font-medium uppercase tracking-[0.18em] flex-1"
-        style={{ color: INK_SOFT }}
-      >
-        {label}
-      </span>
-      <span className="hidden md:block h-px w-16" style={{ background: BORDER }} />
-    </div>
-  );
+// SectionHeader is intentionally a no-op — section identity lives in ManPageFrame corner markers.
+function SectionHeader(_props: { label: string; number?: string }) {
+  return null;
 }
 
 // Soft "stamp" — used sparingly. Replaces the heavy black GoldPill.
@@ -390,35 +380,24 @@ function GoldPill({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Subtler data label — sentence case, smaller tracking, normal weight.
+// Data label — uses inherited page color so it reads on both slate and ivory pages.
 function DataLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="block text-[10px] font-semibold uppercase tracking-[0.14em] mb-1.5"
-      style={{ color: ACCENT_INK }}
-    >
-      {children}
-    </span>
-  );
+  return <span className="dossier-label">{children}</span>;
 }
 
-// "Stylist note" pull-quote — uses the editorial serif and a soft amber rule.
+// "Stylist note" pull-quote — inherits page color, works on both slate and ivory pages.
 function StylistNote({ children }: { children: React.ReactNode }) {
   return (
     <div className="pl-5 py-1" style={{ borderLeft: `2px solid ${ACCENT}55` }}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] mb-2" style={{ color: ACCENT_INK }}>
-        Stylist Rationale
-      </p>
-      <p className="text-[14px] italic leading-relaxed" style={{ fontFamily: SERIF, color: INK_SOFT, fontWeight: 350 }}>
-        &ldquo;{children}&rdquo;
-      </p>
+      <p className="dossier-label" style={{ marginBottom: 8 }}>Stylist Rationale</p>
+      <p className="display-it diagnosis-quote">&ldquo;{children}&rdquo;</p>
     </div>
   );
 }
 
 // Thin hairline divider — replaces the old `h-px bg-BORDER` everywhere.
 function HairRule({ className = '' }: { className?: string }) {
-  return <div className={className} style={{ height: 1, background: BORDER }} />;
+  return <div className={`rule ${className}`} />;
 }
 
 type ManualImageTarget =
@@ -950,12 +929,25 @@ function FaceSection({
   };
 
   return (
-    <div style={{ background: '#fff' }}>
+    <section className="man-page slate">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Facial Architecture</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">01</div>
+      </div>
       <SectionHeader number="01" label="Facial Architecture" />
-      <div className="px-6 md:px-12 pb-14">
+      <div className="man-page-inner">
+        <h2>
+          <span className="display">Face</span>
+          <span className="display-it">architecture.</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
         <div className="flex flex-wrap items-center gap-3 mb-10">
           <GoldPill>{face.face_shape} face</GoldPill>
-          <span className="text-[12px]" style={{ color: INK_SOFT }}>
+          <span className="text-[12px] faded">
             {face.feature_type} feature type
           </span>
         </div>
@@ -965,7 +957,7 @@ function FaceSection({
           ? renderFaceGrid('hairstyle', hairstyleUrls, 'Hairstyle options')
           : hasHairstyleImages && (
             <div className="mb-10">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+              <p className="dossier-label" style={{ fontSize: 11, marginBottom: 20 }}>
                 Hairstyle options
               </p>
               <div className="grid grid-cols-2 gap-4 md:gap-6">
@@ -980,7 +972,7 @@ function FaceSection({
           ? renderFaceGrid('beard', beardUrls, 'Beard & facial hair options')
           : hasBeardImages && (
             <div className="mb-10">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+              <p className="dossier-label" style={{ fontSize: 11, marginBottom: 20 }}>
                 Beard & facial hair options
               </p>
               <div className="grid grid-cols-2 gap-4 md:gap-6">
@@ -995,7 +987,7 @@ function FaceSection({
           ? renderFaceGrid('eyewear', eyewearUrls, 'Eyewear options')
           : hasEyewearImages && (
             <div className="mb-10">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
+              <p className="dossier-label" style={{ fontSize: 11, marginBottom: 20 }}>
                 Eyewear options
               </p>
               <div className="grid grid-cols-2 gap-4 md:gap-6">
@@ -1021,11 +1013,8 @@ function FaceSection({
 
         {/* Narrative */}
         {text && (
-          <div className="mt-10 pt-8" style={{ borderTop: `1px solid ${BORDER}` }}>
-            <div
-              className="rounded-3xl p-6 md:p-8"
-              style={{ background: '#fff', border: `1px solid ${BORDER}`, boxShadow: '0 22px 50px -42px rgba(27,24,21,0.25)' }}
-            >
+          <div className="mt-10 pt-8" style={{ borderTop: '1px solid rgba(244,239,229,0.18)' }}>
+            <div className="glass-dark" style={{ padding: '24px 28px' }}>
               <RenderMarkdown text={text} />
             </div>
           </div>
@@ -1224,7 +1213,7 @@ function FaceSection({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </section>
   );
 }
 
@@ -1276,12 +1265,25 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
   ];
 
   return (
-    <div style={{ background: SHELL }}>
+    <section className="man-page ivory">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Body Geometry</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">02</div>
+      </div>
       <SectionHeader number="02" label="Body Geometry" />
-      <div className="px-6 md:px-12 pb-14">
+      <div className="man-page-inner">
+        <h2>
+          <span className="display">Body</span>
+          <span className="display-it">geometry.</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
         <div className="flex flex-wrap items-center gap-3 mb-8">
           <GoldPill>{body.silhouette_type} build</GoldPill>
-          <span className="text-[12px]" style={{ color: INK_SOFT }}>Your dominant frame geometry</span>
+          <span className="text-[12px] faded">Your dominant frame geometry</span>
         </div>
 
         {/* Fit diagram strip — visual anchor for abstract fit copy */}
@@ -1374,7 +1376,7 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1416,12 +1418,25 @@ function Swatch({
 function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
   const { colour } = cls;
   return (
-    <div style={{ background: '#fff' }}>
+    <section className="man-page bone">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Chromatic Harmony</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">03</div>
+      </div>
       <SectionHeader number="03" label="Chromatic Harmony" />
-      <div className="px-6 md:px-12 pb-14">
+      <div className="man-page-inner">
+        <h2>
+          <span className="display">Chromatic</span>
+          <span className="display-it">harmony.</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
         <div className="flex flex-wrap items-center gap-3 mb-10">
           <GoldPill>{colour.undertone} undertone · {colour.skin_tone_depth}</GoldPill>
-          <span className="text-[12px]" style={{ color: INK_SOFT }}>{colour.season}</span>
+          <span className="text-[12px] faded">{colour.season}</span>
         </div>
 
         {/* Primary palette — full-width hero strip */}
@@ -1506,24 +1521,37 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
           </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 function SnapshotSection({ text }: { text?: string }) {
   if (!text) return null;
   return (
-    <div style={{ background: '#fff' }}>
+    <section className="man-page ivory">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Personal Style Snapshot</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">00</div>
+      </div>
       <SectionHeader number="00" label="Personal Style Snapshot" />
-      <div className="px-6 md:px-12 pb-12">
+      <div className="man-page-inner">
+        <h2>
+          <span className="display">Personal</span>
+          <span className="display-it">snapshot.</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
         <div
           className="rounded-3xl p-7 md:p-9"
-          style={{ background: SHELL, border: `1px solid ${BORDER}` }}
+          style={{ background: 'rgba(44,38,34,0.04)', border: `1px solid ${BORDER}` }}
         >
           <RenderMarkdown text={text} />
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1794,12 +1822,25 @@ function OutfitsSection({
   // Fallback: if parsing failed, render raw markdown
   if (categories.length === 0 || categories.every(c => c.outfits.length === 0)) {
     return (
-      <div style={{ background: SHELL }}>
+      <section className="man-page bone">
+        <div className="grain" />
+        <div className="corner-tl">
+          <div className="man-mono corner-kicker">Section</div>
+          <div className="man-small-caps corner-title">Your Outfit Formulas</div>
+        </div>
+        <div className="corner-tr">
+          <div className="man-mono corner-kicker">04</div>
+        </div>
         <SectionHeader number="04" label={`Your ${split.total} Outfit Formulas`} />
-        <div className="px-6 md:px-12 pb-14">
+        <div className="man-page-inner">
+          <h2>
+            <span className="display">Outfit</span>
+            <span className="display-it">formulas.</span>
+          </h2>
+          <div className="rule" style={{ marginBottom: 40 }} />
           <RenderMarkdown text={text} />
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -2031,10 +2072,25 @@ function OutfitsSection({
   };
 
   return (
-    <div style={{ background: SHELL }}>
+    <section className="man-page bone">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Your Outfit Formulas</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">04</div>
+      </div>
       <SectionHeader number="04" label={`Your ${split.total} Outfit Formulas`} />
 
-      <div className="px-4 md:px-8 pb-14 space-y-14">
+      <div className="man-page-inner space-y-14">
+        <div>
+          <h2>
+            <span className="display">Outfit</span>
+            <span className="display-it">formulas.</span>
+          </h2>
+          <div className="rule" style={{ marginBottom: 0 }} />
+        </div>
         {(editError || sectionNotice) && (
           <div
             className="mx-2 md:mx-4 flex items-start gap-2 rounded-2xl px-4 py-3"
@@ -2426,7 +2482,7 @@ function OutfitsSection({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </section>
   );
 }
 
@@ -2574,9 +2630,24 @@ function ComboGridSection({
   };
 
   return (
-    <div style={{ background: '#fff' }}>
+    <section className="man-page slate">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Combination Grids</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">05</div>
+      </div>
       <SectionHeader number="05" label="Combination Grids" />
-      <div className="px-6 md:px-12 pb-14 space-y-8">
+      <div className="man-page-inner space-y-8">
+        <div>
+          <h2>
+            <span className="display">The system,</span>
+            <span className="display-it">connected.</span>
+          </h2>
+          <div className="rule" style={{ marginBottom: 0 }} />
+        </div>
         <div className="flex flex-col gap-4">
           {sectionNotice && (
             <div
@@ -2840,7 +2911,7 @@ function ComboGridSection({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </section>
   );
 }
 
@@ -2897,19 +2968,45 @@ function StyleRulesSection({ text }: { text: string }) {
   if (!parsed) {
     // Fallback for unrecognised markdown — keep behaviour unchanged.
     return (
-      <div style={{ background: '#fff' }}>
+      <section className="man-page ivory">
+        <div className="grain" />
+        <div className="corner-tl">
+          <div className="man-mono corner-kicker">Section</div>
+          <div className="man-small-caps corner-title">Your Style Rules</div>
+        </div>
+        <div className="corner-tr">
+          <div className="man-mono corner-kicker">05</div>
+        </div>
         <SectionHeader number="05" label="Your Style Rules" />
-        <div className="px-6 md:px-12 pb-14">
+        <div className="man-page-inner">
+          <h2>
+            <span className="display">Always.</span>
+            <span className="display-it">Never.</span>
+          </h2>
+          <div className="rule" style={{ marginBottom: 40 }} />
           <RenderMarkdown text={text} />
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div style={{ background: '#fff' }}>
+    <section className="man-page ivory">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">Your Style Rules</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">05</div>
+      </div>
       <SectionHeader number="05" label="Your Style Rules" />
-      <div className="px-6 md:px-12 pb-14">
+      <div className="man-page-inner">
+        <h2>
+          <span className="display">Always.</span>
+          <span className="display-it">Never.</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
           {/* Always */}
           <div
@@ -2972,7 +3069,7 @@ function StyleRulesSection({ text }: { text: string }) {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -2988,19 +3085,33 @@ function TextReportSection({
   background?: string;
 }) {
   if (!text) return null;
-  const panelBackground = background === '#fff' || background === '#ffffff' ? SHELL : '#fff';
+  // Map legacy background prop to blueprint page variant
+  const variant = background === SHELL || background === BONE ? 'bone' : 'ivory';
+  const panelBg = variant === 'bone' ? 'rgba(44,38,34,0.04)' : SHELL;
   return (
-    <div style={{ background }}>
+    <section className={`man-page ${variant}`}>
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Section</div>
+        <div className="man-small-caps corner-title">{label}</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">{number}</div>
+      </div>
       <SectionHeader number={number} label={label} />
-      <div className="px-6 md:px-12 pb-14">
+      <div className="man-page-inner">
+        <h2>
+          <span className="display-it">{label}</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
         <div
           className="rounded-3xl p-6 md:p-8"
-          style={{ background: panelBackground, border: `1px solid ${BORDER}` }}
+          style={{ background: panelBg, border: `1px solid ${BORDER}` }}
         >
           <RenderMarkdown text={text} />
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -3014,24 +3125,32 @@ function IdentitySection({ text }: { text: string }) {
   const body  = lines.join('\n').trim();
 
   return (
-    <div style={{ background: SHELL }}>
+    <section className="man-page slate">
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">Closing</div>
+        <div className="man-small-caps corner-title">Style Identity</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">08</div>
+      </div>
       <SectionHeader number="08" label="Your Style Identity" />
-      <div className="px-6 md:px-12 pb-16">
-        <div
-          className="rounded-3xl p-8 md:p-12 max-w-3xl"
-          style={{ background: '#fff', boxShadow: '0 30px 80px -50px rgba(27,24,21,0.30)' }}
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] mb-5" style={{ color: ACCENT_INK }}>
-            Personal statement
-          </p>
+      <div className="man-page-inner">
+        <h2>
+          <span className="display">Your style</span>
+          <span className="display-it">identity.</span>
+        </h2>
+        <div className="rule" style={{ marginBottom: 40 }} />
+        <div className="glass-dark" style={{ padding: '32px 40px', maxWidth: 720 }}>
+          <p className="dossier-label" style={{ marginBottom: 16 }}>Personal statement</p>
           <p
-            className="text-xl md:text-2xl italic leading-relaxed"
-            style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
+            className="display-it"
+            style={{ fontSize: 'clamp(18px, 2.5vw, 26px)', lineHeight: 1.55, opacity: 0.85 }}
             dangerouslySetInnerHTML={{ __html: richify(body) }}
           />
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -3287,28 +3406,25 @@ function ManReport({
     <div
       className="sticky top-0 z-10 px-5 md:px-12 h-12 md:h-14 flex items-center justify-between"
       style={{
-        background: 'rgba(251,248,244,0.86)',
+        background: 'rgba(27,24,21,0.92)',
         backdropFilter: 'blur(14px)',
-        borderBottom: `1px solid ${BORDER}`,
+        borderBottom: '1px solid rgba(244,239,229,0.12)',
       }}
     >
       <div className="flex items-center gap-3">
         <div
           className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center"
-          style={{ background: INK }}
+          style={{ background: '#F4EFE5' }}
         >
-          <span
-            className="text-[12px] md:text-[13px] italic"
-            style={{ fontFamily: SERIF, color: ACCENT, fontWeight: 500 }}
-          >
+          <span className="man-display-it" style={{ fontSize: 13, color: ACCENT, fontWeight: 500 }}>
             I
           </span>
         </div>
-        <span className="text-[11px] font-medium uppercase tracking-[0.22em]" style={{ color: INK }}>
-          Iconik <span style={{ color: ACCENT_INK }}>Blueprint</span>
+        <span className="man-mono" style={{ color: '#F4EFE5', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+          Iconik <span style={{ color: ACCENT }}>Blueprint</span>
         </span>
       </div>
-      <span className="text-[10px] italic" style={{ fontFamily: SERIF, color: INK_SOFT }}>
+      <span className="man-display-it" style={{ fontSize: 11, color: 'rgba(244,239,229,0.55)' }}>
         {reportDate}
       </span>
     </div>
@@ -3426,8 +3542,8 @@ function ManReport({
 
   return (
     <div
-      className="overflow-x-hidden"
-      style={{ background: IVORY, color: INK, fontFamily: 'var(--font-geist-sans, system-ui)' }}
+      className="man-report overflow-x-hidden"
+      style={{ color: INK }}
     >
       {/* Sticky Nav */}
       {motionMode === 'standard' ? (
@@ -3440,104 +3556,76 @@ function ManReport({
         </motion.div>
       ) : stickyHeader}
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="relative px-5 md:px-12 pt-12 md:pt-20 pb-14 md:pb-20" style={{ background: IVORY }}>
-        {/* Decorative gradient blob — soft modern depth, not filigree */}
-        <div
-          aria-hidden
-          className="absolute pointer-events-none"
-          style={{
-            top: -120,
-            right: -120,
-            width: 420,
-            height: 420,
-            background: `radial-gradient(circle at center, ${ACCENT}1A 0%, ${ACCENT}00 70%)`,
-            filter: 'blur(20px)',
-          }}
-        />
+      {/* ── Cover page ─────────────────────────────────────────────────────── */}
+      <section className="man-page slate man-cover">
+        <div className="grain" />
+        <div className="corner-tl">
+          <div className="man-display man-wordmark">I C O N I K</div>
+          <div className="man-micro muted">EST · MMXXIV</div>
+        </div>
+        <div className="corner-tr" style={{ textAlign: 'right' }}>
+          <div className="man-micro muted">Analysis Verified</div>
+          <div className="man-micro muted" style={{ marginTop: 8 }}>{reportDate}</div>
+        </div>
+        <div className="man-cover-center">
+          <div className="man-cover-rule">
+            <span /><div className="man-micro">A Personal Blueprint</div><span />
+          </div>
+          <h1 className="man-cover-heading">
+            <span className="man-display">The</span>
+            <span className="man-display-it">Lookbook</span>
+          </h1>
+          {identityExcerpt && (
+            <p className="man-display-it man-cover-excerpt">&ldquo;{identityExcerpt}&rdquo;</p>
+          )}
+          <div className="man-mono man-cover-number">bp.iconik.pro</div>
+        </div>
+        <div className="corner-bl">
+          <div className="man-display-it man-cover-tag">Same man.</div>
+          <div className="man-display-it man-cover-tag">Different science.</div>
+        </div>
+        <div className="corner-br">
+          <div className="man-mono corner-kicker">Cover / 01</div>
+        </div>
+      </section>
 
-        <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-end">
-          <div className="lg:col-span-7 min-w-0">
-            <p
-              className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] mb-5"
-              style={{ color: ACCENT_INK }}
-            >
-              <span style={{ fontSize: 13 }}>✦</span>
-              <span>Analysis verified</span>
-              <span style={{ color: BORDER }}>·</span>
-              <span style={{ color: INK_SOFT, letterSpacing: '0.16em' }}>{reportDate}</span>
-            </p>
-
-            <h1
-              className="leading-[0.95] tracking-tight"
-              style={{
-                fontFamily: SERIF,
-                color: INK,
-                fontWeight: 350,
-                fontSize: 'clamp(56px, 9vw, 112px)',
-              }}
-            >
-              <span className="italic">The</span>{' '}
-              <span className="italic" style={{ color: ACCENT_INK }}>Lookbook</span>
-            </h1>
-
-            {identityExcerpt && (
-              <p
-                className="mt-6 max-w-xl italic leading-relaxed"
-                style={{ fontFamily: SERIF, color: INK_SOFT, fontSize: 18, fontWeight: 350 }}
-              >
-                &ldquo;{identityExcerpt}&rdquo;
+      {/* ── Summary page — blueprint card + style brief ──────────────────── */}
+      <section className="man-page ivory">
+        <div className="grain" />
+        <div className="corner-tl">
+          <div className="man-mono corner-kicker">The Blueprint</div>
+          <div className="man-small-caps corner-title">Overview</div>
+        </div>
+        <div className="corner-tr">
+          <div className="man-mono corner-kicker">00</div>
+        </div>
+        <div className="man-page-inner">
+          <div className="flex flex-wrap gap-2.5 mb-8">
+            <GoldPill>{cls.body.silhouette_type} build</GoldPill>
+            <GoldPill>{cls.face.face_shape} face</GoldPill>
+            <GoldPill>{cls.colour.season}</GoldPill>
+            <GoldPill>{cls.outfit_split.total} ensembles</GoldPill>
+          </div>
+          <BlueprintCard cls={cls} />
+          <div className="man-rule" style={{ margin: '40px 0 32px' }} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
+            <div>
+              <DataLabel>Aesthetic direction</DataLabel>
+              <p style={{ fontSize: 13, color: INK, lineHeight: 1.6 }}>{cls.style_brief.aesthetic_direction}</p>
+            </div>
+            <div>
+              <DataLabel>Primary vision</DataLabel>
+              <p style={{ fontSize: 14, fontFamily: SERIF, color: INK_SOFT, fontStyle: 'italic', fontWeight: 350, lineHeight: 1.6 }}>
+                &ldquo;{cls.style_brief.primary_brief}&rdquo;
               </p>
-            )}
-
-            <div className="mt-7 flex flex-wrap gap-2.5">
-              <GoldPill>{cls.body.silhouette_type} build</GoldPill>
-              <span
-                className="inline-flex items-center px-3.5 py-1.5 text-[11px] rounded-full"
-                style={{ background: '#fff', color: INK, border: `1px solid ${BORDER}` }}
-              >
-                {cls.face.face_shape} face
-              </span>
-              <span
-                className="inline-flex items-center px-3.5 py-1.5 text-[11px] rounded-full"
-                style={{ background: '#fff', color: INK, border: `1px solid ${BORDER}` }}
-              >
-                {cls.colour.season}
-              </span>
-              <span
-                className="inline-flex items-center px-3.5 py-1.5 text-[11px] rounded-full"
-                style={{ background: '#fff', color: INK, border: `1px solid ${BORDER}` }}
-              >
-                {cls.outfit_split.total} ensembles
-              </span>
+            </div>
+            <div>
+              <DataLabel>Register</DataLabel>
+              <p style={{ fontSize: 13, color: INK, lineHeight: 1.6 }}>{cls.style_brief.register}</p>
             </div>
           </div>
-
-          <div className="lg:col-span-5 min-w-0">
-            <BlueprintCard cls={cls} />
-          </div>
         </div>
-      </div>
-
-      {/* Style Brief strip */}
-      <div className="px-6 md:px-12 py-7" style={{ background: '#fff', borderTop: `1px solid ${BORDER}` }}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-          <div>
-            <DataLabel>Aesthetic direction</DataLabel>
-            <p className="text-[13px] leading-relaxed" style={{ color: INK }}>{cls.style_brief.aesthetic_direction}</p>
-          </div>
-          <div>
-            <DataLabel>Primary vision</DataLabel>
-            <p className="text-[14px] italic leading-relaxed" style={{ fontFamily: SERIF, color: INK_SOFT, fontWeight: 350 }}>
-              &ldquo;{cls.style_brief.primary_brief}&rdquo;
-            </p>
-          </div>
-          <div>
-            <DataLabel>Register</DataLabel>
-            <p className="text-[13px]" style={{ color: INK }}>{cls.style_brief.register}</p>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {sectionConfigs.map((section, index) => (
         <DeferredSection
@@ -3553,18 +3641,324 @@ function ManReport({
       ))}
 
       {/* Footer */}
-      <div className="px-6 md:px-12 py-12 text-center" style={{ background: '#fff', borderTop: `1px solid ${BORDER}` }}>
-        <p
-          className="text-2xl italic mb-2"
-          style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
-        >
-          Iconik <span style={{ color: ACCENT_INK }}>Blueprint</span>
+      <div className="man-footer">
+        <p className="man-display-it man-footer-wordmark">
+          Iconik <span style={{ color: ACCENT }}>Blueprint</span>
         </p>
-        <p className="text-[11px] tracking-[0.18em] uppercase" style={{ color: INK_SOFT }}>
+        <p className="man-mono" style={{ fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(244,239,229,0.45)', marginTop: 10 }}>
           Personal · Confidential · {reportDate}
         </p>
       </div>
+
+      <ManBlueprintStyles />
     </div>
+  );
+}
+
+function ManBlueprintStyles() {
+  return (
+    <style jsx global>{`
+      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,1,300;9..144,1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+      .man-report {
+        background: #F8F3E9;
+      }
+
+      /* ── Page frame ────────────────────────────────────────── */
+      .man-page {
+        max-width: 1060px;
+        margin: 0 auto 20px;
+        border-radius: 20px;
+        padding: 64px 56px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .man-page.slate {
+        background: radial-gradient(ellipse 120% 80% at 25% 10%, ${SLATE_LIGHT} 0%, ${SLATE} 45%, ${SLATE_DEEP} 100%);
+        color: #F4EFE5;
+      }
+
+      .man-page.ivory {
+        background: linear-gradient(180deg, ${PAPER} 0%, #F1E9D8 100%);
+        color: ${INK};
+      }
+
+      .man-page.bone {
+        background: ${BONE};
+        color: ${INK};
+      }
+
+      .man-cover {
+        min-height: 720px;
+      }
+
+      /* ── Grain texture ─────────────────────────────────────── */
+      .grain {
+        position: absolute;
+        inset: 0;
+        opacity: 0.04;
+        pointer-events: none;
+        background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+        background-size: 3px 3px;
+      }
+
+      /* ── Corner markers ────────────────────────────────────── */
+      .corner-tl, .corner-tr, .corner-bl, .corner-br {
+        position: absolute;
+        z-index: 2;
+      }
+      .corner-tl { top: 28px; left: 32px; }
+      .corner-tr { top: 28px; right: 32px; text-align: right; }
+      .corner-bl { bottom: 28px; left: 32px; }
+      .corner-br { bottom: 28px; right: 32px; text-align: right; }
+      .corner-kicker, .faded, .muted { opacity: 0.55; }
+      .corner-title { margin-top: 6px; opacity: 0.7; }
+
+      /* ── Typography ────────────────────────────────────────── */
+      .man-display {
+        font-family: 'Fraunces', serif;
+        font-weight: 300;
+        font-style: normal;
+        letter-spacing: -0.025em;
+        line-height: 0.95;
+      }
+      .man-display-it {
+        font-family: 'Fraunces', serif;
+        font-weight: 300;
+        font-style: italic;
+        letter-spacing: -0.025em;
+        line-height: 1.04;
+      }
+      .man-mono {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 400;
+        font-size: 11px;
+        letter-spacing: 0;
+      }
+      .man-micro {
+        font-size: 9px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        font-weight: 400;
+      }
+      .man-small-caps {
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        font-weight: 400;
+      }
+
+      /* ── Dividers & layout ─────────────────────────────────── */
+      .man-rule {
+        height: 1px;
+        background: currentColor;
+        opacity: 0.18;
+      }
+      .man-page-inner {
+        margin-top: 64px;
+      }
+
+      /* ── Cover page ────────────────────────────────────────── */
+      .man-wordmark {
+        font-size: 14px;
+        letter-spacing: 0.42em;
+      }
+      .man-cover-center {
+        position: absolute;
+        top: 34%;
+        left: 56px;
+        right: 56px;
+        z-index: 1;
+        text-align: center;
+      }
+      .man-cover-rule {
+        display: flex;
+        align-items: baseline;
+        gap: 24px;
+        margin-bottom: 36px;
+      }
+      .man-cover-rule span {
+        height: 1px;
+        flex: 1;
+        background: rgba(244,239,229,0.3);
+      }
+      .man-cover-rule div { opacity: 0.7; }
+      .man-cover-heading {
+        margin: 0;
+        text-align: center;
+      }
+      .man-cover-heading .man-display,
+      .man-cover-heading .man-display-it {
+        display: block;
+        font-size: clamp(72px, 12vw, 108px);
+      }
+      .man-cover-excerpt {
+        font-size: 17px;
+        opacity: 0.72;
+        max-width: 520px;
+        margin: 28px auto 0;
+        line-height: 1.55;
+      }
+      .man-cover-number {
+        text-align: center;
+        margin-top: 40px;
+        font-size: 11px;
+        opacity: 0.6;
+      }
+      .man-cover-tag {
+        font-size: 14px;
+        opacity: 0.82;
+      }
+
+      /* ── Footer ────────────────────────────────────────────── */
+      .man-footer {
+        text-align: center;
+        padding: 56px 24px;
+        background: #1B1815;
+      }
+      .man-footer-wordmark {
+        font-size: 26px;
+        color: #F4EFE5;
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      /* ── Typography utilities (mirror women's blueprint exactly) ─── */
+      .display {
+        font-family: 'Fraunces', serif;
+        font-weight: 300;
+        letter-spacing: -0.025em;
+        line-height: 0.95;
+      }
+      .display-it {
+        font-family: 'Fraunces', serif;
+        font-weight: 300;
+        font-style: italic;
+        letter-spacing: -0.025em;
+        line-height: 1.04;
+      }
+      .mono {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 400;
+        letter-spacing: 0;
+      }
+      .micro {
+        font-size: 9px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        font-weight: 400;
+      }
+      .small-caps {
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        font-weight: 400;
+      }
+      .faded { opacity: 0.55; }
+
+      /* ── Glass card ──────────────────────────────────────────── */
+      .glass-dark {
+        background: rgba(244,239,229,0.06);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(244,239,229,0.15);
+        border-radius: 18px;
+      }
+      .slate .glass-dark {
+        background: rgba(244,239,229,0.06);
+        border-color: rgba(244,239,229,0.15);
+      }
+
+      /* ── Rule ────────────────────────────────────────────────── */
+      .rule, .rule-thin {
+        height: 1px;
+        background: currentColor;
+        opacity: 0.18;
+      }
+      .rule-thin { opacity: 0.1; }
+      .quote-rule { margin: 40px 0 24px; }
+
+      /* ── Section editorial h2 headings ───────────────────────── */
+      .man-page h2 {
+        margin: 0 0 40px;
+      }
+      .man-page h2 span {
+        display: block;
+        font-size: clamp(44px, 7vw, 80px);
+      }
+
+      /* ── Dossier label (inherits page color, no hardcoded amber) ─ */
+      .dossier-label {
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        opacity: 0.45;
+        text-transform: uppercase;
+        letter-spacing: 0.10em;
+        margin-bottom: 6px;
+      }
+
+      /* ── Diagnosis quote ─────────────────────────────────────── */
+      .diagnosis-quote {
+        font-family: 'Fraunces', serif;
+        font-weight: 300;
+        font-style: italic;
+        font-size: 22px;
+        opacity: 0.75;
+        line-height: 1.5;
+        letter-spacing: -0.025em;
+      }
+
+      /* ── Slate page: force readable colors on all inner content ─
+         Inline styles (color: #8C5621 etc.) are dark and unreadable
+         on the slate blue background — override them site-wide.    */
+      .man-page.slate .man-page-inner p,
+      .man-page.slate .man-page-inner li,
+      .man-page.slate .man-page-inner td,
+      .man-page.slate .man-page-inner label {
+        color: rgba(244,239,229,0.78) !important;
+      }
+      .man-page.slate .man-page-inner h2,
+      .man-page.slate .man-page-inner h3,
+      .man-page.slate .man-page-inner h4,
+      .man-page.slate .man-page-inner strong,
+      .man-page.slate .man-page-inner b {
+        color: #F4EFE5 !important;
+      }
+      /* Cards inside slate sections: glass-dark instead of white/cream */
+      .man-page.slate .man-page-inner .rounded-2xl,
+      .man-page.slate .man-page-inner .rounded-3xl {
+        background: rgba(244,239,229,0.07) !important;
+        border-color: rgba(244,239,229,0.14) !important;
+        box-shadow: none !important;
+      }
+      /* Skeleton shimmer on slate */
+      .man-page.slate .skeleton-shimmer {
+        background: rgba(244,239,229,0.07);
+      }
+
+      /* ── Responsive ────────────────────────────────────────── */
+      @media (max-width: 900px) {
+        .man-page {
+          border-radius: 0;
+          margin-bottom: 0;
+          padding: 72px 20px 44px;
+        }
+        .corner-tl, .corner-tr {
+          top: 20px;
+        }
+        .corner-tl { left: 20px; }
+        .corner-tr { right: 20px; }
+        .man-cover-center {
+          position: relative;
+          top: auto;
+          left: auto;
+          right: auto;
+          padding: 140px 0 80px;
+        }
+      }
+    `}</style>
   );
 }
 

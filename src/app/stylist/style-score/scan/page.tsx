@@ -53,28 +53,47 @@ const CONTEXTS = [
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-function ProgressBar({ step }: { step: number }) {
-    const pct = (step / TOTAL_STEPS) * 100;
+function StepDots({ step }: { step: number }) {
     return (
-        <div className="w-full bg-luxury-cream rounded-full h-1.5 overflow-hidden">
-            <div className="bg-luxury-accent h-1.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${Math.min(pct, 100)}%` }} />
+        <div className="flex items-center gap-1.5">
+            {Array.from({ length: TOTAL_STEPS - 1 }, (_, i) => (
+                <div
+                    key={i}
+                    className="rounded-full transition-all duration-300"
+                    style={{
+                        width: i < step - 1 ? '16px' : '6px',
+                        height: '6px',
+                        background: i < step - 1
+                            ? 'var(--iconik-slate)'
+                            : i === step - 1
+                                ? 'var(--luxury-charcoal)'
+                                : 'var(--luxury-cream)',
+                    }}
+                />
+            ))}
         </div>
     );
 }
 
-function RadioCard({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
+function OptionCard({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
     return (
         <button
             type="button"
             onClick={onClick}
-            className={`w-full text-left border-2 rounded-xl px-5 py-4 transition-all duration-200 ${selected
-                ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10'
-                : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'}`}
+            className="w-full text-left rounded-xl px-5 py-4 transition-all duration-200 border"
+            style={{
+                background: selected ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+            }}
         >
             <div className="flex items-center gap-4">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? 'border-luxury-accent' : 'border-luxury-charcoal/20'}`}>
-                    {selected && <div className="w-2.5 h-2.5 bg-luxury-accent rounded-full" />}
-                </div>
+                <div
+                    className="w-4 h-4 rounded-full flex-shrink-0 border transition-all duration-200"
+                    style={{
+                        borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                        background: selected ? 'var(--luxury-charcoal)' : 'transparent',
+                    }}
+                />
                 {children}
             </div>
         </button>
@@ -167,20 +186,33 @@ export default function StyleScanPage() {
     };
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden flex flex-col">
+        <div className="min-h-screen text-luxury-charcoal overflow-x-hidden flex flex-col" style={{ background: 'var(--luxury-warm-white)' }}>
 
             {/* Header */}
-            <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream py-4 px-6 sticky top-0 z-20">
+            <header
+                className="py-4 px-6 sticky top-0 z-20"
+                style={{ background: 'rgba(244,239,229,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--luxury-cream)' }}
+            >
                 <div className="max-w-2xl mx-auto">
                     <div className="flex items-center justify-between mb-3">
-                        <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+                        <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '16px', letterSpacing: '0.32em', fontWeight: 400 }}>I C O N I K</span>
                         {step > 0 && (
-                            <span className="text-xs luxury-body text-luxury-charcoal/50 font-semibold tracking-widest uppercase">
-                                {step < TOTAL_STEPS ? `Question ${step} of ${TOTAL_STEPS - 1}` : 'Almost done'}
-                            </span>
+                            <div className="flex items-center gap-3">
+                                {step < TOTAL_STEPS && <StepDots step={step} />}
+                                <span className="iconik-mono text-luxury-charcoal/40" style={{ fontSize: '10px' }}>
+                                    {step < TOTAL_STEPS ? `${step} / ${TOTAL_STEPS - 1}` : 'Almost done'}
+                                </span>
+                            </div>
                         )}
                     </div>
-                    {step > 0 && <ProgressBar step={step} />}
+                    {step > 0 && (
+                        <div className="w-full rounded-full overflow-hidden" style={{ height: '2px', background: 'var(--luxury-cream)' }}>
+                            <div
+                                className="h-full rounded-full transition-all duration-500 ease-out"
+                                style={{ width: `${Math.min((step / TOTAL_STEPS) * 100, 100)}%`, background: 'var(--iconik-slate)' }}
+                            />
+                        </div>
+                    )}
                 </div>
             </header>
 
@@ -195,77 +227,85 @@ export default function StyleScanPage() {
                             animate="center"
                             exit="exit"
                             transition={{ duration: 0.3, ease: 'easeOut' }}
-                            className="bg-luxury-warm-white md:bg-luxury-cream/20 md:backdrop-blur-sm md:border md:border-luxury-cream md:rounded-3xl md:p-10 md:shadow-xl md:shadow-luxury-accent/5"
+                            className="rounded-2xl border p-8 md:p-10"
+                            style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}
                         >
 
                             {/* ── Step 0: Welcome ──────────────────────────── */}
                             {step === 0 && (
                                 <div className="text-center">
-                                    <div className="w-20 h-20 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative">
-                                        <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
-                                        <CheckCircle className="w-10 h-10 text-luxury-accent relative z-10" />
-                                    </div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Free ICONIK Style Scan</p>
-                                    <h1 className="text-3xl md:text-4xl luxury-heading text-luxury-charcoal mb-5 leading-tight">
-                                        Your free Style Score + Personal Mood Board.
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-10">Free ICONIK Style Scan</div>
+
+                                    <h1 className="iconik-display text-luxury-charcoal mb-2" style={{ fontSize: 'clamp(40px, 6vw, 64px)' }}>
+                                        Your free Style Score
                                     </h1>
-                                    <p className="luxury-body text-luxury-charcoal/70 text-base leading-relaxed mb-8 max-w-sm mx-auto">
+                                    <h1 className="iconik-display-it text-luxury-charcoal mb-10" style={{ fontSize: 'clamp(40px, 6vw, 64px)', opacity: 0.75 }}>
+                                        + Personal Mood Board.
+                                    </h1>
+
+                                    <div className="h-px mb-8" style={{ background: 'var(--luxury-cream)' }} />
+
+                                    <p className="luxury-body text-luxury-charcoal/55 text-base leading-relaxed mb-10 max-w-sm mx-auto" style={{ fontWeight: 300 }}>
                                         6 quick questions. A personalised result that shows you exactly where your style is losing alignment — and how to fix it.
                                     </p>
+
                                     <button
                                         onClick={goNext}
-                                        className="inline-flex items-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 text-base font-semibold luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                                        className="inline-flex items-center gap-3 px-10 py-4 text-base luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                                        style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                                     >
-                                        Start My Free Style Scan <ArrowRight className="w-5 h-5" />
+                                        Start My Free Style Scan <ArrowRight className="w-4 h-4" />
                                     </button>
-                                    <p className="luxury-body text-luxury-charcoal/40 text-xs mt-4">Takes 3 minutes · 100% free · No card required</p>
+                                    <p className="luxury-body text-luxury-charcoal/30 text-xs mt-5">Takes 3 minutes · 100% free · No card required</p>
                                 </div>
                             )}
 
                             {/* ── Step 1: Email ────────────────────────────── */}
                             {step === 1 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Before We Start</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-3">Where should we send your results?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-7">Your Style Score and Mood Board will be ready at the end. Enter your email so they don&apos;t disappear.</p>
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Before We Start</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>Where should we send your results?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/50 text-sm mb-8" style={{ fontWeight: 300 }}>Your Style Score and Mood Board will be ready at the end. Enter your email so they don&apos;t disappear.</p>
                                     <div>
-                                        <label className="block text-sm font-semibold luxury-body text-luxury-charcoal/70 mb-2">Email Address</label>
+                                        <label className="iconik-micro text-luxury-charcoal/40 block mb-3">Email Address</label>
                                         <input
                                             type="email"
                                             value={email}
                                             onChange={e => { setEmail(e.target.value); setEmailError(''); }}
                                             onKeyDown={e => { if (e.key === 'Enter' && stepValid()) handleNextOrComplete(); }}
-                                            className="w-full px-4 py-4 border-2 border-luxury-cream rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all text-base bg-white luxury-body"
+                                            className="w-full px-4 py-4 rounded-xl transition-all text-base luxury-body outline-none"
+                                            style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)', color: 'var(--luxury-charcoal)' }}
                                             placeholder="your@email.com"
                                             autoFocus
                                         />
-                                        {emailError && <p className="text-luxury-accent text-xs mt-2 luxury-body">{emailError}</p>}
-                                        <p className="text-xs text-luxury-charcoal/40 mt-2 luxury-body">We&apos;ll only send your result — no spam, ever.</p>
+                                        {emailError && <p className="iconik-mono text-red-500 text-xs mt-2">{emailError}</p>}
+                                        <p className="luxury-body text-luxury-charcoal/35 text-xs mt-2" style={{ fontWeight: 300 }}>We&apos;ll only send your result — no spam, ever.</p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── Step 2: Style Struggle (emoji cards) ─────── */}
+                            {/* ── Step 2: Style Struggle ──────────────────── */}
                             {step === 2 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Question 1 of 5</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-3">What&apos;s your biggest style struggle right now?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-7">Select one.</p>
-                                    <div className="space-y-3">
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Question 1 of 5</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-8" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>What&apos;s your biggest style struggle right now?</h2>
+                                    <div className="space-y-2">
                                         {STRUGGLES.map(o => (
                                             <button
                                                 key={o.value}
                                                 type="button"
                                                 onClick={() => setStruggle(o.value)}
-                                                className={`w-full text-left border-2 rounded-xl px-5 py-4 transition-all duration-200 ${struggle === o.value
-                                                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10'
-                                                    : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'}`}
+                                                className="w-full text-left rounded-xl px-5 py-4 transition-all duration-200 border"
+                                                style={{
+                                                    background: struggle === o.value ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                                                    borderColor: struggle === o.value ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                                                }}
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <span className="text-2xl flex-shrink-0">{o.emoji}</span>
+                                                    <span className="text-xl flex-shrink-0">{o.emoji}</span>
                                                     <div>
-                                                        <div className="font-semibold text-luxury-charcoal luxury-body text-sm">{o.label}</div>
-                                                        <div className="text-xs text-luxury-charcoal/50 luxury-body mt-0.5">{o.sub}</div>
+                                                        <div className="luxury-body text-luxury-charcoal text-sm" style={{ fontWeight: struggle === o.value ? 500 : 400 }}>{o.label}</div>
+                                                        <div className="luxury-body text-luxury-charcoal/40 text-xs mt-0.5" style={{ fontWeight: 300 }}>{o.sub}</div>
                                                     </div>
                                                 </div>
                                             </button>
@@ -274,14 +314,12 @@ export default function StyleScanPage() {
                                 </div>
                             )}
 
-                            {/* ── Step 3: Body Shape (image cards) ─────────── */}
+                            {/* ── Step 3: Body Shape ───────────────────────── */}
                             {step === 3 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Question 2 of 5</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-3">Which silhouette is closest to yours?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-6">Select one. Don&apos;t overthink it — go with your instinct.</p>
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Question 2 of 5</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-7" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Which silhouette is closest to yours?</h2>
 
-                                    {/* First 4 in 2-column grid */}
                                     <div className="grid grid-cols-2 gap-3 mb-3">
                                         {BODY_SHAPES.slice(0, 4).map(o => {
                                             const selected = bodyShape === o.value;
@@ -290,28 +328,26 @@ export default function StyleScanPage() {
                                                     key={o.value}
                                                     type="button"
                                                     onClick={() => setBodyShape(o.value)}
-                                                    className={`relative flex flex-col border-2 rounded-2xl overflow-hidden transition-all duration-200 text-left ${selected
-                                                        ? 'border-luxury-accent shadow-md shadow-luxury-accent/15'
-                                                        : 'border-luxury-cream hover:border-luxury-accent/40'}`}
+                                                    className="relative flex flex-col rounded-xl overflow-hidden transition-all duration-200 text-left border"
+                                                    style={{ borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)' }}
                                                 >
                                                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
                                                         <Image src={o.image} alt={o.label} fill className="object-cover" />
                                                         {selected && (
-                                                            <div className="absolute top-2 right-2 w-6 h-6 bg-luxury-accent rounded-full flex items-center justify-center shadow-md">
-                                                                <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--luxury-charcoal)' }}>
+                                                                <CheckCircle className="w-3 h-3 text-white" />
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className={`px-3 py-2.5 ${selected ? 'bg-luxury-pink-bg' : 'bg-luxury-warm-white'}`}>
-                                                        <p className={`font-semibold luxury-body text-xs ${selected ? 'text-luxury-accent' : 'text-luxury-charcoal'}`}>{o.label}</p>
-                                                        <p className="text-[10px] luxury-body text-luxury-charcoal/50 mt-0.5 leading-snug">{o.sub}</p>
+                                                    <div className="px-3 py-2.5" style={{ background: selected ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)' }}>
+                                                        <p className="luxury-body text-luxury-charcoal text-xs" style={{ fontWeight: selected ? 500 : 400 }}>{o.label}</p>
+                                                        <p className="luxury-body text-luxury-charcoal/40 leading-snug" style={{ fontSize: '10px', fontWeight: 300 }}>{o.sub}</p>
                                                     </div>
                                                 </button>
                                             );
                                         })}
                                     </div>
 
-                                    {/* 5th card centred at half width */}
                                     {(() => {
                                         const o = BODY_SHAPES[4];
                                         const selected = bodyShape === o.value;
@@ -320,21 +356,20 @@ export default function StyleScanPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setBodyShape(o.value)}
-                                                    className={`relative flex flex-col border-2 rounded-2xl overflow-hidden transition-all duration-200 text-left w-[calc(50%-6px)] ${selected
-                                                        ? 'border-luxury-accent shadow-md shadow-luxury-accent/15'
-                                                        : 'border-luxury-cream hover:border-luxury-accent/40'}`}
+                                                    className="relative flex flex-col rounded-xl overflow-hidden transition-all duration-200 text-left border"
+                                                    style={{ width: 'calc(50% - 6px)', borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)' }}
                                                 >
                                                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
                                                         <Image src={o.image} alt={o.label} fill className="object-cover" />
                                                         {selected && (
-                                                            <div className="absolute top-2 right-2 w-6 h-6 bg-luxury-accent rounded-full flex items-center justify-center shadow-md">
-                                                                <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--luxury-charcoal)' }}>
+                                                                <CheckCircle className="w-3 h-3 text-white" />
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className={`px-3 py-2.5 ${selected ? 'bg-luxury-pink-bg' : 'bg-luxury-warm-white'}`}>
-                                                        <p className={`font-semibold luxury-body text-xs ${selected ? 'text-luxury-accent' : 'text-luxury-charcoal'}`}>{o.label}</p>
-                                                        <p className="text-[10px] luxury-body text-luxury-charcoal/50 mt-0.5 leading-snug">{o.sub}</p>
+                                                    <div className="px-3 py-2.5" style={{ background: selected ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)' }}>
+                                                        <p className="luxury-body text-luxury-charcoal text-xs" style={{ fontWeight: selected ? 500 : 400 }}>{o.label}</p>
+                                                        <p className="luxury-body text-luxury-charcoal/40 leading-snug" style={{ fontSize: '10px', fontWeight: 300 }}>{o.sub}</p>
                                                     </div>
                                                 </button>
                                             </div>
@@ -343,58 +378,54 @@ export default function StyleScanPage() {
                                 </div>
                             )}
 
-                            {/* ── Step 4: Undertone (split-screen colour test) */}
+                            {/* ── Step 4: Undertone ───────────────────────── */}
                             {step === 4 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Question 3 of 5</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-2">Which shade makes your skin look more alive?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-5">
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Question 3 of 5</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Which shade makes your skin look more alive?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/50 text-sm mb-6" style={{ fontWeight: 300 }}>
                                         Hold your phone flat against your inner wrist. Look in a mirror. Which side makes your skin glow more?
                                     </p>
 
-                                    {/* Split-screen colour swatch */}
-                                    <div className="rounded-2xl overflow-hidden border border-luxury-cream mb-2 shadow-sm" style={{ height: '120px' }}>
+                                    <div className="rounded-xl overflow-hidden border mb-2" style={{ borderColor: 'var(--luxury-cream)', height: '100px' }}>
                                         <div className="flex h-full">
-                                            <div className="flex-1 flex flex-col items-center justify-center gap-1.5" style={{ backgroundColor: '#E8C080' }}>
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5C3D0A]/70">Warm</span>
-                                                <span className="text-[9px] luxury-body text-[#5C3D0A]/50">Golden · Peachy</span>
+                                            <div className="flex-1 flex flex-col items-center justify-center gap-1" style={{ backgroundColor: '#E8C080' }}>
+                                                <span className="iconik-micro" style={{ color: 'rgba(92,61,10,0.7)' }}>Warm</span>
+                                                <span className="luxury-body" style={{ fontSize: '9px', color: 'rgba(92,61,10,0.5)', fontWeight: 300 }}>Golden · Peachy</span>
                                             </div>
-                                            <div className="w-px bg-white/60" />
-                                            <div className="flex-1 flex flex-col items-center justify-center gap-1.5" style={{ backgroundColor: '#B0A8D8' }}>
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2A1F5C]/70">Cool</span>
-                                                <span className="text-[9px] luxury-body text-[#2A1F5C]/50">Lavender · Pink</span>
+                                            <div className="w-px" style={{ background: 'rgba(255,255,255,0.6)' }} />
+                                            <div className="flex-1 flex flex-col items-center justify-center gap-1" style={{ backgroundColor: '#B0A8D8' }}>
+                                                <span className="iconik-micro" style={{ color: 'rgba(42,31,92,0.7)' }}>Cool</span>
+                                                <span className="luxury-body" style={{ fontSize: '9px', color: 'rgba(42,31,92,0.5)', fontWeight: 300 }}>Lavender · Pink</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <p className="text-[10px] luxury-body text-luxury-charcoal/40 text-center mb-6">
+                                    <p className="luxury-body text-luxury-charcoal/30 text-center text-xs mb-6" style={{ fontWeight: 300 }}>
                                         Hold your phone against your inner wrist — not on screen
                                     </p>
 
-                                    {/* Answer cards */}
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {UNDERTONES.map(o => (
-                                            <RadioCard key={o.value} selected={undertone === o.value} onClick={() => setUndertone(o.value)}>
+                                            <OptionCard key={o.value} selected={undertone === o.value} onClick={() => setUndertone(o.value)}>
                                                 <div className="flex items-center gap-3 flex-1">
-                                                    <div className="w-4 h-4 rounded-full flex-shrink-0 border border-luxury-cream/80 shadow-sm" style={{ backgroundColor: o.dotColour }} />
+                                                    <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 border" style={{ backgroundColor: o.dotColour, borderColor: 'var(--luxury-cream)' }} />
                                                     <div>
-                                                        <div className="font-semibold text-luxury-charcoal luxury-body">{o.label}</div>
-                                                        <div className="text-xs text-luxury-charcoal/50 luxury-body mt-0.5">{o.sub}</div>
+                                                        <div className="luxury-body text-luxury-charcoal text-sm" style={{ fontWeight: undertone === o.value ? 500 : 400 }}>{o.label}</div>
+                                                        <div className="luxury-body text-luxury-charcoal/40 text-xs mt-0.5" style={{ fontWeight: 300 }}>{o.sub}</div>
                                                     </div>
                                                 </div>
-                                            </RadioCard>
+                                            </OptionCard>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── Step 5: Aesthetic (image cards) ──────────── */}
+                            {/* ── Step 5: Aesthetic ───────────────────────── */}
                             {step === 5 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Question 4 of 5</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-3">Which of these feels most like the style you want?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-6">Select one.</p>
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Question 4 of 5</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-7" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Which of these feels most like the style you want?</h2>
 
-                                    {/* First 4 in 2-column grid */}
                                     <div className="grid grid-cols-2 gap-3 mb-3">
                                         {AESTHETICS.slice(0, 4).map(o => {
                                             const selected = aesthetic === o.value;
@@ -403,28 +434,26 @@ export default function StyleScanPage() {
                                                     key={o.value}
                                                     type="button"
                                                     onClick={() => setAesthetic(o.value)}
-                                                    className={`relative flex flex-col border-2 rounded-2xl overflow-hidden transition-all duration-200 text-left ${selected
-                                                        ? 'border-luxury-accent shadow-md shadow-luxury-accent/15'
-                                                        : 'border-luxury-cream hover:border-luxury-accent/40'}`}
+                                                    className="relative flex flex-col rounded-xl overflow-hidden transition-all duration-200 text-left border"
+                                                    style={{ borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)' }}
                                                 >
                                                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
                                                         <Image src={o.image} alt={o.label} fill className="object-cover" />
                                                         {selected && (
-                                                            <div className="absolute top-2 right-2 w-6 h-6 bg-luxury-accent rounded-full flex items-center justify-center shadow-md">
-                                                                <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--luxury-charcoal)' }}>
+                                                                <CheckCircle className="w-3 h-3 text-white" />
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className={`px-3 py-2.5 ${selected ? 'bg-luxury-pink-bg' : 'bg-luxury-warm-white'}`}>
-                                                        <p className={`font-semibold luxury-body text-xs ${selected ? 'text-luxury-accent' : 'text-luxury-charcoal'}`}>{o.label}</p>
-                                                        <p className="text-[10px] luxury-body text-luxury-charcoal/50 mt-0.5 leading-snug">{o.sub}</p>
+                                                    <div className="px-3 py-2.5" style={{ background: selected ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)' }}>
+                                                        <p className="luxury-body text-luxury-charcoal text-xs" style={{ fontWeight: selected ? 500 : 400 }}>{o.label}</p>
+                                                        <p className="luxury-body text-luxury-charcoal/40 leading-snug" style={{ fontSize: '10px', fontWeight: 300 }}>{o.sub}</p>
                                                     </div>
                                                 </button>
                                             );
                                         })}
                                     </div>
 
-                                    {/* 5th card centred at half width */}
                                     {(() => {
                                         const o = AESTHETICS[4];
                                         const selected = aesthetic === o.value;
@@ -433,21 +462,20 @@ export default function StyleScanPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setAesthetic(o.value)}
-                                                    className={`relative flex flex-col border-2 rounded-2xl overflow-hidden transition-all duration-200 text-left w-[calc(50%-6px)] ${selected
-                                                        ? 'border-luxury-accent shadow-md shadow-luxury-accent/15'
-                                                        : 'border-luxury-cream hover:border-luxury-accent/40'}`}
+                                                    className="relative flex flex-col rounded-xl overflow-hidden transition-all duration-200 text-left border"
+                                                    style={{ width: 'calc(50% - 6px)', borderColor: selected ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)' }}
                                                 >
                                                     <div className="relative w-full" style={{ aspectRatio: '3/4' }}>
                                                         <Image src={o.image} alt={o.label} fill className="object-cover" />
                                                         {selected && (
-                                                            <div className="absolute top-2 right-2 w-6 h-6 bg-luxury-accent rounded-full flex items-center justify-center shadow-md">
-                                                                <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--luxury-charcoal)' }}>
+                                                                <CheckCircle className="w-3 h-3 text-white" />
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className={`px-3 py-2.5 ${selected ? 'bg-luxury-pink-bg' : 'bg-luxury-warm-white'}`}>
-                                                        <p className={`font-semibold luxury-body text-xs ${selected ? 'text-luxury-accent' : 'text-luxury-charcoal'}`}>{o.label}</p>
-                                                        <p className="text-[10px] luxury-body text-luxury-charcoal/50 mt-0.5 leading-snug">{o.sub}</p>
+                                                    <div className="px-3 py-2.5" style={{ background: selected ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)' }}>
+                                                        <p className="luxury-body text-luxury-charcoal text-xs" style={{ fontWeight: selected ? 500 : 400 }}>{o.label}</p>
+                                                        <p className="luxury-body text-luxury-charcoal/40 leading-snug" style={{ fontSize: '10px', fontWeight: 300 }}>{o.sub}</p>
                                                     </div>
                                                 </button>
                                             </div>
@@ -456,25 +484,26 @@ export default function StyleScanPage() {
                                 </div>
                             )}
 
-                            {/* ── Step 6: Dressing Context (emoji cards) ─────── */}
+                            {/* ── Step 6: Context ─────────────────────────── */}
                             {step === 6 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Question 5 of 5</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-3">Where do you most need to look great?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-7">Select one.</p>
-                                    <div className="space-y-3">
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Question 5 of 5</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-8" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Where do you most need to look great?</h2>
+                                    <div className="space-y-2">
                                         {CONTEXTS.map(o => (
                                             <button
                                                 key={o.value}
                                                 type="button"
                                                 onClick={() => setDressingContext(o.value)}
-                                                className={`w-full text-left border-2 rounded-xl px-5 py-4 transition-all duration-200 ${dressingContext === o.value
-                                                    ? 'border-luxury-accent bg-luxury-pink-bg shadow-sm shadow-luxury-accent/10'
-                                                    : 'border-luxury-cream bg-luxury-warm-white hover:border-luxury-accent/40 hover:bg-luxury-cream/10'}`}
+                                                className="w-full text-left rounded-xl px-5 py-4 transition-all duration-200 border"
+                                                style={{
+                                                    background: dressingContext === o.value ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                                                    borderColor: dressingContext === o.value ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                                                }}
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <span className="text-2xl flex-shrink-0">{o.emoji}</span>
-                                                    <span className="font-semibold text-luxury-charcoal luxury-body">{o.label}</span>
+                                                    <span className="text-xl flex-shrink-0">{o.emoji}</span>
+                                                    <span className="luxury-body text-luxury-charcoal text-sm" style={{ fontWeight: dressingContext === o.value ? 500 : 400 }}>{o.label}</span>
                                                 </div>
                                             </button>
                                         ))}
@@ -482,42 +511,48 @@ export default function StyleScanPage() {
                                 </div>
                             )}
 
-                            {/* ── Step 7: Optional Photo ────────────────────── */}
+                            {/* ── Step 7: Optional Photo ──────────────────── */}
                             {step === 7 && (
                                 <div>
-                                    <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-4">Optional — Boost Your Accuracy</p>
-                                    <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-3">Want a more accurate Style Score?</h2>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm mb-2">Upload a clear photo — a simple selfie is fine. This helps us calibrate your score.</p>
-                                    <p className="luxury-body text-luxury-accent text-xs mb-7 font-semibold">Completely optional. Skip if you prefer.</p>
+                                    <div className="iconik-micro text-luxury-charcoal/35 mb-6">Optional — Boost Your Accuracy</div>
+                                    <h2 className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Want a more accurate Style Score?</h2>
+                                    <p className="luxury-body text-luxury-charcoal/50 text-sm mb-2" style={{ fontWeight: 300 }}>Upload a clear photo — a simple selfie is fine. This helps us calibrate your score.</p>
+                                    <p className="luxury-body text-luxury-charcoal/40 text-xs mb-7" style={{ fontWeight: 300 }}>Completely optional. Skip if you prefer.</p>
 
-                                    <label className="block cursor-pointer group mb-6">
-                                        <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-200 ${photo ? 'border-luxury-accent bg-luxury-pink-bg' : 'border-luxury-cream bg-luxury-warm-white group-hover:border-luxury-accent/50 group-hover:bg-luxury-cream/20'}`}>
+                                    <label className="block cursor-pointer group mb-5">
+                                        <div
+                                            className="border-dashed rounded-xl p-8 text-center transition-all duration-200 border-2"
+                                            style={{
+                                                background: photo ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                                                borderColor: photo ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                                            }}
+                                        >
                                             {photo ? (
                                                 <div className="flex flex-col items-center gap-3">
                                                     {uploading
-                                                        ? <div className="w-10 h-10 border-2 border-luxury-accent/30 border-t-luxury-accent rounded-full animate-spin" />
-                                                        : <CheckCircle className="w-10 h-10 text-luxury-accent" />
+                                                        ? <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--luxury-cream)', borderTopColor: 'var(--luxury-charcoal)' }} />
+                                                        : <CheckCircle className="w-8 h-8 text-luxury-charcoal" />
                                                     }
-                                                    <div className="font-semibold text-luxury-charcoal luxury-body text-sm">{uploading ? 'Uploading…' : photo.name}</div>
-                                                    {!uploading && <div className="text-xs text-luxury-charcoal/50 luxury-body">Click to change</div>}
+                                                    <div className="luxury-body text-luxury-charcoal text-sm">{uploading ? 'Uploading…' : photo.name}</div>
+                                                    {!uploading && <div className="luxury-body text-luxury-charcoal/40 text-xs">Click to change</div>}
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-3">
-                                                    <Upload className="w-10 h-10 text-luxury-charcoal/30 group-hover:text-luxury-accent transition-colors" />
-                                                    <div className="font-semibold text-luxury-charcoal luxury-body">Upload a photo</div>
-                                                    <div className="text-sm luxury-body text-luxury-charcoal/50">Selfie · Full body · Any angle</div>
-                                                    <div className="text-xs luxury-body text-luxury-charcoal/30 uppercase tracking-wider">JPG · PNG · HEIC · Max 20MB</div>
+                                                    <Upload className="w-8 h-8 text-luxury-charcoal/25" />
+                                                    <div className="luxury-body text-luxury-charcoal text-sm">Upload a photo</div>
+                                                    <div className="luxury-body text-luxury-charcoal/40 text-xs">Selfie · Full body · Any angle</div>
+                                                    <div className="iconik-micro text-luxury-charcoal/25">JPG · PNG · HEIC · Max 20MB</div>
                                                 </div>
                                             )}
                                             <input type="file" accept=".jpg,.jpeg,.png,.heic,.heif" className="hidden" onChange={e => handlePhotoChange(e.target.files?.[0] ?? null)} />
                                         </div>
                                     </label>
 
-                                    <div className="flex items-center gap-3 p-3 bg-luxury-cream/30 rounded-xl">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
                                         <div className="relative w-10 h-14 flex-shrink-0 rounded-lg overflow-hidden">
                                             <Image src="/headshot.webp" alt="Example photo" fill className="object-cover" />
                                         </div>
-                                        <p className="text-xs luxury-body text-luxury-charcoal/50 leading-relaxed">
+                                        <p className="luxury-body text-luxury-charcoal/45 leading-relaxed text-xs" style={{ fontWeight: 300 }}>
                                             A clear selfie like this works perfectly. Natural light is ideal but not required.
                                         </p>
                                     </div>
@@ -528,12 +563,13 @@ export default function StyleScanPage() {
                     </AnimatePresence>
 
                     {/* Navigation */}
-                    <div className={`flex mt-8 gap-4 ${step > 0 ? 'justify-between' : 'justify-end'}`}>
+                    <div className={`flex mt-6 gap-4 ${step > 0 ? 'justify-between' : 'justify-end'}`}>
                         {step > 0 && (
                             <button
                                 type="button"
                                 onClick={goBack}
-                                className="flex items-center gap-2 px-6 py-3 border-2 border-luxury-cream rounded-full text-luxury-charcoal/70 luxury-body font-semibold hover:border-luxury-charcoal/30 hover:text-luxury-charcoal transition-all"
+                                className="flex items-center gap-2 px-6 py-3 rounded-full luxury-body transition-all border"
+                                style={{ borderColor: 'var(--luxury-cream)', color: 'var(--luxury-charcoal)', background: 'transparent' }}
                             >
                                 <ArrowLeft className="w-4 h-4" /> Back
                             </button>
@@ -543,18 +579,20 @@ export default function StyleScanPage() {
                                 type="button"
                                 onClick={handleComplete}
                                 disabled={uploading}
-                                className="flex items-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 text-luxury-warm-white px-10 py-3 text-base font-semibold luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg"
+                                className="flex items-center gap-3 px-10 py-3 text-base luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+                                style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                             >
-                                {uploading ? 'Uploading…' : 'Get My Style Score'} <ArrowRight className="w-5 h-5" />
+                                {uploading ? 'Uploading…' : 'Get My Style Score'} <ArrowRight className="w-4 h-4" />
                             </button>
                         ) : step > 0 ? (
                             <button
                                 type="button"
                                 onClick={handleNextOrComplete}
                                 disabled={!stepValid()}
-                                className="flex items-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-40 disabled:cursor-not-allowed text-luxury-warm-white px-10 py-3 text-base font-semibold luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg"
+                                className="flex items-center gap-3 px-10 py-3 text-base luxury-body rounded-full transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                                style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                             >
-                                Continue <ArrowRight className="w-5 h-5" />
+                                Continue <ArrowRight className="w-4 h-4" />
                             </button>
                         ) : null}
                     </div>

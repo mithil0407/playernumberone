@@ -123,7 +123,8 @@ function IntakeButton({ href, label = 'Complete My Intake Now' }: { href: string
     return (
         <Link
             href={href}
-            className="inline-flex w-full items-center justify-center gap-3 bg-luxury-charcoal hover:bg-luxury-charcoal/85 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg"
+            className="inline-flex w-full items-center justify-center gap-3 px-8 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-lg"
+            style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
         >
             {label} <ArrowRight className="w-4 h-4" />
         </Link>
@@ -338,15 +339,15 @@ function StylistSuccessInner() {
 
     if (editPurchased) {
         return (
-            <div className="min-h-screen bg-luxury-warm-white flex flex-col items-center justify-center px-4 text-center">
+            <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
                 <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                    className="w-24 h-24 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative"
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8"
+                    style={{ background: 'var(--iconik-slate-deep)' }}
                 >
-                    <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
-                    <CheckCircle className="w-12 h-12 text-luxury-accent relative z-10" />
+                    <CheckCircle className="w-8 h-8 text-luxury-warm-white" />
                 </motion.div>
 
                 <motion.div
@@ -355,44 +356,40 @@ function StylistSuccessInner() {
                     transition={{ delay: 0.2 }}
                     className="max-w-lg"
                 >
-                    <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider block mb-6">ICONIK</span>
-                    <h1 className="text-3xl md:text-5xl luxury-heading text-luxury-charcoal mb-5 leading-tight">
+                    <div className="iconik-display text-luxury-charcoal mb-6" style={{ fontSize: '16px', letterSpacing: '0.32em' }}>I C O N I K</div>
+                    <h1 className="iconik-display text-luxury-charcoal mb-5" style={{ fontSize: 'clamp(28px, 5vw, 44px)', lineHeight: 1.1 }}>
                         Your Blueprint and ICONIK Edit are confirmed.
                     </h1>
-                    <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-4">
+                    <p className="luxury-body text-luxury-charcoal/55 text-base leading-relaxed mb-4" style={{ fontWeight: 300 }}>
                         You&apos;ll receive a link to complete your intake form at{' '}
-                        {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'} shortly.
+                        {email ? <strong className="text-luxury-charcoal font-medium">{email}</strong> : 'your email'} shortly.
                     </p>
-                    <p className="luxury-body text-luxury-charcoal/60 leading-relaxed mb-8">
-                        Your Blueprint arrives within <strong className="text-luxury-charcoal">72 hours</strong> of completing the intake form.
+                    <p className="luxury-body text-luxury-charcoal/45 leading-relaxed mb-8" style={{ fontWeight: 300 }}>
+                        Your Blueprint arrives within <span className="text-luxury-charcoal">72 hours</span> of completing the intake form.
                     </p>
-                    <div className="mb-5">
-                        <IntakeButton href={intakeHref} />
-                    </div>
-                    <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
+                    <div className="mb-5"><IntakeButton href={intakeHref} /></div>
+                    <div className="rounded-2xl p-5 mb-8 text-left space-y-3 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
+                        <div className="iconik-micro text-luxury-charcoal/40 mb-3">Next Steps</div>
                         {[
                             'Complete the intake form here now, or use the email link later',
                             'Receive your personalised Blueprint within 72 hours',
                             'Your ICONIK Edit is active — your first drop arrives within 72 hours',
                         ].map((step, i) => (
-                            <div key={i} className="flex items-center gap-3">
-                                <div className="w-6 h-6 bg-luxury-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span className="text-[10px] font-black text-luxury-accent">{i + 1}</span>
+                            <div key={i} className="flex items-start gap-3">
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--luxury-charcoal)' }}>
+                                    <span className="iconik-mono text-luxury-warm-white" style={{ fontSize: '9px' }}>{i + 1}</span>
                                 </div>
-                                <span className="luxury-body text-luxury-charcoal/80 text-sm">{step}</span>
+                                <span className="luxury-body text-luxury-charcoal/65 text-sm" style={{ fontWeight: 300 }}>{step}</span>
                             </div>
                         ))}
                     </div>
-                    <p className="luxury-body text-luxury-charcoal/40 text-sm">
+                    <p className="luxury-body text-luxury-charcoal/35 text-sm" style={{ fontWeight: 300 }}>
                         Questions? Email us at{' '}
-                        <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-accent hover:underline">help.iconikfashion@gmail.com</a>
+                        <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-charcoal hover:underline">help.iconikfashion@gmail.com</a>
                     </p>
                 </motion.div>
                 <footer className="mt-16">
-                    <Link href="/" className="luxury-body text-luxury-charcoal/30 text-xs hover:text-luxury-charcoal transition-colors">
-                        ← Back to ICONIK
-                    </Link>
+                    <Link href="/" className="luxury-body text-luxury-charcoal/30 text-xs hover:text-luxury-charcoal transition-colors">← Back to ICONIK</Link>
                 </footer>
             </div>
         );
@@ -402,14 +399,15 @@ function StylistSuccessInner() {
 
     if (hasCheckoutEditIntent && !noThanks) {
         return (
-            <div className="min-h-screen bg-luxury-warm-white flex flex-col items-center justify-center px-4 text-center">
+            <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
                 <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                    className="w-24 h-24 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-8 relative"
+                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8"
+                    style={{ background: 'var(--luxury-cream)' }}
                 >
-                    <CheckCircle className="w-12 h-12 text-luxury-accent relative z-10" />
+                    <CheckCircle className="w-8 h-8 text-luxury-charcoal" />
                 </motion.div>
 
                 <motion.div
@@ -418,42 +416,41 @@ function StylistSuccessInner() {
                     transition={{ delay: 0.2 }}
                     className="max-w-lg w-full"
                 >
-                    <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider block mb-4">ICONIK</span>
-                    <h1 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal mb-3 leading-tight">
+                    <div className="iconik-display text-luxury-charcoal mb-5" style={{ fontSize: '16px', letterSpacing: '0.32em' }}>I C O N I K</div>
+                    <h1 className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: 'clamp(24px, 4vw, 36px)', lineHeight: 1.1 }}>
                         Finish authorizing your selected ICONIK Edit.
                     </h1>
-                    <p className="luxury-body text-luxury-charcoal/60 mb-8">
+                    <p className="luxury-body text-luxury-charcoal/50 mb-8" style={{ fontWeight: 300 }}>
                         {editAuthorizationReady
                             ? 'Your Blueprint is confirmed. Complete the $39/month authorization to activate your Edit.'
                             : 'We saved your Edit selection. Retry setup below to authorize it.'}
                     </p>
 
-                    <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-6 text-left mb-6">
-                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40 mb-4">THE ICONIK EDIT — $39/month</p>
-                        <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed mb-4">
+                    <div className="rounded-2xl p-6 text-left mb-5 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
+                        <div className="iconik-micro text-luxury-charcoal/40 mb-4">The ICONIK Edit — $39/month</div>
+                        <p className="luxury-body text-luxury-charcoal/55 text-sm leading-relaxed mb-4" style={{ fontWeight: 300 }}>
                             This was selected at checkout. If the payment popup did not open or was closed, continue here.
                         </p>
-                        <div className="space-y-2.5 mb-5">
+                        <div className="space-y-2.5 mb-4">
                             {EDIT_BULLETS.map((b, i) => (
                                 <div key={i} className="flex items-start gap-2.5">
-                                    <span className="text-luxury-accent text-xs mt-0.5 flex-shrink-0">→</span>
-                                    <span className="luxury-body text-luxury-charcoal/70 text-sm">{b}</span>
+                                    <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--luxury-charcoal)', opacity: 0.35 }} />
+                                    <span className="luxury-body text-luxury-charcoal/60 text-sm" style={{ fontWeight: 300 }}>{b}</span>
                                 </div>
                             ))}
                         </div>
-                        <p className="luxury-body text-luxury-charcoal/40 text-xs">
-                            $39 billed today · Then monthly · Cancel anytime
-                        </p>
+                        <div className="iconik-mono text-luxury-charcoal/35" style={{ fontSize: '10px' }}>$39 billed today · Then monthly · Cancel anytime</div>
                     </div>
 
                     {editError && (
-                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body mb-4">{editError}</div>
+                        <div className="rounded-xl p-3 text-sm luxury-body mb-4" style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>{editError}</div>
                     )}
 
                     <button
                         onClick={handleAddEdit}
                         disabled={editLoading}
-                        className="w-full inline-flex items-center justify-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg mb-4"
+                        className="w-full inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-lg mb-4 disabled:opacity-50"
+                        style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                     >
                         {editLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</> : <>{editActionLabel} <ArrowRight className="w-4 h-4" /></>}
                     </button>
@@ -465,14 +462,12 @@ function StylistSuccessInner() {
                             setEditState('declined');
                             localStorage.setItem('stylist_editSelected', 'false');
                         }}
-                        className="w-full luxury-body text-luxury-charcoal/40 text-sm hover:text-luxury-charcoal/60 transition-colors"
+                        className="w-full luxury-body text-luxury-charcoal/35 text-sm hover:text-luxury-charcoal/55 transition-colors mb-5"
                     >
                         No thanks, just the Blueprint
                     </button>
 
-                    <div className="mt-6">
-                        <IntakeButton href={intakeHref} label="Go To Intake Form" />
-                    </div>
+                    <IntakeButton href={intakeHref} label="Go To Intake Form" />
                 </motion.div>
             </div>
         );
@@ -481,40 +476,34 @@ function StylistSuccessInner() {
     // ── State C: Edit upsell (not selected at checkout, or dismissed) ─────────
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
+        <div className="min-h-screen text-luxury-charcoal" style={{ background: 'var(--luxury-warm-white)' }}>
 
             {/* Hero */}
-            <div className="flex flex-col items-center justify-center px-4 pt-16 pb-10 text-center">
-                <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                    className="w-20 h-20 bg-luxury-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 relative"
-                >
-                    <div className="absolute inset-0 bg-luxury-accent rounded-full opacity-20 animate-ping" />
-                    <CheckCircle className="w-10 h-10 text-luxury-accent relative z-10" />
-                </motion.div>
-
+            <div
+                className="flex flex-col items-center justify-center px-4 pt-20 pb-14 text-center relative overflow-hidden"
+                style={{ background: 'radial-gradient(ellipse 120% 80% at 25% 10%, var(--iconik-slate-light) 0%, var(--iconik-slate) 45%, var(--iconik-slate-deep) 100%)' }}
+            >
+                <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #F4EFE5 1px, transparent 0)', backgroundSize: '3px 3px' }} />
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
-                    className="max-w-md"
+                    className="max-w-md relative"
                 >
-                    <span className="text-2xl luxury-heading text-luxury-charcoal tracking-wider block mb-4">ICONIK</span>
-                    <h1 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal mb-3 leading-tight">
-                        Your Blueprint is confirmed.
+                    <div className="iconik-display text-luxury-warm-white mb-6" style={{ fontSize: '16px', letterSpacing: '0.32em' }}>I C O N I K</div>
+                    <h1 className="iconik-display text-luxury-warm-white mb-3" style={{ fontSize: 'clamp(32px, 5vw, 52px)', lineHeight: 1.05 }}>
+                        Your Blueprint is
                     </h1>
-                    <p className="luxury-body text-luxury-charcoal/60 leading-relaxed">
-                        It arrives within <strong className="text-luxury-charcoal">72 hours</strong> of completing your intake form.
+                    <h1 className="iconik-display-it text-luxury-warm-white/85 mb-6" style={{ fontSize: 'clamp(32px, 5vw, 52px)', lineHeight: 1.05 }}>
+                        confirmed.
+                    </h1>
+                    <p className="luxury-body text-luxury-warm-white/60 leading-relaxed" style={{ fontWeight: 300 }}>
+                        It arrives within <span className="text-luxury-warm-white">72 hours</span> of completing your intake form.
                     </p>
                 </motion.div>
             </div>
 
-            {/* Divider line */}
-            <div className="max-w-2xl mx-auto px-4">
-                <div className="border-t border-luxury-cream mb-10" />
-
+            <div className="max-w-2xl mx-auto px-4 py-10">
                 <AnimatePresence>
                     {!noThanks ? (
                         <motion.div
@@ -522,54 +511,52 @@ function StylistSuccessInner() {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            transition={{ delay: 0.25 }}
+                            transition={{ delay: 0.1 }}
                         >
-                            {/* Bridge */}
-                            <p className="luxury-body text-luxury-charcoal/50 text-center text-sm mb-8">
+                            <p className="luxury-body text-luxury-charcoal/40 text-center text-sm mb-8" style={{ fontWeight: 300 }}>
                                 One thing before you go.
                             </p>
 
-                            {/* Edit offer */}
-                            <div className="border border-luxury-cream rounded-2xl p-7 mb-6" style={{ borderLeftWidth: '3px', borderLeftColor: '#C9A96E' }}>
-                                <p className="text-[9px] font-black uppercase tracking-[0.35em] text-luxury-charcoal/40 mb-5">THE ICONIK EDIT</p>
+                            <div className="rounded-2xl p-7 mb-5 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
+                                <div className="iconik-micro text-luxury-charcoal/40 mb-5">The ICONIK Edit</div>
 
-                                <p className="luxury-body text-luxury-charcoal/70 text-sm leading-relaxed mb-2">
+                                <p className="luxury-body text-luxury-charcoal/55 text-sm leading-relaxed mb-2" style={{ fontWeight: 300 }}>
                                     Most clients tell us the Blueprint answered every &ldquo;what works for me&rdquo; question.
                                 </p>
-                                <p className="luxury-body text-luxury-charcoal/80 text-sm leading-relaxed mb-6">
-                                    The Edit answers what comes next — every week, for as long as you want it.
-                                </p>
+                                <div className="iconik-display-it text-luxury-charcoal mb-6" style={{ fontSize: '20px', opacity: 0.8 }}>
+                                    The Edit answers what comes next — every week.
+                                </div>
 
                                 <div className="space-y-3 mb-6">
                                     {EDIT_BULLETS.map((b, i) => (
                                         <div key={i} className="flex items-start gap-2.5">
-                                            <span className="text-luxury-accent text-xs mt-0.5 flex-shrink-0">→</span>
-                                            <span className="luxury-body text-luxury-charcoal/70 text-sm leading-relaxed">{b}</span>
+                                            <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ background: 'var(--luxury-charcoal)', opacity: 0.35 }} />
+                                            <span className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed" style={{ fontWeight: 300 }}>{b}</span>
                                         </div>
                                     ))}
                                 </div>
 
                                 <div className="flex items-baseline gap-2 mb-6">
-                                    <span className="luxury-heading text-luxury-charcoal text-3xl">$39</span>
-                                    <span className="luxury-body text-luxury-charcoal/50 text-sm">/month</span>
+                                    <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '36px' }}>$39</span>
+                                    <span className="luxury-body text-luxury-charcoal/40 text-sm" style={{ fontWeight: 300 }}>/month</span>
                                 </div>
 
                                 {editError && (
-                                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body mb-4">{editError}</div>
+                                    <div className="rounded-xl p-3 text-sm luxury-body mb-4" style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>{editError}</div>
                                 )}
 
                                 <button
                                     onClick={handleAddEdit}
                                     disabled={editLoading}
-                                    className="w-full inline-flex items-center justify-center gap-3 bg-luxury-accent hover:bg-luxury-accent/80 disabled:opacity-60 text-luxury-warm-white px-8 py-4 rounded-full transition-all duration-300 luxury-body font-semibold hover:shadow-lg mb-5"
+                                    className="w-full inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-lg mb-5 disabled:opacity-50"
+                                    style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                                 >
                                     {editLoading
                                         ? <><Loader2 className="w-4 h-4 animate-spin" /> Setting up…</>
-                                        : <>ADD THE ICONIK EDIT <ArrowRight className="w-4 h-4" /></>
+                                        : <>Add the ICONIK Edit <ArrowRight className="w-4 h-4" /></>
                                     }
                                 </button>
 
-                                {/* Plain text no-thanks */}
                                 <p className="text-center">
                                     <button
                                         onClick={() => {
@@ -577,7 +564,7 @@ function StylistSuccessInner() {
                                             persistEditState('declined');
                                             setEditState('declined');
                                         }}
-                                        className="luxury-body text-luxury-charcoal/35 text-sm hover:text-luxury-charcoal/55 transition-colors"
+                                        className="luxury-body text-luxury-charcoal/30 text-sm hover:text-luxury-charcoal/50 transition-colors"
                                     >
                                         No thanks, just the Blueprint
                                     </button>
@@ -589,47 +576,42 @@ function StylistSuccessInner() {
                             </div>
                         </motion.div>
                     ) : (
-                        // After declining — show normal next steps
                         <motion.div
                             key="next-steps"
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="max-w-lg mx-auto text-center pb-16"
                         >
-                            <p className="luxury-body text-luxury-charcoal/70 text-lg leading-relaxed mb-4">
+                            <p className="luxury-body text-luxury-charcoal/55 text-base leading-relaxed mb-4" style={{ fontWeight: 300 }}>
                                 Complete your intake form now, or use the backup link we sent to{' '}
-                                {email ? <strong className="text-luxury-charcoal">{email}</strong> : 'your email'}.
+                                {email ? <strong className="text-luxury-charcoal font-medium">{email}</strong> : 'your email'}.
                             </p>
-                            <div className="mb-5">
-                                <IntakeButton href={intakeHref} />
-                            </div>
-                            <div className="bg-luxury-cream/40 border border-luxury-cream rounded-2xl p-5 mb-8 text-left space-y-3">
-                                <p className="text-xs font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Next Steps</p>
+                            <div className="mb-5"><IntakeButton href={intakeHref} /></div>
+                            <div className="rounded-2xl p-5 mb-8 text-left space-y-3 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
+                                <div className="iconik-micro text-luxury-charcoal/40 mb-3">Next Steps</div>
                                 {[
                                     'Complete the intake form here now, or use the email link later',
                                     'Receive your personalised Blueprint within 72 hours',
                                 ].map((step, i) => (
-                                    <div key={i} className="flex items-center gap-3">
-                                        <div className="w-6 h-6 bg-luxury-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <span className="text-[10px] font-black text-luxury-accent">{i + 1}</span>
+                                    <div key={i} className="flex items-start gap-3">
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--luxury-charcoal)' }}>
+                                            <span className="iconik-mono text-luxury-warm-white" style={{ fontSize: '9px' }}>{i + 1}</span>
                                         </div>
-                                        <span className="luxury-body text-luxury-charcoal/80 text-sm">{step}</span>
+                                        <span className="luxury-body text-luxury-charcoal/60 text-sm" style={{ fontWeight: 300 }}>{step}</span>
                                     </div>
                                 ))}
                             </div>
-                            <p className="luxury-body text-luxury-charcoal/40 text-sm">
+                            <p className="luxury-body text-luxury-charcoal/35 text-sm" style={{ fontWeight: 300 }}>
                                 Questions? Email us at{' '}
-                                <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-accent hover:underline">help.iconikfashion@gmail.com</a>
+                                <a href="mailto:help.iconikfashion@gmail.com" className="text-luxury-charcoal hover:underline">help.iconikfashion@gmail.com</a>
                             </p>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
 
-            <footer className="py-6 px-6 text-center border-t border-luxury-cream">
-                <Link href="/" className="luxury-body text-luxury-charcoal/30 text-xs hover:text-luxury-charcoal transition-colors">
-                    ← Back to ICONIK
-                </Link>
+            <footer className="py-6 px-6 text-center border-t" style={{ borderColor: 'var(--luxury-cream)' }}>
+                <Link href="/" className="luxury-body text-luxury-charcoal/30 text-xs hover:text-luxury-charcoal transition-colors">← Back to ICONIK</Link>
             </footer>
         </div>
     );
@@ -638,8 +620,8 @@ function StylistSuccessInner() {
 export default function StylistCheckoutSuccessPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-luxury-warm-white flex items-center justify-center">
-                <div className="text-luxury-charcoal/40 luxury-body">Loading…</div>
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--luxury-warm-white)' }}>
+                <div className="luxury-body text-luxury-charcoal/40">Loading…</div>
             </div>
         }>
             <StylistSuccessInner />

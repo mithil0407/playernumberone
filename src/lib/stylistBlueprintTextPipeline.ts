@@ -34,7 +34,7 @@ export async function runStylistBlueprintTextPipeline(
   submission: StylistIntakeSubmission,
   shareToken: string | null,
   existingReportData?: StylistBlueprintReportData | null,
-) {
+): Promise<StylistBlueprintReportData | null> {
   let currentStage = 'classifying';
   try {
     await updateReport(reportId, { status: 'generating', progress_stage: currentStage, error_message: null }, shareToken);
@@ -63,17 +63,20 @@ export async function runStylistBlueprintTextPipeline(
       Array.from({ length: 28 }, (_, index) => [`p${index + 1}`, false]),
     );
 
+    const finalReportData = {
+      ...reportData,
+      generated_at: new Date().toISOString(),
+    };
+
     await updateReport(reportId, {
       status: 'draft_ready',
       progress_stage: null,
       error_message: null,
       generated_at: new Date().toISOString(),
       section_approvals: approvals,
-      report_data: {
-        ...reportData,
-        generated_at: new Date().toISOString(),
-      },
+      report_data: finalReportData,
     }, shareToken);
+    return finalReportData;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Blueprint generation failed';
     await updateReport(reportId, {
@@ -81,5 +84,6 @@ export async function runStylistBlueprintTextPipeline(
       progress_stage: null,
       error_message: `${currentStage}: ${message}`,
     }, shareToken);
+    return null;
   }
 }

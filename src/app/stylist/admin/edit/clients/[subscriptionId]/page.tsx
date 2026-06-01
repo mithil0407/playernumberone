@@ -4,6 +4,20 @@ import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, RefreshCw, Zap } from 'lucide-react';
 
+const S = {
+  bg: '#F4EFE5',
+  card: '#EDE5D2',
+  border: 'rgba(44,38,34,0.1)',
+  rowBorder: 'rgba(44,38,34,0.07)',
+  ink: '#2C2622',
+  muted: 'rgba(44,38,34,0.4)',
+  slate: '#94A6AD',
+  slateDeep: '#7E9098',
+  gold: '#C9A96E',
+  error: '#C4645A',
+  success: '#5A8B6A',
+};
+
 interface SubscriptionDetail {
   id: string;
   customer_email: string;
@@ -23,9 +37,22 @@ function profileOf(row: SubscriptionDetail | null) {
 
 function DataBlock({ title, value }: { title: string; value: unknown }) {
   return (
-    <div className="rounded-2xl border p-5" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
-      <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: '#c9a96e' }}>{title}</p>
-      <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px]" style={{ color: '#c8bfae' }}>{typeof value === 'string' ? value : JSON.stringify(value ?? {}, null, 2)}</pre>
+    <div className="rounded-2xl border p-5" style={{ background: S.card, borderColor: S.border }}>
+      <div className="iconik-micro mb-3" style={{ color: S.muted }}>{title}</div>
+      <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] font-mono" style={{ color: S.muted }}>
+        {typeof value === 'string' ? value : JSON.stringify(value ?? {}, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
+function ContextCard({ title, value }: { title: string; value: unknown }) {
+  return (
+    <div className="rounded-xl border p-4" style={{ background: S.bg, borderColor: S.rowBorder }}>
+      <p className="iconik-micro mb-2" style={{ color: S.muted }}>{title}</p>
+      <p className="luxury-body text-sm leading-6" style={{ color: S.ink, fontWeight: 300 }}>
+        {typeof value === 'string' ? value : JSON.stringify(value ?? {}, null, 2)}
+      </p>
     </div>
   );
 }
@@ -76,27 +103,73 @@ export default function StyleEditClientPage({ params }: { params: Promise<{ subs
     }
   };
 
-  if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin" style={{ color: '#c9a96e' }} /></div>;
-  if (!subscription) return <p style={{ color: '#6b5f4a' }}>Subscription not found.</p>;
+  if (loading) return (
+    <div className="h-64 flex items-center justify-center">
+      <Loader2 className="animate-spin" style={{ color: S.muted }} />
+    </div>
+  );
+  if (!subscription) return <p className="luxury-body" style={{ color: S.muted }}>Subscription not found.</p>;
 
   const profile = profileOf(subscription);
   const issues = [...(subscription.style_edit_issues ?? [])].sort((a, b) => new Date(b.week_start).getTime() - new Date(a.week_start).getTime());
+  const latestIssue = issues[0] ?? null;
 
   return (
     <div className="max-w-6xl">
-      <Link href="/stylist/admin/edit" className="inline-flex items-center gap-2 text-sm mb-6" style={{ color: '#6b5f4a' }}><ArrowLeft size={14} /> Back to ICONIK Edit</Link>
+      <Link href="/stylist/admin/edit" className="inline-flex items-center gap-2 text-sm mb-6 luxury-body" style={{ color: S.muted }}>
+        <ArrowLeft size={14} /> Back to ICONIK Edit
+      </Link>
+
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <div>
-          <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#c9a96e' }}>Edit Subscriber</p>
-          <h1 className="text-2xl font-light" style={{ color: '#f0ebe0' }}>{subscription.customer_name || subscription.customer_email}</h1>
-          <p className="text-sm mt-1" style={{ color: '#6b5f4a' }}>{subscription.customer_email} · {subscription.status}</p>
+          <div className="iconik-micro mb-2" style={{ color: S.muted }}>Edit Subscriber</div>
+          <h1 className="iconik-display" style={{ fontSize: '26px', color: S.ink }}>{subscription.customer_name || subscription.customer_email}</h1>
+          <p className="luxury-body text-sm mt-1" style={{ color: S.muted, fontWeight: 300 }}>
+            {subscription.customer_email} · {subscription.status}
+          </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={rebuild} disabled={working} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60" style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}>{working ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Rebuild Profile</button>
-          <button onClick={generateIssue} disabled={working} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60" style={{ background: '#c9a96e', color: '#fff' }}><Zap size={14} /> Generate Week</button>
+          <button
+            onClick={rebuild}
+            disabled={working}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
+            style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
+          >
+            {working ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Rebuild Profile
+          </button>
+          <button
+            onClick={generateIssue}
+            disabled={working}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
+            style={{ background: S.slateDeep, color: S.bg }}
+          >
+            <Zap size={14} /> Generate Week
+          </button>
         </div>
       </div>
-      {message && <p className="text-sm mb-4" style={{ color: '#c9a96e' }}>{message}</p>}
+
+      {message && <p className="luxury-body text-sm mb-4" style={{ color: S.slate }}>{message}</p>}
+
+      <div className="rounded-2xl border p-5 mb-6" style={{ background: S.card, borderColor: S.border }}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div>
+            <div className="iconik-micro mb-1" style={{ color: S.muted }}>Review Context</div>
+            <p className="luxury-body text-sm" style={{ color: S.ink, fontWeight: 500 }}>
+              {latestIssue ? `Latest issue ${latestIssue.issue_number} - ${latestIssue.status.replace(/_/g, ' ')}` : 'No issue generated yet'}
+            </p>
+          </div>
+          {latestIssue && (
+            <Link href={`/stylist/admin/edit/issues/${latestIssue.id}`} className="px-4 py-2 rounded-xl text-sm luxury-body transition" style={{ background: S.ink, color: S.bg }}>
+              Review Latest Issue
+            </Link>
+          )}
+        </div>
+        <div className="grid md:grid-cols-3 gap-3">
+          <ContextCard title="Profile status" value={profile?.status ?? 'not built'} />
+          <ContextCard title="Next issue" value={profile?.next_issue_at ?? latestIssue?.week_start ?? '—'} />
+          <ContextCard title="Profile summary" value={profile?.profile_summary ?? '—'} />
+        </div>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-6">
         <DataBlock title="Subscription" value={{ id: subscription.id, status: subscription.status, plan_type: subscription.plan_type, customer_phone: subscription.customer_phone, created_at: subscription.created_at }} />
@@ -104,16 +177,32 @@ export default function StyleEditClientPage({ params }: { params: Promise<{ subs
         <DataBlock title="Issue History" value={issues.map(issue => ({ id: issue.id, status: issue.status, week_start: issue.week_start, title: issue.topic_plan?.title, sent_at: issue.sent_at }))} />
       </div>
 
-      <div className="rounded-2xl border overflow-hidden mb-6" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
+      <div className="rounded-2xl border overflow-hidden mb-6" style={{ background: S.bg, borderColor: S.border }}>
         <table className="w-full">
-          <thead style={{ background: '#0f0f0f' }}><tr>{['Issue', 'Week', 'Status', 'Topic'].map(head => <th key={head} className="text-left px-4 py-3 text-[11px] uppercase tracking-wide" style={{ color: '#6b5f4a' }}>{head}</th>)}</tr></thead>
+          <thead style={{ background: S.card }}>
+            <tr>
+              {['Issue', 'Week', 'Status', 'Topic'].map(head => (
+                <th key={head} className="text-left px-4 py-3 iconik-micro" style={{ color: S.muted }}>{head}</th>
+              ))}
+            </tr>
+          </thead>
           <tbody>
-            {issues.length === 0 ? <tr><td colSpan={4} className="px-4 py-8 text-center text-sm" style={{ color: '#6b5f4a' }}>No issues yet.</td></tr> : issues.map(issue => (
-              <tr key={issue.id} className="border-t" style={{ borderColor: '#181818' }}>
-                <td className="px-4 py-4"><Link href={`/stylist/admin/edit/issues/${issue.id}`} className="hover:underline" style={{ color: '#f0ebe0' }}>Issue {issue.issue_number}</Link></td>
-                <td className="px-4 py-4 text-sm" style={{ color: '#c8bfae' }}>{issue.week_start}</td>
-                <td className="px-4 py-4 text-sm capitalize" style={{ color: issue.status === 'error' ? '#f87171' : '#c8bfae' }}>{issue.status}</td>
-                <td className="px-4 py-4 text-sm" style={{ color: '#c9a96e' }}>{issue.topic_plan?.title || '-'}</td>
+            {issues.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center luxury-body text-sm" style={{ color: S.muted }}>No issues yet.</td>
+              </tr>
+            ) : issues.map(issue => (
+              <tr key={issue.id} className="border-t" style={{ borderColor: S.rowBorder }}>
+                <td className="px-4 py-4">
+                  <Link href={`/stylist/admin/edit/issues/${issue.id}`} className="luxury-body hover:underline" style={{ color: S.ink, fontWeight: 500 }}>
+                    Issue {issue.issue_number}
+                  </Link>
+                </td>
+                <td className="px-4 py-4 iconik-mono" style={{ fontSize: '11px', color: S.muted }}>{issue.week_start}</td>
+                <td className="px-4 py-4 iconik-mono capitalize" style={{ fontSize: '11px', color: issue.status === 'error' ? S.error : issue.status === 'sent' ? S.success : S.muted }}>
+                  {issue.status}
+                </td>
+                <td className="px-4 py-4 luxury-body text-sm" style={{ color: S.muted, fontWeight: 300 }}>{issue.topic_plan?.title || '—'}</td>
               </tr>
             ))}
           </tbody>

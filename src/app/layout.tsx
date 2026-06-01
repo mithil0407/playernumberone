@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, Fraunces, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
@@ -25,6 +25,21 @@ const playfair = Playfair_Display({
   display: 'swap',
   variable: '--font-playfair',
   fallback: ['Georgia', 'serif'],
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-fraunces',
+  fallback: ['Georgia', 'serif'],
+  axes: ['opsz'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-jetbrains-mono',
+  fallback: ['monospace'],
 });
 
 export const metadata: Metadata = {
@@ -115,7 +130,7 @@ export default function RootLayout({
           fetchPriority="high"
         />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} ${inter.className}`}>
+      <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${inter.className}`}>
         {/* Google Analytics — single gtag init shared across both properties */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`}

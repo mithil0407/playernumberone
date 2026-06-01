@@ -208,9 +208,12 @@ function ToggleButton({ active, children, onClick }: { active: boolean; children
         <button
             type="button"
             onClick={onClick}
-            className={`rounded-xl border px-4 py-3 text-left text-sm luxury-body transition ${
-                active ? 'border-luxury-accent bg-luxury-pink-bg text-luxury-charcoal' : 'border-luxury-cream bg-white text-luxury-charcoal/65 hover:border-luxury-accent/50'
-            }`}
+            className="rounded-xl border px-4 py-3 text-left text-sm luxury-body transition"
+            style={{
+                background: active ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                borderColor: active ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                color: 'var(--luxury-charcoal)',
+            }}
         >
             {children}
         </button>
@@ -230,19 +233,25 @@ function FocusCard({
         <button
             type="button"
             onClick={onClick}
-            className={`min-h-[132px] rounded-xl border p-4 text-left transition ${
-                active
-                    ? 'border-luxury-accent bg-luxury-pink-bg text-luxury-charcoal shadow-sm shadow-luxury-accent/10'
-                    : 'border-luxury-cream bg-white text-luxury-charcoal/70 hover:border-luxury-accent/50'
-            }`}
+            className="min-h-[132px] rounded-xl border p-4 text-left transition"
+            style={{
+                background: active ? 'var(--luxury-cream)' : 'var(--luxury-warm-white)',
+                borderColor: active ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+            }}
         >
-            <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-full border text-xl luxury-heading ${
-                active ? 'border-luxury-accent bg-white text-luxury-accent' : 'border-luxury-cream bg-luxury-warm-white text-luxury-charcoal/55'
-            }`}>
+            <span
+                className="mb-4 flex h-10 w-10 items-center justify-center rounded-full border iconik-mono"
+                style={{
+                    borderColor: active ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)',
+                    background: active ? 'var(--luxury-charcoal)' : 'transparent',
+                    color: active ? 'var(--luxury-warm-white)' : 'var(--luxury-charcoal)',
+                    fontSize: '16px',
+                }}
+            >
                 {item.icon}
             </span>
-            <span className="block luxury-body text-sm font-semibold text-luxury-charcoal">{item.label}</span>
-            <span className="mt-1 block text-xs leading-relaxed text-luxury-charcoal/50">{item.hint}</span>
+            <span className="block luxury-body text-sm text-luxury-charcoal" style={{ fontWeight: active ? 500 : 400 }}>{item.label}</span>
+            <span className="mt-1 block luxury-body text-xs text-luxury-charcoal/40" style={{ fontWeight: 300 }}>{item.hint}</span>
         </button>
     );
 }
@@ -264,9 +273,12 @@ function PhotoUploadCard({
                 'aspect-[4/5]';
 
     return (
-        <label className="group flex min-h-full cursor-pointer flex-col overflow-hidden rounded-xl border-2 border-dashed border-luxury-cream bg-white transition hover:border-luxury-accent/60">
+        <label
+            className="group flex min-h-full cursor-pointer flex-col overflow-hidden rounded-xl border-2 border-dashed transition"
+            style={{ background: 'var(--luxury-warm-white)', borderColor: fileName ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)' }}
+        >
             {field.referenceImage && (
-                <div className={`relative bg-[#fde7de] ${referenceAspect}`}>
+                <div className={`relative ${referenceAspect}`} style={{ background: 'var(--luxury-cream)' }}>
                     <Image
                         src={field.referenceImage}
                         alt={field.referenceAlt || field.label}
@@ -277,17 +289,17 @@ function PhotoUploadCard({
                 </div>
             )}
             {!field.referenceImage && (
-                <div className="flex aspect-[3/4] items-center justify-center bg-luxury-cream/35 px-6 text-center">
-                    <div className="rounded-full border border-luxury-accent/30 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-luxury-accent">
+                <div className="flex aspect-[3/4] items-center justify-center px-6 text-center" style={{ background: 'var(--luxury-cream)' }}>
+                    <div className="rounded-full border px-4 py-2 iconik-micro text-luxury-charcoal/50" style={{ borderColor: 'rgba(37, 31, 27, 0.2)' }}>
                         Upload reference
                     </div>
                 </div>
             )}
             <div className="flex flex-1 flex-col p-5">
-                <Upload className="w-5 h-5 text-luxury-accent mb-2" />
-                <p className="font-semibold luxury-body">{field.label}</p>
-                <p className="text-xs text-luxury-charcoal/50 mt-1">{field.instruction}</p>
-                <p className="mt-auto pt-4 text-xs text-luxury-charcoal/45 truncate">{fileName || 'Choose file'}</p>
+                <Upload className="w-4 h-4 text-luxury-charcoal/30 mb-2" />
+                <p className="luxury-body text-luxury-charcoal text-sm" style={{ fontWeight: fileName ? 500 : 400 }}>{field.label}</p>
+                <p className="luxury-body text-luxury-charcoal/40 text-xs mt-1" style={{ fontWeight: 300 }}>{field.instruction}</p>
+                <p className="mt-auto pt-4 luxury-body text-luxury-charcoal/35 text-xs truncate" style={{ fontWeight: 300 }}>{fileName || 'Choose file'}</p>
             </div>
             <input type="file" accept="image/*" className="hidden" onChange={e => onChange(e.target.files?.[0])} />
         </label>
@@ -302,6 +314,7 @@ function StylistIntakeInner() {
     const [accessError, setAccessError] = useState('');
     const [order, setOrder] = useState<Record<string, unknown> | null>(null);
     const [saving, setSaving] = useState(false);
+    const [submitStage, setSubmitStage] = useState<'uploading' | 'saving' | 'complete' | null>(null);
     const [complete, setComplete] = useState(false);
 
     const [profile, setProfile] = useState({ fullName: '', ageRange: '', country: '', language: 'English', phone: '' });
@@ -426,21 +439,24 @@ function StylistIntakeInner() {
 
     const uploadAllPhotos = async () => {
         if (Object.keys(uploadedUrls).length > 0) return uploadedUrls;
-        const urls = {
-            headshot: await uploadOne(photos.headshot, 'headshot'),
-            full_body_front: await uploadOne(photos.front, 'front'),
-            full_body_side: await uploadOne(photos.side, 'side'),
-            one_outfit: await uploadOne(photos.outfit, 'one_outfit'),
-        };
+        const entries = await Promise.all([
+            uploadOne(photos.headshot, 'headshot').then(url => ['headshot', url] as const),
+            uploadOne(photos.front, 'front').then(url => ['full_body_front', url] as const),
+            uploadOne(photos.side, 'side').then(url => ['full_body_side', url] as const),
+            uploadOne(photos.outfit, 'one_outfit').then(url => ['one_outfit', url] as const),
+        ]);
+        const urls = Object.fromEntries(entries);
         setUploadedUrls(urls);
         return urls;
     };
 
     const submit = async () => {
         setSaving(true);
+        setSubmitStage('uploading');
         setAccessError('');
         try {
             const photoUrls = await uploadAllPhotos();
+            setSubmitStage('saving');
             const selectedBoard = moodBoards.find(board => board.id === selectedMoodboard);
             const completionPercentage = selectedMoodboard ? 100 : Math.max(65, progress);
             const res = await fetch('/api/stylist-intake', {
@@ -484,9 +500,11 @@ function StylistIntakeInner() {
             });
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.error || 'Unable to save intake');
+            setSubmitStage('complete');
             setComplete(true);
         } catch (err) {
             setAccessError(err instanceof Error ? err.message : 'Unable to save intake');
+            setSubmitStage(null);
         } finally {
             setSaving(false);
         }
@@ -494,15 +512,26 @@ function StylistIntakeInner() {
 
     if (accessState !== 'allowed') {
         return (
-            <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal flex items-center justify-center px-4">
-                <div className="w-full max-w-md bg-white border border-luxury-cream rounded-2xl p-6">
-                    <p className="text-[10px] font-black uppercase tracking-[0.35em] text-luxury-charcoal/40 mb-3">ICONIK Intake</p>
-                    <h1 className="luxury-heading text-2xl mb-3">Verify your Blueprint purchase</h1>
-                    <p className="luxury-body text-sm text-luxury-charcoal/60 mb-5">Enter the email used at checkout.</p>
-                    <input value={accessEmail} onChange={e => setAccessEmail(e.target.value)} className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3 mb-3" placeholder="your@email.com" />
-                    {accessError && <p className="text-sm text-red-600 mb-3">{accessError}</p>}
-                    <button onClick={() => verifyAccess(accessEmail)} disabled={accessState === 'checking'} className="w-full bg-luxury-accent text-white rounded-full py-3 font-semibold">
-                        {accessState === 'checking' ? 'Checking...' : 'Continue'}
+            <div className="min-h-screen text-luxury-charcoal flex items-center justify-center px-4" style={{ background: 'var(--luxury-warm-white)' }}>
+                <div className="w-full max-w-md rounded-2xl p-6 border" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                    <div className="iconik-micro text-luxury-charcoal/35 mb-4">ICONIK Intake</div>
+                    <h1 className="iconik-display text-luxury-charcoal mb-3" style={{ fontSize: '28px' }}>Verify your Blueprint purchase</h1>
+                    <p className="luxury-body text-luxury-charcoal/50 text-sm mb-5" style={{ fontWeight: 300 }}>Enter the email used at checkout.</p>
+                    <input
+                        value={accessEmail}
+                        onChange={e => setAccessEmail(e.target.value)}
+                        className="w-full rounded-xl px-4 py-3 mb-3 luxury-body outline-none"
+                        style={{ border: '1.5px solid var(--luxury-cream)', background: 'var(--luxury-warm-white)' }}
+                        placeholder="your@email.com"
+                    />
+                    {accessError && <p className="luxury-body text-red-600 text-sm mb-3">{accessError}</p>}
+                    <button
+                        onClick={() => verifyAccess(accessEmail)}
+                        disabled={accessState === 'checking'}
+                        className="w-full rounded-full py-3 luxury-body disabled:opacity-50"
+                        style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
+                    >
+                        {accessState === 'checking' ? 'Checking…' : 'Continue'}
                     </button>
                 </div>
             </div>
@@ -512,38 +541,57 @@ function StylistIntakeInner() {
     if (complete) {
         const board = moodBoards.find(item => item.id === selectedMoodboard);
         return (
-            <div className="min-h-screen bg-luxury-warm-white flex items-center justify-center px-4 text-center">
+            <div className="min-h-screen flex items-center justify-center px-4 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
                 <div className="max-w-xl">
-                    <div className="w-20 h-20 rounded-full bg-luxury-accent/10 flex items-center justify-center mx-auto mb-6">
-                        <Check className="w-10 h-10 text-luxury-accent" />
+                    <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-8"
+                        style={{ background: 'var(--iconik-slate-deep)' }}
+                    >
+                        <Check className="w-8 h-8 text-luxury-warm-white" />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.35em] text-luxury-charcoal/40 mb-3">Style Direction Confirmed</p>
-                    <h1 className="luxury-heading text-3xl md:text-5xl text-luxury-charcoal mb-4">{board?.label || 'Your ICONIK Direction'}</h1>
-                    <p className="luxury-body text-luxury-charcoal/65 leading-relaxed">This, combined with your body geometry analysis, colour profile, and facial architecture, is the foundation of your Blueprint. We will have it with you within 24 hours.</p>
+                    <div className="iconik-micro text-luxury-charcoal/35 mb-4">Style Direction Confirmed</div>
+                    <h1 className="iconik-display text-luxury-charcoal mb-4" style={{ fontSize: 'clamp(28px, 5vw, 48px)' }}>{board?.label || 'Your ICONIK Direction'}</h1>
+                    <p className="luxury-body text-luxury-charcoal/55 leading-relaxed" style={{ fontWeight: 300 }}>This, combined with your body geometry analysis, colour profile, and facial architecture, is the foundation of your Blueprint. We will have it with you within 24 hours.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
-            <header className="sticky top-0 z-30 bg-luxury-warm-white/95 backdrop-blur border-b border-luxury-cream">
+        <div className="min-h-screen text-luxury-charcoal" style={{ background: 'var(--luxury-warm-white)' }}>
+            {submitStage && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center px-5" style={{ background: 'rgba(244,239,229,0.92)', backdropFilter: 'blur(20px)' }}>
+                    <div className="w-full max-w-sm rounded-2xl border p-7 text-center shadow-2xl" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                        <Loader2 className="mx-auto mb-4 h-7 w-7 animate-spin text-luxury-charcoal/40" />
+                        <div className="iconik-micro text-luxury-charcoal/35 mb-3">ICONIK Intake</div>
+                        <h2 className="iconik-display text-luxury-charcoal" style={{ fontSize: '22px' }}>
+                            {submitStage === 'uploading' && 'Uploading your photos…'}
+                            {submitStage === 'saving' && 'Saving your Blueprint intake…'}
+                            {submitStage === 'complete' && 'Intake received.'}
+                        </h2>
+                        <p className="luxury-body text-luxury-charcoal/45 text-sm leading-relaxed mt-3" style={{ fontWeight: 300 }}>
+                            Please keep this page open. Photo uploads now run together, so this should only take a few seconds.
+                        </p>
+                    </div>
+                </div>
+            )}
+            <header className="sticky top-0 z-30" style={{ background: 'rgba(244,239,229,0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--luxury-cream)' }}>
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between mb-3">
-                        <span className="luxury-heading text-2xl">ICONIK</span>
-                        <span className="text-xs luxury-body text-luxury-charcoal/45">{STEPS[step]} · {progress}%</span>
+                        <span className="iconik-display text-luxury-charcoal" style={{ fontSize: '14px', letterSpacing: '0.32em' }}>I C O N I K</span>
+                        <span className="iconik-mono text-luxury-charcoal/35" style={{ fontSize: '10px' }}>{STEPS[step]} · {progress}%</span>
                     </div>
-                    <div className="h-1.5 bg-luxury-cream rounded-full overflow-hidden">
-                        <div className="h-full bg-luxury-accent transition-all" style={{ width: `${progress}%` }} />
+                    <div className="h-px overflow-hidden" style={{ background: 'var(--luxury-cream)' }}>
+                        <div className="h-full transition-all" style={{ width: `${progress}%`, background: 'var(--iconik-slate)', height: '2px' }} />
                     </div>
                 </div>
             </header>
 
             <main className="max-w-4xl mx-auto px-4 py-8">
-                <div className="bg-white border border-luxury-cream rounded-2xl p-5 md:p-8">
+                <div className="rounded-2xl border p-5 md:p-8" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
                     {step === 0 && (
                         <section className="space-y-5">
-                            <h1 className="luxury-heading text-3xl">Basic profile</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Basic profile</h1>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <input className="border-2 border-luxury-cream rounded-xl px-4 py-3" placeholder="Full name" value={profile.fullName} onChange={e => setProfile({ ...profile, fullName: e.target.value })} />
                                 <select className="border-2 border-luxury-cream rounded-xl px-4 py-3" value={profile.ageRange} onChange={e => setProfile({ ...profile, ageRange: e.target.value })}>
@@ -558,7 +606,7 @@ function StylistIntakeInner() {
 
                     {step === 1 && (
                         <section className="space-y-5">
-                            <h1 className="luxury-heading text-3xl">Body measurements</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Body measurements</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Optional, but the more precise your Blueprint, the more specific your outfit formulas.</p>
                             <div className="flex gap-2">
                                 {['cm', 'in'].map(unit => <ToggleButton key={unit} active={measurements.unit === unit} onClick={() => setMeasurements({ ...measurements, unit })}>{unit.toUpperCase()}</ToggleButton>)}
@@ -573,7 +621,7 @@ function StylistIntakeInner() {
 
                     {step === 2 && (
                         <section className="space-y-5">
-                            <h1 className="luxury-heading text-3xl">Body photos</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Body photos</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Phone photos are perfect. Headshot and side profile matter most here; the front photo helps complete the body analysis.</p>
                             <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
                                 <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
@@ -610,7 +658,7 @@ function StylistIntakeInner() {
 
                     {step === 3 && (
                         <section className="space-y-5">
-                            <h1 className="luxury-heading text-3xl">One outfit you love</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>One outfit you love</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Upload one outfit you already feel good in. This replaces the old wardrobe sample upload.</p>
                             <div className="max-w-xl">
                                 {(() => {
@@ -631,7 +679,7 @@ function StylistIntakeInner() {
 
                     {step === 4 && (
                         <section className="space-y-6">
-                            <h1 className="luxury-heading text-3xl">Physical context</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Physical context</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Tap whatever your eye goes to first. You can choose more than one.</p>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                 {focusAreas.map(item => (
@@ -648,7 +696,7 @@ function StylistIntakeInner() {
 
                     {step === 5 && (
                         <section className="space-y-6">
-                            <h1 className="luxury-heading text-3xl">Coverage requirements</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Coverage requirements</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Tell us what needs to be respected before we build silhouettes.</p>
                             <div className="grid md:grid-cols-2 gap-3">
                                 {['No restrictions', 'I prefer to cover my arms', 'I prefer to cover my legs / knees', 'I observe full modesty', 'Specific religious/cultural requirements'].map(item => (
@@ -670,7 +718,7 @@ function StylistIntakeInner() {
 
                     {step === 6 && (
                         <section className="space-y-5">
-                            <h1 className="luxury-heading text-3xl">Lifestyle and shopping</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Lifestyle and shopping</h1>
                             <div className="space-y-5">
                                 <div className="rounded-2xl border border-luxury-cream bg-luxury-warm-white/40 p-4">
                                     <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/40">1 of 8</p>
@@ -754,12 +802,12 @@ function StylistIntakeInner() {
                     {step === 7 && (
                         <section className="space-y-6">
                             <div>
-                                <h1 className="luxury-heading text-3xl mb-2">Style preference sorting</h1>
+                                <h1 className="iconik-display text-luxury-charcoal mb-2" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Style preference sorting</h1>
                                 <p className="luxury-body text-luxury-charcoal/60">This is not about what you currently own. Trust your first reaction.</p>
                             </div>
-                            <div className="flex items-center gap-3 rounded-2xl border border-luxury-cream bg-luxury-warm-white/45 p-4">
-                                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-luxury-accent text-white">
-                                    <ArrowRight className="h-4 w-4" />
+                            <div className="flex items-center gap-3 rounded-2xl border p-4" style={{ borderColor: 'var(--luxury-cream)', background: 'var(--luxury-cream)' }}>
+                                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full" style={{ background: 'var(--luxury-charcoal)' }}>
+                                    <ArrowRight className="h-4 w-4 text-luxury-warm-white" />
                                 </div>
                                 <p className="luxury-body text-sm leading-relaxed text-luxury-charcoal/70">
                                     For each piece, choose <strong className="text-luxury-charcoal">Like</strong>, <strong className="text-luxury-charcoal">No</strong>, or <strong className="text-luxury-charcoal">Skip</strong>. Complete this section to unlock the next one.
@@ -775,7 +823,7 @@ function StylistIntakeInner() {
                                     <div className="mb-4 flex items-center justify-between gap-3">
                                         <div>
                                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/40">Section {categoryIndex + 1} of {pieceCategories.length}</p>
-                                            <h2 className="luxury-heading text-2xl text-luxury-charcoal">{category.title}</h2>
+                                            <h2 className="iconik-display text-luxury-charcoal" style={{ fontSize: '22px' }}>{category.title}</h2>
                                         </div>
                                         <span className="rounded-full bg-luxury-cream/60 px-3 py-1 text-xs font-semibold text-luxury-charcoal/55">
                                             {answeredCount}/{category.options.length}
@@ -792,7 +840,7 @@ function StylistIntakeInner() {
                                                         <p className="text-sm font-semibold luxury-body mb-2">{label}</p>
                                                         <div className="grid grid-cols-3 gap-1 text-[11px]">
                                                             {(['liked', 'disliked', 'skipped'] as const).map(action => (
-                                                                <button key={action} type="button" onClick={() => setPreference(category.key, key, action)} className={`rounded-full border py-1 ${activeAction === action ? 'border-luxury-accent bg-luxury-pink-bg' : 'border-luxury-cream'}`}>
+                                                                <button key={action} type="button" onClick={() => setPreference(category.key, key, action)} className={`rounded-full border py-1 ${activeAction === action ? 'border-luxury-charcoal bg-luxury-cream' : 'border-luxury-cream'}`}>
                                                                     {action === 'liked' ? 'Like' : action === 'disliked' ? 'No' : 'Skip'}
                                                                 </button>
                                                             ))}
@@ -803,7 +851,7 @@ function StylistIntakeInner() {
                                         })}
                                     </div>
                                     {preferenceCategoryComplete[category.key] && categoryIndex < pieceCategories.length - 1 && (
-                                        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-luxury-accent">
+                                        <div className="mt-4 flex items-center gap-2 text-sm text-luxury-charcoal/50 luxury-body">
                                             <Check className="h-4 w-4" />
                                             Next section unlocked
                                         </div>
@@ -816,16 +864,16 @@ function StylistIntakeInner() {
 
                     {step === 8 && (
                         <section className="space-y-5">
-                            <h1 className="luxury-heading text-3xl">Approve your style direction</h1>
+                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Approve your style direction</h1>
                             <div className="grid md:grid-cols-3 gap-4">
                                 {recommendedBoards.map(board => (
-                                    <button key={board.id} type="button" onClick={() => setSelectedMoodboard(board.id)} className={`text-left border-2 rounded-2xl overflow-hidden ${selectedMoodboard === board.id ? 'border-luxury-accent' : 'border-luxury-cream'}`}>
+                                    <button key={board.id} type="button" onClick={() => setSelectedMoodboard(board.id)} className="text-left rounded-2xl overflow-hidden border-2 transition" style={{ borderColor: selectedMoodboard === board.id ? 'var(--luxury-charcoal)' : 'var(--luxury-cream)' }}>
                                         <div className="grid grid-cols-2">
                                             {board.images.map(image => <div key={image} className="relative aspect-square"><Image src={image} alt={board.label} fill className="object-cover" /></div>)}
                                         </div>
                                         <div className="p-4">
                                             <div className="flex gap-1 mb-3">{board.colours.map(colour => <span key={colour} className="h-4 flex-1 rounded" style={{ backgroundColor: colour }} />)}</div>
-                                            <p className="luxury-heading text-lg">{board.label}</p>
+                                            <p className="iconik-display text-luxury-charcoal" style={{ fontSize: '18px' }}>{board.label}</p>
                                             <p className="text-xs luxury-body text-luxury-charcoal/50">{board.words.join(' · ')}</p>
                                         </div>
                                     </button>
@@ -841,16 +889,34 @@ function StylistIntakeInner() {
                     {accessError && <div className="mt-5 bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm luxury-body">{accessError}</div>}
 
                     <div className="flex justify-between gap-3 mt-8">
-                        <button type="button" disabled={step === 0 || saving} onClick={() => setStep(step - 1)} className="inline-flex items-center gap-2 rounded-full border-2 border-luxury-cream px-5 py-3 disabled:opacity-40">
+                        <button
+                            type="button"
+                            disabled={step === 0 || saving}
+                            onClick={() => setStep(step - 1)}
+                            className="inline-flex items-center gap-2 rounded-full px-5 py-3 luxury-body border disabled:opacity-40 transition"
+                            style={{ borderColor: 'var(--luxury-cream)', color: 'var(--luxury-charcoal)', background: 'transparent' }}
+                        >
                             <ArrowLeft className="w-4 h-4" /> Back
                         </button>
                         {step < STEPS.length - 1 ? (
-                            <button type="button" disabled={saving || (step === 7 && !preferenceSortingComplete)} onClick={() => setStep(step + 1)} className="inline-flex items-center gap-2 rounded-full bg-luxury-accent text-white px-7 py-3 font-semibold disabled:opacity-50">
+                            <button
+                                type="button"
+                                disabled={saving || (step === 7 && !preferenceSortingComplete)}
+                                onClick={() => setStep(step + 1)}
+                                className="inline-flex items-center gap-2 rounded-full px-7 py-3 luxury-body disabled:opacity-50 transition hover:shadow-lg"
+                                style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
+                            >
                                 Continue <ArrowRight className="w-4 h-4" />
                             </button>
                         ) : (
-                            <button type="button" disabled={saving || !selectedMoodboard} onClick={submit} className="inline-flex items-center gap-2 rounded-full bg-luxury-accent text-white px-7 py-3 font-semibold disabled:opacity-50">
-                                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <>Confirm Direction <Check className="w-4 h-4" /></>}
+                            <button
+                                type="button"
+                                disabled={saving || !selectedMoodboard}
+                                onClick={submit}
+                                className="inline-flex items-center gap-2 rounded-full px-7 py-3 luxury-body disabled:opacity-50 transition hover:shadow-lg"
+                                style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
+                            >
+                                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Confirm Direction <Check className="w-4 h-4" /></>}
                             </button>
                         )}
                     </div>
@@ -862,7 +928,11 @@ function StylistIntakeInner() {
 
 export default function StylistIntakePage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-luxury-warm-white flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-luxury-accent" /></div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--luxury-warm-white)' }}>
+                <Loader2 className="w-6 h-6 animate-spin text-luxury-charcoal/30" />
+            </div>
+        }>
             <StylistIntakeInner />
         </Suspense>
     );

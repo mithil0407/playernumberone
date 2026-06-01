@@ -170,6 +170,22 @@ export interface StylistBlueprintReportData {
 
 type AnyRecord = Record<string, unknown>;
 
+function canonicalPageType(pageNumber: number): BlueprintPageType {
+  if (pageNumber === 1) return 'cover';
+  if (pageNumber === 2) return 'summary';
+  if (pageNumber === 3) return 'reading_guide';
+  if ([4, 5, 6, 7].includes(pageNumber)) return 'diagnosis';
+  if (pageNumber === 8) return 'avoidance';
+  if (pageNumber === 9) return 'palette';
+  if ([10, 11].includes(pageNumber)) return 'rules';
+  if (pageNumber === 12) return 'fabric';
+  if (pageNumber === 13) return 'outfit_system';
+  if (pageNumber >= 14 && pageNumber <= 25) return 'outfit';
+  if (pageNumber === 26) return 'matrix';
+  if (pageNumber === 27) return 'audit';
+  return 'continuation';
+}
+
 function stringify(value: unknown) {
   return JSON.stringify(value ?? null, null, 2);
 }
@@ -529,7 +545,7 @@ ${stringify(reportData.pages)}
 --- INTAKE ---
 ${buildStylistBlueprintIntakeDigest(submission)}`;
 
-  const raw = asRecord(await callGeminiJSON(prompt));
+  const raw = asRecord(await callGeminiJSON(prompt, photoUrls(submission)));
   return normalisePages(raw.pages, act);
 }
 
@@ -549,7 +565,8 @@ function normalisePages(value: unknown, act: 'opening' | 'diagnosis' | 'prescrip
   const pages = arr.map(item => {
     const page = asRecord(item);
     const pageNumber = Number(page.page_number);
-    const pageType = allowedTypes.includes(page.page_type as BlueprintPageType) ? page.page_type as BlueprintPageType : 'diagnosis';
+    const aiPageType = allowedTypes.includes(page.page_type as BlueprintPageType) ? page.page_type as BlueprintPageType : 'diagnosis';
+    const pageType = canonicalPageType(pageNumber) || aiPageType;
     const blocks = Array.isArray(page.blocks) ? page.blocks.map(block => {
       const record = asRecord(block);
       return {
