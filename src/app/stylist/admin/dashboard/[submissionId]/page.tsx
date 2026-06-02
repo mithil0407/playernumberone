@@ -52,7 +52,25 @@ interface Submission {
 function fmt(value: unknown) {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'string') return value.replace(/_/g, ' ');
-  return JSON.stringify(value, null, 2);
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    const items = value.filter(item => item !== null && item !== undefined && item !== '');
+    return items.length ? items.map(fmt).join(', ') : '—';
+  }
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => {
+        if (item === null || item === undefined || item === '') return false;
+        if (Array.isArray(item)) return item.length > 0;
+        if (typeof item === 'object') return Object.keys(item as Record<string, unknown>).length > 0;
+        return true;
+      });
+    if (!entries.length) return '—';
+    return entries
+      .map(([key, item]) => `${key.replace(/_/g, ' ')}: ${fmt(item)}`)
+      .join('\n');
+  }
+  return String(value);
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -77,7 +95,7 @@ function ContextCard({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="rounded-xl border p-4" style={{ background: S.bg, borderColor: S.rowBorder }}>
       <p className="iconik-micro mb-2" style={{ color: S.muted }}>{label}</p>
-      <p className="luxury-body text-sm leading-6" style={{ color: S.ink, fontWeight: 300 }}>{fmt(value)}</p>
+      <p className="luxury-body text-sm leading-6 whitespace-pre-line" style={{ color: S.ink, fontWeight: 300 }}>{fmt(value)}</p>
     </div>
   );
 }
@@ -149,13 +167,13 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
           {latest?.error_message && <p className="luxury-body text-xs mt-1" style={{ color: S.error }}>{latest.error_message}</p>}
         </div>
         <div className="flex gap-2">
-          {latest && ['draft_ready', 'in_review', 'approved', 'sent'].includes(latest.status) && (
+          {latest && (
             <Link
               href={`/stylist/admin/report/${latest.id}`}
               className="px-4 py-2 rounded-xl text-sm luxury-body transition"
               style={{ background: S.ink, color: S.bg }}
             >
-              Review Report
+              Open Report
             </Link>
           )}
           {latest?.status === 'sent' && (

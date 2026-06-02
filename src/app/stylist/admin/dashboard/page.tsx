@@ -176,7 +176,7 @@ export default function StylistSubmissionsDashboard() {
         <table className="w-full">
           <thead style={{ background: S.card }}>
             <tr>
-              {['Client', 'Country', 'Moodboard', 'Completed', 'Report'].map(head => (
+              {['Client', 'Country', 'Moodboard', 'Completed', 'Report', 'Actions'].map(head => (
                 <th key={head} className="text-left px-4 py-3 iconik-micro" style={{ color: S.muted }}>{head}</th>
               ))}
             </tr>
@@ -184,7 +184,7 @@ export default function StylistSubmissionsDashboard() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center luxury-body text-sm" style={{ color: S.muted }}>Loading…</td>
+                <td colSpan={6} className="px-4 py-10 text-center luxury-body text-sm" style={{ color: S.muted }}>Loading…</td>
               </tr>
             ) : submissions.map(item => (
               <tr key={item.id} className="border-t" style={{ borderColor: S.border }}>
@@ -204,6 +204,26 @@ export default function StylistSubmissionsDashboard() {
                   {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : '—'}
                 </td>
                 <td className="px-4 py-4"><ReportBadge report={item.latest_report} /></td>
+                <td className="px-4 py-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/stylist/admin/dashboard/${item.id}`}
+                      className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                      style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
+                    >
+                      Intake
+                    </Link>
+                    {item.latest_report && (
+                      <Link
+                        href={`/stylist/admin/report/${item.latest_report.id}`}
+                        className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                        style={{ background: S.ink, color: S.bg }}
+                      >
+                        Open Report
+                      </Link>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

@@ -79,6 +79,7 @@ export async function POST(
         await supabaseAdmin
           .from('stylist_blueprint_reports')
           .update({
+            status: 'draft_ready',
             progress_stage: null,
             error_message: message,
             updated_at: new Date().toISOString(),
