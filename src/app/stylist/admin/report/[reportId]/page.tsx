@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -38,7 +38,6 @@ interface Report {
 
 const IMAGE_GROUPS: Array<{ value: StylistBlueprintImageGroup; label: string }> = [
   { value: 'all', label: 'All missing' },
-  { value: 'cover', label: 'Cover' },
   { value: 'diagnosis', label: 'Diagnosis' },
   { value: 'prescription', label: 'Prescription' },
   { value: 'capsule_1', label: 'Capsule 1' },
@@ -79,6 +78,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
+  const dirtyPagesSizeRef = useRef(0);
 
   const load = useCallback(async (fresh = false) => {
     const res = await fetch(`/api/stylist-blueprint/${reportId}${fresh ? '?fresh=1' : ''}`, { cache: 'no-store' });
@@ -89,10 +89,29 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setLoading(false);
   }, [reportId]);
 
+  const refreshGeneratedImages = useCallback(async () => {
+    const res = await fetch(`/api/stylist-blueprint/${reportId}?fresh=1`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.report) return;
+    setReport(prev => prev ? {
+      ...prev,
+      status: data.report.status,
+      progress_stage: data.report.progress_stage,
+      error_message: data.report.error_message,
+      image_urls: data.report.image_urls,
+      updated_at: data.report.updated_at,
+    } : data.report);
+  }, [reportId]);
+
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
-    if (report?.status !== 'generating' && !report?.progress_stage) return;
+    dirtyPagesSizeRef.current = dirtyPages.size;
+  }, [dirtyPages.size]);
+
+  useEffect(() => {
+    if (!generatingImages && report?.status !== 'generating' && !report?.progress_stage) return;
     const interval = setInterval(async () => {
       const res = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
       if (!res.ok) return;
@@ -104,10 +123,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         progress_stage: status.progressStage,
         error_message: status.errorMessage,
       } : prev);
-      if (status.status !== 'generating' && !status.progressStage) void load(true);
+      await refreshGeneratedImages();
+      if (dirtyPagesSizeRef.current === 0 && status.status !== 'generating' && !status.progressStage) void load(true);
     }, 3000);
     return () => clearInterval(interval);
-  }, [report?.status, report?.progress_stage, reportId, load]);
+  }, [generatingImages, report?.status, report?.progress_stage, reportId, load, refreshGeneratedImages]);
 
   useEffect(() => {
     if (report?.status === 'draft_ready') {
@@ -221,6 +241,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const generateImages = async (force = false) => {
     setGeneratingImages(true);
     setError('');
+    setReport(prev => prev ? {
+      ...prev,
+      progress_stage: `generating_images_${imageGroup}`,
+      error_message: null,
+    } : prev);
     try {
       const res = await fetch(`/api/stylist-blueprint/${reportId}/generate-images`, {
         method: 'POST',
@@ -229,7 +254,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Image generation failed');
-      await load(true);
+      await refreshGeneratedImages();
+      const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
+      if (statusRes.ok) setImageCounts((await statusRes.json()).imageCounts ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Image generation failed');
     } finally {

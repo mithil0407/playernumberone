@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Free ICONIK Style Score + Personal Mood Board',
-    description: 'Get your free ICONIK Style Score and Personal Mood Board based on your colours, body proportions, style goals, and outfit struggles. Takes 3 minutes.',
+    title: 'The Color Mirror · ICONIK',
+    description: 'Find the colors quietly fighting your face in 90 seconds. No upload. No account. Free color diagnosis from ICONIK.',
     openGraph: {
-        title: 'Free ICONIK Style Score + Personal Mood Board',
-        description: 'Discover why your clothes don\'t feel like you. Get your free ICONIK Style Score in 3 minutes.',
+        title: 'The Color Mirror · ICONIK',
+        description: 'Find the colors quietly fighting your face in 90 seconds with a free ICONIK color diagnosis.',
         type: 'website',
     },
 };

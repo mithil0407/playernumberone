@@ -18,7 +18,7 @@ export async function POST(
 
   const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
-  const allowedGroups = new Set(['cover', 'diagnosis', 'prescription', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing', 'all']);
+  const allowedGroups = new Set(['diagnosis', 'prescription', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing', 'all']);
   const group = allowedGroups.has(body.group) ? body.group as StylistBlueprintImageGroup : 'all';
   const force = Boolean(body.force);
 

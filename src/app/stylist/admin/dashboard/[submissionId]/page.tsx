@@ -49,7 +49,7 @@ interface Submission {
   created_at: string;
 }
 
-function fmt(value: unknown) {
+function fmt(value: unknown): string {
   if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'string') return value.replace(/_/g, ' ');
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);

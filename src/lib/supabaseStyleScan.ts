@@ -10,6 +10,7 @@ export { db as supabaseStyleScan };
 export interface StyleScanLead {
   id?: string;
   email: string;
+  first_name?: string;
   style_struggle?: string;
   body_shape?: string;
   undertone?: string;
@@ -22,6 +23,10 @@ export interface StyleScanLead {
   mood_keywords?: string;
   mood_colours?: string;
   whats_missing?: string;
+  season_name?: string;
+  diagnosis_answers?: Record<string, unknown> | null;
+  betrayer_colours?: string;
+  power_palette?: string;
   blueprint_cta_clicked?: boolean;
   checkout_started?: boolean;
   purchased?: boolean;
@@ -359,5 +364,220 @@ export function computeScanResult(answers: ScanAnswers): ScanResult {
     moodKeywords: moodBoard.keywords,
     moodColours: moodBoard.colours,
     whatsMissing,
+  };
+}
+
+// ── Color Mirror Diagnosis Logic ───────────────────────────────────────────
+
+export type TemperatureSwatch = 'warm' | 'cool';
+export type MetalTest = 'gold' | 'silver' | 'both';
+export type WhiteTest = 'warm_cream' | 'bright_white';
+export type NaturalDepth = 'light' | 'medium' | 'deep';
+export type ClaritySwatch = 'vivid' | 'muted';
+export type StyleGoal = 'arms' | 'midsection' | 'polished' | 'glow';
+
+export interface ColorMirrorAnswers {
+  temperatureSwatch: TemperatureSwatch;
+  metalTest: MetalTest;
+  whiteTest: WhiteTest;
+  naturalDepth: NaturalDepth;
+  claritySwatch: ClaritySwatch;
+  styleGoal: StyleGoal;
+}
+
+export interface NamedColour {
+  name: string;
+  hex: string;
+}
+
+export interface ColorMirrorResult {
+  seasonName: string;
+  undertone: 'warm' | 'cool' | 'neutral';
+  subcopy: string;
+  betrayerColours: NamedColour[];
+  powerPalette: NamedColour[];
+  betrayerExplanation: string;
+  styleGoalPhrase: string;
+}
+
+const STYLE_GOAL_PHRASES: Record<StyleGoal, string> = {
+  arms: 'draw the eye away from your arms',
+  midsection: 'draw the eye away from your midsection',
+  polished: 'make you look more polished and expensive',
+  glow: 'make you glow',
+};
+
+const SEASON_DATA: Record<string, Omit<ColorMirrorResult, 'undertone' | 'styleGoalPhrase'>> = {
+  'Soft Autumn': {
+    seasonName: 'Soft Autumn',
+    subcopy: 'Warm-toned, with a softness that means high-contrast, icy colors overwhelm your face instead of lifting it. In every round, you leaned warm — that is not coincidence. That is your Chromatic Harmony.',
+    betrayerColours: [
+      { name: 'Icy Fuchsia', hex: '#C02368' },
+      { name: 'Blue White', hex: '#F4F7FB' },
+      { name: 'Sharp Cobalt', hex: '#1F5DB8' },
+    ],
+    powerPalette: [
+      { name: 'Soft Olive', hex: '#8B8A5A' },
+      { name: 'Camel', hex: '#C8956C' },
+      { name: 'Warm Taupe', hex: '#A88770' },
+      { name: 'Dusty Peach', hex: '#D9A083' },
+      { name: 'Moss', hex: '#6F7A52' },
+    ],
+    betrayerExplanation: 'These cool, high-contrast tones fight your warm undertone — pulling the color out of your face before you have said a word. You probably own at least one.',
+  },
+  'Deep Autumn': {
+    seasonName: 'Deep Autumn',
+    subcopy: 'Warm-toned and deep, with natural richness that gets flattened by pale, icy colors. Your face needs depth, warmth, and weight — not washed-out brightness.',
+    betrayerColours: [
+      { name: 'Powder Pink', hex: '#F0C9D8' },
+      { name: 'Icy Lilac', hex: '#C9C5EF' },
+      { name: 'Cool Mint', hex: '#BDE7DE' },
+    ],
+    powerPalette: [
+      { name: 'Espresso', hex: '#3A241C' },
+      { name: 'Burnt Sienna', hex: '#A85632' },
+      { name: 'Antique Gold', hex: '#B58B32' },
+      { name: 'Forest Olive', hex: '#4F5B32' },
+      { name: 'Deep Teal', hex: '#245C5A' },
+    ],
+    betrayerExplanation: 'These pale, cool tones sit on top of your coloring instead of connecting to it. They make strong features look tired rather than intentional.',
+  },
+  'Warm Spring': {
+    seasonName: 'Warm Spring',
+    subcopy: 'Warm-toned and bright, with coloring that comes alive around clear, sunny colors. Muted and greyed shades can make your face look quieter than it actually is.',
+    betrayerColours: [
+      { name: 'Dusty Mauve', hex: '#A98F9B' },
+      { name: 'Slate Grey', hex: '#65727D' },
+      { name: 'Muted Sage', hex: '#9BA8A3' },
+    ],
+    powerPalette: [
+      { name: 'Coral', hex: '#EE6F57' },
+      { name: 'Golden Cream', hex: '#F5ECD7' },
+      { name: 'Clear Turquoise', hex: '#28A6B6' },
+      { name: 'Warm Grass', hex: '#78A848' },
+      { name: 'Apricot', hex: '#F2A15F' },
+    ],
+    betrayerExplanation: 'These muted, greyed colors dull the warmth in your face. They are not wrong colors — they are just too quiet for your natural brightness.',
+  },
+  'Warm Autumn': {
+    seasonName: 'Warm Autumn',
+    subcopy: 'Warm-toned, vivid, and deep enough to carry saturated earthy color. Cool brightness can look loud on you, while rich warmth looks expensive.',
+    betrayerColours: [
+      { name: 'Electric Blue', hex: '#1267D8' },
+      { name: 'Pure White', hex: '#F4F4F6' },
+      { name: 'Cool Magenta', hex: '#B62076' },
+    ],
+    powerPalette: [
+      { name: 'Rust', hex: '#B45F32' },
+      { name: 'Marigold', hex: '#D89B24' },
+      { name: 'Warm Navy', hex: '#28475A' },
+      { name: 'Olive Brown', hex: '#6F6138' },
+      { name: 'Tomato Red', hex: '#C9462E' },
+    ],
+    betrayerExplanation: 'These cold, high-voltage shades compete with your warmth. They grab attention before your face does, which is why they can feel harsh.',
+  },
+  'Soft Summer': {
+    seasonName: 'Soft Summer',
+    subcopy: 'Cool-toned, with a softness that looks best in refined, muted color. Warm golden shades can make your skin look uneven instead of fresh.',
+    betrayerColours: [
+      { name: 'Mustard', hex: '#C59A25' },
+      { name: 'Orange Coral', hex: '#E26A3E' },
+      { name: 'Warm Camel', hex: '#C8956C' },
+    ],
+    powerPalette: [
+      { name: 'Dusty Blue', hex: '#7B9FC4' },
+      { name: 'Rose Grey', hex: '#B89AA6' },
+      { name: 'Soft Navy', hex: '#455A70' },
+      { name: 'Mauve', hex: '#987D94' },
+      { name: 'Sage Grey', hex: '#9BA8A3' },
+    ],
+    betrayerExplanation: 'These warm, yellow-based tones push against your cool softness. They can make your face look flushed, flat, or older than it is.',
+  },
+  'Deep Summer': {
+    seasonName: 'Deep Summer',
+    subcopy: 'Cool-toned and deeper than a classic summer, with coloring that needs cool weight without harsh brightness. Warm earth colors can drag your face down.',
+    betrayerColours: [
+      { name: 'Burnt Orange', hex: '#B75A2A' },
+      { name: 'Golden Brown', hex: '#9A6A2D' },
+      { name: 'Olive Mustard', hex: '#8B7C32' },
+    ],
+    powerPalette: [
+      { name: 'Smoky Plum', hex: '#5F4B67' },
+      { name: 'Cool Navy', hex: '#253F5D' },
+      { name: 'Pine Blue', hex: '#2F6675' },
+      { name: 'Deep Rose', hex: '#8E4D68' },
+      { name: 'Charcoal Blue', hex: '#3E4C59' },
+    ],
+    betrayerExplanation: 'These golden, earthy tones sit too warm against your skin. They steal clarity from your face and make the outfit look heavier than it should.',
+  },
+  'Cool Winter': {
+    seasonName: 'Cool Winter',
+    subcopy: 'Cool-toned and clear, with features that sharpen around crisp contrast. Warm, muted colors soften the wrong things and make your face recede.',
+    betrayerColours: [
+      { name: 'Camel', hex: '#C8956C' },
+      { name: 'Muted Sage', hex: '#9BA8A3' },
+      { name: 'Warm Cream', hex: '#F5ECD7' },
+    ],
+    powerPalette: [
+      { name: 'Pure White', hex: '#F4F4F6' },
+      { name: 'Cobalt', hex: '#2D6FA3' },
+      { name: 'Black Cherry', hex: '#4D1230' },
+      { name: 'Emerald', hex: '#087A68' },
+      { name: 'Icy Pink', hex: '#E8D3E3' },
+    ],
+    betrayerExplanation: 'These warm, softened colors blur the contrast your face naturally carries. They make you look quieter when your coloring wants precision.',
+  },
+  'Deep Winter': {
+    seasonName: 'Deep Winter',
+    subcopy: 'Cool-toned, vivid, and deep, with coloring that can carry contrast. Warm dusty shades drain your face because they are too soft and too golden.',
+    betrayerColours: [
+      { name: 'Dusty Peach', hex: '#D9A083' },
+      { name: 'Warm Beige', hex: '#D6BF9A' },
+      { name: 'Olive Khaki', hex: '#8A845C' },
+    ],
+    powerPalette: [
+      { name: 'Ink Navy', hex: '#121F35' },
+      { name: 'Ruby', hex: '#A5163A' },
+      { name: 'Icy White', hex: '#F4F4F6' },
+      { name: 'Sapphire', hex: '#173D8F' },
+      { name: 'Pine', hex: '#074B47' },
+    ],
+    betrayerExplanation: 'These warm, dusty tones mute the depth that makes you striking. They pull energy out of your face and leave the clothes doing too much work.',
+  },
+};
+
+function getTemperature(answers: ColorMirrorAnswers): ColorMirrorResult['undertone'] {
+  let score = 0;
+  score += answers.temperatureSwatch === 'warm' ? 1 : -1;
+  score += answers.metalTest === 'gold' ? 1 : answers.metalTest === 'silver' ? -1 : 0;
+  score += answers.whiteTest === 'warm_cream' ? 1 : -1;
+  if (score >= 1) return 'warm';
+  if (score <= -1) return 'cool';
+  return 'neutral';
+}
+
+export function computeColorMirrorResult(answers: ColorMirrorAnswers): ColorMirrorResult {
+  const undertone = getTemperature(answers);
+  const clarity = answers.claritySwatch;
+  const depth = answers.naturalDepth;
+  const warmTieBreak = answers.temperatureSwatch === 'warm';
+  const effectiveUndertone = undertone === 'neutral' ? (warmTieBreak ? 'warm' : 'cool') : undertone;
+
+  let seasonName: string;
+  if (effectiveUndertone === 'warm' && clarity === 'muted') {
+    seasonName = depth === 'deep' ? 'Deep Autumn' : 'Soft Autumn';
+  } else if (effectiveUndertone === 'warm' && clarity === 'vivid') {
+    seasonName = depth === 'deep' ? 'Warm Autumn' : 'Warm Spring';
+  } else if (effectiveUndertone === 'cool' && clarity === 'muted') {
+    seasonName = depth === 'deep' ? 'Deep Summer' : 'Soft Summer';
+  } else {
+    seasonName = depth === 'deep' ? 'Deep Winter' : 'Cool Winter';
+  }
+
+  const season = SEASON_DATA[seasonName] ?? SEASON_DATA['Soft Autumn'];
+  return {
+    ...season,
+    undertone,
+    styleGoalPhrase: STYLE_GOAL_PHRASES[answers.styleGoal],
   };
 }

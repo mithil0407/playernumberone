@@ -87,18 +87,70 @@ function getField(item: unknown, keys: string[], fallback = '') {
   for (const key of keys) {
     const value = item[key];
     if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     if (Array.isArray(value) && value.length) return value.map(String).join(', ');
+    if (isObject(value)) return objectSummary(value);
   }
   return fallback;
 }
 
-function objectSummary(item: unknown) {
+function objectSummary(item: unknown): string {
   if (typeof item === 'string') return item;
   if (!isObject(item)) return String(item ?? '');
   return Object.entries(item)
-    .filter(([, value]) => typeof value === 'string' || typeof value === 'number' || Array.isArray(value))
-    .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${Array.isArray(value) ? value.join(', ') : value}`)
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${Array.isArray(value) ? value.join(', ') : isObject(value) ? objectSummary(value) : value}`)
     .join(' - ');
+}
+
+const OUTFIT_SLOT_KEYS = [
+  'top',
+  'bottom',
+  'bottoms',
+  'dress',
+  'outerwear',
+  'layer',
+  'footwear',
+  'shoes',
+  'bag',
+  'jewellery',
+  'jewelry',
+  'accessory',
+  'accessories',
+] as const;
+
+function titleCase(value: string) {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function normaliseFormulaItems(page: BlueprintPage): unknown[] {
+  const formulaBlock = page.blocks.find(block => /formula|piece|look|outfit/i.test(`${block.label} ${block.heading}`))
+    || page.blocks.find(block => asItems(block).length >= 3);
+  const rawItems = asItems(formulaBlock);
+  const objectItem = rawItems.length === 1 && isObject(rawItems[0]) ? rawItems[0] : null;
+  const slotSource = objectItem && OUTFIT_SLOT_KEYS.some(key => objectItem[key] !== undefined)
+    ? objectItem
+    : null;
+
+  if (slotSource) {
+    return OUTFIT_SLOT_KEYS
+      .map(key => {
+        const value = slotSource[key];
+        if (value === null || value === undefined || value === '') return null;
+        return {
+          slot: titleCase(key),
+          piece: typeof value === 'string' ? value : objectSummary(value),
+          structural_notes: getField(value, ['structural_notes', 'notes', 'reason', 'body'], ''),
+        };
+      })
+      .filter(Boolean) as unknown[];
+  }
+
+  if (rawItems.length) return rawItems.slice(0, 8);
+
+  return page.blocks
+    .filter(block => block.heading || block.label || block.body || block.reason)
+    .slice(0, 8);
 }
 
 function splitDisplayName(name: string) {
@@ -145,16 +197,10 @@ function pageKicker(page: BlueprintPage) {
 function imageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null) {
   const images = imageUrls;
   switch (page.page_number) {
-    case 1: return images?.cover?.portrait ?? null;
     case 4: return images?.diagnosis?.silhouetteFront ?? null;
     case 5: return images?.diagnosis?.undertoneMap ?? null;
     case 6: return images?.diagnosis?.faceShapeDiagram ?? null;
-    case 7: return images?.diagnosis?.combinedAxes ?? null;
-    case 8: return images?.diagnosis?.avoidanceGrid ?? null;
-    case 9: return images?.prescription?.basePalette ?? null;
-    case 10: return images?.prescription?.necklineGrid ?? null;
     case 11: return images?.prescription?.hairDirections ?? null;
-    case 12: return images?.prescription?.approvedFabrics ?? null;
     case 26: return images?.closing?.combinationMatrix ?? null;
     case 28: return images?.closing?.editTeaser ?? null;
     default:
@@ -168,13 +214,8 @@ function imageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintI
 function secondaryImageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null) {
   if (page.page_number >= 14 && page.page_number <= 25) return null;
   if (page.page_number === 4) return imageUrls?.diagnosis?.silhouetteSide ?? null;
-  if (page.page_number === 5) return imageUrls?.diagnosis?.depthContrastMatrix ?? null;
   if (page.page_number === 6) return imageUrls?.diagnosis?.necklinePreview ?? null;
-  if (page.page_number === 7) return imageUrls?.diagnosis?.focalHeatmap ?? null;
-  if (page.page_number === 9) return imageUrls?.prescription?.accentPalette ?? null;
-  if (page.page_number === 10) return imageUrls?.prescription?.sleeveWaistGrid ?? null;
   if (page.page_number === 11) return imageUrls?.prescription?.eyewearFrames ?? null;
-  if (page.page_number === 12) return imageUrls?.prescription?.avoidedFabrics ?? null;
   return null;
 }
 
@@ -365,7 +406,8 @@ function DiagnosisPage({
     { label: 'Discipline', body: data.analysis.evidence_notes.join(' ') },
   ];
 
-  if (page.page_number === 5) return <ChromaticPage page={page} data={data} image={image} secondary={secondary} />;
+  if (page.page_number === 5) return <ChromaticPage page={page} data={data} image={image} />;
+  if (page.page_number === 7) return <ProportionalAxesPage page={page} data={data} />;
 
   return (
     <PageFrame page={page} className="diagnosis-page">
@@ -423,33 +465,40 @@ function ChromaticPage({
   page,
   data,
   image,
-  secondary,
 }: {
   page: BlueprintPage;
   data: StylistBlueprintReportData;
   image: string | null;
-  secondary: string | null;
 }) {
   const depth = data.classification.colour.depth || 'medium';
   const contrast = data.classification.colour.contrast || 'medium';
+  const undertonePosition = axisPosition(data.classification.colour.undertone_direction, 'undertone');
+  const depthPosition = axisPosition(depth, 'depth');
+  const contrastPosition = axisPosition(contrast, 'contrast');
   return (
     <PageFrame page={page} className="chromatic-page">
       <div className="chromatic-inner">
         <h2><span className="display">Colour, in</span><span className="display-it">three axes.</span></h2>
         <div className="rule" />
-        <div className="axis-block">
-          <div className="axis-head">
-            <div className="mono faded">Axis 01 - Undertone</div>
-            <div className="display axis-value">{data.classification.colour.undertone_direction}</div>
+        <div className="chromatic-map">
+          <div className="axis-portrait">
+            {image ? <img src={image} alt="" /> : <UndertoneBar position={undertonePosition} />}
           </div>
-          {image ? <img src={image} alt="" className="axis-image" /> : <UndertoneBar />}
-          <div className="axis-scale mono faded"><span>Cool</span><span>Neutral</span><span>Warm</span></div>
+          <div className="chromatic-axes">
+            <div className="axis-block">
+              <div className="axis-head">
+                <div className="mono faded">Axis 01 - Undertone</div>
+                <div className="display axis-value">{data.classification.colour.undertone_direction}</div>
+              </div>
+              <UndertoneBar position={undertonePosition} />
+              <div className="axis-scale mono faded"><span>Cool</span><span>Neutral</span><span>Warm</span></div>
+            </div>
+            <div className="mini-axis-grid">
+              <MiniAxis label="Axis 02 - Depth" value={depth} position={depthPosition} />
+              <MiniAxis label="Axis 03 - Contrast" value={contrast} position={contrastPosition} />
+            </div>
+          </div>
         </div>
-        <div className="mini-axis-grid">
-          <MiniAxis label="Axis 02 - Depth" value={depth} />
-          <MiniAxis label="Axis 03 - Contrast" value={contrast} reverse />
-        </div>
-        {secondary && <img src={secondary} alt="" className="secondary-strip chromatic-secondary" />}
         <div className="rule quote-rule" />
         <p className="display-it diagnosis-quote">&quot;{page.subtitle || data.analysis.chromatic_family}&quot;</p>
       </div>
@@ -457,16 +506,32 @@ function ChromaticPage({
   );
 }
 
-function UndertoneBar() {
+function axisPosition(value: string, kind: 'undertone' | 'depth' | 'contrast') {
+  const text = value.toLowerCase();
+  if (kind === 'undertone') {
+    if (text.includes('cool') && text.includes('warm')) return 50;
+    if (text.includes('cool')) return text.includes('neutral') ? 32 : 14;
+    if (text.includes('warm')) return text.includes('neutral') ? 68 : 86;
+    return 50;
+  }
+  if (text.includes('low') || text.includes('light') || text.includes('soft')) return 16;
+  if (text.includes('high') || text.includes('deep') || text.includes('dark')) return 84;
+  if (text.includes('medium-high') || text.includes('medium high')) return 68;
+  if (text.includes('medium-low') || text.includes('medium low')) return 32;
+  return 50;
+}
+
+function UndertoneBar({ position }: { position: number }) {
   return (
     <div className="undertone-bar">
-      <div className="undertone-marker" />
+      <div className="undertone-marker" style={{ left: `${position}%` }} />
     </div>
   );
 }
 
-function MiniAxis({ label, value, reverse = false }: { label: string; value: string; reverse?: boolean }) {
-  const bars = Array.from({ length: 10 }, (_, index) => reverse ? 100 - index * 8 : 30 + index * 7);
+function MiniAxis({ label, value, position }: { label: string; value: string; position: number }) {
+  const bars = Array.from({ length: 10 }, (_, index) => 30 + index * 7);
+  const activeIndex = Math.max(0, Math.min(9, Math.round((position / 100) * 9)));
   return (
     <div>
       <div className="axis-head small">
@@ -474,9 +539,51 @@ function MiniAxis({ label, value, reverse = false }: { label: string; value: str
         <div className="display-it mini-axis-value">{value}</div>
       </div>
       <div className="bars">
-        {bars.map((height, index) => <span key={index} style={{ height: `${height}%` }} className={index === 6 ? 'active' : ''} />)}
+        {bars.map((height, index) => <span key={index} style={{ height: `${height}%` }} className={index === activeIndex ? 'active' : ''} />)}
       </div>
     </div>
+  );
+}
+
+function ProportionalAxesPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const blocks = page.blocks.length ? page.blocks : [
+    { label: 'Axis 01', heading: 'Vertical balance', body: data.classification.body.proportion_directive },
+    { label: 'Axis 02', heading: 'Horizontal balance', body: data.classification.body.silhouette_rules.join(' ') },
+    { label: 'Axis 03', heading: 'Focal control', body: data.analysis.proportional_focus.join(', ') },
+  ];
+  return (
+    <PageFrame page={page} className="proportion-page">
+      <div className="proportion-inner">
+        <div>
+          <h2>
+            <EditableText page={page} value={page.title} update={value => ({ ...page, title: value })} className="display" />
+            <EditableText page={page} value={page.subtitle || 'aligned.'} update={value => ({ ...page, subtitle: value })} className="display-it" />
+          </h2>
+          <div className="rule" />
+          <p className="display-it diagnosis-quote">&quot;{data.analysis.proportional_focus.join('. ')}&quot;</p>
+        </div>
+        <div className="proportion-card-grid">
+          {blocks.slice(0, 6).map((block, index) => (
+            <div key={index} className="glass-dark proportion-card">
+              <div className="mono dossier-label">{block.label || `Axis ${String(index + 1).padStart(2, '0')}`}</div>
+              <EditableText
+                as="h3"
+                page={page}
+                value={block.heading || block.label || `Axis ${index + 1}`}
+                update={value => updateBlock(page, index, block.heading !== undefined ? { heading: value } : { label: value })}
+                className="display"
+              />
+              <EditableText
+                as="p"
+                page={page}
+                value={block.body || block.reason || objectSummary(asItems(block)[0])}
+                update={value => updateBlock(page, index, block.body !== undefined ? { body: value } : { reason: value })}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageFrame>
   );
 }
 
@@ -604,6 +711,73 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
   );
 }
 
+function FaceGridFallback() {
+  return (
+    <div className="face-grid-fallback">
+      {Array.from({ length: 4 }, (_, index) => (
+        <span key={index}>
+          <i />
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function HairFaceAccessoriesPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const hairImage = imageUrls?.prescription?.hairDirections ?? null;
+  const eyewearImage = imageUrls?.prescription?.eyewearFrames ?? null;
+  const cards = page.blocks.flatMap((block, sourceIndex) => {
+    const items = asItems(block);
+    if (!items.length) return [{ block, item: block, sourceIndex }];
+    return items.map(item => ({ block, item, sourceIndex }));
+  }).slice(0, 6);
+
+  return (
+    <PageFrame page={page} className="hair-page">
+      <div className="hair-inner">
+        <div className="hair-copy">
+          <h2>
+            <EditableText page={page} value={page.title} update={value => ({ ...page, title: value })} className="display" />
+            <EditableText page={page} value={page.subtitle || 'framed.'} update={value => ({ ...page, subtitle: value })} className="display-it" />
+          </h2>
+          <div className="rule" />
+          <p>{firstBody(page.blocks, data.classification.face_hair_accessories.face_direction)}</p>
+        </div>
+        <div className="face-visuals">
+          <div className="face-panel">
+            <div className="mono dossier-label">Hair direction - 2x2</div>
+            {hairImage ? <img src={hairImage} alt="" /> : <FaceGridFallback />}
+          </div>
+          <div className="face-panel">
+            <div className="mono dossier-label">Eyeframes + sunglasses - 2x2</div>
+            {eyewearImage ? <img src={eyewearImage} alt="" /> : <FaceGridFallback />}
+          </div>
+        </div>
+        <div className="hair-card-grid">
+          {cards.map(({ block, item, sourceIndex }, index) => (
+            <div key={index} className="glass-dark premium-rule-card">
+              <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
+              <EditableText
+                as="h3"
+                page={page}
+                value={getField(item, ['heading', 'label', 'rule', 'name'], block.heading || block.label || `Rule ${index + 1}`)}
+                update={value => updateBlock(page, sourceIndex, block.heading !== undefined ? { heading: value } : { label: value })}
+                className="display"
+              />
+              <EditableText
+                as="p"
+                page={page}
+                value={getField(item, ['body', 'note', 'answer', 'piece', 'reason'], objectSummary(item))}
+                update={value => updateBlock(page, sourceIndex, block.body !== undefined ? { body: value } : { reason: value })}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
 function OutfitSystemPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
   const covers = imageUrls?.application?.capsuleCovers?.filter((url): url is string => Boolean(url)) ?? [];
   return (
@@ -639,9 +813,8 @@ function SwatchDot({ hex }: { hex: string }) {
 function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
   const image = imageForPage(page, imageUrls);
   const detail = secondaryImageForPage(page, imageUrls);
-  const formulaBlock = page.blocks.find(block => /formula|piece|look/i.test(`${block.label} ${block.heading}`)) || page.blocks.find(block => asItems(block).length >= 3);
   const reasoning = page.blocks.find(block => block.reason || /reason|why|works/i.test(`${block.label} ${block.heading}`));
-  const items = asItems(formulaBlock).slice(0, 6);
+  const items = normaliseFormulaItems(page);
   const palette = [...data.classification.colour.base_palette, ...data.classification.colour.accent_palette].slice(0, 5);
   const outfitNumber = page.page_number - 13;
   return (
@@ -750,25 +923,33 @@ function NodeMap() {
   );
 }
 
-function ContinuationPage({ page }: { page: BlueprintPage }) {
+function ContinuationPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const image = imageForPage(page, imageUrls);
   return (
     <PageFrame page={page} className="continuation-page">
-      <div className="continuation-inner">
-        <div className="display-it note">a note to the wearer</div>
-        <h2><span className="display">Your Blueprint is</span><span className="display">the system.</span><span className="display-it">The Edit is the practice.</span></h2>
-        <EditableText
-          as="p"
-          page={page}
-          value={firstBody(page.blocks, 'A weekly study built on the data in this Blueprint. New outfit formulas, shopping intelligence, and styling logic matched to your palette and geometry.')}
-          update={value => updateBlock(page, page.blocks.findIndex(block => block.body || block.reason), { body: value })}
-        />
-        <div className="edit-pill">
-          <div className="display">$39<span>/mo</span></div>
-          <i />
-          <div className="display-it">Continue with the Edit &gt;</div>
+      <div className={image ? 'continuation-layout' : 'continuation-inner'}>
+        <div className="continuation-copy">
+          <div className="display-it note">a note to the wearer</div>
+          <h2><span className="display">Your Blueprint is</span><span className="display">the system.</span><span className="display-it">The Edit is the practice.</span></h2>
+          <EditableText
+            as="p"
+            page={page}
+            value={firstBody(page.blocks, 'A weekly study built on the data in this Blueprint. New outfit formulas, shopping intelligence, and styling logic matched to your palette and geometry.')}
+            update={value => updateBlock(page, page.blocks.findIndex(block => block.body || block.reason), { body: value })}
+          />
+          <div className="edit-pill">
+            <div className="display">$39<span>/mo</span></div>
+            <i />
+            <div className="display-it">Continue with the Edit &gt;</div>
+          </div>
+          <div className="short-rule" />
+          <div className="display-it tagline">Same body. Different science.</div>
         </div>
-        <div className="short-rule" />
-        <div className="display-it tagline">Same body. Different science.</div>
+        {image && (
+          <div className="continuation-image">
+            <img src={image} alt="" />
+          </div>
+        )}
       </div>
     </PageFrame>
   );
@@ -780,7 +961,8 @@ function GenericPage({ page, data, imageUrls }: { page: BlueprintPage; data: Sty
   if (pageType === 'palette') return <PalettePage page={page} data={data} />;
   if (pageType === 'outfit_system') return <OutfitSystemPage page={page} imageUrls={imageUrls} />;
   if (pageType === 'matrix') return <MatrixPage page={page} imageUrls={imageUrls} />;
-  if (pageType === 'continuation') return <ContinuationPage page={page} />;
+  if (pageType === 'continuation') return <ContinuationPage page={page} imageUrls={imageUrls} />;
+  if (page.page_number === 11) return <HairFaceAccessoriesPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'rules' || pageType === 'fabric' || pageType === 'avoidance' || pageType === 'audit') {
     return <RuleLikePage page={page} data={data} imageUrls={imageUrls} />;
   }
@@ -1028,7 +1210,25 @@ function BlueprintStyles() {
         top: 32%;
         left: 56px;
         right: 56px;
+        z-index: 2;
+      }
+      .cover-portrait {
+        position: absolute;
+        right: 58px;
+        bottom: 58px;
+        width: min(34%, 320px);
+        aspect-ratio: 2 / 3;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid rgba(244, 239, 229, 0.18);
+        box-shadow: 0 28px 80px rgba(44, 38, 34, 0.18);
         z-index: 1;
+      }
+      .cover-portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
       .cover-rule {
         display: flex;
@@ -1240,6 +1440,34 @@ function BlueprintStyles() {
       .chromatic-inner {
         margin-top: 70px;
       }
+      .chromatic-map {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.82fr) 1.18fr;
+        gap: 36px;
+        align-items: stretch;
+        margin-top: 42px;
+      }
+      .axis-portrait {
+        min-height: 360px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(244, 239, 229, 0.18);
+        background: rgba(244, 239, 229, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .axis-portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .chromatic-axes {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
       .axis-block {
         margin: 48px 0 56px;
       }
@@ -1258,9 +1486,10 @@ function BlueprintStyles() {
       .axis-image {
         width: 100%;
         max-height: 220px;
-        object-fit: cover;
+        object-fit: contain;
         border-radius: 14px;
         border: 1px solid rgba(244, 239, 229, 0.18);
+        background: rgba(244, 239, 229, 0.08);
       }
       .undertone-bar {
         position: relative;
@@ -1322,6 +1551,34 @@ function BlueprintStyles() {
       .chromatic-secondary {
         max-height: 180px;
         object-fit: cover;
+      }
+      .proportion-inner {
+        margin-top: 78px;
+        display: grid;
+        grid-template-columns: 0.84fr 1.16fr;
+        gap: 46px;
+      }
+      .proportion-inner h2 span {
+        display: block;
+        font-size: clamp(48px, 7vw, 82px);
+      }
+      .proportion-card-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .proportion-card {
+        padding: 24px;
+      }
+      .proportion-card h3 {
+        font-size: 26px;
+        margin: 12px 0;
+      }
+      .proportion-card p {
+        font-size: 13px;
+        line-height: 1.65;
+        opacity: 0.78;
+        margin: 0;
       }
       .palette-inner h2 {
         display: flex;
@@ -1395,7 +1652,78 @@ function BlueprintStyles() {
         margin-top: 28px;
       }
       .reference-images img {
-        aspect-ratio: 16 / 9;
+        aspect-ratio: 4 / 5;
+      }
+      .hair-inner {
+        margin-top: 72px;
+      }
+      .hair-copy {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 44px;
+        align-items: end;
+      }
+      .hair-copy h2 {
+        margin: 0;
+      }
+      .hair-copy h2 span {
+        display: block;
+        font-size: clamp(44px, 7vw, 76px);
+      }
+      .hair-copy p {
+        font-size: 14px;
+        line-height: 1.7;
+        opacity: 0.72;
+        margin: 24px 0 0;
+      }
+      .face-visuals {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-top: 34px;
+      }
+      .face-panel {
+        background: rgba(44, 38, 34, 0.04);
+        border: 1px solid rgba(44, 38, 34, 0.08);
+        border-radius: 18px;
+        padding: 16px;
+      }
+      .face-panel img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        object-position: top center;
+        border-radius: 12px;
+        margin-top: 12px;
+        display: block;
+      }
+      .face-grid-fallback {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        aspect-ratio: 1 / 1;
+        margin-top: 12px;
+      }
+      .face-grid-fallback span {
+        border-radius: 12px;
+        background: linear-gradient(160deg, ${SLATE_LIGHT}, ${SLATE_DEEP});
+        position: relative;
+      }
+      .face-grid-fallback i {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 34%;
+        height: 44%;
+        transform: translate(-50%, -45%);
+        border-radius: 50% 50% 42% 42%;
+        border: 1px solid rgba(244, 239, 229, 0.65);
+      }
+      .hair-card-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 18px;
       }
       .capsule-map {
         display: grid;
@@ -1469,22 +1797,24 @@ function BlueprintStyles() {
       .flatlay-frame {
         background: linear-gradient(160deg, ${SLATE} 0%, ${SLATE_DEEP} 100%);
         border-radius: 24px;
-        padding: 36px;
-        aspect-ratio: 4 / 5;
+        padding: 20px;
+        aspect-ratio: 2 / 3;
         position: relative;
         overflow: hidden;
         color: ${IVORY};
       }
       .flatlay-frame img {
         width: 100%;
-        height: calc(100% - 30px);
-        margin-top: 8px;
+        height: calc(100% - 28px);
+        margin-top: 6px;
         object-fit: contain;
+        object-position: center;
+        border-radius: 16px;
       }
       .outfit-svg {
         width: 100%;
-        height: calc(100% - 30px);
-        margin-top: 8px;
+        height: calc(100% - 28px);
+        margin-top: 6px;
       }
       .detail-image {
         width: 100%;
@@ -1503,7 +1833,7 @@ function BlueprintStyles() {
       }
       .formula-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 12px;
       }
       .formula-card {
@@ -1604,7 +1934,38 @@ function BlueprintStyles() {
         margin: 0 auto;
         text-align: center;
       }
+      .continuation-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+        align-items: center;
+        gap: 48px;
+        width: 100%;
+      }
+      .continuation-copy {
+        text-align: left;
+      }
+      .continuation-inner .continuation-copy {
+        text-align: center;
+      }
+      .continuation-image {
+        aspect-ratio: 2 / 3;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid rgba(244, 239, 229, 0.16);
+        box-shadow: 0 24px 70px rgba(44, 38, 34, 0.18);
+      }
+      .continuation-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
       .continuation-inner .note {
+        font-size: 20px;
+        opacity: 0.65;
+        margin-bottom: 28px;
+      }
+      .continuation-copy .note {
         font-size: 20px;
         opacity: 0.65;
         margin-bottom: 28px;
@@ -1612,11 +1973,21 @@ function BlueprintStyles() {
       .continuation-inner h2 span {
         font-size: clamp(44px, 7vw, 64px);
       }
+      .continuation-copy h2 span {
+        font-size: clamp(40px, 6vw, 58px);
+      }
       .continuation-inner p {
         font-size: 15px;
         line-height: 1.85;
         opacity: 0.82;
         margin: 44px auto 0;
+        max-width: 520px;
+      }
+      .continuation-copy p {
+        font-size: 15px;
+        line-height: 1.85;
+        opacity: 0.82;
+        margin: 36px 0 0;
         max-width: 520px;
       }
       .edit-pill {
@@ -1680,6 +2051,9 @@ function BlueprintStyles() {
         .summary-grid,
         .diagnosis-grid,
         .rule-layout,
+        .chromatic-map,
+        .proportion-inner,
+        .hair-copy,
         .outfit-hero,
         .matrix-grid {
           grid-template-columns: 1fr;
@@ -1693,6 +2067,9 @@ function BlueprintStyles() {
         .dossier-cards,
         .reading-blocks,
         .rule-card-grid,
+        .proportion-card-grid,
+        .face-visuals,
+        .hair-card-grid,
         .capsule-map,
         .mini-axis-grid,
         .reference-images {
@@ -1710,7 +2087,25 @@ function BlueprintStyles() {
           top: auto;
           left: auto;
           right: auto;
-          padding: 180px 0 120px;
+          padding: 140px 0 32px;
+        }
+        .cover-portrait {
+          position: relative;
+          right: auto;
+          bottom: auto;
+          width: min(72%, 260px);
+          margin: 0 auto 96px;
+        }
+        .continuation-layout {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        .continuation-copy {
+          text-align: center;
+        }
+        .continuation-image {
+          width: min(78%, 280px);
+          margin: 0 auto;
         }
         .finding-list,
         .outfit-meta {

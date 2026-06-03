@@ -28,7 +28,6 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPE
 let bucketReady = false;
 
 export type StylistBlueprintImageGroup =
-  | 'cover'
   | 'diagnosis'
   | 'prescription'
   | 'capsule_1'
@@ -412,9 +411,10 @@ async function callEditorialImage(
   if (geminiBuffer) return geminiBuffer;
 
   console.warn(`[stylist-blueprint-images] Falling back to OpenAI image model for ${fileName}`);
-  return sourceUrl
-    ? (await callOpenAIImageEdit(prompt, sourceUrl, fileName, size)) ?? callOpenAIImage(prompt, size)
-    : callOpenAIImage(prompt, size);
+  if (sourceUrl) {
+    return callOpenAIImageEdit(prompt, sourceUrl, fileName, size);
+  }
+  return callOpenAIImage(prompt, size);
 }
 
 function blockText(value: unknown): string {
@@ -464,8 +464,8 @@ CRITICAL CLOTHING INSTRUCTION:
 Background and style:
 - Matte ICONIK slate background ${SLATE}.
 - Premium studio cyclorama fashion editorial, clean front/three-quarter pose.
-- Full outfit visible from head to toe.
-- No text, no labels, no watermark, no extra people, no mannequin.
+- Full outfit visible from head to toe, centered in frame, with generous margin above the head and below the footwear. Both shoes and all footwear details must be fully visible.
+- Absolutely no text, letters, typography, captions, labels, logos, signage, watermarks, UI marks, brand marks, readable symbols, extra people, or mannequin.
 - Natural realistic fabric behavior and correct garment construction.
 
 Client styling constraints:
@@ -551,8 +551,8 @@ function prescriptionPrompt(reportData: StylistBlueprintReportData, slot: keyof 
     accentPalette: `${base} Show exactly 5 colour swatches in one centered row. Use these colours exactly: ${accentPalette}.`,
     necklineGrid: `${base} Show six approved neckline geometry diagrams in a 3x2 grid: ${reportData.classification.face_hair_accessories.approved_necklines.join(', ')}. Warm-white line work.`,
     sleeveWaistGrid: `${base} Show sleeve and waistline construction geometry diagrams for these silhouette rules: ${reportData.classification.body.silhouette_rules.join(', ')}. Warm-white line work.`,
-    hairDirections: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions. Create a polished head-and-shoulders editorial portrait on matte ICONIK slate #94A6AD showing the client with the recommended hairstyle direction: ${hairStyles}. The hair should look realistic, wearable, and matched to the client's facial architecture: ${reportData.classification.face_hair_accessories.face_shape}. No text, no labels, no before/after split, no collage.`,
-    eyewearFrames: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions. Create a polished head-and-shoulders editorial portrait on matte ICONIK slate #94A6AD showing the client wearing the recommended eyewear frame direction: ${eyewearShapes}. Frames should be realistic, properly scaled, and matched to the client's facial architecture: ${reportData.classification.face_hair_accessories.face_shape}. No text, no labels, no before/after split, no collage.`,
+    hairDirections: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions in every cell. Create one clean 2x2 grid image with exactly four polished head-and-shoulders hairstyle options for the same client: ${hairStyles}. Each cell should show one distinct realistic, wearable hairstyle matched to ${reportData.classification.face_hair_accessories.face_shape} facial architecture. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
+    eyewearFrames: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions in every cell. Create one clean 2x2 grid image with exactly four eyewear options on the same client: two optical eyeglass frames and two sunglasses. Frame direction: ${eyewearShapes}. Frames must be realistic, properly scaled, and matched to ${reportData.classification.face_hair_accessories.face_shape} facial architecture. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
     approvedFabrics: `${base} Show a 2x2 macro texture grid of approved fabrics: ${reportData.classification.fabrics.approved.map(f => f.name).join(', ')}. Warm ivory fabric texture, photorealistic macro detail.`,
     avoidedFabrics: `${base} Show avoided fabric macro swatches: ${reportData.classification.fabrics.avoid.map(f => f.name).join(', ')}. Add subtle warm-rose diagonal avoid strokes. Photorealistic macro detail.`,
   };
@@ -588,38 +588,16 @@ export async function generateStylistBlueprintImages(
 
   await persistPaths(reportId, paths, shareToken, `generating_images_${group}`);
 
-  if (group === 'cover' || group === 'all') {
-    await setSlot({
-      reportId, paths, shareToken, force, fileName: 'cover-portrait',
-      getCurrent: () => paths.cover.portrait,
-      setCurrent: path => { paths.cover.portrait = path; },
-      create: async () => generatedImage(
-        reportId,
-        'cover-portrait',
-        `Using the uploaded headshot as source when provided, create a warm editorial head-and-shoulders portrait treatment on slate background ${SLATE}. Preserve identity and facial features. Natural luminous skin, no text, Vogue editorial restraint.`,
-        photos.headshot,
-        '1024x1536',
-      ),
-    });
-  }
-
   if (group === 'diagnosis' || group === 'all') {
-    const fullBodySource = photos.front || photos.side || null;
     const diagnosisSlots: Array<[keyof MutablePaths['diagnosis'], string, string | null, '1024x1024' | '1024x1536' | '1536x1024']> = [
-      ['silhouetteFront', 'diagnosis-silhouette-front', photos.front || fullBodySource, '1024x1536'],
-      ['silhouetteSide', 'diagnosis-silhouette-side', photos.side || fullBodySource, '1024x1536'],
-      ['proportionalAxes', 'diagnosis-proportional-axes', fullBodySource, '1024x1536'],
+      ['silhouetteFront', 'diagnosis-silhouette-front', photos.front, '1024x1536'],
+      ['silhouetteSide', 'diagnosis-silhouette-side', photos.side, '1024x1536'],
       ['undertoneMap', 'diagnosis-undertone-map', photos.headshot, '1024x1024'],
-      ['depthContrastMatrix', 'diagnosis-depth-contrast', photos.headshot, '1024x1024'],
-      ['palettePreview', 'diagnosis-palette-preview', null, '1536x1024'],
       ['faceShapeDiagram', 'diagnosis-face-shape', photos.headshot, '1024x1024'],
       ['faceRatios', 'diagnosis-face-ratios', photos.headshot, '1024x1024'],
-      ['necklinePreview', 'diagnosis-neckline-preview', null, '1024x1024'],
-      ['combinedAxes', 'diagnosis-combined-axes', fullBodySource, '1024x1536'],
-      ['focalHeatmap', 'diagnosis-focal-heatmap', fullBodySource, '1024x1536'],
-      ['avoidanceGrid', 'diagnosis-avoidance-grid', null, '1536x1024'],
     ];
     for (const [slot, fileName, sourceUrl, size] of diagnosisSlots) {
+      if (!sourceUrl) continue;
       await setSlot({
         reportId, paths, shareToken, force, fileName,
         getCurrent: () => paths.diagnosis[slot],
@@ -631,19 +609,11 @@ export async function generateStylistBlueprintImages(
 
   if (group === 'prescription' || group === 'all') {
     const prescriptionSlots: Array<[keyof MutablePaths['prescription'], string, string | null, '1024x1024' | '1024x1536' | '1536x1024']> = [
-      ['basePalette', 'prescription-base-palette', null, '1536x1024'],
-      ['accentPalette', 'prescription-accent-palette', null, '1536x1024'],
-      ['necklineGrid', 'prescription-neckline-grid', null, '1536x1024'],
-      ['sleeveWaistGrid', 'prescription-sleeve-waist-grid', null, '1536x1024'],
       ['hairDirections', 'prescription-hair-directions', photos.headshot, '1024x1536'],
       ['eyewearFrames', 'prescription-eyewear-frames', photos.headshot, '1024x1536'],
-      ['approvedFabrics', 'prescription-approved-fabrics', null, '1024x1024'],
-      ['avoidedFabrics', 'prescription-avoided-fabrics', null, '1536x1024'],
     ];
     for (const [slot, fileName, sourceUrl, size] of prescriptionSlots) {
-      if ((slot === 'hairDirections' || slot === 'eyewearFrames') && !sourceUrl) {
-        throw new Error(`Client headshot is required for ${fileName}`);
-      }
+      if (!sourceUrl) continue;
       await setSlot({
         reportId, paths, shareToken, force, fileName,
         getCurrent: () => paths.prescription[slot],
@@ -706,6 +676,7 @@ export async function generateStylistBlueprintImages(
       setCurrent: path => { paths.closing.editTeaser = path; },
       create: () => {
         const clientSource = photos.front || photos.side || photos.headshot || null;
+        if (!clientSource) throw new Error('No client photo found for closing teaser image generation');
         return generatedImage(
           reportId,
           'closing-edit-teaser',
@@ -783,17 +754,38 @@ export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintIm
   } as ResolvedStylistBlueprintImageUrls;
 }
 
-export function getStylistBlueprintImageCounts(paths: StylistBlueprintImagePaths | null | undefined) {
+export function getStylistBlueprintImageCounts(
+  paths: StylistBlueprintImagePaths | null | undefined,
+  options: {
+    hasFrontPhoto?: boolean;
+    hasSidePhoto?: boolean;
+    hasHeadshot?: boolean;
+    hasClientPhoto?: boolean;
+  } = {},
+) {
   const normalised = normalise(paths);
   const groups = {
-    cover: [normalised.cover.portrait],
-    diagnosis: Object.values(normalised.diagnosis),
-    prescription: Object.values(normalised.prescription),
-    capsule_1: normalised.application.outfitFlatlays.slice(0, 3),
-    capsule_2: normalised.application.outfitFlatlays.slice(3, 6),
-    capsule_3: normalised.application.outfitFlatlays.slice(6, 9),
-    capsule_4: normalised.application.outfitFlatlays.slice(9, 12),
-    closing: [normalised.closing.combinationMatrix, normalised.closing.editTeaser],
+    diagnosis: [
+      ...(options.hasFrontPhoto ? [normalised.diagnosis.silhouetteFront] : []),
+      ...(options.hasSidePhoto ? [normalised.diagnosis.silhouetteSide] : []),
+      ...(options.hasHeadshot ? [
+        normalised.diagnosis.undertoneMap,
+        normalised.diagnosis.faceShapeDiagram,
+        normalised.diagnosis.faceRatios,
+      ] : []),
+    ],
+    prescription: options.hasHeadshot ? [
+      normalised.prescription.hairDirections,
+      normalised.prescription.eyewearFrames,
+    ] : [],
+    capsule_1: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(0, 3) : [],
+    capsule_2: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(3, 6) : [],
+    capsule_3: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(6, 9) : [],
+    capsule_4: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(9, 12) : [],
+    closing: [
+      normalised.closing.combinationMatrix,
+      ...(options.hasClientPhoto ? [normalised.closing.editTeaser] : []),
+    ],
   };
   return Object.fromEntries(
     Object.entries(groups).map(([key, values]) => [key, {

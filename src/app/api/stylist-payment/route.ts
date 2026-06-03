@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
                 const leadAttribution = firstTouchAttribution(null, incomingAttribution);
                 const lead = await saveStyleScanLead({
                     email: scan.email,
+                    first_name: scan.firstName,
                     style_struggle: scan.struggle,
                     body_shape: scan.bodyShape,
                     undertone: scan.undertone,
@@ -55,7 +56,18 @@ export async function POST(request: NextRequest) {
                     mood_keywords: Array.isArray(scan.moodKeywords) ? scan.moodKeywords.join(',') : scan.moodKeywords,
                     mood_colours: Array.isArray(scan.moodColours) ? scan.moodColours.join(',') : scan.moodColours,
                     whats_missing: scan.whatsMissing,
-                    source: 'style_scan_checkout_fallback',
+                    season_name: scan.seasonName,
+                    diagnosis_answers: {
+                        temperatureSwatch: scan.temperatureSwatch,
+                        metalTest: scan.metalTest,
+                        whiteTest: scan.whiteTest,
+                        naturalDepth: scan.naturalDepth,
+                        claritySwatch: scan.claritySwatch,
+                        styleGoal: scan.styleGoal,
+                    },
+                    betrayer_colours: Array.isArray(scan.betrayerColours) ? JSON.stringify(scan.betrayerColours) : scan.betrayerColours,
+                    power_palette: Array.isArray(scan.powerPalette) ? JSON.stringify(scan.powerPalette) : scan.powerPalette,
+                    source: scan.source || 'color_mirror_checkout_fallback',
                     ...leadAttribution,
                 });
 

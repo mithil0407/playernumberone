@@ -17,11 +17,20 @@ export async function GET(
   const { reportId } = await params;
   const { data, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, image_urls')
+    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, image_urls, stylist_intake_responses(photo_urls, one_outfit_image_url)')
     .eq('id', reportId)
     .single();
 
   if (error || !data) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+
+  const intake = Array.isArray(data.stylist_intake_responses)
+    ? data.stylist_intake_responses[0]
+    : data.stylist_intake_responses;
+  const photoUrls = (intake?.photo_urls ?? {}) as Record<string, string | null | undefined>;
+  const hasFrontPhoto = Boolean(photoUrls.full_body_front);
+  const hasSidePhoto = Boolean(photoUrls.full_body_side);
+  const hasHeadshot = Boolean(photoUrls.headshot);
+  const hasClientPhoto = Boolean(photoUrls.full_body_front || photoUrls.full_body_side || photoUrls.headshot || photoUrls.one_outfit || intake?.one_outfit_image_url);
 
   return NextResponse.json({
     reportId: data.id,
@@ -31,6 +40,11 @@ export async function GET(
     generatedAt: data.generated_at,
     shareToken: data.share_token,
     updatedAt: data.updated_at,
-    imageCounts: getStylistBlueprintImageCounts(data.image_urls as StylistBlueprintImagePaths | null),
+    imageCounts: getStylistBlueprintImageCounts(data.image_urls as StylistBlueprintImagePaths | null, {
+      hasFrontPhoto,
+      hasSidePhoto,
+      hasHeadshot,
+      hasClientPhoto,
+    }),
   });
 }
