@@ -27,6 +27,13 @@ export interface StyleScanLead {
   diagnosis_answers?: Record<string, unknown> | null;
   betrayer_colours?: string;
   power_palette?: string;
+  tool_id?: string;
+  tool_version?: string;
+  result_key?: string;
+  result_label?: string;
+  result_summary?: string;
+  result_payload?: Record<string, unknown> | null;
+  share_payload?: Record<string, unknown> | null;
   blueprint_cta_clicked?: boolean;
   checkout_started?: boolean;
   purchased?: boolean;

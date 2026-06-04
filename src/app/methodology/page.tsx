@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import CollectionHubPage from "@/components/CollectionHubPage";
 import { buildMetadata } from "@/lib/seo";
-import { comparisonLinks, methodologyLinks } from "@/lib/seoContent";
+import { comparisonLinks, methodologyLinks, toolLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = buildMetadata({
   title: "Iconik Methodology",
@@ -30,6 +30,11 @@ export default function MethodologyHubPage() {
           title: "Comparison Pages",
           description: "Use these if you are evaluating Iconik's approach against apps, quizzes, or older colour systems.",
           links: comparisonLinks,
+        },
+        {
+          title: "Interactive Proof Tools",
+          description: "These free tools turn the methodology into participatory diagnostics.",
+          links: toolLinks,
         },
       ]}
       ctaTitle="Want the methodology applied to your own profile?"

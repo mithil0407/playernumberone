@@ -286,6 +286,25 @@ export default function BodyTypeStylingPage() {
             </div>
           </section>
 
+          <section className="mb-14 rounded-2xl border border-gray-200 bg-gray-50 p-7">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              Free body and proportion tools
+            </h2>
+            <p className="text-gray-600 mb-5 leading-relaxed">
+              Use these interactive diagnostics if you want to test your own measurements before reading the deeper guides.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Link href="/tools/silhouette-scan" className="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50 transition-colors">
+                <p className="font-semibold text-gray-900 mb-2">Silhouette Scan</p>
+                <p className="text-sm text-gray-600 leading-relaxed">Enter shoulder, bust, waist, and hip measurements to discover your geometric silhouette.</p>
+              </Link>
+              <Link href="/tools/proportion-code" className="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50 transition-colors">
+                <p className="font-semibold text-gray-900 mb-2">Proportion Code</p>
+                <p className="text-sm text-gray-600 leading-relaxed">Find whether you are long-waisted, balanced, or long-legged, then get rise and tuck rules.</p>
+              </Link>
+            </div>
+          </section>
+
           {/* FAQ */}
           <section className="mb-14">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>

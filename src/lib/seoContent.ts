@@ -1,3 +1,5 @@
+import { leadMagnetLinks } from "@/lib/leadMagnets";
+
 export type SeoLink = {
   href: string;
   title: string;
@@ -111,6 +113,15 @@ export const comparisonLinks: SeoLink[] = [
     title: "CHM vs Seasonal Colour Analysis",
     description: "How Iconik's Indian-skin-tone colour system compares with imported seasonal analysis.",
   },
+];
+
+export const toolLinks: SeoLink[] = [
+  {
+    href: "/free-colour-analysis-quiz",
+    title: "Free Colour Analysis Quiz",
+    description: "The current Color Mirror quiz for fast undertone and colour-season discovery.",
+  },
+  ...leadMagnetLinks,
 ];
 
 export const colourAnalysisLinks: SeoLink[] = [
@@ -399,6 +410,11 @@ export const footerExploreGroups = [
         title: "FAQ",
         description: "Fast answers to the most common pre-purchase questions.",
       },
+      {
+        href: "/tools",
+        title: "Free Style Tools",
+        description: "Interactive diagnostics for colour, body shape, proportions, and face architecture.",
+      },
     ],
   },
   {
@@ -460,6 +476,7 @@ export const coreCommercialPaths = [
   "/capsule-wardrobe-service-india",
   "/personal-shopper-vs-personal-stylist-india",
   "/free-colour-analysis-quiz",
+  "/tools",
   "/terms",
   "/privacy-policy",
   "/refund-policy",
@@ -508,6 +525,7 @@ export const seoSitemapPaths = Array.from(
     ...methodologyLinks.map((link) => link.href),
     ...styleGuideLinks.map((link) => link.href),
     ...comparisonLinks.map((link) => link.href),
+    ...leadMagnetLinks.map((link) => link.href),
     ...colourAnalysisLinks.map((link) => link.href),
     ...bodyTypeLinks.map((link) => link.href),
     ...faqLinks.map((link) => link.href),

@@ -307,6 +307,29 @@ export default function ColourAnalysisPage() {
             </ul>
           </section>
 
+          <section className="mb-12 rounded-2xl border border-gray-200 bg-gray-50 p-7">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              Free colour tools
+            </h2>
+            <p className="text-gray-600 mb-5 leading-relaxed">
+              If you want a participatory test before reading more, start with the interactive tools below. They give you one immediate colour insight and then point to the deeper Blueprint.
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link href="/free-colour-analysis-quiz" className="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50">
+                <p className="font-semibold text-gray-900 mb-2">Free Colour Analysis Quiz</p>
+                <p className="text-sm text-gray-600 leading-relaxed">A quick Color Mirror test for undertone and season direction.</p>
+              </Link>
+              <Link href="/tools/contrast-scan" className="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50">
+                <p className="font-semibold text-gray-900 mb-2">Contrast Scan</p>
+                <p className="text-sm text-gray-600 leading-relaxed">Turn a selfie black and white to see your natural light-dark contrast.</p>
+              </Link>
+              <Link href="/tools/glow-test" className="rounded-xl border border-gray-200 bg-white p-5 hover:bg-gray-50">
+                <p className="font-semibold text-gray-900 mb-2">Glow Test</p>
+                <p className="text-sm text-gray-600 leading-relaxed">Use clothes from your closet to spot which colours lift or dull your face.</p>
+              </Link>
+            </div>
+          </section>
+
           {/* CTA */}
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your personal colour palette in 48 hours?</h2>
