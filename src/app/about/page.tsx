@@ -1,204 +1,161 @@
-'use client';
+import Image from "next/image";
+import Link from "next/link";
+import {
+  breadcrumbList,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { ArrowLeft, User, Mail, MapPin, Briefcase } from 'lucide-react';
-import { trackPageView } from '@/lib/metaPixel';
+const proofPoints = [
+  "Personalised Style Blueprint delivered digitally after intake and stylist review.",
+  "Three-part analysis: body geometry, colour harmony, and face-shape guidance.",
+  "Recommendations built for Indian wardrobes, including ethnic, western, fusion, work, and occasion wear.",
+  "Clear business identity, support contact, privacy policy, terms, and refund policy.",
+];
+
+const methods = [
+  {
+    title: "Geometric Silhouette Profiling",
+    href: "/methodology/geometric-silhouette-profiling",
+    description:
+      "Maps shoulder, waist, hip, limb, and soft-tissue proportions into practical silhouette rules for Indian garments.",
+  },
+  {
+    title: "Chromatic Harmony Mapping",
+    href: "/methodology/chromatic-harmony-mapping",
+    description:
+      "Separates undertone, skin depth, and contrast so Indian skin tones are not forced into generic colour advice.",
+  },
+  {
+    title: "Facial Architecture Analysis",
+    href: "/methodology/facial-architecture-analysis",
+    description:
+      "Connects face shape to necklines, earrings, collars, and hair direction so outfits work close to the face.",
+  },
+];
 
 export default function AboutPage() {
-  // Track page view on mount
-  useEffect(() => {
-    trackPageView();
-  }, []);
-  
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    {
+      "@type": "AboutPage",
+      "@id": "https://www.iconik.pro/about#webpage",
+      name: "About Iconik",
+      url: "https://www.iconik.pro/about",
+      mainEntity: { "@id": "https://www.iconik.pro/#organization" },
+    },
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "About", path: "/about" },
+    ]),
+  ]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            Back to Iconik
-          </Link>
-        </div>
-      </header>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-5xl">
+          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
+            <ol className="flex items-center gap-2">
+              <li><Link href="/" className="hover:underline">Home</Link></li>
+              <li aria-hidden="true">›</li>
+              <li className="font-medium text-gray-800">About Iconik</li>
+            </ol>
+          </nav>
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
-        >
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">About Iconik</h1>
-            <p className="text-xl text-gray-600">
-              A personal styling service built to turn wardrobe confusion into a repeatable decision framework.
-            </p>
-          </div>
-
-          {/* Business Information */}
-          <div className="space-y-8">
-            {/* Legal Business Information */}
-            <section className="bg-blue-50/70 backdrop-blur-sm rounded-2xl p-8 border border-blue-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <Briefcase className="w-6 h-6 text-blue-600" />
-                Business Information
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Legal Business Name</h3>
-                  <p className="text-2xl font-bold text-blue-600 mb-4">MITHIL NILESH NAVALAKHA</p>
-                  
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Brand Name</h3>
-                  <p className="text-xl text-gray-700">Iconik</p>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Business Type</h3>
-                  <p className="text-gray-700 mb-4">Individual Proprietorship</p>
-                  
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Industry</h3>
-                  <p className="text-gray-700">Personal Styling & Wardrobe Strategy</p>
-                </div>
-              </div>
-            </section>
-
-            {/* Services */}
-            <section className="bg-green-50/70 backdrop-blur-sm rounded-2xl p-8 border border-green-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Our Services</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Iconik Style Blueprint</h3>
-                  <ul className="space-y-2 text-gray-700">
-                    <li>• Body shape and silhouette guidance</li>
-                    <li>• Undertone-led colour recommendations</li>
-                    <li>• Outfit formulas for work, casual, and occasion dressing</li>
-                    <li>• Face-shape guidance for necklines and accessories</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Additional Services</h3>
-                  <ul className="space-y-2 text-gray-700">
-                    <li>• 1-on-1 stylist consultation</li>
-                    <li>• Market-specific styling pages for India and international audiences</li>
-                    <li>• Ongoing styling support through selected subscription products</li>
-                    <li>• Editorial guides that explain the methodology in practical terms</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* Mission & Vision */}
-            <section className="bg-purple-50/70 backdrop-blur-sm rounded-2xl p-8 border border-purple-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Our Mission</h2>
-              
-              <div className="space-y-4">
-                <p className="text-gray-700 leading-relaxed">
-                  At Iconik, we believe personal styling works best when it is clear, analytical, and practical. Our mission is to
-                  help women understand what suits them, shop with confidence, and build wardrobes that work across real life.
-                </p>
-                
-                <p className="text-gray-700 leading-relaxed">
-                  Through a methodology-led approach to styling, Iconik helps clients buy better, dress more consistently,
-                  and stop relying on generic fashion advice that does not translate to their real lives.
-                </p>
-              </div>
-            </section>
-
-            {/* Contact Information */}
-            <section className="bg-gray-50/70 backdrop-blur-sm rounded-2xl p-8 border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-start gap-4">
-                  <Mail className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
-                    <p className="text-gray-700">
-                      <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">
-                        help.iconikfashion@gmail.com
-                      </a>
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <MapPin className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Business Location</h3>
-                    <p className="text-gray-700">India</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-600 text-center">
-                  For business inquiries, partnerships, or support, please reach out to us using the contact information above.
-                </p>
-              </div>
-            </section>
-
-            {/* Legal Compliance */}
-            <section className="bg-yellow-50/70 backdrop-blur-sm rounded-2xl p-8 border border-yellow-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Legal Compliance</h2>
-              
-              <div className="space-y-4">
-                <p className="text-gray-700">
-                  <strong>Business Registration:</strong> Operating as an individual proprietorship under the name 
-                  MITHIL NILESH NAVALAKHA.
-                </p>
-                
-                <p className="text-gray-700">
-                  <strong>Payment Processing:</strong> All payments are processed securely through Cashfree Payment Gateway, 
-                  ensuring your financial information is protected.
-                </p>
-                
-                <p className="text-gray-700">
-                  <strong>Privacy & Data Protection:</strong> We are committed to protecting your personal information 
-                  in accordance with our <Link href="/privacy-policy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
-                </p>
-                
-                <p className="text-gray-700">
-                  <strong>Service Terms:</strong> All services are provided under our 
-                  <Link href="/terms" className="text-blue-600 hover:underline"> Terms of Service</Link> with a 
-                  7-day money-back guarantee as outlined in our 
-                  <Link href="/refund-policy" className="text-blue-600 hover:underline"> Refund Policy</Link>.
-                </p>
-              </div>
-            </section>
-          </div>
-
-          {/* CTA Section */}
-          <div className="mt-12 text-center">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border border-blue-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Transform Your Life?</h2>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                Join women who use Iconik to dress with more clarity, consistency, and confidence.
+          <header className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+            <div>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-gray-400">
+                About Iconik
               </p>
-              <Link 
-                href="/checkout"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
-              >
-                Start Your Transformation
-              </Link>
+              <h1 className="mb-5 text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
+                A personal styling service built around evidence, not guesswork.
+              </h1>
+              <p className="text-lg leading-relaxed text-gray-600">
+                Iconik helps Indian women understand what suits them through a documented Style Blueprint: body-shape analysis, undertone-led colour guidance, face-shape recommendations, and outfit formulas for real wardrobes.
+              </p>
             </div>
-          </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+              <Image
+                src="/tripti.png"
+                alt="Iconik founder and stylist profile"
+                width={640}
+                height={640}
+                className="mb-5 aspect-square w-full rounded-xl object-cover"
+                priority
+              />
+              <p className="text-sm font-semibold text-gray-900">Reviewed by Mithil Navalakha</p>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Founder, Iconik. Responsible for Iconik&apos;s methodology, style report structure, and client experience.
+              </p>
+            </div>
+          </header>
 
-          {/* Last Updated */}
-          <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
-            <p>Business information last updated: January 2024</p>
-          </div>
-        </motion.div>
-      </div>
-    </div>
+          <section className="mt-16 rounded-2xl border border-gray-200 bg-gray-50 p-7">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">Who is Iconik for?</h2>
+            <p className="mb-4 leading-relaxed text-gray-600">
+              Iconik is for women who want a repeatable styling system: what colours to wear, which silhouettes to choose, what to avoid, and how to build outfits across work, casual, ethnic, and occasion contexts.
+            </p>
+            <ul className="grid gap-3 text-gray-600 md:grid-cols-2">
+              {proofPoints.map((point) => (
+                <li key={point} className="flex gap-3">
+                  <span className="font-bold text-green-600">✓</span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="mt-14">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">How the methodology works</h2>
+            <p className="mb-6 leading-relaxed text-gray-600">
+              Iconik&apos;s proprietary terms are backed by a specific styling process. Each method translates an observable variable into wardrobe decisions a client can use while shopping or getting dressed.
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {methods.map((method) => (
+                <Link key={method.href} href={method.href} className="rounded-xl border border-gray-200 p-5 hover:bg-gray-50">
+                  <h3 className="mb-2 text-lg font-semibold text-gray-900">{method.title}</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">{method.description}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-14 grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-gray-200 p-7">
+              <h2 className="mb-4 text-2xl font-bold text-gray-900">Business identity</h2>
+              <dl className="space-y-3 text-gray-600">
+                <div>
+                  <dt className="font-semibold text-gray-900">Brand</dt>
+                  <dd>Iconik</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Industry</dt>
+                  <dd>Personal styling and wardrobe strategy</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-gray-900">Support</dt>
+                  <dd><a href="mailto:help.iconikfashion@gmail.com" className="underline">help.iconikfashion@gmail.com</a></dd>
+                </div>
+              </dl>
+            </div>
+            <div className="rounded-2xl border border-gray-200 p-7">
+              <h2 className="mb-4 text-2xl font-bold text-gray-900">Policies and trust</h2>
+              <p className="mb-4 leading-relaxed text-gray-600">
+                Iconik publishes its core commercial policies so clients can evaluate the service before paying.
+              </p>
+              <div className="space-y-2 text-gray-700">
+                <Link href="/terms" className="block underline">Terms of Service</Link>
+                <Link href="/privacy-policy" className="block underline">Privacy Policy</Link>
+                <Link href="/refund-policy" className="block underline">Refund Policy</Link>
+                <Link href="/contact" className="block underline">Contact</Link>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

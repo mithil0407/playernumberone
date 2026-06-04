@@ -4,6 +4,16 @@ export type SeoLink = {
   description: string;
 };
 
+export type SeoPageStatus = "index" | "noindex" | "redirect" | "exclude";
+
+export type SeoPageInventoryEntry = {
+  path: string;
+  status: SeoPageStatus;
+  redirectTo?: string;
+  changeFrequency?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
+  priority?: number;
+};
+
 export const methodologyLinks: SeoLink[] = [
   {
     href: "/methodology/geometric-silhouette-profiling",
@@ -95,6 +105,11 @@ export const comparisonLinks: SeoLink[] = [
     href: "/vs/style-blueprint-vs-quiz",
     title: "Style Blueprint vs Style Quiz",
     description: "The difference between a foundational framework and a lightweight quiz result.",
+  },
+  {
+    href: "/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis",
+    title: "CHM vs Seasonal Colour Analysis",
+    description: "How Iconik's Indian-skin-tone colour system compares with imported seasonal analysis.",
   },
 ];
 
@@ -237,11 +252,6 @@ export const bodyTypeLinks: SeoLink[] = [
     title: "Petite Styling India",
     description: "Scale, length, and vertical-line advice for petite Indian women.",
   },
-  {
-    href: "/body-type-styling/rectangle-india",
-    title: "Rectangle Body Shape Deep Dive",
-    description: "An expanded rectangle-frame guide for Indian clothing categories.",
-  },
 ];
 
 export const faqLinks: SeoLink[] = [
@@ -305,6 +315,21 @@ export const faqLinks: SeoLink[] = [
     title: "What Colours Make You Look Slimmer?",
     description: "Colour, contrast, and visual-line guidance for slimming effects.",
   },
+  {
+    href: "/faq/capsule-wardrobe-how-many-outfits",
+    title: "How Many Outfits in a Capsule Wardrobe?",
+    description: "A concise answer for capsule wardrobe sizing and outfit combinations.",
+  },
+  {
+    href: "/faq/does-black-make-you-look-slimmer",
+    title: "Does Black Make You Look Slimmer?",
+    description: "A practical answer about black clothing, contrast, and slimming visual lines.",
+  },
+  {
+    href: "/faq/neckline-round-face",
+    title: "Best Neckline for a Round Face",
+    description: "Face-shape guidance for choosing necklines that add length and balance.",
+  },
 ];
 
 export const cityLinks: SeoLink[] = [
@@ -314,12 +339,25 @@ export const cityLinks: SeoLink[] = [
   { href: "/personal-stylist-hyderabad", title: "Hyderabad", description: "Service page for Hyderabad." },
   { href: "/personal-stylist-chennai", title: "Chennai", description: "Service page for Chennai." },
   { href: "/personal-stylist-pune", title: "Pune", description: "Service page for Pune." },
-  { href: "/personal-stylist-kolkata", title: "Kolkata", description: "Service page for Kolkata." },
-  { href: "/personal-stylist-ahmedabad", title: "Ahmedabad", description: "Service page for Ahmedabad." },
-  { href: "/personal-stylist-kochi", title: "Kochi", description: "Service page for Kochi." },
-  { href: "/personal-stylist-jaipur", title: "Jaipur", description: "Service page for Jaipur." },
-  { href: "/personal-stylist-surat", title: "Surat", description: "Service page for Surat." },
-  { href: "/personal-stylist-chandigarh", title: "Chandigarh", description: "Service page for Chandigarh." },
+];
+
+export const retiredCityPaths = [
+  "/personal-stylist-ahmedabad",
+  "/personal-stylist-bhopal",
+  "/personal-stylist-chandigarh",
+  "/personal-stylist-coimbatore",
+  "/personal-stylist-indore",
+  "/personal-stylist-jaipur",
+  "/personal-stylist-kochi",
+  "/personal-stylist-kolkata",
+  "/personal-stylist-lucknow",
+  "/personal-stylist-mysuru",
+  "/personal-stylist-nagpur",
+  "/personal-stylist-patna",
+  "/personal-stylist-surat",
+  "/personal-stylist-thiruvananthapuram",
+  "/personal-stylist-vadodara",
+  "/personal-stylist-visakhapatnam",
 ];
 
 export const footerExploreGroups = [
@@ -421,6 +459,7 @@ export const coreCommercialPaths = [
   "/wardrobe-audit-india",
   "/capsule-wardrobe-service-india",
   "/personal-shopper-vs-personal-stylist-india",
+  "/free-colour-analysis-quiz",
   "/terms",
   "/privacy-policy",
   "/refund-policy",
@@ -475,3 +514,83 @@ export const seoSitemapPaths = Array.from(
     ...cityLinks.map((link) => link.href),
   ]),
 );
+
+export const redirectSeoPages: SeoPageInventoryEntry[] = [
+  ...retiredCityPaths.map((path) => ({
+    path,
+    status: "redirect" as const,
+    redirectTo: "/personal-stylist-india",
+  })),
+  { path: "/body-type-styling/apple", status: "redirect", redirectTo: "/body-type-styling/apple-body-shape-india" },
+  { path: "/body-type-styling/pear", status: "redirect", redirectTo: "/body-type-styling/pear-body-shape-india" },
+  { path: "/body-type-styling/rectangle", status: "redirect", redirectTo: "/body-type-styling/rectangle-body-shape-india" },
+  { path: "/body-type-styling/rectangle-india", status: "redirect", redirectTo: "/body-type-styling/rectangle-body-shape-india" },
+  { path: "/body-type-styling/hourglass-india", status: "redirect", redirectTo: "/body-type-styling/hourglass" },
+  { path: "/body-type-styling/plus-size-india", status: "redirect", redirectTo: "/body-type-styling/plus-size" },
+  { path: "/arms", status: "redirect", redirectTo: "/body-type-styling/heavy-arms-styling" },
+  { path: "/tummy", status: "redirect", redirectTo: "/body-type-styling/how-to-dress-tummy" },
+  { path: "/plus-size", status: "redirect", redirectTo: "/body-type-styling/plus-size" },
+  { path: "/modest", status: "redirect", redirectTo: "/style-guides/modest-professional-fashion-india" },
+  { path: "/iconik-methodology", status: "redirect", redirectTo: "/methodology" },
+];
+
+export const noindexSeoPages: SeoPageInventoryEntry[] = [
+  { path: "/checkout", status: "noindex" },
+  { path: "/checkout/basic-success", status: "noindex" },
+  { path: "/checkout/success", status: "noindex" },
+  { path: "/checkout-monthly", status: "noindex" },
+  { path: "/closet", status: "noindex" },
+  { path: "/dashboard", status: "noindex" },
+  { path: "/iconik-club/admin", status: "noindex" },
+  { path: "/iconik-club/client", status: "noindex" },
+  { path: "/iconik-club/join/success", status: "noindex" },
+  { path: "/iconik-club/preview", status: "noindex" },
+  { path: "/man/admin", status: "noindex" },
+  { path: "/man/checkout", status: "noindex" },
+  { path: "/man/intake", status: "noindex" },
+  { path: "/man/report", status: "noindex" },
+  { path: "/stylist/admin", status: "noindex" },
+  { path: "/stylist/checkout", status: "noindex" },
+  { path: "/stylist/intake", status: "noindex" },
+  { path: "/stylist/report", status: "noindex" },
+  { path: "/stylist/style-score", status: "noindex" },
+  { path: "/stylist/style-score/scan", status: "noindex" },
+  { path: "/stylist/style-score/result", status: "noindex" },
+  { path: "/offer-2699", status: "noindex" },
+  { path: "/offer-2699/checkout", status: "noindex" },
+  { path: "/global/checkout", status: "noindex" },
+  { path: "/global/intake", status: "noindex" },
+  { path: "/global/thankyou", status: "noindex" },
+  { path: "/globe/admin", status: "noindex" },
+  { path: "/globe/checkout", status: "noindex" },
+  { path: "/globe/intake", status: "noindex" },
+  { path: "/globe/report", status: "noindex" },
+  { path: "/globe/thankyou", status: "noindex" },
+  { path: "/au/checkout", status: "noindex" },
+  { path: "/au/intake", status: "noindex" },
+  { path: "/au/thankyou", status: "noindex" },
+  { path: "/uae/checkout", status: "noindex" },
+  { path: "/uae/oto", status: "noindex" },
+  { path: "/uae/quiz", status: "noindex" },
+  { path: "/us/checkout", status: "noindex" },
+  { path: "/monthly/checkout", status: "noindex" },
+  { path: "/monthly/indian/checkout", status: "noindex" },
+];
+
+export const seoPageInventory: SeoPageInventoryEntry[] = [
+  ...seoSitemapPaths.map((path) => ({
+    path,
+    status: "index" as const,
+    changeFrequency: path === "/" ? "weekly" as const : "monthly" as const,
+    priority:
+      path === "/" ? 1 :
+      coreCommercialPaths.includes(path) ? 0.85 :
+      hubPaths.includes(path) ? 0.8 :
+      cityLinks.some((link) => link.href === path) ? 0.72 :
+      0.65,
+  })),
+  ...redirectSeoPages,
+  ...noindexSeoPages,
+];
+
+export const indexedSeoPages = seoPageInventory.filter((entry) => entry.status === "index");

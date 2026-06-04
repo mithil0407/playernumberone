@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { bodyTypeLinks, colourAnalysisLinks, methodologyLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = {
   title: "Iconik Style Blog — Body Type, Colour Analysis & Personal Styling",
@@ -45,7 +46,9 @@ export default function BlogPage() {
       <div className="mx-auto max-w-3xl">
         <header className="mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Iconik Style Blog</h1>
-          <p className="text-lg text-gray-600">Science-backed styling guides for Indian women.</p>
+          <p className="text-lg text-gray-600 leading-relaxed">
+            Science-backed styling guides for Indian women, reviewed by Iconik and connected to the colour, body, and methodology hubs.
+          </p>
         </header>
         <div className="divide-y divide-gray-200">
           {posts.map((post) => (
@@ -61,6 +64,20 @@ export default function BlogPage() {
             </article>
           ))}
         </div>
+        <section className="mt-14 rounded-2xl border border-gray-200 bg-gray-50 p-7">
+          <h2 className="mb-4 text-2xl font-bold text-gray-900">Start with the core hubs</h2>
+          <p className="mb-5 leading-relaxed text-gray-600">
+            If you are researching a styling question, these hubs are stronger starting points than isolated posts because they link the full topical cluster.
+          </p>
+          <div className="grid gap-3 md:grid-cols-3">
+            {[colourAnalysisLinks[0], bodyTypeLinks[0], methodologyLinks[0]].map((link) => (
+              <Link key={link.href} href={link.href} className="rounded-xl border border-gray-200 bg-white p-4 hover:bg-gray-50">
+                <p className="mb-1 font-semibold text-gray-900">{link.title}</p>
+                <p className="text-sm leading-relaxed text-gray-600">{link.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );

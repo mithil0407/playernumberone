@@ -311,9 +311,14 @@ export default function ColourAnalysisPage() {
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your personal colour palette in 48 hours?</h2>
             <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ is included in every Iconik Style Blueprint — alongside body analysis and 16+ outfit recommendations.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link href="/free-colour-analysis-quiz" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
+                Take the Free Colour Quiz
+              </Link>
+              <Link href="/" className="inline-block rounded-full border border-gray-300 px-8 py-3 font-semibold text-gray-900 hover:bg-white transition-colors">
+                Get My Style Blueprint — ₹3,299
+              </Link>
+            </div>
           </div>
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">

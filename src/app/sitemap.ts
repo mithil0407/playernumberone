@@ -1,10 +1,14 @@
 import { MetadataRoute } from "next";
-import { seoSitemapPaths } from "@/lib/seoContent";
+import { indexedSeoPages } from "@/lib/seoContent";
 
 const BASE = "https://www.iconik.pro";
+const LAST_MODIFIED = new Date("2026-06-04");
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return seoSitemapPaths.map((path) => ({
-    url: path === "/" ? `${BASE}/` : `${BASE}${path}`,
+  return indexedSeoPages.map((entry) => ({
+    url: entry.path === "/" ? `${BASE}/` : `${BASE}${entry.path}`,
+    lastModified: LAST_MODIFIED,
+    changeFrequency: entry.changeFrequency ?? "monthly",
+    priority: entry.priority ?? 0.6,
   }));
 }
