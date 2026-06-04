@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveGlobeCustomer, saveGlobeOrder, supabaseGlobe } from '@/lib/supabaseGlobe';
+import { saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
 import Razorpay from 'razorpay';
 
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
 
         let customerId = 'mock-customer-id';
         let dbOrderId = 'mock-order-id';
+        let stylistOrderId = 'mock-stylist-order-id';
 
         try {
             const { data: existingCustomer } = await supabaseGlobe
@@ -66,6 +68,19 @@ export async function POST(request: NextRequest) {
                 ...orderAttribution,
             });
             dbOrderId = order.id!;
+
+            const stylistOrder = await saveStylistOrder({
+                lead_id: null,
+                customer_email,
+                customer_name,
+                customer_phone,
+                amount,
+                currency: 'USD',
+                status: 'pending',
+                razorpay_order_id: orderId,
+                ...orderAttribution,
+            });
+            stylistOrderId = stylistOrder.id!;
         } catch (err) {
             console.log('Globe Supabase error, using mock IDs:', err);
         }
@@ -88,6 +103,7 @@ export async function POST(request: NextRequest) {
                     iconik_edit_addon: iconik_edit_addon ? 'true' : 'false',
                     service: 'ICONIK Globe Blueprint',
                     db_order_id: dbOrderId,
+                    stylist_order_id: stylistOrderId,
                     customer_id: customerId,
                     utm_source: incomingAttribution.utm_source || '',
                     utm_medium: incomingAttribution.utm_medium || '',
@@ -113,6 +129,17 @@ export async function POST(request: NextRequest) {
                 console.error('Failed to update globe order with Razorpay ID:', updateIdError);
             }
 
+            if (stylistOrderId !== 'mock-stylist-order-id') {
+                const { error: updateStylistIdError } = await supabaseStyleScan
+                    .from('stylist_orders')
+                    .update({ razorpay_order_id: razorpayOrder.id })
+                    .eq('id', stylistOrderId);
+
+                if (updateStylistIdError) {
+                    console.error('Failed to update mirrored stylist order with Razorpay ID:', updateStylistIdError);
+                }
+            }
+
             return NextResponse.json({
                 success: true,
                 key: process.env.RAZORPAY_KEY_ID,
@@ -121,6 +148,7 @@ export async function POST(request: NextRequest) {
                 currency: 'USD',
                 customer_id: customerId,
                 db_order_id: dbOrderId,
+                stylist_order_id: stylistOrderId,
             });
 
         } catch (razorpayError) {

@@ -5,24 +5,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
 import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { captureAttribution } from '@/lib/attribution';
 
 // ── Data ────────────────────────────────────────────────────────────────────
 
 const pillars = [
     {
-        icon: <Gem className="h-6 w-6 text-luxury-green" />,
+        icon: <Gem className="h-6 w-6 text-[#94A6AD]" />,
         number: '01',
         title: 'Geometric Silhouette Profiling',
         body: 'We identify your exact body geometry — every proportion ratio and structural strength. Every cut that works with your specific frame, defined by science, not guesswork.',
     },
     {
-        icon: <Sparkles className="h-6 w-6 text-luxury-green" />,
+        icon: <Sparkles className="h-6 w-6 text-[#94A6AD]" />,
         number: '02',
         title: 'Chromatic Harmony Mapping',
         body: 'Your undertone, depth, and contrast level determines every colour that makes you glow — and every colour that washes you out. We map yours precisely.',
     },
     {
-        icon: <Award className="h-6 w-6 text-luxury-green" />,
+        icon: <Award className="h-6 w-6 text-[#94A6AD]" />,
         number: '03',
         title: 'Facial Architecture Analysis',
         body: 'Your face shape determines your necklines, eyewear, earring geometry, and hair structures. Most women have never been told their face architecture — until now.',
@@ -30,13 +31,13 @@ const pillars = [
 ];
 
 const blueprintItems = [
-    { icon: <Trophy className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Body Geometry Analysis', desc: 'Your exact silhouette type with technical rationale — what cuts flatter every proportion.' },
-    { icon: <Award className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Face Architecture Profile', desc: 'Your face shape with structure-specific neckline, earring, and eyewear recommendations.' },
-    { icon: <Sparkles className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Chromatic Harmony Map', desc: 'Your seasonal colour palette: 10 exact colours that work for your undertone + depth.' },
-    { icon: <Gem className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Outfit Formulas', desc: '20 complete outfits (top, bottom, footwear, bag, jewellery) built specifically for your Blueprint.' },
-    { icon: <Heart className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Hair Direction', desc: '4 hairstyle recommendations with technical explanation of why each works for your face shape.' },
-    { icon: <Shield className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'Eyewear Guide', desc: '4 frame styles matched to your face geometry and undertone.' },
-    { icon: <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />, title: 'What to Avoid', desc: 'Cuts, colours, and silhouettes that will never serve you — and exactly why.' },
+    { icon: <Trophy className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Body Geometry Analysis', desc: 'Your exact silhouette type with technical rationale — what cuts flatter every proportion.' },
+    { icon: <Award className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Face Architecture Profile', desc: 'Your face shape with structure-specific neckline, earring, and eyewear recommendations.' },
+    { icon: <Sparkles className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Chromatic Harmony Map', desc: 'Your seasonal colour palette: 10 exact colours that work for your undertone + depth.' },
+    { icon: <Gem className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Outfit Formulas', desc: '20 complete outfits (top, bottom, footwear, bag, jewellery) built specifically for your Blueprint.' },
+    { icon: <Heart className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Hair Direction', desc: '4 hairstyle recommendations with technical explanation of why each works for your face shape.' },
+    { icon: <Shield className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Eyewear Guide', desc: '4 frame styles matched to your face geometry and undertone.' },
+    { icon: <CheckCircle className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'What to Avoid', desc: 'Cuts, colours, and silhouettes that will never serve you — and exactly why.' },
 ];
 
 const testimonials = [
@@ -91,9 +92,10 @@ function CTAButton({ className = '' }: { className?: string }) {
         <Link
             href="/globe/checkout"
             onClick={() => trackCTAClick('Get My Blueprint', 'Globe Landing', 97, 'USD', 'Globe Funnel')}
-            className={`inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
+            className={`inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform ${className}`}
         >
-            GET MY BLUEPRINT — $97 <ArrowRight className="ml-3 h-4 w-4" />
+            <span className="iconik-display" style={{ fontSize: '15px' }}>Get My Blueprint — $97</span>
+            <ArrowRight className="h-4 w-4 opacity-60" />
         </Link>
     );
 }
@@ -114,6 +116,7 @@ export default function GlobeLandingPage() {
     const prevSlide = useCallback(() => setCarouselIndex(i => (i - 1 + heroImages.length) % heroImages.length), [heroImages.length]);
 
     useEffect(() => {
+        captureAttribution();
         trackPageView('Globe Landing');
         trackViewContent('ICONIK Blueprint Globe', 97, ['iconik_blueprint_globe'], 'USD', 'Globe Funnel');
     }, []);
@@ -124,24 +127,24 @@ export default function GlobeLandingPage() {
     }, [nextSlide]);
 
     return (
-        <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal overflow-x-hidden">
+        <div className="man-editorial min-h-screen overflow-x-hidden">
 
             {/* ── Navbar ─────────────────────────────────────────────────── */}
-            <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
+            <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
                 <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-center">
-                    <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
+                    <span className="iconik-display" style={{ fontSize: '22px', letterSpacing: '0.12em', color: '#2C2622' }}>ICONIK</span>
                 </div>
             </nav>
 
             {/* ══ ORDER FOLLOWS ROOT PAGE: Hero → Stats → What You Receive (Report + Method + Inside) → Case Studies → Pricing → Before/After → Pain Cards → Who This Is For → Testimonials → How It Works → FAQ → Final CTA ══ */}
 
             {/* ── SECTION 1: Above the Fold ─────────────────────────────── */}
-            <section className="pt-24 pb-16 px-4 md:px-6 lg:px-8 bg-luxury-warm-white">
+            <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto text-center">
                     <div>
                         {/* Featured in */}
-                        <div className="mb-5">
-                            <p className="luxury-body text-luxury-charcoal/60 mb-2 text-sm">Featured in</p>
+                        <div className="mb-6">
+                            <p className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Featured in</p>
                             <div className="flex items-center justify-center">
                                 <Image
                                     src="/vogue-india-logo.png"
@@ -154,31 +157,32 @@ export default function GlobeLandingPage() {
                         </div>
 
                         {/* Headline */}
-                        <h1 className="text-3xl md:text-7xl luxury-heading text-luxury-charcoal mb-6 leading-[0.95] tracking-tight">
+                        <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(36px, 8vw, 80px)', color: '#2C2622' }}>
                             Discover Your Signature Style{' '}
-                            <span className="text-luxury-accent">in 24 Hours.</span>
+                            <span className="iconik-display-it" style={{ color: '#6B7F87' }}>in 24 Hours.</span>
                         </h1>
 
                         {/* Subheadline */}
-                        <p className="text-sm md:text-xl luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto mb-8 leading-relaxed">
+                        <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, maxWidth: '680px', margin: '0 auto 32px' }}>
                             ICONIK analyses your facial architecture, body geometry, and colour harmony using a proprietary methodology used by professional stylists.{' '}
-                            <span className="font-semibold text-luxury-accent">Personalised Blueprint. 24-hour delivery. $97.</span>
+                            <strong style={{ fontWeight: 500, color: '#2C2622' }}>Personalised Blueprint. 24-hour delivery. $97.</strong>
                         </p>
 
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
                         <div className="max-w-sm mx-auto mb-8">
-                            <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-luxury-cream">
+                            <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
                                     <button
                                         onClick={prevSlide}
-                                        className="p-2 md:p-3 bg-luxury-warm-white border border-luxury-cream rounded-full hover:bg-luxury-cream transition-all duration-300 flex-shrink-0"
+                                        className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:-translate-x-0.5"
+                                        style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }}
                                         aria-label="Previous image"
                                     >
-                                        <ArrowLeft className="w-4 h-4 text-luxury-charcoal" />
+                                        <ArrowLeft className="w-4 h-4" style={{ color: '#2C2622' }} />
                                     </button>
 
                                     <div className="relative w-52 md:w-64" style={{ aspectRatio: '3/4' }}>
-                                        <div className="w-full h-full rounded-2xl overflow-hidden border-2 border-luxury-cream bg-luxury-cream/30">
+                                        <div className="w-full h-full rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
                                             <Image
                                                 src={heroImages[carouselIndex].src}
                                                 alt={heroImages[carouselIndex].caption}
@@ -191,14 +195,15 @@ export default function GlobeLandingPage() {
 
                                     <button
                                         onClick={nextSlide}
-                                        className="p-2 md:p-3 bg-luxury-warm-white border border-luxury-cream rounded-full hover:bg-luxury-cream transition-all duration-300 flex-shrink-0"
+                                        className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:translate-x-0.5"
+                                        style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }}
                                         aria-label="Next image"
                                     >
-                                        <ArrowRight className="w-4 h-4 text-luxury-charcoal" />
+                                        <ArrowRight className="w-4 h-4" style={{ color: '#2C2622' }} />
                                     </button>
                                 </div>
 
-                                <p className="luxury-body text-luxury-charcoal/50 text-xs text-center mt-4">
+                                <p className="iconik-micro mt-4 opacity-40 text-center" style={{ color: '#2C2622' }}>
                                     {heroImages[carouselIndex].caption}
                                 </p>
 
@@ -207,7 +212,7 @@ export default function GlobeLandingPage() {
                                         <button
                                             key={idx}
                                             onClick={() => setCarouselIndex(idx)}
-                                            className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === carouselIndex ? 'bg-luxury-accent w-4' : 'bg-luxury-accent/30'
+                                            className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === carouselIndex ? 'bg-[#2C2622] w-4' : 'bg-[#2C2622]/30'
                                                 }`}
                                             aria-label={`Go to slide ${idx + 1}`}
                                         />
@@ -218,17 +223,17 @@ export default function GlobeLandingPage() {
 
                         <CTAButton className="text-base px-12 py-5 mb-8" />
 
-                        <div className="flex items-center justify-center gap-3 text-sm luxury-body text-luxury-charcoal/60 flex-wrap mt-2">
+                        <div className="flex items-center justify-center gap-3 flex-wrap">
                             <div className="flex gap-0.5">
                                 {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className="h-4 w-4 text-luxury-gold fill-current" />
+                                    <Star key={i} className="h-4 w-4 text-[#9a7d4a] fill-current" />
                                 ))}
                             </div>
-                            <span className="text-luxury-charcoal/80 font-medium">Trusted by 500+ women worldwide</span>
-                            <span className="hidden md:inline">·</span>
-                            <span className="hidden md:inline">24-Hour Delivery</span>
-                            <span className="hidden md:inline">·</span>
-                            <span className="hidden md:inline">30-Day Guarantee</span>
+                            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 500+ women worldwide</span>
+                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
+                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>30-Day Guarantee</span>
                         </div>
 
                     </div>
@@ -236,7 +241,7 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── Stats strip ───────────────────────────────────────────── */}
-            <section className="py-12 bg-luxury-cream/30">
+            <section className="py-12 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
                 <div className="max-w-5xl mx-auto px-4 md:px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
                         {[
@@ -246,11 +251,11 @@ export default function GlobeLandingPage() {
                             { num: '30-day', label: 'Money-Back Guarantee' },
                         ].map((s, i) => (
                             <div key={i} className="group">
-                                <div className="text-2xl md:text-5xl luxury-heading text-luxury-accent mb-2 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-1">
+                                <div className="text-2xl md:text-5xl iconik-display text-[#6B7F87] mb-2 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-1">
                                     {s.num}
-                                    {s.star && <Star className="h-6 w-6 text-luxury-gold fill-current" />}
+                                    {s.star && <Star className="h-6 w-6 text-[#9a7d4a] fill-current" />}
                                 </div>
-                                <div className="luxury-body text-luxury-charcoal/70 text-sm">{s.label}</div>
+                                <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
                             </div>
                         ))}
                     </div>
@@ -259,11 +264,11 @@ export default function GlobeLandingPage() {
 
             {/* ── SECTION 3: What You Receive — Report Preview ──────────── */}
             {/* (mirrors root page: Report Preview comes first in the features block) */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-cream/20">
+            <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-10">
-                        <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Sample Report</p>
-                        <h3 className="text-2xl md:text-4xl luxury-heading text-luxury-charcoal">What Your Blueprint Actually Looks Like</h3>
+                        <p className="text-xs iconik-mono text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Sample Report</p>
+                        <h3 className="text-2xl md:text-4xl iconik-display text-luxury-charcoal">What Your Blueprint Actually Looks Like</h3>
                     </div>
 
                     {/* Browser Frame */}
@@ -276,7 +281,7 @@ export default function GlobeLandingPage() {
                                 <div className="w-3 h-3 rounded-full bg-[#28c840]" />
                             </div>
                             <div className="flex-1 flex justify-center">
-                                <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 luxury-body tracking-wide">
+                                <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 iconik-mono tracking-wide">
                                     iconik.pro/your-blueprint
                                 </div>
                             </div>
@@ -301,7 +306,7 @@ export default function GlobeLandingPage() {
                                 <div className="flex items-center gap-3 text-[#b58e4d] text-[9px] font-black uppercase tracking-[0.4em] mb-3">
                                     <CheckCircle className="w-4 h-4" /> Analysis Verified
                                 </div>
-                                <h2 className="text-4xl md:text-6xl luxury-heading text-black italic tracking-tighter leading-none">The Lookbook</h2>
+                                <h2 className="text-4xl md:text-6xl iconik-display text-black italic tracking-tighter leading-none">The Lookbook</h2>
                                 <div className="mt-4 flex flex-wrap gap-3">
                                     <span className="px-4 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Hourglass Profile</span>
                                     <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">Oval Face</span>
@@ -490,7 +495,7 @@ export default function GlobeLandingPage() {
                                             <span className="text-[#b58e4d] text-[9px] font-black uppercase tracking-[0.4em]">{look.category} Ensemble</span>
                                             <div className="h-px w-8 bg-[#b58e4d]/30" />
                                         </div>
-                                        <h3 className="text-2xl md:text-3xl luxury-heading text-black italic mb-6 leading-tight">{look.title}</h3>
+                                        <h3 className="text-2xl md:text-3xl iconik-display text-black italic mb-6 leading-tight">{look.title}</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                                             <div>
                                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Composition</p>
@@ -544,12 +549,12 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 4: ICONIK Method ──────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-warm-white">
+            <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Methodology</p>
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">The ICONIK Method</h2>
-                        <p className="luxury-body text-luxury-charcoal/60 text-sm md:text-lg max-w-2xl mx-auto">
+                        <p className="iconik-mono text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Methodology</p>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal mb-4">The ICONIK Method</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 text-sm md:text-lg max-w-2xl mx-auto">
                             Three proprietary analysis systems. Thousands of data points. One blueprint built entirely around you.
                         </p>
                     </div>
@@ -557,9 +562,9 @@ export default function GlobeLandingPage() {
                         {pillars.map((p, i) => (
                             <div key={i} className="p-8 md:p-10 bg-luxury-cream/40 rounded-2xl border border-luxury-cream hover:-translate-y-1 transition-all duration-300">
                                 <div className="mb-4">{p.icon}</div>
-                                <div className="text-4xl luxury-heading text-luxury-accent/20 mb-3">{p.number}</div>
-                                <h3 className="luxury-heading text-luxury-charcoal text-xl mb-4">{p.title}</h3>
-                                <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed">{p.body}</p>
+                                <div className="text-4xl iconik-display text-[#6B7F87]/20 mb-3">{p.number}</div>
+                                <h3 className="iconik-display text-luxury-charcoal text-xl mb-4">{p.title}</h3>
+                                <p className="iconik-mono text-luxury-charcoal/60 text-sm leading-relaxed">{p.body}</p>
                             </div>
                         ))}
                     </div>
@@ -567,19 +572,19 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 5: What's Inside Your Blueprint ───────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-cream/20">
+            <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">Included</p>
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal">What&apos;s Inside Your Blueprint</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">Included</p>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal">What&apos;s Inside Your Blueprint</h2>
                     </div>
                     <div className="max-w-2xl mx-auto space-y-4">
                         {blueprintItems.map((item, i) => (
                             <div key={i} className="flex items-start gap-4 p-5 bg-luxury-warm-white/80 border border-luxury-cream rounded-xl hover:bg-luxury-warm-white transition-all duration-300">
                                 {item.icon}
                                 <div>
-                                    <h3 className="luxury-heading text-luxury-charcoal text-base mb-1">{item.title}</h3>
-                                    <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed">{item.desc}</p>
+                                    <h3 className="iconik-display text-luxury-charcoal text-base mb-1">{item.title}</h3>
+                                    <p className="iconik-mono text-luxury-charcoal/60 text-sm leading-relaxed">{item.desc}</p>
                                 </div>
                             </div>
                         ))}
@@ -591,12 +596,12 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 6: Case Studies ───────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-warm-white">
+            <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">Real Findings</p>
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">What the Blueprint actually found</h2>
-                        <p className="luxury-body text-luxury-charcoal/60 text-sm md:text-lg">
+                        <p className="iconik-mono text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">Real Findings</p>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal mb-4">What the Blueprint actually found</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 text-sm md:text-lg">
                             Three women. Three different geometries. Three specific solutions.
                         </p>
                     </div>
@@ -645,18 +650,18 @@ export default function GlobeLandingPage() {
                                 </div>
                                 <div className="p-6 space-y-4">
                                     <div>
-                                        <p className="luxury-heading text-luxury-charcoal text-lg leading-none">{c.name} · {c.age} · {c.city}</p>
+                                        <p className="iconik-display text-luxury-charcoal text-lg leading-none">{c.name} · {c.age} · {c.city}</p>
                                         <div className="mt-3 h-px bg-luxury-cream" />
                                     </div>
                                     <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
                                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Concern</span>
-                                        <span className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{c.concern.join(' ')}</span>
+                                        <span className="iconik-mono text-luxury-charcoal/80 text-sm leading-snug">{c.concern.join(' ')}</span>
                                     </div>
                                     <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
                                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Finding</span>
                                         <div className="space-y-0.5">
                                             {c.finding.map((f, i) => (
-                                                <p key={i} className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{f}</p>
+                                                <p key={i} className="iconik-mono text-luxury-charcoal/80 text-sm leading-snug">{f}</p>
                                             ))}
                                         </div>
                                     </div>
@@ -665,18 +670,18 @@ export default function GlobeLandingPage() {
                                         <div className="space-y-1">
                                             {c.changed.map((ch, i) => (
                                                 <div key={i} className="flex items-start gap-2">
-                                                    <div className="w-1 h-1 rounded-full bg-luxury-accent mt-1.5 flex-shrink-0" />
-                                                    <p className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{ch}</p>
+                                                    <div className="w-1 h-1 rounded-full bg-[#2C2622] mt-1.5 flex-shrink-0" />
+                                                    <p className="iconik-mono text-luxury-charcoal/80 text-sm leading-snug">{ch}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                     <div className="h-px bg-luxury-cream" />
                                     <div>
-                                        <p className="luxury-body text-luxury-charcoal italic text-sm leading-relaxed mb-3">&ldquo;{c.quote}&rdquo;</p>
+                                        <p className="iconik-mono text-luxury-charcoal italic text-sm leading-relaxed mb-3">&ldquo;{c.quote}&rdquo;</p>
                                         <div className="flex gap-1">
                                             {[...Array(c.stars)].map((_, i) => (
-                                                <Star key={i} className="h-3.5 w-3.5 text-luxury-gold fill-current" />
+                                                <Star key={i} className="h-3.5 w-3.5 text-[#9a7d4a] fill-current" />
                                             ))}
                                         </div>
                                     </div>
@@ -688,22 +693,22 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 7: Price Anchor ────────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-accent">
+            <section className="py-24 px-4 md:px-6 me-slate">
                 <div className="max-w-3xl mx-auto text-center text-luxury-warm-white">
-                    <p className="luxury-body text-luxury-warm-white/70 text-lg leading-relaxed mb-8">
+                    <p className="iconik-mono text-luxury-warm-white/70 text-lg leading-relaxed mb-8">
                         An in-person personal styling session with a professional stylist costs $500–1,500+. They give you one day. You forget half of it. You still don&apos;t know your colours.
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
-                        <div className="luxury-body text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Blueprint</div>
-                        <div className="text-4xl md:text-7xl luxury-heading text-luxury-warm-white mb-3">$97</div>
-                        <p className="luxury-body text-luxury-warm-white/70 text-lg">
+                        <div className="iconik-mono text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Blueprint</div>
+                        <div className="text-4xl md:text-7xl iconik-display text-luxury-warm-white mb-3">$97</div>
+                        <p className="iconik-mono text-luxury-warm-white/70 text-lg">
                             Yours forever. Built on your specific body, face, and colour profile.
                         </p>
                     </div>
                     <Link
                         href="/globe/checkout"
                         onClick={() => trackCTAClick('Get My Blueprint', 'Globe Price Section', 97, 'USD', 'Globe Funnel')}
-                        className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-luxury-accent px-10 py-4 rounded-full transition-all duration-300 luxury-body hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
+                        className="inline-flex items-center bg-luxury-warm-white hover:bg-luxury-cream text-[#6B7F87] px-10 py-4 rounded-full transition-all duration-300 iconik-mono hover:shadow-xl hover:-translate-y-0.5 transform font-semibold"
                     >
                         GET MY BLUEPRINT — $97 <ArrowRight className="ml-3 h-4 w-4" />
                     </Link>
@@ -711,11 +716,11 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 8: Before/After ───────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-cream/20">
+            <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Blueprint in Practice</p>
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">Real clients. Specific findings. Measurable change.</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Blueprint in Practice</p>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal mb-4">Real clients. Specific findings. Measurable change.</h2>
                     </div>
                     <div className="grid md:grid-cols-2 gap-8 md:gap-12">
                         {[
@@ -741,18 +746,18 @@ export default function GlobeLandingPage() {
                                 <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6">
                                     <div>
                                         <p className="text-[10px] font-semibold text-luxury-charcoal/50 uppercase tracking-widest mb-3 leading-tight">{comparison.beforeLabel}</p>
-                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-luxury-cream/30">
+                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden" style={{ background: '#EDE5D2' }}>
                                             <Image src={comparison.before} alt={comparison.beforeLabel} fill className="object-cover" />
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-semibold text-luxury-accent uppercase tracking-widest mb-3 leading-tight">{comparison.afterLabel}</p>
-                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-luxury-cream/30">
+                                        <p className="text-[10px] font-semibold text-[#6B7F87] uppercase tracking-widest mb-3 leading-tight">{comparison.afterLabel}</p>
+                                        <div className="relative w-full aspect-square rounded-xl overflow-hidden" style={{ background: '#EDE5D2' }}>
                                             <Image src={comparison.after} alt={comparison.afterLabel} fill className="object-cover" />
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/60 leading-relaxed border-t border-luxury-cream pt-4">{comparison.caption}</p>
+                                <p className="text-xs md:text-sm iconik-mono text-luxury-charcoal/60 leading-relaxed border-t border-luxury-cream pt-4">{comparison.caption}</p>
                             </div>
                         ))}
                     </div>
@@ -760,10 +765,10 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 9: Sound Familiar? ────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-warm-white">
+            <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal">Sound Familiar?</h2>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal">Sound Familiar?</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                         {[
@@ -794,8 +799,8 @@ export default function GlobeLandingPage() {
                                     <Image src={item.image} alt={item.imageAlt} fill className="object-cover" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                                 </div>
-                                <span className="block luxury-heading text-2xl mb-4 leading-none text-luxury-accent">{item.num}</span>
-                                <p className="luxury-body text-luxury-charcoal/80 text-base leading-relaxed">{item.text}</p>
+                                <span className="block iconik-display text-2xl mb-4 leading-none text-[#6B7F87]">{item.num}</span>
+                                <p className="iconik-mono text-luxury-charcoal/80 text-base leading-relaxed">{item.text}</p>
                             </div>
                         ))}
                     </div>
@@ -803,11 +808,11 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 10: Who This Is For ───────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-cream/20">
+            <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-3xl mx-auto">
                     <div className="text-center mb-12">
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">This Is For You If</p>
-                        <h2 className="text-2xl md:text-5xl luxury-heading text-luxury-charcoal">Who This Is For</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">This Is For You If</p>
+                        <h2 className="text-2xl md:text-5xl iconik-display text-luxury-charcoal">Who This Is For</h2>
                     </div>
                     <div className="space-y-4">
                         {[
@@ -818,8 +823,8 @@ export default function GlobeLandingPage() {
                             "You're ready to understand your geometry, your colours, and your face — for good.",
                         ].map((line, i) => (
                             <div key={i} className="flex items-start gap-4 p-5 bg-luxury-warm-white/80 border border-luxury-cream rounded-xl hover:bg-luxury-warm-white transition-all duration-300">
-                                <CheckCircle className="w-5 h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                                <p className="luxury-body text-luxury-charcoal/80 text-sm md:text-base leading-relaxed">{line}</p>
+                                <CheckCircle className="w-5 h-5 text-[#6B7F87] flex-shrink-0 mt-0.5" />
+                                <p className="iconik-mono text-luxury-charcoal/80 text-sm md:text-base leading-relaxed">{line}</p>
                             </div>
                         ))}
                     </div>
@@ -830,11 +835,11 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 11: Testimonials ──────────────────────────────── */}
-            <section id="testimonials" className="py-24 px-4 md:px-6 bg-luxury-warm-white">
+            <section id="testimonials" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-4">Client Stories</h2>
-                        <p className="luxury-body text-luxury-charcoal/60 text-sm md:text-lg">What women around the world are saying.</p>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal mb-4">Client Stories</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 text-sm md:text-lg">What women around the world are saying.</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8 md:gap-10">
                         {[
@@ -855,15 +860,15 @@ export default function GlobeLandingPage() {
                                             className="object-cover"
                                         />
                                     </div>
-                                    <p className="luxury-body text-luxury-charcoal/80 text-center leading-relaxed">
+                                    <p className="iconik-mono text-luxury-charcoal/80 text-center leading-relaxed">
                                         &ldquo;{t.quote}&rdquo;
                                     </p>
                                     <div className="text-center">
-                                        <p className="luxury-body text-luxury-charcoal/60 mb-3">{t.name}</p>
-                                        <p className="luxury-body text-luxury-accent text-xs mb-3">{t.tag}</p>
+                                        <p className="iconik-mono text-luxury-charcoal/60 mb-3">{t.name}</p>
+                                        <p className="iconik-mono text-[#6B7F87] text-xs mb-3">{t.tag}</p>
                                         <div className="flex justify-center gap-1">
                                             {[...Array(5)].map((_, j) => (
-                                                <Star key={j} className="h-4 w-4 text-luxury-gold fill-current" />
+                                                <Star key={j} className="h-4 w-4 text-[#9a7d4a] fill-current" />
                                             ))}
                                         </div>
                                     </div>
@@ -875,11 +880,11 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 12: How It Works ──────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-cream/20">
+            <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto">
                     <div className="text-center mb-14">
-                        <p className="luxury-body text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Process</p>
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal">How It Works</h2>
+                        <p className="iconik-mono text-luxury-charcoal/60 mb-4 tracking-widest text-xs uppercase">The Process</p>
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal">How It Works</h2>
                     </div>
                     <div className="grid md:grid-cols-3 gap-6">
                         {[
@@ -891,9 +896,9 @@ export default function GlobeLandingPage() {
                                 key={i}
                                 className="p-8 bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl hover:-translate-y-1 text-center"
                             >
-                                <div className="text-5xl luxury-heading text-luxury-accent/20 mb-4">{s.step}</div>
-                                <h3 className="luxury-heading text-luxury-charcoal text-xl mb-3">{s.title}</h3>
-                                <p className="luxury-body text-luxury-charcoal/60 text-sm leading-relaxed">{s.desc}</p>
+                                <div className="text-5xl iconik-display text-[#6B7F87]/20 mb-4">{s.step}</div>
+                                <h3 className="iconik-display text-luxury-charcoal text-xl mb-3">{s.title}</h3>
+                                <p className="iconik-mono text-luxury-charcoal/60 text-sm leading-relaxed">{s.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -901,13 +906,13 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 8: FAQ ─────────────────────────────────────────── */}
-            <section id="faq" className="py-24 px-4 md:px-6 bg-luxury-cream/20">
+            <section id="faq" className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-3xl mx-auto">
                     <div className="text-center mb-14">
-                        <h2 className="text-2xl md:text-5xl luxury-heading text-luxury-charcoal mb-4">
+                        <h2 className="text-2xl md:text-5xl iconik-display text-luxury-charcoal mb-4">
                             Frequently Asked Questions
                         </h2>
-                        <p className="luxury-body text-luxury-charcoal/60 max-w-xl mx-auto text-sm md:text-base">
+                        <p className="iconik-mono text-luxury-charcoal/60 max-w-xl mx-auto text-sm md:text-base">
                             Everything you need to know about your Blueprint.
                         </p>
                     </div>
@@ -919,11 +924,11 @@ export default function GlobeLandingPage() {
                                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
                             >
                                 <div className="flex justify-between items-center gap-4">
-                                    <h3 className="text-base md:text-lg luxury-heading text-luxury-charcoal">{faq.question}</h3>
-                                    <span className="text-luxury-accent font-bold text-xl flex-shrink-0">{openFaq === i ? '−' : '+'}</span>
+                                    <h3 className="text-base md:text-lg iconik-display text-luxury-charcoal">{faq.question}</h3>
+                                    <span className="text-[#6B7F87] font-bold text-xl flex-shrink-0">{openFaq === i ? '−' : '+'}</span>
                                 </div>
                                 {openFaq === i && (
-                                    <p className="luxury-body text-luxury-charcoal/70 text-sm md:text-base leading-relaxed mt-3 border-t border-luxury-cream pt-3">
+                                    <p className="iconik-mono text-luxury-charcoal/70 text-sm md:text-base leading-relaxed mt-3 border-t border-luxury-cream pt-3">
                                         {faq.answer}
                                     </p>
                                 )}
@@ -934,18 +939,18 @@ export default function GlobeLandingPage() {
             </section>
 
             {/* ── SECTION 9: Final CTA ──────────────────────────────────── */}
-            <section className="py-24 px-4 md:px-6 bg-luxury-warm-white text-center">
+            <section className="py-24 px-4 md:px-6 text-center" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-3xl mx-auto">
                     <div>
-                        <h2 className="text-2xl md:text-6xl luxury-heading text-luxury-charcoal mb-6 leading-tight">
+                        <h2 className="text-2xl md:text-6xl iconik-display text-luxury-charcoal mb-6 leading-tight">
                             Most women spend years buying clothes that{' '}
-                            <span className="text-luxury-accent">almost</span> work.
+                            <span className="text-[#6B7F87]">almost</span> work.
                         </h2>
-                        <p className="text-base md:text-xl luxury-body text-luxury-charcoal/60 mb-10 leading-relaxed">
+                        <p className="text-base md:text-xl iconik-mono text-luxury-charcoal/60 mb-10 leading-relaxed">
                             Your Blueprint tells you exactly what does.
                         </p>
                         <CTAButton className="text-base px-12 py-5 mb-6" />
-                        <div className="flex items-center justify-center gap-3 text-sm luxury-body text-luxury-charcoal/50 mt-4 flex-wrap">
+                        <div className="flex items-center justify-center gap-3 text-sm iconik-mono text-luxury-charcoal/50 mt-4 flex-wrap">
                             <span>★★★★★ Trusted by 500+ women worldwide</span>
                             <span>·</span>
                             <span>24-Hour Delivery</span>
@@ -958,7 +963,7 @@ export default function GlobeLandingPage() {
 
             {/* ── Minimal Footer ────────────────────────────────────────── */}
             <footer className="py-8 px-6 bg-luxury-cream/20 text-center border-t border-luxury-cream">
-                <p className="luxury-body text-luxury-charcoal/40 text-xs">
+                <p className="iconik-mono text-luxury-charcoal/40 text-xs">
                     © {new Date().getFullYear()} ICONIK Style Intelligence ·{' '}
                     <Link href="/privacy-policy" className="hover:text-luxury-charcoal transition-colors">Privacy</Link>
                     {' · '}
@@ -972,7 +977,7 @@ export default function GlobeLandingPage() {
                     <Link
                         href="/globe/checkout"
                         onClick={() => trackCTAClick('Get My Blueprint', 'Globe Sticky CTA', 97, 'USD', 'Globe Funnel')}
-                        className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg"
+                        className="w-full bg-[#2C2622] hover:bg-[#3d3430] text-luxury-warm-white px-6 py-3.5 text-base rounded-full transition-all duration-300 iconik-mono text-center block font-semibold shadow-lg"
                     >
                         GET MY BLUEPRINT — $97
                     </Link>

@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseGlobe } from '@/lib/supabaseGlobe';
+import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { sendGlobeQuizReminderEmail } from '@/lib/email';
 
 async function handleReminder(request: NextRequest) {
@@ -51,19 +52,34 @@ async function handleReminder(request: NextRequest) {
                 .filter((email): email is string => Boolean(email))
         ));
 
-        const { data: intakes, error: intakesError } = emails.length > 0
-            ? await supabaseGlobe
-                .from('globe_intake_submissions')
-                .select('customer_email')
-                .in('customer_email', emails)
-            : { data: [], error: null };
+        const [stylistOrdersRes, stylistIntakesRes] = emails.length > 0
+            ? await Promise.all([
+                supabaseStyleScan
+                    .from('stylist_orders')
+                    .select('customer_email')
+                    .in('customer_email', emails)
+                    .eq('status', 'paid')
+                    .eq('intake_completed', true),
+                supabaseStyleScan
+                    .from('stylist_intake_responses')
+                    .select('customer_email')
+                    .in('customer_email', emails)
+                    .not('completed_at', 'is', null),
+            ])
+            : [
+                { data: [], error: null },
+                { data: [], error: null },
+            ];
 
-        if (intakesError) {
-            console.error('Globe quiz reminder — intakes query error:', intakesError);
-            return NextResponse.json({ error: 'Failed to query intakes' }, { status: 500 });
+        if (stylistOrdersRes.error || stylistIntakesRes.error) {
+            console.error('Globe quiz reminder — stylist intake query error:', stylistOrdersRes.error || stylistIntakesRes.error);
+            return NextResponse.json({ error: 'Failed to query stylist intakes' }, { status: 500 });
         }
 
-        const submittedEmails = new Set((intakes || []).map((intake) => intake.customer_email));
+        const submittedEmails = new Set([
+            ...(stylistOrdersRes.data || []).map((order) => order.customer_email),
+            ...(stylistIntakesRes.data || []).map((intake) => intake.customer_email),
+        ]);
 
         let reminded = 0;
         let skipped = 0;
@@ -89,7 +105,7 @@ async function handleReminder(request: NextRequest) {
             // ── Send the reminder email ────────────────────────────────────
             const name = order.customer_name || email.split('@')[0];
             const phone = order.customer_phone || '';
-            const intakeLink = `https://www.iconik.pro/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+            const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
             const result = await sendGlobeQuizReminderEmail({
                 customer_name: name,

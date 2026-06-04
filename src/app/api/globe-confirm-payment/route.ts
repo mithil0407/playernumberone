@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseGlobe } from '@/lib/supabaseGlobe';
+import { saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
@@ -10,6 +11,7 @@ export async function POST(request: NextRequest) {
             db_order_id,
             razorpay_payment_id,
             razorpay_order_id,
+            stylist_order_id,
             customer_name,
             customer_email,
             customer_phone,
@@ -22,6 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         let updatedOrder: Record<string, unknown> | null = null;
+        let mirroredStylistOrder: Record<string, unknown> | null = null;
 
         if (db_order_id && db_order_id !== 'mock-order-id') {
             const { data, error } = await supabaseGlobe
@@ -57,6 +60,68 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
             }
             updatedOrder = data;
+        }
+
+        const mirroredOrderPayload = {
+            customer_email: customer_email || String(updatedOrder?.customer_email ?? ''),
+            customer_name: customer_name || String(updatedOrder?.customer_name ?? ''),
+            customer_phone: customer_phone || String(updatedOrder?.customer_phone ?? ''),
+            amount: amount ?? Number(updatedOrder?.amount ?? 0),
+            currency: 'USD',
+            status: 'paid' as const,
+            razorpay_order_id,
+            razorpay_payment_id,
+            ...attributionFromRow(updatedOrder),
+        };
+
+        if (stylist_order_id && stylist_order_id !== 'mock-stylist-order-id') {
+            const { data, error } = await supabaseStyleScan
+                .from('stylist_orders')
+                .update({
+                    status: 'paid',
+                    razorpay_payment_id,
+                    ...(razorpay_order_id && { razorpay_order_id }),
+                    ...(customer_name && { customer_name }),
+                    ...(customer_phone && { customer_phone }),
+                })
+                .eq('id', stylist_order_id)
+                .select()
+                .maybeSingle();
+
+            if (error) {
+                console.error('Mirrored stylist order update by id failed:', error);
+            } else {
+                mirroredStylistOrder = data;
+            }
+        }
+
+        if (!mirroredStylistOrder && razorpay_order_id) {
+            const { data, error } = await supabaseStyleScan
+                .from('stylist_orders')
+                .update({
+                    status: 'paid',
+                    razorpay_payment_id,
+                    ...(customer_name && { customer_name }),
+                    ...(customer_phone && { customer_phone }),
+                })
+                .eq('razorpay_order_id', razorpay_order_id)
+                .select()
+                .maybeSingle();
+
+            if (error) {
+                console.error('Mirrored stylist order update by Razorpay id failed:', error);
+            } else {
+                mirroredStylistOrder = data;
+            }
+        }
+
+        if (!mirroredStylistOrder && mirroredOrderPayload.customer_email) {
+            try {
+                mirroredStylistOrder = await saveStylistOrder(mirroredOrderPayload);
+            } catch (stylistOrderErr) {
+                console.error('Failed to create fallback mirrored stylist order:', stylistOrderErr);
+                return NextResponse.json({ error: 'Failed to unlock stylist intake' }, { status: 500 });
+            }
         }
 
         if (updatedOrder && (db_order_id || razorpay_order_id)) {
@@ -109,7 +174,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, stylist_order_id: mirroredStylistOrder?.id ?? stylist_order_id ?? null });
 
 
     } catch (error) {
