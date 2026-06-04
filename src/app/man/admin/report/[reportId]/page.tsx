@@ -3,10 +3,10 @@
 import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, AlertCircle, Pencil, X, Zap, Ban, RotateCcw, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SPRING } from '@/lib/reportAnimations';
-import ManReport from '@/components/ManReport';
+import ManReport, { getManReportSlideMeta, type ManReportSlideMeta } from '@/components/ManReport';
+import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, FaceImageKind } from '@/lib/manImageGenerator';
 import type { ComboGridKind } from '@/lib/manComboGridSection';
@@ -217,12 +217,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [report, setReport]               = useState<Report | null>(null);
   const [loading, setLoading]             = useState(true);
   const [activeSection, setActiveSection] = useState<SectionKey>('s1');
+  const [activePageNumber, setActivePageNumber] = useState(1);
+  const [viewMode, setViewMode] = useState<'page' | 'full'>('full');
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [editText, setEditText]           = useState('');
   const [saving, setSaving]               = useState(false);
   const [sending, setSending]             = useState(false);
   const [copied, setCopied]               = useState(false);
-  const [showLinkPreview, setShowLinkPreview] = useState(false);
   const [error, setError]                 = useState('');
   const [terminating, setTerminating]       = useState(false);
   const [retrying, setRetrying]             = useState(false);
@@ -454,6 +455,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const logout = async () => {
+    await fetch('/api/iconik-club/admin/logout', { method: 'POST' });
+    window.location.href = '/man/admin/login';
   };
 
   const copyImagePrompt = useCallback(async (target: ManualImageTarget): Promise<string | null> => {
@@ -951,6 +957,15 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     () => (reportData ? buildSafeReportData(reportData) : null),
     [reportData],
   );
+  const slideMeta = useMemo(() => safeData ? getManReportSlideMeta(safeData) : [], [safeData]);
+  const activeSlide = slideMeta.find(slide => slide.pageNumber === activePageNumber) ?? slideMeta[0] ?? null;
+  const activeSlideSection = activeSlide?.sectionKey ?? activeSection;
+
+  useEffect(() => {
+    if (slideMeta.length > 0 && !slideMeta.some(slide => slide.pageNumber === activePageNumber)) {
+      setActivePageNumber(slideMeta[0].pageNumber);
+    }
+  }, [activePageNumber, slideMeta]);
 
   const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
   const ready        = allApproved(approvals);
@@ -978,10 +993,6 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     Boolean(report?.error_message?.startsWith('Image generation'));
   const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
   const imageProgressText = `${activeGroomingDone}/1 ${activeGroomingLabel} · ${imageCounts.beardDone}/1 beard grid · ${imageCounts.eyewearDone}/1 eyewear grid · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids`;
-  const section4Qa = report?.report_data?.qa?.section4 ?? null;
-  const section4Issues = section4Qa?.issues ?? [];
-  const section4ErrorCount = section4Issues.filter(issue => issue.severity === 'error').length;
-  const section4WarningCount = section4Issues.length - section4ErrorCount;
   const hasPartialText = !!report?.report_data?.classification ||
     Object.values(report?.report_data?.sections ?? {}).some(value => typeof value === 'string' && value.trim().length > 0);
 
@@ -1201,488 +1212,190 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return `${m}m ${s}s`;
   })();
 
+  const approvedCount = Object.values(approvals).filter(Boolean).length;
+  const activeApproved = activeSlideSection ? Boolean(approvals[activeSlideSection as SectionKey]) : false;
+  const canEditActiveSection = Boolean(activeSlideSection && report.report_data?.sections?.[SECTION_FIELD_MAP[activeSlideSection as SectionKey]] !== undefined);
+  const selectedSlideTitle = viewMode === 'full'
+    ? 'Full report'
+    : activeSlide
+      ? 'Page ' + activeSlide.pageNumber + ': ' + activeSlide.title
+      : 'Report';
+
   return (
-    <div className="flex gap-0 h-[calc(100vh-4rem)] -m-5 lg:-m-8 overflow-hidden">
-      {/* ── Left: Report Preview ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto flex flex-col report-scroll" style={{ background: '#f5f5f5' }}>
-        {/* Stuck banner */}
-        {isStuck && (
-          <div className="flex items-center justify-between gap-4 px-5 py-3 flex-shrink-0"
-            style={{ background: '#1a0f00', borderBottom: '1px solid #3a2000' }}>
-            <div className="flex items-center gap-2">
-              <AlertCircle size={14} style={{ color: '#fb923c' }} />
-              <span className="text-xs font-medium" style={{ color: '#fb923c' }}>
-                Generation has been running for {elapsedLabel} — it may be stuck.
-              </span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => handleTerminate()}
-                disabled={terminating}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
-                style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
-              >
-                {terminating ? <Loader2 size={11} className="animate-spin" /> : <Ban size={11} />}
-                Cancel
-              </button>
-              <button
-                onClick={async () => { await handleTerminate(); await handleRetry(); }}
-                disabled={terminating || retrying}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
-              >
-                {(terminating || retrying) ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
-                Force Restart
-              </button>
-            </div>
-          </div>
-        )}
-
-        {safeData ? (
-          <ManReport
-            data={safeData}
-            imageUrls={report.image_urls}
-            viewerMode="admin"
-            motionMode="reduced"
-            deferSections
-            onRegenerateFaceImage={regenerateFaceImage}
-            onDraftFaceStyleSwap={draftFaceStyleSwap}
-            onApplyFaceStyleSwap={applyFaceStyleSwap}
-            onRegenerateOutfit={regenerateOutfit}
-            onSaveOutfitText={saveOutfitText}
-            onSaveComboGridText={saveComboGridText}
-            onRegenerateComboGrid={regenerateComboGrid}
-            onDraftOutfitSwap={draftOutfitSwap}
-            onApplyOutfitSwap={applyOutfitSwap}
-            onRetryMissingImages={handleGenerateImages}
-            onCopyImagePrompt={copyImagePrompt}
-            onUploadManualImage={uploadManualImage}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
-            <Loader2 size={22} className="animate-spin" style={{ color: '#c9a96e' }} />
-            <p className="text-xs" style={{ color: '#6b5f4a' }}>
-              {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ── Right: Edit Panel ────────────────────────────────────────────── */}
-      <div className="w-72 flex-shrink-0 flex flex-col border-l overflow-hidden" style={{ background: '#0f0f0f', borderColor: '#1e1e1e' }}>
-
-        {/* Panel header */}
-        <div className="px-4 py-4 border-b" style={{ borderColor: '#1e1e1e' }}>
-          <Link
-            href="/man/admin/dashboard"
-            className="flex items-center gap-1.5 text-xs mb-3 transition-opacity hover:opacity-70"
-            style={{ color: '#6b5f4a' }}
-          >
-            <ArrowLeft size={12} /> Dashboard
+    <div className="min-h-screen man-admin-review" style={{ background: S.bg, color: S.ink }}>
+      <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
+        <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
+          <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
+          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>Men - Review</div>
+        </div>
+        <div className="px-4 py-3 border-b" style={{ borderColor: S.border }}>
+          <Link href="/man/admin/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+            <LayoutDashboard size={15} /> Blueprints
           </Link>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: '#c9a96e' }}>Review Panel</p>
-          <p className="text-xs mt-0.5 truncate" style={{ color: '#6b5f4a' }}>
-            {report.man_intake_submissions?.customer_email ?? reportId}
-          </p>
-          {isGenerating && (
-            <div className="mt-2 space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: isStuck ? '#fb923c' : '#c9a96e' }} />
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: isStuck ? '#fb923c' : '#c9a96e' }}>
-                  {isStuck ? `STUCK · ${elapsedLabel}` : `LIVE · ${elapsedLabel}`}
-                </span>
-              </div>
-              <p className="text-[9px]" style={{ color: '#6b5f4a' }}>
-                {STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}
-              </p>
-              <button
-                onClick={() => handleTerminate()}
-                disabled={terminating}
-                className="flex items-center gap-1 text-[9px] font-medium px-2 py-1 rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
-                style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
-              >
-                {terminating ? <Loader2 size={9} className="animate-spin" /> : <Ban size={9} />}
-                {terminating ? 'Cancelling…' : 'Cancel Generation'}
-              </button>
-            </div>
-          )}
+        </div>
+        <div className="px-5 py-4 border-b" style={{ borderColor: S.border }}>
+          <Link href="/man/admin/dashboard" className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
+            <ArrowLeft size={14} /> Back to dashboard
+          </Link>
+          <h1 className="iconik-display truncate" style={{ fontSize: '22px', color: S.ink }}>
+            {report.man_intake_submissions?.customer_email || 'Client'}
+          </h1>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Pill tone={isError ? 'error' : report.status === 'sent' ? 'success' : isGenerating ? 'gold' : 'slate'}>
+              {report.progress_stage ? (STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')) : report.status.replace(/_/g, ' ')}
+            </Pill>
+            <Pill tone={ready ? 'success' : 'muted'}>{approvedCount}/{Object.keys(approvals).length}</Pill>
+          </div>
         </div>
 
-        {/* Section tabs + approvals */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-          {SECTIONS.map(({ key, label, field }) => {
-            const approved   = approvals[key];
-            const active     = activeSection === key;
-            const hasContent = !!report.report_data?.sections?.[field];
-            const sectionIssues = key === 's4' ? section4Issues.length : 0;
-
-            return (
-              <div
-                key={key}
-                className="group relative flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer"
-                onClick={() => setActiveSection(key)}
-              >
-                {/* Sliding active highlight */}
-                {active && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 rounded-lg"
-                    style={{ background: '#1e1a14', border: '1px solid #2a2010' }}
-                    transition={SPRING}
-                  />
-                )}
-
-                {/* Approve toggle / skeleton circle */}
-                <div className="relative z-10 flex-shrink-0">
-                  {hasContent ? (
-                    <motion.button
-                      onClick={e => { e.stopPropagation(); toggleApproval(key); }}
-                      className="w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{
-                        background: approved ? '#16a34a' : '#1e1e1e',
-                        border: `1px solid ${approved ? '#16a34a' : '#2a2a2a'}`,
-                      }}
-                      title={approved ? 'Approved — click to un-approve' : 'Click to approve'}
-                      whileHover={{ scale: 1.18 }}
-                      whileTap={{ scale: 0.88 }}
-                      transition={SPRING}
-                    >
-                      <AnimatePresence>
-                        {approved && (
-                          <motion.span
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          >
-                            <Check size={10} className="text-white" />
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  ) : (
-                    <div
-                      className="w-5 h-5 rounded-full animate-pulse"
-                      style={{ background: '#1e1e1e', border: '1px solid #2a2a2a' }}
-                    />
-                  )}
-                </div>
-
-                <span className="relative z-10 flex-1 text-xs font-medium" style={{ color: hasContent ? (active ? '#c9a96e' : '#6b5f4a') : '#3a3028' }}>
-                  {label}
-                </span>
-                {sectionIssues > 0 && (
-                  <span
-                    className="relative z-10 text-[9px] font-bold px-1.5 py-0.5 rounded"
-                    style={{
-                      color: section4ErrorCount ? '#f87171' : '#fb923c',
-                      background: section4ErrorCount ? '#2a0e0e' : '#2a1900',
-                      border: `1px solid ${section4ErrorCount ? '#3a1010' : '#3a2000'}`,
-                    }}
-                  >
-                    {sectionIssues}
-                  </span>
-                )}
-
-                {/* Edit button — only when content exists */}
-                {hasContent && (
-                  <motion.button
-                    onClick={e => { e.stopPropagation(); startEdit(key); }}
-                    className="relative z-10 p-1 rounded opacity-0 group-hover:opacity-100"
-                    style={{ color: '#6b5f4a' }}
-                    title="Edit section text"
-                    whileHover={{ scale: 1.15, opacity: 1 }}
-                    whileTap={{ scale: 0.9 }}
-                    transition={SPRING}
-                  >
-                    <Pencil size={11} />
-                  </motion.button>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Approve all — disabled while generating */}
-          {activeSection === 's4' && section4Issues.length > 0 && (
-            <div className="mt-3 rounded-lg p-2.5 space-y-2" style={{ background: '#130f08', border: '1px solid #2a2010' }}>
-              <div className="flex items-center gap-1.5">
-                <AlertCircle size={12} style={{ color: section4ErrorCount ? '#f87171' : '#fb923c' }} />
-                <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: section4ErrorCount ? '#f87171' : '#fb923c' }}>
-                  Section 4 QA · {section4ErrorCount} errors · {section4WarningCount} warnings
-                </p>
-              </div>
-              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                {section4Issues.slice(0, 8).map((qaIssue, index) => (
-                  <p key={`${qaIssue.code}-${index}`} className="text-[10px] leading-snug" style={{ color: qaIssue.severity === 'error' ? '#fca5a5' : '#c8a56a' }}>
-                    {qaIssue.message}
-                  </p>
-                ))}
-                {section4Issues.length > 8 && (
-                  <p className="text-[10px]" style={{ color: '#6b5f4a' }}>
-                    +{section4Issues.length - 8} more issues
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Approve all — disabled while generating */}
-          {!isGenerating && (
-            <motion.button
-              onClick={approveAll}
-              className="w-full mt-3 py-2 rounded-lg text-xs font-medium"
-              style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
-              whileHover={{ scale: 1.02, opacity: 0.9 }}
-              whileTap={{ scale: 0.98 }}
-              transition={SPRING}
-            >
-              Approve All Sections
-            </motion.button>
-          )}
-        </div>
-
-        {/* Send controls */}
-        <div className="px-3 py-4 border-t space-y-2" style={{ borderColor: '#1e1e1e' }}>
-          {/* Image model toggle — shown whenever retry/reject actions are available */}
-          {(isError || ['draft_ready', 'in_review', 'approved'].includes(report.status)) && (
-            <div className="rounded-lg p-2 space-y-1.5" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#4a4030' }}>Image Model</p>
-              <div className="flex gap-1">
-                {(['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setImageModel(m)}
-                    className="flex-1 py-1 rounded text-[9px] font-medium transition-all"
-                    style={{
-                      background: imageModel === m ? '#2a2010' : 'transparent',
-                      color: imageModel === m ? '#c9a96e' : '#4a4030',
-                      border: `1px solid ${imageModel === m ? '#3a3010' : '#1e1e1e'}`,
-                    }}
-                  >
-                    {m === 'gemini-3.1-flash-image-preview' ? '3.1 Preview' : '2.5 Flash'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {report.status === 'sent' ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <CheckCheck size={14} className="text-green-400" />
-                <span className="text-xs text-green-400 font-medium">Sent to client</span>
-              </div>
-              {report.share_token && (
-                <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#0d0d0d', border: '1px solid #2a2a2a' }}>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#4a4030' }}>Client Link</p>
-                  <p className="text-[10px] break-all leading-relaxed" style={{ color: '#c8bfae' }}>
-                    {`${window.location.origin}/man/report/${report.share_token}`}
-                  </p>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={copyLink}
-                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
-                      style={{ background: '#1e1e1e', color: '#c8bfae', border: '1px solid #2a2a2a' }}
-                    >
-                      {copied ? <CheckCheck size={11} /> : <Copy size={11} />}
-                      {copied ? 'Copied!' : 'Copy'}
-                    </button>
-                    <a
-                      href={`/man/report/${report.share_token}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
-                      style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
-                    >
-                      Open
-                    </a>
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="iconik-micro mb-3" style={{ color: S.muted }}>Review Queue</div>
+          <div className="space-y-4">
+            {(['Opening', 'Diagnosis', 'Prescription', 'Outfits', 'Closing'] as const).map(group => {
+              const groupSlides = slideMeta.filter(slide => slide.group === group);
+              if (groupSlides.length === 0) return null;
+              return (
+                <div key={group}>
+                  <p className="iconik-mono mb-1.5" style={{ fontSize: '10px', color: S.muted }}>{group}</p>
+                  <div className="space-y-1">
+                    {groupSlides.map((slide: ManReportSlideMeta) => {
+                      const active = activePageNumber === slide.pageNumber;
+                      const approved = Boolean(approvals[slide.sectionKey as SectionKey]);
+                      return (
+                        <button
+                          key={slide.pageNumber + '-' + slide.title}
+                          onClick={() => {
+                            setActivePageNumber(slide.pageNumber);
+                            setActiveSection(slide.sectionKey as SectionKey);
+                            setViewMode('page');
+                          }}
+                          className="w-full grid grid-cols-[1fr_auto] items-center gap-2 rounded-xl px-3 py-2.5 text-left transition"
+                          style={{
+                            background: active ? S.ink : 'transparent',
+                            color: active ? S.bg : S.muted,
+                            border: '1px solid ' + (active ? S.ink : S.border),
+                          }}
+                        >
+                          <span className="iconik-mono truncate" style={{ fontSize: '11px' }}>{String(slide.pageNumber).padStart(2, '0')} - {slide.title}</span>
+                          <span className="rounded-full px-2 py-0.5 iconik-micro" style={{ background: approved ? S.success + '18' : S.bg, color: approved ? S.success : S.muted }}>
+                            {approved ? 'OK' : 'Open'}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-          ) : isError ? (
-            <>
-              <div className="flex items-center gap-2 px-2 py-2 rounded-lg mb-1" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
-                <AlertCircle size={12} style={{ color: '#f87171', flexShrink: 0 }} />
-                <p className="text-[10px] leading-tight" style={{ color: '#f87171' }}>
-                  {report.error_message ?? 'Generation failed'}
-                </p>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 rounded-2xl border p-4 space-y-2" style={{ background: S.bg, borderColor: S.border }}>
+            <div className="iconik-micro" style={{ color: S.muted }}>Images</div>
+            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Hairstyle</span><Pill tone={imageCounts.hairstyleDone >= 1 ? 'success' : 'gold'}>{imageCounts.hairstyleDone}/1</Pill></div>
+            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Beard</span><Pill tone={imageCounts.beardDone >= 1 ? 'success' : 'gold'}>{imageCounts.beardDone}/1</Pill></div>
+            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Eyewear</span><Pill tone={imageCounts.eyewearDone >= 1 ? 'success' : 'gold'}>{imageCounts.eyewearDone}/1</Pill></div>
+            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Outfits</span><Pill tone={imageCounts.outfitDone >= expectedOutfitCount ? 'success' : 'gold'}>{imageCounts.outfitDone}/{expectedOutfitCount}</Pill></div>
+            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Grids</span><Pill tone={imageCounts.comboGridDone >= 3 ? 'success' : 'gold'}>{imageCounts.comboGridDone}/3</Pill></div>
+          </div>
+        </div>
+        <div className="px-4 py-4 border-t" style={{ borderColor: S.border }}>
+          <button onClick={logout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+            <LogOut size={14} /> Sign out
+          </button>
+        </div>
+      </aside>
+
+      <main className="min-h-screen pl-[310px]">
+        <header className="sticky top-0 z-20 border-b px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div>
+              <div className="iconik-micro mb-1" style={{ color: S.muted }}>Men Blueprint Report</div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>{selectedSlideTitle}</h2>
+                <Pill tone={hasAllImages ? 'success' : 'gold'}>Images {imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone}/{expectedOutfitCount + 6}</Pill>
+                {isGenerating && <Pill tone={isStuck ? 'error' : 'gold'}>{isStuck ? 'Stuck ' + elapsedLabel : 'Live ' + elapsedLabel}</Pill>}
               </div>
-              <motion.button
-                onClick={handleRetry}
-                disabled={retrying}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={SPRING}
-              >
-                {retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-                {retrying ? 'Starting…' : (hasPartialText ? 'Resume Generation' : 'Retry Generation')}
-              </motion.button>
-            </>
+              {report.error_message && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
+              {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
+              {!isGenerating && report.progress_stage && <p className="luxury-body text-xs mt-2" style={{ color: isImageStuck ? S.gold : S.muted }}>{STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')} · {imageProgressText}</p>}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {(isError || ['draft_ready', 'in_review', 'approved'].includes(report.status)) && (
+                <select value={imageModel} onChange={event => setImageModel(event.target.value as typeof imageModel)} className="rounded-xl px-3 py-2 text-sm luxury-body outline-none" style={{ background: S.card, color: S.ink, border: '1px solid ' + S.border }}>
+                  <option value="gemini-3.1-flash-image-preview">3.1 Preview</option>
+                  <option value="gemini-2.5-flash-image">2.5 Flash</option>
+                </select>
+              )}
+              <ActionButton onClick={() => setViewMode(viewMode === 'full' ? 'page' : 'full')} tone={viewMode === 'full' ? 'primary' : 'neutral'}>{viewMode === 'full' ? 'Page View' : 'Full Report'}</ActionButton>
+              {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages}>{generatingImages ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />} {imageButtonLabel}</ActionButton>}
+              {isError && <ActionButton onClick={handleRetry} disabled={retrying} tone="primary">{retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />} {hasPartialText ? 'Resume' : 'Retry'}</ActionButton>}
+              {isStuck && <ActionButton onClick={() => handleTerminate()} disabled={terminating} tone="danger">{terminating ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />} Cancel</ActionButton>}
+              {isImageStuck && !isGenerating && <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages} tone="primary">{generatingImages ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Restart Images</ActionButton>}
+              <ActionButton onClick={copyLink}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}</ActionButton>
+            </div>
+          </div>
+        </header>
+
+        <div className="px-8 py-8 pb-28">
+          {!safeData ? (
+            <div className="p-10 luxury-body" style={{ color: S.muted }}>{report.status === 'generating' ? (STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating...') : 'No report data yet.'}</div>
           ) : (
-            <>
-              {!ready && !isGenerating && (
-                <p className="text-[10px] text-center" style={{ color: '#4a4030' }}>
-                  Approve all {Object.values(approvals).filter(Boolean).length}/6 sections to send
-                </p>
-              )}
-              {isGenerating && (
-                <p className="text-[10px] text-center" style={{ color: '#4a4030' }}>
-                  Generation in progress — approve sections as they appear
-                </p>
-              )}
-              <motion.button
-                onClick={sendToClient}
-                disabled={!ready || sending || isGenerating}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
-                style={{ background: ready && !isGenerating ? 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)' : '#1e1e1e', color: '#fff' }}
-                whileHover={ready && !isGenerating ? { scale: 1.02 } : undefined}
-                whileTap={ready && !isGenerating ? { scale: 0.98 } : undefined}
-                transition={SPRING}
-              >
-                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                {sending ? 'Sending…' : 'Send to Client'}
-              </motion.button>
-              {/* Image error — shown when image generation failed */}
-              {!isGenerating && !report.progress_stage && !hasAllImages && report.error_message?.startsWith('Image generation failed') && (
-                <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
-                  <AlertCircle size={12} style={{ color: '#f87171', flexShrink: 0 }} />
-                  <p className="text-[10px] leading-tight" style={{ color: '#f87171' }}>
-                    {report.error_message}
-                  </p>
-                </div>
-              )}
-              {/* Generate images — shown when text is ready but images are missing or partial */}
-              {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] text-center" style={{ color: '#6b5f4a' }}>
-                    {imageProgressText}
-                  </p>
-                  <motion.button
-                    onClick={() => { void handleGenerateImages(); }}
-                    disabled={generatingImages}
-                    className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 disabled:opacity-40"
-                    style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={SPRING}
-                  >
-                    {generatingImages ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-                    {generatingImages ? 'Starting…' : imageButtonLabel}
-                  </motion.button>
-                </div>
-              )}
-              {/* Images in progress */}
-              {report.progress_stage && !isGenerating && (
-                <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#0d0d0d', border: `1px solid ${isImageStuck ? '#3a2000' : '#1e1e1e'}` }}>
-                  <div className="flex items-center gap-2">
-                    {isImageStuck
-                      ? <AlertCircle size={11} className="flex-shrink-0" style={{ color: '#fb923c' }} />
-                      : <Loader2 size={11} className="animate-spin flex-shrink-0" style={{ color: '#c9a96e' }} />
-                    }
-                    <span className="text-[10px]" style={{ color: isImageStuck ? '#fb923c' : '#6b5f4a' }}>
-                      {isImageStuck
-                        ? generatingImages
-                          ? 'Stuck — auto-retrying missing images…'
-                          : `Stuck — auto-retry will restart missing images (${Math.round(imageProgressAgeMs / 60000)}m stale)`
-                        : (STAGE_LABELS[report.progress_stage] ?? 'Generating images…')
-                      }
-                    </span>
-                  </div>
-                  <p className="text-[10px]" style={{ color: '#6b5f4a' }}>
-                    {imageProgressText}
-                  </p>
-                  {isImageStuck && (
-                    <button
-                      onClick={() => { void handleGenerateImages(); }}
-                      disabled={generatingImages}
-                      className="w-full py-1.5 rounded-md text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80 disabled:opacity-40"
-                      style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
-                    >
-                      {generatingImages ? <Loader2 size={10} className="animate-spin" /> : <RotateCcw size={10} />}
-                      {generatingImages ? 'Restarting…' : 'Force Restart Images'}
-                    </button>
-                  )}
-                </div>
-              )}
-              <button
-                onClick={() => setShowLinkPreview(v => !v)}
-                className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-                style={{ background: '#1e1e1e', color: '#6b5f4a', border: '1px solid #2a2a2a' }}
-              >
-                <Copy size={12} /> Preview Link
-              </button>
-              {showLinkPreview && report.share_token && (
-                <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#0d0d0d', border: '1px solid #2a2a2a' }}>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#4a4030' }}>Client Link</p>
-                  <p className="text-[10px] break-all leading-relaxed" style={{ color: '#c8bfae' }}>
-                    {`${window.location.origin}/man/report/${report.share_token}`}
-                  </p>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={copyLink}
-                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
-                      style={{ background: '#1e1e1e', color: '#c8bfae', border: '1px solid #2a2a2a' }}
-                    >
-                      {copied ? <CheckCheck size={11} /> : <Copy size={11} />}
-                      {copied ? 'Copied!' : 'Copy'}
-                    </button>
-                    <a
-                      href={`/man/report/${report.share_token}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-1.5 rounded-md text-[10px] font-medium flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
-                      style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
-                    >
-                      Open
-                    </a>
-                  </div>
-                </div>
-              )}
-              {['draft_ready', 'in_review', 'approved'].includes(report.status) && (
-                confirmingReject ? (
-                  <div className="rounded-lg p-2.5 space-y-2" style={{ background: '#1a0a0a', border: '1px solid #3a1010' }}>
-                    <p className="text-[10px] text-center" style={{ color: '#f87171' }}>Reject this report and generate a new one?</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setConfirmingReject(false)}
-                        className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                        style={{ background: '#1e1e1e', color: '#6b5f4a', border: '1px solid #2a2a2a' }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleRejectAndRetry}
-                        disabled={rejecting}
-                        className="flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80 disabled:opacity-40"
-                        style={{ background: '#7f1d1d', color: '#fca5a5' }}
-                      >
-                        {rejecting ? <Loader2 size={11} className="animate-spin" /> : null}
-                        {rejecting ? 'Rejecting…' : 'Confirm'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmingReject(true)}
-                    className="w-full py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-                    style={{ background: '#1a0a0a', color: '#f87171', border: '1px solid #3a1010' }}
-                  >
-                    <RotateCcw size={12} /> Reject & Retry
-                  </button>
-                )
-              )}
-            </>
-          )}
-
-          {error && (
-            <div className="flex items-center gap-2 text-xs rounded-lg p-2" style={{ color: '#f87171', background: '#1a0a0a' }}>
-              <AlertCircle size={12} /> {error}
+            <div className="mx-auto max-w-[1120px] rounded-2xl overflow-hidden" style={{ background: S.ink }}>
+              <ManReport
+                data={safeData}
+                imageUrls={report.image_urls}
+                viewerMode="admin"
+                motionMode="reduced"
+                deferSections={viewMode === 'full'}
+                focusPageNumber={viewMode === 'page' ? activePageNumber : undefined}
+                onRegenerateFaceImage={regenerateFaceImage}
+                onDraftFaceStyleSwap={draftFaceStyleSwap}
+                onApplyFaceStyleSwap={applyFaceStyleSwap}
+                onRegenerateOutfit={regenerateOutfit}
+                onSaveOutfitText={saveOutfitText}
+                onSaveComboGridText={saveComboGridText}
+                onRegenerateComboGrid={regenerateComboGrid}
+                onDraftOutfitSwap={draftOutfitSwap}
+                onApplyOutfitSwap={applyOutfitSwap}
+                onRetryMissingImages={handleGenerateImages}
+                onCopyImagePrompt={copyImagePrompt}
+                onUploadManualImage={uploadManualImage}
+              />
             </div>
           )}
         </div>
-      </div>
+      </main>
+
+      {safeData && (
+        <footer className="fixed bottom-0 left-[310px] right-0 z-30 border-t px-8 py-3 backdrop-blur" style={{ background: 'rgba(244,239,229,0.96)', borderColor: S.border, paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Pill tone={activeApproved ? 'success' : 'gold'}>{activeSlide ? 'Page ' + activeSlide.pageNumber : 'Page'} {activeApproved ? 'approved' : 'open'}</Pill>
+              <span className="luxury-body text-xs" style={{ color: S.muted }}>{activeSlide ? activeSlide.title + ' maps to ' + activeSlide.sectionKey.toUpperCase() + ' approval.' : 'Select a report page to review.'}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <ActionButton onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} disabled={!canEditActiveSection || isGenerating}>Edit Section Text</ActionButton>
+              <ActionButton onClick={() => activeSlideSection && toggleApproval(activeSlideSection as SectionKey)} disabled={!activeSlideSection || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
+              <ActionButton onClick={approveAll} disabled={isGenerating} tone="success"><CheckCheck size={14} /> Approve All</ActionButton>
+              {['draft_ready', 'in_review', 'approved'].includes(report.status) && (confirmingReject ? (<><ActionButton onClick={() => setConfirmingReject(false)}>Cancel Reject</ActionButton><ActionButton onClick={handleRejectAndRetry} disabled={rejecting} tone="danger">{rejecting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Retry</ActionButton></>) : (<ActionButton onClick={() => setConfirmingReject(true)} tone="danger"><RotateCcw size={14} /> Reject & Retry</ActionButton>))}
+              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send</ActionButton>
+            </div>
+          </div>
+        </footer>
+      )}
+
+      <style jsx global>{`
+        @media (max-width: 1000px) {
+          .man-admin-review aside.fixed { position: relative; width: 100%; height: auto; }
+          .man-admin-review main.min-h-screen { padding-left: 0; }
+          .man-admin-review footer.fixed { left: 0; }
+        }
+        @media (max-width: 640px) {
+          .man-admin-review header.sticky,
+          .man-admin-review main > div,
+          .man-admin-review footer.fixed { padding-left: 1rem; padding-right: 1rem; }
+        }
+      `}</style>
 
       {/* ── Inline section editor modal ───────────────────────────────────── */}
       <AnimatePresence>

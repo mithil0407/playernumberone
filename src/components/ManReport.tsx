@@ -79,6 +79,30 @@ interface OutfitCategory {
   outfits: ParsedOutfit[];
 }
 
+export type ManReportSectionKey = 's0' | 's1' | 's2' | 's3' | 's4' | 's4g' | 's5s' | 's5g' | 's6';
+export type ManReportSlideGroup = 'Opening' | 'Diagnosis' | 'Prescription' | 'Outfits' | 'Closing';
+
+export interface ManReportSlideMeta {
+  pageNumber: number;
+  title: string;
+  group: ManReportSlideGroup;
+  sectionKey: ManReportSectionKey;
+  slideType:
+    | 'cover'
+    | 'overview'
+    | 'snapshot'
+    | 'face'
+    | 'body'
+    | 'colour'
+    | 'outfit_system'
+    | 'outfit'
+    | 'combo_grids'
+    | 'shopping'
+    | 'grooming'
+    | 'identity';
+  outfitNumber?: number;
+}
+
 // Strips hex colour codes like (FFFDD0) or (#FFFDD0) from outfit text
 function stripHex(text: string): string {
   return text.replace(/\s*\(#?[0-9A-Fa-f]{3,6}\)/g, '').trim();
@@ -189,6 +213,54 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
   }
 
   return categories.filter(c => c.outfits.length > 0);
+}
+
+export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
+  const sections = data.sections ?? {};
+  const categories = parseOutfitCategories(sections.s4_outfits ?? '');
+  const outfits = categories.flatMap(category => category.outfits.map(outfit => ({ category, outfit })));
+  const slides: Omit<ManReportSlideMeta, 'pageNumber'>[] = [
+    { title: 'Cover', group: 'Opening', sectionKey: 's0', slideType: 'cover' },
+    { title: 'Overview', group: 'Opening', sectionKey: 's0', slideType: 'overview' },
+  ];
+
+  if (sections.s0_snapshot?.trim()) {
+    slides.push({ title: 'Personal Style Snapshot', group: 'Opening', sectionKey: 's0', slideType: 'snapshot' });
+  }
+
+  slides.push(
+    { title: 'Face Architecture', group: 'Diagnosis', sectionKey: 's1', slideType: 'face' },
+    { title: 'Body Geometry', group: 'Diagnosis', sectionKey: 's2', slideType: 'body' },
+    { title: 'Chromatic Harmony', group: 'Diagnosis', sectionKey: 's3', slideType: 'colour' },
+    { title: 'Outfit System', group: 'Prescription', sectionKey: 's4', slideType: 'outfit_system' },
+  );
+
+  if (outfits.length > 0) {
+    for (const { outfit } of outfits) {
+      slides.push({
+        title: `Outfit ${String(outfit.number).padStart(2, '0')}: ${outfit.label}`,
+        group: 'Outfits',
+        sectionKey: 's4',
+        slideType: 'outfit',
+        outfitNumber: outfit.number,
+      });
+    }
+  } else if (sections.s4_outfits?.trim()) {
+    slides.push({ title: 'Outfit Formulas', group: 'Outfits', sectionKey: 's4', slideType: 'outfit' });
+  }
+
+  if (sections.s4_combo_grids?.trim()) {
+    slides.push({ title: 'Combination Grids', group: 'Outfits', sectionKey: 's4g', slideType: 'combo_grids' });
+  }
+  if ((sections.s5_shopping ?? sections.s5_rules)?.trim()) {
+    slides.push({ title: 'Shopping & Fit', group: 'Prescription', sectionKey: 's5s', slideType: 'shopping' });
+  }
+  if (sections.s5_grooming_skin?.trim()) {
+    slides.push({ title: 'Grooming & Skincare', group: 'Prescription', sectionKey: 's5g', slideType: 'grooming' });
+  }
+  slides.push({ title: 'Identity Statement', group: 'Closing', sectionKey: 's6', slideType: 'identity' });
+
+  return slides.map((slide, index) => ({ ...slide, pageNumber: index + 1 }));
 }
 
 function extractOutfitBlock(s4Text: string, outfitNumber: number): string | null {
@@ -364,7 +436,7 @@ function RenderMarkdown({ text, skipH2 = true }: { text: string; skipH2?: boolea
 // Section header: hairline + section number in serif italic on the left,
 // label in soft caps on the right. Reads like a magazine spread, not a CSV row.
 // SectionHeader is intentionally a no-op — section identity lives in ManPageFrame corner markers.
-function SectionHeader(_props: { label: string; number?: string }) {
+function SectionHeader({}: { label: string; number?: string }) {
   return null;
 }
 
@@ -596,6 +668,7 @@ function FaceSection({
   beardUrls,
   eyewearUrls,
   adminMode,
+  onRegenerateFaceImage,
   onDraftFaceStyleSwap,
   onApplyFaceStyleSwap,
   onCopyImagePrompt,
@@ -607,6 +680,10 @@ function FaceSection({
   beardUrls?: (string | null)[];
   eyewearUrls?: (string | null)[];
   adminMode?: boolean;
+  onRegenerateFaceImage?: (
+    kind: FaceImageKind,
+    optionIndex: number,
+  ) => Promise<FaceImageRegenerationResult | null>;
   onDraftFaceStyleSwap?: (input: {
     kind: FaceImageKind;
     optionIndex: number;
@@ -643,10 +720,12 @@ function FaceSection({
   const [styleSwapError, setStyleSwapError] = useState<string | null>(null);
   const [draftingStyleSwap, setDraftingStyleSwap] = useState(false);
   const [applyingStyleSwap, setApplyingStyleSwap] = useState(false);
+  const [regeneratingGrid, setRegeneratingGrid] = useState<FaceImageKind | null>(null);
   const hasHairstyleImages = hairstyleUrls && hairstyleUrls.some(Boolean);
   const hasBeardImages = beardUrls && beardUrls.some(Boolean);
   const hasEyewearImages   = eyewearUrls && eyewearUrls.some(Boolean);
   const canStyleSwap = adminMode && !!onDraftFaceStyleSwap && !!onApplyFaceStyleSwap;
+  const canRegenerateGrid = adminMode && !!onRegenerateFaceImage;
 
   const getCurrentFaceStyle = (kind: FaceImageKind, optionIndex: number): string => {
     if (kind === 'hairstyle') return face.hairstyle_recommendations?.[optionIndex - 1] ?? '';
@@ -855,11 +934,43 @@ function FaceSection({
       ? ['Top left optical frame', 'Top right optical frame', 'Bottom left sunglasses', 'Bottom right sunglasses']
       : ['Top left', 'Top right', 'Bottom left', 'Bottom right'];
 
+    const handleRegenerateGrid = async () => {
+      if (!onRegenerateFaceImage) return;
+      setRegeneratingGrid(kind);
+      try {
+        const result = await onRegenerateFaceImage(kind, 1);
+        if (!result?.imageUrl) return;
+        setBrokenFaceImages(prev => ({ ...prev, [imageKey]: false }));
+        if (kind === 'hairstyle') {
+          setHairstyleOverrides(prev => ({ ...prev, 0: result.imageUrl, 1: result.imageUrl }));
+        } else if (kind === 'beard') {
+          setBeardOverrides(prev => ({ ...prev, 0: result.imageUrl, 1: result.imageUrl }));
+        } else {
+          setEyewearOverrides(prev => ({ ...prev, 0: result.imageUrl, 1: result.imageUrl }));
+        }
+      } finally {
+        setRegeneratingGrid(null);
+      }
+    };
+
     return (
       <div className="mb-10">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: ACCENT_INK }}>
-          {title}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: ACCENT_INK }}>
+            {title}
+          </p>
+          {canRegenerateGrid && (
+            <button
+              onClick={handleRegenerateGrid}
+              disabled={regeneratingGrid === kind}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium disabled:opacity-45"
+              style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
+            >
+              {regeneratingGrid === kind ? <Loader2 size={11} className="animate-spin" /> : null}
+              {regeneratingGrid === kind ? 'Regenerating...' : 'Regenerate grid'}
+            </button>
+          )}
+        </div>
         <div
           className="w-full overflow-hidden relative rounded-2xl"
           style={{
@@ -1599,7 +1710,7 @@ interface OutfitSwapApplyResult {
 }
 
 function OutfitsSection({
-  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onSaveOutfitText, onDraftOutfitSwap, onApplyOutfitSwap, onCopyImagePrompt, onUploadManualImage, qaPassedOutfits,
+  cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onSaveOutfitText, onDraftOutfitSwap, onApplyOutfitSwap, onCopyImagePrompt, onUploadManualImage, qaPassedOutfits, focusPageNumber, slideMeta,
 }: {
   cls: ClassificationResult;
   text: string;
@@ -1631,6 +1742,8 @@ function OutfitsSection({
   onCopyImagePrompt?: (target: ManualImageTarget) => Promise<string | null>;
   onUploadManualImage?: (target: ManualImageTarget, file: File, options?: ManualImageUploadOptions) => Promise<string | null>;
   qaPassedOutfits?: Set<number>; // outfit numbers without QA errors
+  focusPageNumber?: number;
+  slideMeta: ManReportSlideMeta[];
 }) {
   const [editingNumber, setEditingNumber] = useState<number | null>(null);
   const [editText, setEditText]           = useState('');
@@ -1818,9 +1931,18 @@ function OutfitsSection({
 
   const categories = useMemo(() => parseOutfitCategories(text), [text]);
   const split      = cls.outfit_split;
+  const shouldShowSlide = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
+    const slide = slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber));
+    if (!slide) return false;
+    return !focusPageNumber || slide.pageNumber === focusPageNumber;
+  };
+  const slideNumber = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
+    return slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber))?.pageNumber;
+  };
 
   // Fallback: if parsing failed, render raw markdown
   if (categories.length === 0 || categories.every(c => c.outfits.length === 0)) {
+    if (!shouldShowSlide('outfit')) return null;
     return (
       <section className="man-page bone">
         <div className="grain" />
@@ -2072,80 +2194,85 @@ function OutfitsSection({
   };
 
   return (
-    <section className="man-page bone">
-      <div className="grain" />
-      <div className="corner-tl">
-        <div className="man-mono corner-kicker">Section</div>
-        <div className="man-small-caps corner-title">Your Outfit Formulas</div>
-      </div>
-      <div className="corner-tr">
-        <div className="man-mono corner-kicker">04</div>
-      </div>
-      <SectionHeader number="04" label={`Your ${split.total} Outfit Formulas`} />
-
-      <div className="man-page-inner space-y-14">
-        <div>
-          <h2>
-            <span className="display">Outfit</span>
-            <span className="display-it">formulas.</span>
-          </h2>
-          <div className="rule" style={{ marginBottom: 0 }} />
-        </div>
-        {(editError || sectionNotice) && (
-          <div
-            className="mx-2 md:mx-4 flex items-start gap-2 rounded-2xl px-4 py-3"
-            style={{
-              background: editError ? '#fff2f2' : '#f4efe4',
-              border: `1px solid ${editError ? '#f0cccc' : BORDER}`,
-              color: editError ? OXBLOOD : INK_SOFT,
-            }}
-          >
-            <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-            <p className="text-[12px] leading-relaxed">{editError ?? sectionNotice}</p>
+    <>
+      {shouldShowSlide('outfit_system') && (
+        <section className="man-page bone">
+          <div className="grain" />
+          <div className="corner-tl">
+            <div className="man-mono corner-kicker">Act III - Application</div>
+            <div className="man-small-caps corner-title">Your Outfit Formulas</div>
           </div>
-        )}
+          <div className="corner-tr">
+            <div className="man-mono corner-kicker">{String(slideNumber('outfit_system') ?? 1).padStart(2, '0')} / {slideMeta.length}</div>
+          </div>
+          <SectionHeader number="04" label={`Your ${split.total} Outfit Formulas`} />
 
-        {categories.map((cat, ci) => {
-          const catCount = split.categories.find(c =>
-            c.category.toLowerCase().includes(cat.name.toLowerCase().slice(0, 4))
-          )?.count;
-
-          return (
-            <div key={ci} className="space-y-6">
-              {/* Category cover — big serif heading + count + intro */}
-              <div className="px-2 md:px-4 pt-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT_INK }}>
-                    {ci + 1} of {categories.length} · {cat.name}
-                  </p>
-                  <h3
-                    className="text-3xl md:text-4xl italic leading-[1.05]"
-                    style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}
-                  >
-                    {cat.name}
-                  </h3>
-                  {cat.intro && (
-                    <p className="mt-3 text-[14px] italic leading-relaxed max-w-2xl"
-                      style={{ fontFamily: SERIF, color: INK_SOFT, fontWeight: 350 }}>
-                      {cat.intro}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: INK_SOFT }}>
-                    {catCount ?? cat.outfits.length} outfits
-                  </p>
-                </div>
-              </div>
-
-              {/* Outfit cards stacked vertically with breathing room */}
-              <div className="space-y-6">
-                {cat.outfits.map((outfit) => renderOutfitCard(cat, outfit))}
-              </div>
+          <div className="man-page-inner space-y-12">
+            <div>
+              <h2>
+                <span className="display">Outfit</span>
+                <span className="display-it">system.</span>
+              </h2>
+              <div className="rule" style={{ marginBottom: 0 }} />
             </div>
-          );
-        })}
-      </div>
+            {(editError || sectionNotice) && (
+              <div
+                className="flex items-start gap-2 rounded-2xl px-4 py-3"
+                style={{
+                  background: editError ? '#fff2f2' : '#f4efe4',
+                  border: `1px solid ${editError ? '#f0cccc' : BORDER}`,
+                  color: editError ? OXBLOOD : INK_SOFT,
+                }}
+              >
+                <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                <p className="text-[12px] leading-relaxed">{editError ?? sectionNotice}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {categories.map((cat, ci) => {
+                const catCount = split.categories.find(c =>
+                  c.category.toLowerCase().includes(cat.name.toLowerCase().slice(0, 4))
+                )?.count;
+                return (
+                  <div key={ci} className="rounded-3xl p-6 md:p-7" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <p className="text-[11px] font-medium uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT_INK }}>
+                      {ci + 1} of {categories.length}
+                    </p>
+                    <h3 className="text-3xl italic leading-[1.05]" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
+                      {cat.name}
+                    </h3>
+                    {cat.intro && (
+                      <p className="mt-3 text-[13px] italic leading-relaxed" style={{ fontFamily: SERIF, color: INK_SOFT, fontWeight: 350 }}>
+                        {cat.intro}
+                      </p>
+                    )}
+                    <div className="rule-thin" style={{ margin: '22px 0 14px' }} />
+                    <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: INK_SOFT }}>
+                      {catCount ?? cat.outfits.length} outfits
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {categories.flatMap(cat => cat.outfits.map(outfit => shouldShowSlide('outfit', outfit.number) ? (
+        <section key={outfit.number} className="man-page bone man-outfit-slide">
+          <div className="grain" />
+          <div className="corner-tl">
+            <div className="man-mono corner-kicker">Act III - Application</div>
+            <div className="man-small-caps corner-title">{cat.name}</div>
+          </div>
+          <div className="corner-tr">
+            <div className="man-mono corner-kicker">{String(slideNumber('outfit', outfit.number) ?? 1).padStart(2, '0')} / {slideMeta.length}</div>
+          </div>
+          <div className="man-page-inner">
+            {renderOutfitCard(cat, outfit)}
+          </div>
+        </section>
+      ) : null))}
 
       <AnimatePresence>
         {swapNumber && (
@@ -2482,7 +2609,7 @@ function OutfitsSection({
           </motion.div>
         )}
       </AnimatePresence>
-    </section>
+    </>
   );
 }
 
@@ -3161,6 +3288,7 @@ function IdentitySection({ text }: { text: string }) {
 interface ManReportProps {
   data: ReportData;
   imageUrls?: ResolvedImageUrls | null;
+  focusPageNumber?: number;
   viewerMode?: 'admin' | 'public';
   motionMode?: 'reduced' | 'standard';
   deferSections?: boolean;
@@ -3366,6 +3494,7 @@ function BlueprintCard({ cls }: { cls: ClassificationResult }) {
 function ManReport({
   data,
   imageUrls,
+  focusPageNumber,
   viewerMode = 'public',
   motionMode = 'standard',
   deferSections = false,
@@ -3376,6 +3505,7 @@ function ManReport({
   onRegenerateComboGrid,
   onDraftOutfitSwap,
   onApplyOutfitSwap,
+  onRegenerateFaceImage,
   onDraftFaceStyleSwap,
   onApplyFaceStyleSwap,
   onCopyImagePrompt,
@@ -3385,6 +3515,13 @@ function ManReport({
   const isAdminViewer = viewerMode === 'admin' || adminMode === true;
   const reportDate    = formatReportDate(data.generated_at);
   const identityExcerpt = useMemo(() => extractIdentityExcerpt(sections.s6_identity), [sections.s6_identity]);
+  const slideMeta = useMemo(() => getManReportSlideMeta(data), [data]);
+  const totalSlides = slideMeta.length;
+  const shouldRenderSlide = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
+    const slide = slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber));
+    if (!slide) return false;
+    return !focusPageNumber || slide.pageNumber === focusPageNumber;
+  };
 
   // Outfit numbers that have NO QA errors — used to show "Stylist verified" ribbon.
   // QA issues encode the outfit number inside the message (e.g. "Outfit 3 …"),
@@ -3406,25 +3543,25 @@ function ManReport({
     <div
       className="sticky top-0 z-10 px-5 md:px-12 h-12 md:h-14 flex items-center justify-between"
       style={{
-        background: 'rgba(27,24,21,0.92)',
+        background: 'rgba(244,239,229,0.94)',
         backdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(244,239,229,0.12)',
+        borderBottom: '1px solid rgba(44,38,34,0.10)',
       }}
     >
       <div className="flex items-center gap-3">
         <div
           className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center"
-          style={{ background: '#F4EFE5' }}
+          style={{ background: '#2C2622' }}
         >
-          <span className="man-display-it" style={{ fontSize: 13, color: ACCENT, fontWeight: 500 }}>
+          <span className="man-display-it" style={{ fontSize: 13, color: '#F4EFE5', fontWeight: 500 }}>
             I
           </span>
         </div>
-        <span className="man-mono" style={{ color: '#F4EFE5', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
-          Iconik <span style={{ color: ACCENT }}>Blueprint</span>
+        <span className="man-mono" style={{ color: '#2C2622', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+          Iconik <span style={{ color: SLATE_DEEP }}>Blueprint</span>
         </span>
       </div>
-      <span className="man-display-it" style={{ fontSize: 11, color: 'rgba(244,239,229,0.55)' }}>
+      <span className="man-display-it" style={{ fontSize: 11, color: 'rgba(44,38,34,0.55)' }}>
         {reportDate}
       </span>
     </div>
@@ -3433,6 +3570,7 @@ function ManReport({
   const sectionConfigs = [
     {
       key: 's0',
+      slideType: 'snapshot',
       label: 'Personal Style Snapshot',
       estimatedHeight: 420,
       background: '#ffffff',
@@ -3440,6 +3578,7 @@ function ManReport({
     },
     {
       key: 's1',
+      slideType: 'face',
       label: 'Facial Architecture',
       estimatedHeight: 980,
       background: '#ffffff',
@@ -3452,6 +3591,7 @@ function ManReport({
           beardUrls={imageUrls?.beardCards ?? undefined}
           eyewearUrls={imageUrls?.eyewearCards ?? undefined}
           adminMode={isAdminViewer}
+          onRegenerateFaceImage={onRegenerateFaceImage}
           onDraftFaceStyleSwap={onDraftFaceStyleSwap}
           onApplyFaceStyleSwap={onApplyFaceStyleSwap}
           onCopyImagePrompt={onCopyImagePrompt}
@@ -3461,6 +3601,7 @@ function ManReport({
     },
     {
       key: 's2',
+      slideType: 'body',
       label: 'Body Geometry',
       estimatedHeight: 860,
       background: SHELL,
@@ -3468,6 +3609,7 @@ function ManReport({
     },
     {
       key: 's3',
+      slideType: 'colour',
       label: 'Chromatic Harmony',
       estimatedHeight: 900,
       background: '#ffffff',
@@ -3475,6 +3617,7 @@ function ManReport({
     },
     {
       key: 's4',
+      slideType: 'outfit_system',
       label: `Your ${cls.outfit_split.total} Outfit Formulas`,
       estimatedHeight: 2400,
       background: SHELL,
@@ -3492,11 +3635,14 @@ function ManReport({
           onCopyImagePrompt={onCopyImagePrompt}
           onUploadManualImage={onUploadManualImage}
           qaPassedOutfits={qaPassedOutfits}
+          focusPageNumber={focusPageNumber}
+          slideMeta={slideMeta}
         />
       ),
     },
     {
       key: 's4g',
+      slideType: 'combo_grids',
       label: 'Combination Grids',
       estimatedHeight: 900,
       background: '#ffffff',
@@ -3515,6 +3661,7 @@ function ManReport({
     },
     {
       key: 's5s',
+      slideType: 'shopping',
       label: 'Shopping & Fit System',
       estimatedHeight: 720,
       background: SHELL,
@@ -3526,6 +3673,7 @@ function ManReport({
     },
     {
       key: 's5g',
+      slideType: 'grooming',
       label: 'Grooming & Basic Skincare',
       estimatedHeight: 680,
       background: '#ffffff',
@@ -3533,6 +3681,7 @@ function ManReport({
     },
     {
       key: 's6',
+      slideType: 'identity',
       label: 'Your Style Identity',
       estimatedHeight: 420,
       background: SHELL,
@@ -3546,7 +3695,7 @@ function ManReport({
       style={{ color: INK }}
     >
       {/* Sticky Nav */}
-      {motionMode === 'standard' ? (
+      {viewerMode === 'public' && !focusPageNumber && (motionMode === 'standard' ? (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -3554,10 +3703,10 @@ function ManReport({
         >
           {stickyHeader}
         </motion.div>
-      ) : stickyHeader}
+      ) : stickyHeader)}
 
       {/* ── Cover page ─────────────────────────────────────────────────────── */}
-      <section className="man-page slate man-cover">
+      {shouldRenderSlide('cover') && <section className="man-page slate man-cover">
         <div className="grain" />
         <div className="corner-tl">
           <div className="man-display man-wordmark">I C O N I K</div>
@@ -3585,19 +3734,19 @@ function ManReport({
           <div className="man-display-it man-cover-tag">Different science.</div>
         </div>
         <div className="corner-br">
-          <div className="man-mono corner-kicker">Cover / 01</div>
+          <div className="man-mono corner-kicker">01 / {totalSlides}</div>
         </div>
-      </section>
+      </section>}
 
       {/* ── Summary page — blueprint card + style brief ──────────────────── */}
-      <section className="man-page ivory">
+      {shouldRenderSlide('overview') && <section className="man-page ivory">
         <div className="grain" />
         <div className="corner-tl">
           <div className="man-mono corner-kicker">The Blueprint</div>
           <div className="man-small-caps corner-title">Overview</div>
         </div>
         <div className="corner-tr">
-          <div className="man-mono corner-kicker">00</div>
+          <div className="man-mono corner-kicker">{String(slideMeta.find(item => item.slideType === 'overview')?.pageNumber ?? 2).padStart(2, '0')} / {totalSlides}</div>
         </div>
         <div className="man-page-inner">
           <div className="flex flex-wrap gap-2.5 mb-8">
@@ -3625,9 +3774,11 @@ function ManReport({
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
-      {sectionConfigs.map((section, index) => (
+      {sectionConfigs
+        .filter(section => section.key === 's4' ? (!focusPageNumber || slideMeta.find(item => item.pageNumber === focusPageNumber)?.sectionKey === 's4') : shouldRenderSlide(section.slideType))
+        .map((section, index) => (
         <DeferredSection
           key={section.key}
           label={section.label}
@@ -3641,14 +3792,14 @@ function ManReport({
       ))}
 
       {/* Footer */}
-      <div className="man-footer">
+      {!focusPageNumber && <div className="man-footer">
         <p className="man-display-it man-footer-wordmark">
           Iconik <span style={{ color: ACCENT }}>Blueprint</span>
         </p>
         <p className="man-mono" style={{ fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(244,239,229,0.45)', marginTop: 10 }}>
           Personal · Confidential · {reportDate}
         </p>
-      </div>
+      </div>}
 
       <ManBlueprintStyles />
     </div>
@@ -3915,6 +4066,8 @@ function ManBlueprintStyles() {
          on the slate blue background — override them site-wide.    */
       .man-page.slate .man-page-inner p,
       .man-page.slate .man-page-inner li,
+      .man-page.slate .man-page-inner span,
+      .man-page.slate .man-page-inner em,
       .man-page.slate .man-page-inner td,
       .man-page.slate .man-page-inner label {
         color: rgba(244,239,229,0.78) !important;
@@ -3924,7 +4077,7 @@ function ManBlueprintStyles() {
       .man-page.slate .man-page-inner h4,
       .man-page.slate .man-page-inner strong,
       .man-page.slate .man-page-inner b {
-        color: #F4EFE5 !important;
+        color: rgba(244,239,229,0.88) !important;
       }
       /* Cards inside slate sections: glass-dark instead of white/cream */
       .man-page.slate .man-page-inner .rounded-2xl,
