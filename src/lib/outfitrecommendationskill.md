@@ -1,8 +1,10 @@
 # ICONIK Men's Blueprint — Outfit Recommendation Engine
 
-**Version:** 5.0  
+**Version:** 5.1 — Classy Modern Upgrade  
 **Scope:** Automated Blueprint report generation — men's outfit recommendation section only  
 **Output:** Exactly **20 outfits** across 4 lifestyle contexts:
+**Update Focus:** v5.1 adds a stronger classy-modern taste layer, richer smart-casual formulas, premium colour pairing banks, styling-detail logic and an aspirational quality filter so recommendations feel more like refined ICONIK reference outfits, not merely rule-correct combinations.
+
 
 - **6 Office / Formal**
 - **4 Smart Casual**
@@ -91,6 +93,165 @@ The default ICONIK male wardrobe direction is:
 
 ---
 
+# SECTION 01A — CLASSY MODERN VISUAL DNA
+
+This section upgrades the taste standard of the outfit engine. Correct is not enough. Every outfit must feel premium, mature, modern and aspirational.
+
+## Core Direction
+
+Every generated outfit should sit inside one or more of these refined masculine worlds:
+
+- Riviera smart casual
+- Old-money casual
+- Modern business casual
+- Resort smart
+- Urban classic
+- Quiet luxury
+- Mature city evening
+- Soft tailoring
+- Global Indian premium casual
+
+## Visual Markers
+
+Use more of:
+
+- soft luxury colours
+- matte textures
+- relaxed tailoring
+- open collars
+- pleated or clean-falling trousers
+- suede loafers
+- leather penny loafers
+- draped knits
+- lightweight blazers
+- linen shirts
+- fine knit polos
+- crisp white shirts
+- controlled contrast
+- one styling move per outfit
+
+Use less of:
+
+- basic polo + chino combinations
+- generic shirt + trouser pairings
+- overly corporate styling
+- stiff formal looks
+- too many sneakers
+- too many denim-led outfits
+- obvious fast-fashion combinations
+- loud colours
+- excessive accessories
+- trend-heavy silhouettes
+
+## Classy Modern Rule
+
+Every outfit must feel like a real premium Indian or global Indian man could wear it to look richer, sharper and more composed. If an outfit is merely correct but not aspirational, regenerate it.
+
+## One Styling Move Rule
+
+Every outfit should contain one deliberate styling move that makes it feel directed:
+
+- open collar
+- sleeves rolled cleanly
+- knit draped over shoulders
+- single pleated trouser
+- blazer worn open
+- belt matched to shoe
+- suede loafer instead of sneaker
+- shirt tucked only where context supports it
+- clean full-length trouser break
+- eyewear calibrated to face shape
+- tonal leather accessory
+- contrast knit layer
+
+Do not use more than one or two strong styling moves in the same outfit. The outfit should look controlled, not styled for a photoshoot.
+
+## Premium Texture Rule
+
+Prioritise matte, expensive-looking fabrics:
+
+- linen
+- linen-cotton
+- cotton poplin
+- cotton Oxford
+- fine knit cotton
+- fine merino
+- brushed cotton
+- suede
+- leather
+- flannel
+- soft wool
+- lightweight tailoring cloth
+
+Avoid anything shiny, clingy, synthetic-looking, overly thin, or visually cheap.
+
+## Rich-Man Casual Calibration
+
+For Smart Casual, Evening and Relaxed Casual, the default should not be casual. The default should be relaxed but expensive.
+
+A simple outfit becomes ICONIK-level when it has:
+
+1. controlled colour depth
+2. strong trouser line
+3. premium shoe
+4. clean collar or neckline
+5. one intentional styling detail
+6. body-shape correction
+7. no unnecessary noise
+
+---
+
+# SECTION 01B — PREMIUM COLOUR PAIRING BANK
+
+Use these pairings whenever they match the client's undertone, season and anti-preferences.
+
+## Warm / Neutral Premium Pairings
+
+- Pale yellow + cream + cognac brown
+- Ivory + dark olive + brown suede
+- Camel + white + navy
+- Taupe + navy + dark brown
+- White + espresso + tan
+- Chocolate + cream + black
+- Olive + ivory + dark indigo
+- Tobacco + white + dark indigo
+- Warm beige + charcoal + dark brown
+- Cream + burgundy loafer + navy
+
+## Cool / Neutral Premium Pairings
+
+- White + navy + off-white suede
+- Powder blue + charcoal + dark brown
+- Soft grey + white + black
+- Slate blue + cream + dark brown
+- Navy + stone + black
+- Charcoal + white + silver watch
+- Deep teal + off-white + black
+- Dark navy + pale blue + brown leather
+- Black + cream + silver
+- Cool taupe + white + navy
+
+## Evening Premium Pairings
+
+- Black + cream + silver
+- Deep navy + white + dark brown
+- Chocolate + ivory + black
+- Charcoal + powder blue + black
+- Espresso + cream + burgundy
+- Dark olive + white + brown suede
+- Burgundy accent + navy anchor + white base
+
+## Colour Pairing Rules
+
+1. Use one dominant anchor, one soft contrast and one bridge colour.
+2. Do not use more than one accent colour.
+3. Let footwear resolve the outfit temperature.
+4. Use off-white/ivory instead of stark white for warm clients unless contrast is intentionally needed.
+5. Use pure white, blue-white or cool white for cool clients where appropriate.
+6. Cream trousers require a darker top, darker shoe or strong styling layer.
+7. Pale yellow is allowed only when soft and muted, never mustard or bright yellow.
+
+
 # SECTION 02 — CHEAP / IMMATURE OUTPUT PROHIBITION
 
 Most ICONIK male clients are mature. Avoid outfits that look like fast-fashion partywear, cheap Instagram styling or shiny clubwear.
@@ -149,6 +310,52 @@ Most ICONIK male clients are mature. Avoid outfits that look like fast-fashion p
 - Ribbed knit
 
 ---
+
+# SECTION 02A — PREMIUM TASTE FILTER
+
+Before accepting any outfit, reject it if it feels:
+
+- too basic
+- too mall-brand
+- too young
+- too influencer
+- too wedding guest unless wedding context is requested
+- too stiff corporate
+- too streetwear
+- too colourful
+- too denim-heavy
+- too sneaker-dependent
+- too accessorised
+- too random
+- lacking one premium styling detail
+- lacking body-shape correction
+- lacking clear colour depth
+
+## Aspirational Test
+
+Ask internally:
+
+Would this outfit look mature, expensive and wearable on a real ICONIK male client?
+
+If no, regenerate.
+
+## Sophistication Score
+
+Each outfit must internally score at least 8/10 across:
+
+- maturity
+- wearability
+- premium feel
+- body-shape correction
+- colour harmony
+- context accuracy
+- modern/classy appeal
+- fabric quality
+- footwear elevation
+- styling intention
+
+Reject anything below 8/10.
+
 
 # SECTION 03 — FORM INPUT MAP
 
@@ -854,6 +1061,85 @@ Every outfit must be traceable to one of these formulas.
 **HOT version:** Replace corduroy with linen or cotton overshirt in muted warm tone (rust, tobacco, terracotta). Same structure applies.  
 **Avoid:** Closing the overshirt. Wearing with light denim. Wearing with white or cream trousers (insufficient dark anchor).
 
+
+## FORMULA 28 — SOFT KNIT POLO + LINEN TROUSER
+
+**Structure:** Soft pale yellow, ivory, taupe, powder blue, stone or espresso open-collar knit polo + clearly contrasting linen or linen-cotton trouser + leather or suede loafer.  
+**Key rule:** Polo must be structured, not clingy. Colour must be soft, matte and muted — pale yellow is allowed only as a soft butter/pastel tone, never mustard or bright yellow.  
+**Best for:** Smart Casual, Office business-casual, Relaxed Casual, HOT climate.  
+**Works for:** Rectangle, Athletic, Slim, Oval only if polo has structure and trouser anchors the lower half.  
+**Classy reference:** Soft knit polo with cream or navy linen trouser and brown loafer.  
+**Avoid:** Thin polos that collapse at the belly, bright yellow, tight sleeves, cropped trousers.
+
+---
+
+## FORMULA 29 — WHITE SHIRT + SHOULDER-DRAPED KNIT + TAILORED TROUSER
+
+**Structure:** Crisp white or warm ivory button-down shirt with open collar + navy, espresso, olive or charcoal knit draped over shoulders + tailored trouser in a clearly contrasting depth + suede slip-on loafer or leather penny loafer.  
+**Key rule:** This is a polished styling move, not random scarf styling. The knit must look intentional and premium.  
+**Best for:** Smart Casual, Resort Smart, HOT polished casual, Elevated Daytime.  
+**Works for:** Slim, Athletic, Rectangle. Oval only if shirt fit is relaxed and not pulling at the stomach.  
+**Avoid:** Conservative clients, very casual clients, bulky knits, matching navy knit and navy trouser without contrast.
+
+---
+
+## FORMULA 30 — LINEN SHIRT + PLEATED TROUSER + LOAFER
+
+**Structure:** Linen or linen-cotton shirt in ivory, powder blue, olive, chocolate, taupe or white + single-pleated tailored trouser in navy, cream, stone, charcoal or dark brown + loafers.  
+**Styling:** Shirt can be tucked in formal/smart settings with belt or worn untucked in casual settings depending on body shape.  
+**Best for:** HOT Office, Smart Casual, Evening Casual.  
+**Works for:** All body shapes when trouser width and shirt fit are adjusted. Oval needs open collar, non-clingy fabric and preferably an open layer if tucked.  
+**Avoid:** Thin linen that becomes transparent, deep wrinkles, low-rise pleated trousers, cropped hems.
+
+---
+
+## FORMULA 31 — LIGHT LINEN BLAZER + DARK CONTRAST TROUSER
+
+**Structure:** Beige, camel, taupe, ivory or soft grey unlined linen-cotton blazer worn open + white/ivory/powder-blue shirt or structured knit + dark navy, olive, charcoal or espresso trouser + leather loafer.  
+**Key rule:** Blazer and trouser must clearly contrast. Blazer stays open for verticality.  
+**Best for:** Office/Formal, Smart Casual, HOT climate.  
+**Works for:** All body shapes. Strong for Oval and Triangle because the open blazer creates structure and vertical line.  
+**Avoid:** Matching blazer and trouser, padded heavy blazer, tight buttoned blazer.
+
+---
+
+## FORMULA 32 — DARK OPEN-COLLAR KNIT + LIGHT TAILORED TROUSER
+
+**Structure:** Dark chocolate, deep navy, black, charcoal, dark olive or espresso open-collar knit polo + cream, stone, taupe or light grey tailored trouser + black/dark brown/burgundy loafer.  
+**Key rule:** Knit must be matte and structured. Trouser must fall cleanly with no crop.  
+**Best for:** Evening Wear, Smart Casual, Dinner, Gallery/Event looks.  
+**Works for:** Slim, Athletic, Rectangle. Oval only if knit is relaxed and not clingy; if belly is primary concern, add open jacket or switch to Formula 04/31.  
+**Avoid:** Shiny dark shirts, tight knits, black-on-black monotone.
+
+---
+
+## FORMULA 33 — SUEDE JACKET + WHITE SHIRT + DARK TROUSER
+
+**Structure:** Dark brown, chocolate, taupe or olive suede jacket worn open + white or ivory open-collar shirt + dark navy, charcoal or espresso tailored trouser + leather loafers or Chelsea boots.  
+**Best for:** Evening Wear, Smart Casual, TEMPERATE, indoor premium settings.  
+**Works for:** Rectangle, Slim, Athletic. Oval if jacket hangs below belly and stays open.  
+**Avoid:** Shiny bomber jackets, cropped suede jackets, tight white shirts.
+
+---
+
+## FORMULA 34 — RESORT SMART LINEN OVERSHIRT + TAILORED TROUSER
+
+**Structure:** Linen overshirt in white, ivory, taupe, olive, tobacco, pale blue or sand worn open over plain tee or vest-style base + tailored linen/cotton trouser in a contrasting depth + suede slip-on loafers or sandals in HOT relaxed contexts.  
+**Best for:** Relaxed Casual, Resort Smart, HOT Evening Casual.  
+**Works for:** All body shapes. Strong for Oval when worn open past the belly.  
+**Avoid:** Closing the overshirt, using light tee + light trouser with no dark anchor, synthetic resort shirts.
+
+---
+
+## FORMULA 35 — CRISP SHIRT + HIGH-RISE TROUSER + LOAFER
+
+**Structure:** Crisp white, ivory, powder blue or fine-stripe shirt + high-rise tailored trouser in navy, charcoal, espresso, stone or cream + dark leather loafer + belt if tucked.  
+**Styling:** Open collar, sleeves cleanly rolled only in Smart Casual or Relaxed Casual.  
+**Best for:** Office/Formal, Smart Casual, HOT climate.  
+**Works for:** Slim, Rectangle, Athletic. Oval only with relaxed shirt fit and optional open blazer/jacket.  
+**Avoid:** Low-rise trousers, tight tucked shirts, pulling buttons, cropped hems.
+
+
 ---
 
 # SECTION 17 — PRESERVED REFERENCE OUTFIT LIBRARY
@@ -985,6 +1271,10 @@ Allowed formulas:
 - Formula 25 — Overcoat Tonal Stack
 - Formula 01 — Open-Collar Knit Polo + Contrasting Trouser (business-casual offices only)
 - Formula 15 — Structured Knit Polo + Contrasting Dark Trouser (modern offices only)
+- Formula 28 — Soft Knit Polo + Linen Trouser (business-casual offices only)
+- Formula 30 — Linen Shirt + Pleated Trouser + Loafer
+- Formula 31 — Light Linen Blazer + Dark Contrast Trouser
+- Formula 35 — Crisp Shirt + High-Rise Trouser + Loafer
 
 Rules:
 1. No sneakers in Office/Formal under any circumstance.
@@ -1012,6 +1302,13 @@ Allowed formulas:
 - Formula 21
 - Formula 22
 - Formula 23
+- Formula 28
+- Formula 29
+- Formula 30
+- Formula 31
+- Formula 32
+- Formula 33
+- Formula 35
 
 Rules:
 1. 1–2 outfits may use layers in HOT climate; 2–3 in TEMPERATE.
@@ -1036,7 +1333,13 @@ Allowed formulas:
 - Formula 23
 - Formula 24
 - Formula 26
-- Formula 27 (TEMPERATE evening)
+- Formula 27
+- Formula 28
+- Formula 34 (TEMPERATE evening)
+- Formula 30
+- Formula 32
+- Formula 33
+- Formula 34
 
 Rules:
 1. Evening does not mean shiny. No satin, no silk, no high-gloss fabrics.
@@ -1345,6 +1648,11 @@ NON-NEGOTIABLE CONSTRAINTS:
 22. No two outfits in the same context should feel similar.
 23. Every "Why It Works" must reference at least one client variable.
 24. The rust corduroy overshirt formula (or its HOT climate equivalent) is the primary template for Oval belly-zone clients in Relaxed Casual. Use it or a close variant.
+25. Apply the Classy Modern Visual DNA section. Every outfit must feel premium, mature, wearable and aspirational.
+26. Every outfit should include one intentional styling move.
+27. Use the Premium Colour Pairing Bank where it fits the client's undertone and season.
+28. Reject any outfit that feels merely basic, mall-brand, overly young, overly corporate, too streetwear or not aspirational.
+29. Internally score each outfit for sophistication. Reject anything below 8/10.
 
 OUTPUT: Generate all 20 outfits using the exact output format.
 ```
@@ -1432,6 +1740,26 @@ DO NOT BUY: A closed overshirt worn as a top, or a linen shirt tucked in — bot
 
 ---
 
-*ICONIK Men's Blueprint Outfit Recommendation Engine — v5.0*  
+
+
+## REFERENCE M15 — Butter Yellow Knit Polo + Cream Linen Trouser
+
+TOP: Soft butter-yellow open-collar knit polo — structured cotton knit — relaxed through the body, not clingy.  
+BOTTOM: Cream or ivory linen-cotton tailored trousers — straight clean fall — full-length break.  
+FOOTWEAR: Cognac or medium-brown leather penny loafers.  
+ACCESSORY: Dark rectangular sunglasses calibrated to face shape + silver or steel watch.  
+Works for: HOT Smart Casual / Resort Smart / Relaxed Premium. Avoid for clients who dislike light colours or need strong belly camouflage unless an open layer is added.
+
+## REFERENCE M16 — White Shirt + Navy Shoulder Knit + Navy Tailored Trouser
+
+TOP: Crisp white button-down shirt — open collar — sleeves cleanly rolled or buttoned depending on context.  
+STYLING LAYER: Navy knit sweater draped over shoulders and tied loosely at the chest.  
+BOTTOM: Navy tailored trousers — must be a visibly different depth or texture from the knit.  
+FOOTWEAR: Off-white suede slip-on loafers or dark brown suede penny loafers.  
+ACCESSORY: Brown panto optical frames or sunglasses calibrated to face shape + minimalist watch.  
+Works for: HOT polished Smart Casual / Resort Smart / Elevated Daytime. Avoid if the client dislikes expressive styling or has strong Oval belly concerns with a tucked shirt.
+
+
+*ICONIK Men's Blueprint Outfit Recommendation Engine — v5.1*  
 *Built for ICONIK LLP.*  
 *Same body. Different science.*
