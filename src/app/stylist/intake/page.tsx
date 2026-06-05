@@ -124,6 +124,15 @@ const pieceCategories = [
 ];
 
 type PhotoKey = 'headshot' | 'front' | 'side' | 'outfit';
+type MeasurementKey = 'height' | 'weight' | 'bust' | 'waist' | 'hips';
+
+const measurementLabels: Array<{ key: MeasurementKey; label: string; placeholder: string; unitType: 'length' | 'weight' }> = [
+    { key: 'height', label: 'Height', placeholder: 'Height', unitType: 'length' },
+    { key: 'weight', label: 'Weight', placeholder: 'Weight', unitType: 'weight' },
+    { key: 'bust', label: 'Bust', placeholder: 'Bust', unitType: 'length' },
+    { key: 'waist', label: 'Waist', placeholder: 'Waist', unitType: 'length' },
+    { key: 'hips', label: 'Hips', placeholder: 'Hips', unitType: 'length' },
+];
 
 const photoUploadFields: Array<{
     key: PhotoKey;
@@ -150,6 +159,8 @@ const photoUploadFields: Array<{
         key: 'side',
         label: 'Full body side profile',
         instruction: 'Turn 90 degrees · Natural posture · Full body in frame',
+        referenceImage: '/side-profile.webp',
+        referenceAlt: 'Example side profile photo',
     },
     {
         key: 'outfit',
@@ -269,7 +280,7 @@ function PhotoUploadCard({
 }) {
     const referenceAspect =
         field.key === 'headshot' ? 'aspect-[4/3]' :
-            field.key === 'front' ? 'aspect-[3/4]' :
+            field.key === 'front' || field.key === 'side' ? 'aspect-[3/4]' :
                 'aspect-[4/5]';
 
     return (
@@ -318,7 +329,15 @@ function StylistIntakeInner() {
     const [complete, setComplete] = useState(false);
 
     const [profile, setProfile] = useState({ fullName: '', ageRange: '', country: '', language: 'English', phone: '' });
-    const [measurements, setMeasurements] = useState({ unit: 'cm', height: '', weight: '', bust: '', waist: '', hips: '' });
+    const [measurements, setMeasurements] = useState({
+        length_unit: 'cm',
+        weight_unit: 'kg',
+        height: '',
+        weight: '',
+        bust: '',
+        waist: '',
+        hips: '',
+    });
     const [photos, setPhotos] = useState<{ headshot?: File; front?: File; side?: File; outfit?: File }>({});
     const [uploadedUrls, setUploadedUrls] = useState<Record<string, unknown>>({});
     const [selectedFocus, setSelectedFocus] = useState<string[]>([]);
@@ -608,12 +627,50 @@ function StylistIntakeInner() {
                         <section className="space-y-5">
                             <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Body measurements</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Optional, but the more precise your Blueprint, the more specific your outfit formulas.</p>
-                            <div className="flex gap-2">
-                                {['cm', 'in'].map(unit => <ToggleButton key={unit} active={measurements.unit === unit} onClick={() => setMeasurements({ ...measurements, unit })}>{unit.toUpperCase()}</ToggleButton>)}
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <p className="mb-2 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/35">Height / body measurements</p>
+                                    <div className="flex gap-2">
+                                        {['cm', 'in'].map(unit => (
+                                            <ToggleButton
+                                                key={unit}
+                                                active={measurements.length_unit === unit}
+                                                onClick={() => setMeasurements({ ...measurements, length_unit: unit })}
+                                            >
+                                                {unit === 'cm' ? 'CM' : 'Inches'}
+                                            </ToggleButton>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="mb-2 text-xs font-black uppercase tracking-[0.24em] text-luxury-charcoal/35">Weight</p>
+                                    <div className="flex gap-2">
+                                        {['kg', 'lb'].map(unit => (
+                                            <ToggleButton
+                                                key={unit}
+                                                active={measurements.weight_unit === unit}
+                                                onClick={() => setMeasurements({ ...measurements, weight_unit: unit })}
+                                            >
+                                                {unit === 'kg' ? 'KG' : 'Pounds'}
+                                            </ToggleButton>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                             <div className="grid md:grid-cols-5 gap-4">
-                                {['height', 'weight', 'bust', 'waist', 'hips'].map(field => (
-                                    <input key={field} className="border-2 border-luxury-cream rounded-xl px-4 py-3" placeholder={field} value={measurements[field as keyof typeof measurements]} onChange={e => setMeasurements({ ...measurements, [field]: e.target.value })} />
+                                {measurementLabels.map(field => (
+                                    <label key={field.key} className="block">
+                                        <span className="mb-2 block text-xs font-semibold text-luxury-charcoal/50">
+                                            {field.label} ({field.unitType === 'weight' ? measurements.weight_unit : measurements.length_unit})
+                                        </span>
+                                        <input
+                                            className="w-full border-2 border-luxury-cream rounded-xl px-4 py-3"
+                                            inputMode="decimal"
+                                            placeholder={`${field.placeholder} in ${field.unitType === 'weight' ? measurements.weight_unit : measurements.length_unit}`}
+                                            value={measurements[field.key]}
+                                            onChange={e => setMeasurements({ ...measurements, [field.key]: e.target.value })}
+                                        />
+                                    </label>
                                 ))}
                             </div>
                         </section>
@@ -623,35 +680,34 @@ function StylistIntakeInner() {
                         <section className="space-y-5">
                             <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Body photos</h1>
                             <p className="luxury-body text-luxury-charcoal/60">Phone photos are perfect. Headshot and side profile matter most here; the front photo helps complete the body analysis.</p>
-                            <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-                                <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
-                                    {(['headshot', 'front'] as const).map(key => {
-                                        const field = photoUploadFields.find(item => item.key === key);
-                                        if (!field) return null;
-                                        return (
-                                            <PhotoUploadCard
-                                                key={field.key}
-                                                field={field}
-                                                fileName={photos[field.key]?.name}
-                                                featured
-                                                onChange={file => setPhotos({ ...photos, [field.key]: file })}
-                                            />
-                                        );
-                                    })}
-                                </div>
+                            <div className="grid gap-4 md:grid-cols-2">
                                 {(() => {
-                                    const field = photoUploadFields.find(item => item.key === 'side');
+                                    const field = photoUploadFields.find(item => item.key === 'headshot');
                                     if (!field) return null;
                                     return (
-                                        <div className="sm:max-w-md lg:max-w-none">
+                                        <div className="md:col-span-2 md:mx-auto md:w-full md:max-w-md">
                                             <PhotoUploadCard
                                                 field={field}
-                                                fileName={photos.side?.name}
-                                                onChange={file => setPhotos({ ...photos, side: file })}
+                                                fileName={photos.headshot?.name}
+                                                featured
+                                                onChange={file => setPhotos({ ...photos, headshot: file })}
                                             />
                                         </div>
                                     );
                                 })()}
+                                {(['front', 'side'] as const).map(key => {
+                                    const field = photoUploadFields.find(item => item.key === key);
+                                    if (!field) return null;
+                                    return (
+                                        <PhotoUploadCard
+                                            key={field.key}
+                                            field={field}
+                                            fileName={photos[field.key]?.name}
+                                            featured
+                                            onChange={file => setPhotos({ ...photos, [field.key]: file })}
+                                        />
+                                    );
+                                })}
                             </div>
                         </section>
                     )}
