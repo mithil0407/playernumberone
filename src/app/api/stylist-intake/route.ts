@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
+import { findPaidGlobeOrderByEmail, mirrorPaidGlobeOrderToStylist } from '@/lib/globeStylistMirror';
 
 function cleanEmail(value: string | null) {
     return value?.trim().toLowerCase() || '';
@@ -9,14 +10,22 @@ async function findPaidOrder(email: string) {
     const { data, error } = await supabaseStyleScan
         .from('stylist_orders')
         .select('*')
-        .eq('customer_email', email)
+        .ilike('customer_email', email)
         .eq('status', 'paid')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
     if (error) throw error;
-    return data;
+    if (data) return data;
+
+    const globeOrder = await findPaidGlobeOrderByEmail(email);
+    if (!globeOrder) return null;
+
+    return mirrorPaidGlobeOrderToStylist({
+        globeOrder,
+        customerEmail: email,
+    });
 }
 
 export async function GET(request: NextRequest) {
