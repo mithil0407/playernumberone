@@ -5,6 +5,7 @@ import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAu
 import { loadStylistBlueprintReportByIdFresh, getStylistBlueprintReportById } from '@/lib/stylistBlueprintLoader';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
+  getStylistBlueprintPageCount,
   isVersionedStylistBlueprintReportData,
   validateStylistBlueprintReport,
   type BlueprintPage,
@@ -104,7 +105,16 @@ export async function POST(
   const action = body.action;
 
   if (action === 'approve_all') {
-    const sectionApprovals = Object.fromEntries(Array.from({ length: 28 }, (_, index) => [`p${index + 1}`, true]));
+    const { data: existing, error: loadError } = await supabaseAdmin
+      .from('stylist_blueprint_reports')
+      .select('report_data')
+      .eq('id', reportId)
+      .single();
+    if (loadError || !existing) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    const pageCount = isVersionedStylistBlueprintReportData(existing.report_data)
+      ? getStylistBlueprintPageCount(existing.report_data)
+      : 28;
+    const sectionApprovals = Object.fromEntries(Array.from({ length: pageCount }, (_, index) => [`p${index + 1}`, true]));
     const { data, error } = await supabaseAdmin
       .from('stylist_blueprint_reports')
       .update({ section_approvals: sectionApprovals, updated_at: new Date().toISOString() })

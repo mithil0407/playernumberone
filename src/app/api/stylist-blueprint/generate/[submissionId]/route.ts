@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
 import { runStylistBlueprintTextPipeline } from '@/lib/stylistBlueprintTextPipeline';
 import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
-import type { StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
+import { STYLIST_BLUEPRINT_PAGE_COUNT, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 
 export const maxDuration = 300;
 
@@ -54,7 +54,7 @@ export async function POST(
       submission_id: submissionId,
       status: 'generating',
       progress_stage: 'classifying',
-      section_approvals: Object.fromEntries(Array.from({ length: 28 }, (_, index) => [`p${index + 1}`, false])),
+      section_approvals: Object.fromEntries(Array.from({ length: STYLIST_BLUEPRINT_PAGE_COUNT }, (_, index) => [`p${index + 1}`, false])),
     })
     .select('id, share_token')
     .single();

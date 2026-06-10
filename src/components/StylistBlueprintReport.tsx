@@ -2,12 +2,24 @@
 
 import type {
   BlueprintBlock,
+  BlueprintColourUse,
   BlueprintPage,
   LegacyStylistBlueprintReportData,
   StylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
-import type { ResolvedStylistBlueprintImageUrls } from '@/lib/stylistBlueprintImageGenerator';
+import {
+  getStylistBlueprintAuditPage,
+  getStylistBlueprintContinuationPage,
+  getStylistBlueprintMatrixPage,
+  getStylistBlueprintOutfitCount,
+  getStylistBlueprintOutfitEndPage,
+  getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintPageCount,
+  isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
+} from '@/lib/stylistBlueprintSchema';
+import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { createContext, type ElementType, type FocusEvent, type ReactNode, useContext } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 const SLATE = '#94A6AD';
 const SLATE_LIGHT = '#A0B2B9';
@@ -19,7 +31,7 @@ const INK = '#2C2622';
 const ROSE = '#D4537E';
 
 function isVersionedStylistBlueprintReportData(data: unknown): data is StylistBlueprintReportData {
-  return Boolean(data && typeof data === 'object' && 'version' in data && (data as { version?: string }).version === 'women_blueprint_28_v1');
+  return isVersionedStylistBlueprintReportDataShared(data);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -33,6 +45,11 @@ function asItems(block?: BlueprintBlock) {
 type EditableReportContextValue = {
   editable: boolean;
   onPageChange?: (page: BlueprintPage) => void;
+  onReportDataChange?: (data: StylistBlueprintReportData) => void;
+  onImageRegenerate?: (slotKey: StylistBlueprintImageSlotKey) => void | Promise<void>;
+  regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
+  imageRegenerationDisabled?: boolean;
+  reportData?: StylistBlueprintReportData;
 };
 
 const EditableReportContext = createContext<EditableReportContextValue>({ editable: false });
@@ -81,6 +98,45 @@ function updateBlock(page: BlueprintPage, index: number, patch: Partial<Blueprin
   };
 }
 
+function ImageSlotFrame({
+  slotKey,
+  className = '',
+  label,
+  children,
+}: {
+  slotKey: StylistBlueprintImageSlotKey;
+  className?: string;
+  label: string;
+  children: ReactNode;
+}) {
+  const { onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled } = useContext(EditableReportContext);
+  const canRegenerate = Boolean(onImageRegenerate);
+  const isRegenerating = regeneratingImageSlot === slotKey;
+  const disabled = Boolean(imageRegenerationDisabled || (regeneratingImageSlot && !isRegenerating));
+
+  return (
+    <div className={`image-slot-frame ${className}`}>
+      {children}
+      {canRegenerate && (
+        <button
+          type="button"
+          className="image-regenerate-button"
+          aria-label={`Regenerate ${label}`}
+          title={`Regenerate ${label}`}
+          disabled={disabled}
+          onClick={event => {
+            event.preventDefault();
+            event.stopPropagation();
+            void onImageRegenerate?.(slotKey);
+          }}
+        >
+          {isRegenerating ? <Loader2 size={14} className="spin-icon" /> : <RefreshCw size={14} />}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function getField(item: unknown, keys: string[], fallback = '') {
   if (typeof item === 'string') return item;
   if (!isObject(item)) return fallback;
@@ -92,6 +148,42 @@ function getField(item: unknown, keys: string[], fallback = '') {
     if (isObject(value)) return objectSummary(value);
   }
   return fallback;
+}
+
+function isHex(value: string) {
+  return /^#[0-9a-f]{6}$/i.test(value);
+}
+
+function allReportColours(data: StylistBlueprintReportData): BlueprintColourUse[] {
+  return [
+    ...data.classification.colour.base_palette.map(colour => ({ name: colour.name, hex: colour.hex, role: 'support' as const })),
+    ...data.classification.colour.accent_palette.map(colour => ({ name: colour.name, hex: colour.hex, role: 'accent' as const })),
+  ].filter(colour => isHex(colour.hex));
+}
+
+const COMMON_COLOURS: Array<{ name: string; hex: string; role: BlueprintColourUse['role']; terms: string[] }> = [
+  { name: 'Black', hex: '#111111', role: 'ground', terms: ['black'] },
+  { name: 'White', hex: '#F7F4EE', role: 'support', terms: ['white', 'ivory', 'cream'] },
+  { name: 'Navy', hex: '#1F2A36', role: 'ground', terms: ['navy'] },
+  { name: 'Denim Blue', hex: '#355C7D', role: 'support', terms: ['denim', 'blue jean', 'indigo'] },
+  { name: 'Brown', hex: '#5B3A29', role: 'ground', terms: ['brown', 'chocolate', 'cocoa'] },
+  { name: 'Tan', hex: '#B08968', role: 'support', terms: ['tan', 'camel'] },
+  { name: 'Grey', hex: '#7D807A', role: 'support', terms: ['grey', 'gray'] },
+  { name: 'Red', hex: '#8F1D2C', role: 'accent', terms: ['red', 'burgundy', 'maroon'] },
+  { name: 'Pink', hex: '#C9829A', role: 'accent', terms: ['pink', 'blush', 'fuchsia'] },
+  { name: 'Mustard', hex: '#C5962D', role: 'accent', terms: ['mustard', 'yellow'] },
+];
+
+function inferColourFromText(text: string, data: StylistBlueprintReportData): BlueprintColourUse | null {
+  const lower = text.toLowerCase();
+  const hexMatch = text.match(/#[0-9a-f]{6}/i);
+  if (hexMatch) return { name: hexMatch[0].toUpperCase(), hex: hexMatch[0].toUpperCase(), role: 'support' };
+
+  const paletteMatch = allReportColours(data).find(colour => lower.includes(colour.name.toLowerCase()));
+  if (paletteMatch) return paletteMatch;
+
+  const common = COMMON_COLOURS.find(colour => colour.terms.some(term => lower.includes(term)));
+  return common ? { name: common.name, hex: common.hex, role: common.role } : null;
 }
 
 function objectSummary(item: unknown): string {
@@ -160,15 +252,19 @@ function splitDisplayName(name: string) {
 }
 
 function pageClass(pageNumber: number, pageType: BlueprintPage['page_type']) {
-  if (pageNumber === 1 || pageNumber === 28 || pageType === 'matrix') return 'slate';
+  if (pageNumber === 1 || pageType === 'continuation' || pageType === 'matrix') return 'slate';
   if ([4, 7, 8].includes(pageNumber)) return 'slate';
   if ([5, 6].includes(pageNumber)) return 'slate-deep';
   if (pageType === 'outfit') return 'bone';
-  if ([2, 3, 9, 10, 11, 12, 13, 27].includes(pageNumber)) return 'ivory';
+  if ([2, 3, 9, 10, 11, 12, 13].includes(pageNumber) || pageType === 'audit') return 'ivory';
   return 'ivory';
 }
 
-function canonicalPageType(page: BlueprintPage): BlueprintPage['page_type'] {
+function canonicalPageType(page: BlueprintPage, data?: StylistBlueprintReportData): BlueprintPage['page_type'] {
+  return data ? getCanonicalTypeForData(page, data) : page.page_type;
+}
+
+function getCanonicalTypeForData(page: BlueprintPage, data: StylistBlueprintReportData): BlueprintPage['page_type'] {
   const pageNumber = page.page_number;
   if (pageNumber === 1) return 'cover';
   if (pageNumber === 2) return 'summary';
@@ -179,43 +275,67 @@ function canonicalPageType(page: BlueprintPage): BlueprintPage['page_type'] {
   if ([10, 11].includes(pageNumber)) return 'rules';
   if (pageNumber === 12) return 'fabric';
   if (pageNumber === 13) return 'outfit_system';
-  if (pageNumber >= 14 && pageNumber <= 25) return 'outfit';
-  if (pageNumber === 26) return 'matrix';
-  if (pageNumber === 27) return 'audit';
-  if (pageNumber === 28) return 'continuation';
+  if (pageNumber >= getStylistBlueprintOutfitStartPage() && pageNumber <= getStylistBlueprintOutfitEndPage(data)) return 'outfit';
+  if (pageNumber === getStylistBlueprintMatrixPage(data)) return 'matrix';
+  if (pageNumber === getStylistBlueprintAuditPage(data)) return 'audit';
+  if (pageNumber === getStylistBlueprintContinuationPage(data)) return 'continuation';
   return page.page_type;
 }
 
-function pageKicker(page: BlueprintPage) {
+function pageKicker(page: BlueprintPage, data?: StylistBlueprintReportData) {
+  const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
   if (page.page_number <= 3) return 'Opening';
   if (page.page_number <= 8) return `Pillar ${String(page.page_number - 3).padStart(2, '0')}`;
   if (page.page_number <= 12) return 'Act II - Prescription';
-  if (page.page_number <= 25) return 'Act III - Application';
+  if (page.page_number <= outfitEndPage) return 'Act III - Application';
   return 'Closing';
 }
 
-function imageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null) {
+function imageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null, data?: StylistBlueprintReportData) {
   const images = imageUrls;
+  const continuationPage = getStylistBlueprintContinuationPage(data);
+  const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
   switch (page.page_number) {
     case 4: return images?.diagnosis?.silhouetteFront ?? null;
     case 5: return images?.diagnosis?.undertoneMap ?? null;
     case 6: return images?.diagnosis?.faceShapeDiagram ?? null;
     case 11: return images?.prescription?.hairDirections ?? null;
-    case 26: return images?.closing?.combinationMatrix ?? null;
-    case 28: return images?.closing?.editTeaser ?? null;
     default:
-      if (page.page_number >= 14 && page.page_number <= 25) {
+      if (page.page_number === continuationPage) return images?.closing?.editTeaser ?? null;
+      if (page.page_number >= getStylistBlueprintOutfitStartPage() && page.page_number <= outfitEndPage) {
         return images?.application?.outfitFlatlays?.[page.page_number - 14] ?? null;
       }
       return null;
   }
 }
 
-function secondaryImageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null) {
-  if (page.page_number >= 14 && page.page_number <= 25) return null;
+function secondaryImageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null, data?: StylistBlueprintReportData) {
+  if (page.page_number >= getStylistBlueprintOutfitStartPage() && page.page_number <= getStylistBlueprintOutfitEndPage(data)) return null;
   if (page.page_number === 4) return imageUrls?.diagnosis?.silhouetteSide ?? null;
-  if (page.page_number === 6) return imageUrls?.diagnosis?.necklinePreview ?? null;
   if (page.page_number === 11) return imageUrls?.prescription?.eyewearFrames ?? null;
+  return null;
+}
+
+function imageSlotForPage(page: BlueprintPage, data?: StylistBlueprintReportData): StylistBlueprintImageSlotKey | null {
+  const continuationPage = getStylistBlueprintContinuationPage(data);
+  const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
+  switch (page.page_number) {
+    case 4: return 'diagnosis.silhouetteFront';
+    case 5: return 'diagnosis.undertoneMap';
+    case 6: return 'diagnosis.faceShapeDiagram';
+    case 11: return 'prescription.hairDirections';
+    default:
+      if (page.page_number === continuationPage) return 'closing.editTeaser';
+      if (page.page_number >= getStylistBlueprintOutfitStartPage() && page.page_number <= outfitEndPage) {
+        return `application.outfitFlatlays.${page.page_number - 14}` as StylistBlueprintImageSlotKey;
+      }
+      return null;
+  }
+}
+
+function secondaryImageSlotForPage(page: BlueprintPage): StylistBlueprintImageSlotKey | null {
+  if (page.page_number === 4) return 'diagnosis.silhouetteSide';
+  if (page.page_number === 11) return 'prescription.eyewearFrames';
   return null;
 }
 
@@ -232,11 +352,14 @@ function PageFrame({
   children: ReactNode;
   className?: string;
 }) {
+  const { reportData } = useContext(EditableReportContext);
+  const pageType = canonicalPageType(page, reportData);
+  const totalPages = getStylistBlueprintPageCount(reportData);
   return (
-    <section className={`iconik-page ${pageClass(page.page_number, canonicalPageType(page))} ${className}`}>
+    <section className={`iconik-page ${pageClass(page.page_number, pageType)} ${className}`}>
       <div className="grain" />
       <div className="corner-tl">
-        <div className="mono corner-kicker">{pageKicker(page)}</div>
+        <div className="mono corner-kicker">{pageKicker(page, reportData)}</div>
         <EditableText
           page={page}
           value={page.title}
@@ -245,7 +368,7 @@ function PageFrame({
         />
       </div>
       <div className="corner-tr">
-        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / 28</div>
+        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / {totalPages}</div>
       </div>
       {children}
     </section>
@@ -253,7 +376,27 @@ function PageFrame({
 }
 
 function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const { editable, onReportDataChange } = useContext(EditableReportContext);
   const name = splitDisplayName(data.client.display_name);
+  const totalPages = getStylistBlueprintPageCount(data);
+  const updateDisplayName = (value: string) => {
+    const nextName = value.replace(/\s+/g, ' ').trim();
+    if (!nextName || nextName === data.client.display_name) return;
+    onReportDataChange?.({
+      ...data,
+      client: {
+        ...data.client,
+        display_name: nextName,
+      },
+      classification: {
+        ...data.classification,
+        client: {
+          ...data.classification.client,
+          name: nextName,
+        },
+      },
+    });
+  };
   return (
     <section className="iconik-page slate cover-page">
       <div className="grain" />
@@ -271,7 +414,12 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
           <div className="micro">A Personal Blueprint</div>
           <span />
         </div>
-        <h1>
+        <h1
+          contentEditable={editable}
+          suppressContentEditableWarning
+          onBlur={event => updateDisplayName(event.currentTarget.innerText)}
+          style={{ outline: 'none' }}
+        >
           <span className="display">{name.first}</span>
           <span className="display-it">{name.rest}</span>
         </h1>
@@ -281,16 +429,17 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
         <div className="display-it cover-tag">Same body.</div>
         <div className="display-it cover-tag">Different science.</div>
       </div>
-      <div className="corner-br"><div className="mono corner-kicker">01 / 28</div></div>
+      <div className="corner-br"><div className="mono corner-kicker">01 / {totalPages}</div></div>
     </section>
   );
 }
 
 function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
   const focus = data.analysis.proportional_focus.join('. ');
+  const colourSummary = `Build outfits from ${data.classification.colour.base_palette.slice(0, 3).map(colour => colour.name).join(', ')}, then use ${data.classification.colour.accent_palette.slice(0, 2).map(colour => colour.name).join(' or ')} only as controlled accents.`;
   const cards = [
     ['01 - SILHOUETTE', data.analysis.silhouette_profile, 'relative body geometry', firstBody(page.blocks, data.classification.body.proportion_directive)],
-    ['02 - CHROMATIC', data.analysis.chromatic_family, `${data.classification.colour.depth} depth`, data.classification.colour.palette?.[0]?.usage || data.classification.colour.undertone_direction],
+    ['02 - CHROMATIC', data.analysis.chromatic_family, `${data.classification.colour.depth} depth`, colourSummary],
     ['03 - ARCHITECTURE', data.classification.face_hair_accessories.face_shape, 'face and neckline logic', data.classification.face_hair_accessories.face_direction],
     ['04 - DIRECTION', data.analysis.style_direction, data.classification.taste.moodboard, data.classification.client.lifestyle_summary],
   ];
@@ -398,8 +547,12 @@ function DiagnosisPage({
   data: StylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
 }) {
-  const image = imageForPage(page, imageUrls);
-  const secondary = secondaryImageForPage(page, imageUrls);
+  const { onImageRegenerate } = useContext(EditableReportContext);
+  const image = imageForPage(page, imageUrls, data);
+  const secondary = secondaryImageForPage(page, imageUrls, data);
+  const imageSlot = imageSlotForPage(page, data);
+  const secondarySlot = secondaryImageSlotForPage(page);
+  const showSecondary = Boolean(secondary || (onImageRegenerate && secondarySlot));
   const statements = page.blocks.length ? page.blocks : [
     { label: 'Finding', body: data.classification.body.proportion_directive },
     { label: 'Implication', body: data.classification.body.silhouette_rules.join(' ') },
@@ -415,9 +568,17 @@ function DiagnosisPage({
         <div>
           <div className="diagram-card">
             <div className="mono figure-label">FIG. {String(page.page_number - 3).padStart(2, '0')} - PROFILE</div>
-            {image ? <img src={image} alt="" /> : <SilhouetteFallback />}
+            {imageSlot ? (
+              <ImageSlotFrame slotKey={imageSlot} label="diagnosis image" className={`diagram-media ${page.page_number === 4 ? 'silhouette-media' : ''}`}>
+                {image ? <img src={image} alt="" /> : <SilhouetteFallback />}
+              </ImageSlotFrame>
+            ) : image ? <img src={image} alt="" /> : <SilhouetteFallback />}
           </div>
-          {secondary && <img src={secondary} alt="" className="secondary-strip" />}
+          {showSecondary && secondarySlot && (
+            <ImageSlotFrame slotKey={secondarySlot} label="secondary diagnosis image" className={`secondary-strip ${page.page_number === 4 ? 'silhouette-secondary' : ''}`}>
+              {secondary ? <img src={secondary} alt="" /> : <SilhouetteFallback />}
+            </ImageSlotFrame>
+          )}
         </div>
         <div className="diagnosis-copy">
           <h2>
@@ -481,9 +642,9 @@ function ChromaticPage({
         <h2><span className="display">Colour, in</span><span className="display-it">three axes.</span></h2>
         <div className="rule" />
         <div className="chromatic-map">
-          <div className="axis-portrait">
+          <ImageSlotFrame slotKey="diagnosis.undertoneMap" label="undertone image" className="axis-portrait">
             {image ? <img src={image} alt="" /> : <UndertoneBar position={undertonePosition} />}
-          </div>
+          </ImageSlotFrame>
           <div className="chromatic-axes">
             <div className="axis-block">
               <div className="axis-head">
@@ -630,9 +791,55 @@ function PaletteSwatchGrid({
   );
 }
 
+function comparableText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/^(why|reason|because)\s*:\s*/i, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+function meaningfulReason(body: string, reason: string) {
+  if (!reason.trim()) return '';
+  const bodyText = comparableText(body);
+  const reasonText = comparableText(reason);
+  if (!reasonText || reasonText === bodyText) return '';
+  return reason.trim();
+}
+
+function ruleCardFromItem(input: {
+  block: BlueprintBlock;
+  item: unknown;
+  index: number;
+  sourceIndex: number;
+  titleField: 'heading' | 'label';
+}) {
+  const { block, item, index, sourceIndex, titleField } = input;
+  const title = getField(
+    item,
+    ['name', 'heading', 'label', 'rule', 'question', 'filter', 'title'],
+    block.heading || block.label || `Rule ${index + 1}`,
+  );
+  const body = getField(
+    item,
+    ['recommendation', 'guidance', 'answer', 'filter', 'note', 'body', 'instruction', 'action', 'piece'],
+    '',
+  );
+  const reason = meaningfulReason(body, getField(item, ['reason', 'why'], block.reason || ''));
+
+  return {
+    label: block.label || block.heading || `Rule ${sourceIndex + 1}`,
+    heading: title,
+    body: body || reason,
+    reason: body ? reason : '',
+    sourceIndex,
+    titleField,
+  };
+}
+
 function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const image = imageForPage(page, imageUrls);
-  const secondary = secondaryImageForPage(page, imageUrls);
+  const image = imageForPage(page, imageUrls, data);
+  const secondary = secondaryImageForPage(page, imageUrls, data);
   const cards: Array<{
     label: string;
     heading: string;
@@ -644,23 +851,18 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
     const items = asItems(block);
     const titleField = block.heading !== undefined ? 'heading' : 'label';
     if (!items.length) {
+      const body = block.body || '';
+      const reason = meaningfulReason(body, block.reason || '');
       return [{
         label: block.label || block.heading || `Rule ${sourceIndex + 1}`,
         heading: block.heading || block.label || `Rule ${sourceIndex + 1}`,
-        body: block.body || block.reason || '',
-        reason: block.reason || '',
+        body: body || reason,
+        reason: body ? reason : '',
         sourceIndex,
         titleField,
       }];
     }
-    return items.map((item, index) => ({
-      label: `${block.label || block.heading || 'Rule'} ${index + 1}`,
-      heading: getField(item, ['heading', 'label', 'rule', 'name', 'question'], block.heading || block.label || `Rule ${index + 1}`),
-      body: getField(item, ['body', 'note', 'answer', 'piece'], objectSummary(item)),
-      reason: getField(item, ['reason', 'why'], block.reason || ''),
-      sourceIndex,
-      titleField,
-    }));
+    return items.map((item, index) => ruleCardFromItem({ block, item, index, sourceIndex, titleField }));
   });
   return (
     <PageFrame page={page} className="rule-page">
@@ -728,8 +930,18 @@ function HairFaceAccessoriesPage({ page, data, imageUrls }: { page: BlueprintPag
   const eyewearImage = imageUrls?.prescription?.eyewearFrames ?? null;
   const cards = page.blocks.flatMap((block, sourceIndex) => {
     const items = asItems(block);
-    if (!items.length) return [{ block, item: block, sourceIndex }];
-    return items.map(item => ({ block, item, sourceIndex }));
+    const titleField = block.heading !== undefined ? 'heading' : 'label';
+    if (!items.length) {
+      const body = block.body || '';
+      const reason = meaningfulReason(body, block.reason || '');
+      return [{
+        heading: block.heading || block.label || `Rule ${sourceIndex + 1}`,
+        body: body || reason,
+        sourceIndex,
+        titleField,
+      }];
+    }
+    return items.map((item, index) => ruleCardFromItem({ block, item, index, sourceIndex, titleField }));
   }).slice(0, 6);
 
   return (
@@ -746,29 +958,33 @@ function HairFaceAccessoriesPage({ page, data, imageUrls }: { page: BlueprintPag
         <div className="face-visuals">
           <div className="face-panel">
             <div className="mono dossier-label">Hair direction - 2x2</div>
-            {hairImage ? <img src={hairImage} alt="" /> : <FaceGridFallback />}
+            <ImageSlotFrame slotKey="prescription.hairDirections" label="hair direction image" className="face-panel-media">
+              {hairImage ? <img src={hairImage} alt="" /> : <FaceGridFallback />}
+            </ImageSlotFrame>
           </div>
           <div className="face-panel">
             <div className="mono dossier-label">Eyeframes + sunglasses - 2x2</div>
-            {eyewearImage ? <img src={eyewearImage} alt="" /> : <FaceGridFallback />}
+            <ImageSlotFrame slotKey="prescription.eyewearFrames" label="eyewear image" className="face-panel-media">
+              {eyewearImage ? <img src={eyewearImage} alt="" /> : <FaceGridFallback />}
+            </ImageSlotFrame>
           </div>
         </div>
         <div className="hair-card-grid">
-          {cards.map(({ block, item, sourceIndex }, index) => (
+          {cards.map((card, index) => (
             <div key={index} className="glass-dark premium-rule-card">
               <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
               <EditableText
                 as="h3"
                 page={page}
-                value={getField(item, ['heading', 'label', 'rule', 'name'], block.heading || block.label || `Rule ${index + 1}`)}
-                update={value => updateBlock(page, sourceIndex, block.heading !== undefined ? { heading: value } : { label: value })}
+                value={card.heading}
+                update={value => updateBlock(page, card.sourceIndex, card.titleField === 'heading' ? { heading: value } : { label: value })}
                 className="display"
               />
               <EditableText
                 as="p"
                 page={page}
-                value={getField(item, ['body', 'note', 'answer', 'piece', 'reason'], objectSummary(item))}
-                update={value => updateBlock(page, sourceIndex, block.body !== undefined ? { body: value } : { reason: value })}
+                value={card.body}
+                update={value => updateBlock(page, card.sourceIndex, { body: value })}
               />
             </div>
           ))}
@@ -778,12 +994,14 @@ function HairFaceAccessoriesPage({ page, data, imageUrls }: { page: BlueprintPag
   );
 }
 
-function OutfitSystemPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+function OutfitSystemPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
   const covers = imageUrls?.application?.capsuleCovers?.filter((url): url is string => Boolean(url)) ?? [];
+  const outfitCount = getStylistBlueprintOutfitCount(data);
+  const outfitLabel = outfitCount === 20 ? 'Twenty' : outfitCount === 12 ? 'Twelve' : String(outfitCount);
   return (
     <PageFrame page={page} className="outfit-system-page">
       <div className="system-inner">
-        <h2><span className="display">Twelve formulas.</span><span className="display-it">One wardrobe system.</span></h2>
+        <h2><span className="display">{outfitLabel} formulas.</span><span className="display-it">One wardrobe system.</span></h2>
         <EditableText
           as="p"
           page={page}
@@ -797,7 +1015,7 @@ function OutfitSystemPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?
               {covers[index] && <img src={covers[index]} alt="" />}
               <div className="mono faded">Capsule {String(index + 1).padStart(2, '0')}</div>
               <h3 className="display">{getField(item, ['heading', 'label', 'name', 'capsule'], `Capsule ${index + 1}`)}</h3>
-              <p>{getField(item, ['body', 'reason', 'serves'], objectSummary(item))}</p>
+              <p>{getField(item, ['recommendation', 'guidance', 'body', 'serves', 'note'], '')}</p>
             </div>
           ))}
         </div>
@@ -810,13 +1028,46 @@ function SwatchDot({ hex }: { hex: string }) {
   return <span className="swatch-dot" style={{ background: hex }} />;
 }
 
+function colourForFormulaItem(item: unknown, page: BlueprintPage, data: StylistBlueprintReportData, index: number): BlueprintColourUse {
+  const record = isObject(item) ? item : {};
+  const metadataHex = typeof record.colour_hex === 'string' && isHex(record.colour_hex) ? record.colour_hex : '';
+  const metadataName = typeof record.colour_name === 'string' && record.colour_name.trim() ? record.colour_name.trim() : '';
+  const metadataRole = ['lead', 'support', 'ground', 'accent'].includes(String(record.palette_role))
+    ? record.palette_role as BlueprintColourUse['role']
+    : 'support';
+  if (metadataHex) return { name: metadataName || metadataHex, hex: metadataHex, role: metadataRole };
+
+  const text = objectSummary(item);
+  const inferred = inferColourFromText(text, data);
+  if (inferred) return inferred;
+
+  const pageColour = page.palette_used?.[index % (page.palette_used.length || 1)];
+  if (pageColour?.hex && isHex(pageColour.hex)) return pageColour;
+
+  return allReportColours(data)[index % Math.max(allReportColours(data).length, 1)] ?? { name: 'Palette colour', hex: IVORY, role: 'support' };
+}
+
+function paletteForOutfitPage(page: BlueprintPage, data: StylistBlueprintReportData, items: unknown[]): BlueprintColourUse[] {
+  const fromPage = page.palette_used?.filter(colour => isHex(colour.hex)) ?? [];
+  if (fromPage.length) return fromPage;
+
+  const inferred = items
+    .map((item, index) => colourForFormulaItem(item, page, data, index))
+    .filter((colour, index, arr) => arr.findIndex(existing => existing.hex.toLowerCase() === colour.hex.toLowerCase()) === index)
+    .slice(0, 5);
+
+  if (inferred.length) return inferred;
+  return allReportColours(data).slice(0, 5);
+}
+
 function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const image = imageForPage(page, imageUrls);
-  const detail = secondaryImageForPage(page, imageUrls);
+  const image = imageForPage(page, imageUrls, data);
+  const detail = secondaryImageForPage(page, imageUrls, data);
   const reasoning = page.blocks.find(block => block.reason || /reason|why|works/i.test(`${block.label} ${block.heading}`));
   const items = normaliseFormulaItems(page);
-  const palette = [...data.classification.colour.base_palette, ...data.classification.colour.accent_palette].slice(0, 5);
+  const palette = paletteForOutfitPage(page, data, items);
   const outfitNumber = page.page_number - 13;
+  const imageSlot = imageSlotForPage(page, data);
   return (
     <PageFrame page={page} className="outfit-page">
       <div className="outfit-hero">
@@ -845,7 +1096,11 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
           <div className="flatlay-frame">
             <div className="grain" />
             <div className="mono figure-label">Composition - {String(outfitNumber).padStart(2, '0')}</div>
-            {image ? <img src={image} alt="" /> : <OutfitFallback palette={palette.map(colour => colour.hex)} />}
+            {imageSlot && (
+              <ImageSlotFrame slotKey={imageSlot} label={`outfit ${outfitNumber} image`} className="flatlay-media">
+                {image ? <img src={image} alt="" /> : <OutfitFallback palette={palette.map(colour => colour.hex)} />}
+              </ImageSlotFrame>
+            )}
           </div>
           {detail && <img className="detail-image" src={detail} alt="" />}
         </div>
@@ -855,13 +1110,13 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
         <div className="mono faded formula-label">The Formula - {Math.max(items.length, 5)} pieces</div>
         <div className="formula-grid">
           {(items.length ? items : page.blocks.slice(0, 5)).map((item, index) => {
-            const colour = palette[index % palette.length];
+            const colour = colourForFormulaItem(item, page, data, index);
             return (
               <div key={index} className="formula-card">
                 <SwatchDot hex={colour.hex} />
                 <div className="mono dossier-label">{String(index + 1).padStart(2, '0')} - {getField(item, ['slot', 'category', 'label'], 'piece')}</div>
                 <h3 className="display">{getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`))}</h3>
-                <p>{getField(item, ['structural_notes', 'notes', 'body', 'reason'], objectSummary(item))}</p>
+                <p>{getField(item, ['structural_notes', 'notes', 'guidance', 'body'], '')}</p>
               </div>
             );
           })}
@@ -887,23 +1142,25 @@ function OutfitFallback({ palette }: { palette: string[] }) {
   );
 }
 
-function MatrixPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const image = imageForPage(page, imageUrls);
-  const items = page.blocks.flatMap(block => asItems(block).length ? asItems(block) : [block]).slice(0, 12);
+function MatrixPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+  const outfitCount = getStylistBlueprintOutfitCount(data);
+  const items = page.blocks.flatMap(block => asItems(block).length ? asItems(block) : [block]).slice(0, outfitCount);
   return (
     <PageFrame page={page} className="matrix-page">
       <div className="matrix-grid">
-        <div>
-          <h2><span className="display">The system,</span><span className="display-it">connected.</span></h2>
-          <p>{firstBody(page.blocks, 'The formulas share anchor pieces, which turns twelve outfits into a wider wardrobe system.')}</p>
-          {image ? <img src={image} alt="" className="matrix-image" /> : <NodeMap />}
+	        <div>
+	          <h2><span className="display">The system,</span><span className="display-it">connected.</span></h2>
+	          <p>{firstBody(page.blocks, `The formulas share anchor pieces, which turns ${outfitCount} outfit formulas into a wider wardrobe system.`)}</p>
+          <div className="matrix-image" aria-hidden="true">
+            <NodeMap count={outfitCount} />
+          </div>
         </div>
         <div className="matrix-table">
           {items.map((item, index) => (
             <div key={index}>
               <div>
                 <div className="mono faded">{String(index + 1).padStart(2, '0')}</div>
-                <strong>{getField(item, ['piece', 'name', 'heading', 'label'], objectSummary(item))}</strong>
+                <strong>{getField(item, ['piece', 'name', 'heading', 'label'], `Core piece ${index + 1}`)}</strong>
               </div>
               <span>{getField(item, ['appears_in', 'outfits', 'body', 'reason'], '')}</span>
             </div>
@@ -914,20 +1171,22 @@ function MatrixPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?: Reso
   );
 }
 
-function NodeMap() {
+function NodeMap({ count = 12 }: { count?: number }) {
   return (
     <div className="node-map">
-      {Array.from({ length: 12 }, (_, index) => <span key={index} style={{ transform: `rotate(${index * 30}deg) translateY(-120px)` }} />)}
+      {Array.from({ length: count }, (_, index) => <span key={index} style={{ transform: `rotate(${index * (360 / count)}deg) translateY(-120px)` }} />)}
       <div className="node-center" />
     </div>
   );
 }
 
-function ContinuationPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const image = imageForPage(page, imageUrls);
+function ContinuationPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const { onImageRegenerate } = useContext(EditableReportContext);
+  const image = imageForPage(page, imageUrls, data);
+  const showImage = Boolean(image || onImageRegenerate);
   return (
     <PageFrame page={page} className="continuation-page">
-      <div className={image ? 'continuation-layout' : 'continuation-inner'}>
+      <div className={showImage ? 'continuation-layout' : 'continuation-inner'}>
         <div className="continuation-copy">
           <div className="display-it note">a note to the wearer</div>
           <h2><span className="display">Your Blueprint is</span><span className="display">the system.</span><span className="display-it">The Edit is the practice.</span></h2>
@@ -945,10 +1204,10 @@ function ContinuationPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?
           <div className="short-rule" />
           <div className="display-it tagline">Same body. Different science.</div>
         </div>
-        {image && (
-          <div className="continuation-image">
-            <img src={image} alt="" />
-          </div>
+        {showImage && (
+          <ImageSlotFrame slotKey="closing.editTeaser" label="edit teaser image" className="continuation-image">
+            {image ? <img src={image} alt="" /> : <OutfitFallback palette={[IVORY, INK, ROSE]} />}
+          </ImageSlotFrame>
         )}
       </div>
     </PageFrame>
@@ -956,12 +1215,12 @@ function ContinuationPage({ page, imageUrls }: { page: BlueprintPage; imageUrls?
 }
 
 function GenericPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const pageType = canonicalPageType(page);
+  const pageType = canonicalPageType(page, data);
   if (pageType === 'outfit') return <OutfitPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'palette') return <PalettePage page={page} data={data} />;
-  if (pageType === 'outfit_system') return <OutfitSystemPage page={page} imageUrls={imageUrls} />;
-  if (pageType === 'matrix') return <MatrixPage page={page} imageUrls={imageUrls} />;
-  if (pageType === 'continuation') return <ContinuationPage page={page} imageUrls={imageUrls} />;
+  if (pageType === 'outfit_system') return <OutfitSystemPage page={page} data={data} imageUrls={imageUrls} />;
+  if (pageType === 'matrix') return <MatrixPage page={page} data={data} />;
+  if (pageType === 'continuation') return <ContinuationPage page={page} data={data} imageUrls={imageUrls} />;
   if (page.page_number === 11) return <HairFaceAccessoriesPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'rules' || pageType === 'fabric' || pageType === 'avoidance' || pageType === 'audit') {
     return <RuleLikePage page={page} data={data} imageUrls={imageUrls} />;
@@ -1028,22 +1287,30 @@ function PremiumReport({
   focusPageNumber,
   editable = false,
   onPageChange,
+  onReportDataChange,
+  onImageRegenerate,
+  regeneratingImageSlot,
+  imageRegenerationDisabled,
 }: {
   data: StylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
   focusPageNumber?: number;
   editable?: boolean;
   onPageChange?: (page: BlueprintPage) => void;
+  onReportDataChange?: (data: StylistBlueprintReportData) => void;
+  onImageRegenerate?: (slotKey: StylistBlueprintImageSlotKey) => void | Promise<void>;
+  regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
+  imageRegenerationDisabled?: boolean;
 }) {
   const pages = [...data.pages]
     .filter(page => !focusPageNumber || page.page_number === focusPageNumber)
     .sort((a, b) => a.page_number - b.page_number);
   return (
-    <EditableReportContext.Provider value={{ editable, onPageChange }}>
+    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
         {pages.map(page => {
           if (page.page_number === 1) return <CoverPage key={page.page_number} page={page} data={data} />;
-          const pageType = canonicalPageType(page);
+          const pageType = canonicalPageType(page, data);
           if (pageType === 'summary') return <SummaryPage key={page.page_number} page={page} data={data} />;
           if (pageType === 'reading_guide') return <ReadingGuidePage key={page.page_number} page={page} />;
           return <GenericPage key={page.page_number} page={page} data={data} imageUrls={imageUrls} />;
@@ -1060,15 +1327,35 @@ export default function StylistBlueprintReport({
   focusPageNumber,
   editable,
   onPageChange,
+  onReportDataChange,
+  onImageRegenerate,
+  regeneratingImageSlot,
+  imageRegenerationDisabled,
 }: {
   data: StylistBlueprintReportData | LegacyStylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
   focusPageNumber?: number;
   editable?: boolean;
   onPageChange?: (page: BlueprintPage) => void;
+  onReportDataChange?: (data: StylistBlueprintReportData) => void;
+  onImageRegenerate?: (slotKey: StylistBlueprintImageSlotKey) => void | Promise<void>;
+  regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
+  imageRegenerationDisabled?: boolean;
 }) {
   if (!isVersionedStylistBlueprintReportData(data)) return <LegacyReport data={data} imageUrls={imageUrls} />;
-  return <PremiumReport data={data} imageUrls={imageUrls} focusPageNumber={focusPageNumber} editable={editable} onPageChange={onPageChange} />;
+  return (
+    <PremiumReport
+      data={data}
+      imageUrls={imageUrls}
+      focusPageNumber={focusPageNumber}
+      editable={editable}
+      onPageChange={onPageChange}
+      onReportDataChange={onReportDataChange}
+      onImageRegenerate={onImageRegenerate}
+      regeneratingImageSlot={regeneratingImageSlot}
+      imageRegenerationDisabled={imageRegenerationDisabled}
+    />
+  );
 }
 
 function BlueprintStyles() {
@@ -1095,6 +1382,44 @@ function BlueprintStyles() {
         background: rgba(255, 255, 255, 0.14);
         box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.35);
         outline: none;
+      }
+      .image-slot-frame {
+        position: relative;
+        overflow: hidden;
+      }
+      .image-regenerate-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 5;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid rgba(244, 239, 229, 0.45);
+        background: rgba(44, 38, 34, 0.62);
+        color: ${IVORY};
+        box-shadow: 0 8px 24px rgba(44, 38, 34, 0.2);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        cursor: pointer;
+        transition: opacity 140ms ease, transform 140ms ease, background 140ms ease;
+      }
+      .image-regenerate-button:hover:not(:disabled) {
+        background: rgba(44, 38, 34, 0.78);
+        transform: translateY(-1px);
+      }
+      .image-regenerate-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+      .spin-icon {
+        animation: iconik-spin 900ms linear infinite;
+      }
+      @keyframes iconik-spin {
+        to { transform: rotate(360deg); }
       }
       .display {
         font-family: 'Fraunces', serif;
@@ -1398,15 +1723,35 @@ function BlueprintStyles() {
         margin-bottom: 20px;
         text-transform: uppercase;
       }
-      .diagram-card img, .secondary-strip, .reference-images img {
+      .diagram-media,
+      .secondary-strip,
+      .reference-images img {
         width: 100%;
         border-radius: 18px;
         border: 1px solid rgba(244, 239, 229, 0.14);
-        object-fit: cover;
       }
-      .diagram-card img {
-        aspect-ratio: 4 / 5;
-      }
+	      .diagram-media {
+	        aspect-ratio: 4 / 5;
+	      }
+	      .diagram-media.silhouette-media,
+	      .secondary-strip.silhouette-secondary {
+	        aspect-ratio: 2 / 3;
+	        background: rgba(244, 239, 229, 0.06);
+	      }
+	      .diagram-media img,
+	      .diagram-media .diagram-svg,
+	      .secondary-strip img,
+	      .secondary-strip .diagram-svg {
+        width: 100%;
+        height: 100%;
+	        display: block;
+	        object-fit: cover;
+	      }
+	      .diagram-media.silhouette-media img,
+	      .secondary-strip.silhouette-secondary img {
+	        object-fit: contain;
+	        object-position: center;
+	      }
       .diagram-svg {
         width: 100%;
         height: auto;
@@ -1653,6 +1998,7 @@ function BlueprintStyles() {
       }
       .reference-images img {
         aspect-ratio: 4 / 5;
+        object-fit: cover;
       }
       .hair-inner {
         margin-top: 72px;
@@ -1688,21 +2034,29 @@ function BlueprintStyles() {
         border-radius: 18px;
         padding: 16px;
       }
-      .face-panel img {
-        width: 100%;
-        aspect-ratio: 1 / 1;
-        object-fit: cover;
-        object-position: top center;
+      .face-panel-media {
+        aspect-ratio: 394 / 506;
         border-radius: 12px;
         margin-top: 12px;
+        background: rgba(244, 239, 229, 0.28);
+      }
+      .face-panel-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        border-radius: 12px;
         display: block;
+      }
+      .face-panel-media .face-grid-fallback {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
       }
       .face-grid-fallback {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        aspect-ratio: 1 / 1;
-        margin-top: 12px;
       }
       .face-grid-fallback span {
         border-radius: 12px;
@@ -1803,18 +2157,23 @@ function BlueprintStyles() {
         overflow: hidden;
         color: ${IVORY};
       }
-      .flatlay-frame img {
-        width: 100%;
+      .flatlay-media {
         height: calc(100% - 28px);
         margin-top: 6px;
+        border-radius: 16px;
+      }
+      .flatlay-media img,
+      .flatlay-media .outfit-svg {
+        width: 100%;
+        height: 100%;
         object-fit: contain;
         object-position: center;
         border-radius: 16px;
+        display: block;
       }
       .outfit-svg {
         width: 100%;
-        height: calc(100% - 28px);
-        margin-top: 6px;
+        height: auto;
       }
       .detail-image {
         width: 100%;
@@ -1869,9 +2228,20 @@ function BlueprintStyles() {
       .matrix-image {
         width: 100%;
         aspect-ratio: 1 / 1;
-        object-fit: cover;
         border-radius: 24px;
         margin-top: 28px;
+        border: 1px solid rgba(244, 239, 229, 0.16);
+        background: rgba(244, 239, 229, 0.08);
+      }
+      .matrix-image img,
+      .matrix-image .node-map {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .matrix-image .node-map {
+        margin-top: 0;
       }
       .node-map {
         position: relative;
@@ -1959,6 +2329,12 @@ function BlueprintStyles() {
         height: 100%;
         object-fit: cover;
         display: block;
+      }
+      .continuation-image .outfit-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: linear-gradient(160deg, ${SLATE} 0%, ${SLATE_DEEP} 100%);
       }
       .continuation-inner .note {
         font-size: 20px;

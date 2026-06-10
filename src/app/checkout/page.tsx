@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -55,63 +54,46 @@ export default function CheckoutPage() {
   const pathname = usePathname();
   const isOffer2699Checkout = pathname.startsWith('/offer-2699/checkout');
   const landingHref = isOffer2699Checkout ? '/offer-2699' : '/';
-  const [formData, setFormData] = useState<FormData>({
-    email: '',
-    phone: ''
-  });
+  const [formData, setFormData] = useState<FormData>({ email: '', phone: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 59 });
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [showAddonPopup, setShowAddonPopup] = useState(false);
-  const [popupDismissed, setPopupDismissed] = useState(false); // Track if user dismissed popup
+  const [popupDismissed, setPopupDismissed] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  // Testimonial images
   const testimonialImages = [
     { src: '/text1.webp', alt: 'Client testimonial 1' },
     { src: '/text2.webp', alt: 'Client testimonial 2' },
     { src: '/text3.webp', alt: 'Client testimonial 3' },
     { src: '/text4.webp', alt: 'Client testimonial 4' },
-    { src: '/text5.webp', alt: 'Client testimonial 5' }
+    { src: '/text5.webp', alt: 'Client testimonial 5' },
   ];
 
-  // Auto-rotate testimonials
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % testimonialImages.length);
-    }, 4000); // Change every 4 seconds
-
+    }, 4000);
     return () => clearInterval(interval);
   }, [testimonialImages.length]);
 
-  // Product pricing
   const originalPrice = 5999;
   const discountedPrice = isOffer2699Checkout ? 2699 : 3299;
   const savings = originalPrice - discountedPrice;
 
-  // Track PageView and ViewContent on checkout page load
   useEffect(() => {
     trackPageView('Checkout');
-    trackViewContent(
-      'ICONIK Style Consultation - Checkout',
-      discountedPrice,
-      ['iconik_style_consultation'],
-      'INR',
-      'India'
-    );
+    trackViewContent('ICONIK Style Consultation - Checkout', discountedPrice, ['iconik_style_consultation'], 'INR', 'India');
   }, [discountedPrice]);
 
-  // Add-ons
-  const [wardrobeDetoxAddon, setWardrobeDetoxAddon] = useState(false); // Wardrobe Detox
-  const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false); // Smart Shopper's Guide
-  const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false); // Outfit Preview on You
+  const [wardrobeDetoxAddon, setWardrobeDetoxAddon] = useState(false);
+  const [smartShoppersGuideAddon, setSmartShoppersGuideAddon] = useState(false);
+  const [outfitPreviewAddon, setOutfitPreviewAddon] = useState(false);
 
   const wardrobeDetoxPrice = 1499;
-
   const smartShoppersGuidePrice = 499;
   const outfitPreviewPrice = 999;
 
-  // Memoize total calculations to prevent unnecessary recalculations
   const totalAmount = useMemo(() =>
     discountedPrice +
     (wardrobeDetoxAddon ? wardrobeDetoxPrice : 0) +
@@ -121,72 +103,47 @@ export default function CheckoutPage() {
   );
 
   const totalValue = useMemo(() =>
-    originalPrice + 1000 + // Base + Free bonuses (₹1,000+ value)
+    originalPrice + 1000 +
     (wardrobeDetoxAddon ? wardrobeDetoxPrice : 0) +
     (smartShoppersGuideAddon ? smartShoppersGuidePrice : 0) +
     (outfitPreviewAddon ? outfitPreviewPrice : 0),
     [originalPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon]
   );
 
-  // const totalSavings = totalValue - totalAmount; // Removed as not used in current design
-
-  // OPTIMIZATION #1: Preload Razorpay script immediately on page load
   useEffect(() => {
-    // Check if script already exists
     if (document.querySelector('script[src*="razorpay.com"]')) {
       setRazorpayLoaded(true);
       return;
     }
-
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     script.onload = () => setRazorpayLoaded(true);
     script.onerror = () => console.error('Failed to preload Razorpay');
     document.body.appendChild(script);
-
     return () => {
-      // Cleanup if component unmounts before load
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      if (script.parentNode) script.parentNode.removeChild(script);
     };
   }, []);
 
-  // Optimized countdown timer - only update when time actually changes
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { minutes: prev.minutes - 1, seconds: 59 };
-        }
-        return prev; // No change, prevents unnecessary re-render
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        else if (prev.minutes > 0) return { minutes: prev.minutes - 1, seconds: 59 };
+        return prev;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // Optimized input change handler with memoized validation
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
-    // Phone number validation - only allow 10 digits
     if (name === 'phone') {
       const phoneRegex = /^\d{0,10}$/;
-      if (!phoneRegex.test(value)) {
-        return; // Don't update if invalid
-      }
+      if (!phoneRegex.test(value)) return;
     }
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Update Meta Pixel with user data for advanced matching when both fields have valid data
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (name === 'email' && value.includes('@') && formData.phone.length === 10) {
       updateUserData(value, formData.phone);
     } else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) {
@@ -194,71 +151,37 @@ export default function CheckoutPage() {
     }
   }, [formData.phone, formData.email]);
 
-  // Memoize addon details to prevent recreation on every render
   const addonDetails = useMemo(() => ({
-    wardrobedetox: {
-      name: 'Wardrobe Detox',
-      price: 1499,
-      id: 'wardrobe_detox'
-    },
-    smartshopper: {
-      name: 'Smart Shopper\'s Guide',
-      price: 499,
-      id: 'smart_shoppers_guide'
-    },
-    outfitpreview: {
-      name: 'Outfit Preview on You',
-      price: 999,
-      id: 'outfit_preview'
-    }
+    wardrobedetox: { name: 'Wardrobe Detox', price: 1499, id: 'wardrobe_detox' },
+    smartshopper: { name: "Smart Shopper's Guide", price: 499, id: 'smart_shoppers_guide' },
+    outfitpreview: { name: 'Outfit Preview on You', price: 999, id: 'outfit_preview' },
   }), []);
 
-  // Optimized add-on change handler with Meta tracking only for additions
   const handleAddonChange = useCallback((addonType: 'wardrobedetox' | 'smartshopper' | 'outfitpreview', checked: boolean) => {
     const addon = addonDetails[addonType];
-
-    // Track addon changes
-    if (checked) {
-      trackAddToCart(addon.name, addon.price, addon.id, 'INR', 'India');
-    } else {
-      trackRemoveFromCart(addon.name, addon.price, addon.id, 'INR', 'India');
-    }
-
-    // Update state
-    if (addonType === 'wardrobedetox') {
-      setWardrobeDetoxAddon(checked);
-    } else if (addonType === 'smartshopper') {
-      setSmartShoppersGuideAddon(checked);
-    } else if (addonType === 'outfitpreview') {
-      setOutfitPreviewAddon(checked);
-    }
+    if (checked) trackAddToCart(addon.name, addon.price, addon.id, 'INR', 'India');
+    else trackRemoveFromCart(addon.name, addon.price, addon.id, 'INR', 'India');
+    if (addonType === 'wardrobedetox') setWardrobeDetoxAddon(checked);
+    else if (addonType === 'smartshopper') setSmartShoppersGuideAddon(checked);
+    else if (addonType === 'outfitpreview') setOutfitPreviewAddon(checked);
   }, [addonDetails]);
 
-  // Memoize payment processing function to prevent recreation
   const processPayment = useCallback(async () => {
-    // Validate phone number
     if (formData.phone.length !== 10) {
       alert('Please enter a valid 10-digit phone number');
       return;
     }
-
-    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       alert('Please enter a valid email address');
       return;
     }
-
     setIsProcessing(true);
-
-    // Track InitiateCheckout event with correct item count
     const itemCount = 1 + (wardrobeDetoxAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0) + (outfitPreviewAddon ? 1 : 0);
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'INR', 'India');
-
     try {
-      // Create order data
       const orderData = {
-        customer_name: formData.email.split('@')[0], // Use email prefix as name
+        customer_name: formData.email.split('@')[0],
         customer_email: formData.email,
         customer_phone: formData.phone,
         amount: totalAmount,
@@ -266,7 +189,7 @@ export default function CheckoutPage() {
         add_ons: {
           wardrobe_detox: wardrobeDetoxAddon,
           smart_shoppers_guide: smartShoppersGuideAddon,
-          outfit_preview: outfitPreviewAddon
+          outfit_preview: outfitPreviewAddon,
         },
         total_base_price: discountedPrice,
         wardrobe_detox_price: wardrobeDetoxAddon ? wardrobeDetoxPrice : 0,
@@ -274,61 +197,36 @@ export default function CheckoutPage() {
         outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0,
         attribution: getAttributionPayload(),
       };
-
-      // Call payment API
       const response = await fetch('/api/payment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
-
-      if (!response.ok) {
-        throw new Error('Payment initialization failed');
-      }
-
+      if (!response.ok) throw new Error('Payment initialization failed');
       const responseData = await response.json();
-
-      if (!responseData.success) {
-        throw new Error(responseData.error || 'Payment initialization failed');
-      }
-
-      // Debug: Log the API response
+      if (!responseData.success) throw new Error(responseData.error || 'Payment initialization failed');
       console.log('Payment API Response:', responseData);
       console.log('Customer ID:', responseData.customer_id);
       console.log('DB Order ID:', responseData.db_order_id);
-
-      // OPTIMIZATION #1: Use preloaded Razorpay script (no more waiting for download)
       const initializeRazorpay = () => {
-        // Initialize Razorpay payment
         const options = {
           key: responseData.key,
           amount: responseData.amount,
           currency: responseData.currency,
           name: 'Iconik One On One',
           description: 'Iconik Style Consultation',
-          image: `${window.location.origin}/logopayment.webp`, // Logo displayed on Razorpay checkout
+          image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
           handler: async function (response: RazorpayResponse) {
-            // Payment successful - Track detailed purchase with all items
             const purchasedItems = ['iconik_style_consultation'];
             if (wardrobeDetoxAddon) purchasedItems.push('wardrobe_detox');
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
             if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
-
-            // Track SINGLE purchase event with all items (no duplicates)
             trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'INR', 'India', response.razorpay_payment_id);
-
-            // Store purchase amount and currency for success page tracking
             localStorage.setItem('purchaseAmount', totalAmount.toString());
             localStorage.setItem('purchaseCurrency', 'INR');
-
-            // Store customer email and phone for success page context
             localStorage.setItem('customerEmail', formData.email);
             localStorage.setItem('customerPhone', formData.phone);
-
-            // Store customer and order IDs in localStorage and sessionStorage for immediate access
             if (responseData.customer_id) {
               localStorage.setItem('customerId', responseData.customer_id);
               sessionStorage.setItem('customerId', responseData.customer_id);
@@ -337,38 +235,21 @@ export default function CheckoutPage() {
               localStorage.setItem('orderId', responseData.db_order_id);
               sessionStorage.setItem('orderId', responseData.db_order_id);
             }
-
             const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
-
             window.location.href = successUrl;
           },
-          prefill: {
-            name: formData.email.split('@')[0],
-            email: formData.email,
-            contact: formData.phone
-          },
-          theme: {
-            color: '#E91E63'
-          }
+          prefill: { name: formData.email.split('@')[0], email: formData.email, contact: formData.phone },
+          theme: { color: '#2C2622' },
         };
-
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       };
-
-      // Check if Razorpay is already loaded, otherwise wait for it
       if (razorpayLoaded && window.Razorpay) {
         initializeRazorpay();
       } else {
-        // Wait for Razorpay to load
         const checkRazorpay = setInterval(() => {
-          if (window.Razorpay) {
-            clearInterval(checkRazorpay);
-            initializeRazorpay();
-          }
+          if (window.Razorpay) { clearInterval(checkRazorpay); initializeRazorpay(); }
         }, 100);
-
-        // Timeout after 10 seconds
         setTimeout(() => {
           clearInterval(checkRazorpay);
           if (!window.Razorpay) {
@@ -377,7 +258,6 @@ export default function CheckoutPage() {
           }
         }, 10000);
       }
-
     } catch (error) {
       console.error('Payment error:', error);
       setIsProcessing(false);
@@ -385,149 +265,101 @@ export default function CheckoutPage() {
     }
   }, [formData, totalAmount, discountedPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
 
-  // Memoize submit handler
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-
-
-    // Check if no add-ons are selected
     const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
-
-
-    // Only show popup if: no add-ons AND popup hasn't been dismissed
     if (!hasAddons && !popupDismissed) {
       setShowAddonPopup(true);
     } else {
-      // Process payment directly if add-ons selected OR popup was dismissed
       await processPayment();
     }
   }, [processPayment, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, popupDismissed]);
 
-  // Function to continue without add-ons
   const continueWithoutAddons = useCallback(async () => {
     setShowAddonPopup(false);
     await processPayment();
   }, [processPayment]);
 
   return (
-    <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">
-      {/* Header */}
-      <header className="bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Link href={landingHref} className="flex items-center gap-2 text-luxury-accent hover:text-luxury-charcoal transition-colors luxury-body">
-            <ArrowLeft className="w-5 h-5" />
-            Back to ICONIK
+    <div className="man-editorial min-h-screen">
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href={landingHref} className="inline-flex items-center gap-2 hover:opacity-70 transition-opacity" style={{ color: '#2C2622' }}>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="iconik-mono" style={{ fontSize: '11px', letterSpacing: '0.15em' }}>Back to ICONIK</span>
           </Link>
+          <span className="iconik-display" style={{ fontSize: '18px', letterSpacing: '0.12em', color: '#2C2622' }}>ICONIK</span>
+          <div style={{ width: '80px' }} />
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-4 md:py-8">
-        {/* Trust Badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-3 md:p-4 mb-4 md:mb-6 flex flex-wrap justify-center gap-2 md:gap-4"
-        >
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-            <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">2,847+ Happy Clients</span>
-          </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-            <Lock className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">100% Secure</span>
-          </div>
-          <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-            <Star className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">4.9/5 Rating</span>
-          </div>
-        </motion.div>
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
 
-        {/* Hero Section - Mobile Optimized */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-center mb-6 md:mb-8"
-        >
-          <h1 className="text-2xl md:text-4xl lg:text-5xl luxury-heading text-luxury-charcoal mb-4 md:mb-6">
-            Your Personal Style Transformation Starts Now
-          </h1>
-
-          <div className="text-3xl md:text-5xl lg:text-6xl mb-3 md:mb-4">
-            <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{formatINR(originalPrice)}</span>
-            <span className="text-luxury-green font-semibold">{formatINR(discountedPrice)}</span>
-          </div>
-
-          <div className="bg-luxury-accent text-luxury-warm-white px-4 md:px-6 py-2 rounded-full luxury-body text-sm md:text-lg inline-block animate-bounce">
-            YOU SAVE {formatINR(savings)} TODAY!
-          </div>
-        </motion.div>
-
-        {/* WhatsApp Testimonial Carousel - 75% Size (25% Smaller) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-6 md:mb-8 max-w-[203px] mx-auto"
-        >
-          <h2 className="text-lg md:text-xl luxury-heading text-center mb-3 text-luxury-charcoal">
-            Real Results from Real Women
-          </h2>
-
-          <div className="relative">
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-2xl p-2 border border-luxury-cream overflow-hidden">
-              <div className="relative" style={{ aspectRatio: '9/16' }}>
-                {testimonialImages.map((testimonial, index) => (
-                  <div
-                    key={index}
-                    className={`absolute inset-0 transition-opacity duration-500 ${index === currentTestimonial ? 'opacity-100' : 'opacity-0'
-                      }`}
-                  >
-                    <Image
-                      src={testimonial.src}
-                      alt={testimonial.alt}
-                      width={135}
-                      height={240}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
-                  </div>
-                ))}
-              </div>
+        {/* ── Trust Badges ───────────────────────────────────────────────── */}
+        <div className="rounded-2xl p-3 md:p-4 mb-6 flex flex-wrap justify-center gap-3" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.06)' }}>
+          {[
+            { icon: <CheckCircle className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '2,847+ Happy Clients' },
+            { icon: <Lock className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '100% Secure' },
+            { icon: <Star className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '4.9/5 Rating' },
+          ].map((badge) => (
+            <div key={badge.label} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
+              {badge.icon}
+              <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.1em' }}>{badge.label}</span>
             </div>
+          ))}
+        </div>
 
-            {/* Carousel Dots */}
-            <div className="flex justify-center gap-2 mt-3">
-              {testimonialImages.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentTestimonial
-                    ? 'bg-luxury-accent w-6'
-                    : 'bg-luxury-charcoal/30 hover:bg-luxury-charcoal/50'
-                    }`}
-                  aria-label={`View testimonial ${index + 1}`}
-                />
+        {/* ── Hero / Pricing ─────────────────────────────────────────────── */}
+        <div className="text-center mb-8">
+          <div className="iconik-display mb-4" style={{ fontSize: 'clamp(22px, 5vw, 40px)', color: '#2C2622' }}>
+            Your Personal Style Transformation Starts Now
+          </div>
+          <div className="flex items-baseline justify-center gap-4 mb-4">
+            <span className="iconik-display line-through" style={{ fontSize: 'clamp(20px, 4vw, 32px)', color: '#2C2622', opacity: 0.3 }}>{formatINR(originalPrice)}</span>
+            <span className="iconik-display" style={{ fontSize: 'clamp(28px, 6vw, 48px)', color: '#2C2622' }}>{formatINR(discountedPrice)}</span>
+          </div>
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full" style={{ background: '#2C2622' }}>
+            <span className="iconik-mono" style={{ fontSize: '11px', color: '#F4EFE5', letterSpacing: '0.15em' }}>YOU SAVE {formatINR(savings)} TODAY</span>
+          </div>
+        </div>
+
+        {/* ── Testimonial Carousel ───────────────────────────────────────── */}
+        <div className="mb-8 max-w-[200px] mx-auto">
+          <div className="iconik-display text-center mb-3" style={{ fontSize: '18px', color: '#2C2622' }}>Real Results from Real Women</div>
+          <div className="rounded-2xl p-2" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
+            <div className="relative" style={{ aspectRatio: '9/16' }}>
+              {testimonialImages.map((testimonial, index) => (
+                <div key={index} className={`absolute inset-0 transition-opacity duration-500 ${index === currentTestimonial ? 'opacity-100' : 'opacity-0'}`}>
+                  <Image src={testimonial.src} alt={testimonial.alt} width={135} height={240} className="w-full h-full object-cover rounded-xl" />
+                </div>
               ))}
             </div>
           </div>
-        </motion.div>
+          <div className="flex justify-center gap-2 mt-3">
+            {testimonialImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentTestimonial(index)}
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{ width: index === currentTestimonial ? '16px' : '6px', background: index === currentTestimonial ? '#2C2622' : 'rgba(44,38,34,0.2)' }}
+                aria-label={`View testimonial ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          {/* Order Form - Simplified Design */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="bg-white border-2 border-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl"
-          >
-            <h2 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal mb-6 text-center">Get Your Style Consultation</h2>
 
-            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
-              {/* Email */}
+          {/* ── Order Form ─────────────────────────────────────────────────── */}
+          <div className="rounded-3xl p-6 md:p-8" style={{ background: '#fff', border: '1px solid rgba(44,38,34,0.12)' }}>
+            <div className="iconik-display mb-6 text-center" style={{ fontSize: 'clamp(18px, 3vw, 24px)', color: '#2C2622' }}>Get Your Style Consultation</div>
+
+            <form id="checkout-form" onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">
-                  Email Address *
+                <label htmlFor="email" className="block mb-2 iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6, letterSpacing: '0.15em' }}>
+                  EMAIL ADDRESS *
                 </label>
                 <input
                   type="email"
@@ -536,15 +368,17 @@ export default function CheckoutPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
+                  className="w-full px-4 py-4 rounded-xl transition-all duration-300 text-base outline-none"
+                  style={{ border: '1px solid rgba(44,38,34,0.2)', background: '#fff', color: '#2C2622', fontSize: '14px' }}
+                  onFocus={(e) => e.target.style.borderColor = '#2C2622'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(44,38,34,0.2)'}
                   placeholder="Enter your email address"
                 />
               </div>
 
-              {/* Phone Number */}
               <div>
-                <label htmlFor="phone" className="block text-sm luxury-body text-luxury-charcoal/70 mb-2 font-semibold">
-                  Phone Number *
+                <label htmlFor="phone" className="block mb-2 iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6, letterSpacing: '0.15em' }}>
+                  PHONE NUMBER *
                 </label>
                 <input
                   type="tel"
@@ -554,245 +388,199 @@ export default function CheckoutPage() {
                   onChange={handleInputChange}
                   required
                   maxLength={10}
-                  className="w-full px-4 py-4 border-2 border-luxury-charcoal/20 rounded-xl focus:ring-2 focus:ring-luxury-accent focus:border-luxury-accent transition-all duration-300 luxury-body bg-white text-base"
+                  className="w-full px-4 py-4 rounded-xl transition-all duration-300 text-base outline-none"
+                  style={{ border: '1px solid rgba(44,38,34,0.2)', background: '#fff', color: '#2C2622', fontSize: '14px' }}
+                  onFocus={(e) => e.target.style.borderColor = '#2C2622'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(44,38,34,0.2)'}
                   placeholder="Enter 10-digit phone number"
                 />
-                <p className="text-xs luxury-body text-luxury-charcoal/50 mt-1">Enter exactly 10 digits</p>
+                <p className="mt-1 iconik-mono" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.1em' }}>Enter exactly 10 digits</p>
               </div>
 
-              {/* Security Notice */}
-              <div className="text-center text-sm luxury-body text-luxury-charcoal/60 bg-luxury-cream/30 rounded-xl p-4">
-                <p>🔒 Your payment is secure and encrypted</p>
-                <p className="mt-1">By clicking below, you agree to our terms of service and privacy policy</p>
+              <div className="rounded-xl p-4 text-center" style={{ background: '#EDE5D2' }}>
+                <p className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6, letterSpacing: '0.1em' }}>Your payment is secure and encrypted</p>
+                <p className="mt-1" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.45, lineHeight: 1.5 }}>By clicking below, you agree to our terms of service and privacy policy</p>
               </div>
             </form>
-          </motion.div>
+          </div>
 
-          {/* Order Summary */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="space-y-6 md:space-y-8"
-          >
+          {/* ── Order Summary ───────────────────────────────────────────────── */}
+          <div className="space-y-5">
+
             {/* Main Product */}
-            <div className="bg-luxury-warm-white border-2 border-luxury-charcoal text-luxury-charcoal rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-2 md:top-4 right-[-30px] bg-luxury-gold text-luxury-charcoal px-6 md:px-8 py-1 transform rotate-45 text-xs font-bold">
-                BEST SELLER
+            <div className="rounded-3xl p-6 md:p-8 relative overflow-hidden" style={{ background: '#fff', border: '1px solid rgba(44,38,34,0.12)' }}>
+              <div className="absolute top-3 right-[-28px] px-8 py-1 transform rotate-45" style={{ background: '#2C2622' }}>
+                <span className="iconik-mono" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>BEST SELLER</span>
               </div>
 
               <div className="mb-4">
-                <h3 className="text-xl md:text-2xl luxury-heading mb-2 text-luxury-charcoal">ICONIK Personal Style Consultation</h3>
-
-                <p className="text-sm md:text-base luxury-body text-luxury-charcoal/70 mb-3">
-                  Delivered 1-on-1 by Certified Fashion & Image Consultants
+                <div className="iconik-display mb-2" style={{ fontSize: '20px', color: '#2C2622' }}>ICONIK Personal Style Consultation</div>
+                <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6, marginBottom: '12px', lineHeight: 1.6 }}>
+                  Delivered 1-on-1 by Certified Fashion &amp; Image Consultants
                 </p>
-
-                <div className="text-2xl md:text-3xl mb-4">
-                  <span className="line-through text-luxury-charcoal/40 mr-2 md:mr-4 font-semibold">{formatINR(originalPrice)}</span>
-                  <span className="text-luxury-green font-semibold">{formatINR(discountedPrice)}</span>
+                <div className="flex items-baseline gap-4 mb-4">
+                  <span className="iconik-display line-through" style={{ fontSize: '20px', color: '#2C2622', opacity: 0.35 }}>{formatINR(originalPrice)}</span>
+                  <span className="iconik-display" style={{ fontSize: '28px', color: '#2C2622' }}>{formatINR(discountedPrice)}</span>
                 </div>
               </div>
 
-              <div className="mb-4">
-                <h4 className="luxury-heading text-luxury-charcoal mb-3">Includes:</h4>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">Complete Style DNA Analysis</span>
-                  </li>
-                  <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">Personalized Color Palette</span>
-                  </li>
-                  <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">Body-Flattering Silhouette Mapping</span>
-                  </li>
-                  <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">Hair & Makeup Blueprint</span>
-                  </li>
-                  <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">20-min Private Consultation Call</span>
-                  </li>
-                  <li className="flex items-start gap-2 md:gap-3">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm md:text-base">Lifetime Style Profile Access</span>
-                  </li>
-                </ul>
+              <div className="mb-2">
+                <div className="iconik-display mb-3" style={{ fontSize: '14px', color: '#2C2622' }}>Includes:</div>
+                <div className="space-y-2">
+                  {[
+                    'Complete Style DNA Analysis',
+                    'Personalized Color Palette',
+                    'Body-Flattering Silhouette Mapping',
+                    'Hair & Makeup Blueprint',
+                    '20-min Private Consultation Call',
+                    'Lifetime Style Profile Access',
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-3">
+                      <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />
+                      <span style={{ fontSize: '13px', color: '#2C2622', opacity: 0.75 }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-
-            {/* Complete Your Transformation Section */}
-            <div className="bg-luxury-pink-bg/30 border-2 border-luxury-accent/20 rounded-3xl p-5 md:p-6">
-              <h3 className="text-lg md:text-xl luxury-heading text-luxury-charcoal mb-1 text-center">
-                💎 Complete Your Transformation
-              </h3>
-              <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70 mb-4 text-center">
-                Most clients add these for best results
-              </p>
+            {/* Add-ons */}
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.06)' }}>
+              <div className="iconik-display mb-1 text-center" style={{ fontSize: '17px', color: '#2C2622' }}>Complete Your Transformation</div>
+              <p className="text-center mb-4" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55 }}>Most clients add these for best results</p>
 
               <div className="space-y-3">
-                {/* Add-on 0: Outfit Preview on You - NEW */}
+                {/* Outfit Preview */}
                 <div
                   onClick={() => handleAddonChange('outfitpreview', !outfitPreviewAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${outfitPreviewAddon
-                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
-                    }`}
+                  className="rounded-xl p-4 cursor-pointer transition-all duration-300"
+                  style={{
+                    border: outfitPreviewAddon ? '1.5px solid #2C2622' : '1px solid rgba(44,38,34,0.12)',
+                    background: outfitPreviewAddon ? '#fff' : 'rgba(255,255,255,0.5)',
+                  }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${outfitPreviewAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                      }`}>
-                      {outfitPreviewAddon && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-all" style={{ border: outfitPreviewAddon ? 'none' : '1px solid rgba(44,38,34,0.2)', background: outfitPreviewAddon ? '#2C2622' : 'transparent' }}>
+                      {outfitPreviewAddon && <svg className="w-3.5 h-3.5" fill="none" stroke="#F4EFE5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                     </div>
-
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-base">👗 Outfit Preview on You</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{formatINR(outfitPreviewPrice)}</span>
+                        <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>Outfit Preview on You</div>
+                        <span className="iconik-display flex-shrink-0" style={{ fontSize: '14px', color: '#2C2622' }}>{formatINR(outfitPreviewPrice)}</span>
                       </div>
-                      <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        See how the outfits we recommend will actually look on YOUR body.
-                      </p>
+                      <p style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6, marginBottom: '8px' }}>See how the outfits we recommend will actually look on YOUR body.</p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">See yourself in the outfits</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">No more guessing</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Shop with confidence</span>
+                        {['See yourself in the outfits', 'No more guessing', 'Shop with confidence'].map((tag) => (
+                          <span key={tag} className="iconik-mono px-2 py-0.5 rounded-full" style={{ fontSize: '8px', background: 'rgba(44,38,34,0.06)', color: '#2C2622', opacity: 0.6 }}>{tag}</span>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-                {/* Add-on 1: Wardrobe Detox */}
+
+                {/* Wardrobe Detox */}
                 <div
                   onClick={() => handleAddonChange('wardrobedetox', !wardrobeDetoxAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${wardrobeDetoxAddon
-                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
-                    }`}
+                  className="rounded-xl p-4 cursor-pointer transition-all duration-300"
+                  style={{
+                    border: wardrobeDetoxAddon ? '1.5px solid #2C2622' : '1px solid rgba(44,38,34,0.12)',
+                    background: wardrobeDetoxAddon ? '#fff' : 'rgba(255,255,255,0.5)',
+                  }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${wardrobeDetoxAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                      }`}>
-                      {wardrobeDetoxAddon && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-all" style={{ border: wardrobeDetoxAddon ? 'none' : '1px solid rgba(44,38,34,0.2)', background: wardrobeDetoxAddon ? '#2C2622' : 'transparent' }}>
+                      {wardrobeDetoxAddon && <svg className="w-3.5 h-3.5" fill="none" stroke="#F4EFE5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                     </div>
-
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-base">👗 Wardrobe Detox</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{formatINR(wardrobeDetoxPrice)}</span>
+                        <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>Wardrobe Detox</div>
+                        <span className="iconik-display flex-shrink-0" style={{ fontSize: '14px', color: '#2C2622' }}>{formatINR(wardrobeDetoxPrice)}</span>
                       </div>
-                      <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        Let us audit your closet and create a curated wardrobe for you
-                      </p>
+                      <p style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6, marginBottom: '8px' }}>Let us audit your closet and create a curated wardrobe for you</p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Closet audit</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Keep/donate guide</span>
+                        {['Closet audit', 'Keep/donate guide'].map((tag) => (
+                          <span key={tag} className="iconik-mono px-2 py-0.5 rounded-full" style={{ fontSize: '8px', background: 'rgba(44,38,34,0.06)', color: '#2C2622', opacity: 0.6 }}>{tag}</span>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Add-on 2: Smart Shopper's Guide */}
+                {/* Smart Shopper's Guide */}
                 <div
                   onClick={() => handleAddonChange('smartshopper', !smartShoppersGuideAddon)}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 ${smartShoppersGuideAddon
-                    ? 'border-luxury-accent bg-luxury-warm-white shadow-lg'
-                    : 'border-luxury-cream bg-luxury-warm-white/50 hover:border-luxury-accent/50'
-                    }`}
+                  className="rounded-xl p-4 cursor-pointer transition-all duration-300"
+                  style={{
+                    border: smartShoppersGuideAddon ? '1.5px solid #2C2622' : '1px solid rgba(44,38,34,0.12)',
+                    background: smartShoppersGuideAddon ? '#fff' : 'rgba(255,255,255,0.5)',
+                  }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                      }`}>
-                      {smartShoppersGuideAddon && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-all" style={{ border: smartShoppersGuideAddon ? 'none' : '1px solid rgba(44,38,34,0.2)', background: smartShoppersGuideAddon ? '#2C2622' : 'transparent' }}>
+                      {smartShoppersGuideAddon && <svg className="w-3.5 h-3.5" fill="none" stroke="#F4EFE5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                     </div>
-
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="luxury-heading text-luxury-charcoal text-base">🛍️ Smart Shopper&apos;s Guide</h4>
-                        <span className="text-luxury-green font-semibold text-lg flex-shrink-0">{formatINR(smartShoppersGuidePrice)}</span>
+                        <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>Smart Shopper&apos;s Guide</div>
+                        <span className="iconik-display flex-shrink-0" style={{ fontSize: '14px', color: '#2C2622' }}>{formatINR(smartShoppersGuidePrice)}</span>
                       </div>
-                      <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                        A ready-to-wear capsule wardrobe curated for your body type, lifestyle & budget — pieces that work together effortlessly.
-                      </p>
+                      <p style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6, marginBottom: '8px' }}>A ready-to-wear capsule wardrobe curated for your body type, lifestyle &amp; budget — pieces that work together effortlessly.</p>
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Capsule wardrobe plan</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Mix & match outfits</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Budget-smart picks</span>
-                        <span className="text-[10px] bg-luxury-cream px-2 py-0.5 rounded-full text-luxury-charcoal/70">Built for your body</span>
+                        {['Capsule wardrobe plan', 'Mix & match outfits', 'Budget-smart picks'].map((tag) => (
+                          <span key={tag} className="iconik-mono px-2 py-0.5 rounded-full" style={{ fontSize: '8px', background: 'rgba(44,38,34,0.06)', color: '#2C2622', opacity: 0.6 }}>{tag}</span>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
 
-            {/* Simplified Order Total */}
-            <div className="bg-luxury-cream/40 backdrop-blur-xl rounded-3xl p-5 md:p-6 border border-luxury-cream">
+            {/* Order Total */}
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.06)' }}>
               <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
+                <div className="flex justify-between items-center" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.7 }}>
                   <span>Style Consultation</span>
                   <span>{formatINR(discountedPrice)}</span>
                 </div>
-
                 {wardrobeDetoxAddon && (
-                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
+                  <div className="flex justify-between items-center" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.7 }}>
                     <span>+ Wardrobe Detox</span>
                     <span>{formatINR(wardrobeDetoxPrice)}</span>
                   </div>
                 )}
-
                 {smartShoppersGuideAddon && (
-                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
+                  <div className="flex justify-between items-center" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.7 }}>
                     <span>+ Smart Shopper&apos;s Guide</span>
                     <span>{formatINR(smartShoppersGuidePrice)}</span>
                   </div>
                 )}
-
                 {outfitPreviewAddon && (
-                  <div className="flex justify-between items-center text-sm luxury-body text-luxury-charcoal/70">
+                  <div className="flex justify-between items-center" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.7 }}>
                     <span>+ Outfit Preview</span>
                     <span>{formatINR(outfitPreviewPrice)}</span>
                   </div>
                 )}
               </div>
 
-              {/* Big Bold Total */}
-              <div className="border-t-2 border-luxury-charcoal/10 pt-4">
+              <div className="pt-4 mb-4" style={{ borderTop: '1px solid rgba(44,38,34,0.1)' }}>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">You Pay:</span>
-                  <span className="text-3xl md:text-4xl text-luxury-green font-bold">{formatINR(totalAmount)}</span>
+                  <span className="iconik-display" style={{ fontSize: '20px', color: '#2C2622' }}>You Pay:</span>
+                  <span className="iconik-display" style={{ fontSize: '28px', color: '#2C2622' }}>{formatINR(totalAmount)}</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs luxury-body text-luxury-charcoal/60">
+                  <p className="iconik-mono" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.45 }}>
                     Total value: <span className="line-through">{formatINR(totalValue)}</span>
                   </p>
                   <div className="flex items-center justify-center gap-1 mt-1">
-                    <Clock className="w-3 h-3 text-luxury-accent" />
-                    <span className="text-xs luxury-body text-luxury-accent font-semibold">
+                    <Clock className="w-3 h-3" style={{ color: '#94A6AD' }} />
+                    <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
                       Offer expires in {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Payment Button - Mobile Optimized */}
               <button
                 type="button"
                 disabled={isProcessing}
@@ -806,67 +594,53 @@ export default function CheckoutPage() {
                     await processPayment();
                   }
                 }}
-                className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-luxury-warm-white py-4 md:py-5 px-4 md:px-6 rounded-full text-lg md:text-xl luxury-body shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 mt-4 hover:scale-[1.02] transform font-semibold"
+                className="w-full py-4 md:py-5 px-4 rounded-full transition-all duration-300 disabled:opacity-50 mt-2 hover:-translate-y-0.5 transform"
+                style={{ background: '#2C2622', color: '#F4EFE5' }}
               >
-                {isProcessing ? 'Processing...' : '🔥 Transform My Style Now →'}
+                <span className="iconik-display" style={{ fontSize: '16px' }}>
+                  {isProcessing ? 'Processing...' : 'Transform My Style Now →'}
+                </span>
               </button>
 
-              <div className="text-center text-xs md:text-sm luxury-body text-luxury-charcoal/60 mt-3">
-                <p>💳 Secure payment via Razorpay</p>
-              </div>
+              <p className="text-center mt-3 iconik-mono" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.1em' }}>Secure payment via Razorpay</p>
             </div>
-
 
             {/* Trust Indicators */}
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl p-5 md:p-6 shadow-lg border border-white/20">
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(44,38,34,0.06)' }}>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
-                  <Shield className="w-5 h-5 text-luxury-accent" />
-                  <span>Secure payment with Razorpay</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                  <span>Instant access to your guides</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600 font-light font-['Inter',sans-serif]">
-                  <Users className="w-5 h-5 text-purple-500" />
-                  <span>100s of successful transformations</span>
-                </div>
+                {[
+                  { icon: <Shield className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Secure payment with Razorpay' },
+                  { icon: <Clock className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Instant access to your guides' },
+                  { icon: <Users className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: '100s of successful transformations' },
+                ].map((item) => (
+                  <div key={item.text} className="flex items-center gap-3">
+                    {item.icon}
+                    <span style={{ fontSize: '13px', color: '#2C2622', opacity: 0.7 }}>{item.text}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </motion.div>
+
+          </div>
         </div>
       </div>
 
-
-      {/* Add-on Popup - Optimized for Mobile */}
+      {/* ── Add-on Popup ────────────────────────────────────────────────── */}
       {showAddonPopup && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="bg-luxury-warm-white rounded-t-3xl md:rounded-3xl w-full md:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl"
-          >
-            {/* Header */}
-            <div className="sticky top-0 bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream p-4 z-10">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4" style={{ background: 'rgba(44,38,34,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full md:max-w-lg max-h-[85vh] overflow-y-auto rounded-t-3xl md:rounded-3xl shadow-2xl" style={{ background: '#F8F3E9' }}>
+
+            {/* Popup Header */}
+            <div className="sticky top-0 backdrop-blur-xl p-4 z-10" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <h3 className="text-lg md:text-xl luxury-heading text-luxury-charcoal mb-1">
-                    🎁 Boost Your Transformation
-                  </h3>
-                  <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70">
-                    Add these to get the complete package
-                  </p>
+                  <div className="iconik-display mb-1" style={{ fontSize: '18px', color: '#2C2622' }}>Boost Your Transformation</div>
+                  <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55 }}>Add these to get the complete package</p>
                 </div>
                 <button
-                  onClick={() => {
-                    setShowAddonPopup(false);
-                    setPopupDismissed(true); // Mark as dismissed
-                    trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button', undefined, 'INR', 'India');
-                  }}
-                  className="text-luxury-charcoal/40 hover:text-luxury-charcoal p-1 -mr-1 -mt-1 flex-shrink-0"
+                  onClick={() => { setShowAddonPopup(false); setPopupDismissed(true); trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button', undefined, 'INR', 'India'); }}
+                  className="hover:opacity-60 transition-opacity p-1 flex-shrink-0"
+                  style={{ color: '#2C2622', opacity: 0.4 }}
                   aria-label="Close"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -876,133 +650,96 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Add-ons Content */}
+            {/* Popup Add-ons */}
             <div className="p-3 md:p-4 space-y-3">
-              {/* Wardrobe Detox Add-on */}
+              {/* Wardrobe Detox */}
               <div
                 onClick={() => setWardrobeDetoxAddon(!wardrobeDetoxAddon)}
-                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${wardrobeDetoxAddon
-                  ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
-                  : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
-                  }`}
+                className="rounded-xl p-3 cursor-pointer transition-all duration-300"
+                style={{
+                  border: wardrobeDetoxAddon ? '1.5px solid #2C2622' : '1px solid rgba(44,38,34,0.1)',
+                  background: wardrobeDetoxAddon ? '#fff' : 'rgba(237,229,210,0.3)',
+                }}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${wardrobeDetoxAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                    }`}>
-                    {wardrobeDetoxAddon && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all" style={{ border: wardrobeDetoxAddon ? 'none' : '1px solid rgba(44,38,34,0.2)', background: wardrobeDetoxAddon ? '#2C2622' : 'transparent' }}>
+                    {wardrobeDetoxAddon && <svg className="w-3 h-3" fill="none" stroke="#F4EFE5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                   </div>
-
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                        👗 Wardrobe Detox
-                      </h4>
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">{formatINR(wardrobeDetoxPrice)}</span>
-                      </div>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>Wardrobe Detox</div>
+                      <span className="iconik-display flex-shrink-0" style={{ fontSize: '14px', color: '#2C2622' }}>{formatINR(wardrobeDetoxPrice)}</span>
                     </div>
-                    <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                      Let us audit your closet and create a curated wardrobe
-                    </p>
+                    <p style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6, marginBottom: '8px' }}>Let us audit your closet and create a curated wardrobe</p>
                     <div className="space-y-1">
-                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Closet audit</span>
-                      </div>
-                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Keep/donate guide</span>
-                      </div>
+                      {['Closet audit', 'Keep/donate guide'].map((item) => (
+                        <div key={item} className="flex items-start gap-1.5">
+                          <CheckCircle className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />
+                          <span style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>{item}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Smart Shopper's Guide Add-on */}
+              {/* Smart Shopper's Guide */}
               <div
                 onClick={() => setSmartShoppersGuideAddon(!smartShoppersGuideAddon)}
-                className={`border-2 rounded-xl p-3 cursor-pointer transition-all duration-300 ${smartShoppersGuideAddon
-                  ? 'border-luxury-accent bg-luxury-pink-bg shadow-lg'
-                  : 'border-luxury-cream hover:border-luxury-accent/50 hover:bg-luxury-cream/30'
-                  }`}
+                className="rounded-xl p-3 cursor-pointer transition-all duration-300"
+                style={{
+                  border: smartShoppersGuideAddon ? '1.5px solid #2C2622' : '1px solid rgba(44,38,34,0.1)',
+                  background: smartShoppersGuideAddon ? '#fff' : 'rgba(237,229,210,0.3)',
+                }}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${smartShoppersGuideAddon ? 'border-luxury-accent bg-luxury-accent' : 'border-luxury-charcoal/30'
-                    }`}>
-                    {smartShoppersGuideAddon && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all" style={{ border: smartShoppersGuideAddon ? 'none' : '1px solid rgba(44,38,34,0.2)', background: smartShoppersGuideAddon ? '#2C2622' : 'transparent' }}>
+                    {smartShoppersGuideAddon && <svg className="w-3 h-3" fill="none" stroke="#F4EFE5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                   </div>
-
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h4 className="luxury-heading text-luxury-charcoal text-sm md:text-base">
-                        🛍️ Smart Shopper&apos;s Guide
-                      </h4>
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-luxury-green font-semibold text-base">{formatINR(smartShoppersGuidePrice)}</span>
-                      </div>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>Smart Shopper&apos;s Guide</div>
+                      <span className="iconik-display flex-shrink-0" style={{ fontSize: '14px', color: '#2C2622' }}>{formatINR(smartShoppersGuidePrice)}</span>
                     </div>
-                    <p className="text-xs luxury-body text-luxury-charcoal/70 mb-2">
-                      Curated brand guide for YOUR body type + budget
-                    </p>
+                    <p style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6, marginBottom: '8px' }}>Curated brand guide for YOUR body type + budget</p>
                     <div className="space-y-1">
-                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Best brands for your body shape</span>
-                      </div>
-                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Budget breakdowns (affordable to premium)</span>
-                      </div>
-                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>Sizing recommendations by brand</span>
-                      </div>
-                      <div className="flex items-start gap-1.5 text-xs luxury-body text-luxury-charcoal/70">
-                        <CheckCircle className="w-3.5 h-3.5 text-luxury-accent flex-shrink-0 mt-0.5" />
-                        <span>What to avoid based on your color palette</span>
-                      </div>
+                      {['Best brands for your body shape', 'Budget breakdowns (affordable to premium)', 'What to avoid based on your color palette'].map((item) => (
+                        <div key={item} className="flex items-start gap-1.5">
+                          <CheckCircle className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />
+                          <span style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>{item}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-luxury-warm-white/95 backdrop-blur-xl border-t border-luxury-cream p-3 md:p-4 space-y-2">
+            {/* Popup Footer */}
+            <div className="sticky bottom-0 p-3 md:p-4 space-y-2" style={{ background: 'rgba(248,243,233,0.95)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(44,38,34,0.08)' }}>
               <button
-                onClick={async () => {
-                  setShowAddonPopup(false);
-                  trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount, 'INR', 'India');
-                  await processPayment();
-                }}
+                onClick={async () => { setShowAddonPopup(false); trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount, 'INR', 'India'); await processPayment(); }}
                 disabled={isProcessing}
-                className="w-full bg-luxury-accent hover:bg-luxury-accent/90 text-white py-3 md:py-3.5 rounded-full luxury-body font-semibold transition-all duration-300 disabled:opacity-50 hover:scale-[1.01] transform text-sm md:text-base shadow-lg"
+                className="w-full py-3 md:py-3.5 rounded-full transition-all duration-300 disabled:opacity-50 hover:-translate-y-0.5 transform"
+                style={{ background: '#2C2622', color: '#F4EFE5' }}
               >
-                {isProcessing ? 'Processing...' : `Add & Pay ${formatINR(totalAmount)}`}
+                <span className="iconik-display" style={{ fontSize: '14px' }}>
+                  {isProcessing ? 'Processing...' : `Add & Pay ${formatINR(totalAmount)}`}
+                </span>
               </button>
-
               <button
-                onClick={() => {
-                  trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount, 'INR', 'India');
-                  continueWithoutAddons();
-                }}
+                onClick={() => { trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount, 'INR', 'India'); continueWithoutAddons(); }}
                 disabled={isProcessing}
-                className="w-full bg-transparent hover:bg-luxury-cream/50 text-luxury-charcoal/60 py-2.5 rounded-full luxury-body transition-all duration-300 disabled:opacity-50 text-xs md:text-sm"
+                className="w-full py-2.5 rounded-full transition-all duration-300 disabled:opacity-50"
+                style={{ background: 'transparent', color: '#2C2622' }}
               >
-                No thanks, continue without
+                <span className="iconik-mono" style={{ fontSize: '11px', opacity: 0.5, letterSpacing: '0.1em' }}>No thanks, continue without</span>
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
+
     </div>
   );
 }

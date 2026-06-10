@@ -5,7 +5,13 @@ import OpenAI, { toFile } from 'openai';
 import sharp from 'sharp';
 import { supabaseAdmin } from './supabase';
 import { revalidateStylistBlueprintCache } from './stylistBlueprintCache';
-import type { BlueprintPage, StylistBlueprintReportData, StylistIntakeSubmission } from './stylistBlueprintGenerator';
+import {
+  getStylistBlueprintCapsulePageRanges,
+  getStylistBlueprintOutfitCount,
+  type BlueprintPage,
+  type StylistBlueprintReportData,
+  type StylistIntakeSubmission,
+} from './stylistBlueprintGenerator';
 
 const BUCKET = 'stylist-blueprint-images';
 const SIGNED_URL_TTL = 60 * 60;
@@ -36,6 +42,38 @@ export type StylistBlueprintImageGroup =
   | 'capsule_4'
   | 'closing'
   | 'all';
+
+export const STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS = [
+  'diagnosis.silhouetteFront',
+  'diagnosis.silhouetteSide',
+  'diagnosis.undertoneMap',
+  'diagnosis.faceShapeDiagram',
+  'prescription.hairDirections',
+  'prescription.eyewearFrames',
+  'application.outfitFlatlays.0',
+  'application.outfitFlatlays.1',
+  'application.outfitFlatlays.2',
+  'application.outfitFlatlays.3',
+  'application.outfitFlatlays.4',
+  'application.outfitFlatlays.5',
+  'application.outfitFlatlays.6',
+  'application.outfitFlatlays.7',
+  'application.outfitFlatlays.8',
+  'application.outfitFlatlays.9',
+  'application.outfitFlatlays.10',
+  'application.outfitFlatlays.11',
+  'application.outfitFlatlays.12',
+  'application.outfitFlatlays.13',
+  'application.outfitFlatlays.14',
+  'application.outfitFlatlays.15',
+  'application.outfitFlatlays.16',
+  'application.outfitFlatlays.17',
+  'application.outfitFlatlays.18',
+  'application.outfitFlatlays.19',
+  'closing.editTeaser',
+] as const;
+
+export type StylistBlueprintImageSlotKey = typeof STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS[number];
 
 export interface StylistBlueprintImagePaths {
   cover?: { portrait?: string | null };
@@ -118,6 +156,16 @@ type MutablePaths = {
   };
 };
 
+type SingleSlotPlan = {
+  fileName: string;
+  prompt: string;
+  sourceUrl?: string | null;
+  extraSourceUrl?: string | null;
+  size?: '1024x1024' | '1024x1536' | '1536x1024';
+  getCurrent: (paths: MutablePaths) => string | null | undefined;
+  setCurrent: (paths: MutablePaths, path: string) => void;
+};
+
 function emptyPaths(): MutablePaths {
   return {
     cover: { portrait: null },
@@ -147,8 +195,8 @@ function emptyPaths(): MutablePaths {
     },
     application: {
       capsuleCovers: [null, null, null, null],
-      outfitFlatlays: Array.from({ length: 12 }, () => null),
-      outfitDetails: Array.from({ length: 12 }, () => null),
+      outfitFlatlays: Array.from({ length: 20 }, () => null),
+      outfitDetails: Array.from({ length: 20 }, () => null),
     },
     closing: { combinationMatrix: null, editTeaser: null },
   };
@@ -162,8 +210,8 @@ function normalise(paths: StylistBlueprintImagePaths | null | undefined): Mutabl
     prescription: { ...base.prescription, ...(paths?.prescription ?? {}) },
     application: {
       capsuleCovers: Array.from({ length: 4 }, (_, index) => paths?.application?.capsuleCovers?.[index] ?? null),
-      outfitFlatlays: Array.from({ length: 12 }, (_, index) => paths?.application?.outfitFlatlays?.[index] ?? null),
-      outfitDetails: Array.from({ length: 12 }, (_, index) => paths?.application?.outfitDetails?.[index] ?? null),
+      outfitFlatlays: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitFlatlays?.[index] ?? null),
+      outfitDetails: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitDetails?.[index] ?? null),
     },
     closing: { ...base.closing, ...(paths?.closing ?? {}) },
   };
@@ -444,6 +492,29 @@ function pageText(page: BlueprintPage) {
   ].filter(Boolean).join('\n');
 }
 
+function outfitColourAuthority(page: BlueprintPage) {
+  const paletteUsed = page.palette_used?.length
+    ? `Palette used: ${page.palette_used.map(colour => `${colour.role}: ${colour.name} ${colour.hex}`).join('; ')}`
+    : 'Palette used: read the formula item colour fields below.';
+  const formulaItems = page.blocks
+    .flatMap(block => Array.isArray(block.items) ? block.items : [])
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return '';
+      const record = item as Record<string, unknown>;
+      return [
+        typeof record.slot === 'string' ? `slot=${record.slot}` : '',
+        typeof record.piece === 'string' ? `piece=${record.piece}` : '',
+        typeof record.colour_name === 'string' ? `colour=${record.colour_name}` : '',
+        typeof record.colour_hex === 'string' ? `hex=${record.colour_hex}` : '',
+        typeof record.palette_role === 'string' ? `role=${record.palette_role}` : '',
+      ].filter(Boolean).join(', ');
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  return [paletteUsed, formulaItems ? `Per-piece colour authority:\n${formulaItems}` : ''].filter(Boolean).join('\n');
+}
+
 function wornOutfitPrompt(reportData: StylistBlueprintReportData, page: BlueprintPage) {
   const palette = [
     ...reportData.classification.colour.base_palette,
@@ -464,16 +535,22 @@ CRITICAL CLOTHING INSTRUCTION:
 Background and style:
 - Matte ICONIK slate background ${SLATE}.
 - Premium studio cyclorama fashion editorial, clean front/three-quarter pose.
+- Portrait vertical 2:3 composition. Final image must be tall, not landscape or square.
 - Full outfit visible from head to toe, centered in frame, with generous margin above the head and below the footwear. Both shoes and all footwear details must be fully visible.
 - Absolutely no text, letters, typography, captions, labels, logos, signage, watermarks, UI marks, brand marks, readable symbols, extra people, or mannequin.
 - Natural realistic fabric behavior and correct garment construction.
+- Practical colour realism: never render fully coloured leather sneakers. If the outfit mentions sneakers, they must be white, off-white, cream, or grey-neutral; any palette colour on sneakers is only tiny trim, stripe, stitching, sole, or heel detail.
+- Leather shoes and bags must look commercially realistic: black, espresso, chocolate, cognac, tan, taupe, burgundy, cream, restrained grey, or neutral suede/leather unless the outfit explicitly says tiny trim/detail.
 
 Client styling constraints:
 - Body geometry: ${reportData.classification.body.geometry}.
 - Proportion directive: ${reportData.classification.body.proportion_directive}.
 - Coverage rules: ${reportData.classification.body.coverage_rules.join(', ') || 'follow intake coverage preferences'}.
 - Palette direction: ${reportData.classification.colour.palette_name}; use these colours where relevant: ${palette}.
+- Exact outfit colours: the per-piece colour authority below overrides any generic colour assumption.
 - Taste direction: ${reportData.classification.taste.style_archetype}; avoid: ${reportData.classification.taste.anti_codes.join(', ') || 'anything outside the stated outfit text'}.
+
+${outfitColourAuthority(page)}
 
 Outfit text to render:
 ${outfit}`;
@@ -491,7 +568,7 @@ Styling direction:
 - Body geometry: ${reportData.classification.body.geometry}.
 - Palette: ${reportData.classification.colour.palette_name}.
 - Taste direction: ${reportData.classification.taste.style_archetype}.
-- Build a polished continuation look that feels aligned with the 12 outfit formulas in this report.`;
+- Build a polished continuation look that feels aligned with the ${getStylistBlueprintOutfitCount(reportData)} outfit formulas in this report.`;
 }
 
 async function generatedImage(
@@ -504,7 +581,14 @@ async function generatedImage(
 ) {
   const buffer = await callEditorialImage(prompt, sourceUrl, fileName, size, extraSourceUrl);
   if (!buffer) throw new Error(`Image generation returned no image for ${fileName}`);
-  return uploadBuffer(reportId, fileName, buffer);
+  const output = size === '1024x1536'
+    ? await sharp(buffer, { failOn: 'none' })
+      .rotate()
+      .resize({ width: 1024, height: 1536, fit: 'contain', background: SLATE })
+      .jpeg({ quality: 92 })
+      .toBuffer()
+    : buffer;
+  return uploadBuffer(reportId, fileName, output);
 }
 
 function sourcePhotos(submission?: StylistIntakeSubmission | null) {
@@ -524,8 +608,8 @@ function diagnosisPrompt(reportData: StylistBlueprintReportData, slot: keyof Mut
   const palette = reportData.classification.colour.base_palette.slice(0, 5).map(c => `${c.name} ${c.hex}`).join(', ');
   const base = `Create a premium ICONIK clinical-editorial diagnostic image. Preserve the source client's photo where supplied; do not alter identity, facial features, skin tone, or body shape. Add clean warm-white analytical overlays on matte slate #94A6AD: thin measurement lines, small dot terminators, calibrated marks. No labels, no numbers, no readable text. Vogue editorial meets clinical report.`;
   const prompts: Record<keyof MutablePaths['diagnosis'], string> = {
-    silhouetteFront: `${base} Use the front full-body photo as the underlying image. Overlay shoulder span, hip span, vertical centre line, and natural waist curve for a ${body} silhouette. Crop full body, front-facing, elegant and restrained.`,
-    silhouetteSide: `${base} Use the side/full-body source photo as the underlying image. Create a side-profile proportional overlay with posture line, natural waist marker, torso-to-hip curve, and centre-of-gravity dot for a ${body} silhouette.`,
+    silhouetteFront: `${base} Use the front full-body photo as the underlying image. Overlay shoulder span, hip span, vertical centre line, and natural waist curve for a ${body} silhouette. Keep the full head-to-toe body visible with margin above the head and below the feet; do not crop the head, hair, footwear, or feet. Front-facing, elegant and restrained.`,
+    silhouetteSide: `${base} Use the side/full-body source photo as the underlying image. Create a side-profile proportional overlay with posture line, natural waist marker, torso-to-hip curve, and centre-of-gravity dot for a ${body} silhouette. Keep the full head-to-toe body visible with margin above the head and below the feet; do not crop the head, hair, footwear, or feet.`,
     proportionalAxes: `${base} Use the full-body source photo as the underlying image. Overlay three proportional axes: vertical balance, horizontal balance, and focal point indicator. Scientific but editorial.`,
     undertoneMap: `${base} Use the headshot as the underlying image. Add a subtle horizontal cool-neutral-warm undertone calibration bar and marker beside the face. Chromatic profile: ${colour}.`,
     depthContrastMatrix: `${base} Use the headshot as the underlying image. Add a refined 5x5 depth/contrast calibration matrix beside the portrait with one highlighted point. Chromatic profile: ${colour}.`,
@@ -557,6 +641,137 @@ function prescriptionPrompt(reportData: StylistBlueprintReportData, slot: keyof 
     avoidedFabrics: `${base} Show avoided fabric macro swatches: ${reportData.classification.fabrics.avoid.map(f => f.name).join(', ')}. Add subtle warm-rose diagonal avoid strokes. Photorealistic macro detail.`,
   };
   return prompts[slot];
+}
+
+export function isStylistBlueprintImageSlotKey(value: unknown): value is StylistBlueprintImageSlotKey {
+  return typeof value === 'string' && (STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS as readonly string[]).includes(value);
+}
+
+function singleSlotProgressStage(slotKey: StylistBlueprintImageSlotKey) {
+  return `regenerating_image_${slotKey.replace(/\W+/g, '_')}`;
+}
+
+function regeneratedFileName(baseName: string) {
+  return `${baseName}-regen-${Date.now()}`;
+}
+
+function outfitPageForSlot(reportData: StylistBlueprintReportData, index: number) {
+  const pageNumber = index + 14;
+  const page = reportData.pages.find(item => item.page_number === pageNumber);
+  if (!page) throw new Error(`Missing outfit page ${pageNumber} for image generation`);
+  return page;
+}
+
+function buildSingleSlotPlan(
+  slotKey: StylistBlueprintImageSlotKey,
+  reportData: StylistBlueprintReportData,
+  photos: ReturnType<typeof sourcePhotos>,
+): SingleSlotPlan {
+  const baseFileName = slotKey.replace(/\./g, '-');
+
+  if (slotKey === 'diagnosis.silhouetteFront') {
+    if (!photos.front) throw new Error('No front full-body photo found for silhouette image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: diagnosisPrompt(reportData, 'silhouetteFront'),
+      sourceUrl: photos.front,
+      size: '1024x1536',
+      getCurrent: paths => paths.diagnosis.silhouetteFront,
+      setCurrent: (paths, path) => { paths.diagnosis.silhouetteFront = path; },
+    };
+  }
+
+  if (slotKey === 'diagnosis.silhouetteSide') {
+    if (!photos.side) throw new Error('No side full-body photo found for side-profile image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: diagnosisPrompt(reportData, 'silhouetteSide'),
+      sourceUrl: photos.side,
+      size: '1024x1536',
+      getCurrent: paths => paths.diagnosis.silhouetteSide,
+      setCurrent: (paths, path) => { paths.diagnosis.silhouetteSide = path; },
+    };
+  }
+
+  if (slotKey === 'diagnosis.undertoneMap') {
+    if (!photos.headshot) throw new Error('No headshot found for undertone image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: diagnosisPrompt(reportData, 'undertoneMap'),
+      sourceUrl: photos.headshot,
+      size: '1024x1024',
+      getCurrent: paths => paths.diagnosis.undertoneMap,
+      setCurrent: (paths, path) => { paths.diagnosis.undertoneMap = path; },
+    };
+  }
+
+  if (slotKey === 'diagnosis.faceShapeDiagram') {
+    if (!photos.headshot) throw new Error('No headshot found for face-shape image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: diagnosisPrompt(reportData, 'faceShapeDiagram'),
+      sourceUrl: photos.headshot,
+      size: '1024x1024',
+      getCurrent: paths => paths.diagnosis.faceShapeDiagram,
+      setCurrent: (paths, path) => { paths.diagnosis.faceShapeDiagram = path; },
+    };
+  }
+
+  if (slotKey === 'prescription.hairDirections') {
+    if (!photos.headshot) throw new Error('No headshot found for hair direction image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: prescriptionPrompt(reportData, 'hairDirections'),
+      sourceUrl: photos.headshot,
+      size: '1024x1536',
+      getCurrent: paths => paths.prescription.hairDirections,
+      setCurrent: (paths, path) => { paths.prescription.hairDirections = path; },
+    };
+  }
+
+  if (slotKey === 'prescription.eyewearFrames') {
+    if (!photos.headshot) throw new Error('No headshot found for eyewear image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: prescriptionPrompt(reportData, 'eyewearFrames'),
+      sourceUrl: photos.headshot,
+      size: '1024x1536',
+      getCurrent: paths => paths.prescription.eyewearFrames,
+      setCurrent: (paths, path) => { paths.prescription.eyewearFrames = path; },
+    };
+  }
+
+  if (slotKey.startsWith('application.outfitFlatlays.')) {
+    const index = Number(slotKey.split('.').at(-1));
+    if (!Number.isInteger(index) || index < 0 || index >= getStylistBlueprintOutfitCount(reportData)) throw new Error('Invalid outfit image slot for this report version');
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (!clientSource) throw new Error('No client photo found for outfit image generation');
+    return {
+      fileName: regeneratedFileName(`outfit-${index + 1}-client`),
+      prompt: wornOutfitPrompt(reportData, outfitPageForSlot(reportData, index)),
+      sourceUrl: clientSource,
+      extraSourceUrl: photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+      size: '1024x1536',
+      getCurrent: paths => paths.application.outfitFlatlays[index],
+      setCurrent: (paths, path) => { paths.application.outfitFlatlays[index] = path; },
+    };
+  }
+
+  if (slotKey === 'closing.editTeaser') {
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (!clientSource) throw new Error('No client photo found for closing teaser image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: editTeaserPrompt(reportData),
+      sourceUrl: clientSource,
+      extraSourceUrl: photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+      size: '1024x1536',
+      getCurrent: paths => paths.closing.editTeaser,
+      setCurrent: (paths, path) => { paths.closing.editTeaser = path; },
+    };
+  }
+
+  throw new Error('Unsupported image slot');
 }
 
 async function setSlot(input: {
@@ -623,12 +838,13 @@ export async function generateStylistBlueprintImages(
     }
   }
 
-  const capsuleGroups: Array<[StylistBlueprintImageGroup, number, number, number]> = [
-    ['capsule_1', 0, 14, 16],
-    ['capsule_2', 1, 17, 19],
-    ['capsule_3', 2, 20, 22],
-    ['capsule_4', 3, 23, 25],
-  ];
+  const capsuleGroups: Array<[StylistBlueprintImageGroup, number, number, number]> =
+    getStylistBlueprintCapsulePageRanges(reportData).map((range, index) => [
+      `capsule_${index + 1}` as StylistBlueprintImageGroup,
+      index,
+      range.firstPage,
+      range.lastPage,
+    ]);
   for (const [capsuleGroup, capsuleIndex, firstPage, lastPage] of capsuleGroups) {
     if (group !== capsuleGroup && group !== 'all') continue;
     paths.application.capsuleCovers[capsuleIndex] = null;
@@ -659,18 +875,6 @@ export async function generateStylistBlueprintImages(
 
   if (group === 'closing' || group === 'all') {
     await setSlot({
-      reportId, paths, shareToken, force, fileName: 'closing-combination-matrix',
-      getCurrent: () => paths.closing.combinationMatrix,
-      setCurrent: path => { paths.closing.combinationMatrix = path; },
-      create: () => generatedImage(
-        reportId,
-        'closing-combination-matrix',
-        `Create a premium ICONIK wardrobe system data visualization on matte slate ${SLATE}. Show 12 outfit nodes and shared core piece nodes connected in an elegant constellation web. Warm ivory circles and lines, no text, no labels, no numbers.`,
-        null,
-        '1024x1024',
-      ),
-    });
-    await setSlot({
       reportId, paths, shareToken, force, fileName: 'closing-edit-teaser',
       getCurrent: () => paths.closing.editTeaser,
       setCurrent: path => { paths.closing.editTeaser = path; },
@@ -691,6 +895,49 @@ export async function generateStylistBlueprintImages(
 
   await persistPaths(reportId, paths, shareToken, null);
   return paths;
+}
+
+export async function regenerateStylistBlueprintImageSlot(
+  reportId: string,
+  reportData: StylistBlueprintReportData,
+  slotKey: StylistBlueprintImageSlotKey,
+  options: { shareToken?: string | null; submission?: StylistIntakeSubmission | null; progressStage?: string | null } = {},
+) {
+  const paths = await getStoredPaths(reportId);
+  const photos = sourcePhotos(options.submission);
+  const plan = buildSingleSlotPlan(slotKey, reportData, photos);
+
+  await persistPaths(reportId, paths, options.shareToken, options.progressStage ?? singleSlotProgressStage(slotKey));
+
+  try {
+    const storagePath = await generatedImage(
+      reportId,
+      plan.fileName,
+      plan.prompt,
+      plan.sourceUrl,
+      plan.size ?? '1024x1536',
+      plan.extraSourceUrl,
+    );
+
+    plan.setCurrent(paths, storagePath);
+    await persistPaths(reportId, paths, options.shareToken, null);
+
+    const imageUrls = await resolveStylistBlueprintImageUrls(paths);
+    const freshPaths = normalise(paths);
+    const resolvedPaths = imageUrls ? normalise(imageUrls) : null;
+    const imageUrl = resolvedPaths ? plan.getCurrent(resolvedPaths) ?? null : null;
+
+    return {
+      slotKey,
+      storagePath,
+      imagePaths: freshPaths as StylistBlueprintImagePaths,
+      imageUrls,
+      imageUrl,
+    };
+  } catch (error) {
+    await persistPaths(reportId, paths, options.shareToken, null);
+    throw error;
+  }
 }
 
 function collectPaths(paths: StylistBlueprintImagePaths | null | undefined): string[] {
@@ -761,9 +1008,13 @@ export function getStylistBlueprintImageCounts(
     hasSidePhoto?: boolean;
     hasHeadshot?: boolean;
     hasClientPhoto?: boolean;
+    outfitCount?: number;
   } = {},
 ) {
   const normalised = normalise(paths);
+  const outfitCount = options.outfitCount ?? 20;
+  const capsuleSize = Math.ceil(outfitCount / 4);
+  const outfitSlots = normalised.application.outfitFlatlays.slice(0, outfitCount);
   const groups = {
     diagnosis: [
       ...(options.hasFrontPhoto ? [normalised.diagnosis.silhouetteFront] : []),
@@ -778,12 +1029,11 @@ export function getStylistBlueprintImageCounts(
       normalised.prescription.hairDirections,
       normalised.prescription.eyewearFrames,
     ] : [],
-    capsule_1: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(0, 3) : [],
-    capsule_2: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(3, 6) : [],
-    capsule_3: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(6, 9) : [],
-    capsule_4: options.hasClientPhoto ? normalised.application.outfitFlatlays.slice(9, 12) : [],
+    capsule_1: options.hasClientPhoto ? outfitSlots.slice(0, capsuleSize) : [],
+    capsule_2: options.hasClientPhoto ? outfitSlots.slice(capsuleSize, capsuleSize * 2) : [],
+    capsule_3: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 2, capsuleSize * 3) : [],
+    capsule_4: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 3, outfitCount) : [],
     closing: [
-      normalised.closing.combinationMatrix,
       ...(options.hasClientPhoto ? [normalised.closing.editTeaser] : []),
     ],
   };

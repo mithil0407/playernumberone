@@ -1,7 +1,6 @@
 'use client';
 
 import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import ExploreLinksSection from '@/components/ExploreLinksSection';
@@ -11,11 +10,6 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Clock,
-  Users,
-  Heart,
-  Menu,
-  X,
   Star,
   Sparkles,
   Gem,
@@ -39,1332 +33,734 @@ interface LandingPageContentProps {
 export default function LandingPageContent({
   headline,
   subheadline,
-  headlineClassName,
   checkoutHref = '/checkout',
   basePrice = 3299,
   originalPrice = 5999,
   displayBasePrice,
   displayOriginalPrice,
 }: LandingPageContentProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState({
-    minutes: 5,
-    seconds: 0
-  });
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState({ minutes: 5, seconds: 0 });
+
   const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
 
-
-  // Track page view and product view on mount
   useEffect(() => {
     trackPageView('India');
     trackViewContent('ICONIK Style Consultation', basePrice, ['iconik_style_consultation'], 'INR', 'India');
   }, [basePrice]);
 
-  // Transformation images data
   const transformationImages = useMemo(() => [
-    {
-      src: '/transformation-1.webp',
-      testimonial: 'Finally found my signature style! I feel confident every day.',
-      name: 'Shreya, Mumbai'
-    },
-    {
-      src: '/transformation-2.webp',
-      testimonial: 'The color palette changed everything. I get compliments daily!',
-      name: 'Kavya, Delhi'
-    },
-    {
-      src: '/transformation-3.webp',
-      testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.',
-      name: 'Priya, Bangalore'
-    }
+    { src: '/transformation-1.webp', testimonial: 'Finally found my signature style! I feel confident every day.', name: 'Shreya, Mumbai' },
+    { src: '/transformation-2.webp', testimonial: 'The color palette changed everything. I get compliments daily!', name: 'Kavya, Delhi' },
+    { src: '/transformation-3.webp', testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.', name: 'Priya, Bangalore' },
   ], []);
 
-  // Navigation functions
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
-  };
+  const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
+  const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
 
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
-  };
-
-  const goToImage = (index: number) => {
-    setCurrentImageIndex(index);
-  };
-
-  // next/image with priority={true} on the visible image handles preloading;
-  // no manual preload loop needed (it caused extra network requests).
-
-  // 5-minute countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prevTime => {
-        if (prevTime.minutes === 0 && prevTime.seconds === 0) {
-          // Reset to 5 minutes when timer reaches 0
-          return { minutes: 5, seconds: 0 };
-        }
-
-        if (prevTime.seconds === 0) {
-          return { minutes: prevTime.minutes - 1, seconds: 59 };
-        }
-
+        if (prevTime.minutes === 0 && prevTime.seconds === 0) return { minutes: 5, seconds: 0 };
+        if (prevTime.seconds === 0) return { minutes: prevTime.minutes - 1, seconds: 59 };
         return { minutes: prevTime.minutes, seconds: prevTime.seconds - 1 };
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-
-
-  const testimonials = [
-    {
-      name: 'Priya, 28',
-      story: 'Finally discovered my signature style. I feel confident and elegant in my own skin.',
-      image: '/testimonial-priya.webp'
-    },
-    {
-      name: 'Ananya, 32',
-      story: 'The color palette changed everything! People keep asking what I did differently.',
-      image: '/testimonial-ananya.webp'
-    },
-    {
-      name: 'Shreya, 26',
-      story: 'Shopping is no longer overwhelming. I know exactly what works for me.',
-      image: '/testimonial-shreya.webp'
-    }
-  ];
+  useEffect(() => {
+    const timer = setInterval(nextImage, 4000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const faqs = [
-    {
-      question: 'Will this really help me look more elegant and confident?',
-      answer: 'Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We\'ve helped 200+ women discover their signature style.'
-    },
-    {
-      question: 'What if the style suggestions don\'t feel like me?',
-      answer: 'We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level.'
-    },
-    {
-      question: 'How quickly will I see results?',
-      answer: 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.'
-    }
+    { question: 'Will this really help me look more elegant and confident?', answer: "Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We've helped 200+ women discover their signature style." },
+    { question: "What if the style suggestions don't feel like me?", answer: "We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level." },
+    { question: 'How quickly will I see results?', answer: 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.' },
+  ];
+
+  const blueprintItems = [
+    { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Geometric Silhouette Profile™', desc: 'Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame.' },
+    { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Facial Architecture Analysis™', desc: 'Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance.' },
+    { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Chromatic Harmony Map™', desc: '10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio.' },
+    { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '16 Outfit Formulas', desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
+    { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Concern Zone Solutions', desc: 'Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it.' },
+    { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '30-Minute Stylist Consultation', desc: 'A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first.' },
   ];
 
   return (
-      <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal scroll-smooth overflow-x-hidden pb-20 md:pb-0">
-        {/* Navigation */}
-        <nav className="fixed top-0 w-full bg-luxury-warm-white/95 backdrop-blur-xl border-b border-luxury-cream z-50">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="flex justify-between items-center h-20">
-              <div className="flex items-center">
-                <span className="text-3xl luxury-heading text-luxury-charcoal tracking-wider">ICONIK</span>
-              </div>
-              <div className="hidden md:flex items-center space-x-12">
-                <a href="#features" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Features</a>
-                <a href="#testimonials" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Stories</a>
-                <a href="#pricing" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">Investment</a>
-                <a href="#faq" className="luxury-body text-luxury-charcoal/80 hover:text-luxury-green transition-colors">FAQ</a>
-                <Link
-                  href={checkoutHref}
-                  className="bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-8 py-3 rounded-full transition-all duration-300 luxury-body"
-                >
-                  Begin Journey
-                </Link>
-              </div>
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="text-luxury-charcoal/60 hover:text-luxury-charcoal p-2"
-                >
-                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+    <div className="man-editorial min-h-screen overflow-x-hidden pb-20 md:pb-0">
+
+      {/* ── Navbar ─────────────────────────────────────────────────────── */}
+      <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-center">
+          <span className="iconik-display" style={{ fontSize: '22px', letterSpacing: '0.12em', color: '#2C2622' }}>ICONIK</span>
+        </div>
+      </nav>
+
+      {/* ── SECTION 1: Hero ─────────────────────────────────────────────── */}
+      <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+        <div className="max-w-5xl mx-auto text-center">
+
+          {/* Featured in */}
+          <div className="mb-6">
+            <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Featured in</div>
+            <div className="flex items-center justify-center gap-8">
+              <Image src="/times-of-india-logo.png" alt="Times of India" width={100} height={30} className="opacity-35 hover:opacity-60 transition-opacity h-[30px] w-auto" />
+              <Image src="/femina-logo.png" alt="Femina" width={80} height={25} className="opacity-35 hover:opacity-60 transition-opacity h-[25px] w-auto" />
+              <Image src="/vogue-india-logo.png" alt="Vogue India" width={60} height={20} className="opacity-35 hover:opacity-60 transition-opacity h-[20px] w-auto md:h-[25px]" />
+            </div>
+          </div>
+
+          {/* Headline */}
+          <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(32px, 7vw, 72px)', color: '#2C2622' }}>
+            {headline}
+          </h1>
+
+          {/* Subheadline */}
+          <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, maxWidth: '600px', margin: '0 auto 32px' }}>
+            {subheadline}
+          </p>
+
+          {/* Carousel */}
+          <div className="max-w-sm mx-auto mb-8">
+            <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <div className="flex items-center justify-center gap-3 md:gap-4">
+                <button onClick={prevImage} className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:-translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Previous image">
+                  <ArrowLeft className="w-4 h-4" style={{ color: '#2C2622' }} />
+                </button>
+                <div className="relative w-52 md:w-64" style={{ aspectRatio: '1/1' }}>
+                  <div className="w-full h-full rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
+                    <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill className="object-cover" priority={currentImageIndex === 0} />
+                  </div>
+                </div>
+                <button onClick={nextImage} className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Next image">
+                  <ArrowRight className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
               </div>
+              <div className="mt-4 text-center">
+                <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.65, lineHeight: 1.6 }}>&ldquo;{transformationImages[currentImageIndex].testimonial}&rdquo;</p>
+                <p className="iconik-mono mt-1" style={{ fontSize: '10px', color: '#94A6AD' }}>— {transformationImages[currentImageIndex].name}</p>
+              </div>
+              <div className="flex justify-center gap-2 mt-3">
+                {transformationImages.map((_, idx) => (
+                  <button key={idx} onClick={() => setCurrentImageIndex(idx)} className="h-1.5 rounded-full transition-all duration-300" style={{ width: idx === currentImageIndex ? '16px' : '6px', background: idx === currentImageIndex ? '#2C2622' : 'rgba(44,38,34,0.2)' }} aria-label={`Go to slide ${idx + 1}`} />
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="md:hidden bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream"
-            >
-              <div className="px-6 py-6 space-y-4">
-                <a href="#features" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Features</a>
-                <a href="#testimonials" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Stories</a>
-                <a href="#pricing" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">Investment</a>
-                <a href="#faq" className="block luxury-body text-luxury-charcoal/80 hover:text-luxury-green px-4 py-3 rounded-lg hover:bg-luxury-cream transition-colors">FAQ</a>
-                <Link
-                  href={checkoutHref}
-                  className="block bg-luxury-accent text-luxury-warm-white px-8 py-4 rounded-full luxury-body text-center mt-6 transition-all duration-300"
-                >
-                  Begin Journey
-                </Link>
-              </div>
-            </motion.div>
-          )}
-        </nav>
+          {/* CTA */}
+          <Link
+            href={checkoutHref}
+            onClick={() => trackCTAClick('Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India')}
+            className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-10 py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform mb-8"
+          >
+            <span className="iconik-display" style={{ fontSize: '15px' }}>Begin Your Transformation</span>
+            <ArrowRight className="h-4 w-4 opacity-60" />
+          </Link>
 
-        {/* Hero Section */}
-        <section className="pt-24 md:pt-32 pb-12 md:pb-16 px-4 md:px-6 lg:px-8 relative" id="hero">
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="text-center mb-8">
-              {/* Press Logos */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="mt-2 md:mt-4 mb-3 md:mb-4"
-              >
-                <p className="luxury-body text-luxury-charcoal/60 mb-4">Featured in</p>
-                <div className="flex items-center justify-center gap-8 md:gap-12">
-                  <Image
-                    src="/times-of-india-logo.png"
-                    alt="Times of India"
-                    width={120}
-                    height={40}
-                    className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
-                  />
-                  <Image
-                    src="/femina-logo.png"
-                    alt="Femina"
-                    width={120}
-                    height={40}
-                    className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
-                  />
-                  <Image
-                    src="/vogue-india-logo.png"
-                    alt="Vogue India"
-                    width={120}
-                    height={40}
-                    className="opacity-40 hover:opacity-70 transition-opacity h-[40px] w-auto md:h-[50px]"
-                  />
+          {/* Trust strip */}
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: '#9a7d4a' }} />)}
+            </div>
+            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 200+ women across India</span>
+            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
+            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>7-Day Guarantee</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 2: Stats ────────────────────────────────────────────── */}
+      <section className="py-12 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { num: '200+', label: 'Transformations' },
+              { num: '95%', label: 'Confidence Elevation' },
+              { num: '4.9', label: 'Client Satisfaction', star: true },
+              { num: '2-3', label: 'Weeks to Elegance' },
+            ].map((s) => (
+              <div key={s.label}>
+                <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
+                  {s.num}
+                  {s.star && <Star className="h-5 w-5 fill-current" style={{ color: '#9a7d4a' }} />}
                 </div>
-              </motion.div>
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className={headlineClassName || "text-5xl md:text-7xl lg:text-8xl luxury-heading text-luxury-charcoal mb-4 md:mb-6 leading-[0.9] tracking-tight"}
-              >
-                {headline}
-              </motion.h1>
+                <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Hero Subtitle */}
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="text-lg md:text-xl lg:text-2xl luxury-body text-luxury-charcoal/80 max-w-4xl mx-auto mb-8 leading-relaxed"
-              >
-                {subheadline}
-              </motion.p>
+      {/* ── SECTION 3: Report Preview ────────────────────────────────────── */}
+      <section id="features" className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Your Deliverable</div>
+            <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>What Your Blueprint Actually Looks Like</div>
+          </div>
 
+          {/* Browser frame */}
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
+            <div className="px-5 py-3 flex items-center gap-3" style={{ background: '#EDE5D2', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+              </div>
+              <div className="flex-1 flex justify-center">
+                <div className="rounded-full px-5 py-1.5" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                  <span className="iconik-mono opacity-40" style={{ fontSize: '10px', color: '#2C2622' }}>iconik.pro/your-blueprint</span>
+                </div>
+              </div>
+            </div>
 
-              {/* Testimonial Slideshow Above the Fold */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="max-w-4xl mx-auto mb-4 md:mb-6"
-              >
-                <div className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-4 md:p-6 border border-luxury-cream">
-                  <div className="text-center mb-4">
-                    <h3 className="text-xl md:text-2xl luxury-heading text-luxury-charcoal">
-                      ICONIK Transformations
-                    </h3>
+            <div className="h-[640px] overflow-y-auto overflow-x-hidden" style={{ background: '#faf9f6', scrollbarWidth: 'thin' }}>
+
+              {/* Report nav */}
+              <div className="sticky top-0 z-10 px-6 md:px-10 h-14 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 bg-[#2C2622] flex items-center justify-center">
+                    <Sparkles className="text-[#9a7d4a]" size={14} />
                   </div>
+                  <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', letterSpacing: '0.4em', fontWeight: 700 }}>Iconik <span style={{ color: '#9a7d4a' }}>Blueprint</span></span>
+                </div>
+                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622' }}>Pro Edition // 2025</span>
+              </div>
 
-                  {/* Single Transformation Image with Arrow */}
-                  <div className="flex items-center justify-center gap-4 md:gap-6">
-                    {/* Left Arrow */}
-                    <button
-                      onClick={prevImage}
-                      className="p-2 md:p-3 bg-luxury-accent/10 hover:bg-luxury-accent/20 rounded-full transition-all duration-300 group"
-                    >
-                      <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
-                    </button>
+              {/* Report header */}
+              <div className="px-6 md:px-10 py-10" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#fff' }}>
+                <div className="flex items-center gap-3 mb-3" style={{ color: '#9a7d4a' }}>
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="iconik-mono" style={{ fontSize: '9px', letterSpacing: '0.4em', fontWeight: 700 }}>ANALYSIS VERIFIED</span>
+                </div>
+                <div className="iconik-display-it" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1 }}>The Lookbook</div>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass Profile</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>14 Ensembles</span>
+                </div>
+              </div>
 
-                    {/* 1:1 Square Image Placeholder */}
-                    <div className="relative w-64 h-64 md:w-80 md:h-80 bg-luxury-cream/30 rounded-2xl overflow-hidden border-2 border-luxury-cream">
-                      <Image
-                        src={transformationImages[currentImageIndex].src}
-                        alt="Style Transformation"
-                        width={320}
-                        height={320}
-                        sizes="(max-width: 768px) 256px, 320px"
-                        className="w-full h-full object-cover"
-                        priority
-                      />
+              {/* Section 01: Body Shape */}
+              <div style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                  <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 01 — GEOMETRIC SILHOUETTE PROFILE™</span>
+                  <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                </div>
+                <div className="flex flex-col md:flex-row">
+                  <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto flex-shrink-0 overflow-hidden" style={{ borderRight: '1px solid rgba(44,38,34,0.06)', background: '#f5f3ef' }}>
+                    <Image src="/report-body-shape.webp" alt="Body Shape Analysis" width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                  <div className="flex-1 p-6 md:p-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass</span>
+                      <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.4 }}>Your dominant body geometry</span>
                     </div>
-
-                    {/* Right Arrow */}
-                    <button
-                      onClick={nextImage}
-                      className="p-2 md:p-3 bg-luxury-accent/10 hover:bg-luxury-accent/20 rounded-full transition-all duration-300 group"
-                    >
-                      <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-luxury-charcoal group-hover:text-luxury-green" />
-                    </button>
-                  </div>
-
-                  {/* Testimonial Text Below Image */}
-                  <div className="text-center mt-6 px-4">
-                    <p className="text-luxury-charcoal text-sm md:text-base luxury-body leading-relaxed mb-2">
-                      &quot;{transformationImages[currentImageIndex].testimonial}&quot;
-                    </p>
-                    <p className="text-luxury-green text-xs md:text-sm luxury-body font-medium">
-                      - {transformationImages[currentImageIndex].name}
-                    </p>
-                  </div>
-
-                  {/* Dots Indicator */}
-                  <div className="flex justify-center gap-2 mt-6">
-                    {transformationImages.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => goToImage(index)}
-                        className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${index === currentImageIndex ? 'bg-luxury-accent' : 'bg-luxury-accent/30'
-                          }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
-              >
-                <Link
-                  href={checkoutHref}
-                  onClick={() => {
-                    // Track CTA click with Meta Pixel
-                    trackCTAClick('Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India');
-                  }}
-                  className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-12 md:px-16 py-4 md:py-6 text-lg md:text-xl rounded-full transition-all duration-500 transform hover:-translate-y-1 luxury-body"
-                >
-                  Begin Your Transformation <ArrowRight className="ml-3 h-5 w-5 inline" />
-                </Link>
-              </motion.div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* Elegant Stats */}
-        <section className="py-12 md:py-20 bg-luxury-cream/30">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
-              <div className="text-center group">
-                <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                  200+
-                </div>
-                <div className="luxury-body text-luxury-charcoal/70">Transformations</div>
-              </div>
-              <div className="text-center group">
-                <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                  95%
-                </div>
-                <div className="luxury-body text-luxury-charcoal/70">Confidence Elevation</div>
-              </div>
-              <div className="text-center group">
-                <div className="flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                  <span className="text-4xl md:text-6xl luxury-heading text-luxury-green">4.9</span>
-                  <Star className="h-6 w-6 md:h-8 md:w-8 text-luxury-gold fill-current ml-2" />
-                </div>
-                <div className="luxury-body text-luxury-charcoal/70">Client Satisfaction</div>
-              </div>
-              <div className="text-center group">
-                <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                  2-3
-                </div>
-                <div className="luxury-body text-luxury-charcoal/70">Weeks to Elegance</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="pt-8 pb-20 md:pt-12 md:pb-32 bg-luxury-warm-white relative">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What You Receive</h2>
-            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-              Every consultation is tailored to celebrate your individuality and elevate your personal style.
-            </p>
-          </div>
-
-          {/* Report Preview — Interactive Lookbook Mockup */}
-          <div className="mb-20 md:mb-32 max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Your Deliverable</p>
-              <h3 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">What Your Blueprint Actually Looks Like</h3>
-            </div>
-
-            {/* Browser Frame */}
-            <div className="relative rounded-2xl overflow-hidden border border-luxury-cream shadow-2xl">
-              {/* macOS-style title bar */}
-              <div className="bg-[#f0ede8] px-5 py-3 flex items-center gap-3 border-b border-[#e8e4de]">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                  <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                  <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="bg-white/70 rounded-full px-5 py-1.5 text-[10px] text-luxury-charcoal/40 luxury-body tracking-wide">
-                                    iconik.pro/your-blueprint
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable Report Content */}
-              <div className="h-[640px] overflow-y-auto overflow-x-hidden bg-[#faf9f6]" style={{ scrollbarWidth: 'thin', scrollbarColor: '#e8e4de transparent' }}>
-
-                {/* Report Nav */}
-                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-[#f0ede8] px-6 md:px-10 h-14 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 bg-black flex items-center justify-center">
-                      <Sparkles className="text-[#b58e4d]" size={14} />
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                      {[
+                        { label: 'Shoulder–Hip Balance', value: 'Symmetrical — balanced frame' },
+                        { label: 'Waist Definition', value: 'Naturally defined — visible curve' },
+                        { label: 'Torso Length', value: 'Average — standard proportions' },
+                        { label: 'Vertical Line', value: 'Elongated — good height ratio' },
+                      ].map((row) => (
+                        <div key={row.label}>
+                          <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
+                          <span style={{ fontSize: '12px', color: '#2C2622', fontWeight: 300 }}>{row.value}</span>
+                        </div>
+                      ))}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">Iconik <span className="text-[#b58e4d]">Blueprint</span></span>
-                  </div>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">Pro Edition // 2025</span>
-                </div>
-
-                {/* Report Header */}
-                <div className="px-6 md:px-10 py-10 border-b border-[#f0ede8] bg-white">
-                  <div className="flex items-center gap-3 text-[#b58e4d] text-[9px] font-black uppercase tracking-[0.4em] mb-3">
-                    <CheckCircle className="w-4 h-4" /> Analysis Verified
-                  </div>
-                  <h2 className="text-4xl md:text-6xl luxury-heading text-black italic tracking-tighter leading-none">The Lookbook</h2>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <span className="px-4 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Hourglass Profile</span>
-                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">Oval Face</span>
-                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">14 Ensembles</span>
-                  </div>
-                </div>
-
-                {/* ── Slide 1: Body Shape Analysis ── */}
-                <div className="bg-white border-b border-[#f0ede8]">
-                  <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] flex items-center gap-3">
-                    <div className="h-px flex-1 bg-[#f0ede8]" />
-                    <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 01 — Geometric Silhouette Profile™</span>
-                    <div className="h-px flex-1 bg-[#f0ede8]" />
-                  </div>
-                  <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto bg-[#f5f3ef] flex-shrink-0 border-r border-[#f0ede8]">
-                      <Image src="/report-body-shape.webp" alt="Body Shape Analysis" width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
+                    <div className="pl-5 py-1" style={{ borderLeft: '2px solid rgba(154,125,74,0.2)' }}>
+                      <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Styling Directive</p>
+                      <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;Celebrate the natural waist. Avoid boxy, shapeless silhouettes. Always define the middle — belted, wrap, or fitted waistbands are your friend.&rdquo;</p>
                     </div>
-                    <div className="flex-1 p-6 md:p-10">
-                      <div className="flex items-center gap-4 mb-6">
-                        <span className="px-5 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Hourglass</span>
-                        <span className="text-xs text-gray-400 font-light">Your dominant body geometry</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 02: Face Shape */}
+              <div style={{ background: '#faf9f6', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+                  <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 02 — FACIAL ARCHITECTURE ANALYSIS™</span>
+                  <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                </div>
+                <div className="flex flex-col md:flex-row" style={{ background: '#fff' }}>
+                  <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto flex-shrink-0 overflow-hidden" style={{ borderRight: '1px solid rgba(44,38,34,0.06)', background: '#f5f3ef' }}>
+                    <Image src="/report-face-shape.webp" alt="Face Shape Analysis" width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                  <div className="flex-1 p-6 md:p-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Recommended For You</p>
+                        <div className="space-y-3">
+                          {[
+                            { label: 'Necklines', value: 'V-neck, scoop, off-shoulder — all work' },
+                            { label: 'Earrings', value: 'Any shape — studs to chandeliers' },
+                            { label: 'Collar', value: 'Open collars, notch lapels, boat neck' },
+                            { label: 'Eyewear', value: 'Square, cat-eye, aviator frames' },
+                          ].map((item) => (
+                            <div key={item.label}>
+                              <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{item.label}</span>
+                              <span style={{ fontSize: '12px', color: '#2C2622', fontWeight: 300 }}>{item.value}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 mb-8">
-                        {[
-                          { label: 'Shoulder–Hip Balance', value: 'Symmetrical — balanced frame' },
-                          { label: 'Waist Definition', value: 'Naturally defined — visible curve' },
-                          { label: 'Torso Length', value: 'Average — standard proportions' },
-                          { label: 'Vertical Line', value: 'Elongated — good height ratio' },
-                        ].map((row, idx) => (
-                          <div key={idx}>
-                            <span className="text-[#b58e4d] font-black uppercase text-[8px] tracking-[0.2em] block mb-0.5">{row.label}</span>
-                            <span className="text-xs text-black font-light">{row.value}</span>
+                      <div>
+                        <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Avoid</p>
+                        <div className="space-y-2">
+                          {['Overly round or circular earrings', 'Heavy turtlenecks that shorten neck', 'Round wire-frame glasses'].map((item) => (
+                            <div key={item} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-red-300" />
+                              <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, fontWeight: 300 }}>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 03: Chromatic */}
+              <div style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                  <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 03 — CHROMATIC HARMONY MAP™</span>
+                  <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                </div>
+                <div className="p-6 md:p-10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Warm Undertone · Medium Depth</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Your 10 Colours</p>
+                      <div className="grid grid-cols-5 gap-2 mb-3">
+                        {['#C4956A','#8B6914','#D4A853','#7C4A1E','#E8C99A','#5C3D2E','#F0E0C8','#9E6B3F','#3D2B1F','#B8860B'].map((hex) => (
+                          <div key={hex} className="aspect-square rounded-lg shadow-sm" style={{ background: hex, border: '1px solid rgba(44,38,34,0.06)' }} />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Eliminate These 4</p>
+                      <div className="grid grid-cols-4 gap-2 mb-3">
+                        {['#E8E8F0','#C8D8E8','#F0E8F8','#D0E8D0'].map((hex) => (
+                          <div key={hex} className="aspect-square rounded-lg relative shadow-sm" style={{ background: hex, border: '2px solid rgba(239,68,68,0.3)' }}>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-full h-px bg-red-300 rotate-45 absolute" />
+                              <div className="w-full h-px bg-red-300 -rotate-45 absolute" />
+                            </div>
                           </div>
                         ))}
                       </div>
-                      <div className="border-l-2 border-[#b58e4d]/20 pl-5 py-1">
-                        <p className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.3em] mb-2 italic">Styling Directive</p>
-                        <p className="text-xs text-gray-500 font-light italic leading-relaxed">&ldquo;Celebrate the natural waist. Avoid boxy, shapeless silhouettes. Always define the middle — belted, wrap, or fitted waistbands are your friend.&rdquo;</p>
-                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* ── Slide 2: Face Shape Analysis ── */}
-                <div className="bg-[#faf9f6] border-b border-[#f0ede8]">
-                  <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] flex items-center gap-3">
-                    <div className="h-px flex-1 bg-[#e8e4de]" />
-                    <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 02 — Facial Architecture Analysis™</span>
-                    <div className="h-px flex-1 bg-[#e8e4de]" />
-                  </div>
-                  <div className="flex flex-col md:flex-row bg-white">
-                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto bg-[#f5f3ef] flex-shrink-0 border-r border-[#f0ede8]">
-                      <Image src="/report-face-shape.webp" alt="Face Shape Analysis" width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
-                    </div>
-                    <div className="flex-1 p-6 md:p-10">
-                      <div className="flex items-center gap-4 mb-6">
-                        <span className="px-5 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Oval Face</span>
-                        <span className="text-xs text-gray-400 font-light">Your facial geometry</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Recommended For You</p>
-                          <div className="space-y-3">
-                            {[
-                              { label: 'Necklines', value: 'V-neck, scoop, off-shoulder — all work' },
-                              { label: 'Earrings', value: 'Any shape — studs to chandeliers' },
-                              { label: 'Collar', value: 'Open collars, notch lapels, boat neck' },
-                              { label: 'Eyewear', value: 'Square, cat-eye, aviator frames' },
-                            ].map((item, idx) => (
-                              <div key={idx}>
-                                <span className="text-[#b58e4d] font-black uppercase text-[8px] tracking-[0.2em] block mb-0.5">{item.label}</span>
-                                <span className="text-xs text-black font-light">{item.value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Avoid</p>
-                          <div className="space-y-2">
-                            {['Overly round or circular earrings', 'Heavy turtlenecks that shorten neck', 'Round wire-frame glasses'].map((item, idx) => (
-                              <div key={idx} className="flex items-start gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-300 mt-1.5 flex-shrink-0" />
-                                <span className="text-xs text-gray-500 font-light">{item}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Slide 3: Chromatic Harmony Map ── */}
-                <div className="bg-white border-b border-[#f0ede8]">
-                  <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] flex items-center gap-3">
-                    <div className="h-px flex-1 bg-[#f0ede8]" />
-                    <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 03 — Chromatic Harmony Map™</span>
-                    <div className="h-px flex-1 bg-[#f0ede8]" />
-                  </div>
-                  <div className="p-6 md:p-10">
-                    <div className="flex items-center gap-4 mb-8">
-                      <span className="px-5 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Warm Undertone · Medium Depth</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                      {/* Your Palette */}
-                      <div>
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Your 10 Colours</p>
-                        <div className="grid grid-cols-5 gap-2 mb-4">
-                          {['#C4956A','#8B6914','#D4A853','#7C4A1E','#E8C99A','#5C3D2E','#F0E0C8','#9E6B3F','#3D2B1F','#B8860B'].map((hex, idx) => (
-                            <div key={idx} className="flex flex-col items-center gap-1.5">
-                              <div className="w-full aspect-square rounded-lg border border-[#f0ede8] shadow-sm" style={{ backgroundColor: hex }} />
-                              <span className="text-[7px] font-bold text-gray-400 uppercase tracking-wide">{hex}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-[9px] text-gray-400 font-light italic">Warm earth tones, golden ochres, rich browns — all enhance your natural depth</p>
-                      </div>
-                      {/* Eliminate */}
-                      <div>
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-5">Eliminate These 4</p>
-                        <div className="grid grid-cols-4 gap-2 mb-4">
-                          {['#E8E8F0','#C8D8E8','#F0E8F8','#D0E8D0'].map((hex, idx) => (
-                            <div key={idx} className="flex flex-col items-center gap-1.5">
-                              <div className="w-full aspect-square rounded-lg border-2 border-red-200 relative shadow-sm" style={{ backgroundColor: hex }}>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-full h-px bg-red-300 rotate-45 absolute" />
-                                  <div className="w-full h-px bg-red-300 -rotate-45 absolute" />
-                                </div>
-                              </div>
-                              <span className="text-[7px] font-bold text-red-300 uppercase tracking-wide">{hex}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-[9px] text-gray-400 font-light italic">Cool pastels and icy tones wash out your warm depth and create contrast imbalance</p>
-                        <div className="mt-6 border-l-2 border-[#b58e4d]/20 pl-4">
-                          <p className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.3em] mb-1 italic">Shopping Note</p>
-                          <p className="text-xs text-gray-500 font-light italic">Real examples from Myntra &amp; Ajio included in your full Blueprint</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Slide 4: Outfit Cards ── */}
-                <div className="px-6 md:px-10 py-6 border-b border-[#f0ede8] bg-[#faf9f6] flex items-center gap-3">
-                  <div className="h-px flex-1 bg-[#e8e4de]" />
-                  <span className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.5em]">Section 04 — Your 14 Outfit Formulas</span>
-                  <div className="h-px flex-1 bg-[#e8e4de]" />
-                </div>
-
-                {[
-                  {
-                    category: 'Corporate',
-                    title: 'The Power Silhouette',
-                    img: '/report-preview-1.webp',
-                    items: [
-                      { label: 'Top', value: 'Structured blazer in ivory — strong shoulders, nipped waist' },
-                      { label: 'Bottom', value: 'Straight-cut trousers in slate grey, ankle-length' },
-                      { label: 'Footwear', value: 'Block heel mules in nude — elongates the leg line' },
-                      { label: 'Handbag', value: 'Structured tote in cognac leather' },
-                      { label: 'Jewelry', value: 'Gold bar earrings + thin watch — clean authority' },
-                    ],
-                    rationale: 'The vertical line created by the blazer lapel draws the eye upward and visually lengthens the torso. Straight trousers maintain the hourglass definition without adding bulk at the hip.',
-                    tags: ['Cotton Poplin', 'Ponte Knit', 'Structured Lining'],
-                  },
-                  {
-                    category: 'Occasion',
-                    title: 'The Festive Edit',
-                    img: '/report-preview-2.webp',
-                    items: [
-                      { label: 'Top', value: 'Draped kurta in deep teal silk — V-neck to elongate' },
-                      { label: 'Bottom', value: 'Flared palazzo in matching teal — continuous vertical line' },
-                      { label: 'Footwear', value: 'Heeled kolhapuris in antique gold' },
-                      { label: 'Handbag', value: 'Embroidered clutch in bronze' },
-                      { label: 'Jewelry', value: 'Statement jhumkas + minimal neckpiece' },
-                    ],
-                    rationale: 'A monochromatic head-to-toe in a deep tone creates a clean, unbroken vertical that flatters the hourglass by not interrupting the waist definition.',
-                    tags: ['Raw Silk', 'Chiffon Layer', 'Zari Embroidery'],
-                  },
-                ].map((look, i) => (
-                  <div key={i} className="flex flex-col md:flex-row bg-white border-b border-[#f0ede8]">
-                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto bg-[#f5f3ef] flex-shrink-0 overflow-hidden border-r border-[#f0ede8]">
+              {/* Section 04: Outfit teaser */}
+              <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#faf9f6' }}>
+                <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR 14 OUTFIT FORMULAS</span>
+                <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+              </div>
+              {[
+                {
+                  category: 'Corporate',
+                  title: 'The Power Silhouette',
+                  img: '/report-preview-1.webp',
+                  items: [
+                    { label: 'Top', value: 'Structured blazer in ivory — strong shoulders, nipped waist' },
+                    { label: 'Bottom', value: 'Straight-cut trousers in slate grey, ankle-length' },
+                    { label: 'Footwear', value: 'Block heel mules in nude — elongates the leg line' },
+                    { label: 'Handbag', value: 'Structured tote in cognac leather' },
+                    { label: 'Jewelry', value: 'Gold bar earrings + thin watch — clean authority' },
+                  ],
+                  rationale: 'The vertical line created by the blazer lapel draws the eye upward and visually lengthens the torso. Straight trousers maintain the hourglass definition without adding bulk at the hip.',
+                },
+                {
+                  category: 'Occasion',
+                  title: 'The Festive Edit',
+                  img: '/report-preview-2.webp',
+                  items: [
+                    { label: 'Top', value: 'Draped kurta in deep teal silk — V-neck to elongate' },
+                    { label: 'Bottom', value: 'Flared palazzo in matching teal — continuous vertical line' },
+                    { label: 'Footwear', value: 'Heeled kolhapuris in antique gold' },
+                    { label: 'Handbag', value: 'Embroidered clutch in bronze' },
+                    { label: 'Jewelry', value: 'Statement jhumkas + minimal neckpiece' },
+                  ],
+                  rationale: 'A monochromatic head-to-toe in a deep tone creates a clean, unbroken vertical that flatters the hourglass by not interrupting the waist definition.',
+                },
+              ].map((look, i) => (
+                <div key={i} style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
+                  <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-[220px] aspect-[4/5] md:aspect-auto flex-shrink-0 overflow-hidden" style={{ borderRight: '1px solid rgba(44,38,34,0.06)', background: '#f5f3ef' }}>
                       <Image src={look.img} alt={look.title} width={220} height={275} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                     <div className="flex-1 p-6 md:p-10">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-[#b58e4d] text-[9px] font-black uppercase tracking-[0.4em]">{look.category} Ensemble</span>
-                        <div className="h-px w-8 bg-[#b58e4d]/30" />
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.4em', fontWeight: 700 }}>{look.category} Ensemble</span>
                       </div>
-                      <h3 className="text-2xl md:text-3xl luxury-heading text-black italic mb-6 leading-tight">{look.title}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                      <div className="iconik-display-it mb-5" style={{ fontSize: 'clamp(22px, 3vw, 30px)', color: '#2C2622' }}>{look.title}</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-4">Composition</p>
+                          <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Composition</p>
                           <div className="space-y-3">
-                            {look.items.map((item, idx) => (
-                              <div key={idx}>
-                                <span className="text-[#b58e4d] font-black uppercase text-[8px] tracking-[0.2em] block mb-0.5">{item.label}</span>
-                                <span className="text-xs text-black font-light leading-relaxed">{item.value}</span>
+                            {look.items.map((item) => (
+                              <div key={item.label}>
+                                <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{item.label}</span>
+                                <span style={{ fontSize: '12px', color: '#2C2622', fontWeight: 300 }}>{item.value}</span>
                               </div>
                             ))}
                           </div>
                         </div>
-                        <div className="space-y-6">
-                          <div className="border-l-2 border-[#b58e4d]/20 pl-5 py-1">
-                            <p className="text-[9px] font-black text-[#b58e4d] uppercase tracking-[0.3em] mb-2 italic">Stylist Rationale</p>
-                            <p className="text-xs text-gray-500 font-light italic leading-relaxed">&ldquo;{look.rationale}&rdquo;</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Fabric & Texture</p>
-                            <div className="flex flex-wrap gap-2">
-                              {look.tags.map((tag, idx) => (
-                                <span key={idx} className="px-3 py-1.5 border border-[#f0ede8] text-gray-400 text-[8px] font-black uppercase tracking-widest rounded-full bg-[#faf9f6]">{tag}</span>
-                              ))}
-                            </div>
-                          </div>
+                        <div className="pl-5 py-1 self-start" style={{ borderLeft: '2px solid rgba(154,125,74,0.2)' }}>
+                          <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Stylist Rationale</p>
+                          <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.5, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;{look.rationale}&rdquo;</p>
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
-
-                {/* More outfits teaser */}
-                <div className="bg-white px-6 md:px-10 py-10 text-center">
-                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.5em]">+ 12 More Ensembles in Your Blueprint</p>
                 </div>
-
-              </div>
-
-              {/* Bottom fade + scroll cue */}
-              <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#faf9f6] to-transparent pointer-events-none rounded-b-2xl" />
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-luxury-charcoal/30">
-                <span>Scroll to explore</span>
-                <ArrowRight size={10} className="rotate-90" />
-              </div>
-            </div>
-          </div>
-
-          {/* Feature Cards */}
-          <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-10 md:mb-16">
-            <p className="text-xs luxury-body text-luxury-charcoal/40 uppercase tracking-[0.3em] mb-3">Everything Inside</p>
-            <h3 className="text-2xl md:text-3xl luxury-heading text-luxury-charcoal">The 6 Sections of Your Blueprint</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto px-4 md:px-6 lg:px-8">
-            {[
-              {
-                icon: '/icon1.webp',
-                title: "Geometric Silhouette Profile™",
-                description: "Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame"
-              },
-              {
-                icon: '/icon2.webp',
-                title: "16 Outfit Formulas",
-                description: "Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions"
-              },
-              {
-                icon: '/icon3.webp',
-                title: "Facial Architecture Analysis™",
-                description: "Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance"
-              },
-              {
-                icon: '/icon4.webp',
-                title: "Chromatic Harmony Map™",
-                description: "10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio"
-              },
-              {
-                icon: '/icon5.webp',
-                title: "Concern Zone Solutions",
-                description: "Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it — with the science behind why"
-              },
-              {
-                icon: '/icon6.webp',
-                title: "30-Minute Stylist Consultation",
-                description: "A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first"
-              }
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="p-5 md:p-6 bg-luxury-cream/40 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 rounded-xl hover:-translate-y-1 group"
-              >
-                <div className="flex flex-col items-start space-y-3">
-                  <div className="group-hover:scale-110 transition-transform duration-300">
-                    <Image src={item.icon} alt={item.title} width={40} height={40} className="w-10 h-10 object-contain" />
-                  </div>
-                  <h3 className="text-sm md:text-base luxury-heading text-luxury-charcoal">{item.title}</h3>
-                  <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/70 leading-relaxed">{item.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </section>
-
-        {/* Book Image Card - Moved Lower */}
-        <section className="py-20 md:py-32 bg-luxury-warm-white">
-          <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-luxury-cream/50 backdrop-blur-sm rounded-3xl p-8 md:p-12 lg:p-16 border border-luxury-cream"
-            >
-              <div className="text-center">
-                <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto mb-4 md:mb-6">
-                  <Image
-                    src="/book.png"
-                    alt="ICONIK Style Guide Preview"
-                    width={400}
-                    height={400}
-                    sizes="(max-width: 768px) 256px, (max-width: 1024px) 320px, 384px"
-                    loading="lazy"
-                    className="object-contain drop-shadow-2xl"
-                  />
-                </div>
-                <h3 className="text-2xl md:text-3xl lg:text-4xl luxury-heading text-luxury-charcoal mb-4">
-                  Your Personal Style Guide
-                </h3>
-                <p className="luxury-body text-luxury-charcoal/70 text-lg md:text-xl">
-                  Comprehensive style transformation roadmap
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Micro Case Studies Section */}
-        <section id="testimonials" className="py-20 md:py-32 bg-luxury-cream/20">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">What the Blueprint actually found</h2>
-            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-              Three women. Three different geometries. Three specific solutions.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            {[
-              {
-                name: 'Priya',
-                age: '28',
-                city: 'Mumbai',
-                image: '/testimonial-priya.webp',
-                concern: ['Post-partum tummy, avoided', 'fitted anything for 2 years'],
-                finding: ['Rectangle frame', 'Deep warm autumn undertone'],
-                changed: ['Straight kurtas replaced flowy tops', 'Dark autumn palette introduced', 'Peplum added for occasions'],
-                quote: 'I stopped hiding. I started showing up.',
-                stars: 5,
-              },
-              {
-                name: 'Ananya',
-                age: '32',
-                city: 'Delhi',
-                image: '/testimonial-ananya.webp',
-                concern: ['Heavy arms, wore full', 'sleeves in 35° heat'],
-                finding: ['Inverted triangle frame', 'Cool neutral undertone'],
-                changed: ['Cap sleeves + flutter sleeves introduced', 'Raglan cuts for shoulder balance', 'Eliminated black-only dressing'],
-                quote: 'Everyone keeps asking if I lost weight',
-                stars: 5,
-              },
-              {
-                name: 'Shreya',
-                age: '26',
-                city: 'Bangalore',
-                image: '/testimonial-shreya.webp',
-                concern: ['Petite frame, felt', 'overwhelmed by fabric'],
-                finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'],
-                changed: ['Monochromatic dressing introduced', 'Hem lengths calibrated precisely', 'Accessories scaled to frame'],
-                quote: 'Shopping is no longer overwhelming.',
-                stars: 4,
-              },
-            ].map((c, index) => (
-              <div
-                key={index}
-                className="bg-luxury-warm-white/80 backdrop-blur-sm border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 rounded-2xl overflow-hidden hover:-translate-y-2 group"
-              >
-                {/* Photo */}
-                <div className="aspect-square bg-luxury-cream/50 overflow-hidden">
-                  <Image
-                    src={c.image}
-                    alt={c.name}
-                    width={300}
-                    height={300}
-                    sizes="(max-width: 768px) 90vw, 300px"
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <div className="p-6 md:p-8 space-y-5">
-                  {/* Name */}
-                  <div>
-                    <p className="luxury-heading text-luxury-charcoal text-lg leading-none">{c.name} · {c.age} · {c.city}</p>
-                    <div className="mt-3 h-px bg-luxury-cream" />
-                  </div>
-
-                  {/* Concern */}
-                  <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Concern</span>
-                    <span className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{c.concern.join(' ')}</span>
-                  </div>
-
-                  {/* Finding */}
-                  <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Finding</span>
-                    <div className="space-y-0.5">
-                      {c.finding.map((f, i) => (
-                        <p key={i} className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{f}</p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Changed */}
-                  <div className="grid grid-cols-[80px_1fr] gap-x-3 items-start">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-luxury-charcoal/40 pt-0.5">Changed</span>
-                    <div className="space-y-1">
-                      {c.changed.map((ch, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <div className="w-1 h-1 rounded-full bg-luxury-green mt-1.5 flex-shrink-0" />
-                          <p className="luxury-body text-luxury-charcoal/80 text-sm leading-snug">{ch}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="h-px bg-luxury-cream" />
-
-                  {/* Quote + Stars */}
-                  <div>
-                    <p className="luxury-body text-luxury-charcoal italic text-sm leading-relaxed mb-3">&ldquo;{c.quote}&rdquo;</p>
-                    <div className="flex gap-1">
-                      {[...Array(c.stars)].map((_, i) => (
-                        <Star key={i} className="h-3.5 w-3.5 text-luxury-gold fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 md:py-32 bg-luxury-warm-white">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
-            <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">Investment</h2>
-            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-              Select a package that aligns with your journey to elegance.
-            </p>
-          </div>
-
-          {/* Main Product */}
-          <div className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 mb-8 md:mb-12">
-            <div className="bg-luxury-cream/40 backdrop-blur-sm rounded-2xl border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 overflow-hidden hover:-translate-y-1">
-              <div className="p-6 md:p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl md:text-3xl luxury-heading mb-3 text-luxury-charcoal">
-                    ICONIK Style Consultation
-                  </h3>
-                  <div className="text-2xl md:text-3xl font-semibold mb-2 text-luxury-green">{formattedBasePrice}</div>
-                  <p className="text-base md:text-lg luxury-subheading text-luxury-charcoal/70">
-                    Complete personal style transformation
-                  </p>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="text-lg luxury-heading mb-6 text-luxury-charcoal text-center">What&apos;s Included:</h4>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 max-w-2xl mx-auto">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        Complete style assessment tailored to your features
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        Personalized color palette that makes your skin glow
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        Body-flattering silhouettes that work with your shape
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        Hair & beauty advice for your unique features
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        20-minute one-on-one call with expert stylist
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        16 Styled Looks for every occasion
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
-                      <span className="luxury-body text-luxury-charcoal/80 text-sm">
-                        Beauty and Makeup Plan personalized for you
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="text-center">
-                  <Link
-                    href={checkoutHref}
-                    onClick={() => {
-                      trackCTAClick('Style Consultation', 'Pricing Section', basePrice, 'INR', 'India');
-                    }}
-                    className="inline-flex items-center bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-10 py-3 rounded-full text-base luxury-body hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    ✨ Get Your Style Consultation
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-
-
-        </section>
-
-
-        {/* Before/After Visual Section */}
-        <section className="py-16 md:py-24 px-4 bg-gradient-to-b from-gray-50 to-white">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              style={{ willChange: 'transform' }}
-              className="text-center mb-12 md:mb-16"
-            >
-              <h2 className="text-4xl md:text-6xl luxury-heading mb-4 text-luxury-charcoal">
-                The Blueprint in practice
-              </h2>
-              <p className="text-xl md:text-2xl luxury-subheading text-luxury-charcoal/70 max-w-3xl mx-auto">
-                Real clients. Specific findings. Measurable change.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-              {[
-                {
-                  before: '/style-before.webp',
-                  after: '/style-after.webp',
-                  beforeLabel: 'Before — avoiding structure entirely',
-                  afterLabel: 'After — Geometric Silhouette Profile™ applied',
-                  caption: 'Rekha, 34, Bangalore · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, cap sleeves, dark palette'
-                },
-                {
-                  before: '/wardrobe-before.webp',
-                  after: '/wardrobe-after.webp',
-                  beforeLabel: 'Before — dressing to hide',
-                  afterLabel: 'After — Concern Zone Solutions applied',
-                  caption: 'Ananya, 29, Mumbai · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line kurtas, deep cool palette'
-                }
-              ].map((comparison, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.2 }}
-                  style={{ willChange: 'transform' }}
-                  className="group relative"
-                >
-                  <div className="bg-luxury-warm-white/80 backdrop-blur-sm rounded-3xl p-6 md:p-10 border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-2">
-                    <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6">
-                      <div>
-                        <p className="text-[10px] font-semibold text-luxury-charcoal/50 uppercase tracking-widest mb-3 leading-tight">{comparison.beforeLabel}</p>
-                        <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                          <Image
-                            src={comparison.before}
-                            alt={comparison.beforeLabel}
-                            width={250}
-                            height={250}
-                            sizes="(max-width: 768px) 45vw, 250px"
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-[10px] font-semibold text-luxury-green uppercase tracking-widest mb-3 leading-tight">{comparison.afterLabel}</p>
-                        <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-rose-100 to-pink-100">
-                          <Image
-                            src={comparison.after}
-                            alt={comparison.afterLabel}
-                            width={250}
-                            height={250}
-                            sizes="(max-width: 768px) 45vw, 250px"
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-rose-200/30 via-transparent to-transparent" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs md:text-sm luxury-body text-luxury-charcoal/60 leading-relaxed border-t border-luxury-cream pt-4">{comparison.caption}</p>
-                  </div>
-                </motion.div>
               ))}
+
+              <div className="px-6 md:px-10 py-10 text-center" style={{ background: '#fff' }}>
+                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ 12 More Ensembles in Your Blueprint</span>
+              </div>
+            </div>
+
+            {/* Bottom fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none rounded-b-2xl" style={{ background: 'linear-gradient(to top, #faf9f6, transparent)' }} />
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <span className="iconik-mono opacity-30" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Scroll to explore</span>
+              <ArrowRight size={10} className="rotate-90 opacity-30" style={{ color: '#2C2622' }} />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Problem Section */}
-        <section className="py-20 md:py-32 px-4 bg-luxury-warm-white">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-8 md:mb-16"
-            >
-              <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-charcoal">
-                Sound Familiar?
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-              {[
-                {
-                  num: '01',
-                  text: 'You get dressed every morning and something still feels off. Not wrong exactly. Just never quite right.',
-                  image: '/feeling-overlooked1.webp',
-                  imageAlt: 'Woman at mirror'
-                },
-                {
-                  num: '02',
-                  text: "You've tried the body type guides. The Pinterest boards. The 'flattering for pears' articles. Nothing has stuck.",
-                  image: '/style-confusion1.webp',
-                  imageAlt: 'Woman with clothes'
-                },
-                {
-                  num: '03',
-                  text: "The weight hasn't changed. The budget hasn't changed. But every outfit still feels like a compromise.",
-                  image: '/confidence-issues1.webp',
-                  imageAlt: 'Woman looking at mirror side-on'
-                }
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.2 }}
-                  className="group relative bg-luxury-cream/40 backdrop-blur-sm rounded-3xl p-6 md:p-8 lg:p-10 border border-luxury-cream hover:bg-luxury-cream/60 transition-all duration-300 hover:-translate-y-2"
-                >
-                  <div className="relative w-full aspect-square mb-6 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-                    <Image
-                      src={item.image}
-                      alt={item.imageAlt}
-                      width={300}
-                      height={300}
-                      sizes="(max-width: 640px) 90vw, (max-width: 768px) 45vw, 300px"
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                  </div>
-
-                  <span className="block luxury-heading text-2xl mb-4 leading-none" style={{ color: '#b58e4d' }}>{item.num}</span>
-                  <p className="luxury-body text-luxury-charcoal/80 text-base md:text-lg leading-relaxed">{item.text}</p>
-
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                </motion.div>
-              ))}
-            </div>
+      {/* ── SECTION 4: What's Inside ──────────────────────────────────────── */}
+      <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Everything Inside</div>
+            <div className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>The 6 Sections of Your Blueprint</div>
           </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section id="faq" className="py-20 md:py-32 bg-luxury-cream/20">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-5xl luxury-heading mb-4 text-luxury-charcoal">
-              Frequently Asked Questions
-            </h2>
-            <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-base md:text-lg">
-              Everything you need to know about our consultations.
-            </p>
-          </div>
-          <div className="max-w-4xl mx-auto space-y-4">
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
-                className="text-left p-5 md:p-6 bg-luxury-warm-white/80 backdrop-blur-sm rounded-xl border border-luxury-cream hover:bg-luxury-warm-white transition-all duration-300 hover:-translate-y-1"
-              >
-                <h3 className="text-base md:text-lg luxury-heading mb-2 text-luxury-charcoal">{faq.question}</h3>
-                <p className="luxury-body text-luxury-charcoal/80 text-sm md:text-base leading-relaxed">{faq.answer}</p>
+          <div className="max-w-2xl mx-auto">
+            {blueprintItems.map((item, i) => (
+              <div key={i} className="flex items-start gap-5 py-5 transition-all duration-300" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+                {item.icon}
+                <div>
+                  <div className="iconik-display mb-1" style={{ fontSize: '17px', color: '#2C2622' }}>{item.title}</div>
+                  <p style={{ fontSize: '13px', lineHeight: 1.75, color: '#2C2622', opacity: 0.6 }}>{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
-        </section>
-
-        {/* Final CTA Section */}
-        <section className="py-20 md:py-32 px-4 bg-luxury-accent">
-          <div className="max-w-4xl mx-auto text-center text-luxury-warm-white">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <h2 className="text-4xl md:text-6xl luxury-heading mb-8 text-luxury-warm-white">
-                Ready to Discover Your Signature Style?
-              </h2>
-              <p className="text-xl md:text-2xl luxury-subheading mb-12 opacity-90 max-w-2xl mx-auto">
-                Join 200+ women who have already transformed their confidence and discovered their elegant style
-              </p>
-              <div className="space-y-8">
-                <Link
-                  href={checkoutHref}
-                  onClick={() => {
-                    // Track final CTA click with Meta Pixel
-                    trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', 'India');
-                  }}
-                  className="group relative inline-flex items-center justify-center bg-luxury-warm-white/95 backdrop-blur-xl text-luxury-charcoal px-12 py-5 rounded-full text-xl luxury-body hover:shadow-2xl hover:scale-105 transition-all duration-500 border border-luxury-warm-white/30"
-                >
-                  <span className="relative z-10">✨ Start Your ICONIK Transformation Today</span>
-                  {/* Glass shine effect */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-luxury-warm-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                </Link>
-
-                {/* Trust & Urgency */}
-                <div className="max-w-sm mx-auto space-y-4">
-                  <div className="bg-luxury-warm-white/10 backdrop-blur-xl border border-luxury-warm-white/20 rounded-2xl p-6 text-center">
-                    <p className="luxury-body text-luxury-warm-white text-lg">⏰ Limited Time Offer</p>
-                    <p className="luxury-body text-luxury-warm-white/80">Only 15 slots available this week</p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-6 luxury-body text-luxury-warm-white/80">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-luxury-gold rounded-full"></div>
-                      <span>7-Day Money Back</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-luxury-gold rounded-full"></div>
-                      <span>200+ Success Stories</span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="luxury-body opacity-75 text-center">{formattedBasePrice} + GST • Limited slots available</p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        <ExploreLinksSection
-          eyebrow="Knowledge Hub"
-          title="Learn Before You Buy"
-          description="Use the pages below to understand how Iconik works, what it costs, and the methodology behind the recommendations."
-          groups={footerExploreGroups}
-          className="bg-luxury-cream/20"
-        />
-
-        {/* Footer */}
-        <footer className="py-20 bg-luxury-cream/30 border-t border-luxury-cream">
-          <div className="max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-              {/* Brand */}
-              <div className="md:col-span-2">
-                <div className="text-3xl luxury-heading text-luxury-charcoal mb-6">ICONIK</div>
-                <p className="luxury-body text-luxury-charcoal/70 mb-6 max-w-md leading-relaxed">
-                  Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
-                </p>
-                <div className="flex gap-4">
-                  <a
-                    href={`mailto:${SUPPORT_EMAIL}`}
-                    className="luxury-body text-luxury-charcoal/60 hover:text-luxury-green transition-colors"
-                  >
-                    {SUPPORT_EMAIL}
-                  </a>
-                </div>
-              </div>
-
-              {/* Quick Links */}
-              <div>
-                <h3 className="luxury-heading text-luxury-charcoal mb-6">Quick Links</h3>
-                <ul className="space-y-3">
-                  <li>
-                    <a
-                      href="#features"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Features
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#testimonials"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Stories
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#pricing"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Pricing
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#faq"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      FAQ
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Legal & Support */}
-              <div>
-                <h3 className="luxury-heading text-luxury-charcoal mb-6">Legal & Support</h3>
-                <ul className="space-y-3">
-                  <li>
-                    <Link
-                      href="/about"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      About Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/contact"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Contact Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/shipping"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Shipping & Delivery
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/refund-policy"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Refund Policy
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/terms"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Terms of Service
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/privacy-policy"
-                      className="luxury-body text-luxury-charcoal/70 hover:text-luxury-green transition-colors"
-                    >
-                      Privacy Policy
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-luxury-cream pt-8 text-center">
-              <p className="luxury-body text-luxury-charcoal/60">
-                © {new Date().getFullYear()} Iconik. All rights reserved. | Scientific styling for Indian women.
-              </p>
-              <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
-                Business Legal Name: MITHIL NILESH NAVALAKHA
-              </p>
-              <p className="luxury-body text-luxury-charcoal/50 text-sm mt-1">
-                Results may vary. Individual success depends on effort and commitment to the program.
-              </p>
-            </div>
-          </div>
-        </footer>
-
-        {/* Sticky Mobile CTA */}
-        <div className="fixed bottom-0 left-0 right-0 bg-luxury-warm-white/98 backdrop-blur-xl border-t border-luxury-cream p-3 md:hidden z-50">
-          <div className="max-w-sm mx-auto">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex-1">
-                <div className="luxury-body text-luxury-charcoal/70 text-xs">Complete Package</div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-base font-semibold text-luxury-green">{formattedBasePrice}</span>
-                  <span className="line-through text-luxury-charcoal/40 text-xs">{formattedOriginalPrice}</span>
-                </div>
-              </div>
-              <div className="text-right ml-2">
-                <div className="luxury-body text-luxury-charcoal/60 text-xs">Expires:</div>
-                <div className="luxury-body text-luxury-green text-sm font-medium">
-                  {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-                </div>
-              </div>
-            </div>
+          <div className="text-center mt-12">
             <Link
               href={checkoutHref}
-              onClick={() => {
-                // Track CTA click with Meta Pixel
-                trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', 'India');
-              }}
-              className="w-full bg-luxury-accent hover:bg-luxury-accent/80 text-luxury-warm-white px-6 py-4 text-lg rounded-full transition-all duration-300 luxury-body text-center block font-semibold shadow-lg hover:shadow-xl"
+              onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', 'India')}
+              className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
             >
-              Begin Your Transformation
+              <span className="iconik-display" style={{ fontSize: '15px' }}>Get Your Style Consultation</span>
+              <ArrowRight className="h-4 w-4 opacity-60" />
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* ── SECTION 5: Personal Style Guide ─────────────────────────────── */}
+      <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="rounded-3xl p-8 md:p-12" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
+            <div className="text-center">
+              <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
+                <Image src="/book.png" alt="ICONIK Style Guide Preview" width={400} height={400} className="object-contain drop-shadow-2xl" loading="lazy" />
+              </div>
+              <div className="iconik-display mb-3" style={{ fontSize: 'clamp(24px, 4vw, 40px)', color: '#2C2622' }}>Your Personal Style Guide</div>
+              <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.6, lineHeight: 1.8 }}>Comprehensive style transformation roadmap</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 6: Case Studies ──────────────────────────────────────── */}
+      <section id="testimonials" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Real Findings</div>
+            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>What the Blueprint actually found</div>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Three women. Three different geometries. Three specific solutions.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { name: 'Priya', age: '28', city: 'Mumbai', image: '/testimonial-priya.webp', concern: ['Post-partum tummy, avoided', 'fitted anything for 2 years'], finding: ['Rectangle frame', 'Deep warm autumn undertone'], changed: ['Straight kurtas replaced flowy tops', 'Dark autumn palette introduced', 'Peplum added for occasions'], quote: 'I stopped hiding. I started showing up.', stars: 5 },
+              { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['Heavy arms, wore full', 'sleeves in 35° heat'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap sleeves + flutter sleeves introduced', 'Raglan cuts for shoulder balance', 'Eliminated black-only dressing'], quote: 'Everyone keeps asking if I lost weight', stars: 5 },
+              { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['Petite frame, felt', 'overwhelmed by fabric'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Monochromatic dressing introduced', 'Hem lengths calibrated precisely', 'Accessories scaled to frame'], quote: 'Shopping is no longer overwhelming.', stars: 4 },
+            ].map((c) => (
+              <div key={c.name} className="rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
+                <div className="aspect-square overflow-hidden" style={{ background: 'rgba(237,229,210,0.5)' }}>
+                  <Image src={c.image} alt={c.name} width={300} height={300} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <div className="iconik-display" style={{ fontSize: '18px', color: '#2C2622' }}>{c.name} · {c.age} · {c.city}</div>
+                    <div className="mt-3 me-rule-thin" />
+                  </div>
+                  {[
+                    { label: 'Concern', val: c.concern.join(' ') },
+                    { label: 'Finding', val: c.finding.join(' · ') },
+                  ].map((row) => (
+                    <div key={row.label} className="grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
+                      <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
+                      <span style={{ fontSize: '13px', color: '#2C2622', opacity: 0.75, lineHeight: 1.6 }}>{row.val}</span>
+                    </div>
+                  ))}
+                  <div className="grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
+                    <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>Changed</span>
+                    <div className="space-y-1">
+                      {c.changed.map((ch) => (
+                        <div key={ch} className="flex items-start gap-2">
+                          <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: '#94A6AD' }} />
+                          <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.75, lineHeight: 1.6 }}>{ch}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="me-rule-thin" />
+                  <div>
+                    <div className="iconik-display-it mb-3" style={{ fontSize: '14px', color: '#2C2622', opacity: 0.7, lineHeight: 1.6 }}>&ldquo;{c.quote}&rdquo;</div>
+                    <div className="flex gap-1">
+                      {[...Array(c.stars)].map((_, i) => <Star key={i} className="h-3 w-3 fill-current" style={{ color: '#9a7d4a' }} />)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 7: Price Anchor ───────────────────────────────────────── */}
+      <section className="py-24 px-4 md:px-6 me-slate">
+        <div className="max-w-3xl mx-auto text-center relative z-10">
+          <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
+            A personal styling session in India costs ₹15,000–50,000+. They give you one day. You forget half of it. You still don&apos;t know your colours or your frame.
+          </p>
+          <div className="rounded-2xl p-10 mb-10 me-glass-light">
+            <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>ICONIK Style Consultation</div>
+            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(40px, 8vw, 72px)', color: '#F4EFE5' }}>{formattedBasePrice}</div>
+            <p style={{ fontSize: '16px', color: '#F4EFE5', opacity: 0.7, lineHeight: 1.8 }}>Yours forever. Built on your specific frame, face, and colour profile.</p>
+          </div>
+          <Link
+            href={checkoutHref}
+            onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', 'India')}
+            className="inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
+          >
+            <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>Get Your Style Consultation — {formattedBasePrice}</span>
+            <ArrowRight className="h-4 w-4 opacity-60" style={{ color: '#F4EFE5' }} />
+          </Link>
+        </div>
+      </section>
+
+      {/* ── SECTION 8: Before / After ─────────────────────────────────────── */}
+      <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>The Blueprint in Practice</div>
+            <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>Real clients. Specific findings. Measurable change.</div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            {[
+              { before: '/style-before.webp', after: '/style-after.webp', beforeLabel: 'Before — avoiding structure entirely', afterLabel: 'After — Geometric Silhouette Profile™ applied', caption: 'Rekha, 34, Bangalore · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, cap sleeves, dark palette' },
+              { before: '/wardrobe-before.webp', after: '/wardrobe-after.webp', beforeLabel: 'Before — dressing to hide', afterLabel: 'After — Concern Zone Solutions applied', caption: 'Ananya, 29, Mumbai · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line kurtas, deep cool palette' },
+            ].map((comparison) => (
+              <div key={comparison.caption} className="rounded-3xl p-6 md:p-8 hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
+                <div className="grid grid-cols-2 gap-4 mb-5">
+                  <div>
+                    <p className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>{comparison.beforeLabel}</p>
+                    <div className="relative w-full aspect-square rounded-xl overflow-hidden"><Image src={comparison.before} alt={comparison.beforeLabel} fill className="object-cover" /></div>
+                  </div>
+                  <div>
+                    <p className="iconik-micro mb-3" style={{ color: '#94A6AD' }}>{comparison.afterLabel}</p>
+                    <div className="relative w-full aspect-square rounded-xl overflow-hidden"><Image src={comparison.after} alt={comparison.afterLabel} fill className="object-cover" /></div>
+                  </div>
+                </div>
+                <div className="me-rule-thin mb-4" />
+                <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, lineHeight: 1.8 }}>{comparison.caption}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 9: Sound Familiar ─────────────────────────────────────── */}
+      <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>Sound Familiar?</div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {[
+              { num: '01', text: 'You get dressed every morning and something still feels off. Not wrong exactly. Just never quite right.', image: '/feeling-overlooked1.webp', imageAlt: 'Woman at mirror' },
+              { num: '02', text: "You've tried the body type guides. The Pinterest boards. The 'flattering for pears' articles. Nothing has stuck.", image: '/style-confusion1.webp', imageAlt: 'Woman with clothes' },
+              { num: '03', text: "The weight hasn't changed. The budget hasn't changed. But every outfit still feels like a compromise.", image: '/confidence-issues1.webp', imageAlt: 'Woman looking at mirror side-on' },
+            ].map((item) => (
+              <div key={item.num} className="rounded-3xl p-6 md:p-8 hover:-translate-y-1 transition-all duration-300" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
+                <div className="relative w-full aspect-square mb-6 rounded-xl overflow-hidden">
+                  <Image src={item.image} alt={item.imageAlt} fill className="object-cover" />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(44,38,34,0.3), transparent)' }} />
+                </div>
+                <div className="iconik-display mb-4" style={{ fontSize: '24px', color: '#94A6AD' }}>{item.num}</div>
+                <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.75, lineHeight: 1.75 }}>{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 10: FAQ ───────────────────────────────────────────────── */}
+      <section id="faq" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>Frequently Asked Questions</div>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55, maxWidth: '380px', margin: '0 auto' }}>Everything you need to know about our consultations.</p>
+          </div>
+          <div className="space-y-0">
+            {faqs.map((faq, i) => (
+              <div key={i} className="cursor-pointer py-5" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                <div className="flex justify-between items-center gap-4">
+                  <div className="iconik-display" style={{ fontSize: '17px', color: '#2C2622', lineHeight: 1.4 }}>{faq.question}</div>
+                  <span className="iconik-mono flex-shrink-0 opacity-35" style={{ fontSize: '18px', color: '#2C2622' }}>{openFaq === i ? '−' : '+'}</span>
+                </div>
+                {openFaq === i && (
+                  <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, marginTop: '12px' }}>{faq.answer}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 11: Final CTA ─────────────────────────────────────────── */}
+      <section className="py-24 px-4 md:px-6 text-center me-slate relative">
+        <div className="max-w-3xl mx-auto relative z-10">
+          <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#F4EFE5', lineHeight: 1.1 }}>
+            Ready to Discover Your{' '}
+            <span className="iconik-display-it opacity-55">Signature Style?</span>
+          </div>
+          <p style={{ fontSize: '17px', color: '#F4EFE5', opacity: 0.75, marginTop: '16px', marginBottom: '40px', lineHeight: 1.85 }}>
+            Join 200+ women who have already transformed their confidence and discovered their elegant style.
+          </p>
+          <Link
+            href={checkoutHref}
+            onClick={() => trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', 'India')}
+            className="inline-flex items-center gap-5 px-10 py-5 rounded-full mb-6 hover:opacity-75 transition-opacity me-glass-light"
+          >
+            <span className="iconik-display" style={{ fontSize: '28px', color: '#F4EFE5' }}>{formattedBasePrice}</span>
+            <div className="w-px h-7" style={{ background: 'rgba(244,239,229,0.25)' }} />
+            <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>Start Your Transformation →</span>
+          </Link>
+          <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
+            <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ Trusted by 200+ women across India</span>
+            <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
+            <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>24-Hour Delivery</span>
+            <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
+            <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>7-Day Money-Back Guarantee</span>
+          </div>
+        </div>
+      </section>
+
+      <ExploreLinksSection
+        eyebrow="Knowledge Hub"
+        title="Learn Before You Buy"
+        description="Use the pages below to understand how Iconik works, what it costs, and the methodology behind the recommendations."
+        groups={footerExploreGroups}
+        className="bg-[#EDE5D2]/40"
+      />
+
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer className="py-12 px-6" style={{ background: '#EDE5D2', borderTop: '1px solid rgba(44,38,34,0.08)' }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
+            {/* Brand */}
+            <div className="md:max-w-xs">
+              <span className="iconik-display block mb-4" style={{ fontSize: '20px', letterSpacing: '0.08em', color: '#2C2622' }}>ICONIK</span>
+              <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6, lineHeight: 1.75 }}>
+                Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
+              </p>
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="block mt-3 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>{SUPPORT_EMAIL}</a>
+            </div>
+            {/* Links */}
+            <div className="flex flex-wrap gap-x-12 gap-y-6">
+              <div>
+                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.2em', fontWeight: 700 }}>NAVIGATE</div>
+                <div className="space-y-2">
+                  {['features', 'testimonials', 'pricing', 'faq'].map((anchor) => (
+                    <a key={anchor} href={`#${anchor}`} className="block hover:opacity-100 transition-opacity capitalize" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6 }}>{anchor.charAt(0).toUpperCase() + anchor.slice(1)}</a>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.2em', fontWeight: 700 }}>LEGAL</div>
+                <div className="space-y-2">
+                  {[{ label: 'Privacy Policy', href: '/privacy-policy' }, { label: 'Refund Policy', href: '/refund-policy' }, { label: 'Terms of Service', href: '/terms' }, { label: 'About Us', href: '/about' }, { label: 'Contact', href: '/contact' }].map((link) => (
+                    <Link key={link.href} href={link.href} className="block hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6 }}>{link.label}</Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
+            <p className="iconik-micro opacity-35" style={{ color: '#2C2622' }}>© {new Date().getFullYear()} ICONIK. All rights reserved. Scientific personal styling for Indian women.</p>
+            <p className="iconik-micro opacity-25 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: MITHIL NILESH NAVALAKHA · Results may vary.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* ── Sticky Mobile CTA ───────────────────────────────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t p-3 md:hidden z-50" style={{ background: 'rgba(248,243,233,0.98)', borderColor: 'rgba(44,38,34,0.08)' }}>
+        <div className="max-w-sm mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex-1">
+              <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Complete Package</div>
+              <div className="flex items-baseline gap-1">
+                <span className="iconik-display" style={{ fontSize: '16px', color: '#2C2622' }}>{formattedBasePrice}</span>
+                <span className="line-through" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</span>
+              </div>
+            </div>
+            <div className="text-right ml-2">
+              <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Expires:</div>
+              <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>
+                {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+              </div>
+            </div>
+          </div>
+          <Link
+            href={checkoutHref}
+            onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', 'India')}
+            className="w-full inline-flex items-center justify-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-6 py-4 rounded-full transition-all duration-300 block"
+          >
+            <span className="iconik-display" style={{ fontSize: '15px' }}>Begin Your Transformation</span>
+          </Link>
+        </div>
       </div>
+
+    </div>
   );
 }

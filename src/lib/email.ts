@@ -40,6 +40,28 @@ export interface IntakeReceivedEmailData {
   customer_phone?: string;
 }
 
+export interface StylistIntakeNotificationData {
+  customer_email: string;
+  customer_phone?: string | null;
+  full_name?: string | null;
+  age_range?: string | null;
+  country?: string | null;
+  primary_language?: string | null;
+  body_measurements?: Record<string, unknown> | null;
+  photo_urls?: Record<string, unknown> | null;
+  focus_areas?: string[] | null;
+  coverage_requirements?: Record<string, unknown> | null;
+  lifestyle_context?: Record<string, unknown> | null;
+  piece_preferences?: Record<string, unknown> | null;
+  selected_moodboard_label?: string | null;
+  selected_moodboard_id?: string | null;
+  secondary_moodboard_elements?: string[] | null;
+  hair_context?: Record<string, unknown> | null;
+  shopping_relationship?: string | null;
+  prior_styling_experience?: Record<string, unknown> | null;
+  one_outfit_image_url?: string | null;
+}
+
 export interface GlobeIntakeNotificationData {
   customer_email: string;
   customer_phone: string;
@@ -1199,6 +1221,137 @@ export async function sendGlobeIntakeReceivedEmail(
     return { success: true };
   } catch (error) {
     console.error('Error sending Globe intake received email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function sendStylistIntakeReceivedEmail(
+  data: IntakeReceivedEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const html = buildIntakeReceivedHtml({
+      title: 'Your ICONIK Style Blueprint Intake Was Received',
+      subtitle: 'Style Blueprint',
+      body: 'We have received your ICONIK Style Blueprint intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.',
+      accent: 'linear-gradient(135deg,#111111 0%,#4b3a22 100%)',
+    });
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
+      to: data.customer_email,
+      subject: `Your ICONIK Style Blueprint intake was received`,
+      text: `Hi there,\n\nWe have received your ICONIK Style Blueprint intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nYour report will be delivered to your inbox within 72 hours.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      html,
+    });
+
+    console.log(`Stylist intake received email sent to ${data.customer_email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Stylist intake received email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function sendStylistIntakeNotificationEmail(
+  data: StylistIntakeNotificationData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const row = (label: string, value: unknown) => {
+      if (value === null || value === undefined || value === '') return '';
+      const display = Array.isArray(value)
+        ? value.join(', ')
+        : typeof value === 'object'
+          ? JSON.stringify(value, null, 2)
+          : String(value);
+      if (!display.trim()) return '';
+      return `<tr><td style="padding:6px 12px;font-size:13px;color:#555;border-bottom:1px solid #eee6d8;"><strong style="color:#333;">${htmlEscape(label)}:</strong></td><td style="padding:6px 12px;font-size:13px;color:#333;border-bottom:1px solid #eee6d8;white-space:pre-wrap;">${htmlEscape(display)}</td></tr>`;
+    };
+    const photoLink = (label: string, value: unknown) => {
+      const url = typeof value === 'string' ? value : '';
+      return url ? `<tr><td style="padding:6px 12px;font-size:13px;color:#555;border-bottom:1px solid #eee6d8;"><strong style="color:#333;">${htmlEscape(label)}:</strong></td><td style="padding:6px 12px;font-size:13px;border-bottom:1px solid #eee6d8;"><a href="${htmlEscape(url)}" style="color:#b58e4d;text-decoration:none;">View Photo</a></td></tr>` : '';
+    };
+    const sectionHeader = (title: string) =>
+      `<tr><td colspan="2" style="padding:10px 12px 4px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#b58e4d;background:#faf8f3;">${htmlEscape(title)}</td></tr>`;
+
+    const photos = data.photo_urls ?? {};
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><title>New Stylist Intake Submission</title></head>
+<body style="margin:0;padding:0;background:#faf8f3;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f3;padding:32px 20px;"><tr><td align="center">
+<table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+<tr><td style="background:#111;padding:28px 40px;text-align:center;">
+  <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;letter-spacing:2px;">ICONIK</h1>
+  <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:11px;letter-spacing:3px;text-transform:uppercase;">New Stylist Intake Submission</p>
+</td></tr>
+<tr><td style="padding:28px 40px 8px;">
+  <p style="margin:0 0 4px;font-size:15px;color:#333;">A client has completed their Style Blueprint intake form.</p>
+  <p style="margin:0;font-size:13px;color:#888;">Submitted at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'short' })} IST</p>
+</td></tr>
+<tr><td style="padding:16px 40px 28px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee6d8;border-radius:10px;overflow:hidden;">
+    ${sectionHeader('Client')}
+    ${row('Name', data.full_name)}
+    ${row('Email', data.customer_email)}
+    ${row('Phone', data.customer_phone)}
+    ${row('Country', data.country)}
+    ${row('Age range', data.age_range)}
+    ${row('Language', data.primary_language)}
+    ${sectionHeader('Required Photos')}
+    ${photoLink('Headshot / selfie', photos.headshot)}
+    ${photoLink('Full body front', photos.full_body_front)}
+    ${photoLink('Full body side', photos.full_body_side)}
+    ${photoLink('Loved outfit', photos.one_outfit ?? data.one_outfit_image_url)}
+    ${sectionHeader('Profile Inputs')}
+    ${row('Measurements', data.body_measurements)}
+    ${row('Focus areas', data.focus_areas)}
+    ${row('Coverage', data.coverage_requirements)}
+    ${row('Lifestyle', data.lifestyle_context)}
+    ${row('Hair context', data.hair_context)}
+    ${row('Shopping relationship', data.shopping_relationship)}
+    ${row('Prior styling experience', data.prior_styling_experience)}
+    ${sectionHeader('Style Direction')}
+    ${row('Moodboard', data.selected_moodboard_label || data.selected_moodboard_id)}
+    ${row('Secondary moodboard elements', data.secondary_moodboard_elements)}
+    ${row('Piece preferences', data.piece_preferences)}
+  </table>
+</td></tr>
+<tr><td style="padding:20px 40px 32px;text-align:center;border-top:1px solid #eee6d8;">
+  <p style="margin:0;color:#b58e4d;font-weight:700;font-size:14px;">ICONIK Style Intelligence - Internal</p>
+  <p style="margin:4px 0 0;color:#999;font-size:12px;">help.iconikfashion@gmail.com</p>
+</td></tr>
+</table></td></tr></table>
+</body></html>`;
+
+    const text = [
+      'New Stylist intake submission',
+      `Email: ${data.customer_email}`,
+      data.customer_phone ? `Phone: ${data.customer_phone}` : '',
+      data.full_name ? `Name: ${data.full_name}` : '',
+      typeof photos.headshot === 'string' ? `Headshot: ${photos.headshot}` : '',
+      typeof photos.full_body_front === 'string' ? `Full body front: ${photos.full_body_front}` : '',
+      typeof photos.full_body_side === 'string' ? `Full body side: ${photos.full_body_side}` : '',
+      '',
+      `Focus areas: ${(data.focus_areas ?? []).join(', ')}`,
+      `Moodboard: ${data.selected_moodboard_label || data.selected_moodboard_id || ''}`,
+      `Lifestyle: ${JSON.stringify(data.lifestyle_context ?? {}, null, 2)}`,
+      `Piece preferences: ${JSON.stringify(data.piece_preferences ?? {}, null, 2)}`,
+    ].filter(Boolean).join('\n');
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Intake Bot" <${process.env.GMAIL_USER}>`,
+      to: 'help.iconikfashion@gmail.com',
+      subject: `New Stylist Intake - ${data.customer_email}`,
+      text,
+      html,
+    });
+
+    console.log(`Stylist intake notification sent. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Stylist intake notification:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

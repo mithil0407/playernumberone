@@ -169,6 +169,14 @@ const photoUploadFields: Array<{
     },
 ];
 
+const requiredPhotoKeys: PhotoKey[] = ['headshot', 'front', 'side'];
+const photoUrlKeyByPhotoKey: Record<PhotoKey, string> = {
+    headshot: 'headshot',
+    front: 'full_body_front',
+    side: 'full_body_side',
+    outfit: 'one_outfit',
+};
+
 const moodBoards = [
     {
         id: 'structured-minimalist',
@@ -456,13 +464,35 @@ function StylistIntakeInner() {
         return uploadStyleScanPhoto(file, `${Date.now()}_stylist_${key}_${safeName}`);
     };
 
+    const requiredPhotoMissing = () => requiredPhotoKeys.filter(key => {
+        const uploadedKey = photoUrlKeyByPhotoKey[key];
+        return !photos[key] && !uploadedUrls[uploadedKey];
+    });
+
+    const requiredPhotoError = () => {
+        const missing = requiredPhotoMissing();
+        if (!missing.length) return '';
+        const labels = missing
+            .map(key => photoUploadFields.find(field => field.key === key)?.label || key)
+            .join(', ');
+        return `Please upload these required photos before continuing: ${labels}.`;
+    };
+
+    const updatePhoto = (key: PhotoKey, file?: File) => {
+        setPhotos(prev => ({ ...prev, [key]: file }));
+        setUploadedUrls(prev => {
+            const next = { ...prev };
+            delete next[photoUrlKeyByPhotoKey[key]];
+            return next;
+        });
+    };
+
     const uploadAllPhotos = async () => {
-        if (Object.keys(uploadedUrls).length > 0) return uploadedUrls;
         const entries = await Promise.all([
-            uploadOne(photos.headshot, 'headshot').then(url => ['headshot', url] as const),
-            uploadOne(photos.front, 'front').then(url => ['full_body_front', url] as const),
-            uploadOne(photos.side, 'side').then(url => ['full_body_side', url] as const),
-            uploadOne(photos.outfit, 'one_outfit').then(url => ['one_outfit', url] as const),
+            uploadedUrls.headshot ? Promise.resolve(['headshot', uploadedUrls.headshot] as const) : uploadOne(photos.headshot, 'headshot').then(url => ['headshot', url] as const),
+            uploadedUrls.full_body_front ? Promise.resolve(['full_body_front', uploadedUrls.full_body_front] as const) : uploadOne(photos.front, 'front').then(url => ['full_body_front', url] as const),
+            uploadedUrls.full_body_side ? Promise.resolve(['full_body_side', uploadedUrls.full_body_side] as const) : uploadOne(photos.side, 'side').then(url => ['full_body_side', url] as const),
+            uploadedUrls.one_outfit ? Promise.resolve(['one_outfit', uploadedUrls.one_outfit] as const) : uploadOne(photos.outfit, 'one_outfit').then(url => ['one_outfit', url] as const),
         ]);
         const urls = Object.fromEntries(entries);
         setUploadedUrls(urls);
@@ -470,6 +500,13 @@ function StylistIntakeInner() {
     };
 
     const submit = async () => {
+        const missingPhotoError = requiredPhotoError();
+        if (missingPhotoError) {
+            setStep(2);
+            setAccessError(missingPhotoError);
+            return;
+        }
+
         setSaving(true);
         setSubmitStage('uploading');
         setAccessError('');
@@ -677,21 +714,21 @@ function StylistIntakeInner() {
                     )}
 
                     {step === 2 && (
-                        <section className="space-y-5">
-                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Body photos</h1>
-                            <p className="luxury-body text-luxury-charcoal/60">Phone photos are perfect. Headshot and side profile matter most here; the front photo helps complete the body analysis.</p>
+	                        <section className="space-y-5">
+	                            <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Body photos</h1>
+	                            <p className="luxury-body text-luxury-charcoal/60">Phone photos are perfect. Headshot, full body front, and side profile are required so the Blueprint can analyse face, colour, and body geometry accurately.</p>
                             <div className="grid gap-4 md:grid-cols-2">
                                 {(() => {
                                     const field = photoUploadFields.find(item => item.key === 'headshot');
                                     if (!field) return null;
                                     return (
                                         <div className="md:col-span-2 md:mx-auto md:w-full md:max-w-md">
-                                            <PhotoUploadCard
-                                                field={field}
-                                                fileName={photos.headshot?.name}
-                                                featured
-                                                onChange={file => setPhotos({ ...photos, headshot: file })}
-                                            />
+	                                            <PhotoUploadCard
+	                                                field={field}
+	                                                fileName={photos.headshot?.name}
+	                                                featured
+	                                                onChange={file => updatePhoto('headshot', file)}
+	                                            />
                                         </div>
                                     );
                                 })()}
@@ -701,11 +738,11 @@ function StylistIntakeInner() {
                                     return (
                                         <PhotoUploadCard
                                             key={field.key}
-                                            field={field}
-                                            fileName={photos[field.key]?.name}
-                                            featured
-                                            onChange={file => setPhotos({ ...photos, [field.key]: file })}
-                                        />
+	                                            field={field}
+	                                            fileName={photos[field.key]?.name}
+	                                            featured
+	                                            onChange={file => updatePhoto(field.key, file)}
+	                                        />
                                     );
                                 })}
                             </div>
@@ -722,11 +759,11 @@ function StylistIntakeInner() {
                                     if (!field) return null;
                                     return (
                                         <PhotoUploadCard
-                                            field={field}
-                                            fileName={photos.outfit?.name}
-                                            featured
-                                            onChange={file => setPhotos({ ...photos, outfit: file })}
-                                        />
+	                                            field={field}
+	                                            fileName={photos.outfit?.name}
+	                                            featured
+	                                            onChange={file => updatePhoto('outfit', file)}
+	                                        />
                                     );
                                 })()}
                             </div>
@@ -958,7 +995,15 @@ function StylistIntakeInner() {
                             <button
                                 type="button"
                                 disabled={saving || (step === 7 && !preferenceSortingComplete)}
-                                onClick={() => setStep(step + 1)}
+	                                onClick={() => {
+	                                    const missingPhotoError = step === 2 ? requiredPhotoError() : '';
+	                                    if (missingPhotoError) {
+	                                        setAccessError(missingPhotoError);
+	                                        return;
+	                                    }
+	                                    setAccessError('');
+	                                    setStep(step + 1);
+	                                }}
                                 className="inline-flex items-center gap-2 rounded-full px-7 py-3 luxury-body disabled:opacity-50 transition hover:shadow-lg"
                                 style={{ background: 'var(--luxury-charcoal)', color: 'var(--luxury-warm-white)' }}
                             >

@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { findPaidGlobeOrderByEmail, mirrorPaidGlobeOrderToStylist } from '@/lib/globeStylistMirror';
+import { sendStylistIntakeNotificationEmail, sendStylistIntakeReceivedEmail } from '@/lib/email';
 
 function cleanEmail(value: string | null) {
     return value?.trim().toLowerCase() || '';
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function hasPhotoUrl(photos: Record<string, unknown>, key: string) {
+    return typeof photos[key] === 'string' && Boolean((photos[key] as string).trim());
+}
+
+function missingRequiredPhotoLabels(photos: Record<string, unknown>) {
+    const required = [
+        ['headshot', 'Headshot / selfie'],
+        ['full_body_front', 'Full body front'],
+        ['full_body_side', 'Full body side profile'],
+    ] as const;
+    return required.filter(([key]) => !hasPhotoUrl(photos, key)).map(([, label]) => label);
 }
 
 async function findPaidOrder(email: string) {
@@ -68,6 +86,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'No paid Stylist Blueprint order found for this email.' }, { status: 403 });
         }
 
+        const photoUrls = asRecord(body.photo_urls);
+        const missingPhotos = missingRequiredPhotoLabels(photoUrls);
+        if (missingPhotos.length) {
+            return NextResponse.json({
+                success: false,
+                error: `Missing required intake photo(s): ${missingPhotos.join(', ')}`,
+            }, { status: 400 });
+        }
+
         const completionPercentage = Math.max(0, Math.min(100, Math.round(Number(body.completion_percentage ?? 0))));
         const now = new Date().toISOString();
         const payload = {
@@ -80,7 +107,7 @@ export async function POST(request: NextRequest) {
             country: body.country || null,
             primary_language: body.primary_language || null,
             body_measurements: body.body_measurements || {},
-            photo_urls: body.photo_urls || {},
+            photo_urls: photoUrls,
             focus_areas: Array.isArray(body.focus_areas) ? body.focus_areas : [],
             coverage_requirements: body.coverage_requirements || {},
             lifestyle_context: body.lifestyle_context || {},
@@ -107,14 +134,47 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error;
 
+        const emailStatus: { internal: 'skipped' | 'sent' | 'failed'; client: 'skipped' | 'sent' | 'failed' } = {
+            internal: 'skipped',
+            client: 'skipped',
+        };
+
         if (completionPercentage >= 90) {
             await supabaseStyleScan
                 .from('stylist_orders')
                 .update({ intake_completed: true, intake_completed_at: now })
                 .eq('id', order.id);
+
+            const [internalResult, clientResult] = await Promise.allSettled([
+                sendStylistIntakeNotificationEmail(payload),
+                sendStylistIntakeReceivedEmail({
+                    customer_email: email,
+                    customer_phone: payload.customer_phone || '',
+                }),
+            ]);
+
+            if (internalResult.status === 'rejected') {
+                emailStatus.internal = 'failed';
+                console.error('Stylist internal intake notification threw:', internalResult.reason);
+            } else if (!internalResult.value.success) {
+                emailStatus.internal = 'failed';
+                console.error('Stylist internal intake notification failed:', internalResult.value.error);
+            } else {
+                emailStatus.internal = 'sent';
+            }
+
+            if (clientResult.status === 'rejected') {
+                emailStatus.client = 'failed';
+                console.error('Stylist client intake confirmation threw:', clientResult.reason);
+            } else if (!clientResult.value.success) {
+                emailStatus.client = 'failed';
+                console.error('Stylist client intake confirmation failed:', clientResult.value.error);
+            } else {
+                emailStatus.client = 'sent';
+            }
         }
 
-        return NextResponse.json({ success: true, intake: data });
+        return NextResponse.json({ success: true, intake: data, email_status: emailStatus });
     } catch (error) {
         console.error('Stylist intake submit error:', error);
         return NextResponse.json({
