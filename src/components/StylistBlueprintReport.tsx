@@ -18,6 +18,7 @@ import {
   isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { createContext, type ElementType, type FocusEvent, type ReactNode, useContext } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 
@@ -134,6 +135,27 @@ function ImageSlotFrame({
         </button>
       )}
     </div>
+  );
+}
+
+function ReportImage({
+  src,
+  className,
+  priority = false,
+}: {
+  src: string;
+  className?: string;
+  priority?: boolean;
+}) {
+  return (
+    <img
+      className={className}
+      src={src}
+      alt=""
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : 'auto'}
+      decoding="async"
+    />
   );
 }
 
@@ -570,13 +592,13 @@ function DiagnosisPage({
             <div className="mono figure-label">FIG. {String(page.page_number - 3).padStart(2, '0')} - PROFILE</div>
             {imageSlot ? (
               <ImageSlotFrame slotKey={imageSlot} label="diagnosis image" className={`diagram-media ${page.page_number === 4 ? 'silhouette-media' : ''}`}>
-                {image ? <img src={image} alt="" /> : <SilhouetteFallback />}
+                {image ? <ReportImage src={image} /> : <SilhouetteFallback />}
               </ImageSlotFrame>
-            ) : image ? <img src={image} alt="" /> : <SilhouetteFallback />}
+            ) : image ? <ReportImage src={image} /> : <SilhouetteFallback />}
           </div>
           {showSecondary && secondarySlot && (
             <ImageSlotFrame slotKey={secondarySlot} label="secondary diagnosis image" className={`secondary-strip ${page.page_number === 4 ? 'silhouette-secondary' : ''}`}>
-              {secondary ? <img src={secondary} alt="" /> : <SilhouetteFallback />}
+              {secondary ? <ReportImage src={secondary} /> : <SilhouetteFallback />}
             </ImageSlotFrame>
           )}
         </div>
@@ -641,9 +663,9 @@ function ChromaticPage({
       <div className="chromatic-inner">
         <h2><span className="display">Colour, in</span><span className="display-it">three axes.</span></h2>
         <div className="rule" />
-        <div className="chromatic-map">
+          <div className="chromatic-map">
           <ImageSlotFrame slotKey="diagnosis.undertoneMap" label="undertone image" className="axis-portrait">
-            {image ? <img src={image} alt="" /> : <UndertoneBar position={undertonePosition} />}
+            {image ? <ReportImage src={image} /> : <UndertoneBar position={undertonePosition} />}
           </ImageSlotFrame>
           <div className="chromatic-axes">
             <div className="axis-block">
@@ -905,8 +927,8 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
       </div>
       {(image || secondary) && (
         <div className="reference-images">
-          {image && <img src={image} alt="" />}
-          {secondary && <img src={secondary} alt="" />}
+          {image && <ReportImage src={image} />}
+          {secondary && <ReportImage src={secondary} />}
         </div>
       )}
     </PageFrame>
@@ -959,13 +981,13 @@ function HairFaceAccessoriesPage({ page, data, imageUrls }: { page: BlueprintPag
           <div className="face-panel">
             <div className="mono dossier-label">Hair direction - 2x2</div>
             <ImageSlotFrame slotKey="prescription.hairDirections" label="hair direction image" className="face-panel-media">
-              {hairImage ? <img src={hairImage} alt="" /> : <FaceGridFallback />}
+              {hairImage ? <ReportImage src={hairImage} /> : <FaceGridFallback />}
             </ImageSlotFrame>
           </div>
           <div className="face-panel">
             <div className="mono dossier-label">Eyeframes + sunglasses - 2x2</div>
             <ImageSlotFrame slotKey="prescription.eyewearFrames" label="eyewear image" className="face-panel-media">
-              {eyewearImage ? <img src={eyewearImage} alt="" /> : <FaceGridFallback />}
+              {eyewearImage ? <ReportImage src={eyewearImage} /> : <FaceGridFallback />}
             </ImageSlotFrame>
           </div>
         </div>
@@ -1012,7 +1034,7 @@ function OutfitSystemPage({ page, data, imageUrls }: { page: BlueprintPage; data
         <div className="capsule-map">
           {page.blocks.flatMap(block => asItems(block).length ? asItems(block) : [block]).slice(0, 4).map((item, index) => (
             <div key={index} className="capsule-card">
-              {covers[index] && <img src={covers[index]} alt="" />}
+              {covers[index] && <ReportImage src={covers[index]} />}
               <div className="mono faded">Capsule {String(index + 1).padStart(2, '0')}</div>
               <h3 className="display">{getField(item, ['heading', 'label', 'name', 'capsule'], `Capsule ${index + 1}`)}</h3>
               <p>{getField(item, ['recommendation', 'guidance', 'body', 'serves', 'note'], '')}</p>
@@ -1098,11 +1120,11 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
             <div className="mono figure-label">Composition - {String(outfitNumber).padStart(2, '0')}</div>
             {imageSlot && (
               <ImageSlotFrame slotKey={imageSlot} label={`outfit ${outfitNumber} image`} className="flatlay-media">
-                {image ? <img src={image} alt="" /> : <OutfitFallback palette={palette.map(colour => colour.hex)} />}
+                {image ? <ReportImage src={image} /> : <OutfitFallback palette={palette.map(colour => colour.hex)} />}
               </ImageSlotFrame>
             )}
           </div>
-          {detail && <img className="detail-image" src={detail} alt="" />}
+          {detail && <ReportImage className="detail-image" src={detail} />}
         </div>
       </div>
       <div className="rule formula-rule" />
@@ -1206,7 +1228,7 @@ function ContinuationPage({ page, data, imageUrls }: { page: BlueprintPage; data
         </div>
         {showImage && (
           <ImageSlotFrame slotKey="closing.editTeaser" label="edit teaser image" className="continuation-image">
-            {image ? <img src={image} alt="" /> : <OutfitFallback palette={[IVORY, INK, ROSE]} />}
+            {image ? <ReportImage src={image} /> : <OutfitFallback palette={[IVORY, INK, ROSE]} />}
           </ImageSlotFrame>
         )}
       </div>
@@ -1281,10 +1303,55 @@ function LegacyReport({ data }: { data: LegacyStylistBlueprintReportData; imageU
   return <PremiumReport data={reportData} imageUrls={null} />;
 }
 
+function DeferredBlueprintPage({
+  page,
+  data,
+  defer,
+  children,
+}: {
+  page: BlueprintPage;
+  data: StylistBlueprintReportData;
+  defer: boolean;
+  children: ReactNode;
+}) {
+  const { elementRef, hasIntersected } = useIntersectionObserver({
+    threshold: 0,
+    rootMargin: '700px 0px',
+  });
+  const shouldRender = !defer || hasIntersected;
+  if (shouldRender) return <>{children}</>;
+
+  const pageType = canonicalPageType(page, data);
+  return (
+    <div ref={elementRef} className={`iconik-page ${pageClass(page.page_number, pageType)} deferred-page`}>
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="mono corner-kicker">{pageKicker(page, data)}</div>
+        <div className="small-caps corner-title">{page.title}</div>
+      </div>
+      <div className="corner-tr">
+        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / {getStylistBlueprintPageCount(data)}</div>
+      </div>
+      <div className="deferred-skeleton" aria-hidden="true">
+        <div className="deferred-kicker" />
+        <div className="deferred-title" />
+        <div className="deferred-title short" />
+        <div className="deferred-rule" />
+        <div className="deferred-grid">
+          <div />
+          <div />
+          <div />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PremiumReport({
   data,
   imageUrls,
   focusPageNumber,
+  deferPages = false,
   editable = false,
   onPageChange,
   onReportDataChange,
@@ -1295,6 +1362,7 @@ function PremiumReport({
   data: StylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
   focusPageNumber?: number;
+  deferPages?: boolean;
   editable?: boolean;
   onPageChange?: (page: BlueprintPage) => void;
   onReportDataChange?: (data: StylistBlueprintReportData) => void;
@@ -1308,14 +1376,27 @@ function PremiumReport({
   return (
     <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
-        {pages.map(page => {
-          if (page.page_number === 1) return <CoverPage key={page.page_number} page={page} data={data} />;
-          const pageType = canonicalPageType(page, data);
-          if (pageType === 'summary') return <SummaryPage key={page.page_number} page={page} data={data} />;
-          if (pageType === 'reading_guide') return <ReadingGuidePage key={page.page_number} page={page} />;
-          return <GenericPage key={page.page_number} page={page} data={data} imageUrls={imageUrls} />;
-        })}
         <BlueprintStyles />
+        {pages.map(page => {
+          let node: ReactNode;
+          if (page.page_number === 1) node = <CoverPage page={page} data={data} />;
+          else {
+            const pageType = canonicalPageType(page, data);
+            if (pageType === 'summary') node = <SummaryPage page={page} data={data} />;
+            else if (pageType === 'reading_guide') node = <ReadingGuidePage page={page} />;
+            else node = <GenericPage page={page} data={data} imageUrls={imageUrls} />;
+          }
+          return (
+            <DeferredBlueprintPage
+              key={page.page_number}
+              page={page}
+              data={data}
+              defer={deferPages && !focusPageNumber && !editable && page.page_number > 2}
+            >
+              {node}
+            </DeferredBlueprintPage>
+          );
+        })}
       </article>
     </EditableReportContext.Provider>
   );
@@ -1325,6 +1406,7 @@ export default function StylistBlueprintReport({
   data,
   imageUrls,
   focusPageNumber,
+  deferPages,
   editable,
   onPageChange,
   onReportDataChange,
@@ -1335,6 +1417,7 @@ export default function StylistBlueprintReport({
   data: StylistBlueprintReportData | LegacyStylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
   focusPageNumber?: number;
+  deferPages?: boolean;
   editable?: boolean;
   onPageChange?: (page: BlueprintPage) => void;
   onReportDataChange?: (data: StylistBlueprintReportData) => void;
@@ -1348,6 +1431,7 @@ export default function StylistBlueprintReport({
       data={data}
       imageUrls={imageUrls}
       focusPageNumber={focusPageNumber}
+      deferPages={deferPages}
       editable={editable}
       onPageChange={onPageChange}
       onReportDataChange={onReportDataChange}
@@ -1361,12 +1445,10 @@ export default function StylistBlueprintReport({
 function BlueprintStyles() {
   return (
     <style jsx global>{`
-      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
-
       .iconik-report {
         background: ${INK};
         color: ${INK};
-        font-family: 'Inter', sans-serif;
+        font-family: var(--font-inter), Inter, system-ui, sans-serif;
         font-weight: 300;
         padding: 20px;
       }
@@ -1422,20 +1504,20 @@ function BlueprintStyles() {
         to { transform: rotate(360deg); }
       }
       .display {
-        font-family: 'Fraunces', serif;
+        font-family: var(--font-fraunces), Fraunces, Georgia, serif;
         font-weight: 300;
         letter-spacing: -0.025em;
         line-height: 0.95;
       }
       .display-it {
-        font-family: 'Fraunces', serif;
+        font-family: var(--font-fraunces), Fraunces, Georgia, serif;
         font-weight: 300;
         font-style: italic;
         letter-spacing: -0.025em;
         line-height: 1.04;
       }
       .mono {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
         font-weight: 400;
         letter-spacing: 0;
       }
@@ -1476,6 +1558,56 @@ function BlueprintStyles() {
       .iconik-page.bone {
         background: ${BONE};
         color: ${INK};
+      }
+      .deferred-page {
+        display: flex;
+        align-items: center;
+      }
+      .deferred-skeleton {
+        position: relative;
+        z-index: 1;
+        width: min(620px, 100%);
+        margin: 74px auto 0;
+      }
+      .deferred-kicker,
+      .deferred-title,
+      .deferred-rule,
+      .deferred-grid > div {
+        border-radius: 999px;
+        background: currentColor;
+        opacity: 0.14;
+        animation: iconik-pulse 1.6s ease-in-out infinite;
+      }
+      .deferred-kicker {
+        width: 140px;
+        height: 10px;
+        margin-bottom: 26px;
+      }
+      .deferred-title {
+        width: 78%;
+        height: 44px;
+        margin-bottom: 12px;
+      }
+      .deferred-title.short {
+        width: 48%;
+      }
+      .deferred-rule {
+        width: 100%;
+        height: 1px;
+        margin: 32px 0;
+      }
+      .deferred-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .deferred-grid > div {
+        height: 128px;
+        border-radius: 18px;
+      }
+      @keyframes iconik-pulse {
+        0%, 100% { opacity: 0.1; }
+        50% { opacity: 0.22; }
       }
       .grain {
         position: absolute;

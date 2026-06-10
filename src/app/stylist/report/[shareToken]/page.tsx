@@ -14,12 +14,22 @@ export default async function StylistPublicReportPage({ params }: PageProps) {
   if (!report?.report_data) notFound();
 
   return (
-    <div className="iconik-theme min-h-screen" style={{ background: 'var(--luxury-warm-white)' }}>
-      <StylistBlueprintReport data={report.report_data} imageUrls={report.image_urls} />
-      <div className="px-5 md:px-12 py-6 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
-        <p className="iconik-micro" style={{ color: 'var(--luxury-charcoal)', opacity: 0.35 }}>For your eyes only</p>
+    <>
+      <style>{`
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body { overscroll-behavior-y: none; }
+        * { -webkit-tap-highlight-color: transparent; }
+      `}</style>
+      <div
+        className="iconik-theme min-h-screen min-h-dvh"
+        style={{ background: 'var(--luxury-warm-white)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <StylistBlueprintReport data={report.report_data} imageUrls={report.image_urls} deferPages />
+        <div className="px-5 md:px-12 py-6 text-center" style={{ background: 'var(--luxury-warm-white)' }}>
+          <p className="iconik-micro" style={{ color: 'var(--luxury-charcoal)', opacity: 0.35 }}>For your eyes only</p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
