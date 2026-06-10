@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
 import { loadStylistBlueprintReportByIdFresh, getStylistBlueprintReportById } from '@/lib/stylistBlueprintLoader';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
+import { sendStylistBlueprintReportEmail } from '@/lib/email';
 import {
   getStylistBlueprintPageCount,
   isVersionedStylistBlueprintReportData,
@@ -14,6 +15,18 @@ import {
 
 function authed(cookieValue: string | undefined) {
   return isAdminAuthenticatedFromCookieValue(cookieValue);
+}
+
+function firstString(...values: Array<unknown>) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
 }
 
 export async function GET(
@@ -127,15 +140,77 @@ export async function POST(
   }
 
   if (action === 'send') {
+    const { data: existingReport, error: existingError } = await supabaseAdmin
+      .from('stylist_blueprint_reports')
+      .select('id, status, sent_at, share_token, report_data, stylist_intake_responses(customer_email, full_name)')
+      .eq('id', reportId)
+      .single();
+
+    if (existingError || !existingReport) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    }
+
+    const intake = firstRelation(existingReport.stylist_intake_responses as
+      | { customer_email?: string | null; full_name?: string | null }
+      | Array<{ customer_email?: string | null; full_name?: string | null }>
+      | null);
+    const recipientEmail = intake?.customer_email?.trim() ?? '';
+    if (!recipientEmail) {
+      return NextResponse.json({ error: 'Client email is missing on the intake submission' }, { status: 400 });
+    }
+
+    const reportData = existingReport.report_data as StylistBlueprintReportData | null;
+    const reportUrl = `${(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in').replace(/\/$/, '')}/stylist/report/${existingReport.share_token}`;
+    const emailResult = await sendStylistBlueprintReportEmail({
+      email: recipientEmail,
+      reportUrl,
+      clientName: firstString(
+        isVersionedStylistBlueprintReportData(reportData) ? reportData.client.display_name : null,
+        reportData?.classification?.client?.name,
+        intake?.full_name,
+      ),
+      bodyProfile: firstString(
+        isVersionedStylistBlueprintReportData(reportData) ? reportData.analysis.silhouette_profile : null,
+        reportData?.classification?.body?.geometry,
+        reportData?.classification?.body?.proportion_directive,
+      ),
+      colourProfile: firstString(
+        isVersionedStylistBlueprintReportData(reportData) ? reportData.analysis.chromatic_family : null,
+        reportData?.classification?.colour?.palette_name,
+        reportData?.classification?.colour?.undertone_direction,
+      ),
+      faceProfile: firstString(
+        isVersionedStylistBlueprintReportData(reportData) ? reportData.analysis.facial_architecture : null,
+        reportData?.classification?.face_hair_accessories?.face_shape,
+        reportData?.classification?.face_hair_accessories?.face_direction,
+      ),
+      styleDirection: firstString(
+        isVersionedStylistBlueprintReportData(reportData) ? reportData.analysis.style_direction : null,
+        reportData?.classification?.taste?.style_archetype,
+        reportData?.classification?.taste?.moodboard,
+      ),
+    });
+
+    if (!emailResult.success) {
+      const message = `Client email failed: ${emailResult.error ?? 'Unknown error'}`;
+      await supabaseAdmin
+        .from('stylist_blueprint_reports')
+        .update({ error_message: message, updated_at: new Date().toISOString() })
+        .eq('id', reportId);
+      await revalidateStylistBlueprintCache(reportId, existingReport.share_token);
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+
+    const sentAt = new Date().toISOString();
     const { data, error } = await supabaseAdmin
       .from('stylist_blueprint_reports')
-      .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({ status: 'sent', sent_at: sentAt, error_message: null, updated_at: sentAt })
       .eq('id', reportId)
-      .select('id, share_token, status, sent_at')
+      .select('id, share_token, status, sent_at, error_message')
       .single();
     if (error || !data) return NextResponse.json({ error: 'Failed to send report' }, { status: 500 });
     await revalidateStylistBlueprintCache(reportId, data.share_token);
-    return NextResponse.json({ report: data });
+    return NextResponse.json({ report: data, reportUrl });
   }
 
   if (action === 'mark_in_review') {

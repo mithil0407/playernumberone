@@ -1420,6 +1420,120 @@ export async function sendGlobeBlueprintReportEmail(data: {
   }
 }
 
+export async function sendStylistBlueprintReportEmail(data: {
+  email: string;
+  reportUrl: string;
+  clientName?: string | null;
+  bodyProfile?: string | null;
+  colourProfile?: string | null;
+  faceProfile?: string | null;
+  styleDirection?: string | null;
+}): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  try {
+    const transporter = getTransporter();
+    const from = process.env.GMAIL_USER!;
+    const rawName = data.clientName?.trim() || data.email.split('@')[0] || 'there';
+    const firstName = rawName.split(/\s+/)[0] || 'there';
+    const bodyProfile = data.bodyProfile?.trim() || 'Your silhouette profile';
+    const colourProfile = data.colourProfile?.trim() || 'Your colour map';
+    const faceProfile = data.faceProfile?.trim() || 'Your face architecture';
+    const styleDirection = data.styleDirection?.trim() || 'Your report is built around your body geometry, colouring, lifestyle, and style direction.';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Your ICONIK Style Blueprint is ready</title></head>
+<body style="margin:0;padding:0;background:#F4EFE5;font-family:Georgia,'Times New Roman',serif;">
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#F4EFE5;padding:34px 16px;"><tr><td align="center">
+<table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;width:100%;background:#F8F3E9;border:1px solid #EDE5D2;">
+<tr>
+  <td style="padding:34px 40px 28px;background:#2C2622;text-align:center;color:#F4EFE5;">
+    <div style="font-size:13px;letter-spacing:0.34em;text-transform:uppercase;color:#F4EFE5;">I C O N I K</div>
+    <div style="margin-top:10px;font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:#c9a96e;">Style Blueprint</div>
+  </td>
+</tr>
+<tr>
+  <td style="padding:38px 42px 14px;text-align:center;">
+    <div style="display:inline-block;border-top:1px solid #94A6AD;border-bottom:1px solid #94A6AD;padding:9px 20px;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#7E9098;">A Personal Blueprint</div>
+    <h1 style="margin:22px 0 0;font-size:38px;line-height:1.08;font-weight:400;color:#2C2622;">Your Style Blueprint<br/><span style="font-style:italic;color:#D4537E;">is ready.</span></h1>
+  </td>
+</tr>
+<tr>
+  <td style="padding:12px 42px 8px;color:#4c4540;font-size:15px;line-height:1.85;">
+    Hi ${htmlEscape(firstName)},<br/>
+    Your completed ICONIK Style Blueprint is now live. Inside, you will find your body geometry, colour direction, face and hair architecture, outfit formulas, and your personal style system.
+  </td>
+</tr>
+<tr>
+  <td style="padding:22px 42px;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #EDE5D2;background:#F4EFE5;">
+      <tr>
+        <td width="33.33%" style="padding:17px 12px;text-align:center;border-right:1px solid #EDE5D2;">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a96e;margin-bottom:7px;">Body</div>
+          <div style="font-size:14px;line-height:1.45;color:#2C2622;">${htmlEscape(bodyProfile)}</div>
+        </td>
+        <td width="33.33%" style="padding:17px 12px;text-align:center;border-right:1px solid #EDE5D2;">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a96e;margin-bottom:7px;">Colour</div>
+          <div style="font-size:14px;line-height:1.45;color:#2C2622;">${htmlEscape(colourProfile)}</div>
+        </td>
+        <td width="33.33%" style="padding:17px 12px;text-align:center;">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9a96e;margin-bottom:7px;">Face</div>
+          <div style="font-size:14px;line-height:1.45;color:#2C2622;">${htmlEscape(faceProfile)}</div>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+  <td style="padding:0 42px 22px;">
+    <div style="background:#2C2622;padding:20px 22px;border-left:4px solid #D4537E;">
+      <p style="margin:0;font-size:15px;line-height:1.75;color:#F4EFE5;font-style:italic;">${htmlEscape(styleDirection)}</p>
+    </div>
+  </td>
+</tr>
+<tr>
+  <td style="padding:8px 42px 38px;text-align:center;">
+    <a href="${htmlEscape(data.reportUrl)}" style="display:inline-block;background:#2C2622;color:#c9a96e;text-decoration:none;padding:16px 32px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;">Open Your Private Blueprint</a>
+    <p style="margin:16px 0 0;font-size:12px;line-height:1.7;color:#7d746b;">This private link opens your report directly, with no login required.</p>
+  </td>
+</tr>
+<tr>
+  <td style="padding:22px 40px;text-align:center;border-top:1px solid #EDE5D2;color:#8f877e;font-size:11px;line-height:1.7;letter-spacing:.14em;text-transform:uppercase;">
+    Reply to this email if you need help · ICONIK Blueprint · ${htmlEscape(siteUrl.replace(/^https?:\/\//, ''))}
+  </td>
+</tr>
+</table>
+</td></tr></table>
+</body></html>`;
+
+    const text =
+      `Hi ${firstName},\n\n` +
+      `Your ICONIK Style Blueprint is ready.\n\n` +
+      `Open your private report here:\n${data.reportUrl}\n\n` +
+      `Summary:\n` +
+      `Body: ${bodyProfile}\n` +
+      `Colour: ${colourProfile}\n` +
+      `Face: ${faceProfile}\n\n` +
+      `${styleDirection}\n\n` +
+      `This private link opens your report directly, with no login required. Reply to this email if you need help.\n\n` +
+      `The ICONIK Team`;
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Blueprint" <${from}>`,
+      to: data.email,
+      subject: `${firstName}, your ICONIK Style Blueprint is ready`,
+      text,
+      html,
+    });
+
+    console.log(`Stylist blueprint report email sent to ${data.email}. ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending Stylist Blueprint report email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 // ── Globe Intake Internal Notification Email ─────────────────────────────────
 
 export async function sendGlobeIntakeNotificationEmail(

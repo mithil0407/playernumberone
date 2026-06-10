@@ -495,14 +495,28 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     const saved = await saveChangedPages();
     if (!saved) return;
     setSending(true);
-    const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'sent' }),
-    });
-    const data = await res.json();
-    if (data.report) setReport(prev => prev ? { ...prev, status: 'sent', sent_at: data.report.sent_at } : prev);
-    setSending(false);
+    setError('');
+    try {
+      const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send report email');
+      if (data.report) {
+        setReport(prev => prev ? {
+          ...prev,
+          status: data.report.status,
+          sent_at: data.report.sent_at,
+          error_message: data.report.error_message ?? null,
+        } : prev);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send report email');
+    } finally {
+      setSending(false);
+    }
   };
 
   const copyLink = () => {
@@ -743,7 +757,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 <CheckCheck size={14} /> Approve All
               </ActionButton>
               <ActionButton onClick={sendToClient} disabled={!allApproved || !requiredImagesDone || sending} tone="primary">
-                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}
               </ActionButton>
             </div>
           </div>
