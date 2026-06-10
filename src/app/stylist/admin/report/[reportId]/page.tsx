@@ -82,6 +82,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [rebuildingReport, setRebuildingReport] = useState(false);
   const [regeneratingSlotKey, setRegeneratingSlotKey] = useState<StylistBlueprintImageSlotKey | null>(null);
   const [replacingOutfitPage, setReplacingOutfitPage] = useState<number | null>(null);
+  const [editingOutfitPage, setEditingOutfitPage] = useState<number | null>(null);
   const [outfitInstruction, setOutfitInstruction] = useState('');
   const [replacingAllOutfits, setReplacingAllOutfits] = useState(false);
   const [regeneratingPalette, setRegeneratingPalette] = useState(false);
@@ -328,6 +329,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setRegeneratingSlotKey(slotKey);
     setError('');
     try {
+      // Persist any inline card edits first so the image is built from the latest text.
+      if (hasUnsavedEdits) {
+        const saved = await saveChangedPages();
+        if (!saved) return;
+      }
       const res = await fetch(`/api/stylist-blueprint/${reportId}/regenerate-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -402,6 +408,58 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       await load(true);
     } finally {
       setReplacingOutfitPage(null);
+    }
+  };
+
+  const editCurrentOutfit = async () => {
+    if (!versioned || !activePageIsOutfit || editingOutfitPage || replacingOutfitPage || replacingAllOutfits || generatingImages || report?.progress_stage) return;
+    const instruction = outfitInstruction.trim();
+    if (!instruction) {
+      setError('Enter an instruction describing the change you want.');
+      return;
+    }
+    // Persist any inline card edits first so the AI edits the latest text.
+    if (hasUnsavedEdits) {
+      const saved = await saveChangedPages();
+      if (!saved) return;
+    }
+    setEditingOutfitPage(activePageNumber);
+    setError('');
+    setReport(prev => prev ? {
+      ...prev,
+      progress_stage: `editing_outfit_p${activePageNumber}`,
+      error_message: null,
+    } : prev);
+    try {
+      const res = await fetch(`/api/stylist-blueprint/${reportId}/edit-outfit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageNumber: activePageNumber, instruction }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Outfit edit failed');
+      if (data.report) {
+        setReport(prev => prev ? {
+          ...prev,
+          ...data.report,
+          image_urls: data.imageUrls ?? data.report.image_urls ?? prev.image_urls,
+          progress_stage: data.report.progress_stage ?? null,
+          error_message: data.report.error_message ?? null,
+        } : data.report);
+      }
+      if (data.report?.report_data && isVersionedStylistBlueprintReportData(data.report.report_data)) {
+        setDraftData(JSON.parse(JSON.stringify(data.report.report_data)) as StylistBlueprintReportData);
+        setDirtyPages(new Set());
+        setReportDataDirty(false);
+      }
+      const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
+      if (statusRes.ok) setImageCounts((await statusRes.json()).imageCounts ?? null);
+      setOutfitInstruction('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Outfit edit failed');
+      await load(true);
+    } finally {
+      setEditingOutfitPage(null);
     }
   };
 
@@ -664,15 +722,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                     type="text"
                     value={outfitInstruction}
                     onChange={event => setOutfitInstruction(event.target.value)}
-                    placeholder="Guide this outfit — e.g. 'make it burgundy, no blazer, more casual'"
-                    disabled={replacingOutfitPage !== null || Boolean(report?.progress_stage)}
+                    placeholder="Edit: 'swap the tote for a black clutch' · Replace: 'make it burgundy, no blazer'"
+                    disabled={replacingOutfitPage !== null || editingOutfitPage !== null || Boolean(report?.progress_stage)}
                     className="rounded-xl px-3 py-2 text-sm luxury-body outline-none"
-                    style={{ background: S.card, color: S.ink, border: `1px solid ${S.border}`, minWidth: '320px' }}
+                    style={{ background: S.card, color: S.ink, border: `1px solid ${S.border}`, minWidth: '340px' }}
                   />
                   <ActionButton
-                    onClick={replaceCurrentOutfit}
-                    disabled={replacingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || generatingImages || rebuildingReport || Boolean(regeneratingSlotKey) || Boolean(report?.progress_stage) || hasUnsavedEdits}
+                    onClick={editCurrentOutfit}
+                    disabled={editingOutfitPage !== null || replacingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || generatingImages || rebuildingReport || Boolean(regeneratingSlotKey) || Boolean(report?.progress_stage) || !outfitInstruction.trim()}
                     tone="primary"
+                  >
+                    {editingOutfitPage === activePageNumber ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Edit with AI
+                  </ActionButton>
+                  <ActionButton
+                    onClick={replaceCurrentOutfit}
+                    disabled={replacingOutfitPage !== null || editingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || generatingImages || rebuildingReport || Boolean(regeneratingSlotKey) || Boolean(report?.progress_stage) || hasUnsavedEdits}
+                    tone="neutral"
                   >
                     {replacingOutfitPage === activePageNumber ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Replace Outfit
                   </ActionButton>

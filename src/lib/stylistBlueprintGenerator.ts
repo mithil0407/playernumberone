@@ -834,57 +834,44 @@ const PATTERN_DIRECTIONS = [
 // here and never produce a separate extra garment.
 const ACCENT_APPLICATIONS: Array<{ slot: string; piece: string; guidance: string }> = [
   {
-    slot: 'Pattern Detail',
-    piece: 'pinstripe, micro-print, or border detail',
-    guidance: 'Use the accent as part of a print or stripe, not as a flat block on the whole outfit.',
+    slot: 'Scarf',
+    piece: 'silk scarf',
+    guidance: 'Use the accent as one whole coloured silk scarf, not as a repeated styling crutch.',
   },
   {
-    slot: 'Bag',
-    piece: 'compact clutch or small structured bag',
-    guidance: 'Let the accent become one polished object rather than many scattered details.',
-  },
-  {
-    slot: 'Footwear Detail',
-    piece: 'heel, piping, stitch, or strap detail',
-    guidance: 'Use the accent on a realistic shoe detail while the shoe body stays neutral leather or suede.',
+    slot: 'Print',
+    piece: 'small-scale print on the top or dress',
+    guidance: 'Use the accent inside a print on a real garment, with the base palette carrying the rest of the outfit.',
   },
   {
     slot: 'Jewellery',
-    piece: 'stone, enamel, or metal jewellery detail',
-    guidance: 'Use the accent through jewellery that reads intentional and wearable.',
+    piece: 'stone or enamel jewellery',
+    guidance: 'Use the accent through a coloured jewellery stone or enamel that reads intentional and wearable.',
   },
   {
-    slot: 'Waist Detail',
-    piece: 'slim belt, buckle, or waist piping',
-    guidance: 'Use the accent as a narrow line that shapes the outfit without dominating it.',
+    slot: 'Belt',
+    piece: 'slim leather belt',
+    guidance: 'Use the accent as one whole coloured leather belt at the waist.',
   },
   {
-    slot: 'Print Detail',
-    piece: 'small floral, geometric, or abstract print',
-    guidance: 'Use the accent inside a print with the base palette carrying the rest of the outfit.',
-  },
-  {
-    slot: 'Hair or Face Detail',
-    piece: 'hair clip, eyewear tint, or near-face enamel detail',
-    guidance: 'Keep this close to the face and small enough to feel premium.',
-  },
-  {
-    slot: 'Scarf',
-    piece: 'narrow silk scarf',
-    guidance: 'Use this only as the single scarf moment in the full wardrobe, not as a repeated styling crutch.',
+    slot: 'Bag',
+    piece: 'compact clutch',
+    guidance: 'Use the accent as one whole coloured clutch, never as trim or hardware on a neutral bag.',
   },
 ];
 
 const PRACTICAL_COLOUR_APPLICATION_RULES = `
 Practical colour application rules:
 - Use the palette as wardrobe logic, not literal paint on every item.
-- Never create coloured leather sneakers. Sneakers must be white, off-white, cream, or grey-neutral; palette colours may appear only as tiny trim, stripe, sole, or stitching details.
+- Accent colours appear ONLY as whole realistic pieces: a coloured knit or top, a coloured cardigan/overshirt/jacket, a silk scarf, a leather belt, a jewellery stone/enamel, a garment print, or (for evening) a whole coloured clutch.
+- NEVER put an accent (or any) colour on a bag or shoe as a trim, tag, stripe, piping, hardware, stitch, sole, or "detail". Bags and shoes are a single realistic colour from head to toe.
+- Bags and shoes use realistic leather/suede colours only: black, espresso, chocolate, cognac, tan, taupe, cream, burgundy, or restrained grey. A vivid/bright colour belongs on a knit, top, scarf, belt, jewellery, or evening clutch — not on an everyday leather bag or shoe.
+- Never create coloured leather sneakers. Sneakers are white, off-white, cream, or grey-neutral with no coloured trim.
 - Professional and Occasion outfits should normally use loafers, pointed flats, pumps, sandals, juttis, mules, or refined heels instead of sneakers unless the library reference and client lifestyle clearly justify a casual version.
-- Leather shoes and bags should use realistic leather/suede families: black, espresso, chocolate, cognac, tan, taupe, cream, burgundy, or restrained grey. Do not invent slate leather sneakers, emerald leather sneakers, blue leather sneakers, or similar unrealistic footwear.
-- Accents can be used with more confidence, but realistically: accent inner top, camisole, knit shell, small print, pinstripe, border detail, compact bag, heel/strap trim, belt, enamel, stone, or jewellery. Do not make a whole trouser, sneaker, or large coat the accent colour.
+- Do not make a whole trouser, sneaker, or large coat the accent colour.
 - Do not rely on scarves. Across the full outfit system, use at most one scarf moment unless the admin specifically asks for more.
 - Keep each outfit visually distinct: vary formula type, top/bottom relationship, texture, pattern, shoe type, bag shape, jewellery idea, and where the palette colour appears.
-- Include real wardrobe texture/pattern variety where appropriate: vertical pinstripes, fine stripes, tweed/boucle, ribbed knit, twill, crepe, satin-back crepe, denim, herringbone, micro-check, border detail, piping, or tonal jacquard.
+- Include real wardrobe texture/pattern variety where appropriate: vertical pinstripes, fine stripes, tweed/boucle, ribbed knit, twill, crepe, satin-back crepe, denim, herringbone, micro-check, or tonal jacquard.
 - Every outfit must visibly borrow the assigned library_reference piece relationship, then adapt colour, formality, coverage, climate, and fit to this client.
 - Avoid same-depth same-family top + bottom pairings. Each outfit needs a clear light/dark or texture/depth bridge.
 `.trim();
@@ -1331,68 +1318,90 @@ function colourLooksLeatherGround(colour: PlannedOutfitColour) {
   return /(black|ink|espresso|cocoa|chocolate|brown|tan|camel|cognac|taupe|burgundy|oxblood|cream|ivory|stone|grey|gray|charcoal)/i.test(colourText(colour));
 }
 
-function colourLooksAccentOnly(colour: PlannedOutfitColour) {
-  return colour.role === 'accent' || /(emerald|teal|rose|pink|coral|peach|plum|violet|purple|marigold|mustard|gold|rust|terracotta|sienna|red|berry)/i.test(colourText(colour));
+
+function colourIsSaturated(colour: PlannedOutfitColour) {
+  return colourSaturation(colour.hex) >= 0.35;
 }
 
+// A pale colour that is genuinely neutral (cream/ivory/stone) rather than a bright,
+// high-saturation light colour (lime, bright yellow) that should never be leather.
+function colourLooksNeutralLight(colour: PlannedOutfitColour) {
+  return colourLooksLight(colour) && !colourIsSaturated(colour);
+}
+
+// True only for colours that read as real leather/suede: neutrals, browns, greys,
+// burgundy, or genuinely pale neutrals. Saturated brights are excluded.
+function isRealisticLeatherColour(colour: PlannedOutfitColour) {
+  return colourLooksLeatherGround(colour) || colourLooksGreyNeutral(colour) || colourLooksNeutralLight(colour);
+}
+
+// A realistic neutral leather colour to fall back to so bags/shoes are never
+// forced into a vivid/accent colour (or a fake coloured trim).
+function neutralLeatherColourName(plan: PlannedOutfit): string {
+  const roles = [plan.ground_colour, plan.support_colour, plan.lead_colour]
+    .filter((colour): colour is PlannedOutfitColour => Boolean(colour));
+  const neutral = roles.find(colour => isRealisticLeatherColour(colour));
+  if (neutral) return neutral.name;
+  const cool = roles.some(colour => /navy|blue|slate|charcoal|grey|gray|ink|emerald|teal|plum|indigo|petrol/i.test(colourText(colour)));
+  return cool ? 'Charcoal Grey' : 'Espresso';
+}
+
+// Footwear is always a whole shoe in a realistic shoe colour — never a neutral
+// shoe with a coloured trim/detail. Saturated/vivid colours default to neutral.
 function realisticFootwearFamily(colour: PlannedOutfitColour, plan: PlannedOutfit, originalPiece: string) {
   const lowerPiece = originalPiece.toLowerCase();
   const sneakerAllowed = plan.capsule === 'Everyday' || (plan.capsule === 'Social' && /casual|denim|street|sneaker/.test(lowerPiece));
   const isSneaker = /sneaker|trainer|canvas|low-top|slip-on/.test(lowerPiece);
-  const isWarmLeather = /(espresso|cocoa|chocolate|brown|tan|camel|cognac|taupe|warm|burgundy|oxblood)/i.test(colourText(colour));
+  const isWarmLeather = /(espresso|cocoa|chocolate|brown|tan|camel|cognac|taupe|burgundy|oxblood)/i.test(colourText(colour));
   const isDark = relativeLuminance(colour.hex) < 0.26 || /(black|ink|charcoal|espresso|cocoa|chocolate|navy)/i.test(colourText(colour));
+  const isRealisticShoeColour = isWarmLeather || isDark || isRealisticLeatherColour(colour);
+  const neutral = neutralLeatherColourName(plan);
 
   if (isSneaker && sneakerAllowed) {
-    if (colourLooksLight(colour)) return `${colour.name} minimalist leather low-top sneakers`;
-    if (colourLooksGreyNeutral(colour)) return `white leather low-top sneakers with restrained ${colour.name} trim`;
-    return `off-white leather low-top sneakers with tiny ${colour.name} trim`;
+    if (colourLooksNeutralLight(colour)) return `${colour.name} minimalist leather low-top sneakers`;
+    return `white leather low-top sneakers`;
   }
 
   if (plan.capsule === 'Professional') {
     if (isWarmLeather) return `${colour.name} leather loafers`;
     if (isDark) return `${colour.name} pointed-toe flats or low pumps`;
-    if (colourLooksGreyNeutral(colour)) return `charcoal or pewter suede pointed flats`;
-    return `neutral leather pointed flats with a small ${colour.name} detail`;
+    if (colourLooksGreyNeutral(colour)) return `${colour.name} suede pointed flats`;
+    return `${neutral} leather pointed flats or low pumps`;
   }
 
   if (plan.capsule === 'Occasion') {
-    if (colourLooksAccentOnly(colour)) return `metallic or neutral low heels with tiny ${colour.name} detailing`;
     if (isWarmLeather) return `${colour.name} suede block heels or refined sandals`;
-    if (isDark) return `${colour.name} low heels or dressy flats`;
-    return `${colour.name} refined sandals or low heels`;
+    if (isDark) return `${colour.name} heels or dressy flats`;
+    if (colourLooksGreyNeutral(colour) || colourLooksNeutralLight(colour)) return `${colour.name} heels or refined sandals`;
+    return `metallic or ${neutral} heels`;
   }
 
-  if (colourLooksAccentOnly(colour) && !colourLooksLeatherGround(colour)) {
-    return `neutral leather flats with small ${colour.name} trim`;
-  }
-
-  if (colourLooksGreyNeutral(colour)) return `${colour.name} suede loafers, flats, or grey-neutral sneakers`;
-  if (colourLooksLeatherGround(colour)) return `${colour.name} leather loafers, flats, or sandals`;
-  return `neutral shoe with a controlled ${colour.name} detail`;
+  if (isRealisticShoeColour) return `${colour.name} leather loafers, flats, or sandals`;
+  return `${neutral} leather loafers or flats`;
 }
 
+// Bags are a whole bag in a realistic leather colour, or — for vivid colours — an
+// Occasion clutch in that colour, else a neutral leather bag. Never a coloured trim/tag.
 function realisticBagFamily(colour: PlannedOutfitColour, plan: PlannedOutfit) {
-  if (colourLooksAccentOnly(colour) && plan.capsule === 'Occasion') return `compact ${colour.name} clutch or minaudiere`;
-  if (colourLooksAccentOnly(colour)) return `neutral structured bag with small ${colour.name} trim or hardware`;
-  if (colourLooksLeatherGround(colour) || colourLooksGreyNeutral(colour)) return `${colour.name} structured leather bag`;
-  return `neutral leather bag with a small ${colour.name} detail`;
+  if (isRealisticLeatherColour(colour)) return `${colour.name} structured leather bag`;
+  if (plan.capsule === 'Occasion') return `compact ${colour.name} clutch`;
+  return `${neutralLeatherColourName(plan)} structured leather bag`;
 }
 
+// Accents appear only as whole realistic pieces: scarf, belt, garment print,
+// knit/top/layer, or jewellery stone — never as trims, piping, or shoe details.
 function realisticAccessoryFamily(colour: PlannedOutfitColour, plan: PlannedOutfit, slot: string) {
   const application = plan.accent_application;
-  if (application && colour.role === 'accent') {
-    const lowerSlot = slot.toLowerCase();
-    if (/scarf/.test(lowerSlot) || /scarf/.test(application.slot)) return `${colour.name} narrow silk scarf`;
-    if (/hair|face/.test(lowerSlot) || /hair|face/.test(application.slot)) return `${colour.name} hair clip, eyewear tint, or near-face enamel detail`;
-    if (/print|pattern/.test(lowerSlot) || /print|pattern/.test(application.slot)) return `${colour.name} micro-print, pinstripe, or border detail`;
-    if (/waist|belt/.test(lowerSlot) || /waist|belt/.test(application.slot)) return `${colour.name} slim belt, buckle, or waist piping`;
-    if (/footwear/.test(lowerSlot) || /footwear/.test(application.slot)) return `neutral shoe with ${colour.name} heel, strap, or piping detail`;
-    if (/bag/.test(lowerSlot) || /bag/.test(application.slot)) return realisticBagFamily(colour, plan);
-    if (/top|layer/.test(lowerSlot) || /top|layer/.test(application.slot)) return `${colour.name} ${application.piece}`;
-  }
-  if (/(gold|marigold|amber|copper|bronze)/i.test(colourText(colour))) return `${colour.name} metal jewellery detail`;
-  if (/(silver|pewter|grey|gray|slate)/i.test(colourText(colour))) return `${colour.name} metal, stone, or enamel jewellery detail`;
-  return `${colour.name} stone, enamel, or jewellery detail`;
+  const lowerSlot = slot.toLowerCase();
+  const appSlot = application?.slot.toLowerCase() ?? '';
+  if (/scarf/.test(lowerSlot) || /scarf/.test(appSlot)) return `${colour.name} silk scarf`;
+  if (/belt|waist/.test(lowerSlot) || /belt|waist/.test(appSlot)) return `${colour.name} slim leather belt`;
+  if (/print|pattern/.test(lowerSlot) || /print|pattern/.test(appSlot)) return `${colour.name} small-scale print on the top or dress`;
+  if (/bag/.test(lowerSlot) || /bag/.test(appSlot)) return realisticBagFamily(colour, plan);
+  if (/top|layer/.test(lowerSlot) || /top|layer/.test(appSlot)) return application ? `${colour.name} ${application.piece}` : `${colour.name} knit top`;
+  if (/hair|face/.test(lowerSlot) || /hair|face/.test(appSlot)) return `${colour.name} hair accessory`;
+  if (/(gold|marigold|amber|copper|bronze)/i.test(colourText(colour))) return `${colour.name} metal jewellery`;
+  return `${colour.name} stone or enamel jewellery`;
 }
 
 const COLOUR_MODIFIER_WORDS = [
@@ -1964,6 +1973,129 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
   };
 
   return normaliseGeneratedPage(candidate, reportData, plan);
+}
+
+// Removes fake "with [colour] trim/hardware/detail" clauses from bag/shoe pieces so
+// an edited outfit never reintroduces an unrealistic coloured detail on leather.
+function sanitiseAccessoryPieceRealism(piece: string, slot: string): string {
+  const lower = slot.toLowerCase();
+  if (!/bag|tote|clutch|crossbody|handbag|shoe|footwear|sandal|heel|flat|loafer|pump|sneaker|mule|boot/.test(lower)) return piece;
+  const cleaned = piece
+    .replace(/\b(with|and)\b[^,.]*\b(trim|trims|tag|tags|hardware|piping|stitch(?:ing)?|sole|detail|detailing|accent)\b[^,.]*/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/[,\s]+$/, '')
+    .trim();
+  return cleaned || piece;
+}
+
+// Trusts the model's edited items (so the targeted change is preserved) and only
+// fills missing metadata, cleans bag/shoe realism, and recomputes palette_used.
+// Deliberately does NOT run normaliseOutfitPage, which would re-impose the plan.
+function sanitiseEditedOutfitPage(raw: AnyRecord, existingPage: BlueprintPage, pageNumber: number): BlueprintPage {
+  const rawBlocks = Array.isArray(raw.blocks) && raw.blocks.length ? raw.blocks : existingPage.blocks;
+  const nextBlocks: BlueprintBlock[] = rawBlocks.map((blockRaw) => {
+    const block = asRecord(blockRaw);
+    const items = Array.isArray(block.items)
+      ? block.items.map((itemRaw, idx) => {
+        const item = asRecord(itemRaw);
+        const slot = asString(item.slot) || asString(item.category) || asString(item.label) || `Piece ${idx + 1}`;
+        const pieceRaw = asString(item.piece) || asString(item.name) || asString(item.heading) || '';
+        const colourHex = asString(item.colour_hex);
+        const role = asString(item.palette_role);
+        return {
+          ...item,
+          slot,
+          piece: sanitiseAccessoryPieceRealism(pieceRaw, slot) || pieceRaw,
+          colour_name: asString(item.colour_name) || undefined,
+          colour_hex: isValidHex(colourHex) ? normaliseHex(colourHex) : undefined,
+          palette_role: ['lead', 'support', 'ground', 'accent'].includes(role) ? role : undefined,
+          structural_notes: asString(item.structural_notes) || asString(item.notes) || asString(item.guidance) || '',
+        };
+      })
+      : undefined;
+    return {
+      label: asString(block.label) || undefined,
+      heading: asString(block.heading) || undefined,
+      body: asString(block.body) || undefined,
+      reason: asString(block.reason) || undefined,
+      items,
+    };
+  });
+
+  const used = new Map<string, BlueprintColourUse>();
+  for (const block of nextBlocks) {
+    for (const item of Array.isArray(block.items) ? block.items : []) {
+      const record = asRecord(item);
+      const hex = asString(record.colour_hex);
+      const role = asString(record.palette_role);
+      if (isValidHex(hex) && ['lead', 'support', 'ground', 'accent'].includes(role)) {
+        const key = normaliseHex(hex);
+        if (!used.has(key)) used.set(key, { name: asString(record.colour_name, 'Palette colour'), hex: key, role: role as BlueprintColourUse['role'] });
+      }
+    }
+  }
+
+  return {
+    page_number: pageNumber,
+    page_type: 'outfit',
+    title: asString(raw.title, existingPage.title),
+    subtitle: asString(raw.subtitle, existingPage.subtitle) || undefined,
+    blocks: nextBlocks,
+    image_refs: asStringArray(raw.image_refs).length ? asStringArray(raw.image_refs) : existingPage.image_refs,
+    palette_used: used.size ? [...used.values()] : existingPage.palette_used,
+    library_refs: existingPage.library_refs,
+  };
+}
+
+export async function generateStylistBlueprintOutfitEdit(
+  submission: StylistIntakeSubmission,
+  reportData: StylistBlueprintReportData,
+  pageNumber: number,
+  instruction: string,
+): Promise<BlueprintPage> {
+  const outfitStart = getStylistBlueprintOutfitStartPage();
+  const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
+  if (pageNumber < outfitStart || pageNumber > outfitEnd) {
+    throw new Error(`Page ${pageNumber} is not an outfit page`);
+  }
+  if (!instruction.trim()) throw new Error('An edit instruction is required');
+
+  const existingPage = reportData.pages.find(page => page.page_number === pageNumber);
+  if (!existingPage) throw new Error(`Missing outfit page ${pageNumber}`);
+
+  const palette = [
+    ...reportData.classification.colour.base_palette,
+    ...reportData.classification.colour.accent_palette,
+  ].map(colour => `${colour.name} ${colour.hex}`).join(', ');
+
+  const prompt = `You are ICONIK's premium women Style Blueprint editor.
+Return ONLY valid JSON: {"page":{...}}.
+
+Apply ONLY the requested change to the outfit below. Keep every other piece, colour, fabric, layer, structural note, the title, and the page structure EXACTLY the same. Do not restyle, re-colour, or rephrase anything the instruction does not explicitly ask you to change.
+
+Return the full page object with the same shape, including ALL formula items as objects with {"slot":"","piece":"","colour_name":"","colour_hex":"","palette_role":"lead|support|ground|accent","structural_notes":""} and a page-level "palette_used". Items the instruction does not touch must be returned unchanged.
+
+When the instruction names a colour, use the closest colour from the client palette and set that item's colour_name and colour_hex to it.
+
+${PRACTICAL_COLOUR_APPLICATION_RULES}
+
+--- EDIT INSTRUCTION ---
+${instruction}
+
+--- CLIENT PALETTE ---
+${palette}
+
+--- CURRENT OUTFIT PAGE (edit this, preserve everything else) ---
+${stringify(existingPage)}
+
+--- CLIENT CLASSIFICATION (context only) ---
+${stringify(reportData.classification)}`;
+
+  const raw = asRecord(await callGeminiJSON(prompt, photoUrls(submission)));
+  const page = asRecord(raw.page) || asRecord(Array.isArray(raw.pages) ? raw.pages[0] : null);
+  if (!Object.keys(page).length) throw new Error('Outfit edit returned no page');
+
+  return sanitiseEditedOutfitPage(page, existingPage, pageNumber);
 }
 
 export async function generateStylistBlueprintReplacementOutfits(

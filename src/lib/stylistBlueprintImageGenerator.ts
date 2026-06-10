@@ -539,8 +539,9 @@ Background and style:
 - Full outfit visible from head to toe, centered in frame, with generous margin above the head and below the footwear. Both shoes and all footwear details must be fully visible.
 - Absolutely no text, letters, typography, captions, labels, logos, signage, watermarks, UI marks, brand marks, readable symbols, extra people, or mannequin.
 - Natural realistic fabric behavior and correct garment construction.
-- Practical colour realism: never render fully coloured leather sneakers. If the outfit mentions sneakers, they must be white, off-white, cream, or grey-neutral; any palette colour on sneakers is only tiny trim, stripe, stitching, sole, or heel detail.
-- Leather shoes and bags must look commercially realistic: black, espresso, chocolate, cognac, tan, taupe, burgundy, cream, restrained grey, or neutral suede/leather unless the outfit explicitly says tiny trim/detail.
+- Practical colour realism: never render coloured leather sneakers. If the outfit mentions sneakers, they must be white, off-white, cream, or grey-neutral with no coloured trim.
+- Bags and shoes are a single realistic leather/suede colour head to toe: black, espresso, chocolate, cognac, tan, taupe, burgundy, cream, or restrained grey. Never add a coloured trim, tag, stripe, piping, hardware, stitch, sole, or "detail" in a different colour on a bag or shoe — if a piece is a bag or shoe, ignore any stray colour accent and render the whole item in its realistic neutral leather colour.
+- Accent colours appear only on knitwear, tops, layers, scarves, belts, jewellery stones/enamel, garment prints, or an evening clutch — never as a small detail bolted onto an otherwise neutral bag or shoe.
 
 Client styling constraints:
 - Body geometry: ${reportData.classification.body.geometry}.

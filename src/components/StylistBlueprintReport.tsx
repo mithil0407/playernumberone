@@ -99,6 +99,34 @@ function updateBlock(page: BlueprintPage, index: number, patch: Partial<Blueprin
   };
 }
 
+function updateItem(page: BlueprintPage, blockIndex: number, itemIndex: number, patch: Record<string, unknown>): BlueprintPage {
+  return {
+    ...page,
+    blocks: page.blocks.map((block, bi) => {
+      if (bi !== blockIndex) return block;
+      const items = Array.isArray(block.items) ? block.items : [];
+      return {
+        ...block,
+        items: items.map((item, ii) => ii !== itemIndex ? item : { ...(item && typeof item === 'object' ? item : {}), ...patch }),
+      };
+    }),
+  };
+}
+
+// Returns the outfit formula items plus, when they map 1:1 to a real items
+// array on a single block, the block index so each piece can be edited inline.
+function formulaItemsForOutfit(page: BlueprintPage): { items: unknown[]; blockIndex: number; editable: boolean } {
+  let blockIndex = page.blocks.findIndex(block => /formula|piece|look|outfit/i.test(`${block.label} ${block.heading}`));
+  if (blockIndex < 0) blockIndex = page.blocks.findIndex(block => asItems(block).length >= 3);
+  const rawItems = blockIndex >= 0 ? asItems(page.blocks[blockIndex]) : [];
+  const objectItem = rawItems.length === 1 && isObject(rawItems[0]) ? rawItems[0] : null;
+  const isSlotSource = objectItem && OUTFIT_SLOT_KEYS.some(key => objectItem[key] !== undefined);
+  if (rawItems.length && !isSlotSource) {
+    return { items: rawItems.slice(0, 8), blockIndex, editable: true };
+  }
+  return { items: normaliseFormulaItems(page), blockIndex: -1, editable: false };
+}
+
 function ImageSlotFrame({
   slotKey,
   className = '',
@@ -1086,7 +1114,8 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
   const image = imageForPage(page, imageUrls, data);
   const detail = secondaryImageForPage(page, imageUrls, data);
   const reasoning = page.blocks.find(block => block.reason || /reason|why|works/i.test(`${block.label} ${block.heading}`));
-  const items = normaliseFormulaItems(page);
+  const formula = formulaItemsForOutfit(page);
+  const items = formula.items;
   const palette = paletteForOutfitPage(page, data, items);
   const outfitNumber = page.page_number - 13;
   const imageSlot = imageSlotForPage(page, data);
@@ -1133,12 +1162,22 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
         <div className="formula-grid">
           {(items.length ? items : page.blocks.slice(0, 5)).map((item, index) => {
             const colour = colourForFormulaItem(item, page, data, index);
+            const pieceValue = getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`));
+            const notesValue = getField(item, ['structural_notes', 'notes', 'guidance', 'body'], '');
             return (
               <div key={index} className="formula-card">
                 <SwatchDot hex={colour.hex} />
                 <div className="mono dossier-label">{String(index + 1).padStart(2, '0')} - {getField(item, ['slot', 'category', 'label'], 'piece')}</div>
-                <h3 className="display">{getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`))}</h3>
-                <p>{getField(item, ['structural_notes', 'notes', 'guidance', 'body'], '')}</p>
+                <h3 className="display">
+                  {formula.editable
+                    ? <EditableText page={page} value={pieceValue} update={value => updateItem(page, formula.blockIndex, index, { piece: value })} />
+                    : pieceValue}
+                </h3>
+                <p>
+                  {formula.editable
+                    ? <EditableText as="span" page={page} value={notesValue} update={value => updateItem(page, formula.blockIndex, index, { structural_notes: value })} />
+                    : notesValue}
+                </p>
               </div>
             );
           })}
