@@ -224,7 +224,7 @@ export const getCustomerByEmail = async (email: string) => {
 export const saveSubscription = async (subscription: Subscription) => {
   // If razorpay_subscription_id exists, try to update existing record first
   if (subscription.razorpay_subscription_id) {
-    const { data: existingSubscription } = await supabase
+    const { data: existingSubscription } = await supabaseAdmin
       .from('subscriptions')
       .select('id')
       .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
@@ -232,7 +232,7 @@ export const saveSubscription = async (subscription: Subscription) => {
 
     if (existingSubscription) {
       // Update existing subscription
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('subscriptions')
         .update(subscription)
         .eq('razorpay_subscription_id', subscription.razorpay_subscription_id)
@@ -245,7 +245,7 @@ export const saveSubscription = async (subscription: Subscription) => {
   }
 
   // Insert new subscription
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('subscriptions')
     .insert([subscription])
     .select()
@@ -256,7 +256,7 @@ export const saveSubscription = async (subscription: Subscription) => {
 };
 
 export const getSubscriptionByEmail = async (email: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('subscriptions')
     .select('*')
     .eq('customer_email', email)
@@ -267,7 +267,7 @@ export const getSubscriptionByEmail = async (email: string) => {
 };
 
 export const getActiveSubscriptionByEmail = async (email: string) => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('subscriptions')
     .select('*')
     .eq('customer_email', email)

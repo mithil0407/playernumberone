@@ -132,7 +132,11 @@ export default function ColorMirrorResultPage() {
             (window as any).fbq?.('trackCustom', 'blueprint_cta_clicked', { funnel: 'color_mirror', season: payload?.seasonName });
         }
         if (leadId) {
-            import('@/lib/supabaseStyleScan').then(m => m.markStyleScanCtaClicked(leadId)).catch(() => { });
+            fetch('/api/stylist-lead/cta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leadId, email: payload?.email }),
+            }).catch(() => { });
         }
         if (payload?.email && typeof window !== 'undefined') {
             localStorage.setItem('stylist_customerEmail', payload.email);
