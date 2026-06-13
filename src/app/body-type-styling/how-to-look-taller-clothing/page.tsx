@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How to Look Taller with Clothing: The Vertical Line Method — Iconik",
-  description: "Science-backed guide to looking taller with clothing for Indian women. The vertical line method, best cuts, heel rules, and how Indian garments can add visual height.",
+  title: "How to Look Taller with Clothes: Stylist Rules That Actually Work",
+  description: "High-rise bottoms, unbroken colour, narrow vertical lines — the stylist rules that add visual height, including which kurta lengths and heel choices work for petite Indian women.",
   keywords: "how to look taller with clothes India, dressing to look taller Indian women, vertical line method styling India, petite fashion India, how to appear taller clothing India",
   alternates: { canonical: "https://www.iconik.pro/body-type-styling/how-to-look-taller-clothing" },
   openGraph: {
-    title: "How to Look Taller with Clothing: The Vertical Line Method — Iconik",
+    title: "How to Look Taller with Clothes: Stylist Rules That Actually Work",
     description: "The vertical line method — how to use clothing geometry to create visual height for Indian women.",
     url: "https://www.iconik.pro/body-type-styling/how-to-look-taller-clothing",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "How to look taller with clothing — Iconik" }],

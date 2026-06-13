@@ -20,6 +20,15 @@ export const maxDuration = 300;
 
 const STALE_MS = 10 * 60 * 1000;
 
+function missingPhotoError(submission: Pick<ManIntakeSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
+  const missing = [
+    submission.photo_fullbody_url ? null : 'full body photo',
+    submission.photo_headshot_url ? null : 'headshot photo',
+  ].filter(Boolean);
+
+  return missing.length ? `Cannot resume report until ${missing.join(' and ')} ${missing.length === 1 ? 'is' : 'are'} uploaded.` : null;
+}
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
@@ -62,6 +71,21 @@ export async function POST(
     }
   }
 
+  const { data: submission, error: subErr } = await supabaseAdmin
+    .from('man_intake_submissions')
+    .select('*')
+    .eq('id', report.submission_id)
+    .single();
+
+  if (subErr || !submission) {
+    return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  }
+
+  const photoError = missingPhotoError(submission as ManIntakeSubmission);
+  if (photoError) {
+    return NextResponse.json({ error: photoError }, { status: 400 });
+  }
+
   if (!nextStage) {
     await supabaseAdmin
       .from('man_reports')
@@ -83,16 +107,6 @@ export async function POST(
       resumed: true,
       completedSections,
     });
-  }
-
-  const { data: submission, error: subErr } = await supabaseAdmin
-    .from('man_intake_submissions')
-    .select('*')
-    .eq('id', report.submission_id)
-    .single();
-
-  if (subErr || !submission) {
-    return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
 
   const { error: leaseErr } = await supabaseAdmin

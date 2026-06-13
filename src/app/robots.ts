@@ -6,34 +6,20 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
+        // Only truly private surfaces are blocked from crawling. Funnel pages
+        // (checkout/intake/thankyou/oto) are intentionally NOT listed: they
+        // carry a noindex meta tag, and Google can only see that tag if it is
+        // allowed to crawl the page. Blocking them here caused
+        // "Indexed, though blocked by robots.txt" in Search Console.
         disallow: [
           "/admin",
-          "/checkout",
-          "/checkout-monthly",
           "/dashboard",
           "/closet",
           "/iconik-club/admin",
           "/iconik-club/client",
           "/man/admin",
           "/globe/admin",
-          "/man/checkout",
-          "/man/intake",
-          "/au/checkout",
-          "/au/intake",
-          "/au/thankyou",
-          "/uae/checkout",
-          "/uae/oto",
-          "/globe/checkout",
-          "/globe/intake",
-          "/globe/thankyou",
-          "/global/checkout",
-          "/global/intake",
-          "/global/thankyou",
-          "/us/checkout",
-          "/monthly/checkout",
-          "/monthly/indian/checkout",
-          "/checkout/success",
-          "/checkout/basic-success",
+          "/stylist/admin",
           "/api/",
         ],
       },

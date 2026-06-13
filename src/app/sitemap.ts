@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { indexedSeoPages } from "@/lib/seoContent";
 
 const BASE = "https://www.iconik.pro";
-const LAST_MODIFIED = new Date("2026-06-04");
+const LAST_MODIFIED = new Date("2026-06-12");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return indexedSeoPages.map((entry) => ({

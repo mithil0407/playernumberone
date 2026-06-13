@@ -560,18 +560,21 @@ function ManIntakePageInner() {
         setSubmitting(true);
         setSubmitError('');
         try {
+            if (!form.photoFullBody || !form.photoHeadshot) {
+                setSubmitError('Please upload both your full body photo and headshot before submitting.');
+                return;
+            }
+
             // Upload both photos in parallel
             const ts = Date.now();
             const [photoFullBodyUrl, photoHeadshotUrl] = await Promise.all([
-                form.photoFullBody
-                    ? uploadManIntakePhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`)
-                        .catch(err => { console.warn('Full body photo upload failed:', err); return ''; })
-                    : Promise.resolve(''),
-                form.photoHeadshot
-                    ? uploadManIntakePhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`)
-                        .catch(err => { console.warn('Headshot upload failed:', err); return ''; })
-                    : Promise.resolve(''),
+                uploadManIntakePhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`),
+                uploadManIntakePhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`),
             ]);
+
+            if (!photoFullBodyUrl || !photoHeadshotUrl) {
+                throw new Error('Both photo uploads are required before submission.');
+            }
 
             const derivedColourSeason = deriveColourSeason(
                 form.skinTone,
@@ -618,14 +621,11 @@ function ManIntakePageInner() {
                 free_text_note: form.freeTextNote || undefined,
             };
 
-            // Move to confirmation immediately — save + notify fire-and-forget
+            await saveManIntakeSubmission(submissionPayload);
+
             trackCompleteRegistration(MAN_PRICING.IN.basePrice, 'ICONIK Blueprint Man — Intake Submitted', MAN_PRICING.IN.currency);
             setDirection(1);
             setStep(CONFIRMATION_STEP);
-
-            // Save to DB (background)
-            saveManIntakeSubmission(submissionPayload)
-                .catch(err => console.error('Man intake save error:', err));
 
             // Notify the ICONIK team (background)
             fetch('/api/man-intake-notify', {
@@ -641,7 +641,7 @@ function ManIntakePageInner() {
 
         } catch (err) {
             console.error('Man intake submit error:', err);
-            setSubmitError('Something went wrong. Please try again or email help.iconikfashion@gmail.com');
+            setSubmitError('We could not submit your intake. Please check both photos and try again, or email help.iconikfashion@gmail.com');
         } finally {
             setSubmitting(false);
         }

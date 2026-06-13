@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         derived_colour_season,
         primary_goal,
         location_tier,
+        photo_fullbody_url,
         photo_headshot_url,
         created_at,
         man_reports(id, status, progress_stage, share_token, generated_at, sent_at, error_message, created_at)

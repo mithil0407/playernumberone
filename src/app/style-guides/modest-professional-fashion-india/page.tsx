@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Modest Fashion That Doesn't Look Boring: The Indian Professional — Iconik",
+  title: "Modest Office Wear for Indian Women: Polished, Never Boring",
   description: "How to dress modestly for Indian professional environments without sacrificing style. Coverage-first formulas for corporate, startup, and traditional workplaces — ethnic and western.",
   keywords: "modest professional fashion India, modest work clothes Indian women, covered office wear India, conservative dress code India, modest corporate fashion Indian women",
   alternates: { canonical: "https://www.iconik.pro/style-guides/modest-professional-fashion-india" },
   openGraph: {
-    title: "Modest Fashion That Doesn't Look Boring: The Indian Professional — Iconik",
+    title: "Modest Office Wear for Indian Women: Polished, Never Boring",
     description: "Coverage-first office formulas for Indian professional women — ethnic and western wear that is both modest and authoritative.",
     url: "https://www.iconik.pro/style-guides/modest-professional-fashion-india",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Modest professional fashion India — Iconik" }],

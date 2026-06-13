@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Best Colours for Dark Skin Indian Women — Colour Guide",
-  description: "The best colours for dark skin Indian women — by undertone. Warm dark skin, cool dark skin, and neutral dark skin each have a distinct palette. Iconik's complete colour guide for deep Indian skin tones.",
+  title: "Which Colours Suit Dark Indian Skin? Full Palette by Undertone",
+  description: "Jewel tones for cool undertones, earthy rich shades for warm — the complete colour palette for dark Indian skin, with the exact shades to avoid for each undertone.",
   keywords: "best colours for dark skin Indian women, colour guide dark skin India, what colours suit dark skin India, dark skin colour palette India, clothing colours for dark complexion India",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india" },
   openGraph: {
-    title: "Best Colours for Dark Skin Indian Women — Colour Guide",
+    title: "Which Colours Suit Dark Indian Skin? Full Palette by Undertone",
     description: "Complete colour guide for dark skin Indian women — by undertone. Warm, cool, and neutral dark skin each have a distinct palette.",
     url: "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour guide for dark skin Indian women — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best Colours for Dark Skin Indian Women — Colour Guide",
+    title: "Which Colours Suit Dark Indian Skin? Full Palette by Undertone",
     description: "Complete colour guide for dark skin Indian women — by undertone.",
     images: ["/og-image.webp"],
   },

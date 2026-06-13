@@ -27,6 +27,7 @@ interface Submission {
   derived_colour_season: string | null;
   primary_goal: string | null;
   location_tier: string | null;
+  photo_fullbody_url: string | null;
   photo_headshot_url: string | null;
   created_at: string;
   latest_report: LatestReport | null;
@@ -99,6 +100,13 @@ function formatDate(iso: string) {
 function formatSeason(s: string | null) {
   if (!s) return '—';
   return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function getMissingPhotos(submission: Pick<Submission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
+  return [
+    submission.photo_fullbody_url ? null : 'Full body',
+    submission.photo_headshot_url ? null : 'Headshot',
+  ].filter(Boolean) as string[];
 }
 
 function StatCard({ label, value, icon: Icon, color, loading }: {
@@ -276,7 +284,11 @@ export default function ManSubmissionsDashboard() {
                   </td>
                 </tr>
               )}
-              {!loading && submissions.map(sub => (
+              {!loading && submissions.map(sub => {
+                const missingPhotos = getMissingPhotos(sub);
+                const hasRequiredPhotos = missingPhotos.length === 0;
+
+                return (
                 <tr key={sub.id} style={{ background: '#0d0d0d' }}
                   onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#111111'}
                   onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = '#0d0d0d'}
@@ -296,6 +308,14 @@ export default function ManSubmissionsDashboard() {
                         —
                       </div>
                     )}
+                    <div className="mt-2 flex flex-col gap-1">
+                      <span className="text-[10px]" style={{ color: sub.photo_fullbody_url ? '#22c55e' : '#f87171' }}>
+                        Body {sub.photo_fullbody_url ? '✓' : 'missing'}
+                      </span>
+                      <span className="text-[10px]" style={{ color: sub.photo_headshot_url ? '#22c55e' : '#f87171' }}>
+                        Headshot {sub.photo_headshot_url ? '✓' : 'missing'}
+                      </span>
+                    </div>
                   </td>
 
                   {/* Contact */}
@@ -338,8 +358,20 @@ export default function ManSubmissionsDashboard() {
                   {/* Actions */}
                   <td style={tdStyle}>
                     <div className="flex items-center gap-2 flex-wrap">
+                      {!hasRequiredPhotos && (
+                        <Link
+                          href={`/man/admin/dashboard/${sub.id}`}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                          style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
+                          title={`Missing: ${missingPhotos.join(', ')}`}
+                        >
+                          <AlertCircle size={11} />
+                          Add photos
+                        </Link>
+                      )}
+
                       {/* No report — inline Generate */}
-                      {!sub.latest_report && (
+                      {!sub.latest_report && hasRequiredPhotos && (
                         <button
                           onClick={() => handleGenerate(sub.id)}
                           disabled={generatingIds.has(sub.id)}
@@ -352,7 +384,7 @@ export default function ManSubmissionsDashboard() {
                       )}
 
                       {/* Generating — View Live or Force Restart if stuck */}
-                      {sub.latest_report?.status === 'generating' && sub.latest_report.id && (() => {
+                      {hasRequiredPhotos && sub.latest_report?.status === 'generating' && sub.latest_report.id && (() => {
                         const stuck = (Date.now() - new Date(sub.latest_report.created_at).getTime()) > 10 * 60 * 1000;
                         return stuck ? (
                           <button
@@ -377,7 +409,7 @@ export default function ManSubmissionsDashboard() {
                       })()}
 
                       {/* Error — Retry inline */}
-                      {sub.latest_report?.status === 'error' && (
+                      {hasRequiredPhotos && sub.latest_report?.status === 'error' && (
                         <button
                           onClick={() => handleGenerate(sub.id, sub.latest_report?.id)}
                           disabled={generatingIds.has(sub.id)}
@@ -423,7 +455,8 @@ export default function ManSubmissionsDashboard() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

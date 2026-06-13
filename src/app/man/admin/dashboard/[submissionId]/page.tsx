@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, AlertCircle, Loader2, Zap } from 'lucide-react';
+import { ArrowLeft, ExternalLink, AlertCircle, Loader2, Zap, Upload, CheckCircle } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -96,22 +96,155 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ReportStatusBanner({ report, onGenerate, generating }: {
+function PhotoUploadCard({
+  label,
+  field,
+  url,
+  submissionId,
+  onUploaded,
+}: {
+  label: string;
+  field: 'photo_headshot' | 'photo_fullbody';
+  url: string | null;
+  submissionId: string;
+  onUploaded: (submission: ManSubmission) => void;
+}) {
+  const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const uploadFile = useCallback(async (file: File | null) => {
+    if (!file) return;
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append(field, file);
+
+      const res = await fetch(`/api/man-admin/submissions/${submissionId}`, {
+        method: 'PATCH',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? 'Photo upload failed');
+        return;
+      }
+
+      onUploaded(data.submission);
+    } catch {
+      setError('Photo upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }, [field, onUploaded, submissionId]);
+
+  const inputId = `${field}-${submissionId}`;
+
+  return (
+    <div
+      className="rounded-2xl border overflow-hidden"
+      style={{
+        background: '#111111',
+        borderColor: dragging ? '#c9a96e' : '#1e1e1e',
+      }}
+      onDragEnter={event => {
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragOver={event => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+      }}
+      onDragLeave={event => {
+        event.preventDefault();
+        setDragging(false);
+      }}
+      onDrop={event => {
+        event.preventDefault();
+        setDragging(false);
+        uploadFile(event.dataTransfer.files?.[0] ?? null);
+      }}
+    >
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b" style={{ borderColor: '#1e1e1e' }}>
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#c9a96e' }}>{label}</p>
+          {url && <CheckCircle size={13} style={{ color: '#22c55e' }} />}
+        </div>
+        <label
+          htmlFor={inputId}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80"
+          style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+        >
+          {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+          {url ? 'Replace' : 'Upload'}
+        </label>
+        <input
+          id={inputId}
+          type="file"
+          accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
+          className="hidden"
+          disabled={uploading}
+          onChange={event => {
+            uploadFile(event.target.files?.[0] ?? null);
+            event.currentTarget.value = '';
+          }}
+        />
+      </div>
+
+      {url ? (
+        <img src={url} alt={label} className="w-full object-cover" style={{ maxHeight: 320 }} />
+      ) : (
+        <label
+          htmlFor={inputId}
+          className="h-48 flex flex-col items-center justify-center gap-3 text-sm cursor-pointer"
+          style={{ color: dragging ? '#c9a96e' : '#6b5f4a', background: dragging ? '#17130c' : '#111111' }}
+        >
+          {uploading ? <Loader2 size={22} className="animate-spin" /> : <Upload size={22} />}
+          <span>{uploading ? 'Uploading...' : dragging ? 'Release to upload' : 'Drag and drop or click to upload'}</span>
+        </label>
+      )}
+
+      {error && (
+        <p className="m-3 rounded-xl px-3 py-2 text-xs" style={{ color: '#f87171', background: '#1a0a0a', border: '1px solid #3a1010' }}>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function getMissingPhotoLabels(submission: Pick<ManSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
+  return [
+    submission.photo_fullbody_url ? null : 'full body photo',
+    submission.photo_headshot_url ? null : 'headshot photo',
+  ].filter(Boolean) as string[];
+}
+
+function ReportStatusBanner({ report, onGenerate, generating, canGenerate, missingPhotoText }: {
   report: ManReport | null;
   onGenerate: () => void;
   generating: boolean;
+  canGenerate: boolean;
+  missingPhotoText: string;
 }) {
   if (!report) {
     return (
-      <div className="rounded-2xl border p-5 flex items-center justify-between"
+      <div className="rounded-2xl border p-5 flex items-center justify-between gap-4"
         style={{ background: '#111111', borderColor: '#1e1e1e' }}>
         <div>
           <p className="text-sm font-medium" style={{ color: '#f0ebe0' }}>No report generated yet</p>
           <p className="text-xs mt-0.5" style={{ color: '#6b5f4a' }}>Trigger the AI pipeline to create a draft</p>
+          {!canGenerate && (
+            <p className="text-xs mt-2" style={{ color: '#f87171' }}>{missingPhotoText}</p>
+          )}
         </div>
         <button
           onClick={onGenerate}
-          disabled={generating}
+          disabled={generating || !canGenerate}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-60"
           style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
         >
@@ -154,6 +287,9 @@ function ReportStatusBanner({ report, onGenerate, generating }: {
           )}
         </div>
       </div>
+      {!canGenerate && ['error', 'pending'].includes(report.status) && (
+        <p className="text-xs" style={{ color: '#f87171' }}>{missingPhotoText}</p>
+      )}
       <div className="flex items-center gap-2 flex-shrink-0">
         {['draft_ready', 'in_review', 'approved', 'sent'].includes(report.status) && (
           <Link
@@ -177,9 +313,10 @@ function ReportStatusBanner({ report, onGenerate, generating }: {
         {['error', 'pending'].includes(report.status) && (
           <button
             onClick={onGenerate}
-            disabled={generating}
+            disabled={generating || !canGenerate}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-opacity disabled:opacity-60"
             style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+            title={!canGenerate ? missingPhotoText : undefined}
           >
             {generating ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
             {generating ? 'Starting…' : 'Retry'}
@@ -203,7 +340,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError]     = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res  = await fetch(`/api/man-admin/submissions/${submissionId}`);
@@ -213,9 +350,9 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
     } finally {
       setLoading(false);
     }
-  };
+  }, [submissionId]);
 
-  useEffect(() => { load(); }, [submissionId]);
+  useEffect(() => { load(); }, [load]);
 
   // Poll while a report is generating
   useEffect(() => {
@@ -223,9 +360,17 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
     if (latest?.status !== 'generating') return;
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
-  }, [reports]);
+  }, [load, reports]);
 
   const handleGenerate = async () => {
+    if (submission) {
+      const missingPhotos = getMissingPhotoLabels(submission);
+      if (missingPhotos.length > 0) {
+        setGenError(`Upload ${missingPhotos.join(' and ')} before generating this report.`);
+        return;
+      }
+    }
+
     setGenerating(true);
     setGenError('');
     try {
@@ -261,6 +406,11 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
   }
 
   const latestReport = reports[0] ?? null;
+  const missingPhotos = getMissingPhotoLabels(submission);
+  const canGenerate = missingPhotos.length === 0;
+  const missingPhotoText = missingPhotos.length
+    ? `Upload ${missingPhotos.join(' and ')} before generating this report.`
+    : '';
 
   return (
     <div className="max-w-4xl">
@@ -287,7 +437,13 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
 
       {/* Report status banner */}
       <div className="mb-6">
-        <ReportStatusBanner report={latestReport} onGenerate={handleGenerate} generating={generating} />
+        <ReportStatusBanner
+          report={latestReport}
+          onGenerate={handleGenerate}
+          generating={generating}
+          canGenerate={canGenerate}
+          missingPhotoText={missingPhotoText}
+        />
         {genError && (
           <p className="text-xs mt-2 px-4 py-2 rounded-xl" style={{ color: '#f87171', background: '#1a0a0a', border: '1px solid #3a1010' }}>
             {genError}
@@ -296,20 +452,21 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
       </div>
 
       {/* Photos */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {[
-          { label: 'Headshot', url: submission.photo_headshot_url },
-          { label: 'Full Body', url: submission.photo_fullbody_url },
-        ].map(({ label, url }) => (
-          <div key={label} className="rounded-2xl border overflow-hidden" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest px-4 py-3 border-b" style={{ color: '#c9a96e', borderColor: '#1e1e1e' }}>{label}</p>
-            {url ? (
-              <img src={url} alt={label} className="w-full object-cover" style={{ maxHeight: 320 }} />
-            ) : (
-              <div className="h-48 flex items-center justify-center text-sm" style={{ color: '#4a4030' }}>No photo uploaded</div>
-            )}
-          </div>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <PhotoUploadCard
+          label="Headshot"
+          field="photo_headshot"
+          url={submission.photo_headshot_url}
+          submissionId={submission.id}
+          onUploaded={next => setSubmission(next)}
+        />
+        <PhotoUploadCard
+          label="Full Body"
+          field="photo_fullbody"
+          url={submission.photo_fullbody_url}
+          submissionId={submission.id}
+          onUploaded={next => setSubmission(next)}
+        />
       </div>
 
       {/* Form data sections */}

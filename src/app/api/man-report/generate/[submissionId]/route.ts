@@ -20,6 +20,15 @@ import { runManReportTextPipeline } from '@/lib/manReportTextPipeline';
 // Vercel Hobby plan cap is 300s. Text and image generation are decoupled.
 export const maxDuration = 300;
 
+function missingPhotoError(submission: Pick<ManIntakeSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
+  const missing = [
+    submission.photo_fullbody_url ? null : 'full body photo',
+    submission.photo_headshot_url ? null : 'headshot photo',
+  ].filter(Boolean);
+
+  return missing.length ? `Cannot generate report until ${missing.join(' and ')} ${missing.length === 1 ? 'is' : 'are'} uploaded.` : null;
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(
@@ -43,6 +52,11 @@ export async function POST(
 
   if (subErr || !submission) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  }
+
+  const photoError = missingPhotoError(submission as ManIntakeSubmission);
+  if (photoError) {
+    return NextResponse.json({ error: photoError }, { status: 400 });
   }
 
   // 2. Check if there is already an active generation for this submission

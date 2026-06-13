@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Best Colours for Wheatish Skin Indian Women — Iconik",
-  description: "Which colours work for wheatish skin Indian women? Why undertone — not surface depth — determines your palette, and Chromatic Harmony Mapping™ for medium Indian skin tones.",
+  title: "Best Colours for Wheatish Skin: What Works & What Washes You Out",
+  description: "Wheatish skin suits far more colours than most guides admit — the right list depends on your undertone. Full warm and cool palettes for medium Indian skin, plus the shades that dull it.",
   keywords: "best colours for wheatish skin India, colours for wheatish skin Indian women, what to wear wheatish skin India, colour guide medium skin Indian women, wheatish complexion colour palette India",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india" },
   openGraph: {
-    title: "Best Colours for Wheatish Skin Indian Women — Iconik",
+    title: "Best Colours for Wheatish Skin: What Works & What Washes You Out",
     description: "Why undertone — not surface depth — determines your palette. Complete colour guide for wheatish skin Indian women.",
     url: "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Best colours for wheatish skin India — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best Colours for Wheatish Skin Indian Women — Iconik",
+    title: "Best Colours for Wheatish Skin: What Works & What Washes You Out",
     description: "Why undertone — not surface depth — determines your palette. Complete colour guide for wheatish skin Indian women.",
     images: ["/og-image.webp"],
   },

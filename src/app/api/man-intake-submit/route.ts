@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing customer_email' }, { status: 400 });
         }
 
+        if (!body.photo_fullbody_url || !body.photo_headshot_url) {
+            return NextResponse.json({ error: 'Both full body and headshot photos are required' }, { status: 400 });
+        }
+
         const { data, error } = await supabaseAdmin
             .from('man_intake_submissions')
             .insert([body])

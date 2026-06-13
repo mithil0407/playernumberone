@@ -2,20 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Best Colours for Dusky Skin: Indian Women's Guide — Iconik",
-  description: "Which colours work best for dusky skin tone Indian women? The science of undertone vs surface tone, and Chromatic Harmony Mapping™ for medium-to-deep Indian skin.",
+  title: "Best Colours for Dusky Skin: 16 Shades That Work (& What to Avoid)",
+  description: "Yes, dusky skin can wear pastels — if they match your undertone. 16 colours that flatter dusky Indian skin, split by warm and cool undertone, plus the exact shades that wash you out.",
   keywords: "best colours for dusky skin tone India, colours for dark skin Indian women, what to wear dusky skin India, colour guide dusky skin Indian women, fashion for dark complexion India",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin" },
   openGraph: {
-    title: "Best Colours for Dusky Skin: Indian Women's Guide — Iconik",
-    description: "The colour science behind dusky skin — why undertone, not surface depth, determines your palette.",
+    title: "Best Colours for Dusky Skin: 16 Shades That Work (& What to Avoid)",
+    description: "16 colours that flatter dusky Indian skin, split by warm and cool undertone — plus the shades that wash you out.",
     url: "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Best colours for dusky skin tone India — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best Colours for Dusky Skin: Indian Women's Guide — Iconik",
-    description: "The colour science behind dusky skin — why undertone, not surface depth, determines your palette.",
+    title: "Best Colours for Dusky Skin: 16 Shades That Work (& What to Avoid)",
+    description: "16 colours that flatter dusky Indian skin, split by warm and cool undertone — plus the shades that wash you out.",
     images: ["/og-image.webp"],
   },
 };

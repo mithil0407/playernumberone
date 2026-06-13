@@ -32,6 +32,15 @@ const REPAIR_PROGRESS_STAGE = 'repairing_section4';
 
 export const maxDuration = 300;
 
+function missingPhotoError(submission: Pick<ManIntakeSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
+  const missing = [
+    submission.photo_fullbody_url ? null : 'full body photo',
+    submission.photo_headshot_url ? null : 'headshot photo',
+  ].filter(Boolean);
+
+  return missing.length ? `Cannot generate images until ${missing.join(' and ')} ${missing.length === 1 ? 'is' : 'are'} uploaded.` : null;
+}
+
 function getImageCounts(paths: ManReportImagePaths | null | undefined) {
   return {
     hairstyleDone: paths?.hairstyleCards?.[0] ? 1 : 0,
@@ -124,14 +133,17 @@ async function runImagePipeline(
 
     // ── Outfit images (resume from existing partial paths) ────────────────────
     const fullBodyUrl = submission.photo_fullbody_url;
-    if (!fullBodyUrl) throw new Error('No photo_fullbody_url on submission — cannot generate outfit images');
+    const headshotUrl = submission.photo_headshot_url;
+    if (!fullBodyUrl || !headshotUrl) {
+      throw new Error(missingPhotoError(submission) ?? 'Both source photos are required before image generation');
+    }
 
     const currentBeforeOutfits = await getStoredManReportImagePaths(reportId);
     const existingOutfitPaths = currentBeforeOutfits?.outfitCards ?? [];
     hairstylePaths = currentBeforeOutfits?.hairstyleCards ?? hairstylePaths;
     beardPaths = currentBeforeOutfits?.beardCards ?? beardPaths;
     eyewearPaths = currentBeforeOutfits?.eyewearCards ?? eyewearPaths;
-    const originalHeadshotUrl = submission.photo_headshot_url ?? null;
+    const originalHeadshotUrl = headshotUrl;
 
     const outfitPaths = await generateAllOutfitImages(
       reportId, fullBodyUrl, classification, sections,
@@ -252,6 +264,11 @@ export async function POST(
 
   if (subErr || !submission) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+  }
+
+  const photoError = missingPhotoError(submission as ManIntakeSubmission);
+  if (photoError) {
+    return NextResponse.json({ error: photoError }, { status: 400 });
   }
 
   const reportData       = report.report_data as ReportData;
