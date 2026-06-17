@@ -73,6 +73,24 @@ function isManualReportIntake(intake: Report['stylist_intake_responses']) {
   return intake?.intake_source === 'manual_admin';
 }
 
+async function readJsonBody<T>(response: Response): Promise<T | null> {
+  const text = await response.text();
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+function responseErrorMessage(data: unknown, fallback: string) {
+  if (data && typeof data === 'object' && 'error' in data) {
+    const error = (data as { error?: unknown }).error;
+    if (typeof error === 'string' && error.trim()) return error;
+  }
+  return fallback;
+}
+
 function pageGroup(pageNumber: number, data?: StylistBlueprintReportData | null) {
   if (pageNumber <= 3) return 'Opening';
   if (pageNumber <= 8) return 'Diagnosis';
@@ -119,26 +137,31 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
   const load = useCallback(async (fresh = false) => {
     const res = await fetch(`/api/stylist-blueprint/${reportId}${fresh ? '?fresh=1' : ''}`, { cache: 'no-store' });
-    const data = await res.json();
-    if (data.report) setReport(data.report);
+    const data = await readJsonBody<{ report?: Report; error?: string }>(res);
+    if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to load report'));
+    if (data?.report) setReport(data.report);
     const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
-    if (statusRes.ok) setImageCounts((await statusRes.json()).imageCounts ?? null);
+    if (statusRes.ok) {
+      const statusData = await readJsonBody<{ imageCounts?: Record<string, { done: number; total: number }> }>(statusRes);
+      setImageCounts(statusData?.imageCounts ?? null);
+    }
     setLoading(false);
   }, [reportId]);
 
   const refreshGeneratedImages = useCallback(async () => {
     const res = await fetch(`/api/stylist-blueprint/${reportId}?fresh=1`, { cache: 'no-store' });
     if (!res.ok) return;
-    const data = await res.json();
-    if (!data.report) return;
+    const data = await readJsonBody<{ report?: Report }>(res);
+    if (!data?.report) return;
+    const loadedReport = data.report;
     setReport(prev => prev ? {
       ...prev,
-      status: data.report.status,
-      progress_stage: data.report.progress_stage,
-      error_message: data.report.error_message,
-      image_urls: data.report.image_urls,
-      updated_at: data.report.updated_at,
-    } : data.report);
+      status: loadedReport.status,
+      progress_stage: loadedReport.progress_stage,
+      error_message: loadedReport.error_message,
+      image_urls: loadedReport.image_urls,
+      updated_at: loadedReport.updated_at,
+    } : loadedReport);
   }, [reportId]);
 
   useEffect(() => { void load(); }, [load]);
@@ -333,8 +356,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ report_data: draftData }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to save report edits');
+        const data = await readJsonBody<{ error?: string }>(res);
+        if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
       } else {
         for (const pageNumber of Array.from(dirtyPages)) {
           const page = draftData.pages.find(item => item.page_number === pageNumber);
@@ -344,8 +367,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ page }),
           });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || `Failed to save page ${pageNumber}`);
+          const data = await readJsonBody<{ error?: string }>(res);
+          if (!res.ok) throw new Error(responseErrorMessage(data, `Failed to save page ${pageNumber}`));
         }
       }
       await load(true);

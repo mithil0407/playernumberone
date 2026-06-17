@@ -58,7 +58,10 @@ export async function PATCH(
   }
 
   const { reportId } = await params;
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   const allowedStatuses = new Set(['pending', 'generating', 'draft_ready', 'in_review', 'approved', 'sent', 'error']);
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
@@ -84,7 +87,12 @@ export async function PATCH(
     const incoming = body.page as BlueprintPage;
     const pages = reportData.pages.map(page => page.page_number === incoming.page_number ? incoming : page);
     const nextData = { ...reportData, pages };
-    validateStylistBlueprintReport(nextData);
+    try {
+      validateStylistBlueprintReport(nextData);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid report page data';
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
     patch.report_data = nextData;
   }
   if (body.error_message !== undefined) patch.error_message = body.error_message;
