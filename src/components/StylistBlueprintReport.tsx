@@ -237,11 +237,19 @@ function inferColourFromText(text: string, data: StylistBlueprintReportData): Bl
   return common ? { name: common.name, hex: common.hex, role: common.role } : null;
 }
 
+const HIDDEN_SUMMARY_FIELDS = new Set([
+  'structural_notes',
+  'image_prompt',
+  'prompt',
+  'generation_prompt',
+  'visual_prompt',
+]);
+
 function objectSummary(item: unknown): string {
   if (typeof item === 'string') return item;
   if (!isObject(item)) return String(item ?? '');
   return Object.entries(item)
-    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .filter(([key, value]) => !HIDDEN_SUMMARY_FIELDS.has(key) && value !== null && value !== undefined && value !== '')
     .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${Array.isArray(value) ? value.join(', ') : isObject(value) ? objectSummary(value) : value}`)
     .join(' - ');
 }
@@ -1169,7 +1177,6 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
           {(items.length ? items : page.blocks.slice(0, 5)).map((item, index) => {
             const colour = colourForFormulaItem(item, page, data, index);
             const pieceValue = getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`));
-            const notesValue = getField(item, ['structural_notes', 'notes', 'guidance', 'body'], '');
             return (
               <div key={index} className="formula-card">
                 <SwatchDot hex={colour.hex} />
@@ -1179,11 +1186,6 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
                     ? <EditableText page={page} value={pieceValue} update={value => updateItem(page, formula.blockIndex, index, { piece: value })} />
                     : pieceValue}
                 </h3>
-                <p>
-                  {formula.editable
-                    ? <EditableText as="span" page={page} value={notesValue} update={value => updateItem(page, formula.blockIndex, index, { structural_notes: value })} />
-                    : notesValue}
-                </p>
               </div>
             );
           })}
