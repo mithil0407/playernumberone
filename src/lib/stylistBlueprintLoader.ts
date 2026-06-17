@@ -15,7 +15,10 @@ import {
 } from './stylistBlueprintImageGenerator';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from './stylistBlueprintGenerator';
 
-const PUBLIC_VIEWABLE_STATUSES = ['sent', 'draft_ready', 'in_review', 'approved'] as const;
+const ADMIN_REPORT_SELECT_WITH_SOURCE = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)';
+const ADMIN_REPORT_SELECT_LEGACY = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name)';
+const PUBLIC_REPORT_SELECT_WITH_SOURCE = 'id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)';
+const PUBLIC_REPORT_SELECT_LEGACY = 'id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name)';
 
 export interface LoadedStylistBlueprintReport {
   id: string;
@@ -44,27 +47,63 @@ async function resolveRowImages<T extends { image_urls: StylistBlueprintImagePat
   return { ...row, image_urls: imageUrls };
 }
 
+function isMissingIntakeSourceError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as { code?: string; message?: string; details?: string; hint?: string };
+  const text = [candidate.code, candidate.message, candidate.details, candidate.hint].filter(Boolean).join(' ');
+  return /intake_source/i.test(text) && /(PGRST204|schema cache|column|does not exist|could not find)/i.test(text);
+}
+
 export async function loadStylistBlueprintReportByIdFresh(reportId: string): Promise<LoadedStylistBlueprintReport | null> {
-  const { data, error } = await supabaseAdmin
+  const result = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)')
+    .select(ADMIN_REPORT_SELECT_WITH_SOURCE)
     .eq('id', reportId)
     .single();
 
-  if (error || !data) return null;
-  return resolveRowImages(data as unknown as RawStylistBlueprintReport);
+  if (!result.error && result.data) {
+    return resolveRowImages(result.data as unknown as RawStylistBlueprintReport);
+  }
+
+  if (isMissingIntakeSourceError(result.error)) {
+    const legacyResult = await supabaseAdmin
+      .from('stylist_blueprint_reports')
+      .select(ADMIN_REPORT_SELECT_LEGACY)
+      .eq('id', reportId)
+      .single();
+
+    if (!legacyResult.error && legacyResult.data) {
+      return resolveRowImages(legacyResult.data as unknown as RawStylistBlueprintReport);
+    }
+  }
+
+  return null;
 }
 
 async function loadPublicByShareToken(shareToken: string): Promise<LoadedStylistBlueprintReport | null> {
-  const { data, error } = await supabaseAdmin
+  const result = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)')
+    .select(PUBLIC_REPORT_SELECT_WITH_SOURCE)
     .eq('share_token', shareToken)
-    .in('status', [...PUBLIC_VIEWABLE_STATUSES])
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return null;
-  return resolveRowImages(data as unknown as RawStylistBlueprintReport);
+  if (!result.error && result.data) {
+    return resolveRowImages(result.data as unknown as RawStylistBlueprintReport);
+  }
+
+  if (isMissingIntakeSourceError(result.error)) {
+    const legacyResult = await supabaseAdmin
+      .from('stylist_blueprint_reports')
+      .select(PUBLIC_REPORT_SELECT_LEGACY)
+      .eq('share_token', shareToken)
+      .maybeSingle();
+
+    if (!legacyResult.error && legacyResult.data) {
+      return resolveRowImages(legacyResult.data as unknown as RawStylistBlueprintReport);
+    }
+  }
+
+  return null;
 }
 
 export const getStylistBlueprintReportById = cache(async (reportId: string) => {
@@ -79,7 +118,7 @@ export const getStylistBlueprintReportById = cache(async (reportId: string) => {
 export const getPublicStylistBlueprintByShareToken = cache(async (shareToken: string) => {
   const load = unstable_cache(
     () => loadPublicByShareToken(shareToken),
-    ['stylist-blueprint-public', shareToken],
+    ['stylist-blueprint-public-v2', shareToken],
     { revalidate: STYLIST_BLUEPRINT_CACHE_SECONDS, tags: [getStylistBlueprintShareCacheTag(shareToken)] },
   );
   return load();
