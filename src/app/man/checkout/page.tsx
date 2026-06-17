@@ -527,7 +527,7 @@ export default function ManCheckoutPage() {
                       </div>
                       <p style={{ fontSize: '12px', color: INK, opacity: 0.55, marginBottom: '10px' }}>Keep your stylist on-call after your Blueprint. Ask outfit questions, upload looks, and get monthly recommendations.</p>
                       <div className="flex flex-wrap gap-1.5">
-                        {['AI stylist chat', 'Learns what you like', 'Monthly outfit edit'].map((t) => (
+                        {['Stylist chat', 'Learns what you like', 'Monthly outfit edit'].map((t) => (
                           <span key={t} className="px-2.5 py-0.5 rounded-full iconik-mono" style={{ fontSize: '9px', background: 'rgba(44,38,34,0.06)', color: INK, opacity: 0.6, letterSpacing: '0.1em' }}>{t}</span>
                         ))}
                       </div>
