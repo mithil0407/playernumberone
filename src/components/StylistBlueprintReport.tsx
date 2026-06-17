@@ -51,6 +51,7 @@ type EditableReportContextValue = {
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
   reportData?: StylistBlueprintReportData;
+  visibleTotalPages?: number;
 };
 
 const EditableReportContext = createContext<EditableReportContextValue>({ editable: false });
@@ -122,7 +123,7 @@ function formulaItemsForOutfit(page: BlueprintPage): { items: unknown[]; blockIn
   const objectItem = rawItems.length === 1 && isObject(rawItems[0]) ? rawItems[0] : null;
   const isSlotSource = objectItem && OUTFIT_SLOT_KEYS.some(key => objectItem[key] !== undefined);
   if (rawItems.length && !isSlotSource) {
-    return { items: rawItems.slice(0, 8), blockIndex, editable: true };
+    return { items: rawItems.slice(0, 9), blockIndex, editable: true };
   }
   return { items: normaliseFormulaItems(page), blockIndex: -1, editable: false };
 }
@@ -257,6 +258,7 @@ const OUTFIT_SLOT_KEYS = [
   'bag',
   'jewellery',
   'jewelry',
+  'eyewear',
   'accessory',
   'accessories',
 ] as const;
@@ -288,11 +290,11 @@ function normaliseFormulaItems(page: BlueprintPage): unknown[] {
       .filter(Boolean) as unknown[];
   }
 
-  if (rawItems.length) return rawItems.slice(0, 8);
+  if (rawItems.length) return rawItems.slice(0, 9);
 
   return page.blocks
     .filter(block => block.heading || block.label || block.body || block.reason)
-    .slice(0, 8);
+    .slice(0, 9);
 }
 
 function splitDisplayName(name: string) {
@@ -404,9 +406,13 @@ function PageFrame({
 }) {
   const { reportData } = useContext(EditableReportContext);
   const pageType = canonicalPageType(page, reportData);
-  const totalPages = getStylistBlueprintPageCount(reportData);
+  const { visibleTotalPages } = useContext(EditableReportContext);
+  const totalPages = visibleTotalPages ?? getStylistBlueprintPageCount(reportData);
   return (
-    <section className={`iconik-page ${pageClass(page.page_number, pageType)} ${className}`}>
+    <section
+      className={`iconik-page ${pageClass(page.page_number, pageType)} ${className}`}
+      data-blueprint-page-number={page.page_number}
+    >
       <div className="grain" />
       <div className="corner-tl">
         <div className="mono corner-kicker">{pageKicker(page, reportData)}</div>
@@ -426,9 +432,9 @@ function PageFrame({
 }
 
 function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
-  const { editable, onReportDataChange } = useContext(EditableReportContext);
+  const { editable, onReportDataChange, visibleTotalPages } = useContext(EditableReportContext);
   const name = splitDisplayName(data.client.display_name);
-  const totalPages = getStylistBlueprintPageCount(data);
+  const totalPages = visibleTotalPages ?? getStylistBlueprintPageCount(data);
   const updateDisplayName = (value: string) => {
     const nextName = value.replace(/\s+/g, ' ').trim();
     if (!nextName || nextName === data.client.display_name) return;
@@ -448,7 +454,7 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
     });
   };
   return (
-    <section className="iconik-page slate cover-page">
+    <section className="iconik-page slate cover-page" data-blueprint-page-number={page.page_number}>
       <div className="grain" />
       <div className="corner-tl">
         <div className="display wordmark">I C O N I K</div>
@@ -1346,11 +1352,13 @@ function DeferredBlueprintPage({
   page,
   data,
   defer,
+  totalPages,
   children,
 }: {
   page: BlueprintPage;
   data: StylistBlueprintReportData;
   defer: boolean;
+  totalPages?: number;
   children: ReactNode;
 }) {
   const { elementRef, hasIntersected } = useIntersectionObserver({
@@ -1362,14 +1370,18 @@ function DeferredBlueprintPage({
 
   const pageType = canonicalPageType(page, data);
   return (
-    <div ref={elementRef} className={`iconik-page ${pageClass(page.page_number, pageType)} deferred-page`}>
+    <div
+      ref={elementRef}
+      className={`iconik-page ${pageClass(page.page_number, pageType)} deferred-page`}
+      data-blueprint-page-number={page.page_number}
+    >
       <div className="grain" />
       <div className="corner-tl">
         <div className="mono corner-kicker">{pageKicker(page, data)}</div>
         <div className="small-caps corner-title">{page.title}</div>
       </div>
       <div className="corner-tr">
-        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / {getStylistBlueprintPageCount(data)}</div>
+        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / {totalPages ?? getStylistBlueprintPageCount(data)}</div>
       </div>
       <div className="deferred-skeleton" aria-hidden="true">
         <div className="deferred-kicker" />
@@ -1391,6 +1403,7 @@ function PremiumReport({
   imageUrls,
   focusPageNumber,
   deferPages = false,
+  hideContinuationPage = false,
   editable = false,
   onPageChange,
   onReportDataChange,
@@ -1402,6 +1415,7 @@ function PremiumReport({
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
   focusPageNumber?: number;
   deferPages?: boolean;
+  hideContinuationPage?: boolean;
   editable?: boolean;
   onPageChange?: (page: BlueprintPage) => void;
   onReportDataChange?: (data: StylistBlueprintReportData) => void;
@@ -1409,11 +1423,16 @@ function PremiumReport({
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
 }) {
+  const continuationPage = getStylistBlueprintContinuationPage(data);
   const pages = [...data.pages]
+    .filter(page => !hideContinuationPage || page.page_number !== continuationPage)
     .filter(page => !focusPageNumber || page.page_number === focusPageNumber)
     .sort((a, b) => a.page_number - b.page_number);
+  const visibleTotalPages = hideContinuationPage
+    ? getStylistBlueprintPageCount(data) - 1
+    : getStylistBlueprintPageCount(data);
   return (
-    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data }}>
+    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data, visibleTotalPages }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
         <BlueprintStyles />
         {pages.map(page => {
@@ -1431,6 +1450,7 @@ function PremiumReport({
               page={page}
               data={data}
               defer={deferPages && !focusPageNumber && !editable && page.page_number > 2}
+              totalPages={visibleTotalPages}
             >
               {node}
             </DeferredBlueprintPage>
@@ -1446,6 +1466,7 @@ export default function StylistBlueprintReport({
   imageUrls,
   focusPageNumber,
   deferPages,
+  hideContinuationPage,
   editable,
   onPageChange,
   onReportDataChange,
@@ -1457,6 +1478,7 @@ export default function StylistBlueprintReport({
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
   focusPageNumber?: number;
   deferPages?: boolean;
+  hideContinuationPage?: boolean;
   editable?: boolean;
   onPageChange?: (page: BlueprintPage) => void;
   onReportDataChange?: (data: StylistBlueprintReportData) => void;
@@ -1471,6 +1493,7 @@ export default function StylistBlueprintReport({
       imageUrls={imageUrls}
       focusPageNumber={focusPageNumber}
       deferPages={deferPages}
+      hideContinuationPage={hideContinuationPage}
       editable={editable}
       onPageChange={onPageChange}
       onReportDataChange={onReportDataChange}

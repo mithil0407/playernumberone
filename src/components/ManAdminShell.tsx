@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, LogOut, Menu, X, FileText } from 'lucide-react';
+import { LayoutDashboard, LogOut, Menu, X, FileText, Sparkles } from 'lucide-react';
 
-const NAV = [{ href: '/man/admin/dashboard', label: 'Submissions', icon: LayoutDashboard }];
+const NAV = [
+  { href: '/man/admin/dashboard', label: 'Submissions', icon: LayoutDashboard },
+  { href: '/man/admin/edit', label: 'Iconik Edit', icon: Sparkles },
+];
 
 export default function ManAdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

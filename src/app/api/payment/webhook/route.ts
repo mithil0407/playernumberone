@@ -9,6 +9,12 @@ import { attributionFromRow } from '@/lib/attribution';
 import { MAN_BLUEPRINT_PRODUCT_ID, MAN_OUTFIT_PREVIEW_PRODUCT_ID } from '@/lib/metaPixel';
 import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
 import Razorpay from 'razorpay';
+import {
+  getManEditSubscriptionByRazorpayId,
+  loadManEditReportContext,
+  rebuildManEditProfile,
+  updateManEditSubscriptionFromWebhook,
+} from '@/lib/manEdit';
 
 // Helper function to extract add-ons from Razorpay order notes
 async function getAddOnsFromRazorpayOrder(razorpayOrderId: string): Promise<string> {
@@ -46,6 +52,10 @@ async function getAddOnsFromRazorpayOrder(razorpayOrderId: string): Promise<stri
     // Outfit Preview
     if (notes.outfit_preview_addon === 'true' || notes.outfit_preview === 'true') {
       addOns.push('Outfit Preview on You');
+    }
+
+    if (notes.iconik_edit_subscription === 'true' || notes.man_edit_subscription === 'true') {
+      addOns.push('Iconik Edit subscription');
     }
 
     console.log('Extracted add-ons:', addOns);
@@ -720,9 +730,84 @@ function generateTempPassword(length = 10): string {
   return result;
 }
 
+async function handleManEditSubscriptionEvent(
+  event: string,
+  subscription: RazorpaySubscription,
+  payment?: RazorpayPayment,
+) {
+  const dbSub = await getManEditSubscriptionByRazorpayId(subscription.id);
+  if (!dbSub) return false;
+
+  const nextStatus =
+    event === 'subscription.cancelled' ? 'cancelled' :
+      event === 'subscription.completed' ? 'completed' :
+        event === 'subscription.paused' ? 'paused' :
+          event === 'subscription.activated' || event === 'subscription.charged' || event === 'subscription.resumed' ? 'active' :
+            dbSub.status;
+
+  const updated = await updateManEditSubscriptionFromWebhook({
+    subscriptionId: subscription.id,
+    status: nextStatus,
+    paymentId: payment?.id ?? null,
+    currentStart: subscription.current_start ?? subscription.start_at,
+    chargeAt: subscription.charge_at ?? subscription.current_end,
+    endedAt: subscription.ended_at ?? subscription.end_at,
+  });
+
+  if (event === 'subscription.charged') {
+    const eventSuffix = payment?.id || `${subscription.paid_count ?? 'unknown'}:${subscription.current_start ?? Date.now()}`;
+    await recordRevenueEvent({
+      eventKey: `man_edit_subscriptions:${dbSub.id}:charge:${eventSuffix}`,
+      sourceMarket: 'india',
+      sourceTable: 'man_edit_subscriptions',
+      sourceId: dbSub.id,
+      revenueKind: 'subscription',
+      eventType: subscription.paid_count === 1 ? 'subscription_initial' : 'subscription_charge',
+      productType: 'man_edit',
+      customerEmail: dbSub.customer_email,
+      customerName: dbSub.customer_name,
+      customerPhone: dbSub.customer_phone,
+      amountMinor: payment?.amount ?? dbSub.amount,
+      currency: dbSub.currency ?? 'INR',
+      status: 'paid',
+      paymentId: payment?.id,
+      razorpaySubscriptionId: subscription.id,
+      planType: dbSub.plan_type,
+      occurredAt: subscription.current_start
+        ? new Date(subscription.current_start * 1000).toISOString()
+        : new Date().toISOString(),
+      attribution: attributionFromRow(dbSub),
+      metadata: { webhook_event: event, paid_count: subscription.paid_count },
+    });
+  }
+
+  if (updated?.report_id && (event === 'subscription.activated' || event === 'subscription.charged')) {
+    const { data: report } = await supabaseAdmin
+      .from('man_reports')
+      .select('share_token')
+      .eq('id', updated.report_id)
+      .maybeSingle();
+    if (report?.share_token) {
+      const context = await loadManEditReportContext(report.share_token, true);
+      if (context?.subscription) {
+        await rebuildManEditProfile(context).catch(error => {
+          console.warn('Man Edit profile rebuild failed from webhook:', error);
+        });
+      }
+    }
+  }
+
+  console.log(`Man Edit subscription ${subscription.id} handled for ${event}`);
+  return true;
+}
+
 async function handleSubscriptionActivated(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription activated:', subscription.id);
+
+    if (await handleManEditSubscriptionEvent('subscription.activated', subscription)) {
+      return;
+    }
 
     // 1. Update subscription status to active
     const { error: updateError } = await supabaseAdmin
@@ -821,6 +906,10 @@ async function handleSubscriptionCharged(subscription: RazorpaySubscription, pay
     console.log('Subscription charged:', subscription.id);
     console.log('Payment details:', payment?.id);
 
+    if (await handleManEditSubscriptionEvent('subscription.charged', subscription, payment)) {
+      return;
+    }
+
     // Update subscription billing info and ensure status is active
     const updateData: Record<string, unknown> = {
       status: 'active',
@@ -888,6 +977,10 @@ async function handleSubscriptionCancelled(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription cancelled:', subscription.id);
 
+    if (await handleManEditSubscriptionEvent('subscription.cancelled', subscription)) {
+      return;
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -914,6 +1007,10 @@ async function handleSubscriptionPaused(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription paused:', subscription.id);
 
+    if (await handleManEditSubscriptionEvent('subscription.paused', subscription)) {
+      return;
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -935,6 +1032,10 @@ async function handleSubscriptionPaused(subscription: RazorpaySubscription) {
 async function handleSubscriptionResumed(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription resumed:', subscription.id);
+
+    if (await handleManEditSubscriptionEvent('subscription.resumed', subscription)) {
+      return;
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
@@ -960,6 +1061,10 @@ async function handleSubscriptionResumed(subscription: RazorpaySubscription) {
 async function handleSubscriptionCompleted(subscription: RazorpaySubscription) {
   try {
     console.log('Subscription completed:', subscription.id);
+
+    if (await handleManEditSubscriptionEvent('subscription.completed', subscription)) {
+      return;
+    }
 
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')

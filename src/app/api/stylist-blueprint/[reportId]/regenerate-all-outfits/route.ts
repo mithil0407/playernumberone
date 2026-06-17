@@ -13,12 +13,16 @@ import {
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
 import {
-  regenerateStylistBlueprintImageSlot,
-  type StylistBlueprintImageSlotKey,
   type StylistBlueprintImagePaths,
 } from '@/lib/stylistBlueprintImageGenerator';
 
 export const maxDuration = 300;
+
+// A live regeneration touches updated_at as it persists each step. If progress_stage
+// is set but updated_at is older than this, a previous run almost certainly died
+// (e.g. a serverless timeout, which skips the catch block and leaves progress_stage
+// stuck). In that case we let a new request recover instead of returning 409 forever.
+const STALE_PROGRESS_MS = 6 * 60 * 1000;
 
 function clearOutfitImageSlots(paths: StylistBlueprintImagePaths | null | undefined, outfitCount: number): StylistBlueprintImagePaths {
   return {
@@ -47,7 +51,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, image_urls, share_token, submission_id, section_approvals, progress_stage')
+    .select('id, report_data, image_urls, share_token, submission_id, section_approvals, progress_stage, updated_at')
     .eq('id', reportId)
     .single();
 
@@ -56,10 +60,15 @@ export async function POST(
   }
 
   if (report.progress_stage) {
-    return NextResponse.json(
-      { error: 'Report generation already in progress', progressStage: report.progress_stage },
-      { status: 409 },
-    );
+    const updatedAtMs = report.updated_at ? new Date(report.updated_at).getTime() : 0;
+    const isStale = Date.now() - updatedAtMs > STALE_PROGRESS_MS;
+    if (!isStale) {
+      return NextResponse.json(
+        { error: 'Report generation already in progress', progressStage: report.progress_stage },
+        { status: 409 },
+      );
+    }
+    // Otherwise the previous run is stale/dead — fall through and recover.
   }
 
   if (!isVersionedStylistBlueprintReportData(report.report_data)) {
@@ -125,22 +134,11 @@ export async function POST(
       .eq('id', reportId);
     await revalidateStylistBlueprintCache(reportId, report.share_token ?? null);
 
-    let imageUrls: unknown = null;
-    for (let index = 0; index < outfitCount; index++) {
-      const slotKey = `application.outfitFlatlays.${index}` as StylistBlueprintImageSlotKey;
-      const result = await regenerateStylistBlueprintImageSlot(
-        reportId,
-        nextReportData,
-        slotKey,
-        {
-          shareToken: report.share_token ?? null,
-          submission: submission as StylistIntakeSubmission,
-          progressStage: `regenerating_all_outfit_image_${index + 1}_of_${outfitCount}`,
-        },
-      );
-      imageUrls = result.imageUrls;
-    }
-
+    // Image generation is intentionally NOT done here: regenerating all 20 outfit
+    // images in one request blows past maxDuration and gets killed mid-loop (leaving
+    // half the images missing and progress_stage stuck). The client drives image
+    // generation afterwards, one capsule group at a time, via /generate-images —
+    // that path is resumable and each group fits comfortably within maxDuration.
     const { data: freshReport } = await supabaseAdmin
       .from('stylist_blueprint_reports')
       .select('id, status, progress_stage, error_message, report_data, image_urls, section_approvals, updated_at')
@@ -150,7 +148,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       report: freshReport,
-      imageUrls,
+      imageUrls: freshReport?.image_urls ?? clearedImagePaths,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'All outfit replacement failed';

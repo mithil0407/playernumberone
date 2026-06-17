@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import ManReport from '@/components/ManReport';
+import ManEditPanel from '@/components/ManEditPanel';
 import { getPublicManReportByShareToken, type PublicLoadedManReport } from '@/lib/manReportLoader';
 
 interface PageProps {
@@ -42,6 +43,8 @@ export default async function PublicReportPage({ params }: PageProps) {
           motionMode="standard"
           deferSections
         />
+
+        <ManEditPanel shareToken={shareToken} reportData={result.report_data} />
 
         {/* Confidentiality footnote — the rebuilt ManReport now renders its own
             branded footer, so this strip is just a quiet sign-off. */}

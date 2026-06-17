@@ -71,7 +71,7 @@ export async function POST(
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
-      .update({ error_message: null, updated_at: new Date().toISOString() })
+      .update({ progress_stage: null, error_message: null, updated_at: new Date().toISOString() })
       .eq('id', reportId);
 
     return NextResponse.json({ success: true, ...result });

@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
           diva_diet_plan_addon: add_ons.diva_diet_plan ? 'true' : 'false',
           smart_shoppers_guide_addon: add_ons.smart_shoppers_guide ? 'true' : 'false',
           outfit_preview_addon: add_ons.outfit_preview ? 'true' : 'false',
+          iconik_edit_subscription: add_ons.iconik_edit_subscription ? 'true' : 'false',
           total_base_price: total_base_price,
           diva_diet_plan_price: diva_diet_plan_price,
           smart_shoppers_guide_price: smart_shoppers_guide_price,

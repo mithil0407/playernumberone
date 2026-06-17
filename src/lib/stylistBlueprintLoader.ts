@@ -30,7 +30,7 @@ export interface LoadedStylistBlueprintReport {
   updated_at: string;
   error_message: string | null;
   sent_at: string | null;
-  stylist_intake_responses: { id: string; customer_email: string; customer_phone: string | null; full_name: string | null } | null;
+  stylist_intake_responses: { id: string; customer_email: string | null; customer_phone: string | null; full_name: string | null; intake_source?: string | null } | null;
 }
 
 type RawStylistBlueprintReport = Omit<LoadedStylistBlueprintReport, 'image_urls'> & {
@@ -47,7 +47,7 @@ async function resolveRowImages<T extends { image_urls: StylistBlueprintImagePat
 export async function loadStylistBlueprintReportByIdFresh(reportId: string): Promise<LoadedStylistBlueprintReport | null> {
   const { data, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('*, stylist_intake_responses(id, customer_email, customer_phone, full_name)')
+    .select('*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)')
     .eq('id', reportId)
     .single();
 
@@ -58,7 +58,7 @@ export async function loadStylistBlueprintReportByIdFresh(reportId: string): Pro
 async function loadPublicByShareToken(shareToken: string): Promise<LoadedStylistBlueprintReport | null> {
   const { data, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name)')
+    .select('id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)')
     .eq('share_token', shareToken)
     .in('status', [...PUBLIC_VIEWABLE_STATUSES])
     .single();

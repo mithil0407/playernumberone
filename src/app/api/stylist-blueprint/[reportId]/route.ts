@@ -70,6 +70,7 @@ export async function PATCH(
   if (body.section_approvals) patch.section_approvals = body.section_approvals;
   if (body.page_approvals) patch.section_approvals = body.page_approvals;
   if (body.report_data) patch.report_data = body.report_data;
+  if (body.clear_progress_stage) patch.progress_stage = null;
   if (body.page) {
     const { data: existing } = await supabaseAdmin
       .from('stylist_blueprint_reports')

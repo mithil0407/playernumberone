@@ -6,8 +6,19 @@ import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
   getStylistBlueprintOutfitCount,
+  isManualStylistBlueprintSubmission,
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
+
+const STALE_PROGRESS_MS = 6 * 60 * 1000;
+
+function readReport(reportId: string) {
+  return supabaseAdmin
+    .from('stylist_blueprint_reports')
+    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, report_data, image_urls, stylist_intake_responses(photo_urls, one_outfit_image_url, intake_source)')
+    .eq('id', reportId)
+    .single();
+}
 
 export async function GET(
   _request: NextRequest,
@@ -20,13 +31,27 @@ export async function GET(
   }
 
   const { reportId } = await params;
-  const { data, error } = await supabaseAdmin
-    .from('stylist_blueprint_reports')
-    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, report_data, image_urls, stylist_intake_responses(photo_urls, one_outfit_image_url)')
-    .eq('id', reportId)
-    .single();
 
-  if (error || !data) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+  // The dashboard polls this every few seconds while a long generation runs, so a
+  // single transient Supabase "fetch failed" must not look like a deleted report.
+  // Retry once, and only report 404 when the row is genuinely absent (PGRST116).
+  let data: Awaited<ReturnType<typeof readReport>>['data'] = null;
+  let error: Awaited<ReturnType<typeof readReport>>['error'] = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      ({ data, error } = await readReport(reportId));
+    } catch (err) {
+      // A thrown network error (undici "fetch failed") — treat as transient.
+      error = { name: 'NetworkError', code: 'NETWORK', message: err instanceof Error ? err.message : String(err), details: '', hint: '' };
+    }
+    if (!error || error.code === 'PGRST116') break;
+    if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 600));
+  }
+
+  if (error && error.code !== 'PGRST116') {
+    return NextResponse.json({ error: 'Status temporarily unavailable' }, { status: 503 });
+  }
+  if (!data) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
 
   const intake = Array.isArray(data.stylist_intake_responses)
     ? data.stylist_intake_responses[0]
@@ -36,6 +61,7 @@ export async function GET(
   const hasSidePhoto = Boolean(photoUrls.full_body_side);
   const hasHeadshot = Boolean(photoUrls.headshot);
   const hasClientPhoto = Boolean(photoUrls.full_body_front || photoUrls.full_body_side || photoUrls.headshot || photoUrls.one_outfit || intake?.one_outfit_image_url);
+  const includeClosingEditTeaser = !isManualStylistBlueprintSubmission(intake);
   const outfitCount = isVersionedStylistBlueprintReportData(data.report_data)
     ? getStylistBlueprintOutfitCount(data.report_data)
     : 12;
@@ -46,10 +72,13 @@ export async function GET(
     hasHeadshot,
     hasClientPhoto,
     outfitCount,
+    includeClosingEditTeaser,
   });
   const imagesComplete = Object.values(imageCounts).every(group => group.done >= group.total);
   let progressStage = data.progress_stage;
   let updatedAt = data.updated_at;
+  const updatedAtMs = updatedAt ? new Date(updatedAt).getTime() : 0;
+  const progressIsStale = Boolean(progressStage && Date.now() - updatedAtMs > STALE_PROGRESS_MS);
 
   if (imagesComplete && progressStage?.startsWith('generating_images')) {
     updatedAt = new Date().toISOString();
@@ -57,6 +86,20 @@ export async function GET(
     await supabaseAdmin
       .from('stylist_blueprint_reports')
       .update({ progress_stage: null, updated_at: updatedAt })
+      .eq('id', reportId);
+    await revalidateStylistBlueprintCache(reportId, data.share_token);
+  }
+
+  if (progressStage?.startsWith('regenerating_image_') && progressIsStale) {
+    updatedAt = new Date().toISOString();
+    progressStage = null;
+    await supabaseAdmin
+      .from('stylist_blueprint_reports')
+      .update({
+        progress_stage: null,
+        error_message: 'Previous image regeneration timed out. The admin dashboard unlocked the report; retry the image or outfit action if needed.',
+        updated_at: updatedAt,
+      })
       .eq('id', reportId);
     await revalidateStylistBlueprintCache(reportId, data.share_token);
   }

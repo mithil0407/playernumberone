@@ -30,10 +30,12 @@ interface Report {
 
 interface Submission {
   id: string;
-  customer_email: string;
+  customer_email: string | null;
   customer_phone: string | null;
   full_name: string | null;
   country: string | null;
+  intake_source?: string | null;
+  raw_consultation_notes?: string | null;
   body_measurements: Record<string, unknown>;
   photo_urls: Record<string, string | null>;
   focus_areas: string[];
@@ -145,6 +147,8 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
   );
   if (!submission) return <p className="luxury-body" style={{ color: S.muted }}>Submission not found.</p>;
   const latest = reports[0] ?? null;
+  const clientLabel = submission.full_name || submission.customer_email || submission.customer_phone || 'Manual client';
+  const contactLabel = submission.customer_email || submission.customer_phone || 'No email';
 
   return (
     <div className="max-w-5xl">
@@ -154,8 +158,8 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
 
       <div className="mb-6">
         <div className="iconik-micro mb-2" style={{ color: S.muted }}>Women Blueprint Intake</div>
-        <h1 className="iconik-display" style={{ fontSize: '26px', color: S.ink }}>{submission.full_name || submission.customer_email}</h1>
-        <p className="luxury-body text-sm mt-1" style={{ color: S.muted, fontWeight: 300 }}>{submission.customer_email}</p>
+        <h1 className="iconik-display" style={{ fontSize: '26px', color: S.ink }}>{clientLabel}</h1>
+        <p className="luxury-body text-sm mt-1" style={{ color: S.muted, fontWeight: 300 }}>{contactLabel}</p>
       </div>
 
       <div className="rounded-2xl border p-5 mb-6 flex items-center justify-between gap-4" style={{ background: S.card, borderColor: S.border }}>
@@ -228,9 +232,16 @@ export default function StylistSubmissionDetailPage({ params }: { params: Promis
       <div className="space-y-4">
         <Section title="Profile">
           <DataRow label="Phone" value={submission.customer_phone} />
+          <DataRow label="Email" value={submission.customer_email} />
           <DataRow label="Country" value={submission.country} />
+          <DataRow label="Source" value={submission.intake_source} />
           <DataRow label="Moodboard" value={submission.selected_moodboard_label} />
         </Section>
+        {submission.raw_consultation_notes && (
+          <Section title="Raw Consultation Notes">
+            <pre className="luxury-body text-sm whitespace-pre-wrap" style={{ color: S.ink, fontWeight: 300 }}>{submission.raw_consultation_notes}</pre>
+          </Section>
+        )}
         <Section title="Body & Focus">
           <DataRow label="Measurements" value={submission.body_measurements} />
           <DataRow label="Focus Areas" value={submission.focus_areas} />

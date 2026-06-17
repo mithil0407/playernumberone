@@ -8,6 +8,8 @@ import { revalidateStylistBlueprintCache } from './stylistBlueprintCache';
 import {
   getStylistBlueprintCapsulePageRanges,
   getStylistBlueprintOutfitCount,
+  inferStylistCoverageProfile,
+  isManualStylistBlueprintSubmission,
   type BlueprintPage,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
@@ -515,6 +517,20 @@ function outfitColourAuthority(page: BlueprintPage) {
   return [paletteUsed, formulaItems ? `Per-piece colour authority:\n${formulaItems}` : ''].filter(Boolean).join('\n');
 }
 
+function outfitCoverageAuthority(reportData: StylistBlueprintReportData) {
+  const profile = inferStylistCoverageProfile(reportData);
+  const rules = [
+    profile.neckline
+      ? `Neckline/chest coverage is mandatory: render a higher neckline such as ${profile.approvedNecklines.slice(0, 5).join(', ')}. Absolutely no cleavage, plunging neckline, deep V, low scoop, low-cut top, keyhole, strapless, off-shoulder, one-shoulder, spaghetti straps, strappy standalone camisole, or exposed chest.`
+      : 'Avoid plunging, cleavage-revealing, or obviously low-cut necklines unless explicitly written in the outfit text.',
+    profile.arms ? 'Arm/shoulder coverage is mandatory: render real sleeves or the specified layer; do not show bare upper arms or shoulders.' : '',
+    profile.legs ? 'Leg/knee coverage is mandatory: render trousers/full-length bottoms or at/below-knee hemlines.' : '',
+    profile.opacity ? 'Fabric opacity is mandatory: no sheer, transparent, see-through, or unlined exposure.' : '',
+    profile.looseFit ? 'Fit comfort is mandatory: avoid bodycon or clingy rendering through sensitive areas.' : '',
+  ].filter(Boolean);
+  return rules.join('\n- ');
+}
+
 function wornOutfitPrompt(reportData: StylistBlueprintReportData, page: BlueprintPage) {
   const palette = [
     ...reportData.classification.colour.base_palette,
@@ -547,6 +563,8 @@ Client styling constraints:
 - Body geometry: ${reportData.classification.body.geometry}.
 - Proportion directive: ${reportData.classification.body.proportion_directive}.
 - Coverage rules: ${reportData.classification.body.coverage_rules.join(', ') || 'follow intake coverage preferences'}.
+- Rendered coverage authority:
+- ${outfitCoverageAuthority(reportData)}
 - Palette direction: ${reportData.classification.colour.palette_name}; use these colours where relevant: ${palette}.
 - Exact outfit colours: the per-piece colour authority below overrides any generic colour assumption.
 - Taste direction: ${reportData.classification.taste.style_archetype}; avoid: ${reportData.classification.taste.anti_codes.join(', ') || 'anything outside the stated outfit text'}.
@@ -801,6 +819,7 @@ export async function generateStylistBlueprintImages(
   const force = Boolean(options.force);
   const paths = await getStoredPaths(reportId);
   const photos = sourcePhotos(options.submission);
+  const includeClosingEditTeaser = !isManualStylistBlueprintSubmission(options.submission);
 
   await persistPaths(reportId, paths, shareToken, `generating_images_${group}`);
 
@@ -874,7 +893,7 @@ export async function generateStylistBlueprintImages(
     }
   }
 
-  if (group === 'closing' || group === 'all') {
+  if (includeClosingEditTeaser && (group === 'closing' || group === 'all')) {
     await setSlot({
       reportId, paths, shareToken, force, fileName: 'closing-edit-teaser',
       getCurrent: () => paths.closing.editTeaser,
@@ -906,6 +925,9 @@ export async function regenerateStylistBlueprintImageSlot(
 ) {
   const paths = await getStoredPaths(reportId);
   const photos = sourcePhotos(options.submission);
+  if (slotKey === 'closing.editTeaser' && isManualStylistBlueprintSubmission(options.submission)) {
+    throw new Error('Manual reports do not include the ICONIK Edit teaser image.');
+  }
   const plan = buildSingleSlotPlan(slotKey, reportData, photos);
 
   await persistPaths(reportId, paths, options.shareToken, options.progressStage ?? singleSlotProgressStage(slotKey));
@@ -1010,6 +1032,7 @@ export function getStylistBlueprintImageCounts(
     hasHeadshot?: boolean;
     hasClientPhoto?: boolean;
     outfitCount?: number;
+    includeClosingEditTeaser?: boolean;
   } = {},
 ) {
   const normalised = normalise(paths);
@@ -1035,7 +1058,7 @@ export function getStylistBlueprintImageCounts(
     capsule_3: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 2, capsuleSize * 3) : [],
     capsule_4: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 3, outfitCount) : [],
     closing: [
-      ...(options.hasClientPhoto ? [normalised.closing.editTeaser] : []),
+      ...(options.hasClientPhoto && options.includeClosingEditTeaser !== false ? [normalised.closing.editTeaser] : []),
     ],
   };
   return Object.fromEntries(

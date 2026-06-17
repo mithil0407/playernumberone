@@ -4,10 +4,20 @@ import { join } from 'path';
 export interface ParsedStylistOutfit {
   id: string;
   title: string;
-  source: 'root' | 'curated';
+  source: 'root' | 'curated' | 'learned';
   capsule: 'Professional' | 'Social' | 'Everyday' | 'Occasion';
   fields: Array<{ label: string; value: string }>;
+  normalised_slots: ParsedStylistOutfitSlot[];
+  completeness_score: number;
+  signature: string;
   notes: string[];
+}
+
+export interface ParsedStylistOutfitSlot {
+  slot: string;
+  piece: string;
+  source_label: string;
+  role: 'base' | 'structure' | 'finish' | 'detail';
 }
 
 const LABEL_ALIASES: Record<string, string> = {
@@ -100,6 +110,102 @@ function normaliseLabel(rawLabel: string): string {
   return LABEL_ALIASES[cleaned] ?? cleaned.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function inferSlotFromText(label: string, value: string): string {
+  const text = `${label} ${value}`.toLowerCase();
+  if (/dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble/.test(text)) return 'Dress';
+  if (/trouser|pant|jean|skirt|palazzo|bottom|legging/.test(text)) return 'Bottom';
+  if (/shoe|sandal|heel|flat|sneaker|loafer|pump|mule|footwear|jutti|wedge|espadrille/.test(text)) return 'Footwear';
+  if (/bag|tote|clutch|crossbody|handbag|shoulder bag|baguette/.test(text)) return 'Bag';
+  if (/jewel|earring|necklace|bracelet|watch|bangle|accessor|sunglass|scarf/.test(text)) return 'Jewellery';
+  if (/blazer|jacket|cardigan|vest|coat|outerwear|layer|overshirt|dupatta|bomber/.test(text)) return 'Outerwear';
+  if (/belt|waist|tie/.test(text)) return 'Waist Detail';
+  if (/top|blouse|shirt|tee|t-shirt|knit|camisole|tank|base layer/.test(text)) return 'Top';
+  if (label === 'Outfit' || label === 'Formula') return label;
+  return label;
+}
+
+function slotRole(slot: string): ParsedStylistOutfitSlot['role'] {
+  if (/dress|top|base|bottom|outfit|formula/i.test(slot)) return 'base';
+  if (/outerwear|waist/i.test(slot)) return 'structure';
+  if (/footwear|bag|jewel|accessor/i.test(slot)) return 'finish';
+  return 'detail';
+}
+
+export function normaliseStylistOutfitSlots(fields: Array<{ label: string; value: string }>): ParsedStylistOutfitSlot[] {
+  const slots: ParsedStylistOutfitSlot[] = [];
+  const seen = new Set<string>();
+
+  for (const field of fields) {
+    const slot = inferSlotFromText(field.label, field.value);
+    const key = `${slot}:${field.value}`.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    slots.push({
+      slot,
+      piece: field.value,
+      source_label: field.label,
+      role: slotRole(slot),
+    });
+  }
+
+  return slots;
+}
+
+export function stylistOutfitSignature(slots: ParsedStylistOutfitSlot[]) {
+  return slots
+    .filter(slot => /dress|top|base|outerwear|bottom|footwear|bag|jewel|accessor|waist/i.test(slot.slot))
+    .map(slot => `${slot.slot}:${slot.piece}`.toLowerCase().replace(/\b(black|white|ivory|cream|navy|blue|grey|gray|brown|tan|taupe|camel|cognac|espresso|cocoa|chocolate|beige|olive|green|burgundy|maroon|wine|red|pink|blush|fuchsia|mustard|yellow|gold|silver)\b/g, '').replace(/\s+/g, ' ').trim())
+    .join('|');
+}
+
+export function stylistOutfitCompletenessScore(slots: ParsedStylistOutfitSlot[]): number {
+  const text = slots.map(slot => `${slot.slot} ${slot.piece}`).join(' ').toLowerCase();
+  const hasOnePiece = /\b(dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble)\b/.test(text);
+  const hasTop = /\b(top|blouse|shirt|tee|t-shirt|knit|camisole|tank|base layer)\b/.test(text) || slots.some(slot => /top|base layer/i.test(slot.slot));
+  const hasBottom = /\b(bottom|trouser|pant|jean|skirt|palazzo|legging)\b/.test(text) || slots.some(slot => /bottom/i.test(slot.slot));
+  const hasFootwear = /\b(footwear|shoe|sandal|heel|flat|sneaker|loafer|pump|mule|jutti|wedge|espadrille)\b/.test(text);
+  const hasBag = /\b(bag|tote|clutch|crossbody|handbag|shoulder bag|baguette)\b/.test(text);
+  const hasAccessory = /\b(jewel|earring|necklace|bracelet|watch|bangle|accessor|sunglass|scarf|belt)\b/.test(text);
+  const hasStructure = /\b(blazer|jacket|cardigan|vest|coat|outerwear|layer|overshirt|belt|waist|tie)\b/.test(text);
+  const hasDetail = slots.length >= 5;
+
+  return [
+    hasOnePiece || (hasTop && hasBottom),
+    hasFootwear,
+    hasBag,
+    hasAccessory,
+    hasStructure,
+    hasDetail,
+  ].filter(Boolean).length;
+}
+
+function outfitHasCompleteBase(slots: ParsedStylistOutfitSlot[]): boolean {
+  const text = slots.map(slot => `${slot.slot} ${slot.piece}`).join(' ').toLowerCase();
+  const hasOnePiece = /\b(dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble)\b/.test(text);
+  const hasTop = /\b(top|blouse|shirt|tee|t-shirt|knit|camisole|tank|base layer)\b/.test(text) || slots.some(slot => /top|base layer/i.test(slot.slot));
+  const hasBottom = /\b(bottom|trouser|pant|jean|skirt|palazzo|legging)\b/.test(text) || slots.some(slot => /bottom/i.test(slot.slot));
+  const hasFootwear = /\b(footwear|shoe|sandal|heel|flat|sneaker|loafer|pump|mule|jutti|wedge|espadrille|boot)\b/.test(text);
+  const hasBagOrAccessory = /\b(bag|tote|clutch|crossbody|handbag|shoulder bag|baguette|jewel|earring|necklace|bracelet|watch|bangle|accessor|sunglass|scarf|belt)\b/.test(text);
+
+  return (hasOnePiece || (hasTop && hasBottom)) && hasFootwear && hasBagOrAccessory;
+}
+
+function outfitHasAmbiguousShoppingLanguage(outfit: Pick<ParsedStylistOutfit, 'fields'>): boolean {
+  const text = outfit.fields.map(field => field.value).join(' ').toLowerCase();
+  return (
+    /\b(any|or|\/)\b[^.]{0,28}\b(shade|colour|color|loafers|sneakers|heels|boots|flats|sandals|trench|denim jacket|top|blouse|dress|pants|trousers)\b/.test(text) ||
+    /\btransparent\b/.test(text) ||
+    /\bimage\s+(?:should|in|clear|hd)\b/.test(text)
+  );
+}
+
+export function isUsableStylistOutfitAnchor(outfit: ParsedStylistOutfit): boolean {
+  return outfit.completeness_score >= 5 &&
+    outfit.normalised_slots.length >= 4 &&
+    outfitHasCompleteBase(outfit.normalised_slots) &&
+    !outfitHasAmbiguousShoppingLanguage(outfit);
+}
+
 function parseEntry(
   rawEntry: string,
   index: number,
@@ -144,15 +250,21 @@ function parseEntry(
   const text = dedupedFields.map((field) => `${field.label}: ${field.value}`).join(' ');
   const title = explicitTitle ? cleanText(explicitTitle) : deriveTitle(dedupedFields, index);
   const capsule = inferCapsule(text);
+  const orderedFields = orderFields(dedupedFields);
+  const normalised_slots = normaliseStylistOutfitSlots(orderedFields);
+  const signature = stylistOutfitSignature(normalised_slots) || text.toLowerCase().replace(/\s+/g, ' ').trim();
 
-  notes.push('Use as inspiration only. Adapt colour, coverage, fabric weight, formality, and fit to the client profile.');
+  notes.push('Anchor on this verified outfit: keep its silhouette, piece relationships, and styling logic as one complete outfit. Adapt only colour (to the client palette), coverage, fabric weight, formality, and fit. Do not recombine its pieces with another outfit unless a human stylist explicitly requests it.');
 
   return {
     id: `${source}-${String(index + 1).padStart(2, '0')}`,
     title,
     source,
     capsule,
-    fields: orderFields(dedupedFields),
+    fields: orderedFields,
+    normalised_slots,
+    completeness_score: stylistOutfitCompletenessScore(normalised_slots),
+    signature,
     notes,
   };
 }
@@ -250,12 +362,13 @@ function parseCuratedOutfitLibrary(raw: string): ParsedStylistOutfit[] {
   return entries;
 }
 
-function formatParsedOutfits(outfits: ParsedStylistOutfit[]): string {
+export function formatStylistOutfitsForPrompt(outfits: ParsedStylistOutfit[]): string {
   if (!outfits.length) {
     return 'No parsed client-tested outfit references were found.';
   }
 
   return outfits
+    .filter(isUsableStylistOutfitAnchor)
     .map((outfit) => {
       const fields = outfit.fields
         .map((field) => `- ${field.label}: ${field.value}`)
@@ -263,6 +376,7 @@ function formatParsedOutfits(outfits: ParsedStylistOutfit[]): string {
       return `### ${outfit.id}: ${outfit.title}
 - Capsule: ${outfit.capsule}
 - Source: ${outfit.source}
+- Completeness: ${outfit.completeness_score}/6
 ${fields}
 - Adaptation rule: ${outfit.notes.join(' ')}`;
     })
@@ -270,20 +384,23 @@ ${fields}
 }
 
 export function getStylistOutfitLibraryPrompt(): string {
+  return getStylistOutfitLibraryPromptFromOutfits(getParsedStylistOutfitLibrary());
+}
+
+export function getStylistOutfitLibraryPromptFromOutfits(parsedOutfits: ParsedStylistOutfit[]): string {
   const curatedLibrary = readCuratedLibraryFile();
-  const parsedOutfits = getParsedStylistOutfitLibrary();
 
   return `# ICONIK Stylist Outfit Library
 
-Use these references as client-tested outfit inspiration. Do not copy any look verbatim. Adapt each idea to the client's body geometry, colour direction, coverage requirements, lifestyle, climate, budget, and stated taste.
+These are real, stylist-verified, client-tested outfits — your strongest signal for what actually looks classy and works in real life. Anchor each generated look on ONE complete reference outfit: reproduce its silhouette, piece relationships, and styling logic faithfully. Do not recombine pieces across different references. Adapt only what this specific client needs — colour (to her palette), coverage, fabric weight (to her climate), formality, and fit (to her body). Do not drift into invented looks that are not grounded in this library.
 
 ## Parsed Client-Tested Outfit References
 
-${formatParsedOutfits(parsedOutfits)}
+${formatStylistOutfitsForPrompt(parsedOutfits)}
 
 ## Curated Outfit Frameworks
 
-${formatParsedOutfits(parseCuratedOutfitLibrary(curatedLibrary))}`;
+${formatStylistOutfitsForPrompt(parseCuratedOutfitLibrary(curatedLibrary))}`;
 }
 
 export function getParsedStylistOutfitLibrary(): ParsedStylistOutfit[] {

@@ -21,10 +21,14 @@ import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing } from '@/lib/manPricing';
 import { getAttributionPayload } from '@/lib/attribution';
 
+const MAN_EDIT_PRODUCT_ID = 'iconik_man_edit_monthly';
+const MAN_EDIT_MONTHLY_PRICE = 699;
+
 interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
+  razorpay_subscription_id?: string;
 }
 
 interface RazorpayOptions {
@@ -33,10 +37,13 @@ interface RazorpayOptions {
   currency: string;
   name: string;
   description: string;
-  order_id: string;
+  order_id?: string;
+  subscription_id?: string;
+  image?: string;
   handler: (response: RazorpayResponse) => void;
   prefill: { name: string; email: string; contact: string };
   theme: { color: string };
+  modal?: { ondismiss?: () => void };
 }
 
 interface RazorpayInstance { open(): void; }
@@ -54,6 +61,7 @@ export default function ManCheckoutPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [showAddonPopup, setShowAddonPopup] = useState(false);
   const [popupDismissed, setPopupDismissed] = useState(false);
+  const [iconikEditSubscription, setIconikEditSubscription] = useState(false);
 
   const { country, isIndia, isLoading: regionLoading } = useManRegion();
   const pricing = getManPricing(country);
@@ -128,6 +136,64 @@ export default function ManCheckoutPage() {
     setOutfitPreviewAddon(checked);
   }, [outfitPreviewPrice, pricing.currency]);
 
+  const handleEditSubscriptionChange = useCallback((checked: boolean) => {
+    if (checked) trackAddToCart('Iconik Edit Monthly', MAN_EDIT_MONTHLY_PRICE, MAN_EDIT_PRODUCT_ID, 'INR', MAN_FUNNEL_CATEGORY);
+    else trackRemoveFromCart('Iconik Edit Monthly', MAN_EDIT_MONTHLY_PRICE, MAN_EDIT_PRODUCT_ID, 'INR', MAN_FUNNEL_CATEGORY);
+    setIconikEditSubscription(checked);
+  }, []);
+
+  const redirectToIntake = useCallback(() => {
+    const intakeUrl = `/man/intake?email=${encodeURIComponent(formData.email)}&phone=${encodeURIComponent(formData.phone)}`;
+    window.location.href = intakeUrl;
+  }, [formData.email, formData.phone]);
+
+  const startIconikEditSubscription = useCallback(async (paymentResponse: RazorpayResponse, dbOrderId?: string) => {
+    const response = await fetch('/api/man-edit-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_email: formData.email,
+        customer_phone: formData.phone,
+        customer_name: formData.email.split('@')[0],
+        razorpay_order_id: paymentResponse.razorpay_order_id,
+        db_order_id: dbOrderId,
+        attribution: getAttributionPayload(),
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Could not start Iconik Edit subscription');
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const options: RazorpayOptions = {
+        key: data.key,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'ICONIK Man',
+        description: 'Iconik Edit Monthly',
+        subscription_id: data.subscription_id,
+        image: `${window.location.origin}/logopayment.webp`,
+        handler: function () {
+          resolve();
+        },
+        prefill: {
+          name: formData.email.split('@')[0],
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: { color: '#1c1917' },
+        modal: {
+          ondismiss: () => reject(new Error('Iconik Edit subscription checkout was closed')),
+        },
+      };
+
+      const razorpay = new (window as unknown as { Razorpay: new (o: RazorpayOptions) => RazorpayInstance }).Razorpay(options);
+      razorpay.open();
+    });
+  }, [formData.email, formData.phone]);
+
   const processPayment = useCallback(async () => {
     // Phone validation: 10 digits for India, 7+ for international
     const phoneValid = isIndia ? formData.phone.length === 10 : formData.phone.replace(/[\s\-+]/g, '').length >= 7;
@@ -139,8 +205,8 @@ export default function ManCheckoutPage() {
     if (!emailRegex.test(formData.email)) { alert('Please enter a valid email address'); return; }
 
     setIsProcessing(true);
-    const itemCount = 1 + (outfitPreviewAddon ? 1 : 0);
-    const checkoutItems = [MAN_BLUEPRINT_PRODUCT_ID, ...(outfitPreviewAddon ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+    const itemCount = 1 + (outfitPreviewAddon ? 1 : 0) + (iconikEditSubscription ? 1 : 0);
+    const checkoutItems = [MAN_BLUEPRINT_PRODUCT_ID, ...(outfitPreviewAddon ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : []), ...(iconikEditSubscription ? [MAN_EDIT_PRODUCT_ID] : [])];
     trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Man Style Blueprint', pricing.currency, MAN_FUNNEL_CATEGORY, checkoutItems);
 
     try {
@@ -164,7 +230,8 @@ export default function ManCheckoutPage() {
           amount: totalAmount,
           base_product: 'Iconik Man Style Blueprint',
           add_ons: {
-            outfit_preview: outfitPreviewAddon
+            outfit_preview: outfitPreviewAddon,
+            iconik_edit_subscription: iconikEditSubscription,
           },
           total_base_price: discountedPrice,
           outfit_preview_price: outfitPreviewAddon ? outfitPreviewPrice : 0,
@@ -215,6 +282,8 @@ export default function ManCheckoutPage() {
             const purchasedItems = [MAN_BLUEPRINT_PRODUCT_ID];
             if (outfitPreviewAddon) purchasedItems.push(MAN_OUTFIT_PREVIEW_PRODUCT_ID);
 
+            if (iconikEditSubscription) purchasedItems.push(MAN_EDIT_PRODUCT_ID);
+
             trackPurchase(totalAmount, 'ICONIK Man Complete Package', purchasedItems, purchasedItems.length, pricing.currency, MAN_FUNNEL_CATEGORY, response.razorpay_payment_id, response.razorpay_payment_id);
 
             // International: confirm payment server-side and send email
@@ -242,9 +311,16 @@ export default function ManCheckoutPage() {
             localStorage.setItem('man_customerEmail', formData.email);
             localStorage.setItem('man_customerPhone', formData.phone);
 
-            // Redirect directly to the intake form
-            const intakeUrl = `/man/intake?email=${encodeURIComponent(formData.email)}&phone=${encodeURIComponent(formData.phone)}`;
-            window.location.href = intakeUrl;
+            if (isIndia && iconikEditSubscription) {
+              try {
+                await startIconikEditSubscription(response, responseData.db_order_id);
+              } catch (err) {
+                console.error('Iconik Edit subscription error:', err);
+                alert(err instanceof Error ? err.message : 'Iconik Edit subscription was not completed. You can continue your intake now.');
+              }
+            }
+
+            redirectToIntake();
           },
           prefill: {
             name: formData.email.split('@')[0],
@@ -280,14 +356,14 @@ export default function ManCheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, outfitPreviewAddon, razorpayLoaded, isIndia, discountedPrice, outfitPreviewPrice, pricing.currency]);
+  }, [formData, totalAmount, outfitPreviewAddon, iconikEditSubscription, razorpayLoaded, isIndia, discountedPrice, outfitPreviewPrice, pricing.currency, redirectToIntake, startIconikEditSubscription]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    const hasAddons = outfitPreviewAddon;
+    const hasAddons = outfitPreviewAddon || iconikEditSubscription;
     if (!hasAddons && !popupDismissed) setShowAddonPopup(true);
     else await processPayment();
-  }, [processPayment, outfitPreviewAddon, popupDismissed]);
+  }, [processPayment, outfitPreviewAddon, iconikEditSubscription, popupDismissed]);
 
   const INK = '#2C2622';
   const LIGHT = '#F4EFE5';
@@ -434,6 +510,31 @@ export default function ManCheckoutPage() {
                   </div>
                 </div>
               </div>
+              {isIndia && (
+                <div
+                  onClick={() => handleEditSubscriptionChange(!iconikEditSubscription)}
+                  className="cursor-pointer rounded-2xl p-4 mt-3 transition-all duration-200"
+                  style={{ border: `1px solid ${iconikEditSubscription ? '#94A6AD' : 'rgba(44,38,34,0.1)'}`, background: iconikEditSubscription ? 'rgba(148,166,173,0.08)' : '#FAFAF8' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all" style={{ border: `2px solid ${iconikEditSubscription ? '#94A6AD' : 'rgba(44,38,34,0.2)'}`, background: iconikEditSubscription ? '#94A6AD' : 'transparent' }}>
+                      {iconikEditSubscription && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start gap-2 mb-1">
+                        <div className="iconik-display" style={{ fontSize: '15px', color: INK }}>Iconik Edit</div>
+                        <span className="iconik-display flex-shrink-0" style={{ fontSize: '15px', color: '#94A6AD' }}>₹699/mo</span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: INK, opacity: 0.55, marginBottom: '10px' }}>Keep your stylist on-call after your Blueprint. Ask outfit questions, upload looks, and get monthly recommendations.</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['AI stylist chat', 'Learns what you like', 'Monthly outfit edit'].map((t) => (
+                          <span key={t} className="px-2.5 py-0.5 rounded-full iconik-mono" style={{ fontSize: '9px', background: 'rgba(44,38,34,0.06)', color: INK, opacity: 0.6, letterSpacing: '0.1em' }}>{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Order Total + Pay */}
@@ -449,11 +550,22 @@ export default function ManCheckoutPage() {
                     <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.7 }}>{pricing.displayAddon}</span>
                   </div>
                 )}
+                {isIndia && iconikEditSubscription && (
+                  <div className="flex justify-between items-center" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)', paddingBottom: '8px' }}>
+                    <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.5 }}>+ Iconik Edit</span>
+                    <span className="iconik-mono" style={{ fontSize: '11px', color: INK, opacity: 0.7 }}>₹699 / month</span>
+                  </div>
+                )}
               </div>
               <div className="flex justify-between items-baseline mb-1">
                 <span className="iconik-display" style={{ fontSize: '18px', color: INK }}>You Pay</span>
                 <span className="iconik-display" style={{ fontSize: '32px', color: INK }}>{pricing.symbol}{totalAmount.toLocaleString()}</span>
               </div>
+              {isIndia && iconikEditSubscription && (
+                <p className="text-center mb-3 iconik-mono" style={{ fontSize: '10px', color: INK, opacity: 0.45, letterSpacing: '0.1em' }}>
+                  Then ₹699/month for Iconik Edit after this payment
+                </p>
+              )}
               <div className="flex items-center justify-center gap-2 mb-5">
                 <Clock className="w-3 h-3" style={{ color: '#94A6AD' }} />
                 <span className="iconik-mono" style={{ fontSize: '10px', color: '#94A6AD', letterSpacing: '0.1em' }}>
@@ -464,7 +576,7 @@ export default function ManCheckoutPage() {
                 type="button" disabled={isProcessing}
                 onClick={async (e) => {
                   e.preventDefault();
-                  if (!outfitPreviewAddon && !popupDismissed) {
+                  if (!outfitPreviewAddon && !iconikEditSubscription && !popupDismissed) {
                     setShowAddonPopup(true);
                     trackCTAClick('Add-on Popup Shown', 'Man Checkout Main Button', totalAmount, pricing.currency, MAN_FUNNEL_CATEGORY);
                   } else { await processPayment(); }

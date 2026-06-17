@@ -29,10 +29,11 @@ interface LatestReport {
 
 interface Submission {
   id: string;
-  customer_email: string;
+  customer_email: string | null;
   customer_phone: string | null;
   full_name: string | null;
   country: string | null;
+  intake_source?: string | null;
   selected_moodboard_label: string | null;
   completed_at: string | null;
   created_at: string;
@@ -118,6 +119,8 @@ export default function StylistSubmissionsDashboard() {
     errors: submissions.filter(item => item.latest_report?.status === 'error').length,
   };
 
+  const clientLabel = (item: Submission) => item.full_name || item.customer_email || item.customer_phone || 'Manual client';
+
   return (
     <div>
       <div className="flex items-center justify-between mb-7">
@@ -194,9 +197,11 @@ export default function StylistSubmissionsDashboard() {
                     className="luxury-body hover:underline"
                     style={{ color: S.ink, fontWeight: 500 }}
                   >
-                    {item.full_name || item.customer_email}
+                    {clientLabel(item)}
                   </Link>
-                  <p className="luxury-body text-xs mt-0.5" style={{ color: S.muted, fontWeight: 300 }}>{item.customer_email}</p>
+                  <p className="luxury-body text-xs mt-0.5" style={{ color: S.muted, fontWeight: 300 }}>
+                    {item.customer_email || item.customer_phone || (item.intake_source === 'manual_admin' ? 'Manual entry' : 'No email')}
+                  </p>
                 </td>
                 <td className="px-4 py-4 luxury-body text-sm" style={{ color: S.muted }}>{item.country || '—'}</td>
                 <td className="px-4 py-4 luxury-body text-sm" style={{ color: S.muted }}>{item.selected_moodboard_label || '—'}</td>

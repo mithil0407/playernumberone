@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       customer_phone,
       full_name,
       country,
+      intake_source,
       selected_moodboard_label,
       completion_percentage,
       completed_at,
@@ -48,7 +49,10 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  if (search) query = query.ilike('customer_email', `%${search}%`);
+  if (search) {
+    const safeSearch = search.replace(/[(),]/g, ' ');
+    query = query.or(`customer_email.ilike.%${safeSearch}%,full_name.ilike.%${safeSearch}%,customer_phone.ilike.%${safeSearch}%`);
+  }
 
   const { data, error, count } = await query;
   if (error) {
