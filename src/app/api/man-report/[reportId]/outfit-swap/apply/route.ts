@@ -6,6 +6,7 @@ import type { ReportData } from '@/lib/manReportGenerator';
 import {
   extractOutfitBlock,
   hashOutfitBlock,
+  normaliseSequentialManOutfitNumbers,
   parseManOutfitBlock,
   replaceOutfitBlock,
 } from '@/lib/manOutfitSection';
@@ -75,7 +76,7 @@ export async function POST(
     outfitCards: [],
     comboGridCards: {},
   };
-  const currentSection4 = reportData.sections?.s4_outfits ?? '';
+  const currentSection4 = normaliseSequentialManOutfitNumbers(reportData.sections?.s4_outfits ?? '');
   const currentBlock = extractOutfitBlock(currentSection4, outfitNumber);
 
   if (!currentBlock) {
@@ -86,10 +87,11 @@ export async function POST(
     return NextResponse.json({ error: 'This outfit changed after the draft was created. Generate a fresh replacement draft.' }, { status: 409 });
   }
 
-  const newS4 = replaceOutfitBlock(currentSection4, outfitNumber, candidateBlock);
-  if (!newS4) {
+  const replacedS4 = replaceOutfitBlock(currentSection4, outfitNumber, candidateBlock);
+  if (!replacedS4) {
     return NextResponse.json({ error: `Could not replace Outfit ${outfitNumber}` }, { status: 400 });
   }
+  const newS4 = normaliseSequentialManOutfitNumbers(replacedS4);
 
   const nextReportData = withManReportSection4Qa({
     ...reportData,

@@ -1236,7 +1236,9 @@ Harness-first outfit contract:
 - Do not let the deterministic plan flatten outfits into the same neutral formula. Use it for page number, capsule, coverage, eyewear cadence, and structural safety; the harness chooses the styling intention, archetype, hero, colour movement, and exact item mix.
 - Colour has undertone-safe freedom. You may choose any realistic, buyable, undertone-aligned retail colour even if it is not one of the named palette colours. The generated palette is guidance, not a hard whitelist.
 - Exact palette colours are not provided to the outfit engine. Choose colours from the attached images, coverage, free notes, occasion, garment realism, and retail availability.
-- Intake item preferences must not be used as outfit context. Do not pass in, summarize, infer, or use liked, disliked, or skipped item preferences.
+- Manual-admin notes, profile text, and explicit preferences are hard guardrails when provided. Use liked/preferred garments to steer outfit worlds, and reject outfits that conflict with avoid, exposure, fit, footwear, or garment-category boundaries.
+- If a preference conflicts with body/coverage safety or garment realism, preserve safety/realism and choose the nearest acceptable alternative.
+- For customer-form reports, treat item preferences as soft context unless they express hard coverage, fit, modesty, avoid, or lifestyle needs.
 - Keep each outfit to no more than 3 visible colours plus metal direction. At least half of the full outfit set must use colour in a main garment, not only in bag, jewellery, scarf, eyewear, or shoes.
 - Each outfit page must include one formula block with exact formula item objects: {"slot":"","piece":"","colour_name":"","colour_hex":"","palette_role":"lead|support|ground|accent","structural_notes":""}.
 - Formula items must be exact. Do not use "or", slashes, "optional", alternate colours, alternate shoes, alternate layers, or category-only names.
@@ -1979,9 +1981,9 @@ type ParsedHarnessOutfit = {
 };
 
 const HARNESS_SECTION_MARKERS: Array<{ key: keyof Omit<ParsedHarnessOutfit, 'outfitNumber' | 'context'>; pattern: RegExp }> = [
-  { key: 'top', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?1\s*[—-]\s*TOP\s*:\s*(?:\*\*)?/im },
+  { key: 'top', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?1\s*[—-]\s*TOP(?:\s*\/\s*KURTA)?\s*:\s*(?:\*\*)?/im },
   { key: 'bottom', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?2\s*[—-]\s*BOTTOM\s*:\s*(?:\*\*)?/im },
-  { key: 'layer', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?3\s*[—-]\s*LAYER\s*:\s*(?:\*\*)?/im },
+  { key: 'layer', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?3\s*[—-]\s*LAYER(?:\s*\/\s*DUPATTA)?\s*:\s*(?:\*\*)?/im },
   { key: 'footwear', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?4\s*[—-]\s*FOOTWEAR\s*:\s*(?:\*\*)?/im },
   { key: 'bag', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?5\s*[—-]\s*BAG\s*:\s*(?:\*\*)?/im },
   { key: 'jewellery', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?6\s*[—-]\s*JEWELL?ERY\s*:\s*(?:\*\*)?/im },
@@ -2083,8 +2085,70 @@ function capsuleRangesForHarnessPrompt(reportData: StylistBlueprintReportData, p
     .join('\n');
 }
 
-function buildHarnessOnlyOutfitPrompt(reportData: StylistBlueprintReportData, plans: PlannedOutfit[]) {
+function buildHarnessClientContext(submission: StylistIntakeSubmission | null | undefined, reportData: StylistBlueprintReportData) {
+  const classificationContext = buildStylistBlueprintOutfitClassificationContext(reportData);
+  if (!submission) {
+    return `--- CLIENT FIT CONTEXT ---
+Use this client-specific classification as hard body, coverage, undertone, face, and taste context:
+
+${classificationContext}`;
+  }
+
+  if (isManualStylistBlueprintSubmission(submission)) {
+    return `--- MANUAL CLIENT CONTEXT ---
+This is a manual-admin report. The pasted consultation/profile text and parsed preferences below are hard outfit guardrails.
+
+Manual priority rules:
+- Respect the raw notes, profile text, piece preferences, coverage requirements, lifestyle context, moodboard/aesthetic signals, and classification summary.
+- Do not generate random outfits outside the client's stated preferences.
+- If notes say the client loves or prefers a garment world, use that world repeatedly enough for the set to feel personal.
+- If notes reject an item, exposure level, fit, footwear type, colour direction, garment category, or cultural style, do not include it.
+- If a stated preference conflicts with body/coverage safety or garment realism, keep the safety/realism rule and choose the nearest acceptable alternative.
+- Reject and regenerate any outfit that conflicts with the manual notes or profile preferences.
+
+--- PARSED PROFILE, NOTES, AND PREFERENCES ---
+${buildStylistBlueprintIntakeDigest(submission)}
+
+--- CLASSIFICATION SUMMARY ---
+${classificationContext}`;
+  }
+
+  return `--- CLIENT FIT CONTEXT ---
+Use this client-specific context as guardrails. Hard coverage, fit, modesty, avoid, lifestyle, body, undertone, face, and realism signals override generic outfit variety. Treat softer item likes as directional rather than mandatory.
+
+Client intake:
+Name: ${intakeDisplayName(submission)}
+Country: ${submission.country || ''}
+Age Range: ${submission.age_range || ''}
+Focus Areas:
+${stringify(submission.focus_areas)}
+
+Coverage Requirements:
+${stringify(submission.coverage_requirements)}
+
+Lifestyle:
+${stringify(submission.lifestyle_context)}
+
+Moodboard:
+Selected: ${submission.selected_moodboard_label || submission.selected_moodboard_id || ''}
+Secondary Elements: ${stringify(submission.secondary_moodboard_elements)}
+
+Shopping Relationship:
+${submission.shopping_relationship || ''}
+
+Loved Outfit:
+${submission.one_outfit_description || ''}
+
+Classification:
+${classificationContext}`;
+}
+
+function buildHarnessOnlyOutfitPrompt(reportData: StylistBlueprintReportData, plans: PlannedOutfit[], submission?: StylistIntakeSubmission | null) {
   return `${WOMEN_OUTFIT_HARNESS_V2}
+
+---
+
+${buildHarnessClientContext(submission, reportData)}
 
 ---
 
@@ -2255,8 +2319,8 @@ function parseHarnessTextToBlueprintPages(text: string, reportData: StylistBluep
   ];
 }
 
-async function generateHarnessOnlyOutfitPages(reportData: StylistBlueprintReportData, plans: PlannedOutfit[]) {
-  const prompt = buildHarnessOnlyOutfitPrompt(reportData, plans);
+async function generateHarnessOnlyOutfitPages(reportData: StylistBlueprintReportData, plans: PlannedOutfit[], submission?: StylistIntakeSubmission | null) {
+  const prompt = buildHarnessOnlyOutfitPrompt(reportData, plans, submission);
   const text = await callGeminiText(prompt);
   return parseHarnessTextToBlueprintPages(text, reportData, plans);
 }
@@ -3223,7 +3287,7 @@ export async function generateStylistBlueprintPages(
   const outfitsPerCapsule = outfitCount / 4;
   const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext);
   if (act === 'application') {
-    return generateHarnessOnlyOutfitPages(reportData, outfitDiversityPlan);
+    return generateHarnessOnlyOutfitPages(reportData, outfitDiversityPlan, submission);
   }
   const classificationContext = stringify(reportData.classification);
   const intakeContext = buildStylistBlueprintIntakeDigest(submission);
@@ -3321,7 +3385,6 @@ export async function generateStylistBlueprintReplacementOutfit(
   pageNumber: number,
   reason?: string,
 ): Promise<BlueprintPage> {
-  void submission;
   void reason;
   const outfitStart = getStylistBlueprintOutfitStartPage();
   const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
@@ -3335,7 +3398,7 @@ export async function generateStylistBlueprintReplacementOutfit(
   const libraryContext = await loadOutfitLibraryContext();
   const plan = buildOutfitDiversityPlan(reportData, libraryContext)[pageNumber - outfitStart];
   if (!plan) throw new Error(`Missing outfit plan for page ${pageNumber}`);
-  const pages = await generateHarnessOnlyOutfitPages(reportData, [plan]);
+  const pages = await generateHarnessOnlyOutfitPages(reportData, [plan], submission);
   const page = pages.find(candidate => candidate.page_number === pageNumber);
   if (!page) throw new Error('Replacement outfit generation returned no page');
   return page;
@@ -3466,11 +3529,10 @@ export async function generateStylistBlueprintReplacementOutfits(
   reportData: StylistBlueprintReportData,
   reason?: string,
 ): Promise<BlueprintPage[]> {
-  void submission;
   void reason;
   const libraryContext = await loadOutfitLibraryContext();
   const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext);
-  return generateHarnessOnlyOutfitPages(reportData, outfitDiversityPlan);
+  return generateHarnessOnlyOutfitPages(reportData, outfitDiversityPlan, submission);
 }
 
 export async function generateStylistBlueprintReplacementPalette(

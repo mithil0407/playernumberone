@@ -58,6 +58,9 @@ const SERIF      = "var(--font-playfair, 'Fraunces'), 'Tiempos Headline', 'Cormo
 
 interface ParsedOutfit {
   number:      number;
+  occurrenceIndex: number;
+  blockStart: number;
+  identityKey: string;
   label:       string;
   context:     string;
   top:         string;
@@ -101,6 +104,7 @@ export interface ManReportSlideMeta {
     | 'grooming'
     | 'identity';
   outfitNumber?: number;
+  outfitIdentityKey?: string;
 }
 
 // Strips hex colour codes like (FFFDD0) or (#FFFDD0) from outfit text
@@ -149,8 +153,13 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
 
   const categories: OutfitCategory[] = [];
   let currentCat: OutfitCategory | null = null;
+  let cursor = 0;
+  let occurrenceIndex = 0;
 
   for (const block of outfitBlocks) {
+    const blockStart = text.indexOf(block, cursor);
+    if (blockStart >= 0) cursor = blockStart + block.length;
+
     const boldMatch  = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
     const plainMatch = block.match(/^OUTFIT\s+(\d+)\s*[—–-]\s*(.+)/im);
     const outfitMatch = boldMatch ?? plainMatch;
@@ -186,6 +195,9 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
 
     const outfit: ParsedOutfit = {
       number:      outfitNum,
+      occurrenceIndex,
+      blockStart: blockStart >= 0 ? blockStart : occurrenceIndex,
+      identityKey: `outfit-${outfitNum}-at-${blockStart >= 0 ? blockStart : occurrenceIndex}`,
       label:       rawLabel,
       context:     inferContextName(rawLabel, outfitNum),
       top:         getField(block, 'Top'),
@@ -204,6 +216,7 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       acceptableSubstitutes: getField(block, 'Acceptable substitutes'),
       doNotBuy: getField(block, 'Do not buy'),
     };
+    occurrenceIndex += 1;
 
     if (!currentCat) {
       currentCat = { name: 'Outfits', intro: '', outfits: [] };
@@ -243,6 +256,7 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
         sectionKey: 's4',
         slideType: 'outfit',
         outfitNumber: outfit.number,
+        outfitIdentityKey: outfit.identityKey,
       });
     }
   } else if (sections.s4_outfits?.trim()) {
@@ -263,10 +277,14 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
   return slides.map((slide, index) => ({ ...slide, pageNumber: index + 1 }));
 }
 
-function extractOutfitBlock(s4Text: string, outfitNumber: number): string | null {
+function extractOutfitBlockByIdentity(s4Text: string, outfit: ParsedOutfit): string | null {
   const headerPattern = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
   const matches = Array.from(s4Text.matchAll(headerPattern));
-  const matchIndex = matches.findIndex(match => Number(match[1]) === outfitNumber);
+  const matchIndex = matches.findIndex((match, index) =>
+    index === outfit.occurrenceIndex &&
+    (match.index ?? 0) === outfit.blockStart &&
+    Number(match[1]) === outfit.number
+  );
   if (matchIndex === -1) return null;
 
   const start = matches[matchIndex].index ?? 0;
@@ -1694,9 +1712,26 @@ interface ComboGridRegenerationResult {
   kind?: ComboGridKind | null;
 }
 
+interface OutfitSwapPreview {
+  number: number;
+  label: string;
+  context: string;
+  top: string;
+  bottom: string;
+  layer: string;
+  footwear: string;
+  accessories: string;
+  fitNote: string;
+  colourLogic: string;
+  whyItWorks: string;
+  shoppingTranslation: string;
+  acceptableSubstitutes: string;
+  doNotBuy: string;
+}
+
 interface OutfitSwapDraftResult {
   candidateBlock: string;
-  parsedPreview: ParsedOutfit | null;
+  parsedPreview: OutfitSwapPreview | null;
   qaIssues: ManReportQaIssue[];
   blockingIssues: ManReportQaIssue[];
   baseUpdatedAt: string;
@@ -1745,15 +1780,16 @@ function OutfitsSection({
   focusPageNumber?: number;
   slideMeta: ManReportSlideMeta[];
 }) {
-  const [editingNumber, setEditingNumber] = useState<number | null>(null);
+  const [editingTarget, setEditingTarget] = useState<{ number: number; identityKey: string } | null>(null);
   const [editText, setEditText]           = useState('');
   const [editError, setEditError]         = useState<string | null>(null);
   const [sectionNotice, setSectionNotice] = useState<string | null>(null);
   const [regenerating, setRegenerating]   = useState(false);
   const [savingText, setSavingText]       = useState(false);
-  const [imageOverrides, setImageOverrides] = useState<Record<number, string>>({});
-  const [brokenOutfitImages, setBrokenOutfitImages] = useState<Record<number, boolean>>({});
+  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
+  const [brokenOutfitImages, setBrokenOutfitImages] = useState<Record<string, boolean>>({});
   const [swapNumber, setSwapNumber] = useState<number | null>(null);
+  const [swapIdentityKey, setSwapIdentityKey] = useState<string | null>(null);
   const [swapReason, setSwapReason] = useState('');
   const [swapNotes, setSwapNotes] = useState('');
   const [swapInspirationText, setSwapInspirationText] = useState('');
@@ -1767,6 +1803,7 @@ function OutfitsSection({
   const closeSwap = () => {
     if (draftingSwap || applyingSwap) return;
     setSwapNumber(null);
+    setSwapIdentityKey(null);
     setSwapReason('');
     setSwapNotes('');
     setSwapInspirationText('');
@@ -1776,9 +1813,10 @@ function OutfitsSection({
     setSwapError(null);
   };
 
-  const startSwap = (outfitNumber: number) => {
+  const startSwap = (outfit: ParsedOutfit) => {
     if (regenerating || draftingSwap || applyingSwap) return;
-    setSwapNumber(outfitNumber);
+    setSwapNumber(outfit.number);
+    setSwapIdentityKey(outfit.identityKey);
     setSwapReason('');
     setSwapNotes('');
     setSwapInspirationText('');
@@ -1838,10 +1876,11 @@ function OutfitsSection({
       }
       setImageOverrides(prev => {
         const next = { ...prev };
-        if (result.imageUrl) next[swapNumber] = result.imageUrl;
+        if (result.imageUrl && swapIdentityKey) next[swapIdentityKey] = result.imageUrl;
         return next;
       });
       setSwapNumber(null);
+      setSwapIdentityKey(null);
       setSwapReason('');
       setSwapNotes('');
       setSwapInspirationText('');
@@ -1856,29 +1895,29 @@ function OutfitsSection({
     }
   };
 
-  const startEdit = (outfitNumber: number) => {
+  const startEdit = (outfit: ParsedOutfit) => {
     if (regenerating) return;
-    const outfitBlock = extractOutfitBlock(text, outfitNumber);
+    const outfitBlock = extractOutfitBlockByIdentity(text, outfit);
     if (!outfitBlock) {
-      setEditError(`Could not locate Outfit ${outfitNumber} in Section 4 text. Open the full Section 4 editor to repair the outfit headers.`);
-      setEditingNumber(null);
+      setEditError(`Could not locate Outfit ${outfit.number} in Section 4 text. Open the full Section 4 editor to repair the outfit headers.`);
+      setEditingTarget(null);
       setEditText('');
       return;
     }
     setEditError(null);
     setSectionNotice(null);
-    setEditingNumber(outfitNumber);
+    setEditingTarget({ number: outfit.number, identityKey: outfit.identityKey });
     setEditText(outfitBlock);
   };
   const cancelEdit = (force = false) => {
     if (regenerating && !force) return;
-    setEditingNumber(null);
+    setEditingTarget(null);
     setEditText('');
     setEditError(null);
   };
 
   const handleRegenerate = async () => {
-    if (!editingNumber || !onRegenerateOutfit) return;
+    if (!editingTarget || !onRegenerateOutfit) return;
     if (!editText.trim()) {
       setEditError('Outfit text cannot be empty.');
       return;
@@ -1887,19 +1926,19 @@ function OutfitsSection({
     setEditError(null);
     setSectionNotice(null);
     try {
-      const result = await onRegenerateOutfit(editingNumber, editText);
+      const result = await onRegenerateOutfit(editingTarget.number, editText);
       if (!result) {
         setEditError('Could not save outfit edit. Please try again.');
         return;
       }
       setImageOverrides(prev => {
         const next = { ...prev };
-        if (result.imageUrl) next[editingNumber] = result.imageUrl;
-        else delete next[editingNumber];
+        if (result.imageUrl) next[editingTarget.identityKey] = result.imageUrl;
+        else delete next[editingTarget.identityKey];
         return next;
       });
       if (result.imageStatus === 'failed') {
-        setSectionNotice(`Outfit ${editingNumber} text was saved, but image regeneration failed. Use Retry on the image placeholder when Gemini is available.`);
+        setSectionNotice(`Outfit ${editingTarget.number} text was saved, but image regeneration failed. Use Retry on the image placeholder when Gemini is available.`);
       }
       cancelEdit(true);
     } finally {
@@ -1908,7 +1947,7 @@ function OutfitsSection({
   };
 
   const handleSaveTextOnly = async () => {
-    if (!editingNumber || !onSaveOutfitText) return;
+    if (!editingTarget || !onSaveOutfitText) return;
     if (!editText.trim()) {
       setEditError('Outfit text cannot be empty.');
       return;
@@ -1917,12 +1956,12 @@ function OutfitsSection({
     setEditError(null);
     setSectionNotice(null);
     try {
-      const result = await onSaveOutfitText(editingNumber, editText);
+      const result = await onSaveOutfitText(editingTarget.number, editText);
       if (!result) {
         setEditError('Could not save outfit text. Please try again.');
         return;
       }
-      setSectionNotice(`Outfit ${editingNumber} text saved. The existing image was not changed.`);
+      setSectionNotice(`Outfit ${editingTarget.number} text saved. The existing image was not changed.`);
       cancelEdit(true);
     } finally {
       setSavingText(false);
@@ -1930,14 +1969,24 @@ function OutfitsSection({
   };
 
   const categories = useMemo(() => parseOutfitCategories(text), [text]);
+  const allOutfits = useMemo(() => categories.flatMap(category => category.outfits), [categories]);
+  const duplicateOutfitNumbers = useMemo(() => {
+    const seen = new Set<number>();
+    const duplicates = new Set<number>();
+    for (const outfit of allOutfits) {
+      if (seen.has(outfit.number)) duplicates.add(outfit.number);
+      seen.add(outfit.number);
+    }
+    return duplicates;
+  }, [allOutfits]);
   const split      = cls.outfit_split;
-  const shouldShowSlide = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
-    const slide = slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber));
+  const shouldShowSlide = (slideType: ManReportSlideMeta['slideType'], outfit?: ParsedOutfit) => {
+    const slide = slideMeta.find(item => item.slideType === slideType && (!outfit || item.outfitIdentityKey === outfit.identityKey));
     if (!slide) return false;
     return !focusPageNumber || slide.pageNumber === focusPageNumber;
   };
-  const slideNumber = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
-    return slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber))?.pageNumber;
+  const slideNumber = (slideType: ManReportSlideMeta['slideType'], outfit?: ParsedOutfit) => {
+    return slideMeta.find(item => item.slideType === slideType && (!outfit || item.outfitIdentityKey === outfit.identityKey))?.pageNumber;
   };
 
   // Fallback: if parsing failed, render raw markdown
@@ -1966,25 +2015,27 @@ function OutfitsSection({
     );
   }
 
-  const editingOutfit = editingNumber
-    ? categories.flatMap(category => category.outfits).find(outfit => outfit.number === editingNumber) ?? null
+  const editingOutfit = editingTarget
+    ? allOutfits.find(outfit => outfit.identityKey === editingTarget.identityKey) ?? null
     : null;
 
   // Render an individual outfit row — image left, details right.
   const renderOutfitCard = (cat: OutfitCategory, outfit: ParsedOutfit) => {
-    const sourceOutfitImg = imageOverrides[outfit.number] ?? outfitImageUrls?.[outfit.number - 1] ?? null;
-    const outfitImg   = brokenOutfitImages[outfit.number] ? null : sourceOutfitImg;
-    const isEditing   = editingNumber === outfit.number;
+    const sourceOutfitImg = imageOverrides[outfit.identityKey] ?? outfitImageUrls?.[outfit.number - 1] ?? null;
+    const outfitImg   = brokenOutfitImages[outfit.identityKey] ? null : sourceOutfitImg;
+    const isEditing   = editingTarget?.identityKey === outfit.identityKey;
     const isRegenning = regenerating && isEditing;
-    const canEdit     = adminMode && !!onRegenerateOutfit;
-    const canSwap     = adminMode && !!onDraftOutfitSwap && !!onApplyOutfitSwap;
-    const canManualRecover = adminMode && (!!onCopyImagePrompt || !!onUploadManualImage);
+    const hasDuplicateNumber = duplicateOutfitNumbers.has(outfit.number);
+    const canUseNumberIndexedActions = !hasDuplicateNumber;
+    const canEdit     = adminMode && !!onRegenerateOutfit && canUseNumberIndexedActions;
+    const canSwap     = adminMode && !!onDraftOutfitSwap && !!onApplyOutfitSwap && canUseNumberIndexedActions;
+    const canManualRecover = adminMode && (!!onCopyImagePrompt || !!onUploadManualImage) && canUseNumberIndexedActions;
     const prioritiseImage = outfit.number <= 2;
     const isVerified  = qaPassedOutfits?.has(outfit.number) ?? false;
 
     return (
       <div
-        key={outfit.number}
+        key={outfit.identityKey}
         className="flex flex-col md:flex-row rounded-3xl overflow-hidden"
         style={{ background: '#fff', boxShadow: '0 30px 80px -50px rgba(27,24,21,0.30)' }}
       >
@@ -2004,7 +2055,7 @@ function OutfitsSection({
               className="absolute inset-0 w-full h-full object-cover object-top"
               style={{ opacity: 0, transition: 'opacity 0.5s ease' }}
               onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-              onError={() => setBrokenOutfitImages(prev => ({ ...prev, [outfit.number]: true }))}
+              onError={() => setBrokenOutfitImages(prev => ({ ...prev, [outfit.identityKey]: true }))}
             />
           ) : canManualRecover ? (
             <ManualImageActions
@@ -2014,8 +2065,8 @@ function OutfitsSection({
               onCopyImagePrompt={onCopyImagePrompt}
               onUploadManualImage={onUploadManualImage}
               onUploaded={imageUrl => {
-                setBrokenOutfitImages(prev => ({ ...prev, [outfit.number]: false }));
-                setImageOverrides(prev => ({ ...prev, [outfit.number]: imageUrl }));
+                setBrokenOutfitImages(prev => ({ ...prev, [outfit.identityKey]: false }));
+                setImageOverrides(prev => ({ ...prev, [outfit.identityKey]: imageUrl }));
               }}
             />
           ) : (
@@ -2048,7 +2099,7 @@ function OutfitsSection({
 
           {canEdit && (
             <motion.button
-              onClick={() => isEditing ? cancelEdit() : startEdit(outfit.number)}
+              onClick={() => isEditing ? cancelEdit() : startEdit(outfit)}
               disabled={regenerating}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full"
               style={{ background: 'rgba(27,24,21,0.7)', color: '#fff', backdropFilter: 'blur(6px)' }}
@@ -2164,7 +2215,7 @@ function OutfitsSection({
                 <div className="mt-7 flex flex-wrap items-center gap-2">
                   {canSwap && (
                     <motion.button
-                      onClick={() => startSwap(outfit.number)}
+                      onClick={() => startSwap(outfit)}
                       disabled={draftingSwap || applyingSwap || regenerating}
                       className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                       style={{ background: ACCENT, color: '#fff' }}
@@ -2177,7 +2228,7 @@ function OutfitsSection({
                   )}
                   {canEdit && (
                     <button
-                      onClick={() => startEdit(outfit.number)}
+                      onClick={() => startEdit(outfit)}
                       disabled={regenerating}
                       className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                       style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
@@ -2228,6 +2279,21 @@ function OutfitsSection({
                 <p className="text-[12px] leading-relaxed">{editError ?? sectionNotice}</p>
               </div>
             )}
+            {adminMode && duplicateOutfitNumbers.size > 0 && (
+              <div
+                className="flex items-start gap-2 rounded-2xl px-4 py-3"
+                style={{
+                  background: '#fff7ed',
+                  border: `1px solid ${ACCENT}55`,
+                  color: ACCENT_INK,
+                }}
+              >
+                <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                <p className="text-[12px] leading-relaxed">
+                  Duplicate outfit number{duplicateOutfitNumbers.size > 1 ? 's' : ''} detected: {[...duplicateOutfitNumbers].join(', ')}. Per-outfit image upload, regenerate, and swap actions are disabled for those cards until Section 4 is renumbered and saved.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {categories.map((cat, ci) => {
                 const catCount = split.categories.find(c =>
@@ -2258,15 +2324,15 @@ function OutfitsSection({
         </section>
       )}
 
-      {categories.flatMap(cat => cat.outfits.map(outfit => shouldShowSlide('outfit', outfit.number) ? (
-        <section key={outfit.number} className="man-page bone man-outfit-slide">
+      {categories.flatMap(cat => cat.outfits.map(outfit => shouldShowSlide('outfit', outfit) ? (
+        <section key={outfit.identityKey} className="man-page bone man-outfit-slide">
           <div className="grain" />
           <div className="corner-tl">
             <div className="man-mono corner-kicker">Act III - Application</div>
             <div className="man-small-caps corner-title">{cat.name}</div>
           </div>
           <div className="corner-tr">
-            <div className="man-mono corner-kicker">{String(slideNumber('outfit', outfit.number) ?? 1).padStart(2, '0')} / {slideMeta.length}</div>
+            <div className="man-mono corner-kicker">{String(slideNumber('outfit', outfit) ?? 1).padStart(2, '0')} / {slideMeta.length}</div>
           </div>
           <div className="man-page-inner">
             {renderOutfitCard(cat, outfit)}
@@ -2502,7 +2568,7 @@ function OutfitsSection({
       </AnimatePresence>
 
       <AnimatePresence>
-        {editingNumber && editingOutfit && (
+        {editingTarget && editingOutfit && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center px-4"
             style={{ background: 'rgba(27,24,21,0.58)' }}
@@ -2522,7 +2588,7 @@ function OutfitsSection({
               <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
                 <div>
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
-                    Edit outfit {editingNumber}
+                    Edit outfit {editingTarget.number}
                   </p>
                   <p className="text-xl italic leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
                     {editingOutfit.label}

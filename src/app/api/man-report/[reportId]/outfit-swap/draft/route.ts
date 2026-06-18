@@ -6,6 +6,7 @@ import type { ReportData } from '@/lib/manReportGenerator';
 import {
   extractOutfitBlock,
   hashOutfitBlock,
+  normaliseSequentialManOutfitNumbers,
   parseManOutfitBlock,
 } from '@/lib/manOutfitSection';
 import {
@@ -52,7 +53,7 @@ export async function POST(
   }
 
   const reportData = report.report_data as ReportData;
-  const currentSection4 = reportData.sections?.s4_outfits ?? '';
+  const currentSection4 = normaliseSequentialManOutfitNumbers(reportData.sections?.s4_outfits ?? '');
   const currentBlock = extractOutfitBlock(currentSection4, outfitNumber);
   if (!currentBlock) {
     return NextResponse.json({ error: `Could not locate Outfit ${outfitNumber}` }, { status: 400 });

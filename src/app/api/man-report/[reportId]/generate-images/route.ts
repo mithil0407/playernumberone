@@ -24,6 +24,7 @@ import { repairSection4OutfitsUntilQaPass, type ClassificationResult, type Repor
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
+import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
@@ -273,7 +274,13 @@ export async function POST(
 
   const reportData       = report.report_data as ReportData;
   const existingImageUrls = report.image_urls as ManReportImagePaths | null;
-  let reportDataWithQa = withManReportSection4Qa(reportData);
+  let reportDataWithQa = withManReportSection4Qa({
+    ...reportData,
+    sections: {
+      ...reportData.sections,
+      s4_outfits: normaliseSequentialManOutfitNumbers(reportData.sections?.s4_outfits ?? ''),
+    },
+  });
   let blockingQaIssues = reportDataWithQa.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];
 
   if (blockingQaIssues.length > 0) {
@@ -320,7 +327,7 @@ export async function POST(
         ...reportDataWithQa,
         sections: {
           ...reportDataWithQa.sections,
-          s4_outfits: repaired.section4,
+          s4_outfits: normaliseSequentialManOutfitNumbers(repaired.section4),
         },
       });
       blockingQaIssues = reportDataWithQa.qa?.section4?.issues.filter(issue => issue.severity === 'error') ?? [];

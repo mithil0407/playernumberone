@@ -18,6 +18,8 @@ import {
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidateManReportCache } from '@/lib/manReportCache';
+import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
+import { validateManReportSection4 } from '@/lib/manReportQa';
 
 type SectionField = keyof ReportSections;
 type PartialSections = Partial<Record<SectionField, string>>;
@@ -176,9 +178,10 @@ export async function runManReportTextPipeline(
       if (!hasText(sections.s4_outfits)) {
         sections.s4_outfits = await runSection4(classification, submission);
       }
+      sections.s4_outfits = normaliseSequentialManOutfitNumbers(sections.s4_outfits);
       const section4Repair = await repairSection4OutfitsUntilQaPass(classification, sections.s4_outfits);
-      sections.s4_outfits = section4Repair.section4;
-      qa = { ...(qa ?? {}), section4: section4Repair.qa };
+      sections.s4_outfits = normaliseSequentialManOutfitNumbers(section4Repair.section4);
+      qa = { ...(qa ?? {}), section4: validateManReportSection4(sections.s4_outfits, classification) };
       await writePartialData(reportId, shareToken, classification, sections, 'generating_s4_combo_grids', qa);
     }
 

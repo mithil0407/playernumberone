@@ -5,19 +5,7 @@ import { cookies } from 'next/headers';
 import type { ReportData } from '@/lib/manReportGenerator';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
-
-// Replace the outfit block for `outfitNumber` in the full s4_outfits string.
-// Handles both old bold format "**Outfit N —" and new plain uppercase "OUTFIT N —".
-function replaceOutfitBlock(s4Text: string, outfitNumber: number, newBlock: string): string | null {
-  const headerPattern = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
-  const matches = Array.from(s4Text.matchAll(headerPattern));
-  const matchIndex = matches.findIndex(match => Number(match[1]) === outfitNumber);
-  if (matchIndex === -1) return null;
-
-  const start = matches[matchIndex].index ?? 0;
-  const end = matches[matchIndex + 1]?.index ?? s4Text.length;
-  return `${s4Text.slice(0, start)}${newBlock.trimEnd()}\n\n${s4Text.slice(end)}`;
-}
+import { normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
 
 export async function POST(
   request: NextRequest,
@@ -61,15 +49,16 @@ export async function POST(
   }
 
   const reportData = report.report_data as ReportData;
-  const currentS4 = reportData.sections?.s4_outfits ?? '';
-  const newS4 = replaceOutfitBlock(currentS4, outfitNumber, outfitText);
+  const currentS4 = normaliseSequentialManOutfitNumbers(reportData.sections?.s4_outfits ?? '');
+  const replacedS4 = replaceOutfitBlock(currentS4, outfitNumber, outfitText);
 
-  if (!newS4) {
+  if (!replacedS4) {
     return NextResponse.json(
       { error: `Could not find Outfit ${outfitNumber} in Section 4 text` },
       { status: 400 },
     );
   }
+  const newS4 = normaliseSequentialManOutfitNumbers(replacedS4);
 
   // Re-run QA on the updated text so the admin panel reflects any issues immediately.
   const nextReportData = withManReportSection4Qa({

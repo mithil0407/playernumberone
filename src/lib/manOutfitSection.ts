@@ -1,5 +1,8 @@
 export interface ParsedManOutfit {
   number: number;
+  occurrenceIndex: number;
+  blockStart: number;
+  identityKey: string;
   label: string;
   context: string;
   block: string;
@@ -24,6 +27,7 @@ const CONTEXT_ALIASES: Array<[RegExp, string]> = [
 ];
 
 const KNOWN_CONTEXTS = new Set(['FORMAL', 'SMART CASUAL', 'EVENING WEAR', 'RELAXED CASUAL']);
+const OUTFIT_HEADER_PATTERN = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
 
 export function stripOutfitHex(text: string): string {
   return text.replace(/\s*\(#?[0-9A-Fa-f]{3,6}\)/g, '').trim();
@@ -52,9 +56,12 @@ export function getOutfitField(block: string, label: string): string {
   return stripOutfitHex(raw);
 }
 
+function getOutfitHeaderMatches(s4Text: string): RegExpMatchArray[] {
+  return Array.from(s4Text.matchAll(OUTFIT_HEADER_PATTERN));
+}
+
 export function extractOutfitBlock(s4Text: string, outfitNumber: number): string | null {
-  const headerPattern = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
-  const matches = Array.from(s4Text.matchAll(headerPattern));
+  const matches = getOutfitHeaderMatches(s4Text);
   const matchIndex = matches.findIndex(match => Number(match[1]) === outfitNumber);
   if (matchIndex === -1) return null;
 
@@ -64,8 +71,7 @@ export function extractOutfitBlock(s4Text: string, outfitNumber: number): string
 }
 
 export function replaceOutfitBlock(s4Text: string, outfitNumber: number, newBlock: string): string | null {
-  const headerPattern = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
-  const matches = Array.from(s4Text.matchAll(headerPattern));
+  const matches = getOutfitHeaderMatches(s4Text);
   const matchIndex = matches.findIndex(match => Number(match[1]) === outfitNumber);
   if (matchIndex === -1) return null;
 
@@ -83,7 +89,10 @@ export function hashOutfitBlock(block: string): string {
   return (hash >>> 0).toString(16);
 }
 
-export function parseManOutfitBlock(block: string): ParsedManOutfit | null {
+export function parseManOutfitBlock(
+  block: string,
+  meta?: { occurrenceIndex?: number; blockStart?: number },
+): ParsedManOutfit | null {
   const boldMatch = block.match(/\*\*Outfit\s+(\d+)\s*[—–-]\s*([^*\n]+)\*\*/i);
   const plainMatch = block.match(/^OUTFIT\s+(\d+)\s*[—–-]\s*(.+)/im);
   const header = boldMatch ?? plainMatch;
@@ -91,9 +100,14 @@ export function parseManOutfitBlock(block: string): ParsedManOutfit | null {
 
   const number = parseInt(header[1], 10);
   const label = header[2].replace(/\*+/g, '').trim();
+  const occurrenceIndex = meta?.occurrenceIndex ?? 0;
+  const blockStart = meta?.blockStart ?? 0;
 
   return {
     number,
+    occurrenceIndex,
+    blockStart,
+    identityKey: `outfit-${number}-at-${blockStart}`,
     label,
     context: inferOutfitContext(label, number),
     block: block.trim(),
@@ -115,11 +129,68 @@ export function parseManOutfitBlock(block: string): ParsedManOutfit | null {
 }
 
 export function parseManOutfitsFromSection(s4Text: string): ParsedManOutfit[] {
-  const blocks = s4Text.split(/(?=(?:\*\*Outfit\s+\d+|\bOUTFIT\s+\d+))/i);
-  return blocks
-    .map(parseManOutfitBlock)
-    .filter((outfit): outfit is ParsedManOutfit => !!outfit)
-    .sort((a, b) => a.number - b.number);
+  const matches = getOutfitHeaderMatches(s4Text);
+  return matches
+    .map((match, index) => {
+      const start = match.index ?? 0;
+      const end = matches[index + 1]?.index ?? s4Text.length;
+      return parseManOutfitBlock(s4Text.slice(start, end).trim(), {
+        occurrenceIndex: index,
+        blockStart: start,
+      });
+    })
+    .filter((outfit): outfit is ParsedManOutfit => !!outfit);
+}
+
+export function getDuplicateManOutfitNumbers(s4Text: string): number[] {
+  const seen = new Set<number>();
+  const duplicates = new Set<number>();
+  for (const outfit of parseManOutfitsFromSection(s4Text)) {
+    if (seen.has(outfit.number)) duplicates.add(outfit.number);
+    seen.add(outfit.number);
+  }
+  return [...duplicates].sort((a, b) => a - b);
+}
+
+export function hasSequentialManOutfitNumbers(s4Text: string): boolean {
+  const outfits = parseManOutfitsFromSection(s4Text);
+  return outfits.every((outfit, index) => outfit.number === index + 1);
+}
+
+function renumberOutfitHeaderLine(headerLine: string, nextNumber: number): string {
+  return headerLine.replace(/((?:\*\*Outfit|OUTFIT)\s+)\d+(\s*[—–-])/i, `$1${nextNumber}$2`);
+}
+
+export function normaliseSequentialManOutfitNumbers(s4Text: string): string {
+  const matches = getOutfitHeaderMatches(s4Text);
+  if (matches.length === 0) return s4Text;
+
+  let changed = false;
+  let result = '';
+
+  for (let index = 0; index < matches.length; index++) {
+    const match = matches[index];
+    const start = match.index ?? 0;
+    const end = matches[index + 1]?.index ?? s4Text.length;
+    const expectedNumber = index + 1;
+    const currentNumber = Number(match[1]);
+
+    if (index === 0) result += s4Text.slice(0, start);
+
+    const block = s4Text.slice(start, end);
+    if (currentNumber === expectedNumber) {
+      result += block;
+      continue;
+    }
+
+    const newlineIndex = block.search(/\r?\n/);
+    const headerLine = newlineIndex === -1 ? block : block.slice(0, newlineIndex);
+    const rest = newlineIndex === -1 ? '' : block.slice(newlineIndex);
+    result += `${renumberOutfitHeaderLine(headerLine, expectedNumber)}${rest}`;
+    changed = true;
+  }
+
+  return changed ? result : s4Text;
 }
 
 export function normaliseOutfitHeader(block: string, outfitNumber: number, context: string): string {

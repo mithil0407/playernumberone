@@ -8,6 +8,7 @@ import { revalidateManReportCache } from '@/lib/manReportCache';
 import { getAdminManReportById, loadAdminManReportByIdFresh } from '@/lib/manReportLoader';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { normaliseComboGridText } from '@/lib/manComboGridSection';
+import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
@@ -23,12 +24,39 @@ export async function GET(
 
   const { reportId } = await params;
   const fresh = request.nextUrl.searchParams.get('fresh') === '1';
-  const report = fresh
+  let report = fresh
     ? await loadAdminManReportByIdFresh(reportId)
     : await getAdminManReportById(reportId);
 
   if (!report) {
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+  }
+
+  const reportData = report.report_data as ReportData | null;
+  const currentS4 = reportData?.sections?.s4_outfits ?? '';
+  const normalisedS4 = normaliseSequentialManOutfitNumbers(currentS4);
+  if (reportData?.classification && normalisedS4 !== currentS4) {
+    const nextReportData = withManReportSection4Qa({
+      ...reportData,
+      sections: {
+        ...reportData.sections,
+        s4_outfits: normalisedS4,
+      },
+    });
+    const { data: saved } = await supabaseAdmin
+      .from('man_reports')
+      .update({
+        report_data: nextReportData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId)
+      .select()
+      .single();
+
+    if (saved) {
+      await revalidateManReportCache(reportId, report.share_token ?? null);
+      report = saved;
+    }
   }
 
   return NextResponse.json({ report });
@@ -87,7 +115,13 @@ export async function PATCH(
 
   const nextReportData = update.report_data as ReportData | undefined;
   if (nextReportData?.classification && nextReportData?.sections?.s4_outfits) {
-    update.report_data = withManReportSection4Qa(nextReportData);
+    update.report_data = withManReportSection4Qa({
+      ...nextReportData,
+      sections: {
+        ...nextReportData.sections,
+        s4_outfits: normaliseSequentialManOutfitNumbers(nextReportData.sections.s4_outfits),
+      },
+    });
   }
 
   // When status transitions to 'sent', stamp sent_at

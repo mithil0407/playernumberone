@@ -3,6 +3,7 @@ import type { ClassificationResult } from './manReportGenerator';
 import {
   extractOutfitBlock,
   inferOutfitContext,
+  normaliseSequentialManOutfitNumbers,
   normaliseOutfitHeader,
   parseManOutfitBlock,
   replaceOutfitBlock,
@@ -119,7 +120,8 @@ export async function imageFileToGeminiInlineData(file: File | null): Promise<In
 }
 
 export async function generateOutfitSwapDraft(input: OutfitSwapDraftInput): Promise<OutfitSwapDraftResult> {
-  const currentBlock = extractOutfitBlock(input.currentSection4, input.outfitNumber);
+  const currentSection4 = normaliseSequentialManOutfitNumbers(input.currentSection4);
+  const currentBlock = extractOutfitBlock(currentSection4, input.outfitNumber);
   if (!currentBlock) {
     throw new Error(`Could not locate Outfit ${input.outfitNumber} in Section 4`);
   }
@@ -154,7 +156,7 @@ export async function generateOutfitSwapDraft(input: OutfitSwapDraftInput): Prom
     throw new Error(`AI returned ${parsedCandidate.context}; expected ${context}`);
   }
 
-  const projectedSection4 = replaceOutfitBlock(input.currentSection4, input.outfitNumber, candidateBlock);
+  const projectedSection4 = replaceOutfitBlock(currentSection4, input.outfitNumber, candidateBlock);
   if (!projectedSection4) {
     throw new Error(`Could not project replacement for Outfit ${input.outfitNumber}`);
   }
