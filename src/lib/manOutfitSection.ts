@@ -1,3 +1,5 @@
+import { hasPlaceholderOutfitValue } from './manOutfitPlaceholders';
+
 export interface ParsedManOutfit {
   number: number;
   occurrenceIndex: number;
@@ -120,7 +122,9 @@ export function parseManOutfitBlock(
     colourLogic: getOutfitField(block, 'Colour logic'),
     whyItWorks: (() => {
       const occasion = getOutfitField(block, 'Occasion anchor');
-      return occasion !== '—' ? occasion : getOutfitField(block, 'Why it works(?:\\s+for\\s+you)?');
+      return occasion !== '—' && !hasPlaceholderOutfitValue(occasion)
+        ? occasion
+        : getOutfitField(block, 'Why it works(?:\\s+for\\s+you)?');
     })(),
     shoppingTranslation: getOutfitField(block, 'Shopping translation'),
     acceptableSubstitutes: getOutfitField(block, 'Acceptable substitutes'),

@@ -22,6 +22,7 @@ import {
   stripComboGridTableSeparators,
   type ComboGridKind,
 } from '@/lib/manComboGridSection';
+import { hasPlaceholderOutfitValue } from '@/lib/manOutfitPlaceholders';
 
 // ─────────────────────────────────────────────────────────────
 // Design tokens — modern editorial palette (refresh 2026-05)
@@ -210,7 +211,9 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       // "Occasion anchor" is the current prompt field; "Why it works" is the legacy field
       whyItWorks: (() => {
         const v = getField(block, 'Occasion anchor');
-        return v !== '—' ? v : getField(block, 'Why it works(?:\\s+for\\s+you)?');
+        return v !== '—' && !hasPlaceholderOutfitValue(v)
+          ? v
+          : getField(block, 'Why it works(?:\\s+for\\s+you)?');
       })(),
       shoppingTranslation: getField(block, 'Shopping translation'),
       acceptableSubstitutes: getField(block, 'Acceptable substitutes'),
@@ -1691,12 +1694,14 @@ function SnapshotSection({ text }: { text?: string }) {
 interface OutfitEditResult {
   imageUrl: string | null;
   updatedS4Outfits: string;
+  enrichedOutfitText?: string;
   imageStatus: 'generated' | 'failed';
   error?: string;
 }
 
 interface OutfitSaveTextResult {
   updatedS4Outfits: string;
+  enrichedOutfitText?: string;
 }
 
 interface ComboGridSaveTextResult {
@@ -1799,9 +1804,10 @@ function OutfitsSection({
   const [swapError, setSwapError] = useState<string | null>(null);
   const [draftingSwap, setDraftingSwap] = useState(false);
   const [applyingSwap, setApplyingSwap] = useState(false);
+  const isOutfitOperationBusy = regenerating || savingText || draftingSwap || applyingSwap;
 
   const closeSwap = () => {
-    if (draftingSwap || applyingSwap) return;
+    if (isOutfitOperationBusy) return;
     setSwapNumber(null);
     setSwapIdentityKey(null);
     setSwapReason('');
@@ -1814,7 +1820,10 @@ function OutfitsSection({
   };
 
   const startSwap = (outfit: ParsedOutfit) => {
-    if (regenerating || draftingSwap || applyingSwap) return;
+    if (isOutfitOperationBusy) return;
+    setEditingTarget(null);
+    setEditText('');
+    setEditError(null);
     setSwapNumber(outfit.number);
     setSwapIdentityKey(outfit.identityKey);
     setSwapReason('');
@@ -1896,7 +1905,7 @@ function OutfitsSection({
   };
 
   const startEdit = (outfit: ParsedOutfit) => {
-    if (regenerating) return;
+    if (isOutfitOperationBusy) return;
     const outfitBlock = extractOutfitBlockByIdentity(text, outfit);
     if (!outfitBlock) {
       setEditError(`Could not locate Outfit ${outfit.number} in Section 4 text. Open the full Section 4 editor to repair the outfit headers.`);
@@ -1905,12 +1914,16 @@ function OutfitsSection({
       return;
     }
     setEditError(null);
+    setSwapError(null);
+    setSwapDraft(null);
+    setSwapNumber(null);
+    setSwapIdentityKey(null);
     setSectionNotice(null);
     setEditingTarget({ number: outfit.number, identityKey: outfit.identityKey });
     setEditText(outfitBlock);
   };
   const cancelEdit = (force = false) => {
-    if (regenerating && !force) return;
+    if (isOutfitOperationBusy && !force) return;
     setEditingTarget(null);
     setEditText('');
     setEditError(null);
@@ -2032,6 +2045,7 @@ function OutfitsSection({
     const canManualRecover = adminMode && (!!onCopyImagePrompt || !!onUploadManualImage) && canUseNumberIndexedActions;
     const prioritiseImage = outfit.number <= 2;
     const isVerified  = qaPassedOutfits?.has(outfit.number) ?? false;
+    const showStylistField = (value: string) => value && !hasPlaceholderOutfitValue(value);
 
     return (
       <div
@@ -2100,7 +2114,7 @@ function OutfitsSection({
           {canEdit && (
             <motion.button
               onClick={() => isEditing ? cancelEdit() : startEdit(outfit)}
-              disabled={regenerating}
+              disabled={isOutfitOperationBusy}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full"
               style={{ background: 'rgba(27,24,21,0.7)', color: '#fff', backdropFilter: 'blur(6px)' }}
               title={isEditing ? 'Cancel edit' : 'Advanced edit'}
@@ -2177,34 +2191,34 @@ function OutfitsSection({
               <HairRule className="mb-6" />
 
               <div className="space-y-5 flex-1">
-                {outfit.whyItWorks && outfit.whyItWorks !== '—' && (
+                {showStylistField(outfit.whyItWorks) && (
                   <StylistNote>{outfit.whyItWorks}</StylistNote>
                 )}
-                {outfit.fitNote && outfit.fitNote !== '—' && (
+                {showStylistField(outfit.fitNote) && (
                   <div>
                     <DataLabel>Fit note</DataLabel>
                     <span className="text-[13px] leading-relaxed" style={{ color: INK_SOFT }}>{outfit.fitNote}</span>
                   </div>
                 )}
-                {outfit.colourLogic && outfit.colourLogic !== '—' && (
+                {showStylistField(outfit.colourLogic) && (
                   <div>
                     <DataLabel>Colour logic</DataLabel>
                     <span className="text-[13px] leading-relaxed" style={{ color: INK_SOFT }}>{stripHex(outfit.colourLogic)}</span>
                   </div>
                 )}
-                {outfit.shoppingTranslation && outfit.shoppingTranslation !== '—' && (
+                {showStylistField(outfit.shoppingTranslation) && (
                   <div>
                     <DataLabel>Shopping translation</DataLabel>
                     <span className="text-[13px] leading-relaxed" style={{ color: INK_SOFT }}>{outfit.shoppingTranslation}</span>
                   </div>
                 )}
-                {outfit.acceptableSubstitutes && outfit.acceptableSubstitutes !== '—' && (
+                {showStylistField(outfit.acceptableSubstitutes) && (
                   <div>
                     <DataLabel>Acceptable substitutes</DataLabel>
                     <span className="text-[13px] leading-relaxed" style={{ color: INK_SOFT }}>{outfit.acceptableSubstitutes}</span>
                   </div>
                 )}
-                {outfit.doNotBuy && outfit.doNotBuy !== '—' && (
+                {showStylistField(outfit.doNotBuy) && (
                   <div>
                     <DataLabel>Do not buy</DataLabel>
                     <span className="text-[13px] leading-relaxed" style={{ color: INK_SOFT }}>{outfit.doNotBuy}</span>
@@ -2216,7 +2230,7 @@ function OutfitsSection({
                   {canSwap && (
                     <motion.button
                       onClick={() => startSwap(outfit)}
-                      disabled={draftingSwap || applyingSwap || regenerating}
+                      disabled={isOutfitOperationBusy}
                       className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                       style={{ background: ACCENT, color: '#fff' }}
                       whileHover={{ scale: 1.02 }}
@@ -2229,7 +2243,7 @@ function OutfitsSection({
                   {canEdit && (
                     <button
                       onClick={() => startEdit(outfit)}
-                      disabled={regenerating}
+                      disabled={isOutfitOperationBusy}
                       className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                       style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
                     >
@@ -2596,7 +2610,7 @@ function OutfitsSection({
                 </div>
                 <button
                   onClick={() => cancelEdit()}
-                  disabled={regenerating}
+                  disabled={isOutfitOperationBusy}
                   className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
                   style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
                 >
@@ -2613,6 +2627,7 @@ function OutfitsSection({
                 )}
                 <textarea
                   value={editText}
+                  disabled={isOutfitOperationBusy}
                   onChange={e => {
                     setEditText(e.target.value);
                     if (editError) setEditError(null);
@@ -2633,7 +2648,7 @@ function OutfitsSection({
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => cancelEdit()}
-                    disabled={regenerating || savingText}
+                    disabled={isOutfitOperationBusy}
                     className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                     style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
                   >
@@ -2642,11 +2657,11 @@ function OutfitsSection({
                   {onSaveOutfitText && (
                     <motion.button
                       onClick={handleSaveTextOnly}
-                      disabled={savingText || regenerating || !editText.trim()}
+                      disabled={isOutfitOperationBusy || !editText.trim()}
                       className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                       style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
-                      whileHover={!savingText && !regenerating ? { scale: 1.02 } : undefined}
-                      whileTap={!savingText && !regenerating ? { scale: 0.98 } : undefined}
+                      whileHover={!isOutfitOperationBusy ? { scale: 1.02 } : undefined}
+                      whileTap={!isOutfitOperationBusy ? { scale: 0.98 } : undefined}
                       transition={SPRING}
                     >
                       {savingText
@@ -2657,11 +2672,11 @@ function OutfitsSection({
                   )}
                   <motion.button
                     onClick={handleRegenerate}
-                    disabled={regenerating || savingText || !editText.trim()}
+                    disabled={isOutfitOperationBusy || !editText.trim()}
                     className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                     style={{ background: ACCENT, color: '#fff' }}
-                    whileHover={!regenerating && !savingText ? { scale: 1.02 } : undefined}
-                    whileTap={!regenerating && !savingText ? { scale: 0.98 } : undefined}
+                    whileHover={!isOutfitOperationBusy ? { scale: 1.02 } : undefined}
+                    whileTap={!isOutfitOperationBusy ? { scale: 0.98 } : undefined}
                     transition={SPRING}
                   >
                     {regenerating

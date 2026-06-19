@@ -66,4 +66,18 @@ ACCESSORIES: Silver ring`);
   invariant(!!replaced, 'replaces intended unique outfit after normalisation');
   invariant(replaced.includes('TOP: Black velvet shirt'), 'replacement text is inserted');
   invariant(replaced.includes('TOP: Olive overshirt'), 'neighbouring outfit remains intact');
+
+  const rationaleFallback = parseManOutfitsFromSection(`OUTFIT 1 — OFFICE / FORMAL
+TOP: White cotton shirt
+BOTTOM: Navy trouser
+LAYER: Camel blazer
+FOOTWEAR: Brown loafer
+ACCESSORIES: Watch
+OCCASION ANCHOR: Not specified by stylist
+WHY IT WORKS FOR YOU: The blazer builds shoulder structure while the darker trouser keeps the lower half clean.`);
+
+  invariant(
+    rationaleFallback[0]?.whyItWorks.startsWith('The blazer builds shoulder structure'),
+    'falls back from placeholder occasion anchor to meaningful rationale',
+  );
 }

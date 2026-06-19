@@ -6,6 +6,7 @@ import type { ReportData } from '@/lib/manReportGenerator';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
+import { enrichManOutfitEdit } from '@/lib/manOutfitEdit';
 
 export async function POST(
   request: NextRequest,
@@ -49,8 +50,25 @@ export async function POST(
   }
 
   const reportData = report.report_data as ReportData;
+  if (!reportData.classification) {
+    return NextResponse.json({ error: 'No classification data found' }, { status: 400 });
+  }
+
   const currentS4 = normaliseSequentialManOutfitNumbers(reportData.sections?.s4_outfits ?? '');
-  const replacedS4 = replaceOutfitBlock(currentS4, outfitNumber, outfitText);
+  let enrichedOutfitText: string;
+  try {
+    enrichedOutfitText = await enrichManOutfitEdit({
+      classification: reportData.classification,
+      currentSection4: currentS4,
+      outfitNumber,
+      editedBlock: outfitText,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  const replacedS4 = replaceOutfitBlock(currentS4, outfitNumber, enrichedOutfitText);
 
   if (!replacedS4) {
     return NextResponse.json(
@@ -87,6 +105,7 @@ export async function POST(
 
   return NextResponse.json({
     updatedS4Outfits: newS4,
+    enrichedOutfitText,
     qa: nextReportData.qa,
   });
 }

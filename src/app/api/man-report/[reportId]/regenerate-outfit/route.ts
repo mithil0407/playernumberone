@@ -12,6 +12,7 @@ import type { ReportData } from '@/lib/manReportGenerator';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
+import { enrichManOutfitEdit } from '@/lib/manOutfitEdit';
 
 function clearOutfitImageSlot(
   paths: ManReportImagePaths | null,
@@ -81,7 +82,20 @@ export async function POST(
   // Patch s4_outfits text (replace just this outfit block) and persist it before
   // calling Gemini. If image generation fails, the text edit still remains saved.
   const currentS4 = normaliseSequentialManOutfitNumbers(reportData.sections?.s4_outfits ?? '');
-  const replacedS4 = replaceOutfitBlock(currentS4, outfitNumber, outfitText);
+  let enrichedOutfitText: string;
+  try {
+    enrichedOutfitText = await enrichManOutfitEdit({
+      classification,
+      currentSection4: currentS4,
+      outfitNumber,
+      editedBlock: outfitText,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  const replacedS4 = replaceOutfitBlock(currentS4, outfitNumber, enrichedOutfitText);
   if (!replacedS4) {
     return NextResponse.json({ error: `Could not find Outfit ${outfitNumber} in Section 4 text` }, { status: 400 });
   }
@@ -135,6 +149,7 @@ export async function POST(
       imageUrl: null,
       storagePath: null,
       updatedS4Outfits: newS4,
+      enrichedOutfitText,
       qa: nextReportData.qa,
       imageStatus: 'failed',
       error: message,
@@ -148,7 +163,7 @@ export async function POST(
     newPath = await regenerateSingleOutfitImage(
       reportId,
       outfitNumber,
-      outfitText,
+      enrichedOutfitText,
       submission.photo_fullbody_url,
       classification,
       imageModel ?? 'gemini-3.1-flash-image-preview',
@@ -170,6 +185,7 @@ export async function POST(
       imageUrl: null,
       storagePath: null,
       updatedS4Outfits: newS4,
+      enrichedOutfitText,
       qa: nextReportData.qa,
       imageStatus: 'failed',
       error: message,
@@ -194,6 +210,7 @@ export async function POST(
     imageUrl,
     storagePath: newPath,
     updatedS4Outfits: newS4,
+    enrichedOutfitText,
     qa: nextReportData.qa,
     imageStatus: 'generated',
   });

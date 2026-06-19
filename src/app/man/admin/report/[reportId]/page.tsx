@@ -56,12 +56,14 @@ interface ReportStatusSnapshot {
 interface OutfitRegenerationResult {
   imageUrl: string | null;
   updatedS4Outfits: string;
+  enrichedOutfitText?: string;
   imageStatus: 'generated' | 'failed';
   error?: string;
 }
 
 interface OutfitSaveTextResult {
   updatedS4Outfits: string;
+  enrichedOutfitText?: string;
 }
 
 interface ComboGridSaveTextResult {
