@@ -46,6 +46,8 @@ export function runManOutfitSectionAssertions() {
   invariant(parsed[1].number === 10, 'parses first Outfit 10');
   invariant(parsed[2].number === 10, 'parses second Outfit 10');
   invariant(parsed[1].identityKey !== parsed[2].identityKey, 'duplicate-number outfits get distinct identity keys');
+  invariant(parsed[2].block.startsWith('OUTFIT 10 — EVENING WEAR'), 'stores original plain-header outfit block');
+  invariant(parsed[2].block.includes('TOP: Black silk shirt'), 'stored outfit block includes body text');
   invariant(getDuplicateManOutfitNumbers(duplicateOutfitSample).join(',') === '10', 'detects duplicate outfit number');
 
   const normalised = normaliseSequentialManOutfitNumbers(duplicateOutfitSample);
@@ -80,4 +82,27 @@ WHY IT WORKS FOR YOU: The blazer builds shoulder structure while the darker trou
     rationaleFallback[0]?.whyItWorks.startsWith('The blazer builds shoulder structure'),
     'falls back from placeholder occasion anchor to meaningful rationale',
   );
+
+  const boldWithCategory = parseManOutfitsFromSection(`## Section 4
+
+### Office / Formal
+Use these for meetings and sharper work days.
+
+**Outfit 1 — Navy Authority**
+- **Top:** White cotton shirt
+- **Bottom:** Navy tailored trouser
+- **Layer:** Charcoal blazer
+- **Footwear:** Dark brown loafer
+- **Accessories:** Steel watch
+
+**Outfit 2 — Soft Formal**
+- **Top:** Pale blue oxford shirt
+- **Bottom:** Grey trouser
+- **Layer:** Navy blazer
+- **Footwear:** Brown derby
+- **Accessories:** Leather belt`);
+
+  invariant(boldWithCategory.length === 2, 'parses bold headers with category text between section and outfits');
+  invariant(boldWithCategory[0]?.block.startsWith('**Outfit 1 — Navy Authority**'), 'stores original bold-header outfit block');
+  invariant(boldWithCategory[0]?.block.includes('Charcoal blazer'), 'stored bold outfit block includes body text');
 }

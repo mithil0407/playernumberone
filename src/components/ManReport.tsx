@@ -61,6 +61,7 @@ interface ParsedOutfit {
   number:      number;
   occurrenceIndex: number;
   blockStart: number;
+  block: string;
   identityKey: string;
   label:       string;
   context:     string;
@@ -198,6 +199,7 @@ function parseOutfitCategories(text: string): OutfitCategory[] {
       number:      outfitNum,
       occurrenceIndex,
       blockStart: blockStart >= 0 ? blockStart : occurrenceIndex,
+      block:       block.trim(),
       identityKey: `outfit-${outfitNum}-at-${blockStart >= 0 ? blockStart : occurrenceIndex}`,
       label:       rawLabel,
       context:     inferContextName(rawLabel, outfitNum),
@@ -278,21 +280,6 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
   slides.push({ title: 'Identity Statement', group: 'Closing', sectionKey: 's6', slideType: 'identity' });
 
   return slides.map((slide, index) => ({ ...slide, pageNumber: index + 1 }));
-}
-
-function extractOutfitBlockByIdentity(s4Text: string, outfit: ParsedOutfit): string | null {
-  const headerPattern = /(?:\*\*Outfit|OUTFIT)\s+(\d+)\s*[—–-][^\n]*/gi;
-  const matches = Array.from(s4Text.matchAll(headerPattern));
-  const matchIndex = matches.findIndex((match, index) =>
-    index === outfit.occurrenceIndex &&
-    (match.index ?? 0) === outfit.blockStart &&
-    Number(match[1]) === outfit.number
-  );
-  if (matchIndex === -1) return null;
-
-  const start = matches[matchIndex].index ?? 0;
-  const end = matches[matchIndex + 1]?.index ?? s4Text.length;
-  return s4Text.slice(start, end).trim();
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1906,9 +1893,9 @@ function OutfitsSection({
 
   const startEdit = (outfit: ParsedOutfit) => {
     if (isOutfitOperationBusy) return;
-    const outfitBlock = extractOutfitBlockByIdentity(text, outfit);
+    const outfitBlock = outfit.block?.trim();
     if (!outfitBlock) {
-      setEditError(`Could not locate Outfit ${outfit.number} in Section 4 text. Open the full Section 4 editor to repair the outfit headers.`);
+      setEditError(`Could not load Outfit ${outfit.number} text. Open the full Section 4 editor to repair the outfit headers.`);
       setEditingTarget(null);
       setEditText('');
       return;
@@ -2040,9 +2027,19 @@ function OutfitsSection({
     const isRegenning = regenerating && isEditing;
     const hasDuplicateNumber = duplicateOutfitNumbers.has(outfit.number);
     const canUseNumberIndexedActions = !hasDuplicateNumber;
-    const canEdit     = adminMode && !!onRegenerateOutfit && canUseNumberIndexedActions;
+    const canRequestEdit = adminMode && !!onRegenerateOutfit;
+    const canEdit     = canRequestEdit && canUseNumberIndexedActions && !!outfit.block?.trim();
     const canSwap     = adminMode && !!onDraftOutfitSwap && !!onApplyOutfitSwap && canUseNumberIndexedActions;
     const canManualRecover = adminMode && (!!onCopyImagePrompt || !!onUploadManualImage) && canUseNumberIndexedActions;
+    const editDisabledReason = !canRequestEdit
+      ? ''
+      : hasDuplicateNumber
+        ? `Outfit ${outfit.number} has a duplicate number. Renumber Section 4 before using per-outfit advanced edit.`
+        : !outfit.block?.trim()
+          ? `Could not load Outfit ${outfit.number} text. Use the full Section 4 editor to repair this report.`
+          : isOutfitOperationBusy
+            ? 'Another outfit operation is currently running.'
+            : '';
     const prioritiseImage = outfit.number <= 2;
     const isVerified  = qaPassedOutfits?.has(outfit.number) ?? false;
     const showStylistField = (value: string) => value && !hasPlaceholderOutfitValue(value);
@@ -2111,15 +2108,15 @@ function OutfitsSection({
             </span>
           )}
 
-          {canEdit && (
+          {canRequestEdit && (
             <motion.button
               onClick={() => isEditing ? cancelEdit() : startEdit(outfit)}
-              disabled={isOutfitOperationBusy}
+              disabled={isOutfitOperationBusy || !canEdit}
               className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full"
               style={{ background: 'rgba(27,24,21,0.7)', color: '#fff', backdropFilter: 'blur(6px)' }}
-              title={isEditing ? 'Cancel edit' : 'Advanced edit'}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              title={isEditing ? 'Cancel edit' : editDisabledReason || 'Advanced edit'}
+              whileHover={!isOutfitOperationBusy && canEdit ? { scale: 1.1 } : undefined}
+              whileTap={!isOutfitOperationBusy && canEdit ? { scale: 0.9 } : undefined}
               transition={SPRING}
             >
               {isEditing ? <X size={12} /> : <Pencil size={12} />}
@@ -2225,7 +2222,7 @@ function OutfitsSection({
                   </div>
                 )}
               </div>
-              {(canSwap || canEdit) && (
+              {(canSwap || canRequestEdit) && (
                 <div className="mt-7 flex flex-wrap items-center gap-2">
                   {canSwap && (
                     <motion.button
@@ -2240,15 +2237,21 @@ function OutfitsSection({
                       Reject / Swap
                     </motion.button>
                   )}
-                  {canEdit && (
+                  {canRequestEdit && (
                     <button
                       onClick={() => startEdit(outfit)}
-                      disabled={isOutfitOperationBusy}
+                      disabled={isOutfitOperationBusy || !canEdit}
                       className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
                       style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
+                      title={editDisabledReason || 'Advanced edit'}
                     >
                       Advanced edit
                     </button>
+                  )}
+                  {canRequestEdit && editDisabledReason && !isOutfitOperationBusy && (
+                    <p className="basis-full text-[11px] leading-relaxed" style={{ color: OXBLOOD }}>
+                      {editDisabledReason}
+                    </p>
                   )}
                 </div>
               )}
