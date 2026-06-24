@@ -9,6 +9,7 @@ export interface ConfirmationEmailData {
   payment_id?: string;
   // Optional: override currency symbol for international orders (default '₹')
   currency_symbol?: string;
+  intake_link?: string;
 }
 
 export interface AUOrderConfirmationEmailData {
@@ -143,7 +144,7 @@ function htmlEscape(value: string): string {
 }
 
 function buildEmailHtml(data: ConfirmationEmailData): string {
-  const { customer_name, customer_email, customer_phone, order_amount, add_ons, payment_id } = data;
+  const { customer_name, customer_email, customer_phone, order_amount, add_ons, payment_id, intake_link } = data;
 
   // Build add-ons section
   const addOnsList = add_ons && add_ons !== 'None' && add_ons !== ''
@@ -161,6 +162,14 @@ function buildEmailHtml(data: ConfirmationEmailData): string {
 
   // Suppress unused variable warning — kept for potential future use
   void customer_name;
+
+  const nextStepLink = intake_link || 'https://cal.com/iconone-wpnx1q/30min-copy';
+  const nextStepIntro = intake_link
+    ? 'Before booking your consultation, please upload your photos and measurements using the secure link below:'
+    : 'To get started, please book your session using the link below:';
+  const nextStepButton = intake_link
+    ? 'Complete Your Intake'
+    : '👉 Schedule Your Consultation Here';
 
   return `
 <!DOCTYPE html>
@@ -235,18 +244,18 @@ function buildEmailHtml(data: ConfirmationEmailData): string {
             </td>
           </tr>
 
-          <!-- Book Session CTA -->
+          <!-- Next Step CTA -->
           <tr>
             <td style="padding: 28px 40px 0;">
               <p style="margin:0 0 16px; color:#333; font-size:16px; line-height:1.7;">
-                To get started, please book your session using the link below:
+                ${nextStepIntro}
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="https://cal.com/iconone-wpnx1q/30min-copy"
+                    <a href="${htmlEscape(nextStepLink)}"
                        style="display:inline-block; background:#e91e63; color:#ffffff; text-decoration:none; font-size:16px; font-weight:700; padding:16px 36px; border-radius:50px; letter-spacing:0.3px;">
-                      👉 Schedule Your Consultation Here
+                      ${nextStepButton}
                     </a>
                   </td>
                 </tr>
@@ -339,11 +348,15 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
       ? ` + ${data.add_ons}`
       : '';
 
+    const nextStepText = data.intake_link
+      ? `To get started, please upload your photos and measurements using your secure intake link:\n${data.intake_link}\n\nAfter you submit the intake, the booking calendar will unlock on the same page.`
+      : `To get started, please book your session using the link below:\n👉 Schedule Your Consultation Here: https://cal.com/iconone-wpnx1q/30min-copy`;
+
     const info = await transporter.sendMail({
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your Iconik Style Consultation is Confirmed ✅`,
-      text: `Hi there,\n\nThank you for purchasing your Iconik Style Consultation${addOnsSuffix}. Your order is confirmed, and your transformation journey officially begins now!\n\nTo get started, please book your session using the link below:\n👉 Schedule Your Consultation Here: https://cal.com/iconone-wpnx1q/30min-copy\n\nPlease note our session policies:\n\n24-Hour Rescheduling Rule: You can reschedule your session for free as long as you do so at least 24 hours before your scheduled time.\n\nLate Rescheduling: Changes made within 24 hours of the meeting will incur a ₹399 convenience fee to book a new slot.\n\nNo-Show Policy: We value our consultants' time. If you miss your scheduled session without prior notice (No-Show), no refunds will be issued, and a ₹399 fee will apply if you wish to re-book.\n\nPreparation: To get the best results, please ensure you are in a quiet space with a stable internet connection at the time of your call.\n\nWe recommend choosing a time when you're fully available so you can make the most of your consultation.\n\nIf you have any questions, just reply to this email — we're here to help you look and feel your best.\n\nBest regards,\nTeam Iconik`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Style Consultation${addOnsSuffix}. Your order is confirmed, and your transformation journey officially begins now!\n\n${nextStepText}\n\nPlease note our session policies:\n\n24-Hour Rescheduling Rule: You can reschedule your session for free as long as you do so at least 24 hours before your scheduled time.\n\nLate Rescheduling: Changes made within 24 hours of the meeting will incur a ₹399 convenience fee to book a new slot.\n\nNo-Show Policy: We value our consultants' time. If you miss your scheduled session without prior notice (No-Show), no refunds will be issued, and a ₹399 fee will apply if you wish to re-book.\n\nPreparation: To get the best results, please ensure you are in a quiet space with a stable internet connection at the time of your call.\n\nWe recommend choosing a time when you're fully available so you can make the most of your consultation.\n\nIf you have any questions, just reply to this email — we're here to help you look and feel your best.\n\nBest regards,\nTeam Iconik`,
       html: buildEmailHtml(data),
     });
 

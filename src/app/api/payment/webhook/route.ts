@@ -8,6 +8,7 @@ import { recordRevenueEvent } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
 import { MAN_BLUEPRINT_PRODUCT_ID, MAN_OUTFIT_PREVIEW_PRODUCT_ID } from '@/lib/metaPixel';
 import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
+import { createPostPaymentIntakeToken, findPostPaymentIntakeSourceForOrder, type PostPaymentIntakeSource } from '@/lib/postPaymentIntake';
 import Razorpay from 'razorpay';
 import {
   getManEditSubscriptionByRazorpayId,
@@ -77,6 +78,21 @@ async function getBaseProductFromRazorpayOrder(razorpayOrderId: string): Promise
     return (orderDetails.notes as Record<string, string>)?.base_product || '';
   } catch {
     return '';
+  }
+}
+
+async function getPostPaymentIntakeSourceFromRazorpayOrder(razorpayOrderId: string): Promise<PostPaymentIntakeSource | null> {
+  try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return null;
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+    const orderDetails = await razorpay.orders.fetch(razorpayOrderId);
+    const source = (orderDetails.notes as Record<string, string>)?.checkout_source;
+    return source === 'root_checkout' || source === 'offer_2699_checkout' ? source : null;
+  } catch {
+    return null;
   }
 }
 
@@ -648,6 +664,36 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
             const isMenOrder = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
             const isIntl = baseProduct === 'Iconik Man Style Blueprint INTL';
             const emailFn = isMenOrder ? sendManConfirmationEmail : sendConfirmationEmail;
+            let intakeLink: string | undefined;
+            let requiresPostPaymentIntake = false;
+
+            if (!isMenOrder) {
+              try {
+                const source = await findPostPaymentIntakeSourceForOrder(existingOrder.id)
+                  || await getPostPaymentIntakeSourceFromRazorpayOrder(order.id);
+                if (source) {
+                  requiresPostPaymentIntake = true;
+                  const token = await createPostPaymentIntakeToken({
+                    orderId: existingOrder.id,
+                    customerId: existingOrder.customer_id,
+                    customerEmail: existingOrder.customers.email,
+                    customerPhone: existingOrder.customers.phone,
+                    customerName: existingOrder.customers.name,
+                    source,
+                    razorpayOrderId: order.id,
+                    razorpayPaymentId: payment.id,
+                  });
+                  intakeLink = token.url;
+                }
+              } catch (tokenError) {
+                console.log('Could not create post-payment intake email link:', tokenError);
+              }
+            }
+
+            if (requiresPostPaymentIntake && !intakeLink) {
+              throw new Error('Post-payment intake link is required for this order, so confirmation email was not sent.');
+            }
+
             const emailResult = await emailFn({
               customer_name: existingOrder.customers.name,
               customer_email: existingOrder.customers.email,
@@ -655,6 +701,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
               order_amount: existingOrder.amount,
               add_ons: addOnsString,
               payment_id: payment.id,
+              ...(intakeLink ? { intake_link: intakeLink } : {}),
               ...(isIntl ? { currency_symbol: '$' } : {}),
             });
             if (emailResult.success) {

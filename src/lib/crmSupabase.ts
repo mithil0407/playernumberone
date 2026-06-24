@@ -6,6 +6,11 @@ const crmAnonKey = process.env.CRM_SUPABASE_ANON_KEY || '';
 
 // Create CRM client
 const mockCrmClient = {
+    storage: {
+        from: () => ({
+            upload: async () => ({ data: null, error: { message: 'CRM not configured' } }),
+        }),
+    },
     from: () => ({
         select: () => ({ eq: () => ({ single: () => ({ data: null, error: null }) }) }),
         insert: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }),
@@ -26,6 +31,14 @@ if (crmAnonKey && crmAnonKey !== '') {
     }
 } else {
     console.warn('CRM Supabase anon key not configured, using mock client');
+}
+
+export const isCrmSupabaseConfigured = Boolean(crmAnonKey);
+
+export function assertCrmSupabaseConfigured() {
+    if (!isCrmSupabaseConfigured) {
+        throw new Error('CRM_SUPABASE_ANON_KEY is not configured. Add it to the environment before submitting post-payment intakes.');
+    }
 }
 
 export { crmSupabase };

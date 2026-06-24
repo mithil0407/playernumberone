@@ -185,6 +185,7 @@ export default function CheckoutPage() {
         customer_email: formData.email,
         customer_phone: formData.phone,
         amount: totalAmount,
+        checkout_source: isOffer2699Checkout ? 'offer_2699_checkout' : 'root_checkout',
         base_product: 'Iconik Style Consultation',
         add_ons: {
           wardrobe_detox: wardrobeDetoxAddon,
@@ -235,7 +236,10 @@ export default function CheckoutPage() {
               localStorage.setItem('orderId', responseData.db_order_id);
               sessionStorage.setItem('orderId', responseData.db_order_id);
             }
-            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
+            const intakeToken = responseData.post_payment_intake_token;
+            const successUrl = intakeToken
+              ? `/checkout/intake?t=${encodeURIComponent(intakeToken)}&payment_id=${encodeURIComponent(response.razorpay_payment_id)}`
+              : `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
             window.location.href = successUrl;
           },
           prefill: { name: formData.email.split('@')[0], email: formData.email, contact: formData.phone },
@@ -263,7 +267,7 @@ export default function CheckoutPage() {
       setIsProcessing(false);
       alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [formData, totalAmount, discountedPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded]);
+  }, [formData, totalAmount, discountedPrice, wardrobeDetoxAddon, smartShoppersGuideAddon, outfitPreviewAddon, razorpayLoaded, isOffer2699Checkout]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

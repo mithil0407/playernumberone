@@ -533,6 +533,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const error = data.error as string | undefined;
 
     if (!updatedS4Outfits || !imageStatus) return null;
+    setError('');
 
     setReport(prev => {
       if (!prev?.report_data) return prev;
@@ -589,6 +590,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const qa = data.qa as ReportData['qa'] | undefined;
 
     if (!updatedS4Outfits) return null;
+    setError('');
 
     // Update local state — text and QA only, image_urls intentionally untouched
     setReport(prev => {
@@ -760,6 +762,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const updatedS4Outfits = data.updatedS4Outfits as string | null;
     const qa = data.qa as ReportData['qa'] | undefined;
     if (!updatedS4Outfits) return null;
+    setError('');
 
     setReport(prev => {
       if (!prev?.report_data) return prev;
