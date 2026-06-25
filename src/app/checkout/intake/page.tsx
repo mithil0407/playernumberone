@@ -18,6 +18,85 @@ type IntakeContext = {
 };
 
 type PhotoKey = 'full_front' | 'headshot' | 'side_profile';
+type SubmitStage = 'optimizing' | 'preparing' | 'uploading' | 'saving' | null;
+
+type PreparedUpload = {
+  photo_type: PhotoKey;
+  bucket: string;
+  path: string;
+  signed_url: string;
+};
+
+const PHOTO_KEYS: PhotoKey[] = ['full_front', 'headshot', 'side_profile'];
+
+function replaceExtension(fileName: string, extension: string): string {
+  const cleanName = fileName.trim() || 'intake-photo';
+  return cleanName.includes('.')
+    ? cleanName.replace(/\.[^.]+$/, `.${extension}`)
+    : `${cleanName}.${extension}`;
+}
+
+async function compressImageForUpload(file: File, photoKey: PhotoKey): Promise<File> {
+  if (!file.type.startsWith('image/')) return file;
+  if (file.type === 'image/heic' || file.type === 'image/heif') return file;
+
+  const maxDimension = photoKey === 'headshot' ? 1200 : 1600;
+  const targetQuality = 0.82;
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Could not read image'));
+      img.src = objectUrl;
+    });
+
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    if (!width || !height) return file;
+
+    const scale = Math.min(1, maxDimension / Math.max(width, height));
+    if (scale === 1 && file.size <= 1_200_000 && file.type === 'image/jpeg') return file;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) return file;
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', targetQuality);
+    });
+
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], replaceExtension(file.name, 'jpg'), {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function uploadToSignedUrl(upload: PreparedUpload, file: File): Promise<void> {
+  const body = new FormData();
+  body.append('cacheControl', '3600');
+  body.append('', file);
+
+  const response = await fetch(upload.signed_url, {
+    method: 'PUT',
+    body,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Could not upload ${upload.photo_type.replace('_', ' ')} image.`);
+  }
+}
 
 function FileField({
   id,
@@ -76,6 +155,8 @@ function IntakePageContent() {
   const [loadError, setLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [submitStage, setSubmitStage] = useState<SubmitStage>(null);
+  const [uploadedCount, setUploadedCount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
   const [photos, setPhotos] = useState<Record<PhotoKey, File | null>>({
@@ -142,31 +223,85 @@ function IntakePageContent() {
       return;
     }
 
-    const body = new FormData();
-    body.set('token', token);
-    body.set('payment_id', paymentId);
-    body.set('unit', unit);
-    Object.entries(measurements).forEach(([key, value]) => body.set(key, value));
-    Object.entries(photos).forEach(([key, file]) => {
-      if (file) body.set(key, file);
-    });
-
     setSubmitting(true);
+    setUploadedCount(0);
     try {
-      const response = await fetch('/api/post-payment-intake/submit', {
+      setSubmitStage('optimizing');
+      const compressedPhotos = Object.fromEntries(await Promise.all(
+        PHOTO_KEYS.map(async (photoKey) => {
+          const file = photos[photoKey];
+          if (!file) throw new Error(`Missing ${photoKey} image`);
+          return [photoKey, await compressImageForUpload(file, photoKey)];
+        }),
+      )) as Record<PhotoKey, File>;
+
+      setSubmitStage('preparing');
+      const prepareResponse = await fetch('/api/post-payment-intake/prepare-upload', {
         method: 'POST',
-        body,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          payment_id: paymentId,
+          files: PHOTO_KEYS.map((photoKey) => ({
+            photo_type: photoKey,
+            file_name: compressedPhotos[photoKey].name,
+            content_type: compressedPhotos[photoKey].type || 'image/jpeg',
+          })),
+        }),
       });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Could not submit your intake.');
+      const prepareData = await prepareResponse.json();
+      if (!prepareResponse.ok || !prepareData.success) {
+        throw new Error(prepareData.error || 'Could not prepare photo uploads.');
       }
+
+      const uploads = prepareData.uploads as PreparedUpload[];
+      const uploadByType = new Map(uploads.map((upload) => [upload.photo_type, upload]));
+
+      setSubmitStage('uploading');
+      await Promise.all(PHOTO_KEYS.map(async (photoKey) => {
+        const upload = uploadByType.get(photoKey);
+        if (!upload) throw new Error(`Missing upload URL for ${photoKey}`);
+        await uploadToSignedUrl(upload, compressedPhotos[photoKey]);
+        setUploadedCount((count) => count + 1);
+      }));
+
+      const photoPayload = PHOTO_KEYS.reduce((acc, photoKey) => {
+        const upload = uploadByType.get(photoKey);
+        if (!upload) throw new Error(`Missing upload metadata for ${photoKey}`);
+        acc[photoKey] = { bucket: upload.bucket, path: upload.path };
+        return acc;
+      }, {} as Record<PhotoKey, { bucket: string; path: string }>);
+
+      setSubmitStage('saving');
+      const submitResponse = await fetch('/api/post-payment-intake/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          payment_id: paymentId,
+          pending_intake_id: prepareData.pending_intake_id,
+          measurements: {
+            unit,
+            chest: measurements.chest,
+            waist: measurements.waist,
+            shoulders: measurements.shoulders,
+            hips: measurements.hips,
+          },
+          photos: photoPayload,
+        }),
+      });
+      const submitData = await submitResponse.json();
+      if (!submitResponse.ok || !submitData.success) {
+        throw new Error(submitData.error || 'Could not submit your intake.');
+      }
+
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Could not submit your intake.');
     } finally {
       setSubmitting(false);
+      setSubmitStage(null);
     }
   }
 
@@ -330,6 +465,15 @@ function IntakePageContent() {
           {submitError && (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {submitError}
+            </div>
+          )}
+
+          {submitting && (
+            <div className="rounded-2xl border border-luxury-cream bg-white p-4 text-sm text-luxury-charcoal/70">
+              {submitStage === 'optimizing' && 'Optimizing photos for faster upload...'}
+              {submitStage === 'preparing' && 'Preparing secure photo uploads...'}
+              {submitStage === 'uploading' && `Uploading photos ${uploadedCount}/3...`}
+              {submitStage === 'saving' && 'Saving your intake...'}
             </div>
           )}
 

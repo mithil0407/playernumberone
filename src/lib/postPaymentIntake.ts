@@ -7,6 +7,7 @@ export const POST_PAYMENT_INTAKE_BUCKET = 'consultation-images';
 export const POST_PAYMENT_INTAKE_TOKEN_TTL_DAYS = 14;
 
 export type PostPaymentIntakeSource = 'root_checkout' | 'offer_2699_checkout';
+export type PostPaymentIntakePhotoType = 'full_front' | 'headshot' | 'side_profile';
 
 export interface PostPaymentIntakeTokenRow {
   id: string;
@@ -172,39 +173,69 @@ function sanitizeFileNamePart(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
 }
 
-function extensionForFile(file: File): string {
-  const fromName = file.name.split('.').pop();
+function extensionForUpload(input: { fileName?: string | null; contentType?: string | null }): string {
+  const fromName = input.fileName?.split('.').pop();
   if (fromName && /^[a-z0-9]{2,5}$/i.test(fromName)) return sanitizeFileNamePart(fromName);
-  if (file.type === 'image/png') return 'png';
-  if (file.type === 'image/webp') return 'webp';
-  if (file.type === 'image/heic') return 'heic';
-  if (file.type === 'image/heif') return 'heif';
+  if (input.contentType === 'image/png') return 'png';
+  if (input.contentType === 'image/webp') return 'webp';
+  if (input.contentType === 'image/heic') return 'heic';
+  if (input.contentType === 'image/heif') return 'heif';
   return 'jpg';
 }
 
-export async function uploadPendingIntakePhotoToCrm(input: {
+function isAllowedPhotoType(value: string): value is PostPaymentIntakePhotoType {
+  return value === 'full_front' || value === 'headshot' || value === 'side_profile';
+}
+
+export function assertPostPaymentIntakePhotoType(value: string): PostPaymentIntakePhotoType {
+  if (!isAllowedPhotoType(value)) throw new Error(`Invalid photo type: ${value}`);
+  return value;
+}
+
+export async function createPendingIntakePhotoUploadUrl(input: {
   pendingIntakeId: string;
-  file: File;
-  photoType: 'full_front' | 'headshot' | 'side_profile';
-}): Promise<{ bucket: string; path: string }> {
+  photoType: PostPaymentIntakePhotoType;
+  fileName?: string | null;
+  contentType?: string | null;
+}): Promise<{ bucket: string; path: string; signedUrl: string; token: string }> {
   assertCrmSupabaseConfigured();
 
-  if (!input.file.size) throw new Error(`${input.photoType} image is empty`);
-  if (input.file.type && !input.file.type.startsWith('image/')) {
+  if (input.contentType && !input.contentType.startsWith('image/')) {
     throw new Error(`${input.photoType} must be an image`);
   }
 
-  const ext = extensionForFile(input.file);
+  const ext = extensionForUpload({ fileName: input.fileName, contentType: input.contentType });
   const storagePath = `post-payment-intakes/${input.pendingIntakeId}/${Date.now()}_${input.photoType}.${ext}`;
-  const { error } = await crmSupabase.storage
+  const { data, error } = await crmSupabase.storage
     .from(POST_PAYMENT_INTAKE_BUCKET)
-    .upload(storagePath, input.file, {
-      contentType: input.file.type || 'image/jpeg',
-      upsert: false,
-    });
+    .createSignedUploadUrl(storagePath, { upsert: false });
 
-  if (error) throw new Error(`CRM photo upload failed: ${error.message}`);
-  return { bucket: POST_PAYMENT_INTAKE_BUCKET, path: storagePath };
+  if (error || !data?.signedUrl || !data?.token) {
+    throw new Error(`CRM signed upload URL failed: ${error?.message || 'No signed URL returned'}`);
+  }
+
+  return {
+    bucket: POST_PAYMENT_INTAKE_BUCKET,
+    path: storagePath,
+    signedUrl: data.signedUrl,
+    token: data.token,
+  };
+}
+
+export async function assertPendingIntakePhotosExist(
+  photos: Record<PostPaymentIntakePhotoType, { bucket: string; path: string }>,
+): Promise<void> {
+  assertCrmSupabaseConfigured();
+
+  await Promise.all(Object.entries(photos).map(async ([photoType, photo]) => {
+    const { data, error } = await crmSupabase.storage
+      .from(photo.bucket)
+      .info(photo.path);
+
+    if (error || !data) {
+      throw new Error(`Uploaded ${photoType.replace('_', ' ')} image could not be confirmed`);
+    }
+  }));
 }
 
 export async function upsertPendingCrmIntakeShell(row: PostPaymentIntakeTokenRow, paymentId: string): Promise<{ pendingIntakeId: string }> {

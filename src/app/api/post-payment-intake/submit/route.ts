@@ -1,58 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
+  POST_PAYMENT_INTAKE_BUCKET,
+  assertPendingIntakePhotosExist,
+  assertPostPaymentIntakePhotoType,
   savePendingCrmIntake,
-  uploadPendingIntakePhotoToCrm,
-  upsertPendingCrmIntakeShell,
   verifyPostPaymentIntakeAccess,
+  type PostPaymentIntakePhotoType,
 } from '@/lib/postPaymentIntake';
 
-function getRequiredFile(formData: FormData, key: string): File {
-  const value = formData.get(key);
-  if (!(value instanceof File)) throw new Error(`Missing ${key}`);
-  return value;
-}
+const REQUIRED_PHOTOS: PostPaymentIntakePhotoType[] = ['full_front', 'headshot', 'side_profile'];
 
-function getRequiredNumber(formData: FormData, key: string): number {
-  const raw = String(formData.get(key) || '').trim();
+function getRequiredNumber(measurements: Record<string, unknown>, key: string): number {
+  const raw = String(measurements[key] || '').trim();
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) throw new Error(`Invalid ${key}`);
   return value;
 }
 
+function getRequiredPhoto(
+  photos: Record<string, unknown>,
+  key: PostPaymentIntakePhotoType,
+  pendingIntakeId: string,
+): { bucket: string; path: string } {
+  const value = photos[key];
+  if (!value || typeof value !== 'object') throw new Error(`Missing ${key} image upload`);
+
+  const photo = value as { bucket?: unknown; path?: unknown };
+  const bucket = String(photo.bucket || '');
+  const path = String(photo.path || '');
+  const expectedPrefix = `post-payment-intakes/${pendingIntakeId}/`;
+
+  assertPostPaymentIntakePhotoType(key);
+  if (bucket !== POST_PAYMENT_INTAKE_BUCKET) throw new Error(`Invalid ${key} image bucket`);
+  if (!path.startsWith(expectedPrefix)) throw new Error(`Invalid ${key} image path`);
+  if (!path.includes(`_${key}.`)) throw new Error(`Invalid ${key} image name`);
+
+  return { bucket, path };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const token = String(formData.get('token') || '');
-    const paymentId = String(formData.get('payment_id') || '');
+    const body = await request.json();
+    const token = String(body.token || '');
+    const paymentId = String(body.payment_id || '');
+    const pendingIntakeId = String(body.pending_intake_id || '');
 
     const row = await verifyPostPaymentIntakeAccess({ token, paymentId });
 
-    const unit = String(formData.get('unit') || 'in') === 'cm' ? 'cm' : 'in';
+    if (!pendingIntakeId) throw new Error('Missing pending intake ID');
+
+    const rawMeasurements = body.measurements && typeof body.measurements === 'object'
+      ? body.measurements as Record<string, unknown>
+      : {};
+    const unit = String(rawMeasurements.unit || 'in') === 'cm' ? 'cm' : 'in';
     const measurements = {
       unit,
-      chest: getRequiredNumber(formData, 'chest'),
-      waist: getRequiredNumber(formData, 'waist'),
-      shoulders: getRequiredNumber(formData, 'shoulders'),
-      hips: getRequiredNumber(formData, 'hips'),
+      chest: getRequiredNumber(rawMeasurements, 'chest'),
+      waist: getRequiredNumber(rawMeasurements, 'waist'),
+      shoulders: getRequiredNumber(rawMeasurements, 'shoulders'),
+      hips: getRequiredNumber(rawMeasurements, 'hips'),
     };
 
-    const fullFront = getRequiredFile(formData, 'full_front');
-    const headshot = getRequiredFile(formData, 'headshot');
-    const sideProfile = getRequiredFile(formData, 'side_profile');
+    const rawPhotos = body.photos && typeof body.photos === 'object'
+      ? body.photos as Record<string, unknown>
+      : {};
+    const photoPayload = REQUIRED_PHOTOS.reduce((acc, photoType) => {
+      acc[photoType] = getRequiredPhoto(rawPhotos, photoType, pendingIntakeId);
+      return acc;
+    }, {} as Record<PostPaymentIntakePhotoType, { bucket: string; path: string }>);
 
-    const { pendingIntakeId } = await upsertPendingCrmIntakeShell(row, paymentId);
-    const photos = await Promise.all([
-      uploadPendingIntakePhotoToCrm({ pendingIntakeId, file: fullFront, photoType: 'full_front' }),
-      uploadPendingIntakePhotoToCrm({ pendingIntakeId, file: headshot, photoType: 'headshot' }),
-      uploadPendingIntakePhotoToCrm({ pendingIntakeId, file: sideProfile, photoType: 'side_profile' }),
-    ]);
-
-    const photoPayload = {
-      full_front: photos[0],
-      headshot: photos[1],
-      side_profile: photos[2],
-    };
+    await assertPendingIntakePhotosExist(photoPayload);
 
     await savePendingCrmIntake({
       pendingIntakeId,
