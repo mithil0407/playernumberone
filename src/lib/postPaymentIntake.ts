@@ -169,6 +169,50 @@ export async function verifyPostPaymentIntakeAccess(input: {
   return { ...row, razorpay_payment_id: input.paymentId };
 }
 
+async function hasSubmittedPostPaymentIntakeForContext(row: PostPaymentIntakeTokenRow, paymentId: string): Promise<boolean> {
+  if (row.submitted_at) return true;
+
+  const checks: Array<{ column: 'order_id' | 'razorpay_order_id' | 'razorpay_payment_id'; value: string }> = [];
+  if (row.order_id) checks.push({ column: 'order_id', value: row.order_id });
+  if (row.razorpay_order_id) checks.push({ column: 'razorpay_order_id', value: row.razorpay_order_id });
+  if (paymentId) checks.push({ column: 'razorpay_payment_id', value: paymentId });
+
+  for (const check of checks) {
+    const { data, error } = await supabaseAdmin
+      .from('post_payment_intake_tokens')
+      .select('id')
+      .eq(check.column, check.value)
+      .not('submitted_at', 'is', null)
+      .limit(1)
+      .single();
+
+    if (data?.id) return true;
+    if (error && error.code !== 'PGRST116') {
+      console.error('Post-payment intake submitted-state lookup failed:', error);
+    }
+  }
+
+  return false;
+}
+
+export async function verifyPostPaymentIntakePageAccess(input: {
+  token?: string | null;
+  paymentId?: string | null;
+}): Promise<{ row: PostPaymentIntakeTokenRow; submitted: boolean }> {
+  if (!input.token) throw new Error('Missing intake token');
+  if (!input.paymentId) throw new Error('Missing payment ID');
+
+  const row = await loadPostPaymentIntakeToken(input.token);
+  if (!row) throw new Error('Invalid intake link');
+  if (new Date(row.expires_at).getTime() < Date.now()) throw new Error('This intake link has expired');
+
+  await verifyRazorpayPaymentForToken(row, input.paymentId);
+  const verifiedRow = { ...row, razorpay_payment_id: input.paymentId };
+  const submitted = await hasSubmittedPostPaymentIntakeForContext(verifiedRow, input.paymentId);
+
+  return { row: verifiedRow, submitted };
+}
+
 function sanitizeFileNamePart(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
 }

@@ -188,7 +188,10 @@ function IntakePageContent() {
         if (!response.ok || !data.success) {
           throw new Error(data.error || 'This intake link is invalid.');
         }
-        if (!cancelled) setContext(data.intake);
+        if (!cancelled) {
+          setContext(data.intake);
+          setSubmitted(Boolean(data.submitted));
+        }
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : 'This intake link is invalid.');
       } finally {

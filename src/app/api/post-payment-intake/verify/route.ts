@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyPostPaymentIntakeAccess } from '@/lib/postPaymentIntake';
+import { verifyPostPaymentIntakePageAccess } from '@/lib/postPaymentIntake';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const row = await verifyPostPaymentIntakeAccess({
+    const { row, submitted } = await verifyPostPaymentIntakePageAccess({
       token: body.token,
       paymentId: body.payment_id,
     });
 
     return NextResponse.json({
       success: true,
+      submitted,
       intake: {
         email: row.customer_email,
         phone: row.customer_phone,
