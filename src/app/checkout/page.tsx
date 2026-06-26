@@ -236,10 +236,7 @@ export default function CheckoutPage() {
               localStorage.setItem('orderId', responseData.db_order_id);
               sessionStorage.setItem('orderId', responseData.db_order_id);
             }
-            const intakeToken = responseData.post_payment_intake_token;
-            const successUrl = intakeToken
-              ? `/checkout/intake?t=${encodeURIComponent(intakeToken)}&payment_id=${encodeURIComponent(response.razorpay_payment_id)}`
-              : `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
+            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
             window.location.href = successUrl;
           },
           prefill: { name: formData.email.split('@')[0], email: formData.email, contact: formData.phone },

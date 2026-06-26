@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCustomer, saveOrder, supabaseAdmin, getCustomerByEmail } from '@/lib/supabase';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
-import { createPostPaymentIntakeToken, type PostPaymentIntakeSource } from '@/lib/postPaymentIntake';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -9,10 +8,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price, checkout_source } = body;
     const incomingAttribution = attributionToColumns(body.attribution);
-    const postPaymentIntakeSource: PostPaymentIntakeSource | null =
-      checkout_source === 'root_checkout' || checkout_source === 'offer_2699_checkout'
-        ? checkout_source
-        : null;
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -125,23 +120,6 @@ export async function POST(request: NextRequest) {
         console.error('Failed to update order with Razorpay ID:', updateIdError);
       }
 
-      let postPaymentIntake: { token: string; url: string } | null = null;
-      if (postPaymentIntakeSource && dbOrderId !== 'mock-order-id') {
-        try {
-          postPaymentIntake = await createPostPaymentIntakeToken({
-            orderId: dbOrderId,
-            customerId,
-            customerEmail: customer_email,
-            customerPhone: customer_phone,
-            customerName: customer_name,
-            source: postPaymentIntakeSource,
-            razorpayOrderId: razorpayOrder.id,
-          });
-        } catch (tokenError) {
-          console.error('Failed to create post-payment intake token:', tokenError);
-        }
-      }
-
       // OPTIMIZATION #3: Return minimal payload - only what frontend needs
       return NextResponse.json({
         success: true,
@@ -152,8 +130,6 @@ export async function POST(request: NextRequest) {
         customer_id: customerId,
         order_id: orderId,
         db_order_id: dbOrderId,
-        post_payment_intake_token: postPaymentIntake?.token || null,
-        post_payment_intake_url: postPaymentIntake?.url || null,
       });
 
     } catch (razorpayError) {

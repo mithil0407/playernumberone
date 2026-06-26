@@ -144,7 +144,7 @@ function htmlEscape(value: string): string {
 }
 
 function buildEmailHtml(data: ConfirmationEmailData): string {
-  const { customer_name, customer_email, customer_phone, order_amount, add_ons, payment_id, intake_link } = data;
+  const { customer_name, customer_email, customer_phone, order_amount, add_ons, payment_id } = data;
 
   // Build add-ons section
   const addOnsList = add_ons && add_ons !== 'None' && add_ons !== ''
@@ -163,13 +163,7 @@ function buildEmailHtml(data: ConfirmationEmailData): string {
   // Suppress unused variable warning — kept for potential future use
   void customer_name;
 
-  const nextStepLink = intake_link || 'https://cal.com/iconone-wpnx1q/30min-copy';
-  const nextStepIntro = intake_link
-    ? 'Before booking your consultation, please upload your photos and measurements using the secure link below:'
-    : 'To get started, please book your session using the link below:';
-  const nextStepButton = intake_link
-    ? 'Complete Your Intake'
-    : '👉 Schedule Your Consultation Here';
+  const bookingLink = 'https://cal.com/iconone-wpnx1q/30min-copy';
 
   return `
 <!DOCTYPE html>
@@ -248,14 +242,14 @@ function buildEmailHtml(data: ConfirmationEmailData): string {
           <tr>
             <td style="padding: 28px 40px 0;">
               <p style="margin:0 0 16px; color:#333; font-size:16px; line-height:1.7;">
-                ${nextStepIntro}
+                To get started, please book your consultation session using the link below:
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <a href="${htmlEscape(nextStepLink)}"
+                    <a href="${htmlEscape(bookingLink)}"
                        style="display:inline-block; background:#e91e63; color:#ffffff; text-decoration:none; font-size:16px; font-weight:700; padding:16px 36px; border-radius:50px; letter-spacing:0.3px;">
-                      ${nextStepButton}
+                      Schedule Your Consultation Here
                     </a>
                   </td>
                 </tr>
@@ -348,9 +342,7 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
       ? ` + ${data.add_ons}`
       : '';
 
-    const nextStepText = data.intake_link
-      ? `To get started, please upload your photos and measurements using your secure intake link:\n${data.intake_link}\n\nAfter you submit the intake, the booking calendar will unlock on the same page.`
-      : `To get started, please book your session using the link below:\n👉 Schedule Your Consultation Here: https://cal.com/iconone-wpnx1q/30min-copy`;
+    const nextStepText = `To get started, please book your consultation session using the link below:\nSchedule Your Consultation Here: https://cal.com/iconone-wpnx1q/30min-copy`;
 
     const info = await transporter.sendMail({
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,

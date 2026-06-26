@@ -64,11 +64,11 @@ function SuccessPageContent() {
             </p>
 
             <h1 className="luxury-heading text-3xl md:text-5xl text-luxury-charcoal leading-tight mb-4">
-              Your Style Blueprint is reserved.
+              Your consultation is confirmed.
             </h1>
 
             <p className="luxury-body text-base md:text-lg text-luxury-charcoal/70 leading-relaxed max-w-2xl mx-auto">
-              We have received your order. Your personalised Blueprint is now in the preparation queue and will be delivered within 4-5 days.
+              We have received your payment and emailed your consultation booking link. Please check your inbox, spam folder, and promotions tab if you do not see it.
             </p>
           </div>
 
@@ -76,8 +76,8 @@ function SuccessPageContent() {
             <div className="grid gap-4 md:grid-cols-3">
               <div className="bg-white border border-luxury-cream rounded-2xl p-4 text-center">
                 <Clock className="w-6 h-6 text-luxury-accent mx-auto mb-3" />
-                <p className="luxury-body text-sm font-semibold text-luxury-charcoal mb-1">Delivery timeline</p>
-                <p className="luxury-body text-xs text-luxury-charcoal/60">4-5 days</p>
+                <p className="luxury-body text-sm font-semibold text-luxury-charcoal mb-1">Next step</p>
+                <p className="luxury-body text-xs text-luxury-charcoal/60">Book your slot</p>
               </div>
 
               <div className="bg-white border border-luxury-cream rounded-2xl p-4 text-center">
@@ -105,19 +105,19 @@ function SuccessPageContent() {
                 <div className="flex gap-3">
                   <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
                   <p className="luxury-body text-sm text-luxury-charcoal/70 m-0">
-                    Your stylist reviews your checkout details and prepares your personalised analysis.
+                    Open the confirmation email and use the Cal.com link to choose your consultation slot.
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
                   <p className="luxury-body text-sm text-luxury-charcoal/70 m-0">
-                    Your Blueprint is built around your colours, silhouette, face architecture, and outfit goals.
+                    Check your inbox, spam folder, and promotions tab if the email is not visible right away.
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <CheckCircle className="w-5 h-5 text-luxury-green flex-shrink-0 mt-0.5" />
                   <p className="luxury-body text-sm text-luxury-charcoal/70 m-0">
-                    If we need anything else, we will contact you using the email or phone number from checkout.
+                    After your session is booked, your stylist will guide you through the next steps.
                   </p>
                 </div>
               </div>
