@@ -1,5 +1,10 @@
--- Apply this in the CRM Supabase project, not the main ICONIK app project.
--- It supports the post-payment intake upload flow that writes with CRM_SUPABASE_ANON_KEY.
+-- Apply this in the main ICONIK Supabase project only if the post-payment
+-- intake upload flow is re-enabled.
+-- Current checkout behavior keeps the customer-facing upload flow disabled,
+-- so public.post_payment_client_intakes is not required for the active path.
+-- Server routes should use SUPABASE_SERVICE_ROLE_KEY for CRM compatibility
+-- lookups/writes; CRM_SUPABASE_URL + CRM_SUPABASE_ANON_KEY are legacy fallback
+-- options for explicitly targeting an old CRM project.
 -- This intentionally stores client-submitted photos/measurements in a pending table
 -- instead of auto-creating public.consultations rows. Stylists still create consultations.
 
@@ -36,18 +41,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_post_payment_client_intakes_active_phone
 
 ALTER TABLE public.post_payment_client_intakes ENABLE ROW LEVEL SECURITY;
 
--- Remove the earlier broad policies, if they were applied while testing.
+-- Remove the earlier broad consultation policies, if they were applied while testing.
+-- Do not recreate them in the main project; server routes use the service role client.
 DROP POLICY IF EXISTS "post_payment_intake_insert_consultations" ON public.consultations;
 DROP POLICY IF EXISTS "post_payment_intake_update_consultations" ON public.consultations;
-
--- Keep read-by-phone available for existing add-on lookup behavior, if the CRM dashboard relies on it.
--- Remove this policy manually if the dashboard has its own authenticated read policy.
 DROP POLICY IF EXISTS "post_payment_intake_read_consultations" ON public.consultations;
-CREATE POLICY "post_payment_intake_read_consultations"
-  ON public.consultations
-  FOR SELECT
-  TO anon, authenticated
-  USING (true);
 
 DROP POLICY IF EXISTS "post_payment_intake_read_pending" ON public.post_payment_client_intakes;
 CREATE POLICY "post_payment_intake_read_pending"

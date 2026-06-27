@@ -1,14 +1,40 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// CRM Supabase configuration
-const crmUrl = 'https://dedxszauqfaldmuwliqh.supabase.co';
-const crmAnonKey = process.env.CRM_SUPABASE_ANON_KEY || '';
+type CrmSupabaseConfig = {
+    url: string;
+    key: string;
+    source: 'main-service-role' | 'main-anon' | 'legacy-crm';
+};
+
+function resolveCrmSupabaseConfig(): CrmSupabaseConfig | null {
+    const mainUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const mainServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const mainAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const legacyCrmUrl = process.env.CRM_SUPABASE_URL;
+    const legacyCrmAnonKey = process.env.CRM_SUPABASE_ANON_KEY;
+
+    if (mainUrl && mainServiceKey) {
+        return { url: mainUrl, key: mainServiceKey, source: 'main-service-role' };
+    }
+
+    if (mainUrl && mainAnonKey) {
+        return { url: mainUrl, key: mainAnonKey, source: 'main-anon' };
+    }
+
+    if (legacyCrmUrl && legacyCrmAnonKey) {
+        return { url: legacyCrmUrl, key: legacyCrmAnonKey, source: 'legacy-crm' };
+    }
+
+    return null;
+}
 
 // Create CRM client
 const mockCrmClient = {
     storage: {
         from: () => ({
             upload: async () => ({ data: null, error: { message: 'CRM not configured' } }),
+            createSignedUploadUrl: async () => ({ data: null, error: { message: 'CRM not configured' } }),
+            info: async () => ({ data: null, error: { message: 'CRM not configured' } }),
         }),
     },
     from: () => ({
@@ -20,24 +46,25 @@ const mockCrmClient = {
 } as unknown as SupabaseClient;
 
 let crmSupabase: SupabaseClient = mockCrmClient;
+const crmSupabaseConfig = resolveCrmSupabaseConfig();
 
-if (crmAnonKey && crmAnonKey !== '') {
+if (crmSupabaseConfig) {
     try {
-        crmSupabase = createClient(crmUrl, crmAnonKey);
-        console.log('CRM Supabase client created successfully');
+        crmSupabase = createClient(crmSupabaseConfig.url, crmSupabaseConfig.key);
+        console.log(`CRM compatibility Supabase client created using ${crmSupabaseConfig.source}`);
     } catch (error) {
-        console.error('Failed to create CRM Supabase client:', error);
+        console.error('Failed to create CRM compatibility Supabase client:', error);
         crmSupabase = mockCrmClient;
     }
 } else {
-    console.warn('CRM Supabase anon key not configured, using mock client');
+    console.warn('CRM compatibility Supabase client not configured, using mock client');
 }
 
-export const isCrmSupabaseConfigured = Boolean(crmAnonKey);
+export const isCrmSupabaseConfigured = Boolean(crmSupabaseConfig);
 
 export function assertCrmSupabaseConfigured() {
     if (!isCrmSupabaseConfigured) {
-        throw new Error('CRM_SUPABASE_ANON_KEY is not configured. Add it to the environment before submitting post-payment intakes.');
+        throw new Error('Supabase is not configured for CRM compatibility writes. Set NEXT_PUBLIC_SUPABASE_URL with SUPABASE_SERVICE_ROLE_KEY, or set CRM_SUPABASE_URL with CRM_SUPABASE_ANON_KEY.');
     }
 }
 
@@ -69,10 +96,9 @@ export async function syncToCrm(data: {
     notes?: string;
 }): Promise<{ success: boolean; error?: string; consultation_id?: string }> {
     try {
-        // Check if CRM is configured
-        if (!crmAnonKey || crmAnonKey === '') {
-            console.log('CRM not configured, skipping sync');
-            return { success: false, error: 'CRM not configured' };
+        if (!isCrmSupabaseConfigured) {
+            console.log('CRM compatibility Supabase client not configured, skipping sync');
+            return { success: false, error: 'CRM compatibility Supabase client not configured' };
         }
 
         // Parse add-ons string into array

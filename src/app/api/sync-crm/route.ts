@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { syncToCrm } from '@/lib/crmSupabase';
+import { supabaseAdmin } from '@/lib/supabase';
+import { isCrmSupabaseConfigured, syncToCrm } from '@/lib/crmSupabase';
 
 // GET - Run the CRM sync (protected by secret key)
 export async function GET(request: Request) {
@@ -15,17 +15,17 @@ export async function GET(request: Request) {
             }, { status: 401 });
         }
 
-        // Check if CRM is configured
-        if (!process.env.CRM_SUPABASE_ANON_KEY) {
+        // Check if the CRM compatibility client is configured.
+        if (!isCrmSupabaseConfigured) {
             return NextResponse.json({
-                error: 'CRM_SUPABASE_ANON_KEY not configured'
+                error: 'Supabase CRM compatibility client not configured'
             }, { status: 500 });
         }
 
         console.log('Starting CRM sync...');
 
         // Fetch all orders with add-ons and customer data
-        const { data: orders, error: fetchError } = await supabase
+        const { data: orders, error: fetchError } = await supabaseAdmin
             .from('orders')
             .select('*, customers(*)')
             .not('add_ons', 'is', null)
