@@ -7,7 +7,11 @@ import { supabaseAdmin } from './supabase';
 import { revalidateStylistBlueprintCache } from './stylistBlueprintCache';
 import {
   getStylistBlueprintCapsulePageRanges,
+  getStylistBlueprintHairColourPage,
+  getStylistBlueprintMakeupPage,
   getStylistBlueprintOutfitCount,
+  getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintTransformationPage,
   inferStylistCoverageProfile,
   isManualStylistBlueprintSubmission,
   type BlueprintPage,
@@ -50,8 +54,14 @@ export const STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS = [
   'diagnosis.silhouetteSide',
   'diagnosis.undertoneMap',
   'diagnosis.faceShapeDiagram',
+  'prescription.colourDrapeComparison',
   'prescription.hairDirections',
+  'prescription.hairColourDirections',
   'prescription.eyewearFrames',
+  'prescription.makeupLook',
+  'application.transformationLooks.0',
+  'application.transformationLooks.1',
+  'application.transformationLooks.2',
   'application.outfitFlatlays.0',
   'application.outfitFlatlays.1',
   'application.outfitFlatlays.2',
@@ -99,12 +109,16 @@ export interface StylistBlueprintImagePaths {
     necklineGrid?: string | null;
     sleeveWaistGrid?: string | null;
     hairDirections?: string | null;
+    hairColourDirections?: string | null;
     eyewearFrames?: string | null;
+    makeupLook?: string | null;
+    colourDrapeComparison?: string | null;
     approvedFabrics?: string | null;
     avoidedFabrics?: string | null;
   };
   application?: {
     capsuleCovers?: (string | null)[];
+    transformationLooks?: (string | null)[];
     outfitFlatlays?: (string | null)[];
     outfitDetails?: (string | null)[];
   };
@@ -143,12 +157,16 @@ type MutablePaths = {
     necklineGrid: string | null;
     sleeveWaistGrid: string | null;
     hairDirections: string | null;
+    hairColourDirections: string | null;
     eyewearFrames: string | null;
+    makeupLook: string | null;
+    colourDrapeComparison: string | null;
     approvedFabrics: string | null;
     avoidedFabrics: string | null;
   };
   application: {
     capsuleCovers: (string | null)[];
+    transformationLooks: (string | null)[];
     outfitFlatlays: (string | null)[];
     outfitDetails: (string | null)[];
   };
@@ -191,12 +209,16 @@ function emptyPaths(): MutablePaths {
       necklineGrid: null,
       sleeveWaistGrid: null,
       hairDirections: null,
+      hairColourDirections: null,
       eyewearFrames: null,
+      makeupLook: null,
+      colourDrapeComparison: null,
       approvedFabrics: null,
       avoidedFabrics: null,
     },
     application: {
       capsuleCovers: [null, null, null, null],
+      transformationLooks: [null, null, null],
       outfitFlatlays: Array.from({ length: 20 }, () => null),
       outfitDetails: Array.from({ length: 20 }, () => null),
     },
@@ -212,6 +234,7 @@ function normalise(paths: StylistBlueprintImagePaths | null | undefined): Mutabl
     prescription: { ...base.prescription, ...(paths?.prescription ?? {}) },
     application: {
       capsuleCovers: Array.from({ length: 4 }, (_, index) => paths?.application?.capsuleCovers?.[index] ?? null),
+      transformationLooks: Array.from({ length: 3 }, (_, index) => paths?.application?.transformationLooks?.[index] ?? null),
       outfitFlatlays: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitFlatlays?.[index] ?? null),
       outfitDetails: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitDetails?.[index] ?? null),
     },
@@ -494,34 +517,46 @@ function pageText(page: BlueprintPage) {
   ].filter(Boolean).join('\n');
 }
 
-function outfitColourAuthority(page: BlueprintPage) {
-  const paletteUsed = page.palette_used?.length
-    ? `Palette used: ${page.palette_used.map(colour => `${colour.role}: ${colour.name} ${colour.hex}`).join('; ')}`
-    : 'Palette used: read the formula item colour fields below.';
-  const formulaItems = page.blocks
-    .flatMap(block => Array.isArray(block.items) ? block.items : [])
-    .map((item) => {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) return '';
-      const record = item as Record<string, unknown>;
-      return [
-        typeof record.slot === 'string' ? `slot=${record.slot}` : '',
-        typeof record.piece === 'string' ? `piece=${record.piece}` : '',
-        typeof record.colour_name === 'string' ? `colour=${record.colour_name}` : '',
-        typeof record.colour_hex === 'string' ? `hex=${record.colour_hex}` : '',
-        typeof record.palette_role === 'string' ? `role=${record.palette_role}` : '',
-      ].filter(Boolean).join(', ');
-    })
-    .filter(Boolean)
-    .join('\n');
+function outfitFormulaItems(page: BlueprintPage) {
+  return page.blocks.flatMap(block => Array.isArray(block.items) ? block.items : []);
+}
 
-  return [paletteUsed, formulaItems ? `Per-piece colour authority:\n${formulaItems}` : ''].filter(Boolean).join('\n');
+function formulaItemRecord(item: unknown) {
+  return item && typeof item === 'object' && !Array.isArray(item)
+    ? item as Record<string, unknown>
+    : {};
+}
+
+function formulaSlot(item: unknown) {
+  const slot = formulaItemRecord(item).slot;
+  return typeof slot === 'string' ? slot.trim() : '';
+}
+
+function formulaPiece(item: unknown) {
+  const piece = formulaItemRecord(item).piece;
+  return typeof piece === 'string' ? piece.trim() : '';
+}
+
+function compactOutfitRenderText(page: BlueprintPage) {
+  const items = outfitFormulaItems(page)
+    .map((item) => {
+      const record = formulaItemRecord(item);
+      const slot = formulaSlot(item);
+      const piece = formulaPiece(item);
+      if (!slot || !piece || /^none$/i.test(piece)) return '';
+      const colour = typeof record.colour_name === 'string' ? record.colour_name : '';
+      const hex = typeof record.colour_hex === 'string' ? record.colour_hex : '';
+      return `${slot}: ${[colour, hex, piece].filter(Boolean).join(' ')}`;
+    })
+    .filter(Boolean);
+  return items.length ? items.join('\n') : pageText(page);
 }
 
 function outfitCoverageAuthority(reportData: StylistBlueprintReportData) {
   const profile = inferStylistCoverageProfile(reportData);
   const rules = [
     profile.neckline
-      ? `Neckline/chest coverage is mandatory: render a higher neckline such as ${profile.approvedNecklines.slice(0, 5).join(', ')}. Absolutely no cleavage, plunging neckline, deep V, low scoop, low-cut top, keyhole, strapless, off-shoulder, one-shoulder, spaghetti straps, strappy standalone camisole, or exposed chest.`
+      ? `Neckline/chest coverage is mandatory: render a neckline that does not expose cleavage or sit very low, such as ${profile.approvedNecklines.slice(0, 5).join(', ')}. Safe open necklines are allowed when the chest is covered; do not automatically make it a high neck. Absolutely no cleavage, plunging neckline, deep V, low scoop, low-cut top, keyhole, strapless, off-shoulder, one-shoulder, spaghetti straps, strappy standalone camisole, or exposed chest.`
       : 'Avoid plunging, cleavage-revealing, or obviously low-cut necklines unless explicitly written in the outfit text.',
     profile.arms ? 'Arm/shoulder coverage is mandatory: render real sleeves or the specified layer; do not show bare upper arms or shoulders.' : '',
     profile.legs ? 'Leg/knee coverage is mandatory: render trousers/full-length bottoms or at/below-knee hemlines.' : '',
@@ -532,11 +567,7 @@ function outfitCoverageAuthority(reportData: StylistBlueprintReportData) {
 }
 
 function wornOutfitPrompt(reportData: StylistBlueprintReportData, page: BlueprintPage) {
-  const palette = [
-    ...reportData.classification.colour.base_palette,
-    ...reportData.classification.colour.accent_palette,
-  ].map(colour => `${colour.name} ${colour.hex}`).join(', ');
-  const outfit = pageText(page);
+  const outfit = compactOutfitRenderText(page);
   return `Professional editorial fashion catalogue photography for the ICONIK women's Style Blueprint.
 
 Reference photos may be provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
@@ -546,7 +577,11 @@ Extract the client's face, skin tone, facial features, hair constraints, and ide
 CRITICAL CLOTHING INSTRUCTION:
 - Remove and discard the original clothing from the reference photos.
 - Do not preserve, copy, blend, reinterpret, or borrow garments, shoes, accessories, colours, collars, sleeves, silhouettes, or prints from the reference photos.
-- The outfit text below is the only authority for what the client wears.
+- The compact outfit formula below is the only authority for what the client wears. Render only those listed pieces.
+- If the formula has no Layer line, do not add any jacket, blazer, cardigan, vest, overshirt, coat, shrug, duster, or third-piece layer.
+- Do not add Indianwear, ethnicwear, kurtas, sarees, dupattas, juttis, festive Indian garments, or cultural accessories unless the outfit text explicitly names that exact item.
+- If the outfit text includes a Finishing Detail / slot 07 item such as a scarf, belt, watch, lip tone, hair accessory, or hair detail, render it visibly and accurately as part of the styling. Do not drop scarves or belts when they are listed.
+- Render at most one pair of eyewear on the client. If the outfit text describes eyewear or sunglasses in more than one place, use only the slot-08 EYEWEAR item and ignore any other eyewear mention. Never draw two pairs of glasses.
 
 Background and style:
 - Matte ICONIK slate background ${SLATE}.
@@ -565,13 +600,10 @@ Client styling constraints:
 - Coverage rules: ${reportData.classification.body.coverage_rules.join(', ') || 'follow intake coverage preferences'}.
 - Rendered coverage authority:
 - ${outfitCoverageAuthority(reportData)}
-- Palette direction: ${reportData.classification.colour.palette_name}; use these colours where relevant: ${palette}.
-- Exact outfit colours: the per-piece colour authority below overrides any generic colour assumption.
+- Exact outfit colours: use the per-piece colours in the compact formula below.
 - Taste direction: ${reportData.classification.taste.style_archetype}; avoid: ${reportData.classification.taste.anti_codes.join(', ') || 'anything outside the stated outfit text'}.
 
-${outfitColourAuthority(page)}
-
-Outfit text to render:
+Compact outfit formula to render:
 ${outfit}`;
 }
 
@@ -647,19 +679,83 @@ function prescriptionPrompt(reportData: StylistBlueprintReportData, slot: keyof 
   const base = `Create a premium ICONIK reference image on matte slate #94A6AD. Restrained Vogue editorial meets clinical report. No readable text, no labels, no numbers.`;
   const basePalette = reportData.classification.colour.base_palette.map(c => `${c.name} ${c.hex}`).join(', ');
   const accentPalette = reportData.classification.colour.accent_palette.map(c => `${c.name} ${c.hex}`).join(', ');
-  const hairStyles = reportData.classification.face_hair_accessories.hair_styles.join(', ');
-  const eyewearShapes = reportData.classification.face_hair_accessories.eyewear_shapes.join(', ');
+  const hairStyles = (reportData.classification.face_hair_accessories.hair_styles ?? []).join(', ');
+  const hairColours = (reportData.classification.face_hair_accessories.hair_colour_options ?? []).join(', ');
+  const eyewearShapes = (reportData.classification.face_hair_accessories.eyewear_shapes ?? []).join(', ');
+  const makeupColours = (reportData.classification.makeup?.colours ?? []).join(', ');
   const prompts: Record<keyof MutablePaths['prescription'], string> = {
     basePalette: `${base} Show exactly 10 colour swatches in two rows of five. Use these colours exactly: ${basePalette}.`,
     accentPalette: `${base} Show exactly 5 colour swatches in one centered row. Use these colours exactly: ${accentPalette}.`,
     necklineGrid: `${base} Show six approved neckline geometry diagrams in a 3x2 grid: ${reportData.classification.face_hair_accessories.approved_necklines.join(', ')}. Warm-white line work.`,
     sleeveWaistGrid: `${base} Show sleeve and waistline construction geometry diagrams for these silhouette rules: ${reportData.classification.body.silhouette_rules.join(', ')}. Warm-white line work.`,
-    hairDirections: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions in every cell. Create one clean 2x2 grid image with exactly four polished head-and-shoulders hairstyle options for the same client: ${hairStyles}. Each cell should show one distinct realistic, wearable hairstyle matched to ${reportData.classification.face_hair_accessories.face_shape} facial architecture. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
-    eyewearFrames: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions in every cell. Create one clean 2x2 grid image with exactly four eyewear options on the same client: two optical eyeglass frames and two sunglasses. Frame direction: ${eyewearShapes}. Frames must be realistic, properly scaled, and matched to ${reportData.classification.face_hair_accessories.face_shape} facial architecture. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
+    hairDirections: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions in every cell. Create one clean square 2x2 grid image with exactly four polished head-and-shoulders hairstyle options for the same client: ${hairStyles}. Each cell should show one distinct realistic, wearable hairstyle matched to ${reportData.classification.face_hair_accessories.face_shape} facial architecture. Fill the square composition evenly with no blank bands. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
+    hairColourDirections: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, existing hairstyle, existing haircut, hair length, hair texture, parting, and natural proportions in every cell. Create one clean square 2x2 grid image with exactly four head-and-shoulders variations of the same client, each showing a different flattering, realistic, salon-achievable hair colour or highlight direction: ${hairColours}. Keep the existing hairstyle/cut identical across cells — vary only the hair colour/highlight placement. The result must look classy, feminine, expensive, and wearable, never brassy, patchy, fantasy-coloured, stripy, or over-processed. Colours must look natural on this client's depth and undertone. Fill the square composition evenly with no blank bands. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
+    eyewearFrames: `Use the uploaded client headshot as the source image. Preserve the client's identity, face, skin tone, facial features, and natural proportions in every cell. Create one clean square 2x2 grid image with exactly four eyewear options on the same client: two optical eyeglass frames and two sunglasses. Frame direction: ${eyewearShapes}. Frames must be realistic, properly scaled, and matched to ${reportData.classification.face_hair_accessories.face_shape} facial architecture. Fill the square composition evenly with no blank bands. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
+    makeupLook: `Use the uploaded client headshot as the source image. Preserve the client's exact identity, facial features, skin tone, face shape, hair, and natural proportions. Create one clean head-and-shoulders portrait of the same client wearing subtle natural everyday makeup: skin-first, fresh, soft, and barely-there. This should look like polished real-life makeup, not glam makeup, not bridal makeup, not party makeup, not editorial beauty, and not a heavy makeover. Use these flattering everyday shades very lightly: ${makeupColours}. Avoid heavy foundation, dramatic contour, sharp brows, smoky eyes, false lashes, thick eyeliner, glitter, overdrawn lips, high-shine highlight, and bold lipstick. Even, professional, realistic studio lighting; do not slim, age, or idealise the client. Matte ICONIK slate #94A6AD background. No text, no labels, no numbers, no before/after captions.`,
+    colourDrapeComparison: colourDrapeComparisonPrompt(reportData),
     approvedFabrics: `${base} Show a 2x2 macro texture grid of approved fabrics: ${reportData.classification.fabrics.approved.map(f => f.name).join(', ')}. Warm ivory fabric texture, photorealistic macro detail.`,
     avoidedFabrics: `${base} Show avoided fabric macro swatches: ${reportData.classification.fabrics.avoid.map(f => f.name).join(', ')}. Add subtle warm-rose diagonal avoid strokes. Photorealistic macro detail.`,
   };
   return prompts[slot];
+}
+
+function bestDrapeColour(reportData: StylistBlueprintReportData) {
+  return (
+    reportData.classification.colour.base_palette.find(colour => /face|near|lift|best|soft|clear|fresh/i.test(`${colour.name} ${colour.usage}`))
+    ?? reportData.classification.colour.accent_palette[0]
+    ?? reportData.classification.colour.base_palette.find(colour => !/black|charcoal|grey|gray|taupe|brown|espresso|camel|ivory|white|cream|beige/i.test(colour.name))
+    ?? reportData.classification.colour.base_palette[0]
+    ?? { name: 'soft flattering palette colour', hex: '#A8B8A0' }
+  );
+}
+
+function avoidDrapeColour(reportData: StylistBlueprintReportData) {
+  const avoid = reportData.classification.colour.avoid_colours[0];
+  if (avoid) return avoid;
+  const undertone = reportData.classification.colour.undertone_direction.toLowerCase();
+  if (/warm|gold|olive/.test(undertone)) return 'icy blue-white';
+  if (/cool|pink|blue/.test(undertone)) return 'yellow mustard';
+  return 'harsh neon orange';
+}
+
+function colourDrapeComparisonPrompt(reportData: StylistBlueprintReportData) {
+  const best = bestDrapeColour(reportData);
+  const avoid = avoidDrapeColour(reportData);
+  return `Use the uploaded client headshot as the source image. Preserve the client's exact identity, facial features, skin tone, hair, face shape, and natural proportions.
+
+Create a realistic professional colour-analysis split portrait: the same client head-and-shoulders twice, side by side, on the same clean studio background. Left side draped near the face in the client's MOST UNFLATTERING colour direction: ${avoid}. Right side draped near the face in the client's MOST FLATTERING colour direction: ${best.name} ${best.hex}.
+
+CRITICAL — this must look like one honest photograph split in two, not a beauty edit:
+- Both sides must use identical, equal, neutral studio lighting: same exposure, same white balance, same softbox setup, same shadows, same background, same camera angle, same distance, same pose and expression.
+- Do NOT brighten, glow, smooth, or add radiance to the flattering side. Do NOT darken, dull, grey, or add shadow to the unflattering side.
+- The ONLY difference between the two sides is the colour of the fabric draped at the neckline. Any difference in how the skin reads must come purely from how each drape colour interacts with the same skin under the same light.
+
+No text, no labels, no typography, no arrows, no captions, no logos, no watermark. Do not add jewellery or makeup. Keep both sides identically and professionally lit.`;
+}
+
+function transformationLookPageForSlot(reportData: StylistBlueprintReportData, index: number): BlueprintPage {
+  const pageNumber = getStylistBlueprintTransformationPage(reportData);
+  if (!pageNumber) throw new Error('This report version has no transformation preview page');
+  const page = reportData.pages.find(item => item.page_number === pageNumber);
+  const block = page?.blocks[index];
+  if (!page || page.page_type !== 'transformation' || !block) throw new Error(`Missing transformation look ${index + 1}`);
+  return {
+    page_number: page.page_number,
+    page_type: 'outfit',
+    title: `${page.title} - Look ${index + 1}`,
+    subtitle: block.heading || page.subtitle,
+    blocks: [
+      {
+        label: 'Formula',
+        heading: block.heading,
+        body: block.body,
+        reason: block.reason,
+        items: block.items,
+      },
+    ],
+    image_refs: [],
+    palette_used: page.palette_used,
+  };
 }
 
 export function isStylistBlueprintImageSlotKey(value: unknown): value is StylistBlueprintImageSlotKey {
@@ -675,7 +771,7 @@ function regeneratedFileName(baseName: string) {
 }
 
 function outfitPageForSlot(reportData: StylistBlueprintReportData, index: number) {
-  const pageNumber = index + 14;
+  const pageNumber = getStylistBlueprintOutfitStartPage(reportData) + index;
   const page = reportData.pages.find(item => item.page_number === pageNumber);
   if (!page) throw new Error(`Missing outfit page ${pageNumber} for image generation`);
   return page;
@@ -694,7 +790,7 @@ function buildSingleSlotPlan(
       fileName: regeneratedFileName(baseFileName),
       prompt: diagnosisPrompt(reportData, 'silhouetteFront'),
       sourceUrl: photos.front,
-      size: '1024x1536',
+      size: '1024x1024',
       getCurrent: paths => paths.diagnosis.silhouetteFront,
       setCurrent: (paths, path) => { paths.diagnosis.silhouetteFront = path; },
     };
@@ -706,7 +802,7 @@ function buildSingleSlotPlan(
       fileName: regeneratedFileName(baseFileName),
       prompt: diagnosisPrompt(reportData, 'silhouetteSide'),
       sourceUrl: photos.side,
-      size: '1024x1536',
+      size: '1024x1024',
       getCurrent: paths => paths.diagnosis.silhouetteSide,
       setCurrent: (paths, path) => { paths.diagnosis.silhouetteSide = path; },
     };
@@ -748,6 +844,19 @@ function buildSingleSlotPlan(
     };
   }
 
+  if (slotKey === 'prescription.hairColourDirections') {
+    if (!getStylistBlueprintHairColourPage(reportData)) throw new Error('This report version has no hair colour direction image');
+    if (!photos.headshot) throw new Error('No headshot found for hair colour direction image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: prescriptionPrompt(reportData, 'hairColourDirections'),
+      sourceUrl: photos.headshot,
+      size: '1024x1536',
+      getCurrent: paths => paths.prescription.hairColourDirections,
+      setCurrent: (paths, path) => { paths.prescription.hairColourDirections = path; },
+    };
+  }
+
   if (slotKey === 'prescription.eyewearFrames') {
     if (!photos.headshot) throw new Error('No headshot found for eyewear image generation');
     return {
@@ -757,6 +866,49 @@ function buildSingleSlotPlan(
       size: '1024x1536',
       getCurrent: paths => paths.prescription.eyewearFrames,
       setCurrent: (paths, path) => { paths.prescription.eyewearFrames = path; },
+    };
+  }
+
+  if (slotKey === 'prescription.makeupLook') {
+    if (!getStylistBlueprintMakeupPage(reportData)) throw new Error('This report version has no makeup look image');
+    if (!photos.headshot) throw new Error('No headshot found for makeup look image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: prescriptionPrompt(reportData, 'makeupLook'),
+      sourceUrl: photos.headshot,
+      size: '1024x1536',
+      getCurrent: paths => paths.prescription.makeupLook,
+      setCurrent: (paths, path) => { paths.prescription.makeupLook = path; },
+    };
+  }
+
+  if (slotKey === 'prescription.colourDrapeComparison') {
+    if (!getStylistBlueprintTransformationPage(reportData)) throw new Error('This report version has no colour drape comparison image');
+    if (!photos.headshot) throw new Error('No headshot found for colour drape comparison image generation');
+    return {
+      fileName: regeneratedFileName(baseFileName),
+      prompt: prescriptionPrompt(reportData, 'colourDrapeComparison'),
+      sourceUrl: photos.headshot,
+      size: '1536x1024',
+      getCurrent: paths => paths.prescription.colourDrapeComparison,
+      setCurrent: (paths, path) => { paths.prescription.colourDrapeComparison = path; },
+    };
+  }
+
+  if (slotKey.startsWith('application.transformationLooks.')) {
+    if (!getStylistBlueprintTransformationPage(reportData)) throw new Error('This report version has no transformation preview images');
+    const index = Number(slotKey.split('.').at(-1));
+    if (!Number.isInteger(index) || index < 0 || index >= 3) throw new Error('Invalid transformation image slot');
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (!clientSource) throw new Error('No client photo found for transformation image generation');
+    return {
+      fileName: regeneratedFileName(`transformation-look-${index + 1}`),
+      prompt: wornOutfitPrompt(reportData, transformationLookPageForSlot(reportData, index)),
+      sourceUrl: clientSource,
+      extraSourceUrl: photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+      size: '1024x1536',
+      getCurrent: paths => paths.application.transformationLooks[index],
+      setCurrent: (paths, path) => { paths.application.transformationLooks[index] = path; },
     };
   }
 
@@ -843,9 +995,19 @@ export async function generateStylistBlueprintImages(
   }
 
   if (group === 'prescription' || group === 'all') {
-    const prescriptionSlots: Array<[keyof MutablePaths['prescription'], string, string | null, '1024x1024' | '1024x1536' | '1536x1024']> = [
-      ['hairDirections', 'prescription-hair-directions', photos.headshot, '1024x1536'],
-      ['eyewearFrames', 'prescription-eyewear-frames', photos.headshot, '1024x1536'],
+    type PrescriptionSlotSpec = [keyof MutablePaths['prescription'], string, string | null, '1024x1024' | '1024x1536' | '1536x1024'];
+    const prescriptionSlots: Array<PrescriptionSlotSpec> = [
+      ['hairDirections', 'prescription-hair-directions', photos.headshot, '1024x1024'],
+      ...(getStylistBlueprintHairColourPage(reportData)
+        ? [['hairColourDirections', 'prescription-hair-colour-directions', photos.headshot, '1024x1024'] as PrescriptionSlotSpec]
+        : []),
+      ['eyewearFrames', 'prescription-eyewear-frames', photos.headshot, '1024x1024'],
+      ...(getStylistBlueprintMakeupPage(reportData)
+        ? [['makeupLook', 'prescription-makeup-look', photos.headshot, '1024x1536'] as PrescriptionSlotSpec]
+        : []),
+      ...(getStylistBlueprintTransformationPage(reportData)
+        ? [['colourDrapeComparison', 'prescription-colour-drape-comparison', photos.headshot, '1536x1024'] as PrescriptionSlotSpec]
+        : []),
     ];
     for (const [slot, fileName, sourceUrl, size] of prescriptionSlots) {
       if (!sourceUrl) continue;
@@ -855,6 +1017,28 @@ export async function generateStylistBlueprintImages(
         setCurrent: path => { paths.prescription[slot] = path; },
         create: () => generatedImage(reportId, fileName, prescriptionPrompt(reportData, slot), sourceUrl, size),
       });
+    }
+  }
+
+  if (group === 'all') {
+    const transformationPageNumber = getStylistBlueprintTransformationPage(reportData);
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (transformationPageNumber && clientSource) {
+      for (let index = 0; index < 3; index++) {
+        await setSlot({
+          reportId, paths, shareToken, force, fileName: `transformation-look-${index + 1}`,
+          getCurrent: () => paths.application.transformationLooks[index],
+          setCurrent: path => { paths.application.transformationLooks[index] = path; },
+          create: () => generatedImage(
+            reportId,
+            `transformation-look-${index + 1}`,
+            wornOutfitPrompt(reportData, transformationLookPageForSlot(reportData, index)),
+            clientSource,
+            '1024x1536',
+            photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+          ),
+        });
+      }
     }
   }
 
@@ -873,7 +1057,7 @@ export async function generateStylistBlueprintImages(
       throw new Error('No client photo found for outfit image generation');
     }
     for (let page = firstPage; page <= lastPage; page++) {
-      const index = page - 14;
+      const index = page - getStylistBlueprintOutfitStartPage(reportData);
       const pageData = reportData.pages.find(item => item.page_number === page);
       if (!pageData) throw new Error(`Missing outfit page ${page} for image generation`);
       paths.application.outfitDetails[index] = null;
@@ -969,6 +1153,7 @@ function collectPaths(paths: StylistBlueprintImagePaths | null | undefined): str
     normalised.cover.portrait,
     ...Object.values(normalised.diagnosis),
     ...Object.values(normalised.prescription),
+    ...normalised.application.transformationLooks,
     ...normalised.application.outfitFlatlays,
     normalised.closing.combinationMatrix,
     normalised.closing.editTeaser,
@@ -1009,6 +1194,7 @@ export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintIm
     prescription: Object.fromEntries(Object.entries(resolved.prescription).map(([key, value]) => [key, map(value)])),
     application: {
       capsuleCovers: resolved.application.capsuleCovers.map(() => null),
+      transformationLooks: resolved.application.transformationLooks.map(map),
       outfitFlatlays: resolved.application.outfitFlatlays.map(map),
       outfitDetails: resolved.application.outfitDetails.map(() => null),
     },
@@ -1033,6 +1219,8 @@ export function getStylistBlueprintImageCounts(
     hasClientPhoto?: boolean;
     outfitCount?: number;
     includeClosingEditTeaser?: boolean;
+    includeTransformationPreview?: boolean;
+    includeBeautyPages?: boolean;
   } = {},
 ) {
   const normalised = normalise(paths);
@@ -1050,9 +1238,13 @@ export function getStylistBlueprintImageCounts(
       ] : []),
     ],
     prescription: options.hasHeadshot ? [
+      ...(options.includeTransformationPreview ? [normalised.prescription.colourDrapeComparison] : []),
       normalised.prescription.hairDirections,
+      ...(options.includeBeautyPages ? [normalised.prescription.hairColourDirections] : []),
       normalised.prescription.eyewearFrames,
+      ...(options.includeBeautyPages ? [normalised.prescription.makeupLook] : []),
     ] : [],
+    application: options.hasClientPhoto && options.includeTransformationPreview ? normalised.application.transformationLooks : [],
     capsule_1: options.hasClientPhoto ? outfitSlots.slice(0, capsuleSize) : [],
     capsule_2: options.hasClientPhoto ? outfitSlots.slice(capsuleSize, capsuleSize * 2) : [],
     capsule_3: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 2, capsuleSize * 3) : [],

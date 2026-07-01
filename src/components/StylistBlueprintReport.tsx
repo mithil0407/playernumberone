@@ -9,12 +9,30 @@ import type {
 } from '@/lib/stylistBlueprintGenerator';
 import {
   getStylistBlueprintAuditPage,
+  getStylistBlueprintAvoidancePage,
+  getStylistBlueprintBodyGeometryPage,
+  getStylistBlueprintChromaticPage,
+  getStylistBlueprintColourDrapePage,
   getStylistBlueprintContinuationPage,
+  getStylistBlueprintEyeframePage,
+  getStylistBlueprintFabricPage,
+  getStylistBlueprintFaceArchitecturePage,
+  getStylistBlueprintHairColourPage,
+  getStylistBlueprintHairFaceAccessoriesPage,
+  getStylistBlueprintHairstylePage,
+  getStylistBlueprintMakeupPage,
   getStylistBlueprintMatrixPage,
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintPageCount,
+  getStylistBlueprintPalettePage,
+  getStylistBlueprintProportionPage,
+  getStylistBlueprintReadingGuidePage,
+  getStylistBlueprintRulesStartPage,
+  getStylistBlueprintSummaryPage,
+  getStylistBlueprintTransformationPage,
   isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
@@ -313,6 +331,8 @@ function splitDisplayName(name: string) {
 
 function pageClass(pageNumber: number, pageType: BlueprintPage['page_type']) {
   if (pageNumber === 1 || pageType === 'continuation' || pageType === 'matrix') return 'slate';
+  if (pageType === 'transformation') return 'slate-deep';
+  if (pageType === 'colour_drape' || pageType === 'hair' || pageType === 'hair_colour' || pageType === 'eyewear' || pageType === 'makeup') return 'ivory';
   if ([4, 7, 8].includes(pageNumber)) return 'slate';
   if ([5, 6].includes(pageNumber)) return 'slate-deep';
   if (pageType === 'outfit') return 'bone';
@@ -327,15 +347,26 @@ function canonicalPageType(page: BlueprintPage, data?: StylistBlueprintReportDat
 function getCanonicalTypeForData(page: BlueprintPage, data: StylistBlueprintReportData): BlueprintPage['page_type'] {
   const pageNumber = page.page_number;
   if (pageNumber === 1) return 'cover';
-  if (pageNumber === 2) return 'summary';
-  if (pageNumber === 3) return 'reading_guide';
-  if ([4, 5, 6, 7].includes(pageNumber)) return 'diagnosis';
-  if (pageNumber === 8) return 'avoidance';
-  if (pageNumber === 9) return 'palette';
-  if ([10, 11].includes(pageNumber)) return 'rules';
-  if (pageNumber === 12) return 'fabric';
-  if (pageNumber === 13) return 'outfit_system';
-  if (pageNumber >= getStylistBlueprintOutfitStartPage() && pageNumber <= getStylistBlueprintOutfitEndPage(data)) return 'outfit';
+  if (pageNumber === getStylistBlueprintTransformationPage(data)) return 'transformation';
+  if (pageNumber === getStylistBlueprintSummaryPage(data)) return 'summary';
+  if (pageNumber === getStylistBlueprintReadingGuidePage(data)) return 'reading_guide';
+  if ([
+    getStylistBlueprintBodyGeometryPage(data),
+    getStylistBlueprintChromaticPage(data),
+    getStylistBlueprintFaceArchitecturePage(data),
+    getStylistBlueprintProportionPage(data),
+  ].includes(pageNumber)) return 'diagnosis';
+  if (pageNumber === getStylistBlueprintAvoidancePage(data)) return 'avoidance';
+  if (pageNumber === getStylistBlueprintPalettePage(data)) return 'palette';
+  if (pageNumber === getStylistBlueprintColourDrapePage(data)) return 'colour_drape';
+  if (pageNumber === getStylistBlueprintHairstylePage(data)) return 'hair';
+  if (pageNumber === getStylistBlueprintHairColourPage(data)) return 'hair_colour';
+  if (pageNumber === getStylistBlueprintEyeframePage(data)) return 'eyewear';
+  if (pageNumber === getStylistBlueprintMakeupPage(data)) return 'makeup';
+  if ([getStylistBlueprintRulesStartPage(data), getStylistBlueprintHairFaceAccessoriesPage(data)].includes(pageNumber)) return 'rules';
+  if (pageNumber === getStylistBlueprintFabricPage(data)) return 'fabric';
+  if (pageNumber === getStylistBlueprintOutfitSystemPage(data)) return 'outfit_system';
+  if (pageNumber >= getStylistBlueprintOutfitStartPage(data) && pageNumber <= getStylistBlueprintOutfitEndPage(data)) return 'outfit';
   if (pageNumber === getStylistBlueprintMatrixPage(data)) return 'matrix';
   if (pageNumber === getStylistBlueprintAuditPage(data)) return 'audit';
   if (pageNumber === getStylistBlueprintContinuationPage(data)) return 'continuation';
@@ -344,9 +375,10 @@ function getCanonicalTypeForData(page: BlueprintPage, data: StylistBlueprintRepo
 
 function pageKicker(page: BlueprintPage, data?: StylistBlueprintReportData) {
   const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
-  if (page.page_number <= 3) return 'Opening';
-  if (page.page_number <= 8) return `Pillar ${String(page.page_number - 3).padStart(2, '0')}`;
-  if (page.page_number <= 12) return 'Act II - Prescription';
+  if (page.page_number === getStylistBlueprintTransformationPage(data)) return 'Transformation';
+  if (page.page_number <= getStylistBlueprintReadingGuidePage(data)) return 'Opening';
+  if (page.page_number <= getStylistBlueprintAvoidancePage(data)) return `Pillar ${String(page.page_number - getStylistBlueprintReadingGuidePage(data)).padStart(2, '0')}`;
+  if (page.page_number <= getStylistBlueprintFabricPage(data)) return 'Act II - Prescription';
   if (page.page_number <= outfitEndPage) return 'Act III - Application';
   return 'Closing';
 }
@@ -355,47 +387,51 @@ function imageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintI
   const images = imageUrls;
   const continuationPage = getStylistBlueprintContinuationPage(data);
   const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
-  switch (page.page_number) {
-    case 4: return images?.diagnosis?.silhouetteFront ?? null;
-    case 5: return images?.diagnosis?.undertoneMap ?? null;
-    case 6: return images?.diagnosis?.faceShapeDiagram ?? null;
-    case 11: return images?.prescription?.hairDirections ?? null;
-    default:
-      if (page.page_number === continuationPage) return images?.closing?.editTeaser ?? null;
-      if (page.page_number >= getStylistBlueprintOutfitStartPage() && page.page_number <= outfitEndPage) {
-        return images?.application?.outfitFlatlays?.[page.page_number - 14] ?? null;
-      }
-      return null;
+  if (page.page_number === getStylistBlueprintBodyGeometryPage(data)) return images?.diagnosis?.silhouetteFront ?? null;
+  if (page.page_number === getStylistBlueprintChromaticPage(data)) return images?.diagnosis?.undertoneMap ?? null;
+  if (page.page_number === getStylistBlueprintFaceArchitecturePage(data)) return images?.diagnosis?.faceShapeDiagram ?? null;
+  if (page.page_number === getStylistBlueprintColourDrapePage(data)) return images?.prescription?.colourDrapeComparison ?? null;
+  if (page.page_number === getStylistBlueprintHairstylePage(data)) return images?.prescription?.hairDirections ?? null;
+  if (page.page_number === getStylistBlueprintHairColourPage(data)) return images?.prescription?.hairColourDirections ?? null;
+  if (page.page_number === getStylistBlueprintEyeframePage(data)) return images?.prescription?.eyewearFrames ?? null;
+  if (page.page_number === getStylistBlueprintMakeupPage(data)) return images?.prescription?.makeupLook ?? null;
+  if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return images?.prescription?.hairDirections ?? null;
+  if (page.page_number === continuationPage) return images?.closing?.editTeaser ?? null;
+  if (page.page_number >= getStylistBlueprintOutfitStartPage(data) && page.page_number <= outfitEndPage) {
+    return images?.application?.outfitFlatlays?.[page.page_number - getStylistBlueprintOutfitStartPage(data)] ?? null;
   }
+  return null;
 }
 
 function secondaryImageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null, data?: StylistBlueprintReportData) {
-  if (page.page_number >= getStylistBlueprintOutfitStartPage() && page.page_number <= getStylistBlueprintOutfitEndPage(data)) return null;
-  if (page.page_number === 4) return imageUrls?.diagnosis?.silhouetteSide ?? null;
-  if (page.page_number === 11) return imageUrls?.prescription?.eyewearFrames ?? null;
+  if (page.page_number >= getStylistBlueprintOutfitStartPage(data) && page.page_number <= getStylistBlueprintOutfitEndPage(data)) return null;
+  if (page.page_number === getStylistBlueprintBodyGeometryPage(data)) return imageUrls?.diagnosis?.silhouetteSide ?? null;
+  if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return imageUrls?.prescription?.eyewearFrames ?? null;
   return null;
 }
 
 function imageSlotForPage(page: BlueprintPage, data?: StylistBlueprintReportData): StylistBlueprintImageSlotKey | null {
   const continuationPage = getStylistBlueprintContinuationPage(data);
   const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
-  switch (page.page_number) {
-    case 4: return 'diagnosis.silhouetteFront';
-    case 5: return 'diagnosis.undertoneMap';
-    case 6: return 'diagnosis.faceShapeDiagram';
-    case 11: return 'prescription.hairDirections';
-    default:
-      if (page.page_number === continuationPage) return 'closing.editTeaser';
-      if (page.page_number >= getStylistBlueprintOutfitStartPage() && page.page_number <= outfitEndPage) {
-        return `application.outfitFlatlays.${page.page_number - 14}` as StylistBlueprintImageSlotKey;
-      }
-      return null;
+  if (page.page_number === getStylistBlueprintBodyGeometryPage(data)) return 'diagnosis.silhouetteFront';
+  if (page.page_number === getStylistBlueprintChromaticPage(data)) return 'diagnosis.undertoneMap';
+  if (page.page_number === getStylistBlueprintFaceArchitecturePage(data)) return 'diagnosis.faceShapeDiagram';
+  if (page.page_number === getStylistBlueprintColourDrapePage(data)) return 'prescription.colourDrapeComparison';
+  if (page.page_number === getStylistBlueprintHairstylePage(data)) return 'prescription.hairDirections';
+  if (page.page_number === getStylistBlueprintHairColourPage(data)) return 'prescription.hairColourDirections';
+  if (page.page_number === getStylistBlueprintEyeframePage(data)) return 'prescription.eyewearFrames';
+  if (page.page_number === getStylistBlueprintMakeupPage(data)) return 'prescription.makeupLook';
+  if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return 'prescription.hairDirections';
+  if (page.page_number === continuationPage) return 'closing.editTeaser';
+  if (page.page_number >= getStylistBlueprintOutfitStartPage(data) && page.page_number <= outfitEndPage) {
+    return `application.outfitFlatlays.${page.page_number - getStylistBlueprintOutfitStartPage(data)}` as StylistBlueprintImageSlotKey;
   }
+  return null;
 }
 
-function secondaryImageSlotForPage(page: BlueprintPage): StylistBlueprintImageSlotKey | null {
-  if (page.page_number === 4) return 'diagnosis.silhouetteSide';
-  if (page.page_number === 11) return 'prescription.eyewearFrames';
+function secondaryImageSlotForPage(page: BlueprintPage, data?: StylistBlueprintReportData): StylistBlueprintImageSlotKey | null {
+  if (page.page_number === getStylistBlueprintBodyGeometryPage(data)) return 'diagnosis.silhouetteSide';
+  if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return 'prescription.eyewearFrames';
   return null;
 }
 
@@ -587,6 +623,38 @@ function ReadingGuidePage({ page }: { page: BlueprintPage }) {
   );
 }
 
+function TransformationPage({
+  page,
+  imageUrls,
+}: {
+  page: BlueprintPage;
+  data: StylistBlueprintReportData;
+  imageUrls?: ResolvedStylistBlueprintImageUrls | null;
+}) {
+  const blocks = page.blocks.slice(0, 3);
+  return (
+    <PageFrame page={page} className="transformation-page">
+      <div className="transformation-inner">
+        <div className="transformation-grid">
+          {blocks.map((block, index) => {
+            const slotKey = `application.transformationLooks.${index}` as StylistBlueprintImageSlotKey;
+            const image = imageUrls?.application?.transformationLooks?.[index] ?? null;
+            const items = asItems(block).slice(0, 5);
+            return (
+              <div key={index} className="transformation-card">
+                <div className="transformation-label">Look {index + 1}</div>
+                <ImageSlotFrame slotKey={slotKey} label={`transformation look ${index + 1}`} className="transformation-media">
+                  {image ? <ReportImage src={image} /> : <OutfitFallback palette={items.map(item => getField(item, ['colour_hex', 'hex'], SLATE))} />}
+                </ImageSlotFrame>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
 function SilhouetteFallback() {
   return (
     <svg viewBox="0 0 240 360" className="diagram-svg" xmlns="http://www.w3.org/2000/svg">
@@ -615,7 +683,7 @@ function DiagnosisPage({
   const image = imageForPage(page, imageUrls, data);
   const secondary = secondaryImageForPage(page, imageUrls, data);
   const imageSlot = imageSlotForPage(page, data);
-  const secondarySlot = secondaryImageSlotForPage(page);
+  const secondarySlot = secondaryImageSlotForPage(page, data);
   const showSecondary = Boolean(secondary || (onImageRegenerate && secondarySlot));
   const statements = page.blocks.length ? page.blocks : [
     { label: 'Finding', body: data.classification.body.proportion_directive },
@@ -623,23 +691,23 @@ function DiagnosisPage({
     { label: 'Discipline', body: data.analysis.evidence_notes.join(' ') },
   ];
 
-  if (page.page_number === 5) return <ChromaticPage page={page} data={data} image={image} />;
-  if (page.page_number === 7) return <ProportionalAxesPage page={page} data={data} />;
+  if (page.page_number === getStylistBlueprintChromaticPage(data)) return <ChromaticPage page={page} data={data} image={image} />;
+  if (page.page_number === getStylistBlueprintProportionPage(data)) return <ProportionalAxesPage page={page} data={data} />;
 
   return (
     <PageFrame page={page} className="diagnosis-page">
       <div className="diagnosis-grid">
         <div>
           <div className="diagram-card">
-            <div className="mono figure-label">FIG. {String(page.page_number - 3).padStart(2, '0')} - PROFILE</div>
+            <div className="mono figure-label">FIG. {String(page.page_number - getStylistBlueprintReadingGuidePage(data)).padStart(2, '0')} - PROFILE</div>
             {imageSlot ? (
-              <ImageSlotFrame slotKey={imageSlot} label="diagnosis image" className={`diagram-media ${page.page_number === 4 ? 'silhouette-media' : ''}`}>
+              <ImageSlotFrame slotKey={imageSlot} label="diagnosis image" className={`diagram-media ${page.page_number === getStylistBlueprintBodyGeometryPage(data) ? 'silhouette-media' : ''}`}>
                 {image ? <ReportImage src={image} /> : <SilhouetteFallback />}
               </ImageSlotFrame>
             ) : image ? <ReportImage src={image} /> : <SilhouetteFallback />}
           </div>
           {showSecondary && secondarySlot && (
-            <ImageSlotFrame slotKey={secondarySlot} label="secondary diagnosis image" className={`secondary-strip ${page.page_number === 4 ? 'silhouette-secondary' : ''}`}>
+            <ImageSlotFrame slotKey={secondarySlot} label="secondary diagnosis image" className={`secondary-strip ${page.page_number === getStylistBlueprintBodyGeometryPage(data) ? 'silhouette-secondary' : ''}`}>
               {secondary ? <ReportImage src={secondary} /> : <SilhouetteFallback />}
             </ImageSlotFrame>
           )}
@@ -648,13 +716,13 @@ function DiagnosisPage({
           <h2>
             <EditableText
               page={page}
-              value={page.page_number === 4 ? 'The body,' : page.title}
+              value={page.page_number === getStylistBlueprintBodyGeometryPage(data) ? 'The body,' : page.title}
               update={value => ({ ...page, title: value })}
               className="display"
             />
             <EditableText
               page={page}
-              value={page.page_number === 4 ? 'measured.' : page.subtitle || 'mapped.'}
+              value={page.page_number === getStylistBlueprintBodyGeometryPage(data) ? 'measured.' : page.subtitle || 'mapped.'}
               update={value => ({ ...page, subtitle: value })}
               className="display-it"
             />
@@ -812,14 +880,16 @@ function ProportionalAxesPage({ page, data }: { page: BlueprintPage; data: Styli
   );
 }
 
-function PalettePage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
+function PalettePage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
   return (
     <PageFrame page={page} className="palette-page">
       <div className="palette-inner">
-        <h2><span className="display">Fifteen</span><span className="display-it">colours, one rule.</span></h2>
-        <p className="palette-intro">Ten base shades to build the wardrobe. Five accent shades for tension. Together they describe a complete chromatic territory - your territory.</p>
-        <PaletteSwatchGrid title="The Base - 10 shades - 70% of the wardrobe" colours={data.classification.colour.base_palette} />
-        <PaletteSwatchGrid title="The Accents - 5 shades - for emphasis" colours={data.classification.colour.accent_palette} accent />
+        <div className="palette-copy">
+          <h2><span className="display">Fifteen</span><span className="display-it">colours, one rule.</span></h2>
+          <p className="palette-intro">Ten base shades to build the wardrobe. Five accent shades for tension. Together they describe a complete chromatic territory - your territory.</p>
+          <PaletteSwatchGrid title="The Base - 10 shades - 70% of the wardrobe" colours={data.classification.colour.base_palette} />
+          <PaletteSwatchGrid title="The Accents - 5 shades - for emphasis" colours={data.classification.colour.accent_palette} />
+        </div>
       </div>
     </PageFrame>
   );
@@ -828,30 +898,166 @@ function PalettePage({ page, data }: { page: BlueprintPage; data: StylistBluepri
 function PaletteSwatchGrid({
   title,
   colours,
-  accent = false,
 }: {
   title: string;
   colours: Array<{ name: string; hex: string; usage: string; avoid_for?: string }>;
-  accent?: boolean;
 }) {
   return (
     <div className="palette-section">
       <div className="rule" />
       <div className="palette-heading">
         <div className="mono faded">{title}</div>
-        <div className="mono faded">{accent ? 'Use sparingly' : 'Deep -> light'}</div>
       </div>
       <div className="premium-swatches">
         {colours.map((colour, index) => (
           <div key={`${colour.hex}-${index}`} className="premium-swatch">
             <div className="swatch-tile" style={{ background: colour.hex }} />
-            <div className="mono swatch-code">{String(index + 1).padStart(2, '0')} {colour.hex}</div>
             <div className="display-it swatch-name">{colour.name}</div>
-            <p>{colour.usage}{colour.avoid_for ? ` Avoid for: ${colour.avoid_for}` : ''}</p>
           </div>
         ))}
       </div>
     </div>
+  );
+}
+
+function ColourDrapePage({ page, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const image = imageUrls?.prescription?.colourDrapeComparison ?? null;
+  return (
+    <PageFrame page={page} className="colour-drape-page">
+      <div className="colour-drape-inner">
+        <div className="micro faded">Professional colour analysis</div>
+        <h2><span className="display">Professional</span><span className="display-it">colour drape.</span></h2>
+        <ImageSlotFrame slotKey="prescription.colourDrapeComparison" label="colour drape comparison" className="colour-drape-hero-frame">
+          {image ? <ReportImage src={image} /> : <div className="drape-fallback" />}
+        </ImageSlotFrame>
+      </div>
+    </PageFrame>
+  );
+}
+
+function directionCards(input: string[] | null | undefined, fallback: string) {
+  const values = (input ?? []).map(item => item.trim()).filter(Boolean);
+  return Array.from({ length: 4 }, (_, index) => values[index] || fallback);
+}
+
+function VisualDirectionPage({
+  page,
+  data,
+  imageUrls,
+  kind,
+}: {
+  page: BlueprintPage;
+  data: StylistBlueprintReportData;
+  imageUrls?: ResolvedStylistBlueprintImageUrls | null;
+  kind: 'hair' | 'hair_colour' | 'eyewear';
+}) {
+  const face = data.classification.face_hair_accessories;
+  const config: Record<'hair' | 'hair_colour' | 'eyewear', {
+    image: string | null;
+    slotKey: StylistBlueprintImageSlotKey;
+    title: [string, string];
+    micro: string;
+    label: string;
+    intro: string;
+    cards: string[];
+  }> = {
+    hair: {
+      image: imageUrls?.prescription?.hairDirections ?? null,
+      slotKey: 'prescription.hairDirections',
+      title: ['Hairstyle', 'direction.'],
+      micro: 'Hair analysis',
+      label: 'hair direction image',
+      intro: face.hair_direction,
+      cards: directionCards(face.hair_styles, face.hair_direction),
+    },
+    hair_colour: {
+      image: imageUrls?.prescription?.hairColourDirections ?? null,
+      slotKey: 'prescription.hairColourDirections',
+      title: ['Hair colour', 'direction.'],
+      micro: 'Colour analysis',
+      label: 'hair colour direction image',
+      intro: face.hair_colour_direction,
+      cards: directionCards(face.hair_colour_options, face.hair_colour_direction),
+    },
+    eyewear: {
+      image: imageUrls?.prescription?.eyewearFrames ?? null,
+      slotKey: 'prescription.eyewearFrames',
+      title: ['Eyeframe', 'direction.'],
+      micro: 'Frame analysis',
+      label: 'eyewear image',
+      intro: face.eyewear_direction,
+      cards: directionCards(face.eyewear_shapes, face.eyewear_direction),
+    },
+  };
+  const { image, slotKey, title, micro, label, intro, cards: sourceCards } = config[kind];
+  return (
+    <PageFrame page={page} className="visual-direction-page">
+      <div className="visual-direction-inner">
+        <div className="visual-direction-copy">
+          <div className="micro faded">{micro}</div>
+          <h2><span className="display">{title[0]}</span><span className="display-it">{title[1]}</span></h2>
+          <p>{intro}</p>
+        </div>
+        <ImageSlotFrame slotKey={slotKey} label={label} className="visual-direction-media">
+          {image ? <ReportImage src={image} /> : <FaceGridFallback />}
+        </ImageSlotFrame>
+        <div className="visual-direction-cards">
+          {sourceCards.map((card, index) => (
+            <div key={`${card}-${index}`} className="visual-direction-card">
+              <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
+              <div className="display-it">{card}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageFrame>
+  );
+}
+
+function MakeupPage({
+  page,
+  data,
+  imageUrls,
+}: {
+  page: BlueprintPage;
+  data: StylistBlueprintReportData;
+  imageUrls?: ResolvedStylistBlueprintImageUrls | null;
+}) {
+  const makeup = data.classification.makeup;
+  const image = imageUrls?.prescription?.makeupLook ?? null;
+  const steps = (makeup?.steps ?? []).map(step => step.trim()).filter(Boolean);
+  const colours = (makeup?.colours ?? []).map(colour => colour.trim()).filter(Boolean);
+  return (
+    <PageFrame page={page} className="visual-direction-page">
+      <div className="visual-direction-inner">
+        <div className="visual-direction-copy">
+          <div className="micro faded">Everyday beauty</div>
+          <h2><span className="display">Makeup for</span><span className="display-it">everyday looks.</span></h2>
+          <p>{makeup?.everyday_direction || makeup?.style}</p>
+          {colours.length > 0 && (
+            <div className="visual-direction-cards">
+              {colours.map((colour, index) => (
+                <div key={`${colour}-${index}`} className="visual-direction-card">
+                  <div className="mono dossier-label">SHADE</div>
+                  <div className="display-it">{colour}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <ImageSlotFrame slotKey="prescription.makeupLook" label="everyday makeup look image" className="visual-direction-media">
+          {image ? <ReportImage src={image} /> : <FaceGridFallback />}
+        </ImageSlotFrame>
+        <div className="visual-direction-cards">
+          {steps.map((step, index) => (
+            <div key={`${step}-${index}`} className="visual-direction-card">
+              <div className="mono dossier-label">{`STEP ${String(index + 1).padStart(2, '0')}`}</div>
+              <div className="display-it">{step}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageFrame>
   );
 }
 
@@ -1131,7 +1337,7 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
   const formula = formulaItemsForOutfit(page);
   const items = formula.items;
   const palette = paletteForOutfitPage(page, data, items);
-  const outfitNumber = page.page_number - 13;
+  const outfitNumber = page.page_number - getStylistBlueprintOutfitStartPage(data) + 1;
   const imageSlot = imageSlotForPage(page, data);
   return (
     <PageFrame page={page} className="outfit-page">
@@ -1286,11 +1492,17 @@ function ContinuationPage({ page, data, imageUrls }: { page: BlueprintPage; data
 function GenericPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
   const pageType = canonicalPageType(page, data);
   if (pageType === 'outfit') return <OutfitPage page={page} data={data} imageUrls={imageUrls} />;
-  if (pageType === 'palette') return <PalettePage page={page} data={data} />;
+  if (pageType === 'transformation') return <TransformationPage page={page} data={data} imageUrls={imageUrls} />;
+  if (pageType === 'palette') return <PalettePage page={page} data={data} imageUrls={imageUrls} />;
+  if (pageType === 'colour_drape') return <ColourDrapePage page={page} data={data} imageUrls={imageUrls} />;
+  if (pageType === 'hair') return <VisualDirectionPage page={page} data={data} imageUrls={imageUrls} kind="hair" />;
+  if (pageType === 'hair_colour') return <VisualDirectionPage page={page} data={data} imageUrls={imageUrls} kind="hair_colour" />;
+  if (pageType === 'eyewear') return <VisualDirectionPage page={page} data={data} imageUrls={imageUrls} kind="eyewear" />;
+  if (pageType === 'makeup') return <MakeupPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'outfit_system') return <OutfitSystemPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'matrix') return <MatrixPage page={page} data={data} />;
   if (pageType === 'continuation') return <ContinuationPage page={page} data={data} imageUrls={imageUrls} />;
-  if (page.page_number === 11) return <HairFaceAccessoriesPage page={page} data={data} imageUrls={imageUrls} />;
+  if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return <HairFaceAccessoriesPage page={page} data={data} imageUrls={imageUrls} />;
   if (pageType === 'rules' || pageType === 'fabric' || pageType === 'avoidance' || pageType === 'audit') {
     return <RuleLikePage page={page} data={data} imageUrls={imageUrls} />;
   }
@@ -1879,6 +2091,46 @@ function BlueprintStyles() {
       .reading-inner, .palette-inner, .system-inner, .generic-inner {
         margin-top: 72px;
       }
+      .transformation-inner {
+        margin-top: 72px;
+      }
+      .transformation-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+      }
+      .transformation-card {
+        background: rgba(244, 239, 229, 0.08);
+        border: 1px solid rgba(244, 239, 229, 0.16);
+        border-radius: 18px;
+        overflow: hidden;
+        position: relative;
+      }
+      .transformation-label {
+        position: absolute;
+        z-index: 2;
+        left: 16px;
+        top: 16px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(44, 38, 34, 0.72);
+        color: ${IVORY};
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      .transformation-media {
+        aspect-ratio: 2 / 3;
+        background: rgba(244, 239, 229, 0.06);
+      }
+      .transformation-media img,
+      .transformation-media svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
       .reading-blocks, .generic-blocks {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2126,6 +2378,12 @@ function BlueprintStyles() {
         align-items: baseline;
         gap: 28px;
       }
+      .palette-inner.with-drape {
+        display: grid;
+        grid-template-columns: minmax(0, 1.24fr) minmax(300px, 0.76fr);
+        gap: 34px;
+        align-items: start;
+      }
       .palette-inner h2 span:first-child {
         font-size: clamp(64px, 9vw, 92px);
       }
@@ -2136,6 +2394,59 @@ function BlueprintStyles() {
       .palette-intro {
         max-width: 520px;
         margin: 24px 0 42px;
+      }
+      .palette-drape-panel {
+        position: sticky;
+        top: 24px;
+        background: rgba(44, 38, 34, 0.04);
+        border: 1px solid rgba(44, 38, 34, 0.12);
+        border-radius: 18px;
+        padding: 18px;
+      }
+      .colour-drape-frame {
+        margin-top: 12px;
+        aspect-ratio: 3 / 2;
+        border-radius: 14px;
+        overflow: hidden;
+        background: ${BONE};
+        border: 1px solid rgba(44, 38, 34, 0.12);
+      }
+      .colour-drape-frame img,
+      .drape-fallback {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+      .drape-fallback {
+        background: linear-gradient(90deg, #C9B79F 0 50%, #7F8F77 50% 100%);
+      }
+      .colour-drape-inner {
+        margin-top: 64px;
+      }
+      .colour-drape-inner h2 {
+        margin: 14px 0 30px;
+      }
+      .colour-drape-inner h2 span {
+        display: block;
+        font-size: clamp(48px, 7vw, 78px);
+      }
+      .colour-drape-hero-frame {
+        width: min(100%, 920px);
+        margin: 0 auto;
+        aspect-ratio: 3 / 2;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(44, 38, 34, 0.12);
+        background: ${BONE};
+      }
+      .colour-drape-hero-frame img,
+      .colour-drape-hero-frame .drape-fallback {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        display: block;
       }
       .palette-section .rule {
         margin: 36px 0 20px;
@@ -2157,20 +2468,9 @@ function BlueprintStyles() {
         border-radius: 14px;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
       }
-      .swatch-code {
-        font-size: 9px;
-        opacity: 0.5;
-        margin-top: 8px;
-      }
       .swatch-name {
-        font-size: 13px;
-        margin-top: 2px;
-      }
-      .premium-swatch p {
-        font-size: 10px;
-        line-height: 1.45;
-        opacity: 0.58;
-        margin: 6px 0 0;
+        font-size: 15px;
+        margin-top: 8px;
       }
       .rule-layout {
         margin-top: 78px;
@@ -2195,6 +2495,55 @@ function BlueprintStyles() {
       .reference-images img {
         aspect-ratio: 4 / 5;
         object-fit: cover;
+      }
+      .visual-direction-inner {
+        margin-top: 58px;
+        display: grid;
+        grid-template-columns: minmax(280px, 0.72fr) minmax(420px, 1.28fr);
+        gap: 34px;
+        align-items: start;
+      }
+      .visual-direction-copy h2 {
+        margin: 12px 0 22px;
+      }
+      .visual-direction-copy h2 span {
+        display: block;
+        font-size: clamp(44px, 7vw, 76px);
+      }
+      .visual-direction-copy p {
+        font-size: 14px;
+        line-height: 1.7;
+        opacity: 0.72;
+      }
+      .visual-direction-media {
+        grid-row: span 2;
+        aspect-ratio: 1 / 1;
+        border-radius: 18px;
+        overflow: hidden;
+        background: rgba(244, 239, 229, 0.28);
+        border: 1px solid rgba(44, 38, 34, 0.08);
+      }
+      .visual-direction-media img,
+      .visual-direction-media .face-grid-fallback {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        display: block;
+      }
+      .visual-direction-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .visual-direction-card {
+        border-top: 1px solid rgba(44, 38, 34, 0.12);
+        padding-top: 14px;
+      }
+      .visual-direction-card .display-it {
+        font-size: 18px;
+        line-height: 1.3;
+        margin-top: 6px;
       }
       .hair-inner {
         margin-top: 72px;
@@ -2305,20 +2654,21 @@ function BlueprintStyles() {
         min-height: 820px;
       }
       .outfit-hero {
-        margin-top: 70px;
+        margin-top: 42px;
         display: grid;
-        grid-template-columns: 1.05fr 1fr;
-        gap: 56px;
+        grid-template-columns: minmax(280px, 0.78fr) minmax(500px, 1.22fr);
+        gap: 34px;
+        align-items: start;
       }
       .outfit-no {
         font-size: 18px;
         opacity: 0.5;
       }
       .outfit-copy h2 span {
-        font-size: clamp(58px, 8vw, 96px);
+        font-size: clamp(42px, 6vw, 68px);
       }
       .outfit-quote {
-        font-size: 20px;
+        font-size: 17px;
         opacity: 0.7;
         line-height: 1.5;
         max-width: 400px;
@@ -2347,7 +2697,7 @@ function BlueprintStyles() {
       .flatlay-frame {
         background: linear-gradient(160deg, ${SLATE} 0%, ${SLATE_DEEP} 100%);
         border-radius: 24px;
-        padding: 20px;
+        padding: 16px;
         aspect-ratio: 2 / 3;
         position: relative;
         overflow: hidden;
@@ -2625,6 +2975,8 @@ function BlueprintStyles() {
         .rule-layout,
         .chromatic-map,
         .proportion-inner,
+        .palette-inner,
+        .visual-direction-inner,
         .hair-copy,
         .outfit-hero,
         .matrix-grid {
@@ -2637,11 +2989,13 @@ function BlueprintStyles() {
           padding: 0 0 20px;
         }
         .dossier-cards,
+        .transformation-grid,
         .reading-blocks,
         .rule-card-grid,
         .proportion-card-grid,
         .face-visuals,
         .hair-card-grid,
+        .visual-direction-cards,
         .capsule-map,
         .mini-axis-grid,
         .reference-images {
@@ -2653,6 +3007,10 @@ function BlueprintStyles() {
         }
         .palette-inner h2 {
           display: block;
+        }
+        .palette-drape-panel {
+          position: relative;
+          top: auto;
         }
         .cover-center {
           position: relative;

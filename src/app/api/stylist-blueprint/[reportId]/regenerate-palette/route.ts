@@ -7,6 +7,7 @@ import {
   generateStylistBlueprintReplacementPalette,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintPalettePage,
   isVersionedStylistBlueprintReportData,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
@@ -76,11 +77,11 @@ export async function POST(
       reason,
     );
 
-    const outfitStart = getStylistBlueprintOutfitStartPage();
+    const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
     const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
     const nextApprovals = {
       ...((report.section_approvals as Record<string, boolean> | null) ?? {}),
-      p9: false,
+      [`p${getStylistBlueprintPalettePage(reportData)}`]: false,
       ...Object.fromEntries(
         Array.from({ length: outfitEnd - outfitStart + 1 }, (_, index) => [`p${outfitStart + index}`, false]),
       ),

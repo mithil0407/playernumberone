@@ -4,10 +4,12 @@ import {
   classifyStylistBlueprint,
   createBlueprintShell,
   generateStylistBlueprintPages,
+  getStylistOutfitCulturalMode,
   getStylistBlueprintAuditPage,
   getStylistBlueprintContinuationPage,
   getStylistBlueprintMatrixPage,
   getStylistBlueprintOutfitEndPage,
+  getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPageCount,
   mergeBlueprintPages,
   validateStylistBlueprintReport,
@@ -28,10 +30,11 @@ const ACT_STAGES: Array<{
 
 const REPAIR_ACT_STAGES: Array<{
   stage: string;
-  act: 'opening' | 'diagnosis' | 'application' | 'closing';
+  act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing';
 }> = [
   { stage: 'repairing_opening_pages', act: 'opening' },
   { stage: 'repairing_diagnosis_pages', act: 'diagnosis' },
+  { stage: 'repairing_prescription_pages', act: 'prescription' },
   { stage: 'repairing_application_pages', act: 'application' },
   { stage: 'repairing_closing_pages', act: 'closing' },
 ];
@@ -72,7 +75,7 @@ export async function runStylistBlueprintTextPipeline(
       await updateReport(reportId, { report_data: reportData }, shareToken);
     }
 
-    validateStylistBlueprintReport(reportData);
+    validateStylistBlueprintReport(reportData, { culturalMode: getStylistOutfitCulturalMode(submission) });
 
     const approvals = Object.fromEntries(
       Array.from({ length: getStylistBlueprintPageCount(reportData) }, (_, index) => [`p${index + 1}`, false]),
@@ -107,11 +110,13 @@ function repairedApprovalMap(
   existingApprovals: Record<string, unknown> | null | undefined,
   reportData: StylistBlueprintReportData,
 ) {
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
+  const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
   const affected = new Set<number>([
-    1, 2, 3, 4, 5, 6, 7, 8,
+    ...Array.from({ length: Math.min(outfitStart - 1, getStylistBlueprintPageCount(reportData)) }, (_, index) => index + 1),
     ...Array.from(
-      { length: getStylistBlueprintOutfitEndPage(reportData) - 13 + 1 },
-      (_, index) => 13 + index,
+      { length: outfitEnd - outfitStart + 1 },
+      (_, index) => outfitStart + index,
     ),
     getStylistBlueprintMatrixPage(reportData),
     getStylistBlueprintAuditPage(reportData),
@@ -145,6 +150,7 @@ export async function runStylistBlueprintRepairPipeline(
     );
     reportData = {
       ...reportData,
+      version: existingReportData.version,
       generated_at: existingReportData.generated_at,
       client: existingReportData.client,
       analysis: existingReportData.analysis,
@@ -163,7 +169,7 @@ export async function runStylistBlueprintRepairPipeline(
       await updateReport(reportId, { report_data: reportData }, shareToken);
     }
 
-    validateStylistBlueprintReport(reportData);
+    validateStylistBlueprintReport(reportData, { culturalMode: getStylistOutfitCulturalMode(submission) });
 
     const finalReportData = {
       ...reportData,

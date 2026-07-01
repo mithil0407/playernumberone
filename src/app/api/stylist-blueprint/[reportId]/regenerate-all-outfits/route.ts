@@ -8,7 +8,10 @@ import {
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintOutfitSystemPage,
+  getStylistOutfitCulturalMode,
   isVersionedStylistBlueprintReportData,
+  validateStylistBlueprintReport,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
@@ -97,24 +100,39 @@ export async function POST(
     await revalidateStylistBlueprintCache(reportId, report.share_token ?? null);
 
     const reportData = report.report_data as StylistBlueprintReportData;
-    const replacementPages = await generateStylistBlueprintReplacementOutfits(
-      submission as StylistIntakeSubmission,
-      reportData,
-      reason,
-    );
-    const replacementByNumber = new Map(replacementPages.map(page => [page.page_number, page]));
-    const outfitStart = getStylistBlueprintOutfitStartPage();
+    const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
     const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
     const outfitCount = getStylistBlueprintOutfitCount(reportData);
-
-    const nextReportData: StylistBlueprintReportData = {
-      ...reportData,
-      generated_at: new Date().toISOString(),
-      pages: reportData.pages.map(page => replacementByNumber.get(page.page_number) ?? page),
-    };
+    const culturalMode = getStylistOutfitCulturalMode(submission as StylistIntakeSubmission);
+    let nextReportData: StylistBlueprintReportData | null = null;
+    let lastValidationError: unknown = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const replacementPages = await generateStylistBlueprintReplacementOutfits(
+        submission as StylistIntakeSubmission,
+        reportData,
+        attempt === 0 ? reason : `${reason || 'Admin requested replacement outfits.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate the outfit set and fix that issue.`,
+      );
+      const replacementByNumber = new Map(replacementPages.map(page => [page.page_number, page]));
+      const candidateReportData: StylistBlueprintReportData = {
+        ...reportData,
+        generated_at: new Date().toISOString(),
+        pages: reportData.pages.map(page => replacementByNumber.get(page.page_number) ?? page),
+      };
+      try {
+        validateStylistBlueprintReport(candidateReportData, {
+          culturalMode,
+          validateStaticPageDensity: false,
+        });
+        nextReportData = candidateReportData;
+        break;
+      } catch (error) {
+        lastValidationError = error;
+      }
+    }
+    if (!nextReportData) throw lastValidationError instanceof Error ? lastValidationError : new Error('Replacement outfits failed validation');
     const nextApprovals = {
       ...((report.section_approvals as Record<string, boolean> | null) ?? {}),
-      p13: false,
+      [`p${getStylistBlueprintOutfitSystemPage(reportData)}`]: false,
       ...Object.fromEntries(
         Array.from({ length: outfitEnd - outfitStart + 1 }, (_, index) => [`p${outfitStart + index}`, false]),
       ),

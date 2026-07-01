@@ -84,5 +84,5 @@ Add one entry per outfit using this structure:
 - Colour/palette notes: Best in deep neutral, jewel tone, or monochrome tonal palette matched to depth and contrast.
 - Pieces: Minimal dress or tonal top and skirt; sleek longline coat or cropped evening jacket; pointed heel or dressy flat; sculptural clutch; one strong earring or cuff.
 - Styling rationale: The outfit looks expensive because it removes noise and focuses on proportion, fabric, and one precise accent.
-- Adaptation rules: Add sleeves, a higher neckline, or a softer shoe depending on comfort and coverage. Use satin, crepe, or fine knit based on body-fit needs.
+- Adaptation rules: Add sleeves, avoid cleavage or very low necklines, or choose a softer shoe depending on comfort and coverage. Use satin, crepe, or fine knit based on body-fit needs.
 - Do not use when: The client wants expressive prints, high colour variety, or casual styling.

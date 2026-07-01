@@ -720,10 +720,12 @@ Temperate client outputs should include at least **2 temperate-specific formulas
 
 # SECTION 12 — STYLE POLES CALIBRATION
 
-| Pole | Classic / Minimal | Expressive / Fashion-Forward |
+Style poles are a **directional lean applied to roughly 6–8 anchor outfits, not a filter on all 20.** The DIVERSITY MANDATE always wins — poles never reduce colour, garment, or silhouette range. Read the "Classic / Minimal" column as *neutrals and shapes to lean toward on anchor looks*, not the permitted palette: bold colours, varied garments, and mixed silhouettes still appear across the remaining outfits regardless of a minimal or structured pole.
+
+| Pole | Classic / Minimal (lean toward on anchor looks) | Expressive / Fashion-Forward |
 |---|---|---|
 | Structure | Blazers, polos, chinos, Oxford shirts | Utility jackets, leather jackets, wide-leg trousers |
-| Expression | Navy, cream, olive, charcoal, brown | Stripes, checks, burgundy loafers, rust corduroy, warm textured layers |
+| Expression | Navy, cream, olive, charcoal, brown (neutrals to lean toward, not the only palette) | Stripes, checks, burgundy loafers, rust corduroy, warm textured layers |
 | Tone | Polo + chino, blazer mix, quarter-zip | Corduroy jacket + trouser, leather jacket + denim |
 | Register | Office/elevated | Evening/city casual |
 

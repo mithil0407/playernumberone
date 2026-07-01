@@ -402,7 +402,7 @@ TOPS \u2014 use at least 6 different types across 20 outfits. Avoid repeating th
   \u2022 Knitwear (crew-neck, V-neck, cable-knit, fine-gauge)
   \u2022 Band-collar / mandarin-collar shirt
   \u2022 Printed / patterned shirt (geometric, abstract, stripes \u2014 NO floral prints)
-  \u2022 Kurta (Indian occasion)
+  \u2022 Kurta (only if client explicitly requests ethnic styling \u2014 does not count toward top-type diversity)
 
 LAYERS & OUTERWEAR \u2014 use at least 4 different layer types across the 20 outfits:
   \u2022 Structured blazer (single or double breasted)
@@ -418,7 +418,7 @@ LAYERS & OUTERWEAR \u2014 use at least 4 different layer types across the 20 out
   \u2022 Gilet / vest (quilted or knit)
   \u2022 Trench coat
   \u2022 Overcoat / topcoat (cold climates)
-  \u2022 Nehru jacket / bandh-gala (Indian occasion)
+  \u2022 Nehru jacket / bandh-gala (only if client explicitly requests ethnic styling \u2014 does not count toward layer-type diversity)
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 FOOTWEAR \u2014 use at least 5 different types across 20 outfits
@@ -526,6 +526,8 @@ DIVERSITY MANDATE \u2014 THE MOST IMPORTANT RULE IN THIS ENTIRE PROMPT
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 The 20 outfits must feel like 20 DIFFERENT outfits, not variations of the same look.
 
+STYLE POLES ARE A LEAN, NOT A CAP: the client's style_brief.expression and structure_level (including "minimal", "quiet", "structured") are a directional lean that biases a handful of anchor outfits toward that mood — they do NOT restrict colour or garment variety. A minimal, quiet, or structured client still receives the full 6-colour-family, multi-garment, mixed-silhouette range required below. Never collapse the 20 outfits into a monotone minimalist set because a pole answer says "minimal" or "structured".
+
 GARMENT DIVERSITY (hard requirements):
 - Use at least 5 different bottom types across 20 outfits (e.g. jeans, chinos, tailored trousers, linen trousers)
 - Use at least 6 different top types across 20 outfits (e.g. dress shirt, t-shirt, polo, knit, linen shirt)
@@ -599,7 +601,7 @@ Then for each outfit, use this exact structure:
 - Acceptable substitutes: [1 sentence with practical replacements that preserve the same silhouette and colour logic]
 - Do not buy: [1 sentence naming the common wrong version of this outfit]
 
-If the original intake includes Indian occasions, wedding season, festivals, Indo Authority, Indian Casual, or ethnic wardrobe signals, include lightweight Indian-context support in at least 2 outfits. Use Western-first styling unless the signal is strong; acceptable Indian-context pieces include kurta, band-collar shirt, Nehru jacket, bandh-gala, and festive loafers/sandals where climate-appropriate.
+INDIAN / ETHNIC WEAR — DEFAULT OFF. All 20 outfits are Western unless the client explicitly asks for ethnic styling. Kurta, band-collar shirt, Nehru jacket, bandh-gala, and festive Indian sandals must NOT appear by default. Selecting an Indian tribe (Indo Authority / Indian Casual), "Indian occasions", "wedding season", festivals, or having ethnic wear in the wardrobe is NOT sufficient on its own — do not add any Indian-context outfit for those signals alone. The ONLY trigger is the client explicitly requesting Indian/ethnic styling in their own words in the Free Note or Anti-Pref (e.g. "I want ethnic options", "need festive/wedding looks"). If and only if that explicit request is present, include AT MOST 1 Indian-context outfit, keep the rest Western, and never let it reduce the garment, colour, or silhouette diversity required above.
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 FULL GENERATION CHECKLIST \u2014 ALL 20 MUST PASS BEFORE OUTPUT
@@ -849,10 +851,15 @@ const FIELD_MAPS: Record<string, Record<string, string>> = {
 // ─────────────────────────────────────────────────────────────
 
 function cleanJson(text: string): string {
-  return text
+  const stripped = text
     .replace(/^```(?:json)?\n?/i, '')
     .replace(/\n?```$/i, '')
     .trim();
+  // Callers all expect a single JSON object — slice to the outer braces to drop any prose the model added around it.
+  const first = stripped.indexOf('{');
+  const last  = stripped.lastIndexOf('}');
+  if (first !== -1 && last > first) return stripped.slice(first, last + 1);
+  return stripped;
 }
 
 function readable(val: string | null | undefined): string {
@@ -1117,6 +1124,8 @@ async function withTextRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelay
       lastErr = err;
       const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
       const isTransient =
+        // Malformed JSON from the model (only JSON calls throw SyntaxError) — a fresh generation almost always parses.
+        err instanceof SyntaxError ||
         msg.includes('503') || msg.includes('unavailable') || msg.includes('high demand') ||
         msg.includes('429') || msg.includes('resource_exhausted') || msg.includes('quota') ||
         msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('overloaded');

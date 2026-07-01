@@ -7,9 +7,11 @@ import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { sendStylistBlueprintReportEmail } from '@/lib/email';
 import {
   getStylistBlueprintPageCount,
+  getStylistOutfitCulturalMode,
   isVersionedStylistBlueprintReportData,
   validateStylistBlueprintReport,
   type BlueprintPage,
+  type StylistIntakeSubmission,
   type StylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
 
@@ -77,7 +79,7 @@ export async function PATCH(
   if (body.page) {
     const { data: existing } = await supabaseAdmin
       .from('stylist_blueprint_reports')
-      .select('report_data')
+      .select('report_data, submission_id, stylist_intake_responses(*)')
       .eq('id', reportId)
       .single();
     const reportData = existing?.report_data as StylistBlueprintReportData | null;
@@ -88,7 +90,9 @@ export async function PATCH(
     const pages = reportData.pages.map(page => page.page_number === incoming.page_number ? incoming : page);
     const nextData = { ...reportData, pages };
     try {
-      validateStylistBlueprintReport(nextData);
+      validateStylistBlueprintReport(nextData, {
+        culturalMode: getStylistOutfitCulturalMode(existing?.stylist_intake_responses as unknown as StylistIntakeSubmission | null),
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid report page data';
       return NextResponse.json({ error: message }, { status: 400 });

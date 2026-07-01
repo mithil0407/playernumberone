@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/stylist-blueprint/**': [
       './stylistoutfitlibrary.md',
+      './outfitlibrarywomen.md',
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
     ],

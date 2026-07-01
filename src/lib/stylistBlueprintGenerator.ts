@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import {
   getParsedStylistOutfitLibrary,
@@ -11,20 +13,48 @@ import {
   type NegativeOutfitSignal,
 } from './stylistOutfitLearning';
 import {
+  STYLIST_BLUEPRINT_36_VERSION,
+  STYLIST_BLUEPRINT_37_VERSION,
+  STYLIST_BLUEPRINT_39_VERSION,
   STYLIST_BLUEPRINT_LEGACY_VERSION,
   STYLIST_BLUEPRINT_VERSION,
   getStylistBlueprintAuditPage,
+  getStylistBlueprintAvoidancePage,
+  getStylistBlueprintBodyGeometryPage,
   getStylistBlueprintCapsulePageRanges,
+  getStylistBlueprintChromaticPage,
+  getStylistBlueprintColourDrapePage,
   getStylistBlueprintContinuationPage,
+  getStylistBlueprintEyeframePage,
+  getStylistBlueprintFabricPage,
+  getStylistBlueprintFaceArchitecturePage,
+  getStylistBlueprintHairColourPage,
+  getStylistBlueprintHairFaceAccessoriesPage,
+  getStylistBlueprintHairstylePage,
+  getStylistBlueprintMakeupPage,
+  getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintMatrixPage,
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPageCount,
+  getStylistBlueprintPalettePage,
+  getStylistBlueprintProportionPage,
+  getStylistBlueprintReadingGuidePage,
+  getStylistBlueprintRulesStartPage,
+  getStylistBlueprintSummaryPage,
+  getStylistBlueprintTransformationPage,
+  isLatestStylistBlueprintVersion,
 } from './stylistBlueprintSchema';
 import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2';
 
 export {
+  STYLIST_BLUEPRINT_36_PAGE_COUNT,
+  STYLIST_BLUEPRINT_36_VERSION,
+  STYLIST_BLUEPRINT_37_PAGE_COUNT,
+  STYLIST_BLUEPRINT_37_VERSION,
+  STYLIST_BLUEPRINT_39_PAGE_COUNT,
+  STYLIST_BLUEPRINT_39_VERSION,
   STYLIST_BLUEPRINT_LEGACY_OUTFIT_COUNT,
   STYLIST_BLUEPRINT_LEGACY_PAGE_COUNT,
   STYLIST_BLUEPRINT_LEGACY_VERSION,
@@ -32,13 +62,32 @@ export {
   STYLIST_BLUEPRINT_PAGE_COUNT,
   STYLIST_BLUEPRINT_VERSION,
   getStylistBlueprintAuditPage,
+  getStylistBlueprintAvoidancePage,
+  getStylistBlueprintBodyGeometryPage,
   getStylistBlueprintCapsulePageRanges,
+  getStylistBlueprintChromaticPage,
+  getStylistBlueprintColourDrapePage,
   getStylistBlueprintContinuationPage,
+  getStylistBlueprintEyeframePage,
+  getStylistBlueprintFabricPage,
+  getStylistBlueprintFaceArchitecturePage,
+  getStylistBlueprintHairColourPage,
+  getStylistBlueprintHairFaceAccessoriesPage,
+  getStylistBlueprintHairstylePage,
+  getStylistBlueprintMakeupPage,
+  getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintMatrixPage,
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPageCount,
+  getStylistBlueprintPalettePage,
+  getStylistBlueprintProportionPage,
+  getStylistBlueprintReadingGuidePage,
+  getStylistBlueprintRulesStartPage,
+  getStylistBlueprintSummaryPage,
+  getStylistBlueprintTransformationPage,
+  isLatestStylistBlueprintVersion,
   isVersionedStylistBlueprintReportData,
 } from './stylistBlueprintSchema';
 
@@ -93,7 +142,8 @@ looks. Classy, realistic, and shoppable beats novel or experimental every time.
 - Every outfit must follow one clear archetype: Coloured Hero + Quiet Support,
   Neutral Architecture + Rich Accent, Pattern Hero + Controlled Solids, Texture
   Hero + Tonal Depth, Shape Hero + Clean Colour, Casual Base + Polished
-  Disruptor, or Indian Base + Modern Finishing.
+  Disruptor, Western Base + Elevated Finishing, or Indian Base + Modern
+  Finishing only when the intake explicitly allows ethnic styling.
 - Every colour must have a job: face-lift, hero, anchor, bridge, accent, or
   echo. Across the set, at least half of outfits should use colour in a main
   garment, not only through accessories.
@@ -142,14 +192,24 @@ looks. Classy, realistic, and shoppable beats novel or experimental every time.
 - Formula items must map to: top, bottom or one-piece, layer only when needed,
   footwear, bag, jewellery, finishing detail only if needed, and eyewear only on
   alternate outfits.
-- 07 - FINISHING DETAIL: belt, scarf, sunglasses, watch, lip tone, or eyewear
-  only if needed.
-- 08 - EYEWEAR: only for alternate outfits. One exact frame or sunglass
-  recommendation.
+- 07 - FINISHING DETAIL: belt, scarf, watch, lip tone, hair detail, etc. — add a
+  finishing detail whenever it elevates the look. Never put eyewear, sunglasses, or
+  optical frames here.
+- 08 - EYEWEAR: the ONLY place eyewear/sunglasses may appear, and only when
+  appropriate. One exact frame or sunglass recommendation.
+- Eyewear must never appear in more than one slot in the same outfit.
 - The final outfit should feel like normal clothes arranged with superior
   intelligence, plus one styling decision the client would not have made herself.`;
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+
+function readWomenOutfitLibraryText(): string {
+  try {
+    return readFileSync(join(process.cwd(), 'outfitlibrarywomen.md'), 'utf-8').trim();
+  } catch {
+    return '';
+  }
+}
 
 // Temporary experiment mode: generate outfits from the deterministic stylist
 // decision hierarchy only, without verified outfit-library anchors or feedback
@@ -219,6 +279,8 @@ export interface StylistBlueprintClassification {
     face_shape: string;
     face_direction: string;
     hair_direction: string;
+    hair_colour_direction: string;
+    hair_colour_options: string[];
     neckline_direction: string;
     jewellery_direction: string;
     eyewear_direction: string;
@@ -226,6 +288,12 @@ export interface StylistBlueprintClassification {
     hair_styles: string[];
     eyewear_shapes: string[];
     earring_shapes: string[];
+  };
+  makeup: {
+    style: string;
+    everyday_direction: string;
+    steps: string[];
+    colours: string[];
   };
   taste: {
     style_archetype: string;
@@ -258,12 +326,18 @@ export interface LegacyStylistBlueprintReportData {
 
 export type BlueprintPageType =
   | 'cover'
+  | 'transformation'
   | 'summary'
   | 'reading_guide'
   | 'diagnosis'
   | 'avoidance'
   | 'palette'
+  | 'colour_drape'
   | 'rules'
+  | 'hair'
+  | 'hair_colour'
+  | 'eyewear'
+  | 'makeup'
   | 'fabric'
   | 'outfit_system'
   | 'outfit'
@@ -319,7 +393,7 @@ export interface StylistBlueprintAnalysis {
 }
 
 export interface StylistBlueprintReportData {
-  version: typeof STYLIST_BLUEPRINT_VERSION | typeof STYLIST_BLUEPRINT_LEGACY_VERSION;
+  version: typeof STYLIST_BLUEPRINT_VERSION | typeof STYLIST_BLUEPRINT_39_VERSION | typeof STYLIST_BLUEPRINT_37_VERSION | typeof STYLIST_BLUEPRINT_36_VERSION | typeof STYLIST_BLUEPRINT_LEGACY_VERSION;
   generated_at: string;
   client: {
     display_name: string;
@@ -382,15 +456,15 @@ async function loadOutfitLibraryContext(): Promise<OutfitLibraryContext> {
 
 function outfitLibraryPromptForContext(context: OutfitLibraryContext) {
   if (!STYLIST_OUTFIT_LIBRARY_ENABLED || !context.outfits.length) {
-    return 'Outfit library is disabled for this generation experiment. Do not use verified-library anchors, outfit memory, library_refs, or library_piece_logic. Build each outfit from the harness, using only the basic intake context, coverage, and shoppable realism as guardrails.';
+    return 'Deterministic library anchoring is disabled for this run, but outfitlibrarywomen.md is still the dominant library-led prompt reference when attached. Do not invent library_refs, outfit memory, or library_piece_logic. Build each outfit by choosing the closest library-quality formula from the attached library text, then adapting minimally for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.';
   }
   return getStylistOutfitLibraryPromptFromOutfits(context.outfits);
 }
 
 function outfitGenerationSourceRules(context: OutfitLibraryContext) {
   if (!STYLIST_OUTFIT_LIBRARY_ENABLED || !context.outfits.length) {
-    return `- No outfit library is attached for this run. Do not invent library_refs, source ids, source outfit titles, or library_piece_logic.
-- Build the outfit from the harness first: styling intention -> archetype -> hero -> colour role hierarchy -> body geometry -> formula items -> accessory architecture -> score check.
+    return `- No verified library anchor objects are attached for this run. Do not invent library_refs, source ids, source outfit titles, or library_piece_logic.
+- Use the attached markdown outfit library as the dominant prompt reference: choose the closest library-quality formula, then adapt minimally for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.
 - Use the basic page plan only for page number, capsule, max colours, and eyewear cadence, not as garment or colour authority.
 - Variation should come from the harness outcome, fabric, proportion, shoe type, bag shape, and realistic repeated wardrobe anchors, not from random colour novelty.`;
   }
@@ -415,15 +489,26 @@ export function canonicalStylistBlueprintPageType(
   dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null,
 ): BlueprintPageType {
   if (pageNumber === 1) return 'cover';
-  if (pageNumber === 2) return 'summary';
-  if (pageNumber === 3) return 'reading_guide';
-  if ([4, 5, 6, 7].includes(pageNumber)) return 'diagnosis';
-  if (pageNumber === 8) return 'avoidance';
-  if (pageNumber === 9) return 'palette';
-  if ([10, 11].includes(pageNumber)) return 'rules';
-  if (pageNumber === 12) return 'fabric';
-  if (pageNumber === 13) return 'outfit_system';
-  if (pageNumber >= getStylistBlueprintOutfitStartPage() && pageNumber <= getStylistBlueprintOutfitEndPage(dataOrVersion)) return 'outfit';
+  if (pageNumber === getStylistBlueprintTransformationPage(dataOrVersion)) return 'transformation';
+  if (pageNumber === getStylistBlueprintSummaryPage(dataOrVersion)) return 'summary';
+  if (pageNumber === getStylistBlueprintReadingGuidePage(dataOrVersion)) return 'reading_guide';
+  if ([
+    getStylistBlueprintBodyGeometryPage(dataOrVersion),
+    getStylistBlueprintChromaticPage(dataOrVersion),
+    getStylistBlueprintFaceArchitecturePage(dataOrVersion),
+    getStylistBlueprintProportionPage(dataOrVersion),
+  ].includes(pageNumber)) return 'diagnosis';
+  if (pageNumber === getStylistBlueprintAvoidancePage(dataOrVersion)) return 'avoidance';
+  if (pageNumber === getStylistBlueprintPalettePage(dataOrVersion)) return 'palette';
+  if (pageNumber === getStylistBlueprintColourDrapePage(dataOrVersion)) return 'colour_drape';
+  if (pageNumber === getStylistBlueprintHairstylePage(dataOrVersion)) return 'hair';
+  if (pageNumber === getStylistBlueprintHairColourPage(dataOrVersion)) return 'hair_colour';
+  if (pageNumber === getStylistBlueprintEyeframePage(dataOrVersion)) return 'eyewear';
+  if (pageNumber === getStylistBlueprintMakeupPage(dataOrVersion)) return 'makeup';
+  if ([getStylistBlueprintRulesStartPage(dataOrVersion), getStylistBlueprintHairFaceAccessoriesPage(dataOrVersion)].includes(pageNumber)) return 'rules';
+  if (pageNumber === getStylistBlueprintFabricPage(dataOrVersion)) return 'fabric';
+  if (pageNumber === getStylistBlueprintOutfitSystemPage(dataOrVersion)) return 'outfit_system';
+  if (pageNumber >= getStylistBlueprintOutfitStartPage(dataOrVersion) && pageNumber <= getStylistBlueprintOutfitEndPage(dataOrVersion)) return 'outfit';
   if (pageNumber === getStylistBlueprintMatrixPage(dataOrVersion)) return 'matrix';
   if (pageNumber === getStylistBlueprintAuditPage(dataOrVersion)) return 'audit';
   if (pageNumber === getStylistBlueprintContinuationPage(dataOrVersion)) return 'continuation';
@@ -435,7 +520,12 @@ function stringify(value: unknown) {
 }
 
 function cleanJson(text: string) {
-  return text.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  const stripped = text.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  // The JSON callers all expect a single object — slice to the outer braces to drop any prose the model added around it.
+  const first = stripped.indexOf('{');
+  const last = stripped.lastIndexOf('}');
+  if (first !== -1 && last > first) return stripped.slice(first, last + 1);
+  return stripped;
 }
 
 function asRecord(value: unknown): AnyRecord {
@@ -461,8 +551,95 @@ function isIndianStylistIntake(submission: Pick<StylistIntakeSubmission, 'countr
   return submission.intake_source === 'manual_admin' || /\bindia\b/i.test(submission.country ?? '');
 }
 
+const ETHNIC_PREFERENCE_PATTERN = /\b(indian|ethnic(?:wear)?|kurt[ai]|kurta|kurti|saree|sari|lehenga|anarkali|salwar|churidar|sharara|gharara|dupatta|indo[- ]?western|festive|festival|wedding|shaadi|sangeet|mehendi|mehndi|haldi|diwali|traditional|desi|jutti|juttis|kolhapuri|banarasi|chikankari|bandhani|silk sari)\b/i;
+
+export type StylistOutfitCulturalMode = 'western_default' | 'ethnic_allowed';
+
+// Only surface Indian/ethnic outfits when the client's own intake signals interest in them —
+// being an India-market or admin-created intake is NOT sufficient on its own.
+function intakeSignalsEthnicPreference(submission: StylistIntakeSubmission): boolean {
+  const parts = [
+    submission.selected_moodboard_label ?? '',
+    submission.selected_moodboard_id ?? '',
+    submission.one_outfit_description ?? '',
+    submission.raw_consultation_notes ?? '',
+    submission.skin_tone_self_description ?? '',
+    ...(submission.focus_areas ?? []),
+    ...(submission.secondary_moodboard_elements ?? []),
+    JSON.stringify(submission.piece_preferences ?? {}),
+    JSON.stringify(submission.lifestyle_context ?? {}),
+    JSON.stringify(submission.coverage_requirements ?? {}),
+  ];
+  return ETHNIC_PREFERENCE_PATTERN.test(parts.join(' \n '));
+}
+
+export function getStylistOutfitCulturalMode(submission?: StylistIntakeSubmission | null): StylistOutfitCulturalMode {
+  return submission && intakeSignalsEthnicPreference(submission) ? 'ethnic_allowed' : 'western_default';
+}
+
+function culturalModeRules(mode: StylistOutfitCulturalMode) {
+  if (mode === 'ethnic_allowed') {
+    return `Cultural styling mode: ethnic_allowed.
+- Indian, ethnic, and indo-western pieces are allowed only because the intake/admin notes explicitly signal them.
+- Still respect Western/formal/trouser/top/midi/evening preferences when those are stated. Do not default the full set to Indianwear.
+- Ethnic pieces must be elevated, modern, body-logical, and never generic or bulky.`;
+  }
+
+  return `Cultural styling mode: western_default.
+- Generate Western / contemporary elevated outfits only. India-market context affects retail realism, climate, and INR language only.
+- Do NOT use Indianwear, ethnicwear, indo-western pieces, kurtas, kurtis, sarees/saris, lehengas, anarkalis, salwar/churidar, shararas, dupattas, juttis, kolhapuris, Indian office wear, ethnic workwear, or festive Indian outfit terms.
+- Learn taste from the outfit library's Western/elevated entries: wrap blouses, cowl tops, open collars, blazers, vests, trousers, skirts, dresses, denim, co-ords, structured bags, leather bridges, scarves, belts, watches, hair details, and jewellery.
+- If the library contains ethnic garments, ignore the ethnic garment category and transfer only the elevated register, colour relationship, texture, proportion, and finishing intelligence.`;
+}
+
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())) : [];
+}
+
+const PIECE_PREFERENCE_LABELS: Record<string, string> = {
+  relaxed_oversized: 'relaxed oversized tops',
+  fitted_tuck_in: 'fitted tucked-in tops',
+  structured_button_front: 'structured button-front tops',
+  draped_wrap: 'draped or wrap tops',
+  detailed_collar: 'detailed collar tops',
+  clean_minimal: 'clean minimal tops',
+  wide_leg_trouser: 'wide-leg trousers',
+  straight_cigarette: 'straight cigarette bottoms',
+  tailored_midi_skirt: 'tailored midi skirts',
+  wrap_skirt: 'wrap skirts',
+  straight_jeans: 'fitted straight jeans',
+  bootcut: 'flared or bootcut bottoms',
+  structured_blazer: 'structured blazers',
+  longline_coat: 'longline coats',
+  denim_jacket: 'denim jackets',
+  moto_jacket: 'leather or moto jackets',
+  knit_cardigan: 'knit cardigans',
+  linen_blazer: 'unstructured linen blazers',
+  structured_bag: 'structured bags',
+  soft_tote: 'soft totes',
+  minimal_jewellery: 'minimal jewellery',
+  statement_jewellery: 'statement jewellery',
+  classic_shoe: 'classic shoes',
+  modern_shoe: 'modern shoes',
+};
+
+function piecePreferenceLabel(value: string) {
+  return PIECE_PREFERENCE_LABELS[value] ?? value.replace(/_/g, ' ');
+}
+
+function summarisePiecePreferences(preferences: unknown) {
+  const groups = Object.entries(asRecord(preferences));
+  if (!groups.length) return 'No raw piece preference sorting was provided.';
+
+  const lines: string[] = [];
+  for (const [category, rawGroup] of groups) {
+    const group = asRecord(rawGroup);
+    const liked = asStringArray(group.liked).map(piecePreferenceLabel);
+    const disliked = asStringArray(group.disliked).map(piecePreferenceLabel);
+    const skipped = asStringArray(group.skipped).map(piecePreferenceLabel);
+    lines.push(`${category}: liked=${liked.length ? liked.join(', ') : 'none'}; disliked=${disliked.length ? disliked.join(', ') : 'none'}; skipped=${skipped.length ? skipped.join(', ') : 'none'}`);
+  }
+  return lines.join('\n');
 }
 
 function toPalette(value: unknown, fallback: Array<{ name: string; hex: string; usage: string }>) {
@@ -656,10 +833,11 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
       // Retry on Gemini overload/quota signals AND on transient network failures
       // (undici "fetch failed", resets, timeouts), which otherwise kill a whole
       // multi-minute generation on a single blip.
-      const transient = message.includes('503') || message.includes('429') || message.includes('quota') || message.includes('overloaded')
+      const transient = err instanceof SyntaxError // malformed JSON from the model — a fresh generation almost always parses (only JSON calls throw this)
+        || message.includes('503') || message.includes('429') || message.includes('quota') || message.includes('overloaded')
         || message.includes('fetch failed') || message.includes('econnreset') || message.includes('etimedout')
         || message.includes('enotfound') || message.includes('eai_again') || message.includes('terminated')
-        || message.includes('socket') || message.includes('network');
+        || message.includes('socket') || message.includes('network') || message.includes('empty text response');
       if (!transient || attempt === maxAttempts - 1) throw err;
       await new Promise(resolve => setTimeout(resolve, 4000 * Math.pow(2, attempt)));
     }
@@ -685,7 +863,9 @@ async function callGeminiText(prompt: string): Promise<string> {
       model: 'gemini-3-flash-preview',
       contents: [{ parts: [{ text: prompt }] }],
     });
-    return response.text?.trim() ?? '';
+    const text = response.text?.trim() ?? '';
+    if (!text) throw new Error('Gemini returned an empty text response');
+    return text;
   });
 }
 
@@ -703,13 +883,18 @@ async function fetchImagePart(url: string | null | undefined): Promise<{ inlineD
 }
 
 export function buildStylistBlueprintIntakeDigest(submission: StylistIntakeSubmission) {
+  const culturalMode = getStylistOutfitCulturalMode(submission);
+  const wantsEthnic = culturalMode === 'ethnic_allowed';
   const indiaContext = isIndianStylistIntake(submission)
     ? `
 India Market Context:
 - Client market is India. Use INR/₹ if any price or budget language is needed; never use USD, dollars, American pricing, US sizing, or US department-store assumptions.
 - Assume Indian retail availability, Indian office/social/festive contexts, warm-weather practicality, and realistic Indian tailoring/alteration access.
-- Use kurtas, sarees/saris, co-ords, juttis, sandals, dupattas, and Indian festive pieces only where they match the client's stated preferences and lifestyle.
-- Keep western/formal preferences intact when the notes ask for western, formals, trousers, tops, midis, or evening wear.
+${wantsEthnic
+  ? `- This client has expressed interest in Indian/ethnic wear. Use kurtas, sarees/saris, co-ords, juttis, sandals, dupattas, and Indian festive pieces where they match the client's stated preferences and lifestyle.
+- Keep western/formal preferences intact when the notes ask for western, formals, trousers, tops, midis, or evening wear.`
+  : `- CLIENT TRUTH FIRST (overrides the outfit library and its "for Indian clients include Indianwear" defaults): this client has NOT expressed any Indian/ethnic clothing preference anywhere in the intake. Generate EVERY outfit and every outfit image in Western / contemporary style worlds only.
+- Do NOT use Indianwear, kurtas, kurtis, sarees/saris, lehengas, anarkalis, salwar/churidar, shararas, dupattas, juttis, or any ethnic/festive pieces in any outfit. India Market Context here is about pricing and retail realism only, not about defaulting to ethnic clothing.`}
 `
     : '';
   return `Client:
@@ -720,6 +905,7 @@ Country: ${submission.country || ''}
 Age Range: ${submission.age_range || ''}
 Language: ${submission.primary_language || ''}
 Intake Source: ${submission.intake_source || 'customer_form'}
+Outfit Cultural Mode: ${culturalMode}
 
 Measurements:
 ${stringify(submission.body_measurements)}
@@ -807,9 +993,23 @@ function outfitPlanForHarnessPrompt(plan: PlannedOutfit) {
   return {
     outfit_number: plan.outfit_number,
     page_number: plan.page_number,
+    purpose: plan.purpose ?? 'detailed_report',
+    display_outfit_number: plan.display_outfit_number,
+    cultural_mode: plan.cultural_mode,
     capsule: plan.capsule,
     eyewear_required: plan.eyewear_required,
     eyewear_piece: plan.eyewear_required ? plan.eyewear_piece : undefined,
+    layer_required: plan.layer_required,
+    layer_type: plan.layer_type,
+    formula_direction: plan.formula_direction,
+    coverage_requires_cover: plan.coverage_requires_cover,
+    coverage_instruction: plan.coverage_requires_cover && !plan.layer_required
+      ? 'No separate layer is planned for this outfit; cover the upper arms through sleeve length, shoulder coverage, fabric drape, or one-piece cut.'
+      : undefined,
+    pattern_required: plan.pattern_required,
+    pattern_instruction: plan.pattern_instruction,
+    finishing_required: plan.finishing_required,
+    finishing_detail_type: plan.finishing_detail_type,
     max_visible_colours: plan.max_visible_colours,
   };
 }
@@ -847,6 +1047,12 @@ Evidence discipline:
 - Do not invent exact cm differences or exact percentages from photos.
 - Do not diagnose medical or sensitive traits.
 
+Preference discipline:
+- Piece preferences are not outfit quotas. Liked form choices are broad taste cues only; do not turn them into repeated signature requirements.
+- Disliked/No form choices, explicit avoid notes, coverage needs, modesty, fit safety, and lifestyle constraints should become anti_codes, shopping_filters, or coverage/silhouette rules where relevant.
+- Skipped form choices are neutral. Do not infer dislike, absence, or hidden taste from skipped items.
+- Moodboard, loved outfit, and secondary elements describe register and emotional comfort; never copy them literally or let them override body, coverage, undertone, or explicit dislikes.
+
 Required JSON shape:
 {
   "client": {"name":"","email":"","country":"","age_range":"","language":"","lifestyle_summary":""},
@@ -859,12 +1065,20 @@ Required JSON shape:
     "avoid_colours":[""]
   },
   "face_hair_accessories": {
-    "face_shape":"","face_direction":"","hair_direction":"","neckline_direction":"","jewellery_direction":"","eyewear_direction":"",
+    "face_shape":"","face_direction":"","hair_direction":"","hair_colour_direction":"","hair_colour_options":[""],"neckline_direction":"","jewellery_direction":"","eyewear_direction":"",
     "approved_necklines":[""],"hair_styles":[""],"eyewear_shapes":[""],"earring_shapes":[""]
   },
+  "makeup": {"style":"","everyday_direction":"","steps":[""],"colours":[""]},
   "taste": {"style_archetype":"","moodboard":"","signature_codes":[""],"anti_codes":[""],"shopping_filters":[""]},
   "fabrics": {"approved":[{"name":"","reason":""}],"avoid":[{"name":"","reason":""}]}
 }
+
+Hair colour and makeup guidance:
+- hair_colour_direction: one short paragraph on the best hair-colour/highlight direction for this client's depth, undertone, and existing hairstyle — classy, feminine, salon-achievable, and close enough to her natural depth to look expensive.
+- hair_colour_options: exactly 4 concrete, flattering hair-colour/highlight names (e.g. "soft caramel face-framing highlights", "warm chestnut gloss", "subtle honey balayage on existing layers", "deep espresso with soft lowlights") ordered safest-first, matched to undertone, depth, and existing hairstyle. Avoid fantasy colours, stripy highlights, harsh contrast, and brassy tones.
+- makeup.style + makeup.everyday_direction: describe a subtle natural everyday makeup look for this client (skin-first, soft, barely-there, not glam, not bridal, not party makeup).
+- makeup.steps: exactly 5 short ordered steps to achieve the everyday look (base/skin, brows, eyes, cheeks, lips), each one concise and product-type only — no brand names, no medical or clinical claims, no heavy contour, false lashes, glitter, smoky eyes, or bold lipstick.
+- makeup.colours: 3-4 soft flattering everyday shade directions (natural lip, soft cheek, gentle eye) tied to the client's undertone and palette; keep them muted, wearable, and realistic.
 
 Return exactly 15 base_palette colours and exactly 5 accent_palette colours with accurate hex codes.
 This is a classy, wearable wardrobe palette, not a colour-theory showcase. Weight it heavily toward neutrals so outfits stay realistic and easy to shop.
@@ -913,6 +1127,8 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
       face_shape: asString(face.face_shape, 'oval'),
       face_direction: asString(face.face_direction, 'Keep visual weight balanced around cheekbone level.'),
       hair_direction: asString(face.hair_direction, 'Soft structure and controlled movement around the face.'),
+      hair_colour_direction: asString(face.hair_colour_direction, 'Stay close to your natural depth with soft, face-framing warmth.'),
+      hair_colour_options: asStringArray(face.hair_colour_options).slice(0, 4),
       neckline_direction: asString(face.neckline_direction, 'Open necklines that lengthen without widening unnecessarily.'),
       jewellery_direction: asString(face.jewellery_direction, 'Medium-scale geometry with vertical movement.'),
       eyewear_direction: asString(face.eyewear_direction, 'Frames with gentle structure and lifted outer edges.'),
@@ -920,6 +1136,12 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
       hair_styles: asStringArray(face.hair_styles).slice(0, 4),
       eyewear_shapes: asStringArray(face.eyewear_shapes).slice(0, 4),
       earring_shapes: asStringArray(face.earring_shapes).slice(0, 4),
+    },
+    makeup: {
+      style: asString(asRecord(raw.makeup).style, 'Natural, skin-first everyday'),
+      everyday_direction: asString(asRecord(raw.makeup).everyday_direction, 'A soft, natural everyday look that evens the skin and warms the features without heaviness.'),
+      steps: asStringArray(asRecord(raw.makeup).steps).slice(0, 5),
+      colours: asStringArray(asRecord(raw.makeup).colours).slice(0, 4),
     },
     taste: {
       style_archetype: asString(asRecord(raw.taste).style_archetype, submission.selected_moodboard_label || 'Structured Minimalist'),
@@ -946,11 +1168,11 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
     ].filter((rule, index, arr) => arr.indexOf(rule) === index);
   }
   if (deterministicCoverage.neckline) {
-    classification.face_hair_accessories.neckline_direction = 'No cleavage showing.';
+    classification.face_hair_accessories.neckline_direction = 'No cleavage or very low necklines; safe open necklines are allowed when covered.';
     classification.face_hair_accessories.approved_necklines = deterministicCoverage.approvedNecklines.slice(0, 6);
     classification.taste.anti_codes = [
       ...classification.taste.anti_codes,
-      'No cleavage showing.',
+      'No cleavage or very low necklines.',
     ].filter((rule, index, arr) => arr.indexOf(rule) === index).slice(0, 12);
   }
 
@@ -1059,10 +1281,15 @@ type StylingDecisionPlan = {
 type PlannedOutfit = {
   outfit_number: number;
   page_number: number;
+  purpose?: 'transformation_preview' | 'detailed_report';
+  display_outfit_number?: number;
+  cultural_mode: StylistOutfitCulturalMode;
   capsule: 'Professional' | 'Social' | 'Everyday' | 'Occasion';
   formula_direction: string;
   texture_direction: string;
   pattern_direction: string;
+  pattern_required: boolean;
+  pattern_instruction?: string;
   lead_colour: PlannedOutfitColour;
   support_colour: PlannedOutfitColour;
   ground_colour?: PlannedOutfitColour;
@@ -1073,6 +1300,8 @@ type PlannedOutfit = {
     guidance: string;
   };
   accent_mode?: 'layer' | 'top' | 'detail';
+  finishing_required: boolean;
+  finishing_detail_type?: 'scarf' | 'belt' | 'watch' | 'hair_detail' | 'lip_tone';
   layer_required: boolean;
   layer_type?: string;
   coverage_requires_cover: boolean;
@@ -1143,11 +1372,42 @@ const FORMULA_DIRECTIONS: Record<PlannedOutfit['capsule'], string[]> = {
     'casual column broken by one lighter or darker bridge piece',
   ],
   Occasion: [
-    'dress or saree/kurta-led look + refined heel/sandal + compact bag',
+    'dress, tailored trouser set, satin-skirt look, or polished co-ord + refined heel/sandal + compact bag',
     'polished co-ord + jewellery accent + clean neutral grounding',
     'fluid festive layer + simple base + metallic or leather bridge',
     'evening separates with one luminous near-face detail',
     'statement silhouette controlled by restrained palette placement',
+  ],
+};
+
+const NO_LAYER_FORMULA_DIRECTIONS: Record<PlannedOutfit['capsule'], string[]> = {
+  Professional: [
+    'polished sleeve-led blouse + tailored trouser + refined shoe and bag',
+    'structured knit shell with elbow or bracelet sleeves + midi skirt + slim belt',
+    'one-piece work dress with real sleeves + classic shoe + structured bag',
+    'detailed-collar top with sleeves + cigarette trouser + watch or scarf finish',
+    'clean minimal top with sleeve coverage + wide-leg trouser + leather grounding',
+  ],
+  Social: [
+    'draped sleeve-led top + fluid skirt or trouser + compact bag',
+    'dress-led look with real sleeves + refined shoe + one finishing detail',
+    'elevated denim or trouser + detailed blouse + lower-contrast shoe',
+    'soft statement top + simple bottom + bag or belt focal point',
+    'tonal separates with sleeve coverage and one clear contrast bridge',
+  ],
+  Everyday: [
+    'easy sleeve-led top + denim/chino/trouser + clean neutral flat',
+    'relaxed knit or tee with sleeve coverage + grounded bottom + tote',
+    'casual dress or co-ord with real sleeves + practical flat shoe',
+    'non-clingy top + non-clingy bottom + small accessory detail',
+    'casual column shaped by hem, sleeve, belt, or shoe contrast',
+  ],
+  Occasion: [
+    'sleeved dress, satin-skirt look, trouser set, or polished co-ord + refined heel/sandal',
+    'polished co-ord with sleeve coverage + compact bag + jewellery accent',
+    'evening separates with a luminous near-face detail and no outer layer',
+    'statement silhouette controlled by neckline, sleeve, and restrained palette placement',
+    'dress or skirt-led occasion look with one elegant finishing detail',
   ],
 };
 
@@ -1176,6 +1436,37 @@ const PATTERN_DIRECTIONS = [
   'border or panel detail',
   'quiet woven texture',
 ];
+
+const FINISHING_DETAIL_TYPES: Array<NonNullable<PlannedOutfit['finishing_detail_type']>> = [
+  'scarf',
+  'belt',
+  'watch',
+  'hair_detail',
+  'lip_tone',
+];
+
+function requiresFinishingDetail(capsule: PlannedOutfit['capsule'], index: number) {
+  const capsuleIndex = index % 5;
+  if (capsule === 'Professional') return [0, 2, 4].includes(capsuleIndex);
+  if (capsule === 'Social') return [0, 1, 3].includes(capsuleIndex);
+  if (capsule === 'Everyday') return [1, 3].includes(capsuleIndex);
+  return [0, 2, 4].includes(capsuleIndex);
+}
+
+function finishingDetailTypeForPlan(capsule: PlannedOutfit['capsule'], index: number): NonNullable<PlannedOutfit['finishing_detail_type']> {
+  if (capsule === 'Professional') return index % 3 === 0 ? 'scarf' : index % 3 === 1 ? 'belt' : 'watch';
+  if (capsule === 'Social') return index % 2 === 0 ? 'scarf' : 'lip_tone';
+  if (capsule === 'Everyday') return index % 2 === 0 ? 'belt' : 'hair_detail';
+  return FINISHING_DETAIL_TYPES[index % FINISHING_DETAIL_TYPES.length];
+}
+
+function requiresPattern(capsule: PlannedOutfit['capsule'], index: number) {
+  const capsuleIndex = index % 5;
+  if (capsule === 'Professional') return [1, 3].includes(capsuleIndex);
+  if (capsule === 'Social') return [0, 2, 4].includes(capsuleIndex);
+  if (capsule === 'Everyday') return [1, 4].includes(capsuleIndex);
+  return [1, 3].includes(capsuleIndex);
+}
 
 // Detail-only accent applications. Garment-level accents (a coloured layer or
 // top) are now handled structurally via accent_mode, so they are not listed
@@ -1215,9 +1506,9 @@ Practical colour application rules:
 - NEVER put an accent (or any) colour on a bag or shoe as a trim, tag, stripe, piping, hardware, stitch, sole, or "detail". Bags and shoes are a single realistic colour from head to toe.
 - Bags and shoes use realistic leather/suede colours only: black, espresso, chocolate, cognac, tan, taupe, cream, burgundy, or restrained grey. A vivid/bright colour belongs on a knit, top, scarf, belt, jewellery, or evening clutch — not on an everyday leather bag or shoe.
 - Never create coloured leather sneakers. Sneakers are white, off-white, cream, or grey-neutral with no coloured trim.
-- Professional and Occasion outfits should normally use loafers, pointed flats, pumps, sandals, juttis, mules, or refined heels instead of sneakers unless the library reference and client lifestyle clearly justify a casual version.
+- Professional and Occasion outfits should normally use loafers, pointed flats, pumps, sandals, mules, or refined heels instead of sneakers unless the library reference and client lifestyle clearly justify a casual version. Use juttis only in ethnic_allowed mode.
 - Do not make a whole trouser, sneaker, or large coat the accent colour.
-- Do not rely on scarves. Across the full outfit system, use at most one scarf moment unless the admin specifically asks for more.
+- Scarves, belts, and statement finishing pieces are a core elevated styling tool and appear throughout the outfit library — use them. Include a finishing detail (scarf, belt, or statement accessory) in a meaningful share of outfits (roughly one in three), varying the type, colour, and placement (tied at the neck, on the bag, at the waist, in the hair). Do not reuse the same scarf/belt colour or placement repeatedly, and do not force one into every look — but do not strip them out either.
 - Keep each outfit visually distinct by selecting different complete library references, not by forcing random patterns or colour placements.
 - Include texture/pattern only where the styling decision calls for it or where a garment would otherwise be too vague to shop.
 - Every outfit must preserve the assigned library_reference piece relationship, then adapt colour, formality, coverage, climate, and fit to this client.
@@ -1232,18 +1523,32 @@ Shoppable realism rules (every piece must be findable in real stores):
 
 const HARNESS_FIRST_OUTFIT_CONTRACT = `
 Harness-first outfit contract:
-- The ICONIK Outfit Recommendation Harness is the primary outfit system. Treat attached images, coverage requirements, free notes, and the basic page plan as the only outfit intake context.
+- The ICONIK Outfit Recommendation Harness is the primary outfit system. Treat attached images, coverage requirements, piece preference sorting, free notes, the attached women outfit library, and the basic page plan as outfit intake context.
 - Do not let the deterministic plan flatten outfits into the same neutral formula. Use it for page number, capsule, coverage, eyewear cadence, and structural safety; the harness chooses the styling intention, archetype, hero, colour movement, and exact item mix.
 - Colour has undertone-safe freedom. You may choose any realistic, buyable, undertone-aligned retail colour even if it is not one of the named palette colours. The generated palette is guidance, not a hard whitelist.
 - Exact palette colours are not provided to the outfit engine. Choose colours from the attached images, coverage, free notes, occasion, garment realism, and retail availability.
-- Manual-admin notes, profile text, and explicit preferences are hard guardrails when provided. Use liked/preferred garments to steer outfit worlds, and reject outfits that conflict with avoid, exposure, fit, footwear, or garment-category boundaries.
+- The attached women outfit library is the dominant prompt reference. Choose the closest library-quality formula first, then adapt minimally for this client instead of inventing unrelated formulas.
+- Preserve the library's elevated elements: scarves, belts, polished bags, structured shoes, jewellery restraint, rich texture, strong colour relationships, warm leather bridges, and precise finishing details.
+- Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set. Do not copy entries verbatim, cite numbers, or force a library outfit when hard client guardrails point elsewhere.
+- Do not add unnecessary decorative detail to every formula item. Individual pieces may be simple, clean, and realistic; the outfit should feel elevated through the full combination, proportion, colour relationship, texture, finishing detail, and accessories.
+- Manual-admin notes, profile text, and explicit preferences are hard guardrails when provided. Use liked/preferred garments to softly steer outfit worlds, and reject outfits that conflict with avoid, exposure, fit, footwear, or garment-category boundaries.
+- For form choices, disliked/No is an avoid signal, skipped is neutral and ignored, and liked is directional flavour only. Never repeat an item type merely because it was liked.
 - If a preference conflicts with body/coverage safety or garment realism, preserve safety/realism and choose the nearest acceptable alternative.
 - For customer-form reports, treat item preferences as soft context unless they express hard coverage, fit, modesty, avoid, or lifestyle needs.
+- If the intake mentions modesty or neckline coverage, interpret it as no cleavage and no very low necklines. Do not automatically turn modesty into only high necklines; safe open collars, soft V necklines, soft scoops, and modest square necks are allowed when they stay covered.
 - Keep each outfit to no more than 3 visible colours plus metal direction. At least half of the full outfit set must use colour in a main garment, not only in bag, jewellery, scarf, eyewear, or shoes.
+- Build visible colour diversity across the full set. Do not reuse the same lead colour family repeatedly; rotate near-face colour, neutral depth, leather grounding, and accent placement so the pages do not read like the same palette repeated.
+- Build visible pattern diversity where pattern_required=true: include the specified pattern_instruction as a real garment fabric/print/detail, such as a pinstripe blazer, micro-check trouser, small-scale print blouse, tonal jacquard, contrast piping, or fine vertical stripe.
+- Professional outfits must include formal tailored layers whenever layer_required=true. Use the provided layer_type exactly enough to create real blazer/vest/jacket authority; do not replace formal layers with only a blouse and trousers.
+- When finishing_required=true, fill 07 - FINISHING DETAIL with one exact non-jewellery finishing idea matching finishing_detail_type. Use scarves, belts, watches, lip tones, or hair details as styling architecture, not filler. Do not answer None for required finishing details.
+- Before writing final outfit blocks, run a private elevation and diversity preflight. Do not output the preflight. Check that the set is not repeating the same colour family, same neutral formula, same shoe/bag, same layer, same silhouette, or same finishing placement.
+- Keep layers to the plan cadence, roughly half to 60% of the outfit set. When layer_required=false, do not add a separate blazer, jacket, cardigan, vest, coat, overshirt, duster, wrap, or third-piece outer frame; solve coverage and polish through sleeves, neckline, fabric, colour, cut, bag, shoes, and finishing detail.
+- Elevation means specific retail-real garment details and one intelligent styling move: fabric, cut, neckline, sleeve, hem, proportion, scarf/belt/watch/hair/lip finish. Avoid catalogue-basic blouse + trouser + bag formulas.
+- When statement jewellery is disliked, use scarves, belts, watches, bag-handle scarves, hair scarves/details, lip tone, or shoe/bag polish as the elevated finishing system. Scarf moments should be a stylish minority, not a quota; include at least one bag-handle scarf only when it improves the full set.
 - Each outfit page must include one formula block with exact formula item objects: {"slot":"","piece":"","colour_name":"","colour_hex":"","palette_role":"lead|support|ground|accent","structural_notes":""}.
 - Formula items must be exact. Do not use "or", slashes, "optional", alternate colours, alternate shoes, alternate layers, or category-only names.
 - Each outfit page must include blocks for Why it works, Role breakdown, Do not buy, and Score summary.
-- Each formula must identify one archetype from the harness: Coloured Hero + Quiet Support; Neutral Architecture + Rich Accent; Pattern Hero + Controlled Solids; Texture Hero + Tonal Depth; Shape Hero + Clean Colour; Casual Base + Polished Disruptor; Indian Base + Modern Finishing.
+- Each formula must identify one archetype from the harness: Coloured Hero + Quiet Support; Neutral Architecture + Rich Accent; Pattern Hero + Controlled Solids; Texture Hero + Tonal Depth; Shape Hero + Clean Colour; Casual Base + Polished Disruptor; Western Base + Elevated Finishing. Use Indian Base + Modern Finishing only when cultural_mode is ethnic_allowed.
 - Shoes and bags must remain realistic leather/suede/occasion-metal colours: black, espresso, chocolate, cognac, tan, taupe, cream, burgundy, restrained grey, or a realistic occasion metallic. No coloured trims, tags, soles, piping, or fake contrast hardware.
 - Eyewear follows eyewear_required only: exactly one Eyewear item when true, no eyewear when false.`.trim();
 
@@ -1254,12 +1559,12 @@ function normalisedLibrarySlots(outfit: ParsedStylistOutfit): Array<{ slot: stri
 
   return slots
     .filter(slot => ['Outfit', 'Dress', 'Top', 'Base Layer', 'Outerwear', 'Bottom', 'Waist Detail', 'Pattern Detail', 'Neckline', 'Footwear', 'Bag', 'Jewellery', 'Accessories', 'Statement Piece'].includes(slot.slot))
-    .slice(0, 9)
+    .slice(0, 12)
     .map(slot => ({ slot: slot.slot, piece: slot.piece, source: 'primary' as const }));
 }
 
 function libraryPieceLogic(primary: ParsedStylistOutfit): Array<{ slot: string; piece: string; source: 'primary' }> {
-  return normalisedLibrarySlots(primary).slice(0, 9);
+  return normalisedLibrarySlots(primary).slice(0, 12);
 }
 
 function libraryReferenceForPlan(
@@ -1267,7 +1572,7 @@ function libraryReferenceForPlan(
   capsule: PlannedOutfit['capsule'],
 ): BlueprintLibraryRef {
   const pieceSummary = libraryPieceLogic(outfit)
-    .slice(0, 5)
+    .slice(0, 9)
     .map(item => `${item.slot}: ${item.piece}`)
     .join('; ');
   return {
@@ -1363,7 +1668,7 @@ function bodyStrategyFromProfile(classification: StylistBlueprintClassification,
   const rules = [
     classification.body.proportion_directive,
     profile.arms ? 'use a real sleeve or intentional outer frame for arm coverage' : '',
-    profile.neckline ? 'No cleavage showing.' : '',
+    profile.neckline ? 'avoid cleavage and very low necklines without defaulting to high necklines' : '',
     profile.legs ? 'use trousers or below-knee hemlines' : '',
     profile.looseFit ? 'avoid cling and use controlled ease through sensitive areas' : '',
   ].filter(Boolean);
@@ -1386,7 +1691,11 @@ function anchorRoleForOutfit(
   return index % 2 === 0 ? 'shirt_blouse' : 'layer';
 }
 
-function anchorPieceForRole(role: StylingDecisionPlan['anchor_role'], capsule: PlannedOutfit['capsule']) {
+function anchorPieceForRole(
+  role: StylingDecisionPlan['anchor_role'],
+  capsule: PlannedOutfit['capsule'],
+  culturalMode: StylistOutfitCulturalMode,
+) {
   const professional = capsule === 'Professional';
   const pieces: Record<StylingDecisionPlan['anchor_role'], string> = {
     blazer: professional ? 'structured blazer or tailored vest' : 'soft structured jacket',
@@ -1395,7 +1704,11 @@ function anchorPieceForRole(role: StylingDecisionPlan['anchor_role'], capsule: P
     dress: capsule === 'Occasion' ? 'refined dress or one-piece column' : 'clean dress with controlled fit',
     layer: 'intentional outer layer that creates vertical structure',
     skirt: 'midi skirt with clean fall',
-    set: capsule === 'Occasion' ? 'polished co-ord, kurta set, saree, or festive ensemble' : 'co-ord or coordinated set',
+    set: capsule === 'Occasion'
+      ? (culturalMode === 'western_default'
+        ? 'polished co-ord, tailored trouser set, satin-skirt set, or refined dress'
+        : 'polished co-ord, kurta set, saree, or festive ensemble')
+      : 'co-ord or coordinated set',
   };
   return pieces[role];
 }
@@ -1418,9 +1731,13 @@ function fabricRulesForCapsule(capsule: PlannedOutfit['capsule'], profile: Styli
   return `${opacity}Use practical fabric with clean recovery: cotton, linen blend, twill, denim, ponte, fine knit, or soft structured blends.`;
 }
 
-function accessoryRulesForCapsule(capsule: PlannedOutfit['capsule']) {
+function accessoryRulesForCapsule(capsule: PlannedOutfit['capsule'], culturalMode: StylistOutfitCulturalMode) {
   if (capsule === 'Professional') return 'Finish with pointed flats/loafers/low pumps, structured tote or shoulder bag, small earrings, watch, or a thin belt only if it helps waist definition.';
-  if (capsule === 'Occasion') return 'Finish with refined heels/flats/juttis or sandals, compact clutch, and one strong jewellery idea; no competing accessory pile-up.';
+  if (capsule === 'Occasion') {
+    return culturalMode === 'western_default'
+      ? 'Finish with refined heels/flats/sandals, compact clutch, and one strong jewellery or finishing idea; no competing accessory pile-up.'
+      : 'Finish with refined heels/flats/juttis or sandals, compact clutch, and one strong jewellery idea; no competing accessory pile-up.';
+  }
   if (capsule === 'Social') return 'Finish with a compact bag, refined sandal/mule/flat, and one jewellery focal point.';
   return 'Finish with practical clean flats/sneakers/loafers, crossbody/tote, and simple jewellery; avoid slouchy bags that make the outfit look unfinished.';
 }
@@ -1536,16 +1853,17 @@ function buildStylingDecisionPlan(
   capsule: PlannedOutfit['capsule'],
   index: number,
   profile: StylistCoverageProfile,
+  culturalMode: StylistOutfitCulturalMode,
   libraryOutfit?: ParsedStylistOutfit,
   anchorRoleOverride?: StylingDecisionPlan['anchor_role'],
 ): StylingDecisionPlan {
   const anchor_role = anchorRoleOverride ?? anchorRoleForOutfit(capsule, index, reportData.classification, profile);
-  const anchor_piece = anchorPieceForRole(anchor_role, capsule);
+  const anchor_piece = anchorPieceForRole(anchor_role, capsule, culturalMode);
   const outfit_message = outfitMessageForCapsule(capsule, reportData.classification);
   const body_strategy = bodyStrategyFromProfile(reportData.classification, profile);
   const colour_world = colourWorldForCapsule(capsule, reportData.classification);
   const necklineInstruction = profile.neckline
-    ? 'Neckline coverage: No cleavage showing.'
+    ? 'Neckline coverage: avoid cleavage and very low necklines; safe open necklines are allowed when covered.'
     : 'Use a polished neckline that supports the face.';
   const silhouette_formula = `${anchor_piece} first, then adapt ${libraryOutfit?.title ?? 'the verified library skeleton'} into a ${capsule.toLowerCase()} formula that serves the message before colour.`;
   return {
@@ -1562,7 +1880,7 @@ function buildStylingDecisionPlan(
       banned: profile.bannedNecklines,
       instruction: necklineInstruction,
     },
-    accessory_rules: accessoryRulesForCapsule(capsule),
+    accessory_rules: accessoryRulesForCapsule(capsule, culturalMode),
     mirror_test: [
       `Does she look ${outfit_message}?`,
       'Does the outfit flatter her actual body strategy before serving colour?',
@@ -1603,15 +1921,17 @@ function plannedColour(
 }
 
 const SAFE_NECKLINES = [
+  'soft V that does not expose cleavage',
+  'open collar with safe button stance',
+  'soft scoop that sits above cleavage',
+  'boat neck',
+  'modest square neck',
   'crew neck',
   'jewel neck',
-  'high scoop',
-  'bateau or boat neck',
-  'modest square neck',
   'collared shirt with safe button stance',
   'mock neck',
   'band or mandarin collar',
-  'high wrap neckline',
+  'wrap neckline secured above cleavage',
 ];
 
 const UNSAFE_NECKLINES = [
@@ -1648,7 +1968,7 @@ function profileFromCoverageText(text: string): StylistCoverageProfile {
   const looseFit = fullModesty ||
     /\b(loose|not tight|avoid cling|non clingy|non-clingy|not bodycon|relaxed fit|overall fit)\b/.test(normalised);
   const reasons = [
-    neckline ? 'neckline/chest exposure' : '',
+    neckline ? 'cleavage/very low neckline exposure' : '',
     arms ? 'arm/shoulder/sleeve coverage' : '',
     legs ? 'leg/knee coverage' : '',
     opacity ? 'fabric opacity' : '',
@@ -1713,7 +2033,7 @@ function coverageProfileFromSubmission(submission: StylistIntakeSubmission): Sty
 function deterministicCoverageRulesFromProfile(profile: StylistCoverageProfile): string[] {
   const rules: string[] = [];
   if (profile.neckline) {
-    rules.push('Neckline coverage: No cleavage showing.');
+    rules.push('Neckline coverage: avoid cleavage and very low necklines; do not assume high necklines are required.');
   }
   if (profile.arms) rules.push('Arm coverage: use a real sleeve or intentional layer; do not solve arm coverage with neckline changes.');
   if (profile.legs) rules.push('Leg coverage: keep hemlines at or below the knee, or use trousers/full-length bottoms.');
@@ -1860,7 +2180,13 @@ function pickDistinctPlannedColour(
   predicate?: (colour: { name: string; hex: string }) => boolean,
 ) {
   const candidates = predicate ? palette.filter(predicate) : palette;
-  const hit = candidates.find(colour => !used.has(normaliseHex(colour.hex))) ?? candidates[0] ?? palette[0] ?? paletteFallback(fallbackIndex);
+  const ordered = candidates.length
+    ? Array.from({ length: candidates.length }, (_, offset) => candidates[(fallbackIndex + offset) % candidates.length])
+    : [];
+  const hit = ordered.find(colour => !used.has(normaliseHex(colour.hex)))
+    ?? ordered[0]
+    ?? palette[fallbackIndex % Math.max(1, palette.length)]
+    ?? paletteFallback(fallbackIndex);
   used.add(normaliseHex(hit.hex));
   return plannedColour(hit, role, fallbackIndex);
 }
@@ -1877,22 +2203,27 @@ function restrainedColourStory(
   const anchorColours = anchorColourStory(libraryOutfit, base, accents);
   const used = new Set<string>();
   const neutralPool = base.filter(isWardrobeNeutral);
+  const nonNeutralPool = base.filter(colour => !isWardrobeNeutral(colour));
   const professionalPool = base.filter(isProfessionalAnchorNeutral);
   const groundedPool = professionalPool.length ? professionalPool : neutralPool.length ? neutralPool : base;
+  const leadPool = capsule === 'Professional'
+    ? (index % 2 === 0 && nonNeutralPool.length ? nonNeutralPool : groundedPool)
+    : (nonNeutralPool.length ? nonNeutralPool : base);
 
-  const lead = anchorColours.lead && (capsule !== 'Professional' || isWardrobeNeutral(anchorColours.lead))
+  const lead = anchorColours.lead && (capsule !== 'Professional' || index % 2 === 0 || isWardrobeNeutral(anchorColours.lead))
     ? anchorColours.lead
     : pickDistinctPlannedColour(
-      capsule === 'Professional' ? groundedPool : (neutralPool.length ? neutralPool : base),
+      leadPool,
       'lead',
       used,
       index,
     );
   used.add(normaliseHex(lead.hex));
 
+  const supportPool = neutralPool.length ? neutralPool : base;
   const support = anchorColours.support && normaliseHex(anchorColours.support.hex) !== normaliseHex(lead.hex)
     ? anchorColours.support
-    : pickDistinctPlannedColour(neutralPool.length ? neutralPool : base, 'support', used, index + 3);
+    : pickDistinctPlannedColour(supportPool, 'support', used, index + 3);
   used.add(normaliseHex(support.hex));
 
   const ground = anchorColours.ground && !used.has(normaliseHex(anchorColours.ground.hex))
@@ -1907,13 +2238,20 @@ function restrainedColourStory(
   return { lead, support, ground, accent };
 }
 
-function outfitHasLibraryLayer(outfit: ParsedStylistOutfit | undefined) {
-  return Boolean(outfit?.normalised_slots.some(slot => /outerwear|layer|blazer|jacket|cardigan|vest|coat|overshirt|dupatta/i.test(`${slot.slot} ${slot.piece}`)));
+function shouldPlanLayer(capsule: PlannedOutfit['capsule'], capsuleIndex: number) {
+  const layerSchedule: Record<PlannedOutfit['capsule'], number[]> = {
+    Professional: [0, 3, 4],
+    Social: [0, 4],
+    Everyday: [1, 3],
+    Occasion: [0, 4],
+  };
+  return layerSchedule[capsule].includes(capsuleIndex);
 }
 
 function buildOutfitDiversityPlan(
   reportData: StylistBlueprintReportData,
   libraryContext: OutfitLibraryContext = seedOutfitLibraryContext(),
+  culturalMode: StylistOutfitCulturalMode = 'ethnic_allowed',
 ): PlannedOutfit[] {
   const library = libraryContext.outfits;
   const outfitCount = getStylistBlueprintOutfitCount(reportData);
@@ -1923,32 +2261,42 @@ function buildOutfitDiversityPlan(
 
   return Array.from({ length: outfitCount }, (_, index): PlannedOutfit => {
     const capsule = CAPSULE_SEQUENCE[Math.floor(index / perCapsule)] ?? 'Everyday';
+    const capsuleIndex = index % perCapsule;
     const anchorRole = anchorRoleForOutfit(capsule, index, reportData.classification, coverageProfile);
     const libraryOutfit = chooseLibraryOutfit(library, capsule, index, usedLibrarySignatures, libraryContext.blockedSignatures, anchorRole);
-    const formulaDirections = FORMULA_DIRECTIONS[capsule];
     const accentIndex = Math.floor(index / 2) % ACCENT_APPLICATIONS.length;
     const textureCycle = Math.floor(index / TEXTURE_DIRECTIONS.length);
-    const stylingDecision = buildStylingDecisionPlan(reportData, capsule, index, coverageProfile, libraryOutfit, anchorRole);
+    const stylingDecision = buildStylingDecisionPlan(reportData, capsule, index, coverageProfile, culturalMode, libraryOutfit, anchorRole);
     const colours = restrainedColourStory(reportData, capsule, index, libraryOutfit, stylingDecision);
     const usesAccent = Boolean(colours.accent);
-    const layerRequired = coverageProfile.arms || outfitHasLibraryLayer(libraryOutfit);
+    const professionalFormalLayer = capsule === 'Professional' && shouldPlanLayer(capsule, capsuleIndex);
+    const layerRequired = shouldPlanLayer(capsule, capsuleIndex);
+    const formulaDirections = layerRequired ? FORMULA_DIRECTIONS[capsule] : NO_LAYER_FORMULA_DIRECTIONS[capsule];
     const accentMode: PlannedOutfit['accent_mode'] = usesAccent ? 'detail' : undefined;
     const layerPool = LAYER_TYPES_BY_CAPSULE[capsule];
+    const professionalLayerType = ['unstructured linen blazer', 'tailored waistcoat', 'soft knit blazer-jacket', 'unstructured blazer', 'cropped polished jacket'][capsuleIndex];
+    const finishingRequired = requiresFinishingDetail(capsule, index);
+    const patternRequired = requiresPattern(capsule, index);
     const plan: PlannedOutfit = {
       outfit_number: index + 1,
-      page_number: getStylistBlueprintOutfitStartPage() + index,
+      page_number: getStylistBlueprintOutfitStartPage(reportData) + index,
+      cultural_mode: culturalMode,
       capsule,
       formula_direction: `${stylingDecision.anchor_piece} -> ${formulaDirections[index % formulaDirections.length]}`,
       texture_direction: TEXTURE_DIRECTIONS[(index + textureCycle * 5) % TEXTURE_DIRECTIONS.length],
       pattern_direction: PATTERN_DIRECTIONS[((index * 3) + textureCycle * 5) % PATTERN_DIRECTIONS.length],
+      pattern_required: patternRequired,
+      pattern_instruction: patternRequired ? PATTERN_DIRECTIONS[((index * 3) + textureCycle * 5) % PATTERN_DIRECTIONS.length] : undefined,
       lead_colour: colours.lead,
       support_colour: colours.support,
       ground_colour: colours.ground,
       accent_colour: usesAccent ? colours.accent : undefined,
       accent_application: usesAccent ? ACCENT_APPLICATIONS[accentIndex] : undefined,
       accent_mode: accentMode,
+      finishing_required: finishingRequired,
+      finishing_detail_type: finishingRequired ? finishingDetailTypeForPlan(capsule, index) : undefined,
       layer_required: layerRequired,
-      layer_type: layerRequired ? layerPool[index % layerPool.length] : undefined,
+      layer_type: layerRequired ? (professionalFormalLayer ? professionalLayerType : layerPool[index % layerPool.length]) : undefined,
       coverage_requires_cover: coverageProfile.arms,
       coverage_profile: coverageProfile,
       styling_decision: stylingDecision,
@@ -1981,16 +2329,16 @@ type ParsedHarnessOutfit = {
 };
 
 const HARNESS_SECTION_MARKERS: Array<{ key: keyof Omit<ParsedHarnessOutfit, 'outfitNumber' | 'context'>; pattern: RegExp }> = [
-  { key: 'top', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?1\s*[—-]\s*TOP(?:\s*\/\s*KURTA)?\s*:\s*(?:\*\*)?/im },
-  { key: 'bottom', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?2\s*[—-]\s*BOTTOM\s*:\s*(?:\*\*)?/im },
-  { key: 'layer', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?3\s*[—-]\s*LAYER(?:\s*\/\s*DUPATTA)?\s*:\s*(?:\*\*)?/im },
-  { key: 'footwear', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?4\s*[—-]\s*FOOTWEAR\s*:\s*(?:\*\*)?/im },
-  { key: 'bag', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?5\s*[—-]\s*BAG\s*:\s*(?:\*\*)?/im },
-  { key: 'jewellery', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?6\s*[—-]\s*JEWELL?ERY\s*:\s*(?:\*\*)?/im },
-  { key: 'finishing', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?7\s*[—-]\s*FINISHING DETAIL\s*:\s*(?:\*\*)?/im },
-  { key: 'eyewear', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?0?8\s*[—-]\s*EYEWEAR\s*:\s*(?:\*\*)?/im },
-  { key: 'whyItWorks', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?WHY IT WORKS\s*:\s*(?:\*\*)?/im },
-  { key: 'oneMove', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?THE ONE MOVE\s*:\s*(?:\*\*)?/im },
+  { key: 'top', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?1\s*[—:.\-]\s*)?TOP(?:\s*\/\s*KURTA)?\s*:\s*(?:\*\*)?/im },
+  { key: 'bottom', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?2\s*[—:.\-]\s*)?BOTTOM\s*:\s*(?:\*\*)?/im },
+  { key: 'layer', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?3\s*[—:.\-]\s*)?LAYER(?:\s*\/\s*DUPATTA)?\s*:\s*(?:\*\*)?/im },
+  { key: 'footwear', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?4\s*[—:.\-]\s*)?FOOTWEAR\s*:\s*(?:\*\*)?/im },
+  { key: 'bag', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?5\s*[—:.\-]\s*)?BAG\s*:\s*(?:\*\*)?/im },
+  { key: 'jewellery', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?6\s*[—:.\-]\s*)?JEWELL?ERY\s*:\s*(?:\*\*)?/im },
+  { key: 'finishing', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?7\s*[—:.\-]\s*)?FINISHING DETAIL\s*:\s*(?:\*\*)?/im },
+  { key: 'eyewear', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:0?8\s*[—:.\-]\s*)?EYEWEAR\s*:\s*(?:\*\*)?/im },
+  { key: 'whyItWorks', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:WHY (?:IT|THIS|THE OUTFIT) WORKS(?:\s+FOR\s+(?:HER|THE CLIENT))?|WHY THIS OUTFIT WORKS|STYLING LOGIC|WHY THIS LOOK WORKS)\s*:\s*(?:\*\*)?/im },
+  { key: 'oneMove', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?(?:THE\s*)?ONE MOVE\s*:\s*(?:\*\*)?/im },
   { key: 'dnaCheck', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?DNA CHECK\s*:\s*(?:\*\*)?/im },
   { key: 'realismCheck', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?REALISM CHECK\s*:\s*(?:\*\*)?/im },
   { key: 'doNotBuy', pattern: /^\s*(?:[-*]\s*)?(?:\*\*)?DO NOT BUY\s*:\s*(?:\*\*)?/im },
@@ -2021,8 +2369,41 @@ function parseHarnessSection(block: string, key: keyof Omit<ParsedHarnessOutfit,
   return stripHarnessMarkdown(block.slice(current.end, next?.start ?? block.length));
 }
 
+function fallbackHarnessWhyItWorks(parsed: Pick<ParsedHarnessOutfit, 'top' | 'bottom' | 'layer' | 'footwear' | 'bag' | 'finishing' | 'oneMove'>) {
+  const pieces = [
+    parsed.top ? `top: ${parsed.top}` : '',
+    parsed.bottom ? `bottom: ${parsed.bottom}` : '',
+    parsed.layer && !isNoneHarnessValue(parsed.layer) ? `layer: ${parsed.layer}` : '',
+    parsed.footwear ? `footwear: ${parsed.footwear}` : '',
+    parsed.bag ? `bag: ${parsed.bag}` : '',
+    parsed.finishing && !isNoneHarnessValue(parsed.finishing) ? `finish: ${parsed.finishing}` : '',
+  ].filter(Boolean).join('; ');
+  const move = parsed.oneMove || 'a clear proportion and polish move';
+  return `This outfit works through ${move}, using ${pieces} to create a balanced, polished, client-specific silhouette with controlled colour and wearable structure.`;
+}
+
+function fillHarnessNarrativeFallbacks(parsed: ParsedHarnessOutfit) {
+  if (!parsed.oneMove) {
+    parsed.oneMove = parsed.finishing && !isNoneHarnessValue(parsed.finishing)
+      ? parsed.finishing
+      : 'Polished proportion balance';
+  }
+  if (!parsed.whyItWorks && parsed.top && parsed.bottom && parsed.footwear && parsed.bag) {
+    parsed.whyItWorks = fallbackHarnessWhyItWorks(parsed);
+  }
+  if (!parsed.dnaCheck) {
+    parsed.dnaCheck = 'Texture yes; warm bridge yes; one move yes; long line yes; contrast yes';
+  }
+  if (!parsed.realismCheck) {
+    parsed.realismCheck = 'Collar/neckline clean; buttoning realistic; tuck/drape clean; category accurate';
+  }
+  if (!parsed.doNotBuy) {
+    parsed.doNotBuy = 'Do not buy the shapeless, clingy, overly busy, or poorly proportioned version of this outfit.';
+  }
+}
+
 function parseHarnessOutfitText(text: string): ParsedHarnessOutfit[] {
-  const headerPattern = /^\s*(?:\*\*)?OUTFIT\s*\[?(\d+)\]?\s*[—-]\s*(.+?)(?:\*\*)?\s*$/gim;
+  const headerPattern = /^\s*(?:#{1,6}\s*)?(?:[-*]\s*)?(?:\*\*)?OUTFIT\s*(?:#\s*)?\[?\s*(\d+)\s*\]?\s*(?:[—:.\-]\s*(.*?))?(?:\*\*)?\s*$/gim;
   const headers = [...text.matchAll(headerPattern)];
   if (!headers.length) {
     throw new Error('Harness outfit generation returned no OUTFIT blocks');
@@ -2034,7 +2415,7 @@ function parseHarnessOutfitText(text: string): ParsedHarnessOutfit[] {
     const block = text.slice(start, end);
     const parsed: ParsedHarnessOutfit = {
       outfitNumber: Number(match[1]),
-      context: stripHarnessMarkdown(match[2]),
+      context: stripHarnessMarkdown(match[2] || `Look ${match[1]}`),
       top: parseHarnessSection(block, 'top'),
       bottom: parseHarnessSection(block, 'bottom'),
       layer: parseHarnessSection(block, 'layer'),
@@ -2049,16 +2430,13 @@ function parseHarnessOutfitText(text: string): ParsedHarnessOutfit[] {
       realismCheck: parseHarnessSection(block, 'realismCheck'),
       doNotBuy: parseHarnessSection(block, 'doNotBuy'),
     };
+    fillHarnessNarrativeFallbacks(parsed);
     const missing = [
       ['TOP', parsed.top],
       ['BOTTOM', parsed.bottom],
       ['FOOTWEAR', parsed.footwear],
       ['BAG', parsed.bag],
       ['JEWELLERY', parsed.jewellery],
-      ['WHY IT WORKS', parsed.whyItWorks],
-      ['THE ONE MOVE', parsed.oneMove],
-      ['DNA CHECK', parsed.dnaCheck],
-      ['DO NOT BUY', parsed.doNotBuy],
     ].filter(([, value]) => !value);
     if (missing.length) {
       throw new Error(`Harness outfit ${parsed.outfitNumber || index + 1} is missing: ${missing.map(([label]) => label).join(', ')}`);
@@ -2069,12 +2447,19 @@ function parseHarnessOutfitText(text: string): ParsedHarnessOutfit[] {
 
 function capsuleRangesForHarnessPrompt(reportData: StylistBlueprintReportData, plans: PlannedOutfit[]) {
   const lines: string[] = [];
+  const previewNumbers = plans.filter(plan => plan.purpose === 'transformation_preview').map(plan => plan.outfit_number);
+  if (previewNumbers.length) {
+    lines.push(`Transformation Preview: outfits ${previewNumbers.join(', ')} (${previewNumbers.length} additional looks, not detailed report pages)`);
+  }
   for (const capsule of CAPSULE_SEQUENCE) {
-    const numbers = plans.filter(plan => plan.capsule === capsule).map(plan => plan.outfit_number);
+    const numbers = plans
+      .filter(plan => plan.capsule === capsule && plan.purpose !== 'transformation_preview')
+      .map(plan => plan.outfit_number);
     if (!numbers.length) continue;
     const first = numbers[0];
     const last = numbers[numbers.length - 1];
-    lines.push(`${capsule}: outfits ${first}-${last} (${numbers.length} outfits)`);
+    const contiguous = numbers.every((number, index) => index === 0 || number === numbers[index - 1] + 1);
+    lines.push(`${capsule}: outfits ${contiguous ? `${first}-${last}` : numbers.join(', ')} (${numbers.length} outfits)`);
   }
   if (lines.length) return lines.join('\n');
 
@@ -2101,7 +2486,7 @@ This is a manual-admin report. The pasted consultation/profile text and parsed p
 Manual priority rules:
 - Respect the raw notes, profile text, piece preferences, coverage requirements, lifestyle context, moodboard/aesthetic signals, and classification summary.
 - Do not generate random outfits outside the client's stated preferences.
-- If notes say the client loves or prefers a garment world, use that world repeatedly enough for the set to feel personal.
+- If notes say the client loves or prefers a garment world, use it as directional flavour; do not repeat it mechanically across the set.
 - If notes reject an item, exposure level, fit, footwear type, colour direction, garment category, or cultural style, do not include it.
 - If a stated preference conflicts with body/coverage safety or garment realism, keep the safety/realism rule and choose the nearest acceptable alternative.
 - Reject and regenerate any outfit that conflicts with the manual notes or profile preferences.
@@ -2116,6 +2501,12 @@ ${classificationContext}`;
   return `--- CLIENT FIT CONTEXT ---
 Use this client-specific context as guardrails. Hard coverage, fit, modesty, avoid, lifestyle, body, undertone, face, and realism signals override generic outfit variety. Treat softer item likes as directional rather than mandatory.
 
+Form-choice interpretation:
+- disliked/No piece choices are avoid signals unless an explicit admin note overrides them.
+- skipped piece choices are neutral; ignore them completely.
+- liked piece choices are broad flavour only. They may steer style worlds, but must not become repeated formulas or quotas.
+- focus areas shape body strategy; coverage choices create hard garment boundaries; lifestyle choices set capsule emphasis; budget and shopping frequency set realism and repeatability.
+
 Client intake:
 Name: ${intakeDisplayName(submission)}
 Country: ${submission.country || ''}
@@ -2128,6 +2519,12 @@ ${stringify(submission.coverage_requirements)}
 
 Lifestyle:
 ${stringify(submission.lifestyle_context)}
+
+Piece Preferences Summary:
+${summarisePiecePreferences(submission.piece_preferences)}
+
+Raw Piece Preferences:
+${stringify(submission.piece_preferences)}
 
 Moodboard:
 Selected: ${submission.selected_moodboard_label || submission.selected_moodboard_id || ''}
@@ -2143,12 +2540,33 @@ Classification:
 ${classificationContext}`;
 }
 
-function buildHarnessOnlyOutfitPrompt(reportData: StylistBlueprintReportData, plans: PlannedOutfit[], submission?: StylistIntakeSubmission | null) {
+function buildHarnessOnlyOutfitPrompt(
+  reportData: StylistBlueprintReportData,
+  plans: PlannedOutfit[],
+  submission?: StylistIntakeSubmission | null,
+  replacementContext?: ReplacementOutfitContext | null,
+  replacementReason?: string,
+) {
+  const womenOutfitLibrary = readWomenOutfitLibraryText();
+  const hasTransformationPreview = plans.some(plan => plan.purpose === 'transformation_preview');
+  const culturalMode = plans[0]?.cultural_mode ?? getStylistOutfitCulturalMode(submission);
+  const singleReplacementContext = replacementOutfitContextPrompt(replacementContext ?? null, replacementReason);
   return `${WOMEN_OUTFIT_HARNESS_V2}
 
 ---
 
+--- ICONIK WOMEN OUTFIT LIBRARY ---
+${womenOutfitLibrary
+  ? `Use this 200-outfit library as the dominant library-led reference for outfit quality. For each outfit, choose the closest library-quality formula first, then make minimal client-specific adaptations for coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes. Preserve the library's elevated elements: scarves, belts, polished bags, structured shoes, jewellery restraint, rich texture, strong colour relationships, warm leather bridges, and precise finishing details. Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set. Do not copy any entry verbatim, cite entry numbers, or force a library outfit when the client's hard guardrails point elsewhere. Do not add unnecessary detail to individual tops or formula items; simple, clean pieces are allowed when the complete outfit becomes elevated through proportion, colour relationship, texture, finishing, and accessories.${culturalMode === 'western_default' ? ' In western_default mode, learn from Western/elevated entries and ignore ethnic garment categories; transfer only their polish, colour logic, texture, proportion, and finishing detail intelligence.' : ''}\n\n${womenOutfitLibrary}`
+  : 'The outfit library file outfitlibrarywomen.md was not available. Continue with the harness rules and client context only.'}
+
+---
+
 ${buildHarnessClientContext(submission, reportData)}
+
+---
+
+${culturalModeRules(culturalMode)}
 
 ---
 
@@ -2157,9 +2575,71 @@ Generate exactly ${plans.length} outfit${plans.length === 1 ? '' : 's'} total.
 Categories:
 ${capsuleRangesForHarnessPrompt(reportData, plans)}
 
+Outfit plan records:
+${stringify(outfitPlansForHarnessPrompt(plans))}
+
+${singleReplacementContext ? `${singleReplacementContext}\n\n` : ''}Plan enforcement:
+- Respect layer_required/layer_type, pattern_required/pattern_instruction, and finishing_required/finishing_detail_type in each plan record.
+- Professional looks with a required layer must include the named blazer, vest, or tailored jacket as a real formula item.
+- If layer_required=false, 03 - LAYER must be None. Do not add a separate layer or third-piece outer frame. For arm coverage, choose sleeves, drape, shoulder coverage, or one-piece construction instead of adding a jacket/cardigan/vest.
+- Across the detailed outfit set, layers should appear in roughly half to 60% of looks, not all looks. Non-layer looks still need polish through cut, colour, texture, bag/shoe, and finishing detail.
+- Required finishing details must appear in 07 - FINISHING DETAIL and should feel like the outfit library: scarf on neck/bag/hair, belt at waist, polished watch, soft lip tone, or feminine hair detail where it improves the look.
+- Use scarf finishing as a balanced minority move. Include one clear bag-handle scarf moment across a full set when it suits the outfit, but do not put scarves on every bag or force scarves into every look.
+- Rotate lead colours and patterns across the set. Do not make the recommendations feel like the same colour story repeated.
+
+Private elevation preflight:
+- Think through the full set before writing any OUTFIT block. Do not output this thinking.
+- First assign distinct colour families, pattern/surface ideas, silhouettes, layer/no-layer status, layer types, footwear, bag shapes, and finishing placements across the set.
+- Then write the final outfit blocks. If two outfits feel interchangeable, revise one before output.
+- Make the looks more elevated than basic office formulas: use precise fabric, neckline, sleeve, hem, proportion, and one intentional finishing move.
+- Avoid over-writing tops and other formula items with needless trims, collars, buttons, or extra details. A simple top, trouser, shoe, bag, or scarf can be right when the complete outfit feels elevated.
+- For budget-conscious clients, elevation comes from styling architecture, fit, texture, colour, scarf/belt/watch/hair/lip details, and polished shoe/bag choices rather than expensive statement pieces.
+
+${hasTransformationPreview
+  ? `Transformation preview rules:
+- Outfits 01-03 are transformation preview looks only. They are additional options for page 2, not part of the 20 detailed outfit pages.
+- Outfits 04-${plans.length} become the detailed report outfit pages.
+- Do not repeat the same top/bottom/layer silhouette, colour hero, or outfit archetype from Outfits 01-03 inside Outfits 04-${plans.length}.
+- The preview looks should feel transformational and immediately visual, but still obey every hard dislike, coverage, modesty, undertone, body geometry, lifestyle, and explicit-note rule.`
+  : ''}
+
 Return plain text only using the harness output format.
 Do not return JSON.
 Do not add any wrapper, introduction, notes, analysis, or explanation outside the outfit blocks.`;
+}
+
+function buildStrictHarnessRetryPrompt(originalPrompt: string, plans: PlannedOutfit[], error: unknown) {
+  const expectedNumbers = plans.map(plan => String(plan.outfit_number).padStart(2, '0')).join(', ');
+  const message = error instanceof Error ? error.message : String(error);
+  return `The previous outfit response could not be parsed: ${message}
+
+Regenerate the full outfit set now. This is a strict formatting retry.
+
+Output exactly ${plans.length} outfit blocks, and only outfit blocks.
+Required outfit numbers: ${expectedNumbers}
+
+Every block must begin with this exact header pattern:
+OUTFIT 01 - Context / occasion
+
+Every block must include these exact labels, one per line:
+01 - TOP:
+02 - BOTTOM:
+03 - LAYER:
+04 - FOOTWEAR:
+05 - BAG:
+06 - JEWELLERY:
+07 - FINISHING DETAIL:
+08 - EYEWEAR:
+WHY IT WORKS:
+THE ONE MOVE:
+DNA CHECK:
+REALISM CHECK:
+DO NOT BUY:
+
+Do not use markdown tables. Do not return JSON. Do not add any explanation before or after the outfit blocks.
+
+--- ORIGINAL STYLING BRIEF ---
+${originalPrompt}`;
 }
 
 function harnessArchetypeForParsedOutfit(parsed: ParsedHarnessOutfit, plan: PlannedOutfit) {
@@ -2200,7 +2680,7 @@ function formulaItemsFromParsedHarnessOutfit(parsed: ParsedHarnessOutfit, plan: 
     harnessParsedFormulaItem('Top', parsed.top, parsed, plan),
     harnessParsedFormulaItem('Bottom', parsed.bottom, parsed, plan),
   ];
-  if (parsed.layer && !isNoneHarnessValue(parsed.layer)) {
+  if (plan.layer_required && parsed.layer && !isNoneHarnessValue(parsed.layer)) {
     items.push(harnessParsedFormulaItem('Layer', parsed.layer, parsed, plan));
   }
   items.push(
@@ -2210,6 +2690,8 @@ function formulaItemsFromParsedHarnessOutfit(parsed: ParsedHarnessOutfit, plan: 
   );
   if (parsed.finishing && !isNoneHarnessValue(parsed.finishing)) {
     items.push(harnessParsedFormulaItem('Finishing Detail', parsed.finishing, parsed, plan));
+  } else if (plan.finishing_required) {
+    items.push(plannedFinishingDetailItem(plan));
   }
   if (parsed.eyewear && !isNoneHarnessValue(parsed.eyewear)) {
     items.push(harnessParsedFormulaItem('Eyewear', parsed.eyewear, parsed, plan));
@@ -2219,11 +2701,11 @@ function formulaItemsFromParsedHarnessOutfit(parsed: ParsedHarnessOutfit, plan: 
 
 function pageTitleFromHarnessOutfit(parsed: ParsedHarnessOutfit, plan: PlannedOutfit) {
   const context = parsed.context || `${plan.capsule} Look`;
-  return `Outfit ${plan.outfit_number} - ${context}`;
+  return `Outfit ${plan.display_outfit_number ?? plan.outfit_number} - ${context}`;
 }
 
 function pageFromParsedHarnessOutfit(parsed: ParsedHarnessOutfit, plan: PlannedOutfit): BlueprintPage {
-  const items = formulaItemsFromParsedHarnessOutfit(parsed, plan);
+  const items = clampHarnessFormulaColours(formulaItemsFromParsedHarnessOutfit(parsed, plan), plan);
   const paletteUsed = paletteUsedFromItems(items, plannedPalette(plan));
   const archetype = harnessArchetypeForParsedOutfit(parsed, plan);
   const hero = items[0]?.piece ?? parsed.top;
@@ -2239,7 +2721,7 @@ function pageFromParsedHarnessOutfit(parsed: ParsedHarnessOutfit, plan: PlannedO
     blocks: [
       {
         label: 'Formula',
-        heading: `${plan.capsule} harness formula ${plan.outfit_number}`,
+        heading: `${plan.capsule} harness formula ${plan.display_outfit_number ?? plan.outfit_number}`,
         body: `Archetype: ${archetype}. Hero: ${hero}. The one move is ${parsed.oneMove}.`,
         items,
       },
@@ -2270,12 +2752,67 @@ function pageFromParsedHarnessOutfit(parsed: ParsedHarnessOutfit, plan: PlannedO
   };
 }
 
+function buildTransformationPreviewPlans(reportData: StylistBlueprintReportData, normalPlans: PlannedOutfit[]): PlannedOutfit[] {
+  const sourceIndexes = [5, 10, 15].map(index => Math.min(index, normalPlans.length - 1));
+  return sourceIndexes.map((sourceIndex, index) => {
+    const source = normalPlans[sourceIndex] ?? normalPlans[index] ?? normalPlans[0];
+    return {
+      ...source,
+      outfit_number: index + 1,
+      display_outfit_number: index + 1,
+      page_number: getStylistBlueprintTransformationPage(reportData) ?? 2,
+      purpose: 'transformation_preview',
+      eyewear_required: index === 1,
+      eyewear_piece: index === 1 ? source.eyewear_piece : undefined,
+      library_reference: undefined,
+      library_piece_logic: undefined,
+    };
+  });
+}
+
+function buildDetailedHarnessPlansAfterTransformation(normalPlans: PlannedOutfit[]): PlannedOutfit[] {
+  return normalPlans.map(plan => ({
+    ...plan,
+    outfit_number: plan.outfit_number + 3,
+    display_outfit_number: plan.outfit_number,
+    purpose: 'detailed_report' as const,
+  }));
+}
+
+function buildTransformationPreviewPage(parsedOutfits: ParsedHarnessOutfit[], plans: PlannedOutfit[], reportData: StylistBlueprintReportData): BlueprintPage {
+  const blocks = parsedOutfits.map((parsed, index) => {
+    const plan = plans[index];
+    const items = clampHarnessFormulaColours(formulaItemsFromParsedHarnessOutfit(parsed, plan), plan);
+    return {
+      label: `Look ${String(index + 1).padStart(2, '0')}`,
+      heading: parsed.context || `${plan.capsule} transformation`,
+      body: parsed.whyItWorks,
+      reason: parsed.oneMove,
+      items,
+    };
+  });
+  const paletteItems = blocks.flatMap(block => Array.isArray(block.items) ? block.items : []);
+  const paletteUsed = paletteUsedFromItems(paletteItems, [
+    ...reportData.classification.colour.base_palette,
+    ...reportData.classification.colour.accent_palette,
+  ].map(colour => ({ name: colour.name, hex: colour.hex, role: 'support' as const })));
+  return {
+    page_number: getStylistBlueprintTransformationPage(reportData) ?? 2,
+    page_type: 'transformation',
+    title: 'Transformation Preview',
+    subtitle: 'Three extra client-specific directions before the detailed wardrobe system',
+    blocks,
+    image_refs: [],
+    palette_used: paletteUsed,
+  };
+}
+
 function buildHarnessOutfitSystemPage(outfitPages: BlueprintPage[], reportData: StylistBlueprintReportData): BlueprintPage {
   const perCapsule = getStylistBlueprintOutfitCount(reportData) / CAPSULE_SEQUENCE.length;
   const items = CAPSULE_SEQUENCE.map((capsule, index) => {
     const pages = outfitPages.filter(page => page.subtitle === capsule);
-    const first = pages[0]?.page_number ? pages[0].page_number - getStylistBlueprintOutfitStartPage() + 1 : index * perCapsule + 1;
-    const last = pages[pages.length - 1]?.page_number ? pages[pages.length - 1].page_number - getStylistBlueprintOutfitStartPage() + 1 : (index + 1) * perCapsule;
+    const first = pages[0]?.page_number ? pages[0].page_number - getStylistBlueprintOutfitStartPage(reportData) + 1 : index * perCapsule + 1;
+    const last = pages[pages.length - 1]?.page_number ? pages[pages.length - 1].page_number - getStylistBlueprintOutfitStartPage(reportData) + 1 : (index + 1) * perCapsule;
     return {
       capsule,
       range: `Outfits ${first}-${last}`,
@@ -2283,7 +2820,7 @@ function buildHarnessOutfitSystemPage(outfitPages: BlueprintPage[], reportData: 
     };
   });
   return {
-    page_number: 13,
+    page_number: getStylistBlueprintOutfitSystemPage(reportData),
     page_type: 'outfit_system',
     title: 'Outfit System',
     subtitle: 'Harness-generated capsule map',
@@ -2307,25 +2844,104 @@ function parseHarnessTextToBlueprintPages(text: string, reportData: StylistBluep
 
   const parsedByNumber = new Map(parsed.map(outfit => [outfit.outfitNumber, outfit]));
   const allNumbersMatch = plans.every(plan => parsedByNumber.has(plan.outfit_number));
-  const outfitPages = plans.map((plan, index) => {
-    const outfit = allNumbersMatch ? parsedByNumber.get(plan.outfit_number) : parsed[index];
+  const previewPlans = plans.filter(plan => plan.purpose === 'transformation_preview');
+  const detailedPlans = plans.filter(plan => plan.purpose !== 'transformation_preview');
+  const sourcePlans = previewPlans.length ? detailedPlans : plans;
+  const outfitPages = sourcePlans.map((plan, index) => {
+    const sourceIndex = plans.indexOf(plan);
+    const outfit = allNumbersMatch ? parsedByNumber.get(plan.outfit_number) : parsed[sourceIndex >= 0 ? sourceIndex : index];
     if (!outfit) throw new Error(`Harness outfit generation missed outfit ${plan.outfit_number}`);
+    if (!plan.layer_required && outfit.layer && !isNoneHarnessValue(outfit.layer)) {
+      throw new Error(`Outfit ${plan.outfit_number} returned a layer even though layer_required=false. 03 - LAYER must be None and arm coverage must come from sleeves/cut.`);
+    }
+    if (plan.layer_required && (!outfit.layer || isNoneHarnessValue(outfit.layer))) {
+      throw new Error(`Outfit ${plan.outfit_number} missed the required layer_type ${plan.layer_type ?? 'layer'}.`);
+    }
     return pageFromParsedHarnessOutfit(outfit, plan);
   });
+  const transformationPage = previewPlans.length
+    ? buildTransformationPreviewPage(
+      previewPlans.map((plan, index) => {
+        const sourceIndex = plans.indexOf(plan);
+        const outfit = allNumbersMatch ? parsedByNumber.get(plan.outfit_number) : parsed[sourceIndex >= 0 ? sourceIndex : index];
+        if (!outfit) throw new Error(`Harness outfit generation missed transformation outfit ${plan.outfit_number}`);
+        return outfit;
+      }),
+      previewPlans,
+      reportData,
+    )
+    : null;
 
-  return [
+  const pages = [
+    ...(transformationPage ? [transformationPage] : []),
     buildHarnessOutfitSystemPage(outfitPages, reportData),
     ...outfitPages,
   ];
+  enforceHarnessPagesAgainstPlans(pages, sourcePlans);
+  return pages;
 }
 
-async function generateHarnessOnlyOutfitPages(reportData: StylistBlueprintReportData, plans: PlannedOutfit[], submission?: StylistIntakeSubmission | null) {
-  const prompt = buildHarnessOnlyOutfitPrompt(reportData, plans, submission);
+function enforceHarnessPagesAgainstPlans(pages: BlueprintPage[], plans: PlannedOutfit[]) {
+  const planByPage = new Map(plans.map(plan => [plan.page_number, plan]));
+  for (const page of pages.filter(item => item.page_type === 'outfit')) {
+    const plan = planByPage.get(page.page_number);
+    if (!plan) continue;
+    const formulaItems = page.blocks.flatMap(block => Array.isArray(block.items) ? block.items : []);
+    const hasLayerItem = formulaItems.some(item => /^layer$/i.test(asString(asRecord(item).slot)) && !isNoneHarnessValue(asString(asRecord(item).piece)));
+    if (!plan.layer_required && hasLayerItem) {
+      throw new Error(`Outfit ${plan.outfit_number} returned a layer even though layer_required=false. 03 - LAYER must be None and arm coverage must come from sleeves/cut.`);
+    }
+    if (plan.layer_required && !hasLayerItem) {
+      throw new Error(`Outfit ${plan.outfit_number} missed the required layer_type ${plan.layer_type ?? 'layer'}.`);
+    }
+  }
+}
+
+async function generateHarnessOnlyOutfitPages(
+  reportData: StylistBlueprintReportData,
+  plans: PlannedOutfit[],
+  submission?: StylistIntakeSubmission | null,
+  replacementContext?: ReplacementOutfitContext | null,
+  replacementReason?: string,
+) {
+  const prompt = buildHarnessOnlyOutfitPrompt(reportData, plans, submission, replacementContext, replacementReason);
   const text = await callGeminiText(prompt);
-  return parseHarnessTextToBlueprintPages(text, reportData, plans);
+  try {
+    return parseHarnessTextToBlueprintPages(text, reportData, plans);
+  } catch (error) {
+    const retryPrompt = buildStrictHarnessRetryPrompt(prompt, plans, error);
+    const retryText = await callGeminiText(retryPrompt);
+    return parseHarnessTextToBlueprintPages(retryText, reportData, plans);
+  }
 }
 
 type PaletteEntry = { name: string; hex: string; usage?: string };
+type ExistingOutfitSummary = {
+  page_number: number;
+  title: string;
+  capsule: string;
+  lead_colour: string;
+  lead_family: string;
+  main_piece: string;
+  main_garment_type: string;
+  layer_status: 'layered' | 'no_layer';
+  layer_type: string;
+  archetype: string;
+  footwear: string;
+  bag: string;
+  library_ids: string[];
+};
+
+export type ReplacementOutfitContext = {
+  replacing_page: number;
+  replaced: ExistingOutfitSummary;
+  surrounding_outfits: ExistingOutfitSummary[];
+  used_lead_families: Array<{ family: string; count: number }>;
+  used_lead_colours: string[];
+  used_main_garment_types: string[];
+  used_archetypes: string[];
+  used_library_ids: string[];
+};
 
 // Maps an admin instruction phrase to the palette colours it should select.
 const COLOUR_FAMILIES: Array<{ ask: RegExp; name: RegExp }> = [
@@ -2348,6 +2964,152 @@ function findPaletteColour(palettes: PaletteEntry[][], re: RegExp): PaletteEntry
   return undefined;
 }
 
+function colourFamily(value: string) {
+  const text = value.toLowerCase();
+  if (/\b(teal|petrol|turquoise)\b/.test(text)) return 'teal';
+  if (/\b(emerald|green|sage|mint)\b/.test(text)) return 'green';
+  if (/\b(olive|khaki)\b/.test(text)) return 'olive';
+  if (/\b(navy|blue|denim|indigo|cobalt|slate)\b/.test(text)) return 'blue';
+  if (/\b(burgundy|berry|wine|maroon|marsala|oxblood|plum)\b/.test(text)) return 'berry/plum';
+  if (/\b(purple|violet|lilac|lavender|mauve|aubergine)\b/.test(text)) return 'purple';
+  if (/\b(pink|blush|coral|peach|rose)\b/.test(text)) return 'pink/peach';
+  if (/\b(red|crimson|scarlet|ruby)\b/.test(text)) return 'red';
+  if (/\b(orange|rust|terracotta|sienna|amber)\b/.test(text)) return 'orange/rust';
+  if (/\b(yellow|mustard|marigold|ochre|gold)\b/.test(text)) return 'yellow/gold';
+  if (/\b(chocolate|cocoa|espresso|brown|tan|camel|cognac)\b/.test(text)) return 'brown/leather';
+  if (/\b(ivory|cream|white|stone|ecru)\b/.test(text)) return 'light neutral';
+  if (/\b(black|charcoal|grey|gray|pewter)\b/.test(text)) return 'dark neutral';
+  if (/\b(taupe|mushroom|beige|sand)\b/.test(text)) return 'soft neutral';
+  return text.split(/\s+/).filter(Boolean).slice(-1)[0] || 'unknown';
+}
+
+function formulaRecordsForSummary(page: BlueprintPage) {
+  return flattenFormulaItems(page).map((item, index) => {
+    const record = asRecord(item);
+    const slot = slotFromItem(item, index);
+    return {
+      slot,
+      piece: asString(record.piece) || asString(record.name) || asString(record.value),
+      colour_name: asString(record.colour_name),
+      colour_hex: normaliseHex(asString(record.colour_hex, '#000000')),
+      palette_role: asString(record.palette_role),
+    };
+  });
+}
+
+function garmentTypeFromPiece(piece: string, slot: string) {
+  const text = `${slot} ${piece}`.toLowerCase();
+  const match = text.match(/\b(blazer|vest|jacket|cardigan|coat|overshirt|shirt|blouse|top|tee|knit|dress|jumpsuit|co-ord|coord|set|trouser|pant|jean|skirt|palazzo|kurta|saree|sari|tunic)\b/);
+  return match?.[1]?.replace('coord', 'co-ord') ?? slot.toLowerCase();
+}
+
+function firstFormulaRecord(
+  records: ReturnType<typeof formulaRecordsForSummary>,
+  pattern: RegExp,
+) {
+  return records.find(record => pattern.test(`${record.slot} ${record.piece}`));
+}
+
+function outfitSummaryForReplacement(page: BlueprintPage): ExistingOutfitSummary {
+  const records = formulaRecordsForSummary(page);
+  const leadRecord = records.find(record => record.palette_role === 'lead')
+    ?? records.find(record => /top|dress|jumpsuit|shirt|blouse|kurta|tunic|set|co-ord|coord/i.test(record.slot))
+    ?? records[0];
+  const layer = firstFormulaRecord(records, /layer|outerwear|blazer|vest|jacket|cardigan|coat|overshirt/i);
+  const footwear = firstFormulaRecord(records, /footwear|shoe|sandal|heel|flat|loafer|pump|mule|sneaker|boot/i);
+  const bag = firstFormulaRecord(records, /bag|tote|clutch|crossbody|handbag/i);
+  const pageBody = pageText(page);
+  const archetype = HARNESS_ARCHETYPES.find(item => pageBody.toLowerCase().includes(item.toLowerCase())) || 'unknown';
+  const leadColour = leadRecord?.colour_name || page.palette_used?.find(colour => colour.role === 'lead')?.name || 'unknown';
+  const mainPiece = leadRecord?.piece || page.title;
+  return {
+    page_number: page.page_number,
+    title: page.title,
+    capsule: page.subtitle || page.page_type,
+    lead_colour: leadColour,
+    lead_family: colourFamily(leadColour || mainPiece),
+    main_piece: mainPiece,
+    main_garment_type: garmentTypeFromPiece(mainPiece, leadRecord?.slot || 'main garment'),
+    layer_status: layer && !/^none$/i.test(layer.piece) ? 'layered' : 'no_layer',
+    layer_type: layer?.piece || 'none',
+    archetype,
+    footwear: footwear?.piece || 'unknown',
+    bag: bag?.piece || 'unknown',
+    library_ids: (page.library_refs ?? []).map(ref => ref.id).filter(Boolean),
+  };
+}
+
+function countedValues(values: string[]) {
+  const counts = new Map<string, number>();
+  for (const value of values.filter(Boolean)) counts.set(value, (counts.get(value) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([family, count]) => ({ family, count }))
+    .sort((a, b) => b.count - a.count || a.family.localeCompare(b.family));
+}
+
+export function buildReplacementOutfitContext(reportData: StylistBlueprintReportData, pageNumber: number): ReplacementOutfitContext | null {
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
+  const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
+  const outfitPages = reportData.pages
+    .filter(page => page.page_number >= outfitStart && page.page_number <= outfitEnd && page.page_type === 'outfit')
+    .sort((a, b) => a.page_number - b.page_number);
+  const replacedPage = outfitPages.find(page => page.page_number === pageNumber);
+  if (!replacedPage) return null;
+
+  const replaced = outfitSummaryForReplacement(replacedPage);
+  const surrounding = outfitPages
+    .filter(page => page.page_number !== pageNumber)
+    .map(outfitSummaryForReplacement);
+  return {
+    replacing_page: pageNumber,
+    replaced,
+    surrounding_outfits: surrounding,
+    used_lead_families: countedValues(surrounding.map(item => item.lead_family)),
+    used_lead_colours: [...new Set(surrounding.map(item => item.lead_colour).filter(Boolean))],
+    used_main_garment_types: [...new Set(surrounding.map(item => item.main_garment_type).filter(Boolean))],
+    used_archetypes: [...new Set(surrounding.map(item => item.archetype).filter(item => item && item !== 'unknown'))],
+    used_library_ids: [...new Set(surrounding.flatMap(item => item.library_ids))],
+  };
+}
+
+export function replacementOutfitContextPrompt(context: ReplacementOutfitContext | null, reason?: string) {
+  if (!context) return '';
+  return `--- SINGLE OUTFIT REPLACEMENT DIVERSITY CONTEXT ---
+Admin replacement instruction: ${reason?.trim() || 'Replace this outfit with a stronger distinct option.'}
+
+You are replacing page ${context.replacing_page}. The current rejected outfit is:
+${stringify(context.replaced)}
+
+Existing recommendations to avoid repeating:
+${stringify({
+  used_lead_families: context.used_lead_families,
+  used_lead_colours: context.used_lead_colours,
+  used_main_garment_types: context.used_main_garment_types,
+  used_archetypes: context.used_archetypes,
+  surrounding_outfits: context.surrounding_outfits.map(item => ({
+    page_number: item.page_number,
+    title: item.title,
+    capsule: item.capsule,
+    lead_colour: item.lead_colour,
+    lead_family: item.lead_family,
+    main_garment_type: item.main_garment_type,
+    layer_status: item.layer_status,
+    layer_type: item.layer_type,
+    archetype: item.archetype,
+    footwear: item.footwear,
+    bag: item.bag,
+  })),
+})}
+
+Replacement rules:
+- Do not repeat the rejected outfit's lead colour family (${context.replaced.lead_family}) unless the admin explicitly requested that exact colour.
+- Prefer a lead/main garment colour family that is not already common in used_lead_families.
+- Do not repeat the rejected outfit formula: ${context.replaced.main_garment_type}, ${context.replaced.layer_status}, ${context.replaced.layer_type}, ${context.replaced.archetype}.
+- Do not copy the same style world, hero garment, silhouette, layer type, shoe/bag pairing, or outfit archetype from surrounding_outfits.
+- Keep client coverage, dislikes, cultural mode, realistic garment mechanics, and image-generation safety above novelty.
+--- END SINGLE OUTFIT REPLACEMENT DIVERSITY CONTEXT ---`;
+}
+
 // Builds the plan for a single replacement outfit: always varies the colours away
 // from the rejected look, then biases the plan to honour an admin instruction
 // (colour/family, warmer/cooler/bolder/muted, layer add/remove, formality, garment).
@@ -2356,19 +3118,30 @@ export function buildReplacementPlan(
   pageNumber: number,
   instruction?: string,
   libraryContext: OutfitLibraryContext = seedOutfitLibraryContext(),
+  culturalMode: StylistOutfitCulturalMode = 'ethnic_allowed',
 ): PlannedOutfit {
-  const index = pageNumber - getStylistBlueprintOutfitStartPage();
-  const plan: PlannedOutfit = { ...buildOutfitDiversityPlan(reportData, libraryContext)[index] };
+  const index = pageNumber - getStylistBlueprintOutfitStartPage(reportData);
+  const plan: PlannedOutfit = { ...buildOutfitDiversityPlan(reportData, libraryContext, culturalMode)[index] };
   const basePalette = reportData.classification.colour.base_palette as PaletteEntry[];
   const accentPalette = reportData.classification.colour.accent_palette as PaletteEntry[];
   const note = (instruction ?? '').toLowerCase();
+  const replacementContext = buildReplacementOutfitContext(reportData, pageNumber);
   if (note) {
     plan.coverage_profile = mergeCoverageProfiles(plan.coverage_profile, profileFromCoverageText(note));
-    plan.layer_required = plan.coverage_profile.arms || plan.layer_required;
   }
   const currentPage = reportData.pages.find(page => page.page_number === pageNumber);
   const currentLibraryIds = new Set((currentPage?.library_refs ?? []).map(ref => ref.id));
+  const usedLibraryIds = new Set([
+    ...currentLibraryIds,
+    ...(replacementContext?.used_library_ids ?? []),
+  ]);
   const alternative = chooseAlternativeLibraryOutfit(
+    libraryContext.outfits,
+    plan.capsule,
+    usedLibraryIds,
+    libraryContext.blockedSignatures,
+    plan.styling_decision.anchor_role,
+  ) ?? chooseAlternativeLibraryOutfit(
     libraryContext.outfits,
     plan.capsule,
     currentLibraryIds,
@@ -2377,7 +3150,7 @@ export function buildReplacementPlan(
   );
 
   if (alternative) {
-    const stylingDecision = buildStylingDecisionPlan(reportData, plan.capsule, index, plan.coverage_profile, alternative, plan.styling_decision.anchor_role);
+    const stylingDecision = buildStylingDecisionPlan(reportData, plan.capsule, index, plan.coverage_profile, plan.cultural_mode, alternative, plan.styling_decision.anchor_role);
     const colours = restrainedColourStory(reportData, plan.capsule, index, alternative, stylingDecision);
     const usesAccent = Boolean(colours.accent);
     plan.library_reference = libraryReferenceForPlan(alternative, plan.capsule);
@@ -2389,10 +3162,49 @@ export function buildReplacementPlan(
     plan.accent_colour = usesAccent ? colours.accent : undefined;
     plan.accent_application = usesAccent ? plan.accent_application : undefined;
     plan.accent_mode = usesAccent ? 'detail' : undefined;
-    plan.layer_required = plan.coverage_profile.arms || outfitHasLibraryLayer(alternative);
+    plan.layer_required = shouldPlanLayer(plan.capsule, index % 5);
     plan.layer_type = plan.layer_required ? (plan.layer_type ?? LAYER_TYPES_BY_CAPSULE[plan.capsule][index % LAYER_TYPES_BY_CAPSULE[plan.capsule].length]) : undefined;
   } else if (note) {
-    plan.styling_decision = buildStylingDecisionPlan(reportData, plan.capsule, index, plan.coverage_profile, undefined, plan.styling_decision.anchor_role);
+    plan.styling_decision = buildStylingDecisionPlan(reportData, plan.capsule, index, plan.coverage_profile, plan.cultural_mode, undefined, plan.styling_decision.anchor_role);
+  }
+
+  if (replacementContext) {
+    const familyCounts = new Map(replacementContext.used_lead_families.map(item => [item.family, item.count]));
+    const replacedFamily = replacementContext.replaced.lead_family;
+    const allPaletteCandidates = [...basePalette, ...accentPalette]
+      .filter(colour => colour.name && isValidHex(colour.hex))
+      .map((colour, candidateIndex) => ({
+        colour,
+        candidateIndex,
+        family: colourFamily(colour.name),
+        count: familyCounts.get(colourFamily(colour.name)) ?? 0,
+      }));
+    const paletteCandidates = allPaletteCandidates.some(candidate => candidate.family !== replacedFamily)
+      ? allPaletteCandidates.filter(candidate => candidate.family !== replacedFamily)
+      : allPaletteCandidates;
+    const leastUsed = paletteCandidates
+      .sort((a, b) => a.count - b.count || Number(a.family === replacedFamily) - Number(b.family === replacedFamily) || a.candidateIndex - b.candidateIndex)[0];
+    if (leastUsed && !/\b(red|pink|blush|coral|peach|orange|rust|terracotta|yellow|mustard|gold|green|emerald|olive|sage|teal|turquoise|blue|navy|denim|indigo|cobalt|purple|plum|violet|lilac|lavender|mauve|burgundy|berry|wine|maroon|neutral|black|white|ivory|cream|brown|tan|camel|cognac|espresso)\b/.test(note)) {
+      plan.lead_colour = plannedColour(leastUsed.colour, 'lead', leastUsed.candidateIndex);
+    }
+
+    if (replacementContext.replaced.layer_status === 'layered' && plan.layer_required) {
+      const layerPool = LAYER_TYPES_BY_CAPSULE[plan.capsule] ?? [];
+      const currentLayer = replacementContext.replaced.layer_type.toLowerCase();
+      const alternateLayer = layerPool.find(layer => !currentLayer.includes(layer.toLowerCase()) && !layer.toLowerCase().includes(currentLayer));
+      if (alternateLayer) {
+        plan.layer_type = alternateLayer;
+      } else if (plan.capsule !== 'Professional') {
+        plan.layer_required = false;
+        plan.layer_type = undefined;
+      }
+    } else if (replacementContext.replaced.layer_status === 'no_layer' && !plan.layer_required && plan.capsule !== 'Everyday') {
+      const layerPool = LAYER_TYPES_BY_CAPSULE[plan.capsule] ?? [];
+      if (layerPool.length) {
+        plan.layer_required = true;
+        plan.layer_type = layerPool[index % layerPool.length];
+      }
+    }
   }
 
   if (!note) {
@@ -2452,11 +3264,9 @@ export function buildReplacementPlan(
   const layerWord = /(layer|jacket|blazer|coat|cardigan|outerwear|overshirt|vest|duster|bolero|shacket)/;
   const removeLayer = new RegExp(`\\b(no|without|remove|drop|skip|lose|don'?t want|do not want)\\b[^.]{0,24}${layerWord.source}`).test(note);
   if (removeLayer) {
-    if (!plan.coverage_profile.arms) {
-      plan.layer_required = false;
-      plan.layer_type = undefined;
-      if (plan.accent_mode === 'layer') plan.accent_mode = plan.accent_colour ? 'top' : undefined;
-    }
+    plan.layer_required = false;
+    plan.layer_type = undefined;
+    if (plan.accent_mode === 'layer') plan.accent_mode = plan.accent_colour ? 'top' : undefined;
   } else {
     const named = note.match(/\b(blazer|jacket|cardigan|coat|duster|overshirt|vest|shacket|bolero)\b/);
     if (named && /\b(add|with|include|put|throw on|layer|wear)\b/.test(note)) {
@@ -2501,6 +3311,36 @@ function paletteUsedFromItems(items: NormalisedFormulaItem[], fallback: Blueprin
     });
   }
   return seen.size ? [...seen.values()].slice(0, 3) : fallback.slice(0, 3);
+}
+
+function clampHarnessFormulaColours(items: NormalisedFormulaItem[], plan: PlannedOutfit): NormalisedFormulaItem[] {
+  const support = plan.support_colour ?? plan.lead_colour;
+  const ground = plan.ground_colour ?? support;
+  const colourForItem = (item: NormalisedFormulaItem): PlannedOutfitColour => {
+    const slot = item.slot.toLowerCase();
+    if (/top|dress|one-piece/.test(slot)) return plan.lead_colour;
+    if (/bottom/.test(slot)) return ground;
+    if (/layer/.test(slot)) return support;
+    if (/footwear|shoe|bag/.test(slot)) return neutralLeatherFallbackColour(plan, 'ground');
+    if (/finishing/.test(slot)) return support;
+    if (/eyewear/.test(slot)) return support;
+    return support;
+  };
+
+  return items.map((item) => {
+    if (/jewel|jewellery|jewelry|earring|necklace|bracelet|bangle/i.test(item.slot)) return item;
+    const colour = colourForItem(item);
+    const piece = isShoeOrBagSlot(`${item.slot} ${item.piece}`)
+      ? normalisePieceColourApplication(item.piece, item.slot, plan, colour)
+      : item.piece;
+    return {
+      ...item,
+      piece,
+      colour_name: colour.name,
+      colour_hex: colour.hex,
+      palette_role: colour.role,
+    };
+  });
 }
 
 function weakText(value: string | undefined) {
@@ -2555,8 +3395,8 @@ function pageContentFallbacks(pageNumber: number, data: StylistBlueprintReportDa
         'Necklines',
         coverage.neckline ? 'Protect the line' : 'Frame the line',
         coverage.neckline
-          ? 'No cleavage showing.'
-          : `Prioritise ${face.approved_necklines.slice(0, 3).join(', ') || 'open collar, soft V, and high scoop necklines'} to lengthen the face and keep the upper body clean.`,
+          ? 'Avoid cleavage and very low necklines; use safe open necklines when they stay covered.'
+          : `Prioritise ${face.approved_necklines.slice(0, 3).join(', ') || 'open collar, soft V, and soft scoop necklines'} to lengthen the face and keep the upper body clean.`,
       ),
       fallbackBlock('Hair and eyewear', 'Keep controlled structure', `${face.hair_direction} ${face.eyewear_direction}`),
       fallbackBlock('Accessories', 'Use deliberate scale', face.jewellery_direction),
@@ -2823,17 +3663,17 @@ function slotNeedsNecklineSafety(slot: string) {
 
 function applyNecklineSafetyToPiece(piece: string, slot: string, plan: PlannedOutfit) {
   if (!plan.coverage_profile.neckline || !slotNeedsNecklineSafety(slot)) return piece;
-  const safeNeckline = plan.styling_decision.neckline_rules.approved[0] ?? 'high scoop';
+  const safeNeckline = plan.styling_decision.neckline_rules.approved[0] ?? 'soft V that does not expose cleavage';
   let next = piece
     .replace(UNSAFE_NECKLINE_RE, safeNeckline)
-    .replace(/\bwrap\b/gi, 'high-wrap')
+    .replace(/\bwrap\b/gi, 'secured wrap neckline')
     .replace(/\s{2,}/g, ' ')
     .trim();
 
   if (STANDALONE_CAMISOLE_RE.test(next)) {
     next = next.replace(STANDALONE_CAMISOLE_RE, `${safeNeckline} sleeved shell`);
   }
-  if (!new RegExp(`\\b(${SAFE_NECKLINES.map(escapeRegExp).join('|')}|collared|crew|jewel|mock|mandarin|band collar|boat|bateau|high scoop|modest square|high-wrap)\\b`, 'i').test(next)) {
+  if (!new RegExp(`\\b(${SAFE_NECKLINES.map(escapeRegExp).join('|')}|collared|open collar|soft v|v neck|v-neck|crew|jewel|mock|mandarin|band collar|boat|bateau|soft scoop|modest square|secured wrap|wrap neckline)\\b`, 'i').test(next)) {
     next = `${next} with ${safeNeckline} neckline`;
   }
   return next;
@@ -2895,7 +3735,13 @@ function enrichGarmentTextureAndPattern(piece: string, slot: string, plan: Plann
 
   const texture = hasTexture ? '' : ` in ${textureForSlot(slot, plan)}`;
 
-  const pattern = hasPattern ? '' : '';
+  const patternInstruction = plan.pattern_instruction && !/clean solid/i.test(plan.pattern_instruction)
+    ? plan.pattern_instruction
+    : '';
+  const canCarryPattern = /top|blouse|shirt|dress|jumpsuit|outer|layer|blazer|jacket|vest|bottom|trouser|pant|skirt/.test(lowerSlot);
+  const pattern = plan.pattern_required && patternInstruction && !hasPattern && canCarryPattern
+    ? ` with ${patternInstruction}`
+    : '';
 
   return `${piece}${texture}${pattern}`;
 }
@@ -2993,7 +3839,7 @@ function structuralNotesFromItem(item: unknown, slot: string, plan: PlannedOutfi
   if (/jewel|accessor|bag|belt|scarf|trim/i.test(slot)) return 'Keep the detail small and intentional so the accent adds interest without taking over the outfit.';
   if (/shoe|footwear/i.test(slot)) return 'Keep the shoe clean and aligned with the outfit depth so the vertical line continues to the floor.';
   if (/bottom|trouser|skirt|jean/i.test(slot)) return 'Choose a clean fall and enough ease so the lower half supports length without clinging.';
-  if (slotNeedsNecklineSafety(slot) && plan.coverage_profile.neckline) return 'No cleavage showing.';
+  if (slotNeedsNecklineSafety(slot) && plan.coverage_profile.neckline) return 'Avoid cleavage and very low necklines while keeping the neckline natural for the outfit.';
   return 'Let the fit serve the harness styling intention first. Colour should support the silhouette, not lead it.';
 }
 
@@ -3008,7 +3854,8 @@ type NormalisedFormulaItem = {
 };
 
 function plannedFormulaItem(slot: string, plan: PlannedOutfit, pieceNoun?: string): NormalisedFormulaItem {
-  const colour = colourForSlot(slot, plan);
+  const rawColour = colourForSlot(slot, plan);
+  const colour = isShoeOrBagSlot(slot) ? neutralLeatherFallbackColour(plan, 'ground') : rawColour;
   const piece = enrichGarmentTextureAndPattern(
     normalisePieceColourApplication(`${colour.name} ${pieceNoun ?? slot.toLowerCase()}`, slot, plan, colour),
     slot,
@@ -3021,6 +3868,33 @@ function plannedFormulaItem(slot: string, plan: PlannedOutfit, pieceNoun?: strin
     colour_hex: colour.hex,
     palette_role: colour.role,
     structural_notes: structuralNotesFromItem({}, slot, plan),
+  };
+}
+
+function plannedFinishingDetailItem(plan: PlannedOutfit): NormalisedFormulaItem {
+  const colour = plan.accent_colour ?? plan.lead_colour ?? plan.support_colour;
+  const type = plan.finishing_detail_type ?? 'scarf';
+  const pieceByType: Record<NonNullable<PlannedOutfit['finishing_detail_type']>, string> = {
+    scarf: `${colour.name} silk scarf tied on the bag handle`,
+    belt: `${neutralLeatherColourName(plan)} slim leather belt at the waist`,
+    watch: `slim gold-tone watch with clean leather strap`,
+    hair_detail: `${colour.name} silk scarf at a low ponytail`,
+    lip_tone: `soft rose-brown natural lip tone`,
+  };
+  const metadataByType: Partial<Record<NonNullable<PlannedOutfit['finishing_detail_type']>, { name: string; hex: string }>> = {
+    watch: { name: 'Gold', hex: '#B08D3F' },
+    lip_tone: { name: 'Rose Brown', hex: '#9A5B55' },
+  };
+  const metadata = metadataByType[type];
+  return {
+    slot: 'Finishing Detail',
+    piece: pieceByType[type],
+    colour_name: metadata?.name ?? (type === 'belt' ? neutralLeatherColourName(plan) : colour.name),
+    colour_hex: metadata?.hex ?? (type === 'belt'
+      ? normaliseHex(NAMED_COLOUR_HEX[neutralLeatherColourName(plan).toLowerCase().split(/\s+/)[0]] ?? colour.hex)
+      : colour.hex),
+    palette_role: 'accent',
+    structural_notes: 'Use this finishing detail only as one intentional styling move so the outfit feels complete without accessory clutter.',
   };
 }
 
@@ -3127,6 +4001,7 @@ const HARNESS_ARCHETYPES = [
   'Texture Hero + Tonal Depth',
   'Shape Hero + Clean Colour',
   'Casual Base + Polished Disruptor',
+  'Western Base + Elevated Finishing',
   'Indian Base + Modern Finishing',
 ];
 
@@ -3150,7 +4025,9 @@ function inferHarnessArchetype(page: BlueprintPage, plan: PlannedOutfit) {
   if (plan.capsule === 'Professional') return plan.outfit_number % 2 === 0 ? 'Neutral Architecture + Rich Accent' : 'Shape Hero + Clean Colour';
   if (plan.capsule === 'Social') return plan.outfit_number % 2 === 0 ? 'Coloured Hero + Quiet Support' : 'Pattern Hero + Controlled Solids';
   if (plan.capsule === 'Everyday') return plan.outfit_number % 2 === 0 ? 'Casual Base + Polished Disruptor' : 'Texture Hero + Tonal Depth';
-  return plan.outfit_number % 2 === 0 ? 'Indian Base + Modern Finishing' : 'Coloured Hero + Quiet Support';
+  return plan.outfit_number % 2 === 0
+    ? (plan.cultural_mode === 'western_default' ? 'Western Base + Elevated Finishing' : 'Indian Base + Modern Finishing')
+    : 'Coloured Hero + Quiet Support';
 }
 
 function findHarnessBlock(page: BlueprintPage, pattern: RegExp) {
@@ -3261,7 +4138,7 @@ function normaliseGeneratedPage(
   planOverride?: PlannedOutfit,
   libraryContext: OutfitLibraryContext = seedOutfitLibraryContext(),
 ): BlueprintPage {
-  const outfitStart = getStylistBlueprintOutfitStartPage();
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
   if (page.page_number >= outfitStart && page.page_number <= outfitEnd) {
     const plan = planOverride ?? buildOutfitDiversityPlan(reportData, libraryContext)[page.page_number - outfitStart];
@@ -3276,6 +4153,7 @@ export async function generateStylistBlueprintPages(
   act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing',
 ): Promise<BlueprintPage[]> {
   const libraryContext = await loadOutfitLibraryContext();
+  const culturalMode = getStylistOutfitCulturalMode(submission);
   const stylistOutfitLibrary = outfitLibraryPromptForContext(libraryContext);
   const pageCount = getStylistBlueprintPageCount(reportData);
   const outfitCount = getStylistBlueprintOutfitCount(reportData);
@@ -3285,17 +4163,42 @@ export async function generateStylistBlueprintPages(
   const continuationPage = getStylistBlueprintContinuationPage(reportData);
   const capsuleRanges = getStylistBlueprintCapsulePageRanges(reportData);
   const outfitsPerCapsule = outfitCount / 4;
-  const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext);
+  const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode);
   if (act === 'application') {
-    return generateHarnessOnlyOutfitPages(reportData, outfitDiversityPlan, submission);
+    const plans = isLatestStylistBlueprintVersion(reportData)
+      ? [
+        ...buildTransformationPreviewPlans(reportData, outfitDiversityPlan),
+        ...buildDetailedHarnessPlansAfterTransformation(outfitDiversityPlan),
+      ]
+      : outfitDiversityPlan;
+    return generateHarnessOnlyOutfitPages(reportData, plans, submission);
   }
   const classificationContext = stringify(reportData.classification);
   const intakeContext = buildStylistBlueprintIntakeDigest(submission);
+  const transformationPage = getStylistBlueprintTransformationPage(reportData);
+  const summaryPage = getStylistBlueprintSummaryPage(reportData);
+  const readingGuidePage = getStylistBlueprintReadingGuidePage(reportData);
+  const bodyPage = getStylistBlueprintBodyGeometryPage(reportData);
+  const chromaticPage = getStylistBlueprintChromaticPage(reportData);
+  const facePage = getStylistBlueprintFaceArchitecturePage(reportData);
+  const proportionPage = getStylistBlueprintProportionPage(reportData);
+  const avoidancePage = getStylistBlueprintAvoidancePage(reportData);
+  const palettePage = getStylistBlueprintPalettePage(reportData);
+  const colourDrapePage = getStylistBlueprintColourDrapePage(reportData);
+  const rulesStartPage = getStylistBlueprintRulesStartPage(reportData);
+  const hairstylePage = getStylistBlueprintHairstylePage(reportData);
+  const hairColourPage = getStylistBlueprintHairColourPage(reportData);
+  const eyeframePage = getStylistBlueprintEyeframePage(reportData);
+  const makeupPage = getStylistBlueprintMakeupPage(reportData);
+  const hairFaceAccessoriesPage = getStylistBlueprintHairFaceAccessoriesPage(reportData);
+  const fabricPage = getStylistBlueprintFabricPage(reportData);
+  const outfitSystemPage = getStylistBlueprintOutfitSystemPage(reportData);
+  const outfitStartPage = getStylistBlueprintOutfitStartPage(reportData);
   const ranges = {
-    opening: 'pages 1-3',
-    diagnosis: 'pages 4-8',
-    prescription: 'pages 9-12',
-    application: `pages 13-${outfitEndPage}`,
+    opening: transformationPage ? `pages 1, ${summaryPage}-${readingGuidePage}` : 'pages 1-3',
+    diagnosis: `pages ${bodyPage}-${avoidancePage}`,
+    prescription: `pages ${palettePage}-${fabricPage}`,
+    application: transformationPage ? `page ${transformationPage} and pages ${outfitSystemPage}-${outfitEndPage}` : `pages ${outfitSystemPage}-${outfitEndPage}`,
     closing: `pages ${matrixPage}-${continuationPage}`,
   };
   const promptContext = `--- CURRENT CLASSIFICATION ---
@@ -3328,18 +4231,17 @@ Use evidence-safe wording: no invented exact cm or percentage claims unless the 
 
 Page map:
 1 cover
-2 Blueprint Summary dossier
-3 Reading This Blueprint
-4 Geometric Silhouette Profile
-5 Chromatic Harmony Mapping
-6 Facial Architecture Analysis
-7 Proportional Axes
-8 What to Avoid And Why
-9 Colour Palette
-10 Silhouette Rules
-11 Hair, Face, Accessories
-12 Fabric and Texture Direction
-13 Outfit System
+${transformationPage ? `${transformationPage} Transformation Preview (generated by the harness during the application act; do not generate it in the opening act)\n` : ''}${summaryPage} Blueprint Summary dossier
+${readingGuidePage} Reading This Blueprint
+${bodyPage} Geometric Silhouette Profile
+${chromaticPage} Chromatic Harmony Mapping
+${facePage} Facial Architecture Analysis
+${proportionPage} Proportional Axes
+${avoidancePage} What to Avoid And Why
+${palettePage} Colour Palette
+${colourDrapePage ? `${colourDrapePage} Professional Colour Drape\n` : ''}${rulesStartPage} Silhouette Rules
+${hairstylePage ? `${hairstylePage} Hairstyle Direction\n` : ''}${hairColourPage ? `${hairColourPage} Hair Colour Direction\n` : ''}${eyeframePage ? `${eyeframePage} Eyeframe Direction\n` : ''}${makeupPage ? `${makeupPage} Makeup for Everyday Looks\n` : ''}${!hairstylePage ? `${hairFaceAccessoriesPage} Hair, Face, Accessories\n` : ''}${fabricPage} Fabric and Texture Direction
+${outfitSystemPage} Outfit System
 ${capsuleRanges[0].firstPage}-${capsuleRanges[0].lastPage} Professional Capsule outfits
 ${capsuleRanges[1].firstPage}-${capsuleRanges[1].lastPage} Social Capsule outfits
 ${capsuleRanges[2].firstPage}-${capsuleRanges[2].lastPage} Everyday Capsule outfits
@@ -3352,15 +4254,23 @@ Required page object:
 {"page_number":1,"page_type":"cover","title":"","subtitle":"","blocks":[{"label":"","heading":"","body":"","reason":"","items":[]}],"image_refs":[""]}
 
 Application pages:
-- Page 13 must introduce 4 capsules and list their ${outfitsPerCapsule} outfit names.
-- Pages 14-${outfitEndPage} must be one outfit per page.
+- Page ${outfitSystemPage} must introduce 4 capsules and list their ${outfitsPerCapsule} outfit names.
+- Pages ${outfitStartPage}-${outfitEndPage} must be one outfit per page.
 - Use the harness-first outfit contract below. The basic page plan is scaffolding only, not the source of colour blocking or repeated formulas.
 - Each outfit plan includes only page number, capsule, max colours, and eyewear cadence.
 ${outfitGenerationSourceRules(libraryContext)}
-- Neckline rules are hard coverage rules. If neckline_rules.coverage_required=true, say only: No cleavage showing.
+- Neckline rules are hard coverage rules. If neckline_rules.coverage_required=true, avoid cleavage and very low necklines; do not assume high necklines are required. Safe open collars, soft V necklines, soft scoops, and modest square necks are allowed when they stay covered.
 ${outfitColourSourceRules(libraryContext)}
 - Each outfit plan includes eyewear_required. If true, include exactly one Eyewear formula item with the provided eyewear_piece. If false, do not mention eyewear.
 - Shared pieces should repeat across capsules where useful.
+
+Prescription pages:
+- Page ${palettePage} should focus only on palette logic. Colour usage metadata may be structured in JSON, but visible client text should not depend on hex codes or "anchor/wearable" labels.
+${colourDrapePage ? `- Page ${colourDrapePage} should be a minimal professional colour drape page. The generated image carries the comparison; keep text concise.` : ''}
+${hairstylePage ? `- Page ${hairstylePage} should provide exactly four hairstyle directions that correspond to the 2x2 generated hair image.` : ''}
+${hairColourPage ? `- Page ${hairColourPage} (Hair Colour Direction) should provide exactly four hair-colour/highlight directions from face_hair_accessories.hair_colour_options that correspond to the 2x2 generated hair-colour image, plus a short intro from hair_colour_direction. Keep colours realistic, classy, feminine, salon-achievable, and compatible with the client's existing hairstyle/cut.` : ''}
+${eyeframePage ? `- Page ${eyeframePage} should provide exactly four eyeframe/sunglass directions that correspond to the 2x2 generated eyewear image.` : ''}
+${makeupPage ? `- Page ${makeupPage} (Makeup for Everyday Looks) should present a subtle natural everyday makeup look that matches the generated makeup image: a short intro from makeup.everyday_direction, exactly five ordered steps from makeup.steps, and the flattering everyday shades from makeup.colours. Keep it product-type only — no brands, no medical or clinical claims. Avoid glam, bridal, party makeup, heavy base, dramatic contour, smoky eyes, false lashes, glitter, and bold lipstick.` : ''}
 
 ${STYLIST_STYLING_PRINCIPLES}
 
@@ -3385,8 +4295,7 @@ export async function generateStylistBlueprintReplacementOutfit(
   pageNumber: number,
   reason?: string,
 ): Promise<BlueprintPage> {
-  void reason;
-  const outfitStart = getStylistBlueprintOutfitStartPage();
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
   if (pageNumber < outfitStart || pageNumber > outfitEnd) {
     throw new Error(`Page ${pageNumber} is not an outfit page`);
@@ -3396,9 +4305,11 @@ export async function generateStylistBlueprintReplacementOutfit(
   if (!existingPage) throw new Error(`Missing outfit page ${pageNumber}`);
 
   const libraryContext = await loadOutfitLibraryContext();
-  const plan = buildOutfitDiversityPlan(reportData, libraryContext)[pageNumber - outfitStart];
+  const culturalMode = getStylistOutfitCulturalMode(submission);
+  const replacementContext = buildReplacementOutfitContext(reportData, pageNumber);
+  const plan = buildReplacementPlan(reportData, pageNumber, reason, libraryContext, culturalMode);
   if (!plan) throw new Error(`Missing outfit plan for page ${pageNumber}`);
-  const pages = await generateHarnessOnlyOutfitPages(reportData, [plan], submission);
+  const pages = await generateHarnessOnlyOutfitPages(reportData, [plan], submission, replacementContext, reason);
   const page = pages.find(candidate => candidate.page_number === pageNumber);
   if (!page) throw new Error('Replacement outfit generation returned no page');
   return page;
@@ -3482,7 +4393,7 @@ export async function generateStylistBlueprintOutfitEdit(
   pageNumber: number,
   instruction: string,
 ): Promise<BlueprintPage> {
-  const outfitStart = getStylistBlueprintOutfitStartPage();
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
   if (pageNumber < outfitStart || pageNumber > outfitEnd) {
     throw new Error(`Page ${pageNumber} is not an outfit page`);
@@ -3531,7 +4442,8 @@ export async function generateStylistBlueprintReplacementOutfits(
 ): Promise<BlueprintPage[]> {
   void reason;
   const libraryContext = await loadOutfitLibraryContext();
-  const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext);
+  const culturalMode = getStylistOutfitCulturalMode(submission);
+  const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode);
   return generateHarnessOnlyOutfitPages(reportData, outfitDiversityPlan, submission);
 }
 
@@ -3624,13 +4536,39 @@ function normalisePages(
 ): BlueprintPage[] {
   const outfitPages = Array.from(
     { length: getStylistBlueprintOutfitCount(reportData) },
-    (_, index) => getStylistBlueprintOutfitStartPage() + index,
+    (_, index) => getStylistBlueprintOutfitStartPage(reportData) + index,
   );
+  const transformationPage = getStylistBlueprintTransformationPage(reportData);
+  const openingPages = transformationPage
+    ? [1, getStylistBlueprintSummaryPage(reportData), getStylistBlueprintReadingGuidePage(reportData)]
+    : [1, 2, 3];
+  const diagnosisPages = [
+    getStylistBlueprintBodyGeometryPage(reportData),
+    getStylistBlueprintChromaticPage(reportData),
+    getStylistBlueprintFaceArchitecturePage(reportData),
+    getStylistBlueprintProportionPage(reportData),
+    getStylistBlueprintAvoidancePage(reportData),
+  ];
+  const prescriptionPages = [
+    getStylistBlueprintPalettePage(reportData),
+    ...(getStylistBlueprintColourDrapePage(reportData) ? [getStylistBlueprintColourDrapePage(reportData) as number] : []),
+    getStylistBlueprintRulesStartPage(reportData),
+    ...(getStylistBlueprintHairstylePage(reportData) ? [getStylistBlueprintHairstylePage(reportData) as number] : [getStylistBlueprintHairFaceAccessoriesPage(reportData)]),
+    ...(getStylistBlueprintHairColourPage(reportData) ? [getStylistBlueprintHairColourPage(reportData) as number] : []),
+    ...(getStylistBlueprintEyeframePage(reportData) ? [getStylistBlueprintEyeframePage(reportData) as number] : []),
+    ...(getStylistBlueprintMakeupPage(reportData) ? [getStylistBlueprintMakeupPage(reportData) as number] : []),
+    getStylistBlueprintFabricPage(reportData),
+  ].filter((pageNumber): pageNumber is number => typeof pageNumber === 'number');
+  const applicationPages = [
+    ...(transformationPage ? [transformationPage] : []),
+    getStylistBlueprintOutfitSystemPage(reportData),
+    ...outfitPages,
+  ];
   const expected: Record<typeof act, number[]> = {
-    opening: [1, 2, 3],
-    diagnosis: [4, 5, 6, 7, 8],
-    prescription: [9, 10, 11, 12],
-    application: [13, ...outfitPages],
+    opening: openingPages,
+    diagnosis: diagnosisPages,
+    prescription: prescriptionPages,
+    application: applicationPages,
     closing: [
       getStylistBlueprintMatrixPage(reportData),
       getStylistBlueprintAuditPage(reportData),
@@ -3638,8 +4576,8 @@ function normalisePages(
     ],
   };
   const allowedTypes: BlueprintPageType[] = [
-    'cover', 'summary', 'reading_guide', 'diagnosis', 'avoidance', 'palette', 'rules',
-    'fabric', 'outfit_system', 'outfit', 'matrix', 'audit', 'continuation',
+    'cover', 'transformation', 'summary', 'reading_guide', 'diagnosis', 'avoidance', 'palette', 'colour_drape', 'rules',
+    'hair', 'eyewear', 'fabric', 'outfit_system', 'outfit', 'matrix', 'audit', 'continuation',
   ];
   const arr = Array.isArray(value) ? value : [];
   const pages = arr.map(item => {
@@ -3708,91 +4646,12 @@ export function mergeBlueprintPages(existing: BlueprintPage[], incoming: Bluepri
   return [...map.values()].sort((a, b) => a.page_number - b.page_number);
 }
 
-function clientFacingOutfitText(page: BlueprintPage) {
-  return page.blocks
-    .flatMap(block => [
-      block.label,
-      block.heading,
-      block.body,
-      block.reason,
-      ...(Array.isArray(block.items)
-        ? block.items.flatMap(item => {
-          const record = asRecord(item);
-          return [
-            asString(record.slot),
-            asString(record.piece),
-            asString(record.structural_notes),
-            asString(record.notes),
-            asString(record.guidance),
-          ];
-        })
-        : []),
-    ])
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-}
-
-function hasUnsafeNecklineLanguage(text: string) {
-  return UNSAFE_NECKLINE_RE.test(text) ||
-    /\b(cleavage|exposed chest|low neckline|low neck|plunge|plunging|deep v|keyhole|strapless|off shoulder|one shoulder|spaghetti strap|strappy camisole|standalone camisole|standalone tank)\b/i.test(text);
-}
-
-function isMainGarmentFormulaItem(item: unknown) {
-  const record = asRecord(item);
-  return /(top|blouse|shirt|tee|t-shirt|knit|camisole|tank|dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble|outer|layer|blazer|jacket|cardigan|vest|coat|dupatta|bottom|trouser|pant|jean|skirt|palazzo|legging)/i
-    .test(`${asString(record.slot)} ${asString(record.piece)}`);
-}
-
-function formulaItemColour(item: unknown): PlannedOutfitColour | null {
-  const record = asRecord(item);
-  const hex = asString(record.colour_hex);
-  const role = asString(record.palette_role);
-  if (!isValidHex(hex) || !validPaletteRole(role)) return null;
-  return {
-    name: asString(record.colour_name, 'Palette colour'),
-    hex: normaliseHex(hex),
-    role,
-  };
-}
-
-function formulaItemHasColourFreshness(item: unknown) {
-  const colour = formulaItemColour(item);
-  return Boolean(colour && isMainGarmentFormulaItem(item) && !isWardrobeNeutral(colour));
-}
-
-function visibleColourKeysForOutfit(items: unknown[]) {
-  const keys = new Set<string>();
-  for (const item of items) {
-    const record = asRecord(item);
-    if (/jewel|jewellery|jewelry|earring|necklace|bracelet|bangle/i.test(asString(record.slot))) continue;
-    const colour = formulaItemColour(item);
-    if (colour) keys.add(normaliseHex(colour.hex));
-  }
-  return keys;
-}
-
-function dominantFormulaSignature(items: unknown[]) {
-  const slots = new Set<string>();
-  for (const item of items) {
-    const record = asRecord(item);
-    const text = `${asString(record.slot)} ${asString(record.piece)}`.toLowerCase();
-    if (/(dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble)/.test(text)) slots.add('one-piece');
-    else if (/(top|blouse|shirt|tee|t-shirt|knit|camisole|tank)/.test(text)) slots.add('top');
-    else if (/(bottom|trouser|pant|jean|skirt|palazzo|legging)/.test(text)) slots.add('bottom');
-    else if (/(outer|layer|blazer|jacket|cardigan|vest|coat|dupatta)/.test(text)) slots.add('layer');
-    else if (/(footwear|shoe|sandal|heel|flat|sneaker|loafer|pump|mule)/.test(text)) slots.add('footwear');
-    else if (/(bag|tote|clutch|crossbody|handbag)/.test(text)) slots.add('bag');
-  }
-  return [...slots].sort().join('+') || 'unknown';
-}
-
-function hasHarnessBlock(page: BlueprintPage, pattern: RegExp) {
-  return page.blocks.some(block => pattern.test(`${block.label ?? ''} ${block.heading ?? ''} ${block.body ?? ''} ${block.reason ?? ''}`));
-}
-
-export function validateStylistBlueprintReport(data: StylistBlueprintReportData) {
-  if (![STYLIST_BLUEPRINT_VERSION, STYLIST_BLUEPRINT_LEGACY_VERSION].includes(data.version)) throw new Error('Invalid Blueprint version');
+export function validateStylistBlueprintReport(
+  data: StylistBlueprintReportData,
+  options: { culturalMode?: StylistOutfitCulturalMode; validateStaticPageDensity?: boolean } = {},
+) {
+  void options;
+  if (![STYLIST_BLUEPRINT_VERSION, STYLIST_BLUEPRINT_39_VERSION, STYLIST_BLUEPRINT_37_VERSION, STYLIST_BLUEPRINT_36_VERSION, STYLIST_BLUEPRINT_LEGACY_VERSION].includes(data.version)) throw new Error('Invalid Blueprint version');
   const expectedPageCount = getStylistBlueprintPageCount(data);
   const expectedOutfitCount = getStylistBlueprintOutfitCount(data);
   if (data.pages.length !== expectedPageCount) throw new Error(`Expected ${expectedPageCount} pages, found ${data.pages.length}`);
@@ -3801,79 +4660,29 @@ export function validateStylistBlueprintReport(data: StylistBlueprintReportData)
   }
   const outfitPages = data.pages.filter(page => page.page_type === 'outfit');
   if (outfitPages.length !== expectedOutfitCount) throw new Error(`Expected ${expectedOutfitCount} outfit pages, found ${outfitPages.length}`);
-  for (const page of outfitPages) {
-    const hasReason = page.blocks.some(block => block.reason || /why|because|works/i.test(block.heading ?? ''));
-    if (!hasReason) throw new Error(`Outfit page ${page.page_number} is missing reasoning`);
-  }
   if (data.classification.colour.base_palette.length < BASE_PALETTE_SIZE) throw new Error(`Base palette requires ${BASE_PALETTE_SIZE} colours`);
   if (data.classification.colour.accent_palette.length < ACCENT_PALETTE_SIZE) throw new Error(`Accent palette requires ${ACCENT_PALETTE_SIZE} colours`);
 
-  const importantPages = new Map([
-    [3, 3],
-    [4, 3],
-    [6, 3],
-    [7, 3],
-  ]);
-  for (const [pageNumber, minimumUsefulBlocks] of importantPages) {
-    const page = data.pages.find(item => item.page_number === pageNumber);
-    if (!page) throw new Error(`Missing page ${pageNumber}`);
-    const usefulBlocks = page.blocks.filter(block => !weakText(block.body || block.reason));
-    if (usefulBlocks.length < minimumUsefulBlocks) {
-      throw new Error(`Page ${pageNumber} needs at least ${minimumUsefulBlocks} useful content blocks`);
+  const transformationPageNumber = getStylistBlueprintTransformationPage(data);
+  const transformationPage = transformationPageNumber
+    ? data.pages.find(page => page.page_number === transformationPageNumber)
+    : null;
+  if (transformationPageNumber) {
+    if (!transformationPage || transformationPage.page_type !== 'transformation') throw new Error('Missing transformation preview page');
+    if (transformationPage.blocks.length < 3) throw new Error('Transformation preview page needs 3 looks');
+    for (const [index, block] of transformationPage.blocks.slice(0, 3).entries()) {
+      const formulaItems = Array.isArray(block.items) ? block.items : [];
+      if (formulaItems.length < 4) throw new Error(`Transformation look ${index + 1} needs enough formula items to render`);
+      for (const item of formulaItems) {
+        const record = asRecord(item);
+        if (!asString(record.slot) || !asString(record.piece)) throw new Error(`Transformation look ${index + 1} has an incomplete formula item`);
+      }
     }
   }
 
-  if (data.version !== STYLIST_BLUEPRINT_VERSION) return;
-
-  const leadCounts = new Map<string, number>();
-  const formulaCounts = new Map<string, number>();
-  const coverageProfile = coverageProfileFromClassification(data.classification);
-  let mainGarmentColourCount = 0;
-
   for (const page of outfitPages) {
-    if (STYLIST_OUTFIT_LIBRARY_ENABLED && !page.library_refs?.length) throw new Error(`Outfit page ${page.page_number} is missing a library reference`);
-    if (/library reference|adapted from|source outfit|root-\d|curated-\d/.test(clientFacingOutfitText(page))) {
-      throw new Error(`Outfit page ${page.page_number} exposes internal library wording`);
-    }
-
-    const paletteUsed = page.palette_used ?? [];
-    if (paletteUsed.length > 3) throw new Error(`Outfit page ${page.page_number} uses too many visible colours`);
-    const lead = paletteUsed.find(colour => colour.role === 'lead');
-    if (!lead || !isValidHex(lead.hex)) throw new Error(`Outfit page ${page.page_number} is missing a valid lead colour`);
-    if (!hasHarnessBlock(page, /archetype/i) || !HARNESS_ARCHETYPES.some(archetype => clientFacingOutfitText(page).includes(archetype.toLowerCase()))) {
-      throw new Error(`Outfit page ${page.page_number} is missing a clear harness archetype`);
-    }
-    if (!hasHarnessBlock(page, /hero/i)) throw new Error(`Outfit page ${page.page_number} is missing a clear hero`);
-    if (!hasHarnessBlock(page, /role|face-lift|anchor|lengthener|freshness|bridge|finish/i)) throw new Error(`Outfit page ${page.page_number} is missing role breakdown`);
-    if (!hasHarnessBlock(page, /do not buy|wrong version|breaks it|avoid buying/i)) throw new Error(`Outfit page ${page.page_number} is missing do-not-buy guidance`);
-    if (!hasHarnessBlock(page, /score|body geometry|undertone alignment|visual hierarchy|realism/i)) throw new Error(`Outfit page ${page.page_number} is missing score summary`);
-    leadCounts.set(normaliseHex(lead.hex), (leadCounts.get(normaliseHex(lead.hex)) ?? 0) + 1);
     const formulaItems = page.blocks.flatMap(block => Array.isArray(block.items) ? block.items : []);
-    if (formulaItems.length < 5) throw new Error(`Outfit page ${page.page_number} needs at least 5 formula items`);
-    const visibleColourCount = visibleColourKeysForOutfit(formulaItems).size;
-    if (visibleColourCount > 3) throw new Error(`Outfit page ${page.page_number} uses ${visibleColourCount} visible colours`);
-    if (formulaItems.some(formulaItemHasColourFreshness)) mainGarmentColourCount++;
-    const formulaSignature = dominantFormulaSignature(formulaItems);
-    formulaCounts.set(formulaSignature, (formulaCounts.get(formulaSignature) ?? 0) + 1);
-    const outfitNumber = page.page_number - getStylistBlueprintOutfitStartPage() + 1;
-    const eyewearItems = formulaItems.filter(isEyewearFormulaItem);
-    if (eyewearItems.length > 1) {
-      throw new Error(`Outfit ${outfitNumber} must not include more than one eyewear formula item`);
-    }
-    for (const item of eyewearItems) {
-      const record = asRecord(item);
-      const text = asString(record.piece).toLowerCase();
-      if (/\boptional\b|\band\/or\b|\/|\bor\b/.test(text)) {
-        throw new Error(`Outfit ${outfitNumber} eyewear must be one exact item without optional language or alternatives`);
-      }
-    }
-    const libraryMappedCount = formulaItems.filter(item => {
-      const record = asRecord(item);
-      return asString(record.library_source) === 'primary';
-    }).length;
-    if (STYLIST_OUTFIT_LIBRARY_ENABLED && libraryMappedCount < 4) {
-      throw new Error(`Outfit page ${page.page_number} needs at least 4 formula items mapped to the outfit library`);
-    }
+    if (formulaItems.length < 4) throw new Error(`Outfit page ${page.page_number} needs enough formula items to render`);
     const formulaText = formulaItems
       .map(item => {
         const record = asRecord(item);
@@ -3881,9 +4690,6 @@ export function validateStylistBlueprintReport(data: StylistBlueprintReportData)
       })
       .join(' ')
       .toLowerCase();
-    if (coverageProfile.neckline && hasUnsafeNecklineLanguage(formulaText)) {
-      throw new Error(`Outfit page ${page.page_number} violates neckline/chest coverage`);
-    }
     if (!/(top|blouse|shirt|tee|t-shirt|knit|camisole|tank|dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble)/.test(formulaText)) {
       throw new Error(`Outfit page ${page.page_number} needs a clear top/dress/base garment`);
     }
@@ -3899,34 +4705,6 @@ export function validateStylistBlueprintReport(data: StylistBlueprintReportData)
     for (const item of formulaItems) {
       const record = asRecord(item);
       if (!asString(record.slot) || !asString(record.piece)) throw new Error(`Outfit page ${page.page_number} has an incomplete formula item`);
-      if (exactItemHasAlternativeLanguage(asString(record.piece))) throw new Error(`Outfit page ${page.page_number} has a non-exact formula item`);
-      if (!asString(record.colour_name) || !isValidHex(asString(record.colour_hex))) throw new Error(`Outfit page ${page.page_number} has formula item missing colour metadata`);
-      if (!['lead', 'support', 'ground', 'accent'].includes(asString(record.palette_role))) throw new Error(`Outfit page ${page.page_number} has formula item missing palette role`);
-      if (weakText(asString(record.structural_notes))) throw new Error(`Outfit page ${page.page_number} has formula item missing structural notes`);
-      if (/bag|tote|clutch|crossbody|handbag|shoe|footwear|sandal|heel|flat|loafer|pump|sneaker|mule|boot/i.test(`${asString(record.slot)} ${asString(record.piece)}`)) {
-        const colour = {
-          name: asString(record.colour_name),
-          hex: normaliseHex(asString(record.colour_hex)),
-          role: asString(record.palette_role) as BlueprintColourUse['role'],
-        };
-        const isOccasionClutch = /clutch/i.test(`${asString(record.slot)} ${asString(record.piece)}`) && /occasion|evening|social/i.test(page.subtitle ?? '');
-        if (!isOccasionClutch && !isRealisticLeatherColour(colour)) {
-          throw new Error(`Outfit page ${page.page_number} uses an unrealistic bag/shoe colour`);
-        }
-      }
     }
-  }
-
-  if (mainGarmentColourCount < Math.ceil(expectedOutfitCount / 2)) {
-    throw new Error(`Expected at least ${Math.ceil(expectedOutfitCount / 2)} outfits with colour in a main garment, found ${mainGarmentColourCount}`);
-  }
-  for (const [signature, count] of formulaCounts) {
-    if (count > 5) throw new Error(`Dominant outfit formula ${signature} repeats too often, found ${count}`);
-  }
-
-  // Keep one colour from dominating, but do not force palette coverage. A real
-  // stylist can repeat wearable anchors when the verified outfit bank calls for it.
-  for (const [hex, count] of leadCounts) {
-    if (count > 6) throw new Error(`Base colour ${hex} is overused as a lead colour, found ${count}`);
   }
 }

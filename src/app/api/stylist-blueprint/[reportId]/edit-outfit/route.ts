@@ -60,7 +60,7 @@ export async function POST(
   }
 
   const reportData = report.report_data as StylistBlueprintReportData;
-  const outfitStart = getStylistBlueprintOutfitStartPage();
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
   if (!Number.isInteger(pageNumber) || pageNumber < outfitStart || pageNumber > outfitEnd) {
     return NextResponse.json({ error: 'Invalid outfit page number' }, { status: 400 });

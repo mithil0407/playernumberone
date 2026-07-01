@@ -29,6 +29,7 @@ import {
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPageCount,
+  getStylistBlueprintPalettePage,
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
@@ -229,10 +230,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const requiredImagesDone = imageCounts ? Object.values(imageCounts).every(group => group.done >= group.total) : true;
   const activePageIsOutfit = Boolean(
     versioned &&
-    activePageNumber >= getStylistBlueprintOutfitStartPage() &&
+    activePageNumber >= getStylistBlueprintOutfitStartPage(versioned) &&
     activePageNumber <= getStylistBlueprintOutfitEndPage(versioned),
   );
-  const activePageIsPalette = Boolean(versioned && activePageNumber === 9);
+  const activePageIsPalette = Boolean(versioned && activePageNumber === getStylistBlueprintPalettePage(versioned));
   const hasUnsavedEdits = dirtyPages.size > 0 || reportDataDirty;
   const currentOutfitFeedback = outfitFeedbackByPage[activePageNumber] ?? null;
   const imageGroups = hideContinuationPage

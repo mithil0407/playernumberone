@@ -5,7 +5,9 @@ import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAu
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
+  getStylistBlueprintHairColourPage,
   getStylistBlueprintOutfitCount,
+  getStylistBlueprintTransformationPage,
   isManualStylistBlueprintSubmission,
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
@@ -65,6 +67,12 @@ export async function GET(
   const outfitCount = isVersionedStylistBlueprintReportData(data.report_data)
     ? getStylistBlueprintOutfitCount(data.report_data)
     : 12;
+  const includeTransformationPreview = isVersionedStylistBlueprintReportData(data.report_data)
+    ? Boolean(getStylistBlueprintTransformationPage(data.report_data))
+    : false;
+  const includeBeautyPages = isVersionedStylistBlueprintReportData(data.report_data)
+    ? Boolean(getStylistBlueprintHairColourPage(data.report_data))
+    : false;
 
   const imageCounts = getStylistBlueprintImageCounts(data.image_urls as StylistBlueprintImagePaths | null, {
     hasFrontPhoto,
@@ -73,6 +81,8 @@ export async function GET(
     hasClientPhoto,
     outfitCount,
     includeClosingEditTeaser,
+    includeTransformationPreview,
+    includeBeautyPages,
   });
   const imagesComplete = Object.values(imageCounts).every(group => group.done >= group.total);
   let progressStage = data.progress_stage;

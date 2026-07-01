@@ -234,5 +234,5 @@ export function negativeSignalsPrompt(signals: NegativeOutfitSignal[]): string {
 }
 
 export function isOutfitPageNumber(pageNumber: number, reportData: StylistBlueprintReportData): boolean {
-  return pageNumber >= getStylistBlueprintOutfitStartPage() && pageNumber <= getStylistBlueprintOutfitEndPage(reportData);
+  return pageNumber >= getStylistBlueprintOutfitStartPage(reportData) && pageNumber <= getStylistBlueprintOutfitEndPage(reportData);
 }

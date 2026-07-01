@@ -7,7 +7,9 @@ import {
   generateStylistBlueprintReplacementOutfit,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistOutfitCulturalMode,
   isVersionedStylistBlueprintReportData,
+  validateStylistBlueprintReport,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
@@ -54,7 +56,7 @@ export async function POST(
   }
 
   const reportData = report.report_data as StylistBlueprintReportData;
-  const outfitStart = getStylistBlueprintOutfitStartPage();
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
   const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
   if (!Number.isInteger(pageNumber) || pageNumber < outfitStart || pageNumber > outfitEnd) {
     return NextResponse.json({ error: 'Invalid outfit page number' }, { status: 400 });
@@ -81,18 +83,36 @@ export async function POST(
       .eq('id', reportId);
     await revalidateStylistBlueprintCache(reportId, report.share_token ?? null);
 
-    const replacementPage = await generateStylistBlueprintReplacementOutfit(
-      submission as StylistIntakeSubmission,
-      reportData,
-      pageNumber,
-      reason,
-    );
+    const culturalMode = getStylistOutfitCulturalMode(submission as StylistIntakeSubmission);
+    let nextReportData: StylistBlueprintReportData | null = null;
+    let nextReplacementPage = null as Awaited<ReturnType<typeof generateStylistBlueprintReplacementOutfit>> | null;
+    let lastValidationError: unknown = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const replacementPage = await generateStylistBlueprintReplacementOutfit(
+        submission as StylistIntakeSubmission,
+        reportData,
+        pageNumber,
+        attempt === 0 ? reason : `${reason || 'Admin requested outfit replacement.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate this outfit and fix that issue.`,
+      );
 
-    const nextReportData: StylistBlueprintReportData = {
-      ...reportData,
-      generated_at: new Date().toISOString(),
-      pages: reportData.pages.map(page => page.page_number === pageNumber ? replacementPage : page),
-    };
+      const candidateReportData: StylistBlueprintReportData = {
+        ...reportData,
+        generated_at: new Date().toISOString(),
+        pages: reportData.pages.map(page => page.page_number === pageNumber ? replacementPage : page),
+      };
+      try {
+        validateStylistBlueprintReport(candidateReportData, {
+          culturalMode,
+          validateStaticPageDensity: false,
+        });
+        nextReportData = candidateReportData;
+        nextReplacementPage = replacementPage;
+        break;
+      } catch (error) {
+        lastValidationError = error;
+      }
+    }
+    if (!nextReportData || !nextReplacementPage) throw lastValidationError instanceof Error ? lastValidationError : new Error('Replacement outfit failed validation');
     const nextApprovals = {
       ...((report.section_approvals as Record<string, boolean> | null) ?? {}),
       [`p${pageNumber}`]: false,
@@ -126,7 +146,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      page: replacementPage,
+      page: nextReplacementPage,
       report: freshReport,
       imageUrls: imageResult.imageUrls,
       imageUrl: imageResult.imageUrl,
