@@ -4,7 +4,7 @@ import { join } from 'path';
 export interface ParsedStylistOutfit {
   id: string;
   title: string;
-  source: 'root' | 'curated' | 'learned';
+  source: 'women' | 'root' | 'curated' | 'learned';
   capsule: 'Professional' | 'Social' | 'Everyday' | 'Occasion';
   fields: Array<{ label: string; value: string }>;
   normalised_slots: ParsedStylistOutfitSlot[];
@@ -45,7 +45,11 @@ const LABEL_ALIASES: Record<string, string> = {
   outerwear: 'Outerwear',
   'pattern detail': 'Pattern Detail',
   'statement piece': 'Statement Piece',
+  shoes: 'Footwear',
+  shoe: 'Footwear',
+  'styling line': 'Styling Line',
   top: 'Top',
+  'top inner': 'Base Layer',
   waist: 'Waist Detail',
   'waist detail': 'Waist Detail',
   'waist styling': 'Waist Detail',
@@ -67,8 +71,46 @@ const FIELD_PRIORITY = [
   'Statement Piece',
   'Neckline',
   'Hairstyle',
+  'Styling Line',
   'Formula',
 ];
+
+const INLINE_LABELS = [
+  'TOP INNER',
+  'BASE LAYER',
+  'STYLING LINE',
+  'PATTERN DETAIL',
+  'STATEMENT PIECE',
+  'WAIST DETAIL',
+  'INNER TOP',
+  'ACCESSORIES',
+  'ACCESSORY',
+  'OUTERWEAR',
+  'FOOTWEAR',
+  'JEWELLERY',
+  'JEWELRY',
+  'HAIRSTYLE',
+  'NECKLINE',
+  'BOTTOMS',
+  'BOTTOM',
+  'DRESS',
+  'LAYER',
+  'SHOES',
+  'SHOE',
+  'BELT',
+  'BAG',
+  'TOP',
+];
+
+const INLINE_LABEL_PATTERN = new RegExp(`(?:^|\\s)(${INLINE_LABELS.map(label => label.replace(/\s+/g, '\\s+')).join('|')}):\\s*`, 'gi');
+
+function readWomenLibraryFile(): string {
+  try {
+    return readFileSync(join(process.cwd(), 'outfitlibrarywomen.md'), 'utf-8');
+  } catch {
+    return '';
+  }
+}
 
 function readUserLibraryFile(): string {
   try {
@@ -111,6 +153,28 @@ function normaliseLabel(rawLabel: string): string {
 }
 
 function inferSlotFromText(label: string, value: string): string {
+  if ([
+    'Outfit',
+    'Dress',
+    'Top',
+    'Base Layer',
+    'Outerwear',
+    'Bottom',
+    'Waist Detail',
+    'Pattern Detail',
+    'Footwear',
+    'Bag',
+    'Jewellery',
+    'Accessories',
+    'Statement Piece',
+    'Neckline',
+    'Hairstyle',
+    'Styling Line',
+    'Formula',
+  ].includes(label)) {
+    return label;
+  }
+
   const text = `${label} ${value}`.toLowerCase();
   if (/dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble/.test(text)) return 'Dress';
   if (/trouser|pant|jean|skirt|palazzo|bottom|legging/.test(text)) return 'Bottom';
@@ -223,6 +287,12 @@ function parseEntry(
   const notes: string[] = [];
 
   for (const line of lines) {
+    const inlineFields = splitInlineLabelledFields(line);
+    if (inlineFields.length) {
+      fields.push(...inlineFields);
+      continue;
+    }
+
     const match = line.match(/^([^:]{1,40}):\s*(.+)$/);
     if (match) {
       const label = normaliseLabel(match[1]);
@@ -254,7 +324,7 @@ function parseEntry(
   const normalised_slots = normaliseStylistOutfitSlots(orderedFields);
   const signature = stylistOutfitSignature(normalised_slots) || text.toLowerCase().replace(/\s+/g, ' ').trim();
 
-  notes.push('Anchor on this verified outfit: keep its silhouette, piece relationships, and styling logic as one complete outfit. Adapt only colour (to the client palette), coverage, fabric weight, formality, and fit. Do not recombine its pieces with another outfit unless a human stylist explicitly requests it.');
+  notes.push('Anchor on this verified outfit: keep its silhouette, piece relationships, styling line, accessory architecture, and finishing logic as one complete outfit. Adapt only colour (to the client palette), coverage, fabric weight, formality, climate, and fit. Do not recombine its pieces with another outfit unless a human stylist explicitly requests it.');
 
   return {
     id: `${source}-${String(index + 1).padStart(2, '0')}`,
@@ -267,6 +337,26 @@ function parseEntry(
     signature,
     notes,
   };
+}
+
+function splitInlineLabelledFields(line: string): Array<{ label: string; value: string }> {
+  const withoutNumber = line.replace(/^\s*\d{1,3}\.\s*/, '').trim();
+  const matches = [...withoutNumber.matchAll(INLINE_LABEL_PATTERN)];
+  if (!matches.length) return [];
+
+  const prefix = withoutNumber.slice(0, matches[0].index ?? 0).trim();
+  if (prefix) return [];
+
+  return matches
+    .map((match, index) => {
+      const start = (match.index ?? 0) + match[0].length;
+      const end = index + 1 < matches.length ? matches[index + 1].index ?? withoutNumber.length : withoutNumber.length;
+      return {
+        label: normaliseLabel(match[1]),
+        value: cleanText(withoutNumber.slice(start, end)),
+      };
+    })
+    .filter(field => field.value);
 }
 
 function deriveTitle(fields: Array<{ label: string; value: string }>, index: number): string {
@@ -325,6 +415,39 @@ function parseRawOutfitLibrary(raw: string): ParsedStylistOutfit[] {
     seen.add(signature);
     entries.push(parsed);
   });
+
+  return entries;
+}
+
+function isWomenLibraryHeading(line: string) {
+  const text = cleanText(line.replace(/^\s*\d{1,3}\.\s*/, ''));
+  return Boolean(text) && !text.includes(':') && /^[A-Z0-9 /&().,–—'-]+$/.test(text);
+}
+
+export function parseWomenOutfitLibrary(raw: string): ParsedStylistOutfit[] {
+  const seen = new Set<string>();
+  const entries: ParsedStylistOutfit[] = [];
+
+  raw
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      if (isWomenLibraryHeading(line)) return;
+      if (!splitInlineLabelledFields(line).length) return;
+
+      const parsed = parseEntry(line, entries.length, 'women');
+      if (!parsed) return;
+
+      const signature = parsed.fields
+        .map((field) => `${field.label}:${field.value}`)
+        .join('|')
+        .toLowerCase();
+      if (seen.has(signature)) return;
+
+      seen.add(signature);
+      entries.push(parsed);
+    });
 
   return entries;
 }
@@ -405,6 +528,7 @@ ${formatStylistOutfitsForPrompt(parseCuratedOutfitLibrary(curatedLibrary))}`;
 
 export function getParsedStylistOutfitLibrary(): ParsedStylistOutfit[] {
   return [
+    ...parseWomenOutfitLibrary(readWomenLibraryFile()),
     ...parseRawOutfitLibrary(readUserLibraryFile()),
     ...parseCuratedOutfitLibrary(readCuratedLibraryFile()),
   ];

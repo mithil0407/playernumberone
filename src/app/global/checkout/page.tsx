@@ -153,32 +153,46 @@ export default function GlobalCheckoutPage() {
                         sessionStorage.setItem('global_purchaseTracked', rzpResponse.razorpay_payment_id);
 
                         try {
-                            await fetch('/api/global-confirm-payment', {
+                            const confirmRes = await fetch('/api/global-confirm-payment', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     db_order_id: data.db_order_id,
+                                    stylist_order_id: data.stylist_order_id,
                                     razorpay_payment_id: rzpResponse.razorpay_payment_id,
                                     razorpay_order_id: rzpResponse.razorpay_order_id,
                                     customer_name: email.split('@')[0],
                                     customer_email: email,
                                     customer_phone: phone,
                                     amount: totalAmount,
-                                has_edit_addon: iconikEditAddon,
-                                attribution: getAttributionPayload(),
-                            }),
-                        });
+                                    has_edit_addon: iconikEditAddon,
+                                    attribution: getAttributionPayload(),
+                                }),
+                            });
+                            const confirmData = await confirmRes.json();
+                            if (!confirmRes.ok || !confirmData.success) {
+                                throw new Error(confirmData.error || 'Could not unlock your intake after payment.');
+                            }
                         } catch (err) {
-                            console.warn('Could not confirm global payment in DB:', err);
+                            setIsProcessing(false);
+                            setFormError(
+                                err instanceof Error
+                                    ? `Payment succeeded, but we could not unlock your intake yet: ${err.message}. Please contact support with payment ID ${rzpResponse.razorpay_payment_id}.`
+                                    : `Payment succeeded, but we could not unlock your intake yet. Please contact support with payment ID ${rzpResponse.razorpay_payment_id}.`,
+                            );
+                            return;
                         }
 
                         localStorage.setItem('global_purchaseAmount', totalAmount.toString());
                         localStorage.setItem('global_customerEmail', email);
                         localStorage.setItem('global_customerPhone', phone);
+                        localStorage.setItem('stylist_purchaseAmount', totalAmount.toString());
+                        localStorage.setItem('stylist_customerEmail', email);
+                        localStorage.setItem('stylist_customerPhone', phone);
                         if (data.customer_id) localStorage.setItem('global_customerId', data.customer_id);
                         if (data.db_order_id) localStorage.setItem('global_orderId', data.db_order_id);
 
-                        window.location.href = `/global/thankyou?payment_id=${rzpResponse.razorpay_payment_id}&order_id=${data.razorpay_order_id}&amount=${totalAmount}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+                        window.location.href = `/stylist/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
                     },
                     prefill: { name: email.split('@')[0], email, contact: phone },
                     theme: { color: '#ff6b9d' },

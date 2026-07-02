@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveGlobeCustomer, saveGlobeOrder, supabaseGlobe } from '@/lib/supabaseGlobe';
+import { saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
+import { cleanCustomerEmail } from '@/lib/globeStylistMirror';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -33,20 +35,22 @@ export async function POST(request: NextRequest) {
         const orderId = `global_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         // Razorpay uses smallest currency unit: cents for USD
         const amountInCents = Math.round(amount * 100);
+        const normalizedEmail = cleanCustomerEmail(customer_email);
 
         let customerId = 'mock-customer-id';
         let dbOrderId = 'mock-order-id';
+        let stylistOrderId = 'mock-stylist-order-id';
 
         try {
             const { data: existingCustomer } = await supabaseGlobe
                 .from('globe_customers')
                 .select('*')
-                .eq('email', customer_email)
+                .eq('email', normalizedEmail)
                 .single();
             const customerAttribution = firstTouchAttribution(existingCustomer, incomingAttribution);
             const customer = await saveGlobeCustomer({
                 name: customer_name,
-                email: customer_email,
+                email: normalizedEmail,
                 phone: customer_phone,
                 ...customerAttribution,
             });
@@ -55,7 +59,7 @@ export async function POST(request: NextRequest) {
 
             const order = await saveGlobeOrder({
                 customer_id: customer.id!,
-                customer_email,
+                customer_email: normalizedEmail,
                 customer_name,
                 customer_phone,
                 amount,
@@ -66,6 +70,19 @@ export async function POST(request: NextRequest) {
                 ...orderAttribution,
             });
             dbOrderId = order.id!;
+
+            const stylistOrder = await saveStylistOrder({
+                lead_id: null,
+                customer_email: normalizedEmail,
+                customer_name,
+                customer_phone,
+                amount,
+                currency: 'USD',
+                status: 'pending',
+                razorpay_order_id: orderId,
+                ...orderAttribution,
+            });
+            stylistOrderId = stylistOrder.id!;
         } catch (err) {
             console.log('Global Supabase error, using mock IDs:', err);
         }
@@ -82,12 +99,13 @@ export async function POST(request: NextRequest) {
                 receipt: orderId,
                 notes: {
                     customer_name,
-                    customer_email,
+                    customer_email: normalizedEmail,
                     customer_phone,
                     base_product: 'ICONIK Blueprint Global',
                     iconik_edit_addon: iconik_edit_addon ? 'true' : 'false',
                     service: 'ICONIK Global Blueprint',
                     db_order_id: dbOrderId,
+                    stylist_order_id: stylistOrderId,
                     customer_id: customerId,
                     utm_source: incomingAttribution.utm_source || '',
                     utm_medium: incomingAttribution.utm_medium || '',
@@ -112,6 +130,17 @@ export async function POST(request: NextRequest) {
                 console.error('Failed to update global order with Razorpay ID:', updateIdError);
             }
 
+            if (stylistOrderId !== 'mock-stylist-order-id') {
+                const { error: updateStylistIdError } = await supabaseStyleScan
+                    .from('stylist_orders')
+                    .update({ razorpay_order_id: razorpayOrder.id })
+                    .eq('id', stylistOrderId);
+
+                if (updateStylistIdError) {
+                    console.error('Failed to update mirrored stylist order with Razorpay ID:', updateStylistIdError);
+                }
+            }
+
             return NextResponse.json({
                 success: true,
                 key: process.env.RAZORPAY_KEY_ID,
@@ -120,6 +149,7 @@ export async function POST(request: NextRequest) {
                 currency: 'USD',
                 customer_id: customerId,
                 db_order_id: dbOrderId,
+                stylist_order_id: stylistOrderId,
             });
 
         } catch (razorpayError) {

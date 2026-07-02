@@ -3,6 +3,7 @@ import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
+import { cleanCustomerEmail, mirrorPaidGlobeOrderToStylist } from '@/lib/globeStylistMirror';
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,6 +11,7 @@ export async function POST(request: NextRequest) {
             db_order_id,
             razorpay_payment_id,
             razorpay_order_id,
+            stylist_order_id,
             customer_name,
             customer_email,
             customer_phone,
@@ -22,6 +24,8 @@ export async function POST(request: NextRequest) {
         }
 
         let updatedOrder: Record<string, unknown> | null = null;
+        let mirroredStylistOrder: Record<string, unknown> | null = null;
+        const normalizedEmail = cleanCustomerEmail(customer_email);
 
         if (db_order_id && db_order_id !== 'mock-order-id') {
             const { data, error } = await supabaseGlobe
@@ -29,6 +33,7 @@ export async function POST(request: NextRequest) {
                 .update({
                     status: 'paid',
                     razorpay_payment_id,
+                    ...(normalizedEmail && { customer_email: normalizedEmail }),
                     ...(customer_name && { customer_name }),
                     ...(customer_phone && { customer_phone }),
                 })
@@ -45,6 +50,7 @@ export async function POST(request: NextRequest) {
                 .update({
                     status: 'paid',
                     razorpay_payment_id,
+                    ...(normalizedEmail && { customer_email: normalizedEmail }),
                     ...(customer_name && { customer_name }),
                     ...(customer_phone && { customer_phone }),
                 })
@@ -59,6 +65,23 @@ export async function POST(request: NextRequest) {
             updatedOrder = data;
         }
 
+        try {
+            mirroredStylistOrder = await mirrorPaidGlobeOrderToStylist({
+                globeOrder: updatedOrder,
+                globeOrderId: db_order_id,
+                stylistOrderId: stylist_order_id,
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                customerEmail: normalizedEmail || customer_email,
+                customerName: customer_name,
+                customerPhone: customer_phone,
+                amount,
+            });
+        } catch (stylistOrderErr) {
+            console.error('Failed to mirror global order into stylist orders:', stylistOrderErr);
+            return NextResponse.json({ error: 'Failed to unlock stylist intake' }, { status: 500 });
+        }
+
         if (updatedOrder && (db_order_id || razorpay_order_id)) {
             await recordRevenueEvent({
                 eventKey: `globe_orders:${db_order_id && db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id}:payment:${razorpay_payment_id}`,
@@ -68,7 +91,7 @@ export async function POST(request: NextRequest) {
                 revenueKind: 'one_time',
                 eventType: 'one_time_payment',
                 productType: 'global_blueprint',
-                customerEmail: customer_email || String(updatedOrder.customer_email ?? ''),
+                customerEmail: normalizedEmail || customer_email || String(updatedOrder.customer_email ?? ''),
                 customerName: customer_name || String(updatedOrder.customer_name ?? ''),
                 customerPhone: customer_phone || String(updatedOrder.customer_phone ?? ''),
                 amountMinor: toMinorUnits(amount ?? Number(updatedOrder.amount ?? 0)),
@@ -82,7 +105,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Send confirmation email
-        const emailTo = customer_email || String(updatedOrder?.customer_email ?? '');
+        const emailTo = normalizedEmail || String(updatedOrder?.customer_email ?? '');
         if (emailTo) {
             const name = customer_name || String(updatedOrder?.customer_name ?? '') || emailTo.split('@')[0];
             const phone = customer_phone || String(updatedOrder?.customer_phone ?? '');
@@ -108,7 +131,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, stylist_order_id: mirroredStylistOrder?.id ?? stylist_order_id ?? null });
 
     } catch (error) {
         console.error('Global confirm payment API error:', error);

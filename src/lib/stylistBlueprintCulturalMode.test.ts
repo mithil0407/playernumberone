@@ -261,9 +261,12 @@ export function runStylistBlueprintCulturalModeAssertions() {
     'western_default prompt context still bans ethnicwear unless explicitly requested',
   );
   invariant(
-    WOMEN_OUTFIT_HARNESS_V2.includes('dominant library-led styling reference') &&
-    WOMEN_OUTFIT_HARNESS_V2.includes('minimal adaptation, not reinvention') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('dominant catalog source') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('catalog-faithful adaptation, not reinvention') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Catalog skeleton first') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('colour diversity') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('at least 6 distinct lead colour families') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('4 outfits maximum') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('layer/no-layer diversity') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('Do not add unnecessary detail to individual pieces') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('Do not automatically turn modesty into only high necklines'),
@@ -325,6 +328,20 @@ export function runStylistBlueprintCulturalModeAssertions() {
 
   const replacementPlan = buildReplacementPlan(replacementReport, replacementPage, '', undefined, 'western_default');
   invariant(replacementPlan.lead_colour.name !== 'Emerald', 'replacement plan avoids the replaced lead colour when alternatives exist');
+  invariant(replacementPlan.library_reference?.source === 'women', 'replacement plan selects women library anchors when available');
+  invariant(Boolean(replacementPlan.library_piece_logic?.length), 'replacement plan includes library_piece_logic for the harness');
+
+  const libraryAnchoredReport = reportWithOutfitOverride();
+  const currentLibraryRef = replacementPlan.library_reference;
+  invariant(currentLibraryRef, 'replacement plan exposes a library reference');
+  libraryAnchoredReport.pages = libraryAnchoredReport.pages.map(page => page.page_number === replacementPage
+    ? { ...page, library_refs: [currentLibraryRef] }
+    : page);
+  const alternativeLibraryPlan = buildReplacementPlan(libraryAnchoredReport, replacementPage, '', undefined, 'western_default');
+  invariant(
+    alternativeLibraryPlan.library_reference?.id !== currentLibraryRef.id,
+    'replacement planning avoids the rejected/current library id when another women anchor exists',
+  );
 
   const casualReplacementPlan = buildReplacementPlan(replacementReport, replacementPage, 'make it more casual', undefined, 'western_default');
   invariant(casualReplacementPlan.formula_direction.includes('easy top + relaxed bottom'), 'replacement plan honours admin reason');

@@ -129,7 +129,7 @@ function GlobeThankyouInner() {
                     handler: async (rzpRes: RazorpaySubResponse) => {
                         const subscriptionAmount = selectedPlan === 'monthly' ? 19 : 168;
                         trackPurchase(subscriptionAmount, 'ICONIK Style Feed', ['iconik_style_feed'], 1, 'USD', 'Globe Funnel', rzpRes.razorpay_payment_id);
-                        window.location.href = `/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&subscribed=true`;
+                        window.location.href = `/stylist/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&subscribed=true`;
                     },
                     prefill: { email, contact: phone },
                     theme: { color: '#ff6b9d' },
@@ -155,7 +155,7 @@ function GlobeThankyouInner() {
         }
     }, [selectedPlan, email, phone, razorpayLoaded]);
 
-    const intakeUrl = `/globe/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+    const intakeUrl = `/stylist/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">

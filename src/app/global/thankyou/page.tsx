@@ -121,7 +121,7 @@ function GlobalThankyouInner() {
                     description: `ICONIK Style Feed — ${selectedPlan === 'monthly' ? '$19/month' : '$168/year'}`,
                     handler: async (rzpRes: RazorpaySubResponse) => {
                         console.log('Global Style Feed subscription activated:', rzpRes);
-                        window.location.href = `/global/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&subscribed=true`;
+                        window.location.href = `/stylist/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&subscribed=true`;
                     },
                     prefill: { email, contact: phone },
                     theme: { color: '#ff6b9d' },
@@ -147,7 +147,7 @@ function GlobalThankyouInner() {
         }
     }, [selectedPlan, email, phone, razorpayLoaded]);
 
-    const intakeUrl = `/global/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
+    const intakeUrl = `/stylist/intake?email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
 
     return (
         <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal">

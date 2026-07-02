@@ -211,10 +211,9 @@ function readWomenOutfitLibraryText(): string {
   }
 }
 
-// Temporary experiment mode: generate outfits from the deterministic stylist
-// decision hierarchy only, without verified outfit-library anchors or feedback
-// memory from generated outfits.
-const STYLIST_OUTFIT_LIBRARY_ENABLED = false;
+// Detailed outfit generation should be anchored in parsed, verified outfit
+// skeletons. Feedback learning remains off unless explicitly re-enabled.
+const STYLIST_OUTFIT_LIBRARY_ENABLED = true;
 const STYLIST_OUTFIT_FEEDBACK_LEARNING_ENABLED = false;
 
 export interface StylistIntakeSubmission {
@@ -362,7 +361,7 @@ export interface BlueprintColourUse {
 export interface BlueprintLibraryRef {
   id: string;
   title: string;
-  source: 'root' | 'curated' | 'learned';
+  source: 'women' | 'root' | 'curated' | 'learned';
   capsule: string;
   adaptation: string;
 }
@@ -456,7 +455,7 @@ async function loadOutfitLibraryContext(): Promise<OutfitLibraryContext> {
 
 function outfitLibraryPromptForContext(context: OutfitLibraryContext) {
   if (!STYLIST_OUTFIT_LIBRARY_ENABLED || !context.outfits.length) {
-    return 'Deterministic library anchoring is disabled for this run, but outfitlibrarywomen.md is still the dominant library-led prompt reference when attached. Do not invent library_refs, outfit memory, or library_piece_logic. Build each outfit by choosing the closest library-quality formula from the attached library text, then adapting minimally for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.';
+    return 'No parsed verified outfit anchors are available for this run. Do not invent library_refs, source ids, source outfit titles, or library_piece_logic. Use outfitlibrarywomen.md as the dominant catalog reference when attached: choose the closest complete catalog formula, then adapt minimally for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.';
   }
   return getStylistOutfitLibraryPromptFromOutfits(context.outfits);
 }
@@ -468,8 +467,8 @@ function outfitGenerationSourceRules(context: OutfitLibraryContext) {
 - Use the basic page plan only for page number, capsule, max colours, and eyewear cadence, not as garment or colour authority.
 - Variation should come from the harness outcome, fabric, proportion, shoe type, bag shape, and realistic repeated wardrobe anchors, not from random colour novelty.`;
   }
-  return `- Each outfit page must adapt the selected library skeleton in library_piece_logic. Treat those slots as the hard starting outfit, not loose inspiration.
-- Preserve the selected library skeleton's garment categories, silhouette relationships, and styling logic. Change only colour, coverage, fabric weight, formality, and fit to this client.
+  return `- Each outfit page must adapt the selected library skeleton in library_piece_logic. Treat those slots as the hard catalog starting outfit, not loose inspiration.
+- Preserve the selected library skeleton's garment categories, silhouette relationships, styling line, finish, and accessory architecture. Change only colour, coverage, fabric weight, formality, climate, and fit to this client.
 - Do not invent a different formula when the selected library skeleton already supplies the slot. Do not borrow slots from another library outfit.
 - Each outfit page must include top-level library_refs with the assigned library_reference id, title, source, capsule, and adaptation.
 - Do not mention "adapted from", "library reference", source ids, or source outfit titles in visible client-facing body text. Keep that only in top-level library_refs.`;
@@ -1011,6 +1010,8 @@ function outfitPlanForHarnessPrompt(plan: PlannedOutfit) {
     finishing_required: plan.finishing_required,
     finishing_detail_type: plan.finishing_detail_type,
     max_visible_colours: plan.max_visible_colours,
+    library_reference: plan.library_reference,
+    library_piece_logic: plan.library_piece_logic,
   };
 }
 
@@ -1527,9 +1528,9 @@ Harness-first outfit contract:
 - Do not let the deterministic plan flatten outfits into the same neutral formula. Use it for page number, capsule, coverage, eyewear cadence, and structural safety; the harness chooses the styling intention, archetype, hero, colour movement, and exact item mix.
 - Colour has undertone-safe freedom. You may choose any realistic, buyable, undertone-aligned retail colour even if it is not one of the named palette colours. The generated palette is guidance, not a hard whitelist.
 - Exact palette colours are not provided to the outfit engine. Choose colours from the attached images, coverage, free notes, occasion, garment realism, and retail availability.
-- The attached women outfit library is the dominant prompt reference. Choose the closest library-quality formula first, then adapt minimally for this client instead of inventing unrelated formulas.
-- Preserve the library's elevated elements: scarves, belts, polished bags, structured shoes, jewellery restraint, rich texture, strong colour relationships, warm leather bridges, and precise finishing details.
-- Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set. Do not copy entries verbatim, cite numbers, or force a library outfit when hard client guardrails point elsewhere.
+- The attached women outfit library is the dominant catalog source. Choose one complete assigned library skeleton first, then adapt minimally for this client instead of inventing unrelated formulas.
+- Preserve the assigned library skeleton's garment categories, silhouette relationship, styling line, finish, accessory architecture, scarves, belts, polished bags, structured shoes, jewellery restraint, rich texture, strong colour relationships, warm leather bridges, and precise finishing details.
+- Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set without recombining different library outfits. Do not cite numbers or source ids, and do not force a blocked library slot when hard client guardrails point elsewhere.
 - Do not add unnecessary decorative detail to every formula item. Individual pieces may be simple, clean, and realistic; the outfit should feel elevated through the full combination, proportion, colour relationship, texture, finishing detail, and accessories.
 - Manual-admin notes, profile text, and explicit preferences are hard guardrails when provided. Use liked/preferred garments to softly steer outfit worlds, and reject outfits that conflict with avoid, exposure, fit, footwear, or garment-category boundaries.
 - For form choices, disliked/No is an avoid signal, skipped is neutral and ignored, and liked is directional flavour only. Never repeat an item type merely because it was liked.
@@ -1558,7 +1559,7 @@ function normalisedLibrarySlots(outfit: ParsedStylistOutfit): Array<{ slot: stri
     : outfit.fields.map(field => ({ slot: field.label, piece: field.value, source_label: field.label, role: 'detail' as const }));
 
   return slots
-    .filter(slot => ['Outfit', 'Dress', 'Top', 'Base Layer', 'Outerwear', 'Bottom', 'Waist Detail', 'Pattern Detail', 'Neckline', 'Footwear', 'Bag', 'Jewellery', 'Accessories', 'Statement Piece'].includes(slot.slot))
+    .filter(slot => ['Outfit', 'Dress', 'Top', 'Base Layer', 'Outerwear', 'Bottom', 'Waist Detail', 'Pattern Detail', 'Neckline', 'Footwear', 'Bag', 'Jewellery', 'Accessories', 'Statement Piece', 'Styling Line'].includes(slot.slot))
     .slice(0, 12)
     .map(slot => ({ slot: slot.slot, piece: slot.piece, source: 'primary' as const }));
 }
@@ -1580,7 +1581,7 @@ function libraryReferenceForPlan(
     title: outfit.title,
     source: outfit.source,
     capsule: outfit.capsule,
-    adaptation: `Use this as the complete verified skeleton for this ${capsule} outfit, ${outfit.title}${pieceSummary ? ` (${pieceSummary})` : ''}: preserve the garment categories, silhouette relationship, and styling logic; adapt only colour, coverage, fabric weight, formality, and fit to this client's Blueprint. Do not graft slots from another outfit.`,
+    adaptation: `Use this as the complete verified catalog skeleton for this ${capsule} outfit, ${outfit.title}${pieceSummary ? ` (${pieceSummary})` : ''}: preserve the garment categories, silhouette relationship, styling line, finish, and accessory architecture; adapt only colour, coverage, fabric weight, formality, climate, and fit to this client's Blueprint. Do not graft slots from another outfit.`,
   };
 }
 
@@ -1588,7 +1589,12 @@ function rankedLibraryPool(
   library: ParsedStylistOutfit[],
   capsule: PlannedOutfit['capsule'],
 ) {
-  const sourceScore = (source: ParsedStylistOutfit['source']) => source === 'root' ? 3 : source === 'curated' ? 2 : 1;
+  const sourceScore = (source: ParsedStylistOutfit['source']) => {
+    if (source === 'women') return 4;
+    if (source === 'root') return 3;
+    if (source === 'curated') return 2;
+    return 1;
+  };
   return [...library].sort((a, b) => {
     const capsuleDelta = Number(b.capsule === capsule) - Number(a.capsule === capsule);
     if (capsuleDelta) return capsuleDelta;
@@ -2557,7 +2563,7 @@ function buildHarnessOnlyOutfitPrompt(
 
 --- ICONIK WOMEN OUTFIT LIBRARY ---
 ${womenOutfitLibrary
-  ? `Use this 200-outfit library as the dominant library-led reference for outfit quality. For each outfit, choose the closest library-quality formula first, then make minimal client-specific adaptations for coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes. Preserve the library's elevated elements: scarves, belts, polished bags, structured shoes, jewellery restraint, rich texture, strong colour relationships, warm leather bridges, and precise finishing details. Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set. Do not copy any entry verbatim, cite entry numbers, or force a library outfit when the client's hard guardrails point elsewhere. Do not add unnecessary detail to individual tops or formula items; simple, clean pieces are allowed when the complete outfit becomes elevated through proportion, colour relationship, texture, finishing, and accessories.${culturalMode === 'western_default' ? ' In western_default mode, learn from Western/elevated entries and ignore ethnic garment categories; transfer only their polish, colour logic, texture, proportion, and finishing detail intelligence.' : ''}\n\n${womenOutfitLibrary}`
+  ? `Use this 200-outfit library as the dominant catalog source for outfit quality. For each detailed report outfit, start from the assigned library_reference and library_piece_logic in the plan record when present. Preserve that catalog skeleton's garment categories, silhouette relationship, styling line, finish, and accessory architecture, then make only minimal client-specific adaptations for coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes. Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set without grafting pieces from different library outfits. Do not mention source ids, entry numbers, source titles, "adapted from", or "library reference" in visible client-facing text. Do not add unnecessary detail to individual tops or formula items; simple, clean pieces are allowed when the complete outfit becomes elevated through proportion, colour relationship, texture, finishing, and accessories.${culturalMode === 'western_default' ? ' In western_default mode, ignore ethnic garment categories as usable skeletons unless a plan record explicitly assigns one; transfer only polish, colour logic, texture, proportion, and finishing detail intelligence when cultural guardrails require Western styling.' : ''}\n\n${womenOutfitLibrary}`
   : 'The outfit library file outfitlibrarywomen.md was not available. Continue with the harness rules and client context only.'}
 
 ---
@@ -2579,6 +2585,8 @@ Outfit plan records:
 ${stringify(outfitPlansForHarnessPrompt(plans))}
 
 ${singleReplacementContext ? `${singleReplacementContext}\n\n` : ''}Plan enforcement:
+- When a plan record includes library_reference and library_piece_logic, treat that as the catalog skeleton for that outfit. Preserve its supplied slots before applying layer_required, coverage, colour, cultural mode, and realism adjustments.
+- Do not borrow pieces from another library entry. If a client guardrail blocks a slot, replace only that blocked slot with the nearest catalog-faithful equivalent and keep the rest of the skeleton intact.
 - Respect layer_required/layer_type, pattern_required/pattern_instruction, and finishing_required/finishing_detail_type in each plan record.
 - Professional looks with a required layer must include the named blazer, vest, or tailored jacket as a real formula item.
 - If layer_required=false, 03 - LAYER must be None. Do not add a separate layer or third-piece outer frame. For arm coverage, choose sleeves, drape, shoulder coverage, or one-piece construction instead of adding a jacket/cardigan/vest.
@@ -4620,7 +4628,7 @@ function normalisePages(
           const record = asRecord(item);
           const rawSource = asString(record.source);
           const source: BlueprintLibraryRef['source'] =
-            rawSource === 'curated' || rawSource === 'learned' ? rawSource : 'root';
+            rawSource === 'women' || rawSource === 'curated' || rawSource === 'learned' ? rawSource : 'root';
           return {
             id: asString(record.id, 'library-reference'),
             title: asString(record.title, 'Library reference'),

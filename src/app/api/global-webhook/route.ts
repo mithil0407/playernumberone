@@ -5,6 +5,7 @@ import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { sendGlobeOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
+import { cleanCustomerEmail, mirrorPaidGlobeOrderToStylist } from '@/lib/globeStylistMirror';
 
 interface RazorpayPayment {
     id: string;
@@ -94,7 +95,7 @@ async function handleGlobalPaid(orderId: string, payment?: RazorpayPayment) {
         return;
     }
 
-    const customerEmail = existingOrder.customer_email || String(notes.customer_email || '');
+    const customerEmail = cleanCustomerEmail(existingOrder.customer_email) || cleanCustomerEmail(notes.customer_email);
     const customerName = existingOrder.customer_name || String(notes.customer_name || (customerEmail ? customerEmail.split('@')[0] : 'there'));
     const customerPhone = existingOrder.customer_phone || String(notes.customer_phone || '');
     const rawAmount = orderDetails?.amount;
@@ -116,7 +117,7 @@ async function handleGlobalPaid(orderId: string, payment?: RazorpayPayment) {
         ...(payment?.id && { razorpay_payment_id: payment.id }),
         ...(existingOrder.customer_name ? {} : { customer_name: customerName }),
         ...(existingOrder.customer_phone ? {} : { customer_phone: customerPhone }),
-        ...(existingOrder.customer_email ? {} : { customer_email: customerEmail }),
+        ...(customerEmail && { customer_email: customerEmail }),
         ...(existingOrder.amount != null ? {} : { amount: orderAmount }),
         ...(existingOrder.iconik_edit_addon != null ? {} : { iconik_edit_addon: editAddon }),
     };
@@ -129,6 +130,21 @@ async function handleGlobalPaid(orderId: string, payment?: RazorpayPayment) {
     if (updateError) {
         console.error('Global order update failed:', updateError);
         return;
+    }
+
+    try {
+        await mirrorPaidGlobeOrderToStylist({
+            globeOrder: { ...existingOrder, ...updatePayload },
+            stylistOrderId: typeof notes.stylist_order_id === 'string' ? notes.stylist_order_id : null,
+            razorpayOrderId: orderId,
+            razorpayPaymentId: payment?.id || null,
+            customerEmail,
+            customerName,
+            customerPhone,
+            amount: orderAmount,
+        });
+    } catch (stylistOrderErr) {
+        console.error('Global webhook stylist mirror failed:', stylistOrderErr);
     }
 
     if (payment?.id) {
@@ -258,7 +274,7 @@ export async function POST(request: NextRequest) {
         let webhookData: { event?: string; payload?: Record<string, unknown> } = {};
         try {
             webhookData = JSON.parse(body);
-        } catch (error) {
+        } catch {
             return NextResponse.json({ status: 'error', message: 'Invalid JSON' }, { status: 400 });
         }
 
