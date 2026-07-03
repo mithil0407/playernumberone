@@ -2,6 +2,7 @@ import { supabaseAdmin } from './supabase';
 import { revalidateStylistBlueprintCache } from './stylistBlueprintCache';
 import {
   classifyStylistBlueprint,
+  attachSilhouetteRuleOutfitExamples,
   createBlueprintShell,
   generateStylistBlueprintPages,
   getStylistOutfitCulturalMode,
@@ -72,6 +73,9 @@ export async function runStylistBlueprintTextPipeline(
         generated_at: new Date().toISOString(),
         pages: mergeBlueprintPages(reportData.pages, pages),
       };
+      if (item.act === 'application') {
+        reportData = await attachSilhouetteRuleOutfitExamples(reportData, submission);
+      }
       await updateReport(reportId, { report_data: reportData }, shareToken);
     }
 
@@ -166,6 +170,9 @@ export async function runStylistBlueprintRepairPipeline(
         generated_at: new Date().toISOString(),
         pages: mergeBlueprintPages(reportData.pages, pages),
       };
+      if (item.act === 'application') {
+        reportData = await attachSilhouetteRuleOutfitExamples(reportData, submission);
+      }
       await updateReport(reportId, { report_data: reportData }, shareToken);
     }
 

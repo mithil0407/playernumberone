@@ -116,6 +116,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [reportDataDirty, setReportDataDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
+  const [refreshingSilhouetteProofs, setRefreshingSilhouetteProofs] = useState(false);
   const [rebuildingReport, setRebuildingReport] = useState(false);
   const [regeneratingSlotKey, setRegeneratingSlotKey] = useState<StylistBlueprintImageSlotKey | null>(null);
   const [replacingOutfitPage, setReplacingOutfitPage] = useState<number | null>(null);
@@ -398,6 +399,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     if (unlockingProgress) return 'Unlocking stuck job.';
     if (report?.progress_stage) return `Report generation in progress: ${stageLabel(report.progress_stage)}.`;
     if (generatingImages) return 'Image generation is running.';
+    if (refreshingSilhouetteProofs) return 'Refreshing silhouette proof images.';
     if (rebuildingReport) return 'Report rebuild is running.';
     if (replacingAllOutfits) return 'Replacing all outfits.';
     if (replacingOutfitPage !== null) return `Replacing outfit on page ${replacingOutfitPage}.`;
@@ -539,6 +541,50 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       setError(err instanceof Error ? err.message : 'Image generation failed');
     } finally {
       setGeneratingImages(false);
+    }
+  };
+
+  const refreshSilhouetteProofs = async () => {
+    if (!versioned) {
+      setBlockedError('Silhouette proofs', 'A v1 Blueprint report is required.');
+      return;
+    }
+    const blockReason = busyReason();
+    if (blockReason) {
+      setBlockedError('Silhouette proofs', blockReason);
+      return;
+    }
+    const confirmed = window.confirm(
+      'Remove the old silhouette proof images and generate four new client-worn proof images for the Silhouette Rules slide?',
+    );
+    if (!confirmed) return;
+    setRefreshingSilhouetteProofs(true);
+    setError('');
+    setReport(prev => prev ? {
+      ...prev,
+      progress_stage: 'generating_images_silhouette_proofs',
+      error_message: null,
+      image_urls: prev.image_urls ? {
+        ...prev.image_urls,
+        application: {
+          ...(prev.image_urls.application ?? {}),
+          silhouetteProofs: [null, null, null, null],
+        },
+      } : prev.image_urls,
+    } : prev);
+    try {
+      const res = await fetch(`/api/stylist-blueprint/${reportId}/attach-silhouette-examples`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ generate_images: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Silhouette proof refresh failed');
+      await load(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Silhouette proof refresh failed');
+    } finally {
+      setRefreshingSilhouetteProofs(false);
     }
   };
 
@@ -967,6 +1013,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const editOutfitDisabledReason = outfitActionDisabledReason || (!outfitInstruction.trim() ? 'Enter an edit instruction first.' : '');
   const paletteDisabledReason = !activePageIsPalette ? 'Open page 9 first.' : currentBusyReason;
   const imageDisabledReason = !versioned ? 'A v1 Blueprint report is required.' : currentBusyReason;
+  const silhouetteProofDisabledReason = imageDisabledReason;
   const recipientEmail = report.stylist_intake_responses?.customer_email?.trim() ?? '';
   const clientDisplayName = report.stylist_intake_responses?.full_name
     || recipientEmail
@@ -1180,6 +1227,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   title={imageDisabledReason || 'Regenerate images for the selected group.'}
                 >
                   <RefreshCw size={14} /> Regenerate Images
+                </ActionButton>
+                <ActionButton
+                  onClick={refreshSilhouetteProofs}
+                  disabled={Boolean(silhouetteProofDisabledReason)}
+                  title={silhouetteProofDisabledReason || 'Remove old silhouette proof flatlays and generate new client-worn proof images.'}
+                >
+                  {refreshingSilhouetteProofs ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  {refreshingSilhouetteProofs ? 'Refreshing...' : 'Refresh Silhouette Proofs'}
                 </ActionButton>
               </div>
 

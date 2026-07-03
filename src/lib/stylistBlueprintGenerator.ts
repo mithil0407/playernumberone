@@ -350,7 +350,19 @@ export interface BlueprintBlock {
   body?: string;
   reason?: string;
   items?: unknown[];
+  example_outfit?: SilhouetteProofOutfit;
+  example_outfit_page_number?: number;
+  example_outfit_principle?: string;
+  example_outfit_label?: string;
 }
+
+export type SilhouetteProofOutfit = {
+  title: string;
+  principle: string;
+  formula_items: NormalisedFormulaItem[];
+  palette_used: BlueprintColourUse[];
+  image_slot: `application.silhouetteProofs.${number}`;
+};
 
 export interface BlueprintColourUse {
   name: string;
@@ -2552,6 +2564,7 @@ function buildHarnessOnlyOutfitPrompt(
   submission?: StylistIntakeSubmission | null,
   replacementContext?: ReplacementOutfitContext | null,
   replacementReason?: string,
+  extraContext?: string,
 ) {
   const womenOutfitLibrary = readWomenOutfitLibraryText();
   const hasTransformationPreview = plans.some(plan => plan.purpose === 'transformation_preview');
@@ -2610,6 +2623,8 @@ ${hasTransformationPreview
 - Do not repeat the same top/bottom/layer silhouette, colour hero, or outfit archetype from Outfits 01-03 inside Outfits 04-${plans.length}.
 - The preview looks should feel transformational and immediately visual, but still obey every hard dislike, coverage, modesty, undertone, body geometry, lifestyle, and explicit-note rule.`
   : ''}
+
+${extraContext ? `${extraContext}\n\n` : ''}
 
 Return plain text only using the harness output format.
 Do not return JSON.
@@ -2911,8 +2926,9 @@ async function generateHarnessOnlyOutfitPages(
   submission?: StylistIntakeSubmission | null,
   replacementContext?: ReplacementOutfitContext | null,
   replacementReason?: string,
+  extraContext?: string,
 ) {
-  const prompt = buildHarnessOnlyOutfitPrompt(reportData, plans, submission, replacementContext, replacementReason);
+  const prompt = buildHarnessOnlyOutfitPrompt(reportData, plans, submission, replacementContext, replacementReason, extraContext);
   const text = await callGeminiText(prompt);
   try {
     return parseHarnessTextToBlueprintPages(text, reportData, plans);
@@ -4153,6 +4169,536 @@ function normaliseGeneratedPage(
     return normaliseOutfitPage(page, plan);
   }
   return normaliseUsefulBlocks(page, reportData);
+}
+
+type SilhouetteRuleExampleKind = 'vertical' | 'waist' | 'structure' | 'balance';
+
+type SilhouetteRuleProofTarget = {
+  blockIndex: number;
+  itemIndex?: number;
+  text: string;
+  kind: SilhouetteRuleExampleKind;
+};
+
+const SILHOUETTE_RULE_EXAMPLES: Record<SilhouetteRuleExampleKind, {
+  label: string;
+  principle: string;
+  ruleKeywords: RegExp;
+  directive: string;
+}> = {
+  vertical: {
+    label: 'Vertical Column Proof',
+    principle: 'A continuous base with an open long line creates visual length.',
+    ruleKeywords: /vertical|column|matching|tone|tonal|monochrome|open|longer|long-line|longline|layer|blazer|cardigan|elongat/i,
+    directive: 'Create a fresh outfit with a continuous tonal inner column: matching or near-matching top and bottom tones underneath an open longline cardigan, blazer, duster, or jacket. The top and bottom must visibly read as one vertical base, and the open layer must create the long outer line.',
+  },
+  waist: {
+    label: 'Ratio Proof',
+    principle: 'A deliberate waist point controls the top-to-bottom ratio.',
+    ruleKeywords: /waist|high-rise|high rise|tuck|tucked|semi-tuck|semi tuck|cropped|1\/3|2\/3|ratio|leg line|waistline/i,
+    directive: 'Create a fresh outfit that demonstrates high-rise proportion with a visible tuck, semi-tuck, cropped top, belt, or waist seam. The result must clearly show a 1/3 top to 2/3 bottom ratio and an intentional waist point.',
+  },
+  structure: {
+    label: 'Structure Proof',
+    principle: 'Structured fabric skims the body instead of clinging to it.',
+    ruleKeywords: /structured|structure|skim|skimming|woven|mid-weight|midweight|substance|cling|clinging|fabric|tailored|drape/i,
+    directive: 'Create a fresh outfit using woven, tailored, midweight, or clean-fall garments that skim rather than cling. The formula must make the non-cling fabric behavior visible through cut, fabric, and structural notes.',
+  },
+  balance: {
+    label: 'Balance Proof',
+    principle: 'A stable lower line balances shoulder and hip width.',
+    ruleKeywords: /shoulder|hip|balance|straight-leg|straight leg|wide-leg|wide leg|stable base|width|proportion/i,
+    directive: 'Create a fresh outfit with a stable straight-leg, wide-leg, or similarly grounded lower line that balances shoulder and hip width. The lower body line must look intentional, clean, and visually stabilising.',
+  },
+};
+
+function classifySilhouetteRuleExample(text: string, fallbackIndex: number): SilhouetteRuleExampleKind {
+  const found = (Object.entries(SILHOUETTE_RULE_EXAMPLES) as Array<[SilhouetteRuleExampleKind, typeof SILHOUETTE_RULE_EXAMPLES[SilhouetteRuleExampleKind]]>)
+    .find(([, config]) => config.ruleKeywords.test(text));
+  if (found) return found[0];
+  return (['vertical', 'waist', 'structure', 'balance'] as const)[Math.min(fallbackIndex, 3)];
+}
+
+function ruleBlockText(block: BlueprintBlock, item?: unknown) {
+  return [
+    block.label,
+    block.heading,
+    block.body,
+    block.reason,
+    item == null ? '' : stringify(item),
+  ].filter(Boolean).join(' ');
+}
+
+function collectSilhouetteRuleProofTargets(rulesPage: BlueprintPage): SilhouetteRuleProofTarget[] {
+  const targets: SilhouetteRuleProofTarget[] = [];
+  rulesPage.blocks.forEach((block, blockIndex) => {
+    if (targets.length >= 4) return;
+    const items = Array.isArray(block.items) ? block.items : [];
+    if (items.length) {
+      items.forEach((item, itemIndex) => {
+        if (targets.length >= 4) return;
+        const text = ruleBlockText(block, item);
+        targets.push({
+          blockIndex,
+          itemIndex,
+          text,
+          kind: classifySilhouetteRuleExample(text, targets.length),
+        });
+      });
+      return;
+    }
+    const text = ruleBlockText(block);
+    targets.push({
+      blockIndex,
+      text,
+      kind: classifySilhouetteRuleExample(text, targets.length),
+    });
+  });
+  return targets.slice(0, 4);
+}
+
+function stripLegacySilhouetteExampleFields<T extends object>(record: T) {
+  const rest = { ...record } as Record<string, unknown>;
+  delete rest.example_outfit_page_number;
+  delete rest.example_outfit_principle;
+  delete rest.example_outfit_label;
+  return rest;
+}
+
+function normalisedFormulaItemsForProof(page: BlueprintPage): NormalisedFormulaItem[] {
+  return flattenFormulaItems(page)
+    .map(item => asRecord(item) as NormalisedFormulaItem)
+    .filter(item => Boolean(item.slot && item.piece));
+}
+
+function proofSlotIndex(items: NormalisedFormulaItem[], pattern: RegExp) {
+  return items.findIndex(item => pattern.test(`${item.slot} ${item.piece}`));
+}
+
+function proofColourFromItem(item: NormalisedFormulaItem | undefined, fallback: BlueprintColourUse): BlueprintColourUse {
+  const hex = normaliseHex(asString(item?.colour_hex, fallback.hex));
+  return {
+    name: asString(item?.colour_name, fallback.name),
+    hex,
+    role: fallback.role,
+  };
+}
+
+function replaceProofPieceColour(piece: string, colour: Pick<BlueprintColourUse, 'name'>) {
+  const cleaned = piece.replace(ANCHOR_COLOUR_RE, colour.name).replace(/\s{2,}/g, ' ').trim();
+  if (new RegExp(`\\b${escapeRegExp(colour.name)}\\b`, 'i').test(cleaned)) return cleaned;
+  return `${colour.name} ${cleaned}`;
+}
+
+function mergeProofNote(item: NormalisedFormulaItem, note: string) {
+  return [item.structural_notes, note]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function forceProofColour(
+  item: NormalisedFormulaItem,
+  colour: BlueprintColourUse,
+  role: BlueprintColourUse['role'],
+  note: string,
+): NormalisedFormulaItem {
+  return {
+    ...item,
+    piece: replaceProofPieceColour(item.piece, colour),
+    colour_name: colour.name,
+    colour_hex: colour.hex,
+    palette_role: role,
+    structural_notes: mergeProofNote(item, note),
+  };
+}
+
+function forcePhrase(piece: string, phrase: string, pattern: RegExp) {
+  if (pattern.test(piece)) return piece;
+  return `${phrase} ${piece}`.replace(/\s{2,}/g, ' ').trim();
+}
+
+function enforceVerticalProofItems(items: NormalisedFormulaItem[]): NormalisedFormulaItem[] {
+  const next = [...items];
+  const topIndex = proofSlotIndex(next, /top|blouse|shirt|tee|knit|shell/i);
+  const bottomIndex = proofSlotIndex(next, /bottom|trouser|pant|jean|skirt|palazzo/i);
+  const layerIndex = proofSlotIndex(next, /layer|outerwear|blazer|jacket|cardigan|duster|vest|coat/i);
+  const top = next[topIndex];
+  const bottom = next[bottomIndex];
+  if (top && bottom) {
+    const topColour = proofColourFromItem(top, { name: 'Deep Column', hex: '#2A2926', role: 'lead' });
+    const bottomColour = proofColourFromItem(bottom, { name: 'Deep Column', hex: '#2A2926', role: 'support' });
+    const columnColour = relativeLuminance(bottomColour.hex) <= relativeLuminance(topColour.hex) ? bottomColour : topColour;
+    next[topIndex] = forceProofColour(
+      top,
+      columnColour,
+      'lead',
+      'This top is deliberately the same tone as the bottom so the inner outfit reads as one uninterrupted vertical column.',
+    );
+    next[bottomIndex] = forceProofColour(
+      bottom,
+      columnColour,
+      'support',
+      'This bottom exactly matches the top tone to continue the vertical column from shoulder to hem.',
+    );
+  }
+  if (layerIndex >= 0) {
+    const layer = next[layerIndex];
+    next[layerIndex] = {
+      ...layer,
+      piece: forcePhrase(
+        layer.piece.replace(/\b(single-breasted|cropped|short)\b/gi, '').replace(/\s{2,}/g, ' ').trim(),
+        'open longline',
+        /\bopen\b.*\blongline\b|\blongline\b.*\bopen\b/i,
+      ),
+      structural_notes: mergeProofNote(layer, 'Wear this layer open; its longer outside edges create the two slimming vertical lines over the matching inner column.'),
+    };
+  }
+  return next;
+}
+
+function ensureProofFinishingItem(items: NormalisedFormulaItem[], item: NormalisedFormulaItem) {
+  const existingIndex = proofSlotIndex(items, /finishing|belt|scarf|watch|hair detail|lip tone/i);
+  if (existingIndex >= 0) {
+    const next = [...items];
+    next[existingIndex] = {
+      ...next[existingIndex],
+      piece: item.piece,
+      colour_name: item.colour_name,
+      colour_hex: item.colour_hex,
+      palette_role: item.palette_role,
+      structural_notes: mergeProofNote(next[existingIndex], item.structural_notes),
+    };
+    return next;
+  }
+  if (items.length >= 7) {
+    const replaceIndex = proofSlotIndex(items, /eyewear|jewellery|jewelry|earring|bracelet|watch|ring/i);
+    const next = [...items];
+    next[replaceIndex >= 0 ? replaceIndex : next.length - 1] = item;
+    return next;
+  }
+  return [...items, item];
+}
+
+function enforceWaistProofItems(items: NormalisedFormulaItem[]): NormalisedFormulaItem[] {
+  let next = [...items];
+  const topIndex = proofSlotIndex(next, /top|blouse|shirt|tee|knit|shell/i);
+  const bottomIndex = proofSlotIndex(next, /bottom|trouser|pant|jean|skirt|palazzo/i);
+  if (topIndex >= 0) {
+    const top = next[topIndex];
+    next[topIndex] = {
+      ...top,
+      piece: forcePhrase(top.piece, 'semi-tucked', /\btuck|tucked|semi-tuck|semi tucked|cropped\b/i),
+      structural_notes: mergeProofNote(top, 'Style this top semi-tucked or cropped so the waist point is visible instead of hidden.'),
+    };
+  }
+  if (bottomIndex >= 0) {
+    const bottom = next[bottomIndex];
+    next[bottomIndex] = {
+      ...bottom,
+      piece: forcePhrase(bottom.piece, 'high-rise', /\bhigh-rise|high rise|high-waist|high waist\b/i),
+      structural_notes: mergeProofNote(bottom, 'The high-rise waist creates the 1/3 top to 2/3 bottom proportion and lengthens the leg line.'),
+    };
+  }
+  const beltColour: BlueprintColourUse = {
+    name: asString(next.find(item => /bag|footwear|shoe/i.test(item.slot))?.colour_name, 'Chocolate'),
+    hex: normaliseHex(asString(next.find(item => /bag|footwear|shoe/i.test(item.slot))?.colour_hex, '#4B2E24')),
+    role: 'accent',
+  };
+  next = ensureProofFinishingItem(next, {
+    slot: 'Finishing Detail',
+    piece: `${beltColour.name} slim leather belt at the high waist`,
+    colour_name: beltColour.name,
+    colour_hex: beltColour.hex,
+    palette_role: 'accent',
+    structural_notes: 'The belt marks the waist cleanly so the ratio is visible in the image.',
+  });
+  return next;
+}
+
+function enforceStructureProofItems(items: NormalisedFormulaItem[]): NormalisedFormulaItem[] {
+  return items.map((item) => {
+    if (!/top|bottom|dress|jumpsuit|layer|outerwear|blazer|jacket|trouser|pant|skirt/i.test(`${item.slot} ${item.piece}`)) return item;
+    return {
+      ...item,
+      piece: forcePhrase(item.piece, 'midweight woven', /\bwoven|midweight|mid-weight|tailored|crepe|ponte|structured\b/i),
+      structural_notes: mergeProofNote(item, 'This piece must skim cleanly away from the body with structured fabric; it should never look clingy, thin, or bodycon.'),
+    };
+  });
+}
+
+function enforceBalanceProofItems(items: NormalisedFormulaItem[]): NormalisedFormulaItem[] {
+  const next = [...items];
+  const bottomIndex = proofSlotIndex(next, /bottom|trouser|pant|jean|skirt|palazzo/i);
+  if (bottomIndex >= 0) {
+    const bottom = next[bottomIndex];
+    const colour = proofColourFromItem(bottom, { name: 'Grounded Neutral', hex: '#2F2A25', role: 'support' });
+    next[bottomIndex] = {
+      ...bottom,
+      piece: /\bstraight-leg|straight leg|wide-leg|wide leg|palazzo\b/i.test(bottom.piece)
+        ? bottom.piece
+        : `${colour.name} high-waisted straight-leg tailored trousers`,
+      colour_name: colour.name,
+      colour_hex: colour.hex,
+      palette_role: 'support',
+      structural_notes: mergeProofNote(bottom, 'The clean straight or wide lower line creates a stable base that balances shoulder and hip width.'),
+    };
+  }
+  return next;
+}
+
+function enforceSilhouetteProofItems(items: NormalisedFormulaItem[], kind: SilhouetteRuleExampleKind): NormalisedFormulaItem[] {
+  if (kind === 'vertical') return enforceVerticalProofItems(items);
+  if (kind === 'waist') return enforceWaistProofItems(items);
+  if (kind === 'structure') return enforceStructureProofItems(items);
+  if (kind === 'balance') return enforceBalanceProofItems(items);
+  return items;
+}
+
+function proofOutfitFromPage(page: BlueprintPage, kind: SilhouetteRuleExampleKind, index: number): SilhouetteProofOutfit {
+  const formulaItems = enforceSilhouetteProofItems(normalisedFormulaItemsForProof(page), kind).slice(0, 7);
+  const palette = page.palette_used?.length
+    ? page.palette_used
+    : formulaItems
+      .map(item => {
+        return {
+          name: asString(item.colour_name, 'Neutral'),
+          hex: normaliseHex(asString(item.colour_hex, '#94A6AD')),
+          role: item.palette_role || 'support',
+          usage: asString(item.structural_notes),
+        };
+      })
+      .slice(0, 4);
+  return {
+    title: page.title || SILHOUETTE_RULE_EXAMPLES[kind].label,
+    principle: SILHOUETTE_RULE_EXAMPLES[kind].principle,
+    formula_items: formulaItems,
+    palette_used: paletteUsedFromItems(formulaItems, palette.slice(0, 5)),
+    image_slot: `application.silhouetteProofs.${index}`,
+  };
+}
+
+function attachExampleToRuleItem(item: unknown, proof: SilhouetteProofOutfit) {
+  const base = typeof item === 'string' ? { guidance: item } : asRecord(item);
+  return {
+    ...stripLegacySilhouetteExampleFields(base),
+    example_outfit: proof,
+  };
+}
+
+function silhouetteProofExistingOutfits(reportData: StylistBlueprintReportData) {
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
+  const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
+  return reportData.pages
+    .filter(page => page.page_number >= outfitStart && page.page_number <= outfitEnd && page.page_type === 'outfit')
+    .map(outfitSummaryForReplacement);
+}
+
+function transformationLookSummaries(reportData: StylistBlueprintReportData) {
+  const transformationPage = reportData.pages.find(page => page.page_number === getStylistBlueprintTransformationPage(reportData));
+  return (transformationPage?.blocks ?? []).slice(0, 3).map((block, index) => ({
+    look: index + 1,
+    heading: block.heading || block.label || '',
+    body: block.body || '',
+    formula: Array.isArray(block.items) ? block.items : [],
+  }));
+}
+
+function silhouetteProofCardDirective(target: SilhouetteRuleProofTarget) {
+  return [
+    `Actual Silhouette Rule card text: ${target.text}`,
+    `Proof category: ${SILHOUETTE_RULE_EXAMPLES[target.kind].label}.`,
+    `Hard visual directive: ${SILHOUETTE_RULE_EXAMPLES[target.kind].directive}`,
+    'This proof outfit must be generated only for this rule card and must not become one of the detailed report recommendations.',
+    'It must be different from the main report outfits while still obeying the client profile, coverage, cultural mode, colour palette, and the women outfit harness/library.',
+  ].join(' ');
+}
+
+function silhouetteProofAvoidanceContext(reportData: StylistBlueprintReportData, targets: SilhouetteRuleProofTarget[]) {
+  const detailedOutfits = silhouetteProofExistingOutfits(reportData);
+  const transformationLooks = transformationLookSummaries(reportData);
+  return `--- SILHOUETTE PROOF OUTFITS ---
+Generate these four outfits only as compact proof examples for the Silhouette Rules slide. They are not detailed report recommendations and must not be added to report pages.
+
+Proof directives, one per actual rule card:
+${targets.map((target, index) => `${index + 1}. ${silhouetteProofCardDirective(target)}`).join('\n')}
+
+Do not repeat or closely copy these existing detailed recommendation outfits:
+${stringify(detailedOutfits.map(item => ({
+  title: item.title,
+  capsule: item.capsule,
+  lead_colour: item.lead_colour,
+  main_piece: item.main_piece,
+  main_garment_type: item.main_garment_type,
+  layer_status: item.layer_status,
+  layer_type: item.layer_type,
+  archetype: item.archetype,
+  footwear: item.footwear,
+  bag: item.bag,
+})))}
+
+Do not repeat or closely copy these transformation preview looks:
+${stringify(transformationLooks)}
+
+Each proof outfit should be visually simple, realistic to shop, image-generation safe, and focused on proving its assigned silhouette principle. Preserve any assigned library skeleton as the catalog anchor, but adapt it enough that it is not the same look as the main recommendation pages.
+--- END SILHOUETTE PROOF OUTFITS ---`;
+}
+
+function buildSilhouetteProofPlans(
+  reportData: StylistBlueprintReportData,
+  submission?: StylistIntakeSubmission | null,
+  targets: SilhouetteRuleProofTarget[] = [],
+  libraryContext: OutfitLibraryContext = seedOutfitLibraryContext(),
+) {
+  const culturalMode = getStylistOutfitCulturalMode(submission);
+  const basePlans = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode);
+  const sourceIndexes = [0, 6, 12, 18];
+  const fallbackKinds: SilhouetteRuleExampleKind[] = ['vertical', 'waist', 'structure', 'balance'];
+  const usedLibraryIds = new Set(silhouetteProofExistingOutfits(reportData).flatMap(item => item.library_ids));
+  return (targets.length ? targets : fallbackKinds.map((kind, index) => ({
+    blockIndex: index,
+    text: SILHOUETTE_RULE_EXAMPLES[kind].directive,
+    kind,
+  }))).slice(0, 4).map((target, index): PlannedOutfit => {
+    const kind = target.kind;
+    const sourceIndex = sourceIndexes[index] ?? index;
+    const source = basePlans[sourceIndex] ?? basePlans[index] ?? basePlans[0];
+    if (!source) throw new Error(`Missing silhouette proof source plan ${index + 1}`);
+    const alternative = chooseAlternativeLibraryOutfit(
+      libraryContext.outfits,
+      source.capsule,
+      usedLibraryIds,
+      libraryContext.blockedSignatures,
+      source.styling_decision.anchor_role,
+    );
+    const stylingDecision = alternative && source
+      ? buildStylingDecisionPlan(reportData, source.capsule, sourceIndex, source.coverage_profile, culturalMode, alternative, source.styling_decision.anchor_role)
+      : source.styling_decision;
+    const colours = alternative && source
+      ? restrainedColourStory(reportData, source.capsule, sourceIndex, alternative, stylingDecision)
+      : null;
+    if (alternative) usedLibraryIds.add(alternative.id);
+    const plan: PlannedOutfit = {
+      ...source,
+      outfit_number: index + 1,
+      display_outfit_number: index + 1,
+      page_number: 900 + index,
+      purpose: 'detailed_report',
+      capsule: source.capsule,
+      formula_direction: silhouetteProofCardDirective(target),
+      ...(alternative
+        ? {
+          styling_decision: stylingDecision,
+          lead_colour: colours?.lead ?? source.lead_colour,
+          support_colour: colours?.support ?? source.support_colour,
+          ground_colour: colours?.ground,
+          accent_colour: colours?.accent,
+          accent_mode: colours?.accent ? 'detail' : undefined,
+          accent_application: colours?.accent ? source.accent_application : undefined,
+          library_reference: libraryReferenceForPlan(alternative, source.capsule),
+          library_piece_logic: libraryPieceLogic(alternative),
+        }
+        : {}),
+      eyewear_required: false,
+      finishing_required: kind === 'waist' || source.finishing_required,
+      finishing_detail_type: kind === 'waist' ? 'belt' : source.finishing_detail_type,
+      layer_required: kind === 'vertical' ? true : kind === 'structure' ? false : source.layer_required,
+      layer_type: kind === 'vertical' ? 'open longline blazer or cardigan' : source.layer_type,
+      pattern_required: false,
+      pattern_instruction: undefined,
+      max_visible_colours: 3,
+    };
+    if (!plan.layer_required) plan.layer_type = undefined;
+    return plan;
+  });
+}
+
+export function collectSilhouetteRuleProofTargetsForTest(reportData: StylistBlueprintReportData) {
+  const rulesPage = reportData.pages.find(page => page.page_number === getStylistBlueprintRulesStartPage(reportData));
+  return rulesPage ? collectSilhouetteRuleProofTargets(rulesPage).map(target => ({
+    text: target.text,
+    kind: target.kind,
+    blockIndex: target.blockIndex,
+    itemIndex: target.itemIndex,
+  })) : [];
+}
+
+export function buildSilhouetteProofPlanSummariesForTest(
+  reportData: StylistBlueprintReportData,
+  submission?: StylistIntakeSubmission | null,
+) {
+  const rulesPage = reportData.pages.find(page => page.page_number === getStylistBlueprintRulesStartPage(reportData));
+  const targets = rulesPage ? collectSilhouetteRuleProofTargets(rulesPage) : [];
+  return buildSilhouetteProofPlans(reportData, submission, targets).map(plan => ({
+    page_number: plan.page_number,
+    formula_direction: plan.formula_direction,
+    layer_required: plan.layer_required,
+    layer_type: plan.layer_type,
+    finishing_required: plan.finishing_required,
+    finishing_detail_type: plan.finishing_detail_type,
+    library_reference: plan.library_reference,
+    has_library_piece_logic: Boolean(plan.library_piece_logic?.length),
+  }));
+}
+
+async function generateSilhouetteProofOutfits(
+  reportData: StylistBlueprintReportData,
+  submission?: StylistIntakeSubmission | null,
+  targets: SilhouetteRuleProofTarget[] = [],
+) {
+  const libraryContext = await loadOutfitLibraryContext();
+  const plans = buildSilhouetteProofPlans(reportData, submission, targets, libraryContext);
+  const pages = await generateHarnessOnlyOutfitPages(
+    reportData,
+    plans,
+    submission,
+    null,
+    undefined,
+    silhouetteProofAvoidanceContext(reportData, targets),
+  );
+  return plans.map((plan, index) => {
+    const kind = targets[index]?.kind ?? (['vertical', 'waist', 'structure', 'balance'] as const)[index];
+    const page = pages.find(candidate => candidate.page_number === plans[index].page_number) ?? pages[index];
+    if (!page) throw new Error(`Silhouette proof outfit ${index + 1} was not generated`);
+    return proofOutfitFromPage(page, kind, index);
+  });
+}
+
+export async function attachSilhouetteRuleOutfitExamples(
+  reportData: StylistBlueprintReportData,
+  submission?: StylistIntakeSubmission | null,
+): Promise<StylistBlueprintReportData> {
+  const rulesPageNumber = getStylistBlueprintRulesStartPage(reportData);
+  const rulesPage = reportData.pages.find(page => page.page_number === rulesPageNumber);
+  if (!rulesPage) return reportData;
+
+  const targets = collectSilhouetteRuleProofTargets(rulesPage);
+  if (!targets.length) return reportData;
+  const proofs = await generateSilhouetteProofOutfits(reportData, submission, targets);
+  const proofByTarget = new Map(targets.map((target, index) => [`${target.blockIndex}:${target.itemIndex ?? 'block'}`, proofs[index]]));
+  const nextBlocks = rulesPage.blocks.map((block, blockIndex) => {
+    const blockProof = proofByTarget.get(`${blockIndex}:block`);
+    if (Array.isArray(block.items) && block.items.length) {
+      const nextItems = block.items.map((item, itemIndex) => {
+        const proof = proofByTarget.get(`${blockIndex}:${itemIndex}`);
+        if (!proof) return item;
+        return attachExampleToRuleItem(item, proof);
+      });
+      return { ...block, items: nextItems };
+    }
+
+    if (!blockProof) return stripLegacySilhouetteExampleFields(block);
+    return {
+      ...stripLegacySilhouetteExampleFields(block),
+      example_outfit: blockProof,
+    };
+  });
+
+  return {
+    ...reportData,
+    pages: reportData.pages.map(page => page.page_number === rulesPageNumber ? { ...page, blocks: nextBlocks } : page),
+  };
 }
 
 export async function generateStylistBlueprintPages(

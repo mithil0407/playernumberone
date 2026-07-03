@@ -11,10 +11,12 @@ import {
   getStylistBlueprintMakeupPage,
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintRulesStartPage,
   getStylistBlueprintTransformationPage,
   inferStylistCoverageProfile,
   isManualStylistBlueprintSubmission,
   type BlueprintPage,
+  type SilhouetteProofOutfit,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from './stylistBlueprintGenerator';
@@ -62,6 +64,10 @@ export const STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS = [
   'application.transformationLooks.0',
   'application.transformationLooks.1',
   'application.transformationLooks.2',
+  'application.silhouetteProofs.0',
+  'application.silhouetteProofs.1',
+  'application.silhouetteProofs.2',
+  'application.silhouetteProofs.3',
   'application.outfitFlatlays.0',
   'application.outfitFlatlays.1',
   'application.outfitFlatlays.2',
@@ -119,6 +125,7 @@ export interface StylistBlueprintImagePaths {
   application?: {
     capsuleCovers?: (string | null)[];
     transformationLooks?: (string | null)[];
+    silhouetteProofs?: (string | null)[];
     outfitFlatlays?: (string | null)[];
     outfitDetails?: (string | null)[];
   };
@@ -167,6 +174,7 @@ type MutablePaths = {
   application: {
     capsuleCovers: (string | null)[];
     transformationLooks: (string | null)[];
+    silhouetteProofs: (string | null)[];
     outfitFlatlays: (string | null)[];
     outfitDetails: (string | null)[];
   };
@@ -219,6 +227,7 @@ function emptyPaths(): MutablePaths {
     application: {
       capsuleCovers: [null, null, null, null],
       transformationLooks: [null, null, null],
+      silhouetteProofs: [null, null, null, null],
       outfitFlatlays: Array.from({ length: 20 }, () => null),
       outfitDetails: Array.from({ length: 20 }, () => null),
     },
@@ -235,6 +244,7 @@ function normalise(paths: StylistBlueprintImagePaths | null | undefined): Mutabl
     application: {
       capsuleCovers: Array.from({ length: 4 }, (_, index) => paths?.application?.capsuleCovers?.[index] ?? null),
       transformationLooks: Array.from({ length: 3 }, (_, index) => paths?.application?.transformationLooks?.[index] ?? null),
+      silhouetteProofs: Array.from({ length: 4 }, (_, index) => paths?.application?.silhouetteProofs?.[index] ?? null),
       outfitFlatlays: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitFlatlays?.[index] ?? null),
       outfitDetails: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitDetails?.[index] ?? null),
     },
@@ -550,6 +560,78 @@ function compactOutfitRenderText(page: BlueprintPage) {
     })
     .filter(Boolean);
   return items.length ? items.join('\n') : pageText(page);
+}
+
+function silhouetteProofOutfits(reportData: StylistBlueprintReportData): SilhouetteProofOutfit[] {
+  const rulesPageNumber = getStylistBlueprintRulesStartPage(reportData);
+  const rulesPage = reportData.pages.find(page => page.page_number === rulesPageNumber);
+  if (!rulesPage) return [];
+  const proofs: SilhouetteProofOutfit[] = [];
+  for (const block of rulesPage.blocks) {
+    const items = Array.isArray(block.items) ? block.items : [];
+    if (items.length) {
+      for (const item of items) {
+        const proof = item && typeof item === 'object' && !Array.isArray(item)
+          ? (item as { example_outfit?: SilhouetteProofOutfit }).example_outfit
+          : undefined;
+        if (proof) proofs.push(proof);
+        if (proofs.length >= 4) return proofs;
+      }
+    } else if (block.example_outfit) {
+      proofs.push(block.example_outfit);
+      if (proofs.length >= 4) return proofs;
+    }
+  }
+  return proofs;
+}
+
+function proofFormulaText(proof: SilhouetteProofOutfit) {
+  return (proof.formula_items ?? [])
+    .map((item) => {
+      const slot = typeof item.slot === 'string' ? item.slot : '';
+      const piece = typeof item.piece === 'string' ? item.piece : '';
+      if (!slot || !piece || /^none$/i.test(piece)) return '';
+      const colour = typeof item.colour_name === 'string' ? item.colour_name : '';
+      const hex = typeof item.colour_hex === 'string' ? item.colour_hex : '';
+      const notes = typeof item.structural_notes === 'string' ? item.structural_notes : '';
+      return `${slot}: ${[colour, hex, piece, notes].filter(Boolean).join(' ')}`;
+    })
+    .filter(Boolean)
+    .join('\n');
+}
+
+function silhouetteProofPageForPrompt(proof: SilhouetteProofOutfit): BlueprintPage {
+  const index = Number(proof.image_slot.split('.').at(-1));
+  return {
+    page_number: Number.isInteger(index) ? 900 + index : 900,
+    page_type: 'outfit',
+    title: proof.title,
+    subtitle: 'Silhouette Rules proof',
+    blocks: [
+      {
+        label: 'Formula',
+        heading: proof.title,
+        body: `Silhouette proof principle: ${proof.principle}`,
+        items: proof.formula_items,
+      },
+    ],
+    image_refs: [],
+    palette_used: proof.palette_used,
+  };
+}
+
+function silhouetteProofPrompt(reportData: StylistBlueprintReportData, proof: SilhouetteProofOutfit) {
+  return `${wornOutfitPrompt(reportData, silhouetteProofPageForPrompt(proof))}
+
+Silhouette Rules proof priority:
+- This image is for a Silhouette Rules proof card, not a normal outfit recommendation page.
+- The outfit must visibly demonstrate this principle: ${proof.principle}
+- Keep the silhouette architecture obvious from head to toe while still looking polished, wearable, and client-specific.
+- Follow the proof formula colours literally; if the top and bottom share a colour name or hex, render them as a matching or tonal column.
+- No text, labels, captions, annotations, or rule callouts in the image.
+
+Proof formula:
+${proofFormulaText(proof)}`;
 }
 
 function outfitCoverageAuthority(reportData: StylistBlueprintReportData) {
@@ -912,6 +994,23 @@ function buildSingleSlotPlan(
     };
   }
 
+  if (slotKey.startsWith('application.silhouetteProofs.')) {
+    const index = Number(slotKey.split('.').at(-1));
+    const proof = silhouetteProofOutfits(reportData)[index];
+    if (!Number.isInteger(index) || index < 0 || index >= 4 || !proof) throw new Error('Invalid silhouette proof image slot');
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (!clientSource) throw new Error('No client photo found for silhouette proof image generation');
+    return {
+      fileName: regeneratedFileName(`silhouette-proof-${index + 1}`),
+      prompt: silhouetteProofPrompt(reportData, proof),
+      sourceUrl: clientSource,
+      extraSourceUrl: photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+      size: '1024x1536',
+      getCurrent: paths => paths.application.silhouetteProofs[index],
+      setCurrent: (paths, path) => { paths.application.silhouetteProofs[index] = path; },
+    };
+  }
+
   if (slotKey.startsWith('application.outfitFlatlays.')) {
     const index = Number(slotKey.split('.').at(-1));
     if (!Number.isInteger(index) || index < 0 || index >= getStylistBlueprintOutfitCount(reportData)) throw new Error('Invalid outfit image slot for this report version');
@@ -943,6 +1042,22 @@ function buildSingleSlotPlan(
   }
 
   throw new Error('Unsupported image slot');
+}
+
+export function buildStylistBlueprintImageSlotPlanSummaryForTest(
+  slotKey: StylistBlueprintImageSlotKey,
+  reportData: StylistBlueprintReportData,
+  submission?: StylistIntakeSubmission | null,
+) {
+  const photos = sourcePhotos(submission);
+  const plan = buildSingleSlotPlan(slotKey, reportData, photos);
+  return {
+    fileName: plan.fileName,
+    prompt: plan.prompt,
+    sourceUrl: plan.sourceUrl ?? null,
+    extraSourceUrl: plan.extraSourceUrl ?? null,
+    size: plan.size ?? '1024x1536',
+  };
 }
 
 async function setSlot(input: {
@@ -1040,6 +1155,25 @@ export async function generateStylistBlueprintImages(
         });
       }
     }
+
+    if (silhouetteProofOutfits(reportData).length && !clientSource) {
+      throw new Error('No client photo found for silhouette proof image generation');
+    }
+    for (const [index, proof] of silhouetteProofOutfits(reportData).slice(0, 4).entries()) {
+      await setSlot({
+        reportId, paths, shareToken, force, fileName: `silhouette-proof-${index + 1}`,
+        getCurrent: () => paths.application.silhouetteProofs[index],
+        setCurrent: path => { paths.application.silhouetteProofs[index] = path; },
+        create: () => generatedImage(
+          reportId,
+          `silhouette-proof-${index + 1}`,
+          silhouetteProofPrompt(reportData, proof),
+          clientSource,
+          '1024x1536',
+          photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+        ),
+      });
+    }
   }
 
   const capsuleGroups: Array<[StylistBlueprintImageGroup, number, number, number]> =
@@ -1101,6 +1235,41 @@ export async function generateStylistBlueprintImages(
   return paths;
 }
 
+export async function generateStylistBlueprintSilhouetteProofImages(
+  reportId: string,
+  reportData: StylistBlueprintReportData,
+  shareToken?: string | null,
+  options: { force?: boolean; submission?: StylistIntakeSubmission | null } = {},
+): Promise<StylistBlueprintImagePaths> {
+  const paths = await getStoredPaths(reportId);
+  const force = Boolean(options.force);
+  const photos = sourcePhotos(options.submission);
+  const clientSource = photos.front || photos.side || photos.headshot || null;
+  if (silhouetteProofOutfits(reportData).length && !clientSource) {
+    throw new Error('No client photo found for silhouette proof image generation');
+  }
+  await persistPaths(reportId, paths, shareToken, 'generating_images_silhouette_proofs');
+
+  for (const [index, proof] of silhouetteProofOutfits(reportData).slice(0, 4).entries()) {
+    await setSlot({
+      reportId, paths, shareToken, force, fileName: `silhouette-proof-${index + 1}`,
+      getCurrent: () => paths.application.silhouetteProofs[index],
+      setCurrent: path => { paths.application.silhouetteProofs[index] = path; },
+      create: () => generatedImage(
+        reportId,
+        `silhouette-proof-${index + 1}`,
+        silhouetteProofPrompt(reportData, proof),
+        clientSource,
+        '1024x1536',
+        photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+      ),
+    });
+  }
+
+  await persistPaths(reportId, paths, shareToken, null);
+  return paths;
+}
+
 export async function regenerateStylistBlueprintImageSlot(
   reportId: string,
   reportData: StylistBlueprintReportData,
@@ -1154,6 +1323,7 @@ function collectPaths(paths: StylistBlueprintImagePaths | null | undefined): str
     ...Object.values(normalised.diagnosis),
     ...Object.values(normalised.prescription),
     ...normalised.application.transformationLooks,
+    ...normalised.application.silhouetteProofs,
     ...normalised.application.outfitFlatlays,
     normalised.closing.combinationMatrix,
     normalised.closing.editTeaser,
@@ -1195,6 +1365,7 @@ export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintIm
     application: {
       capsuleCovers: resolved.application.capsuleCovers.map(() => null),
       transformationLooks: resolved.application.transformationLooks.map(map),
+      silhouetteProofs: resolved.application.silhouetteProofs.map(map),
       outfitFlatlays: resolved.application.outfitFlatlays.map(map),
       outfitDetails: resolved.application.outfitDetails.map(() => null),
     },
@@ -1244,7 +1415,10 @@ export function getStylistBlueprintImageCounts(
       normalised.prescription.eyewearFrames,
       ...(options.includeBeautyPages ? [normalised.prescription.makeupLook] : []),
     ] : [],
-    application: options.hasClientPhoto && options.includeTransformationPreview ? normalised.application.transformationLooks : [],
+    application: [
+      ...(options.hasClientPhoto && options.includeTransformationPreview ? normalised.application.transformationLooks : []),
+      ...normalised.application.silhouetteProofs,
+    ],
     capsule_1: options.hasClientPhoto ? outfitSlots.slice(0, capsuleSize) : [],
     capsule_2: options.hasClientPhoto ? outfitSlots.slice(capsuleSize, capsuleSize * 2) : [],
     capsule_3: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 2, capsuleSize * 3) : [],

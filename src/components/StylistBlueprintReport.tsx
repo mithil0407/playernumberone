@@ -5,6 +5,7 @@ import type {
   BlueprintColourUse,
   BlueprintPage,
   LegacyStylistBlueprintReportData,
+  SilhouetteProofOutfit,
   StylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
 import {
@@ -1096,6 +1097,8 @@ function ruleCardFromItem(input: {
     '',
   );
   const reason = meaningfulReason(body, getField(item, ['reason', 'why'], block.reason || ''));
+  const itemRecord = isObject(item) ? item : {};
+  const proofOutfit = (itemRecord.example_outfit ?? block.example_outfit ?? null) as SilhouetteProofOutfit | null;
 
   return {
     label: block.label || block.heading || `Rule ${sourceIndex + 1}`,
@@ -1104,7 +1107,32 @@ function ruleCardFromItem(input: {
     reason: body ? reason : '',
     sourceIndex,
     titleField,
+    exampleOutfit: proofOutfit,
   };
+}
+
+function RuleProofOutfit({
+  proof,
+  imageUrls,
+}: {
+  proof: SilhouetteProofOutfit | null;
+  imageUrls?: ResolvedStylistBlueprintImageUrls | null;
+}) {
+  if (!proof) return null;
+  const slotIndex = Number(proof.image_slot.split('.').at(-1));
+  const image = Number.isInteger(slotIndex) ? imageUrls?.application?.silhouetteProofs?.[slotIndex] ?? null : null;
+  const items = Array.isArray(proof.formula_items) ? proof.formula_items : [];
+  const palette = proof.palette_used?.length
+    ? proof.palette_used.map(colour => colour.hex)
+    : items.map(item => getField(item, ['colour_hex', 'hex'], SLATE)).filter(Boolean);
+
+  return (
+    <div className="rule-proof">
+      <div className="rule-proof-media">
+        {image ? <ReportImage src={image} /> : <OutfitFallback palette={palette} />}
+      </div>
+    </div>
+  );
 }
 
 function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
@@ -1117,6 +1145,7 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
     reason: string;
     sourceIndex: number;
     titleField: 'heading' | 'label';
+    exampleOutfit: SilhouetteProofOutfit | null;
   }> = page.blocks.flatMap((block, sourceIndex) => {
     const items = asItems(block);
     const titleField = block.heading !== undefined ? 'heading' : 'label';
@@ -1130,6 +1159,7 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
         reason: body ? reason : '',
         sourceIndex,
         titleField,
+        exampleOutfit: block.example_outfit ?? null,
       }];
     }
     return items.map((item, index) => ruleCardFromItem({ block, item, index, sourceIndex, titleField }));
@@ -1169,6 +1199,10 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
               {block.reason && (
                 <p className="why">Why: <EditableText page={page} value={block.reason} update={value => updateBlock(page, block.sourceIndex, { reason: value })} /></p>
               )}
+              <RuleProofOutfit
+                proof={block.exampleOutfit}
+                imageUrls={imageUrls}
+              />
             </div>
           ))}
         </div>
@@ -2140,6 +2174,10 @@ function BlueprintStyles() {
       .reading-card, .premium-rule-card {
         padding: 24px;
       }
+      .premium-rule-card {
+        display: flex;
+        flex-direction: column;
+      }
       .reading-card h3, .premium-rule-card h3 {
         font-size: 24px;
         margin: 10px 0 12px;
@@ -2485,6 +2523,25 @@ function BlueprintStyles() {
       }
       .premium-rule-card .why {
         opacity: 0.9;
+      }
+      .rule-proof {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid rgba(44, 38, 34, 0.12);
+      }
+      .rule-proof-media {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.45);
+      }
+      .rule-proof-media img,
+      .rule-proof-media .outfit-svg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
       .reference-images {
         display: grid;

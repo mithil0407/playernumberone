@@ -1,17 +1,22 @@
 import {
   STYLIST_BLUEPRINT_VERSION,
+  buildSilhouetteProofPlanSummariesForTest,
   buildReplacementOutfitContext,
   buildReplacementPlan,
   buildStylistBlueprintIntakeDigest,
+  collectSilhouetteRuleProofTargetsForTest,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintRulesStartPage,
   getStylistOutfitCulturalMode,
   replacementOutfitContextPrompt,
   validateStylistBlueprintReport,
   type BlueprintPage,
+  type SilhouetteProofOutfit,
   type StylistBlueprintClassification,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from './stylistBlueprintGenerator';
+import { buildStylistBlueprintImageSlotPlanSummaryForTest } from './stylistBlueprintImageGenerator';
 import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2';
 
 function invariant(condition: unknown, message: string): asserts condition {
@@ -232,6 +237,71 @@ function reportWithOutfitOverride(pieceOverride?: string): StylistBlueprintRepor
   };
 }
 
+function reportWithSilhouetteRuleCards(): StylistBlueprintReportData {
+  const report = reportWithOutfitOverride();
+  const rulesPageNumber = getStylistBlueprintRulesStartPage(STYLIST_BLUEPRINT_VERSION);
+  return {
+    ...report,
+    pages: report.pages.map(page => page.page_number === rulesPageNumber
+      ? {
+        page_number: rulesPageNumber,
+        page_type: 'rules',
+        title: 'Silhouette Rules',
+        blocks: [
+          {
+            label: 'Rules',
+            heading: 'Silhouette Rules',
+            body: 'Four proof cards.',
+            items: [
+              { name: 'Vertical column', guidance: 'Use a matching top and bottom tone underneath an open long line cardigan to create one vertical column.' },
+              { name: 'Waist ratio', guidance: 'Use a high-rise trouser with a semi-tucked top so the waist point creates a clear 1/3 to 2/3 ratio.' },
+              { name: 'Structure without cling', guidance: 'Choose structured woven midweight fabrics that skim the body instead of clinging.' },
+              { name: 'Balanced base', guidance: 'Use a stable straight-leg or wide-leg lower line to balance shoulder and hip width.' },
+            ],
+          },
+        ],
+        image_refs: [],
+      } satisfies BlueprintPage
+      : page),
+  };
+}
+
+function reportWithSilhouetteProofImage(): StylistBlueprintReportData {
+  const report = reportWithSilhouetteRuleCards();
+  const rulesPageNumber = getStylistBlueprintRulesStartPage(STYLIST_BLUEPRINT_VERSION);
+  const proof: SilhouetteProofOutfit = {
+    title: 'Vertical Column Proof',
+    principle: 'A continuous base with an open long line creates visual length.',
+    formula_items: [
+      formulaItem('Top', 'Deep teal fine-knit crewneck top', 'Deep Teal', '#184A59', 'lead'),
+      formulaItem('Bottom', 'Deep teal straight-leg tailored trousers', 'Deep Teal', '#184A59', 'support'),
+      formulaItem('Layer', 'Ivory open longline cardigan', 'Ivory', '#F5F0E8', 'support'),
+      formulaItem('Footwear', 'Chocolate leather pointed flats', 'Chocolate', '#4B2E24', 'ground'),
+      formulaItem('Bag', 'Chocolate structured leather bag', 'Chocolate', '#4B2E24', 'ground'),
+    ],
+    palette_used: [
+      { name: 'Deep Teal', hex: '#184A59', role: 'lead' },
+      { name: 'Ivory', hex: '#F5F0E8', role: 'support' },
+      { name: 'Chocolate', hex: '#4B2E24', role: 'ground' },
+    ],
+    image_slot: 'application.silhouetteProofs.0',
+  };
+  return {
+    ...report,
+    pages: report.pages.map(page => page.page_number === rulesPageNumber
+      ? {
+        ...page,
+        blocks: page.blocks.map(block => ({
+          ...block,
+          items: Array.isArray(block.items)
+            ? block.items.map((item, index) => index === 0 ? { ...(item as Record<string, unknown>), example_outfit: proof } : item)
+            : block.items,
+        })),
+      }
+      : page),
+  };
+}
+
 export function runStylistBlueprintCulturalModeAssertions() {
   invariant(getStylistOutfitCulturalMode(baseSubmission) === 'western_default', 'India alone stays western_default');
   invariant(
@@ -345,4 +415,55 @@ export function runStylistBlueprintCulturalModeAssertions() {
 
   const casualReplacementPlan = buildReplacementPlan(replacementReport, replacementPage, 'make it more casual', undefined, 'western_default');
   invariant(casualReplacementPlan.formula_direction.includes('easy top + relaxed bottom'), 'replacement plan honours admin reason');
+
+  const silhouetteReport = reportWithSilhouetteRuleCards();
+  const proofTargets = collectSilhouetteRuleProofTargetsForTest(silhouetteReport);
+  invariant(proofTargets.length === 4, 'silhouette proof collection finds the first four actual rule cards');
+  invariant(proofTargets[0].kind === 'vertical', 'vertical column rule is classified from actual card text');
+
+  const proofPlans = buildSilhouetteProofPlanSummariesForTest(silhouetteReport, baseSubmission);
+  invariant(proofPlans[0].formula_direction.includes('matching top and bottom tone'), 'vertical proof plan preserves the exact rule card text');
+  invariant(
+    proofPlans[0].formula_direction.includes('matching or near-matching top and bottom tones') &&
+    proofPlans[0].formula_direction.includes('open longline'),
+    'vertical proof plan requires tonal top/bottom and an open longline layer',
+  );
+  invariant(proofPlans[0].layer_required && /longline|cardigan|blazer/i.test(proofPlans[0].layer_type ?? ''), 'vertical proof plan requires a longline open layer');
+  invariant(proofPlans[0].library_reference?.source === 'women', 'silhouette proof plans retain women library anchors');
+  invariant(proofPlans[0].has_library_piece_logic, 'silhouette proof plans keep library piece logic for the harness');
+
+  const usedProofLibraryRef = proofPlans[0].library_reference;
+  if (usedProofLibraryRef) {
+    const blockedProofReport = {
+      ...silhouetteReport,
+      pages: silhouetteReport.pages.map(page => page.page_number === replacementPage
+        ? { ...page, library_refs: [usedProofLibraryRef] }
+        : page),
+    };
+    const alternativeProofPlans = buildSilhouetteProofPlanSummariesForTest(blockedProofReport, baseSubmission);
+    invariant(
+      alternativeProofPlans[0].library_reference?.id !== usedProofLibraryRef.id,
+      'silhouette proof planning avoids detailed outfit library ids when alternatives exist',
+    );
+  }
+
+  const imagePlan = buildStylistBlueprintImageSlotPlanSummaryForTest(
+    'application.silhouetteProofs.0',
+    reportWithSilhouetteProofImage(),
+    {
+      ...baseSubmission,
+      photo_urls: {
+        full_body_front: 'https://example.com/front.jpg',
+        headshot: 'https://example.com/headshot.jpg',
+      },
+    },
+  );
+  invariant(imagePlan.sourceUrl === 'https://example.com/front.jpg', 'silhouette proof image slot uses the client full-body source photo');
+  invariant(imagePlan.extraSourceUrl === 'https://example.com/headshot.jpg', 'silhouette proof image slot passes the headshot as identity reference');
+  invariant(imagePlan.size === '1024x1536', 'silhouette proof image slot uses portrait worn-outfit sizing');
+  invariant(
+    imagePlan.prompt.includes('Professional editorial fashion catalogue photography') &&
+    imagePlan.prompt.includes('Silhouette Rules proof priority'),
+    'silhouette proof image slot uses the worn-outfit prompt path',
+  );
 }
