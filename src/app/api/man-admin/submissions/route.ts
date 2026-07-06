@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
       .range(from, to);
 
     if (search) {
-      query = query.ilike('customer_email', `%${search}%`);
+      const safeSearch = search.replace(/[(),]/g, ' ');
+      query = query.or(`customer_email.ilike.%${safeSearch}%,customer_phone.ilike.%${safeSearch}%`);
     }
 
     const { data, error, count } = await query;

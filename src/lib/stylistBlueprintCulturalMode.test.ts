@@ -1,5 +1,9 @@
 import {
   STYLIST_BLUEPRINT_VERSION,
+  STYLIST_COLOUR_CLASSIFICATION_RULES,
+  buildHarnessEverydayRealismRepairSummaryForTest,
+  buildHarnessLayerPolicyRepairSummaryForTest,
+  buildStylistBlueprintColourGuardrailSummaryForTest,
   buildSilhouetteProofPlanSummariesForTest,
   buildReplacementOutfitContext,
   buildReplacementPlan,
@@ -21,6 +25,24 @@ import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2';
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
+}
+
+const sparsePalette = [
+  { name: 'Ivory', hex: '#F5F0E8', usage: 'Neutral support.' },
+  { name: 'Taupe', hex: '#B8A898', usage: 'Neutral tailoring.' },
+];
+
+function assertPaletteFamilyCoverage(undertoneDirection: string, messagePrefix: string) {
+  const summary = buildStylistBlueprintColourGuardrailSummaryForTest({
+    undertone_direction: undertoneDirection,
+    depth: 'medium',
+    contrast: 'medium',
+    base_palette: sparsePalette,
+    accent_palette: [],
+  });
+  const missing = summary.coverage.filter(item => !item.present).map(item => item.key);
+  invariant(missing.length === 0, `${messagePrefix} palette covers required families; missing ${missing.join(', ')}`);
+  return summary;
 }
 
 const baseSubmission: StylistIntakeSubmission = {
@@ -332,15 +354,81 @@ export function runStylistBlueprintCulturalModeAssertions() {
   );
   invariant(
     WOMEN_OUTFIT_HARNESS_V2.includes('dominant catalog source') &&
-    WOMEN_OUTFIT_HARNESS_V2.includes('catalog-faithful adaptation, not reinvention') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('catalog-faithful adaptation, not random reinvention') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('Catalog skeleton first') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('colour diversity') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('at least 6 distinct lead colour families') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('4 outfits maximum') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('layer/no-layer diversity') &&
     WOMEN_OUTFIT_HARNESS_V2.includes('Do not add unnecessary detail to individual pieces') &&
-    WOMEN_OUTFIT_HARNESS_V2.includes('Do not automatically turn modesty into only high necklines'),
+    WOMEN_OUTFIT_HARNESS_V2.includes('Do not automatically turn modesty into only high necklines') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('at least 3 different main garment formulas') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('do not repeat the same top type') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Use colour analysis like a stylist, not like a locked palette') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Order matters. Do not put two visually similar dominant colour families back-to-back') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('polka-dot or small-print dress/blouse') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('FOUR-AXIS SCORE') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('FOUR-AXIS OUTFIT QUALITY GATE') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Elevatedness') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Relevance') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Everyday is not weak officewear') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('white fitted scoop-neck tank') &&
+    WOMEN_OUTFIT_HARNESS_V2.includes('Never suggest blue, green, yellow'),
     'harness master prompt strengthens library-led diversity guidance',
+  );
+  invariant(
+    STYLIST_COLOUR_CLASSIFICATION_RULES.includes('Undertone is an axis, not a palette whitelist') &&
+    STYLIST_COLOUR_CLASSIFICATION_RULES.includes('Do not overuse warm-neutral or cool-neutral') &&
+    STYLIST_COLOUR_CLASSIFICATION_RULES.includes('at least 8 wearable colour shades'),
+    'colour classification prompt treats undertone as an axis and requires broader wearable colour diversity',
+  );
+  const noLayerRepair = buildHarnessLayerPolicyRepairSummaryForTest({
+    top: 'Ivory sleeveless blouse',
+    layer: 'Soft ivory cardigan',
+    layerRequired: false,
+    armCoverage: true,
+  });
+  invariant(noLayerRepair.layer === 'None', 'no-layer harness repair sets 03 - LAYER to None');
+  invariant(!noLayerRepair.hasLayerItem, 'no-layer harness repair removes layer formula items');
+  invariant(/sleeve/i.test(noLayerRepair.top), 'no-layer harness repair moves arm coverage into top sleeve/cut');
+  invariant(/without a separate layer|sleeve\/cut coverage/i.test(`${noLayerRepair.whyItWorks} ${noLayerRepair.oneMove}`), 'no-layer harness repair documents sleeve/cut coverage logic');
+  const noLayerGhostRepair = buildHarnessLayerPolicyRepairSummaryForTest({
+    top: 'Emerald sleeved dress',
+    layer: 'Ivory cropped jacket',
+    layerRequired: false,
+    armCoverage: true,
+    whyItWorks: 'The ivory jacket provides a crisp contrast frame over the deep emerald dress.',
+    oneMove: 'Cropped jacket contrast',
+  });
+  invariant(!/jacket|blazer|cardigan|vest/i.test(`${noLayerGhostRepair.whyItWorks} ${noLayerGhostRepair.oneMove}`), 'no-layer harness repair removes ghost layer language from logic');
+  const requiredLayerRepair = buildHarnessLayerPolicyRepairSummaryForTest({
+    top: 'Emerald blouse',
+    layer: 'Ivory single-breasted blazer',
+    layerRequired: true,
+    armCoverage: true,
+  });
+  invariant(requiredLayerRepair.hasLayerItem, 'required-layer harness outputs still retain the layer formula item');
+  const everydayRepair = buildHarnessEverydayRealismRepairSummaryForTest();
+  invariant(!/duster|longline/i.test(everydayRepair.office.layer), 'Everyday repair removes unrealistic longline denim duster layers');
+  invariant(!/pinstripe|suiting|herringbone|windowpane/i.test(everydayRepair.office.bottom), 'Everyday repair removes office-formal bottoms');
+  invariant(!/ponte/i.test(`${everydayRepair.travel.top} ${everydayRepair.travel.bottom}`), 'Everyday travel repair removes ponte dress travel formulas');
+  invariant(everydayRepair.travel.layer === 'None', 'Everyday travel repair preserves no-layer contract when no layer is planned');
+  invariant(/sneaker/i.test(everydayRepair.travel.footwear), 'Everyday travel repair uses realistic travel sneakers');
+  const warmNeutralSummary = assertPaletteFamilyCoverage('warm-neutral', 'warm-neutral');
+  const coolNeutralSummary = assertPaletteFamilyCoverage('cool-neutral', 'cool-neutral');
+  const neutralSummary = assertPaletteFamilyCoverage('neutral', 'neutral');
+  const oliveSummary = assertPaletteFamilyCoverage('olive', 'olive');
+  invariant(warmNeutralSummary.bucket === 'neutralWarm', 'warm-neutral normalises to neutralWarm bucket');
+  invariant(coolNeutralSummary.bucket === 'neutralCool', 'cool-neutral normalises to neutralCool bucket');
+  invariant(neutralSummary.bucket === 'neutral', 'neutral does not fall into the warm fallback bucket');
+  invariant(oliveSummary.bucket === 'olive', 'olive does not fall into the warm fallback bucket');
+  invariant(
+    neutralSummary.baseNames.some(name => /Slate Blue|Deep Denim|Sage|Deep Teal|Mulberry|Dusty Rose/i.test(name)),
+    'neutral fallback produces colour families beyond warm neutrals',
+  );
+  invariant(
+    oliveSummary.baseNames.some(name => /Forest Olive|Sage Grey|Petrol Teal|Mulberry/i.test(name)),
+    'olive fallback produces olive-specific colour families',
   );
   validateStylistBlueprintReport(reportWithOutfitOverride('Emerald straight kurta'), { culturalMode: 'western_default' });
   validateStylistBlueprintReport(reportWithOutfitOverride('Emerald straight kurta'), { culturalMode: 'ethnic_allowed' });

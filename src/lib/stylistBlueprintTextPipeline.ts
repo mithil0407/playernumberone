@@ -7,20 +7,40 @@ import {
   generateStylistBlueprintPages,
   getStylistOutfitCulturalMode,
   getStylistBlueprintAuditPage,
+  getStylistBlueprintAvoidancePage,
+  getStylistBlueprintBodyGeometryPage,
+  getStylistBlueprintChromaticPage,
+  getStylistBlueprintColourDrapePage,
   getStylistBlueprintContinuationPage,
+  getStylistBlueprintEyeframePage,
+  getStylistBlueprintFabricPage,
+  getStylistBlueprintFaceArchitecturePage,
+  getStylistBlueprintHairColourPage,
+  getStylistBlueprintHairFaceAccessoriesPage,
+  getStylistBlueprintHairstylePage,
+  getStylistBlueprintMakeupPage,
   getStylistBlueprintMatrixPage,
+  getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPageCount,
+  getStylistBlueprintPalettePage,
+  getStylistBlueprintProportionPage,
+  getStylistBlueprintReadingGuidePage,
+  getStylistBlueprintRulesStartPage,
+  getStylistBlueprintSummaryPage,
+  getStylistBlueprintTransformationPage,
   mergeBlueprintPages,
   validateStylistBlueprintReport,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from './stylistBlueprintGenerator';
 
+type StylistBlueprintAct = 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing';
+
 const ACT_STAGES: Array<{
   stage: string;
-  act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing';
+  act: StylistBlueprintAct;
 }> = [
   { stage: 'generating_opening_pages', act: 'opening' },
   { stage: 'generating_diagnosis_pages', act: 'diagnosis' },
@@ -31,7 +51,7 @@ const ACT_STAGES: Array<{
 
 const REPAIR_ACT_STAGES: Array<{
   stage: string;
-  act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing';
+  act: StylistBlueprintAct;
 }> = [
   { stage: 'repairing_opening_pages', act: 'opening' },
   { stage: 'repairing_diagnosis_pages', act: 'diagnosis' },
@@ -48,13 +68,76 @@ async function updateReport(reportId: string, patch: Record<string, unknown>, sh
   await revalidateStylistBlueprintCache(reportId, shareToken);
 }
 
+function expectedPagesForAct(reportData: StylistBlueprintReportData, act: StylistBlueprintAct): number[] {
+  const transformationPage = getStylistBlueprintTransformationPage(reportData);
+  const outfitPages = Array.from(
+    { length: getStylistBlueprintOutfitEndPage(reportData) - getStylistBlueprintOutfitStartPage(reportData) + 1 },
+    (_, index) => getStylistBlueprintOutfitStartPage(reportData) + index,
+  );
+
+  const pages: Record<StylistBlueprintAct, Array<number | null>> = {
+    opening: [1, getStylistBlueprintSummaryPage(reportData), getStylistBlueprintReadingGuidePage(reportData)],
+    diagnosis: [
+      getStylistBlueprintBodyGeometryPage(reportData),
+      getStylistBlueprintChromaticPage(reportData),
+      getStylistBlueprintFaceArchitecturePage(reportData),
+      getStylistBlueprintProportionPage(reportData),
+      getStylistBlueprintAvoidancePage(reportData),
+    ],
+    prescription: [
+      getStylistBlueprintPalettePage(reportData),
+      getStylistBlueprintColourDrapePage(reportData),
+      getStylistBlueprintRulesStartPage(reportData),
+      getStylistBlueprintHairstylePage(reportData) ?? getStylistBlueprintHairFaceAccessoriesPage(reportData),
+      getStylistBlueprintHairColourPage(reportData),
+      getStylistBlueprintEyeframePage(reportData),
+      getStylistBlueprintMakeupPage(reportData),
+      getStylistBlueprintFabricPage(reportData),
+    ],
+    application: [
+      transformationPage,
+      getStylistBlueprintOutfitSystemPage(reportData),
+      ...outfitPages,
+    ],
+    closing: [
+      getStylistBlueprintMatrixPage(reportData),
+      getStylistBlueprintAuditPage(reportData),
+      getStylistBlueprintContinuationPage(reportData),
+    ],
+  };
+
+  return pages[act].filter((pageNumber): pageNumber is number => typeof pageNumber === 'number');
+}
+
+function hasAllPages(reportData: StylistBlueprintReportData, pageNumbers: number[]) {
+  const existing = new Set(reportData.pages.map(page => page.page_number));
+  return pageNumbers.every(pageNumber => existing.has(pageNumber));
+}
+
+export function getCompletedStylistBlueprintTextActs(
+  reportData: StylistBlueprintReportData | null | undefined,
+): StylistBlueprintAct[] {
+  if (!reportData) return [];
+  return ACT_STAGES
+    .filter(item => hasAllPages(reportData, expectedPagesForAct(reportData, item.act)))
+    .map(item => item.act);
+}
+
+export function getNextStylistBlueprintTextProgressStage(
+  reportData: StylistBlueprintReportData | null | undefined,
+): string | null {
+  if (!reportData?.classification) return 'classifying';
+  const next = ACT_STAGES.find(item => !hasAllPages(reportData, expectedPagesForAct(reportData, item.act)));
+  return next?.stage ?? null;
+}
+
 export async function runStylistBlueprintTextPipeline(
   reportId: string,
   submission: StylistIntakeSubmission,
   shareToken: string | null,
   existingReportData?: StylistBlueprintReportData | null,
 ): Promise<StylistBlueprintReportData | null> {
-  let currentStage = 'classifying';
+  let currentStage = getNextStylistBlueprintTextProgressStage(existingReportData) ?? 'finalising';
   try {
     await updateReport(reportId, { status: 'generating', progress_stage: currentStage, error_message: null }, shareToken);
 
@@ -64,6 +147,7 @@ export async function runStylistBlueprintTextPipeline(
     await updateReport(reportId, { report_data: reportData }, shareToken);
 
     for (const item of ACT_STAGES) {
+      if (hasAllPages(reportData, expectedPagesForAct(reportData, item.act))) continue;
       currentStage = item.stage;
       await updateReport(reportId, { progress_stage: currentStage }, shareToken);
 

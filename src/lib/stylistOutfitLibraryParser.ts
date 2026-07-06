@@ -275,6 +275,7 @@ function parseEntry(
   index: number,
   source: ParsedStylistOutfit['source'],
   explicitTitle?: string,
+  capsuleOverride?: ParsedStylistOutfit['capsule'],
 ): ParsedStylistOutfit | null {
   const lines = rawEntry
     .split(/\n+/)
@@ -319,7 +320,7 @@ function parseEntry(
 
   const text = dedupedFields.map((field) => `${field.label}: ${field.value}`).join(' ');
   const title = explicitTitle ? cleanText(explicitTitle) : deriveTitle(dedupedFields, index);
-  const capsule = inferCapsule(text);
+  const capsule = capsuleOverride ?? inferCapsule(text);
   const orderedFields = orderFields(dedupedFields);
   const normalised_slots = normaliseStylistOutfitSlots(orderedFields);
   const signature = stylistOutfitSignature(normalised_slots) || text.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -424,19 +425,42 @@ function isWomenLibraryHeading(line: string) {
   return Boolean(text) && !text.includes(':') && /^[A-Z0-9 /&().,–—'-]+$/.test(text);
 }
 
+// The women library's section headings are the stylist's own capsule curation —
+// trust them over per-entry keyword guessing. Evening entries split between
+// Social (dinner-out looks) and Occasion (clutch/shine cocktail looks).
+function capsuleForWomenSection(heading: string): ParsedStylistOutfit['capsule'] | 'evening' | undefined {
+  const text = heading.toUpperCase();
+  if (/OFFICE|BUSINESS/.test(text)) return 'Professional';
+  if (/EVENING|DINNER|COCKTAIL/.test(text)) return 'evening';
+  if (/FESTIVE|FAMILY OCCASION|WEDDING/.test(text)) return 'Occasion';
+  if (/INDO-WESTERN|MODERN ETHNIC|BOHO|ARTISTIC|PRINT-LED|RESORT|VACATION|BRUNCH|EVERYDAY/.test(text)) return 'Everyday';
+  return undefined;
+}
+
+function eveningEntryCapsule(entryText: string): ParsedStylistOutfit['capsule'] {
+  return /\b(clutch|sequin|velvet|cape|one-shoulder|off-shoulder|halter|stiletto)\b/i.test(entryText)
+    ? 'Occasion'
+    : 'Social';
+}
+
 export function parseWomenOutfitLibrary(raw: string): ParsedStylistOutfit[] {
   const seen = new Set<string>();
   const entries: ParsedStylistOutfit[] = [];
+  let sectionCapsule: ParsedStylistOutfit['capsule'] | 'evening' | undefined;
 
   raw
     .split(/\n+/)
     .map(line => line.trim())
     .filter(Boolean)
     .forEach((line) => {
-      if (isWomenLibraryHeading(line)) return;
+      if (isWomenLibraryHeading(line)) {
+        sectionCapsule = capsuleForWomenSection(line) ?? sectionCapsule;
+        return;
+      }
       if (!splitInlineLabelledFields(line).length) return;
 
-      const parsed = parseEntry(line, entries.length, 'women');
+      const capsuleOverride = sectionCapsule === 'evening' ? eveningEntryCapsule(line) : sectionCapsule;
+      const parsed = parseEntry(line, entries.length, 'women', undefined, capsuleOverride);
       if (!parsed) return;
 
       const signature = parsed.fields

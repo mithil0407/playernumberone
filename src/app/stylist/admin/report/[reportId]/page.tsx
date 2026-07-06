@@ -129,6 +129,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [imageGroup, setImageGroup] = useState<StylistBlueprintImageGroup>('all');
   const [sending, setSending] = useState(false);
   const [unlockingProgress, setUnlockingProgress] = useState(false);
+  const [resumingText, setResumingText] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
@@ -397,6 +398,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const busyReason = () => {
     if (saving) return 'Saving edits first.';
     if (unlockingProgress) return 'Unlocking stuck job.';
+    if (resumingText) return 'Resuming text generation.';
     if (report?.progress_stage) return `Report generation in progress: ${stageLabel(report.progress_stage)}.`;
     if (generatingImages) return 'Image generation is running.';
     if (refreshingSilhouetteProofs) return 'Refreshing silhouette proof images.';
@@ -618,6 +620,30 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       setError(err instanceof Error ? err.message : 'Failed to unlock report.');
     } finally {
       setUnlockingProgress(false);
+    }
+  };
+
+  const resumeTextGeneration = async () => {
+    if (!report || resumingText) return;
+    setResumingText(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/stylist-blueprint/${reportId}/resume-text`, { method: 'POST' });
+      const data = await readJsonBody<{ error?: string; progressStage?: string; status?: string }>(res);
+      if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to resume text generation'));
+      setReport(prev => prev ? {
+        ...prev,
+        status: data?.status === 'already_running' ? prev.status : 'generating',
+        progress_stage: data?.progressStage ?? prev.progress_stage ?? 'classifying',
+        error_message: null,
+        updated_at: new Date().toISOString(),
+      } : prev);
+      await load(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resume text generation.');
+      await load(true).catch(() => {});
+    } finally {
+      setResumingText(false);
     }
   };
 
@@ -1159,8 +1185,19 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 <span className="admin-toolbar-label">Report</span>
                 {report.progress_stage && (
                   <ActionButton
+                    onClick={resumeTextGeneration}
+                    disabled={resumingText}
+                    title="Resume text generation in this report and skip pages that already exist."
+                    tone="primary"
+                  >
+                    {resumingText ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                    {resumingText ? 'Resuming...' : 'Resume Text'}
+                  </ActionButton>
+                )}
+                {report.progress_stage && (
+                  <ActionButton
                     onClick={unlockProgressStage}
-                    disabled={unlockingProgress}
+                    disabled={unlockingProgress || resumingText}
                     title={`Clear stuck stage: ${stageLabel(report.progress_stage)}.`}
                     tone="danger"
                   >

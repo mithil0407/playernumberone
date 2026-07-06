@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut } from 'lucide-react';
+import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ManReport, { getManReportSlideMeta, type ManReportSlideMeta } from '@/components/ManReport';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
@@ -14,6 +14,7 @@ import type { ComboGridKind } from '@/lib/manComboGridSection';
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface SectionApprovals {
+  [key: string]: boolean | undefined;
   s0?: boolean;
   s1: boolean; s2: boolean; s3: boolean;
   s4: boolean; s4g?: boolean; s5s?: boolean; s5g?: boolean;
@@ -183,13 +184,6 @@ const SECTION_FIELD_MAP: Record<SectionKey, SectionField> = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function allApproved(approvals: SectionApprovals): boolean {
-  const keys = approvals.s0 === undefined
-    ? (['s1', 's2', 's3', 's4', 's5', 's6'] as const)
-    : (['s0', 's1', 's2', 's3', 's4', 's4g', 's5s', 's5g', 's6'] as const);
-  return keys.every(key => approvals[key] === true);
-}
-
 function buildSafeReportData(reportData: ReportData): ReportData {
   return {
     classification: reportData.classification,
@@ -208,6 +202,25 @@ function buildSafeReportData(reportData: ReportData): ReportData {
     generated_at: reportData.generated_at,
     qa: reportData.qa,
   };
+}
+
+function approvalKeyForPage(pageNumber: number) {
+  return `p${pageNumber}`;
+}
+
+function pageApproved(approvals: SectionApprovals, slide: ManReportSlideMeta | null | undefined): boolean {
+  if (!slide) return false;
+  const pageKey = approvalKeyForPage(slide.pageNumber);
+  if (approvals[pageKey] !== undefined) return Boolean(approvals[pageKey]);
+  return Boolean(approvals[slide.sectionKey]);
+}
+
+function allPagesApproved(approvals: SectionApprovals, slides: ManReportSlideMeta[]): boolean {
+  return slides.length > 0 && slides.every(slide => pageApproved(approvals, slide));
+}
+
+function countApprovedPages(approvals: SectionApprovals, slides: ManReportSlideMeta[]): number {
+  return slides.filter(slide => pageApproved(approvals, slide)).length;
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
@@ -361,13 +374,14 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return () => clearInterval(t);
   }, [report?.progress_stage, report?.status, report?.updated_at]);
 
-  // ── Section approval ──────────────────────────────────────────────────
+  // ── Page approval ─────────────────────────────────────────────────────
 
-  const toggleApproval = async (key: SectionKey) => {
-    if (!report) return;
+  const togglePageApproval = async (slide: ManReportSlideMeta | null) => {
+    if (!report || !slide) return;
+    const pageKey = approvalKeyForPage(slide.pageNumber);
     const next = {
       ...report.section_approvals,
-      [key]: !report.section_approvals[key],
+      [pageKey]: !pageApproved(report.section_approvals, slide),
     };
     setReport(r => r ? { ...r, section_approvals: next } : r);
     await fetch(`/api/man-report/${reportId}`, {
@@ -377,12 +391,36 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     });
   };
 
+  const approveAndNext = async () => {
+    if (!report || !activeSlide) return;
+    const pageKey = approvalKeyForPage(activeSlide.pageNumber);
+    const next = {
+      ...report.section_approvals,
+      [pageKey]: true,
+    };
+    setReport(r => r ? { ...r, section_approvals: next } : r);
+    await fetch(`/api/man-report/${reportId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section_approvals: next }),
+    });
+
+    const nextSlide = slideMeta.find(slide => slide.pageNumber > activeSlide.pageNumber && !pageApproved(next, slide))
+      ?? slideMeta.find(slide => slide.pageNumber > activeSlide.pageNumber)
+      ?? slideMeta[0];
+    if (nextSlide) {
+      setActivePageNumber(nextSlide.pageNumber);
+      setActiveSection(nextSlide.sectionKey as SectionKey);
+      setViewMode('page');
+    }
+  };
+
   const approveAll = async () => {
     if (!report) return;
-    const next: SectionApprovals = {
-      s0: true, s1: true, s2: true, s3: true, s4: true,
-      s4g: true, s5s: true, s5g: true, s5: true, s6: true,
-    };
+    const next: SectionApprovals = { ...report.section_approvals };
+    slideMeta.forEach(slide => {
+      next[approvalKeyForPage(slide.pageNumber)] = true;
+    });
     setReport(r => r ? { ...r, section_approvals: next } : r);
     await fetch(`/api/man-report/${reportId}`, {
       method: 'PATCH',
@@ -429,7 +467,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // ── Send to client ─────────────────────────────────────────────────────
 
   const sendToClient = async () => {
-    if (!report || !allApproved(report.section_approvals)) return;
+    if (!report || !allPagesApproved(report.section_approvals, slideMeta)) return;
     setSending(true);
     setError('');
     try {
@@ -973,7 +1011,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   }, [activePageNumber, slideMeta]);
 
   const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
-  const ready        = allApproved(approvals);
+  const ready        = allPagesApproved(approvals, slideMeta);
   const isGenerating = report?.status === 'generating';
   const isError      = report?.status === 'error';
   const isStuck      = isGenerating && elapsedSecs > 600;
@@ -1217,9 +1255,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return `${m}m ${s}s`;
   })();
 
-  const approvedCount = Object.values(approvals).filter(Boolean).length;
-  const activeApproved = activeSlideSection ? Boolean(approvals[activeSlideSection as SectionKey]) : false;
+  const approvedCount = countApprovedPages(approvals, slideMeta);
+  const totalApprovalPages = slideMeta.length;
+  const activeApproved = pageApproved(approvals, activeSlide);
   const canEditActiveSection = Boolean(activeSlideSection && report.report_data?.sections?.[SECTION_FIELD_MAP[activeSlideSection as SectionKey]] !== undefined);
+  const intakeHref = report.submission_id ? `/man/admin/dashboard/${report.submission_id}` : '/man/admin/dashboard';
   const selectedSlideTitle = viewMode === 'full'
     ? 'Full report'
     : activeSlide
@@ -1231,16 +1271,19 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
         <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
           <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
-          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>Men - Review</div>
+          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>Man - Review</div>
         </div>
-        <div className="px-4 py-3 border-b" style={{ borderColor: S.border }}>
+        <div className="px-4 py-3 border-b space-y-1" style={{ borderColor: S.border }}>
           <Link href="/man/admin/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <LayoutDashboard size={15} /> Blueprints
           </Link>
+          <Link href="/man/admin/edit" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+            <Mail size={15} /> ICONIK Edit
+          </Link>
         </div>
         <div className="px-5 py-4 border-b" style={{ borderColor: S.border }}>
-          <Link href="/man/admin/dashboard" className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
-            <ArrowLeft size={14} /> Back to dashboard
+          <Link href={intakeHref} className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
+            <ArrowLeft size={14} /> Back to intake
           </Link>
           <h1 className="iconik-display truncate" style={{ fontSize: '22px', color: S.ink }}>
             {report.man_intake_submissions?.customer_email || 'Client'}
@@ -1249,7 +1292,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             <Pill tone={isError ? 'error' : report.status === 'sent' ? 'success' : isGenerating ? 'gold' : 'slate'}>
               {report.progress_stage ? (STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')) : report.status.replace(/_/g, ' ')}
             </Pill>
-            <Pill tone={ready ? 'success' : 'muted'}>{approvedCount}/{Object.keys(approvals).length}</Pill>
+            <Pill tone={ready ? 'success' : 'muted'}>Approved {approvedCount}/{totalApprovalPages}</Pill>
           </div>
         </div>
 
@@ -1265,7 +1308,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                   <div className="space-y-1">
                     {groupSlides.map((slide: ManReportSlideMeta) => {
                       const active = activePageNumber === slide.pageNumber;
-                      const approved = Boolean(approvals[slide.sectionKey as SectionKey]);
+                      const approved = pageApproved(approvals, slide);
                       return (
                         <button
                           key={slide.pageNumber + '-' + slide.title}
@@ -1324,19 +1367,67 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
               {!isGenerating && report.progress_stage && <p className="luxury-body text-xs mt-2" style={{ color: isImageStuck ? S.gold : S.muted }}>{STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')} · {imageProgressText}</p>}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {(isError || ['draft_ready', 'in_review', 'approved'].includes(report.status)) && (
-                <select value={imageModel} onChange={event => setImageModel(event.target.value as typeof imageModel)} className="rounded-xl px-3 py-2 text-sm luxury-body outline-none" style={{ background: S.card, color: S.ink, border: '1px solid ' + S.border }}>
+            <div className="admin-toolbar">
+              <div className="admin-toolbar-group">
+                <span className="admin-toolbar-label">View</span>
+                <ActionButton onClick={() => setViewMode(viewMode === 'full' ? 'page' : 'full')} tone={viewMode === 'full' ? 'primary' : 'neutral'} title={viewMode === 'full' ? 'Switch to focused page review.' : 'Show the full report.'}>
+                  {viewMode === 'full' ? `Page View · ${activePageNumber}` : 'Full Report'}
+                </ActionButton>
+                <ActionButton onClick={copyLink} title="Copy the public report link.">
+                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}
+                </ActionButton>
+              </div>
+
+              <div className="admin-toolbar-group">
+                <span className="admin-toolbar-label">Report</span>
+                {isError && (
+                  <ActionButton onClick={handleRetry} disabled={retrying} tone="primary" title="Resume or retry text generation.">
+                    {retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />} {hasPartialText ? 'Resume' : 'Retry'}
+                  </ActionButton>
+                )}
+                {isStuck && (
+                  <ActionButton onClick={() => handleTerminate()} disabled={terminating} tone="danger" title="Cancel the stuck generation job.">
+                    {terminating ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />} Cancel
+                  </ActionButton>
+                )}
+                {['draft_ready', 'in_review', 'approved'].includes(report.status) && (confirmingReject ? (
+                  <>
+                    <ActionButton onClick={() => setConfirmingReject(false)}>Cancel Reject</ActionButton>
+                    <ActionButton onClick={handleRejectAndRetry} disabled={rejecting} tone="danger" title="Discard this report and generate a new one.">
+                      {rejecting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Retry
+                    </ActionButton>
+                  </>
+                ) : (
+                  <ActionButton onClick={() => setConfirmingReject(true)} tone="danger" title="Discard this report and generate a new one.">
+                    <RotateCcw size={14} /> Reject & Retry
+                  </ActionButton>
+                ))}
+              </div>
+
+              <div className="admin-toolbar-group">
+                <span className="admin-toolbar-label">Images</span>
+                <select
+                  value={imageModel}
+                  onChange={event => setImageModel(event.target.value as typeof imageModel)}
+                  disabled={isGenerating || generatingImages || Boolean(report.progress_stage)}
+                  className="admin-toolbar-select luxury-body"
+                  style={{ background: S.card, color: S.ink, border: '1px solid ' + S.border }}
+                  title="Choose the image model for man report image generation."
+                >
                   <option value="gemini-3.1-flash-image-preview">3.1 Preview</option>
                   <option value="gemini-2.5-flash-image">2.5 Flash</option>
                 </select>
-              )}
-              <ActionButton onClick={() => setViewMode(viewMode === 'full' ? 'page' : 'full')} tone={viewMode === 'full' ? 'primary' : 'neutral'}>{viewMode === 'full' ? 'Page View' : 'Full Report'}</ActionButton>
-              {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages}>{generatingImages ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />} {imageButtonLabel}</ActionButton>}
-              {isError && <ActionButton onClick={handleRetry} disabled={retrying} tone="primary">{retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />} {hasPartialText ? 'Resume' : 'Retry'}</ActionButton>}
-              {isStuck && <ActionButton onClick={() => handleTerminate()} disabled={terminating} tone="danger">{terminating ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />} Cancel</ActionButton>}
-              {isImageStuck && !isGenerating && <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages} tone="primary">{generatingImages ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Restart Images</ActionButton>}
-              <ActionButton onClick={copyLink}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}</ActionButton>
+                {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
+                  <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages} title="Generate missing report images.">
+                    {generatingImages ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />} {imageButtonLabel}
+                  </ActionButton>
+                )}
+                {isImageStuck && !isGenerating && (
+                  <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages} tone="primary" title="Restart the stuck image generation job.">
+                    {generatingImages ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Restart Images
+                  </ActionButton>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -1376,24 +1467,91 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Pill tone={activeApproved ? 'success' : 'gold'}>{activeSlide ? 'Page ' + activeSlide.pageNumber : 'Page'} {activeApproved ? 'approved' : 'open'}</Pill>
-              <span className="luxury-body text-xs" style={{ color: S.muted }}>{activeSlide ? activeSlide.title + ' maps to ' + activeSlide.sectionKey.toUpperCase() + ' approval.' : 'Select a report page to review.'}</span>
+              <span className="luxury-body text-xs" style={{ color: S.muted }}>
+                {activeSlide ? 'Click report text to review, or edit this page text from the original section source.' : 'Select a report page to review.'}
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              <ActionButton onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} disabled={!canEditActiveSection || isGenerating}>Edit Section Text</ActionButton>
-              <ActionButton onClick={() => activeSlideSection && toggleApproval(activeSlideSection as SectionKey)} disabled={!activeSlideSection || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
+              <ActionButton onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} disabled={!canEditActiveSection || isGenerating}>Edit Page Text</ActionButton>
+              <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
+              <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success"><CheckCheck size={14} /> Approve and Next</ActionButton>
               <ActionButton onClick={approveAll} disabled={isGenerating} tone="success"><CheckCheck size={14} /> Approve All</ActionButton>
-              {['draft_ready', 'in_review', 'approved'].includes(report.status) && (confirmingReject ? (<><ActionButton onClick={() => setConfirmingReject(false)}>Cancel Reject</ActionButton><ActionButton onClick={handleRejectAndRetry} disabled={rejecting} tone="danger">{rejecting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Retry</ActionButton></>) : (<ActionButton onClick={() => setConfirmingReject(true)} tone="danger"><RotateCcw size={14} /> Reject & Retry</ActionButton>))}
-              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send</ActionButton>
+              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={ready ? 'Send the report email to the client.' : 'Approve every visible page before sending.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
             </div>
           </div>
         </footer>
       )}
 
       <style jsx global>{`
+        .admin-toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 10px;
+        }
+        .admin-toolbar-group {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          min-height: 44px;
+          padding: 6px;
+          border: 1px solid ${S.border};
+          border-radius: 16px;
+          background: rgba(237, 229, 210, 0.46);
+        }
+        .admin-toolbar-label {
+          padding: 0 4px;
+          color: ${S.muted};
+          font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .admin-toolbar-select {
+          min-height: 40px;
+          border-radius: 12px;
+          padding: 8px 12px;
+          font-size: 14px;
+          outline: none;
+        }
+        .admin-toolbar-select:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+        .admin-toolbar button {
+          min-height: 40px;
+          white-space: nowrap;
+        }
+        .iconik-report .iconik-page {
+          scroll-margin-top: 122px;
+        }
+        @media (max-width: 1280px) {
+          .admin-toolbar {
+            justify-content: flex-start;
+          }
+          .admin-toolbar-group {
+            flex: 1 1 100%;
+            justify-content: flex-start;
+          }
+        }
         @media (max-width: 1000px) {
           .man-admin-review aside.fixed { position: relative; width: 100%; height: auto; }
           .man-admin-review main.min-h-screen { padding-left: 0; }
           .man-admin-review footer.fixed { left: 0; }
+          .admin-toolbar {
+            align-items: stretch;
+          }
+          .admin-toolbar-group {
+            align-items: stretch;
+          }
+          .admin-toolbar button,
+          .admin-toolbar-select {
+            width: 100%;
+            justify-content: center;
+          }
         }
         @media (max-width: 640px) {
           .man-admin-review header.sticky,
@@ -1407,7 +1565,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       {editingSection && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.6)' }}
+          style={{ background: 'rgba(44,38,34,0.45)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -1415,31 +1573,31 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         >
           <motion.div
             className="rounded-2xl border w-full max-w-2xl mx-4 flex flex-col"
-            style={{ background: '#111111', borderColor: '#2a2a2a', maxHeight: '80vh' }}
+            style={{ background: S.card, borderColor: S.border, maxHeight: '80vh' }}
             initial={{ scale: 0.96, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 12 }}
             transition={{ type: 'spring', stiffness: 350, damping: 28 }}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#1e1e1e' }}>
-              <p className="text-sm font-medium" style={{ color: '#f0ebe0' }}>
-                Edit — {SECTIONS.find(s => s.key === editingSection)?.label}
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: S.border }}>
+              <p className="text-sm font-medium luxury-body" style={{ color: S.ink }}>
+                Edit - {SECTIONS.find(s => s.key === editingSection)?.label}
               </p>
-              <button onClick={() => setEditingSection(null)} style={{ color: '#6b5f4a' }}>
+              <button onClick={() => setEditingSection(null)} style={{ color: S.muted }}>
                 <X size={16} />
               </button>
             </div>
             <textarea
               value={editText}
               onChange={e => setEditText(e.target.value)}
-              className="flex-1 p-5 text-sm font-light outline-none resize-none min-h-[400px]"
-              style={{ background: '#111111', color: '#c8bfae', lineHeight: 1.7 }}
+              className="flex-1 p-5 text-sm font-light outline-none resize-none min-h-[400px] luxury-body"
+              style={{ background: S.bg, color: S.ink, lineHeight: 1.7 }}
             />
-            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t" style={{ borderColor: '#1e1e1e' }}>
+            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t" style={{ borderColor: S.border }}>
               <button
                 onClick={() => setEditingSection(null)}
                 className="px-4 py-2 rounded-lg text-sm transition-opacity hover:opacity-70"
-                style={{ color: '#6b5f4a' }}
+                style={{ color: S.muted }}
               >
                 Cancel
               </button>
@@ -1447,10 +1605,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 onClick={saveEdit}
                 disabled={saving}
                 className="px-5 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-opacity disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
+                style={{ background: S.slateDeep, color: S.bg }}
               >
                 {saving && <Loader2 size={13} className="animate-spin" />}
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </motion.div>

@@ -1048,7 +1048,7 @@ function FaceSection({
   };
 
   return (
-    <section className="man-page slate">
+    <section className="iconik-page man-page slate">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -1384,7 +1384,7 @@ function BodySection({ cls, text }: { cls: ClassificationResult; text: string })
   ];
 
   return (
-    <section className="man-page ivory">
+    <section className="iconik-page man-page ivory">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -1537,7 +1537,7 @@ function Swatch({
 function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
   const { colour } = cls;
   return (
-    <section className="man-page bone">
+    <section className="iconik-page man-page bone">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -1647,7 +1647,7 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
 function SnapshotSection({ text }: { text?: string }) {
   if (!text) return null;
   return (
-    <section className="man-page ivory">
+    <section className="iconik-page man-page ivory">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -1993,7 +1993,7 @@ function OutfitsSection({
   if (categories.length === 0 || categories.every(c => c.outfits.length === 0)) {
     if (!shouldShowSlide('outfit')) return null;
     return (
-      <section className="man-page bone">
+      <section className="iconik-page man-page bone" data-blueprint-page-number={slideNumber('outfit') ?? undefined}>
         <div className="grain" />
         <div className="corner-tl">
           <div className="man-mono corner-kicker">Section</div>
@@ -2264,7 +2264,7 @@ function OutfitsSection({
   return (
     <>
       {shouldShowSlide('outfit_system') && (
-        <section className="man-page bone">
+        <section className="iconik-page man-page bone" data-blueprint-page-number={slideNumber('outfit_system') ?? undefined}>
           <div className="grain" />
           <div className="corner-tl">
             <div className="man-mono corner-kicker">Act III - Application</div>
@@ -2342,7 +2342,7 @@ function OutfitsSection({
       )}
 
       {categories.flatMap(cat => cat.outfits.map(outfit => shouldShowSlide('outfit', outfit) ? (
-        <section key={outfit.identityKey} className="man-page bone man-outfit-slide">
+        <section key={outfit.identityKey} className="iconik-page man-page bone man-outfit-slide" data-blueprint-page-number={slideNumber('outfit', outfit) ?? undefined}>
           <div className="grain" />
           <div className="corner-tl">
             <div className="man-mono corner-kicker">Act III - Application</div>
@@ -2841,7 +2841,7 @@ function ComboGridSection({
   };
 
   return (
-    <section className="man-page slate">
+    <section className="iconik-page man-page slate">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -3179,7 +3179,7 @@ function StyleRulesSection({ text }: { text: string }) {
   if (!parsed) {
     // Fallback for unrecognised markdown — keep behaviour unchanged.
     return (
-      <section className="man-page ivory">
+      <section className="iconik-page man-page ivory">
         <div className="grain" />
         <div className="corner-tl">
           <div className="man-mono corner-kicker">Section</div>
@@ -3202,7 +3202,7 @@ function StyleRulesSection({ text }: { text: string }) {
   }
 
   return (
-    <section className="man-page ivory">
+    <section className="iconik-page man-page ivory">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -3300,7 +3300,7 @@ function TextReportSection({
   const variant = background === SHELL || background === BONE ? 'bone' : 'ivory';
   const panelBg = variant === 'bone' ? 'rgba(44,38,34,0.04)' : SHELL;
   return (
-    <section className={`man-page ${variant}`}>
+    <section className={`iconik-page man-page ${variant}`}>
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
@@ -3336,7 +3336,7 @@ function IdentitySection({ text }: { text: string }) {
   const body  = lines.join('\n').trim();
 
   return (
-    <section className="man-page slate">
+    <section className="iconik-page man-page slate">
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Closing</div>
@@ -3441,6 +3441,7 @@ function DeferredSection({
   background,
   motionMode,
   defer,
+  pageNumber,
 }: {
   children: React.ReactNode;
   label: string;
@@ -3448,6 +3449,7 @@ function DeferredSection({
   background: string;
   motionMode: 'reduced' | 'standard';
   defer: boolean;
+  pageNumber?: number;
 }) {
   const { elementRef, hasIntersected } = useIntersectionObserver({
     threshold: 0,
@@ -3460,6 +3462,8 @@ function DeferredSection({
     return (
       <div
         ref={elementRef}
+        className="iconik-page-frame"
+        data-blueprint-page-number={pageNumber}
         style={{ background, minHeight: estimatedHeight }}
       >
         <div className="px-6 md:px-12 py-12">
@@ -3481,7 +3485,7 @@ function DeferredSection({
   }
 
   return (
-    <div ref={elementRef}>
+    <div ref={elementRef} className="iconik-page-frame" data-blueprint-page-number={pageNumber}>
       {motionMode === 'standard' ? (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -3601,6 +3605,8 @@ function ManReport({
   const identityExcerpt = useMemo(() => extractIdentityExcerpt(sections.s6_identity), [sections.s6_identity]);
   const slideMeta = useMemo(() => getManReportSlideMeta(data), [data]);
   const totalSlides = slideMeta.length;
+  const pageNumberFor = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) =>
+    slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber))?.pageNumber;
   const shouldRenderSlide = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
     const slide = slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber));
     if (!slide) return false;
@@ -3775,7 +3781,7 @@ function ManReport({
 
   return (
     <div
-      className="man-report overflow-x-hidden"
+      className="iconik-report man-report overflow-x-hidden"
       style={{ color: INK }}
     >
       {/* Sticky Nav */}
@@ -3790,7 +3796,7 @@ function ManReport({
       ) : stickyHeader)}
 
       {/* ── Cover page ─────────────────────────────────────────────────────── */}
-      {shouldRenderSlide('cover') && <section className="man-page slate man-cover">
+      {shouldRenderSlide('cover') && <section className="iconik-page man-page slate man-cover cover-page" data-blueprint-page-number={pageNumberFor('cover') ?? 1}>
         <div className="grain" />
         <div className="corner-tl">
           <div className="man-display man-wordmark">I C O N I K</div>
@@ -3806,7 +3812,7 @@ function ManReport({
           </div>
           <h1 className="man-cover-heading">
             <span className="man-display">The</span>
-            <span className="man-display-it">Lookbook</span>
+            <span className="man-display-it">Blueprint</span>
           </h1>
           {identityExcerpt && (
             <p className="man-display-it man-cover-excerpt">&ldquo;{identityExcerpt}&rdquo;</p>
@@ -3823,7 +3829,7 @@ function ManReport({
       </section>}
 
       {/* ── Summary page — blueprint card + style brief ──────────────────── */}
-      {shouldRenderSlide('overview') && <section className="man-page ivory">
+      {shouldRenderSlide('overview') && <section className="iconik-page man-page ivory" data-blueprint-page-number={pageNumberFor('overview') ?? 2}>
         <div className="grain" />
         <div className="corner-tl">
           <div className="man-mono corner-kicker">The Blueprint</div>
@@ -3870,6 +3876,7 @@ function ManReport({
           background={section.background}
           motionMode={motionMode}
           defer={deferSections && index >= 2}
+          pageNumber={section.key === 's4' ? undefined : pageNumberFor(section.slideType)}
         >
           {section.node}
         </DeferredSection>
@@ -3895,31 +3902,46 @@ function ManBlueprintStyles() {
     <style jsx global>{`
       @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,1,300;9..144,1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
-      .man-report {
-        background: #F8F3E9;
+      .man-report,
+      .man-report.iconik-report {
+        background: ${INK};
+        color: ${INK};
+        font-family: var(--font-inter), Inter, system-ui, sans-serif;
+        font-weight: 300;
+        padding: 20px;
+      }
+
+      .iconik-page-frame {
+        max-width: 1060px;
+        margin: 0 auto 20px;
       }
 
       /* ── Page frame ────────────────────────────────────────── */
       .man-page {
         max-width: 1060px;
+        min-height: 760px;
         margin: 0 auto 20px;
         border-radius: 20px;
         padding: 64px 56px;
         position: relative;
         overflow: hidden;
+        page-break-after: always;
       }
 
-      .man-page.slate {
+      .man-page.slate,
+      .iconik-page.slate {
         background: radial-gradient(ellipse 120% 80% at 25% 10%, ${SLATE_LIGHT} 0%, ${SLATE} 45%, ${SLATE_DEEP} 100%);
         color: #F4EFE5;
       }
 
-      .man-page.ivory {
+      .man-page.ivory,
+      .iconik-page.ivory {
         background: linear-gradient(180deg, ${PAPER} 0%, #F1E9D8 100%);
         color: ${INK};
       }
 
-      .man-page.bone {
+      .man-page.bone,
+      .iconik-page.bone {
         background: ${BONE};
         color: ${INK};
       }

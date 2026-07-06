@@ -537,7 +537,7 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
 
 function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
   const focus = data.analysis.proportional_focus.join('. ');
-  const colourSummary = `Build outfits from ${data.classification.colour.base_palette.slice(0, 3).map(colour => colour.name).join(', ')}, then use ${data.classification.colour.accent_palette.slice(0, 2).map(colour => colour.name).join(' or ')} only as controlled accents.`;
+  const colourSummary = `Use the palette as a full colour territory: grounded neutrals, wearable colour families, and controlled accents selected by depth, contrast, and undertone axis.`;
   const cards = [
     ['01 - SILHOUETTE', data.analysis.silhouette_profile, 'relative body geometry', firstBody(page.blocks, data.classification.body.proportion_directive)],
     ['02 - CHROMATIC', data.analysis.chromatic_family, `${data.classification.colour.depth} depth`, colourSummary],
@@ -887,8 +887,8 @@ function PalettePage({ page, data }: { page: BlueprintPage; data: StylistBluepri
       <div className="palette-inner">
         <div className="palette-copy">
           <h2><span className="display">Fifteen</span><span className="display-it">colours, one rule.</span></h2>
-          <p className="palette-intro">Ten base shades to build the wardrobe. Five accent shades for tension. Together they describe a complete chromatic territory - your territory.</p>
-          <PaletteSwatchGrid title="The Base - 10 shades - 70% of the wardrobe" colours={data.classification.colour.base_palette} />
+          <p className="palette-intro">Fifteen base shades to build the wardrobe. Five accent shades for tension. Together they describe a complete chromatic territory - your territory.</p>
+          <PaletteSwatchGrid title="The Base - 15 shades - wardrobe territory" colours={data.classification.colour.base_palette} />
           <PaletteSwatchGrid title="The Accents - 5 shades - for emphasis" colours={data.classification.colour.accent_palette} />
         </div>
       </div>

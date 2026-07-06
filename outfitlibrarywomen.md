@@ -1,84 +1,94 @@
 200 ELEVATED ICONIK WOMEN OUTFITS — V2
 OFFICE / BUSINESS CASUAL / SOFT POWER
 
-TOP: Ice-blue contrast-collar cotton-poplin shirt with French cuffs and a slightly shaped waist. LAYER: Charcoal double-breasted cropped blazer with sharp shoulders and horn buttons. BOTTOM: Charcoal full-length wide-leg trousers with a pressed crease. BELT: Slim black leather belt with a brushed-gold buckle. SHOES: Black pointed slingback heels. BAG: Cognac structured work tote. ACCESSORIES: Gold oval hoops, slim watch, black rectangular sunglasses, navy-and-ice geometric silk scarf tied on the tote handle. STYLING LINE: Fully tuck the shirt, keep the cuffs visible under the blazer, and let the scarf stop the solid suit from looking flat.
+TOP: Ice-blue contrast-collar cotton-poplin shirt with French cuffs and a slightly shaped waist. LAYER: Charcoal double-breasted cropped blazer with sharp shoulders and horn buttons. BOTTOM: Charcoal full-length wide-leg trousers with a pressed crease. BELT: Slim black leather belt with a brushed-gold buckle. SHOES: Black pointed slingback heels. BAG: Cognac structured work tote. ACCESSORIES: Gold oval hoops, slim watch, black rectangular sunglasses. STYLING LINE: Fully tuck the shirt, keep the French cuffs visible under the blazer, and let the ice-blue collar frame the face against the charcoal suit.
 
 TOP: Forest green matte crepe blouse with a sculpted square neckline and soft elbow sleeves. BOTTOM: Stone-grey high-rise bootcut trousers in suiting twill. BELT: Chocolate leather belt. SHOES: Nude pointed block heels. BAG: Ivory structured top-handle bag. ACCESSORIES: Gold sculptural earrings, tortoiseshell sunglasses, slim bracelet, forest-and-ivory printed scarf tied low on the bag. STYLING LINE: Tuck the blouse fully and use the belt plus scarf to make the two-colour outfit feel styled, not basic.
 
 TOP: White cotton shirt with thin navy banker stripes and a curved hem. LAYER: Navy knitted jacket with gold buttons and bracelet sleeves. BOTTOM: Navy pleated straight trousers. BELT: Tan leather belt. SHOES: Chocolate loafers. BAG: Tan structured tote. ACCESSORIES: Gold hoops, navy-tinted sunglasses, slim watch. STYLING LINE: Front-tuck the shirt, leave the back slightly relaxed, and button only the middle two buttons of the jacket.
 
-TOP: Black compact rib knit with a soft boat neckline. LAYER: Cream bouclé cropped jacket with black contrast trim. BOTTOM: Black A-line midi skirt with a clean front slit. SHOES: Black pointed pumps. BAG: Cognac top-handle bag. ACCESSORIES: Pearl studs, gold cuff, black cat-eye sunglasses, small black-and-cream silk scarf tied on the bag. STYLING LINE: Keep the knit tucked flat and let the bouclé texture plus scarf make the monochrome look feel expensive.
+TOP: Black compact rib knit with a soft boat neckline. LAYER: Cream bouclé cropped jacket with black contrast trim. BOTTOM: Black A-line midi skirt with a clean front slit. SHOES: Black pointed pumps. BAG: Burgundy top-handle bag. ACCESSORIES: Pearl studs, gold cuff, black cat-eye sunglasses. STYLING LINE: Keep the knit tucked flat and let the bouclé texture plus the burgundy bag make the monochrome look feel expensive.
 
 TOP: Cobalt matte crepe wrap blouse with a flat side closure. BOTTOM: Charcoal micro-check wide-leg trousers. BELT: Black slim leather belt. SHOES: Nude slingback heels. BAG: Chocolate structured shoulder bag. ACCESSORIES: Blue-stone studs, gold watch, tortoiseshell sunglasses. STYLING LINE: Wrap the blouse flat with no bow, tuck the edge cleanly, and let the micro-check trouser carry the formal pattern.
 
-TOP: Optic white fine-rib knit shell with a soft scoop neck. LAYER: Deep teal collarless blazer with curved front seams. BOTTOM: Deep teal straight-leg trousers. BELT: Dark brown leather belt. SHOES: Tan pointed mules. BAG: Cognac woven tote. ACCESSORIES: Gold hoops, amber sunglasses, slim bracelet, teal-cognac printed silk scarf on the bag handle. STYLING LINE: Tuck the knit smoothly and use the scarf to keep the teal suit from becoming a plain solid block.
+TOP: Optic white fine-rib knit shell with a soft scoop neck. LAYER: Deep teal collarless blazer with curved front seams. BOTTOM: Deep teal straight-leg trousers. BELT: Dark brown leather belt. SHOES: Tan pointed mules. BAG: Cognac woven tote. ACCESSORIES: Gold hoops, amber sunglasses, slim bracelet. STYLING LINE: Tuck the knit smoothly and let the cognac leather warm the teal suit so it never reads flat.
 
 TOP: Plum matte crepe blouse with a narrow tie-neck scarf attached at the collar. BOTTOM: Mushroom-grey pleated trousers. BELT: Chocolate leather belt. SHOES: Chocolate kitten heels. BAG: Olive structured handbag. ACCESSORIES: Pearl drops, gold watch, brown gradient sunglasses. STYLING LINE: Tie the neck scarf loose and low, not into a bow, so it looks editorial instead of school-uniform.
 
 TOP: Ivory tonal-jacquard shirt with a micro-diamond texture. LAYER: Black cropped waistcoat with a curved hem and gold buttons. BOTTOM: Camel tailored flared trousers. BELT: Black leather belt. SHOES: Black pointed heels. BAG: Tan structured tote. ACCESSORIES: Gold hoops, black sunglasses, slim black-and-gold watch. STYLING LINE: Tuck the shirt fully, button the waistcoat, and let the curved waistcoat hem create the waist shape.
 
-TOP: Cool grey knitted polo with a sharp open placket and compact rib finish. BOTTOM: Navy pinstripe barrel-leg trousers with a tapered ankle. BELT: Cognac slim belt. SHOES: Dark brown loafers. BAG: Cognac work tote. ACCESSORIES: Small gold hoops, tortoiseshell sunglasses, slim watch. STYLING LINE: Tuck the polo fully and use the belt to stop the knit from looking casual.
+TOP: Cool grey knitted polo with a sharp open placket and compact rib finish. BOTTOM: Navy pinstripe barrel-leg trousers with a tapered ankle. BELT: Dark brown slim belt. SHOES: Dark brown loafers. BAG: Burgundy structured work tote. ACCESSORIES: Small gold hoops, tortoiseshell sunglasses, slim watch. STYLING LINE: Tuck the polo fully and use the belt to stop the knit from looking casual.
 
 TOP: Emerald square-neck blouse with pleated sleeve-head detail. LAYER: Black longline single-breasted blazer with a nipped waist. BOTTOM: Ivory straight trousers in structured twill. BELT: Black belt with a small gold buckle. SHOES: Nude pointed slingbacks. BAG: Chocolate top-handle bag. ACCESSORIES: Gold sculptural earrings, oversized black sunglasses, emerald-and-ivory scarf on the bag. STYLING LINE: Keep the blazer open and let the black belt visually connect the blazer to the trouser waist.
 
-TOP: Powder-blue shirt with white collar and cuffs. LAYER: Charcoal cropped herringbone jacket with bracelet sleeves. BOTTOM: Black full-length wide trousers. BELT: Black leather belt. SHOES: Black slingback heels. BAG: Cognac structured tote. ACCESSORIES: Silver hoops, smoke-grey sunglasses, slim watch. STYLING LINE: Tuck the shirt tightly at the sides and leave the contrast cuffs visible.
+TOP: Powder-blue shirt with white collar and cuffs. LAYER: Charcoal cropped herringbone jacket with bracelet sleeves. BOTTOM: Black full-length wide trousers. BELT: Black leather belt. SHOES: Black slingback heels. BAG: Taupe structured tote. ACCESSORIES: Silver hoops, smoke-grey sunglasses, slim watch. STYLING LINE: Tuck the shirt tightly at the sides and leave the contrast cuffs visible.
 
 TOP: Berry matte crepe blouse with a soft gathered neckline. LAYER: Taupe peplum jacket in textured suiting fabric. BOTTOM: Taupe straight trousers. SHOES: Chocolate pointed pumps. BAG: Olive top-handle bag. ACCESSORIES: Pearl hoops, gold cuff, brown sunglasses, berry-and-olive printed scarf knotted on the bag. STYLING LINE: Do not tuck the blouse under the peplum jacket; let the jacket’s waist seam do the shaping.
 
-TOP: White and slate vertical-stripe poplin shirt. LAYER: Slate-grey wrap blazer with a side-tie closure. BOTTOM: White wide-leg trousers in structured cotton twill. SHOES: Tan pointed flats. BAG: Cognac tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, navy scarf on bag. STYLING LINE: Keep the shirt tucked under the wrap blazer and tie the blazer slightly off-centre.
+TOP: White and slate vertical-stripe poplin shirt. LAYER: Slate-grey wrap blazer with a side-tie closure. BOTTOM: White wide-leg trousers in structured cotton twill. SHOES: Tan pointed flats. BAG: Navy structured tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses. STYLING LINE: Keep the shirt tucked under the wrap blazer and tie the blazer slightly off-centre.
 
-TOP: Deep teal compact knit top with a soft square neckline. LAYER: Charcoal windowpane blazer with strong shoulders. BOTTOM: Charcoal straight-leg trousers. BELT: Black leather belt. SHOES: Black pointed loafers. BAG: Tan structured shoulder bag. ACCESSORIES: Gold studs, black sunglasses, slim watch. STYLING LINE: Tuck the knit fully and keep the windowpane blazer as the hero piece.
+TOP: Deep teal compact knit top with a soft square neckline. LAYER: Charcoal windowpane blazer with strong shoulders. BOTTOM: Charcoal straight wool-blend midi skirt with a clean back vent. SHOES: Black kitten heels. BAG: Tan structured shoulder bag. ACCESSORIES: Gold studs, black sunglasses, slim watch. STYLING LINE: Tuck the knit fully and let the skirt-suit pairing keep the windowpane blazer as the hero piece.
 
-DRESS: Navy belted shirt dress in structured cotton-sateen with a flared midi hem and sharp cuffs. BELT: Matching navy self-fabric belt with a rectangular buckle. SHOES: Tan block heels. BAG: Cognac structured tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, slim bracelet, navy-cream printed scarf on the tote. STYLING LINE: Tie the belt flat through the buckle, roll the sleeves once, and use the scarf to lift the solid navy dress.
+DRESS: Navy belted shirt dress in structured cotton-sateen with a flared midi hem and sharp cuffs. BELT: Matching navy self-fabric belt with a rectangular buckle. SHOES: Tan block heels. BAG: Cognac structured tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, slim bracelet. STYLING LINE: Tie the belt flat through the buckle and roll the sleeves once so the dress reads sharp, not uniform-like.
 
-TOP: Olive matte crepe shirt with a diagonal placket and clean cuffed sleeves. LAYER: Cream cropped box jacket in suiting twill. BOTTOM: Cool grey wide-leg trousers. BELT: Chocolate slim belt. SHOES: Chocolate pumps. BAG: Espresso tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, olive-cream printed scarf on bag. STYLING LINE: Tuck the shirt fully and let the diagonal placket replace the usual necklace.
+TOP: Olive matte crepe shirt with a diagonal placket and clean cuffed sleeves. LAYER: Cream cropped box jacket in suiting twill. BOTTOM: Cool grey wide-leg trousers. BELT: Chocolate slim belt. SHOES: Chocolate pumps. BAG: Espresso tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses. STYLING LINE: Tuck the shirt fully and let the diagonal placket replace the usual necklace.
 
-TOP: Black and white fine-stripe cotton wrap shirt. BOTTOM: Black flared trousers with a clean pressed line. BELT: Black leather belt with a gold oval buckle. SHOES: Black pointed heels. BAG: Cognac woven tote. ACCESSORIES: Gold cuff, black sunglasses, small hoops. STYLING LINE: Wrap the shirt flat, keep the belt visible, and avoid a bulky knot at the waist.
+TOP: Black and white fine-stripe cotton wrap shirt. BOTTOM: Black flared trousers with a clean pressed line. BELT: Black leather belt with a gold oval buckle. SHOES: Black pointed heels. BAG: Oxblood shoulder bag. ACCESSORIES: Gold cuff, black sunglasses, small hoops. STYLING LINE: Wrap the shirt flat, keep the belt visible, and avoid a bulky knot at the waist.
 
 TOP: Sapphire blue matte crepe blouse with a shallow curved neckline. LAYER: Stone cropped jacket with a rounded hem and covered buttons. BOTTOM: Stone pleated trousers. BELT: Taupe leather belt. SHOES: Nude block heels. BAG: Chocolate structured tote. ACCESSORIES: Sapphire enamel studs, mixed-metal watch, brown gradient sunglasses. STYLING LINE: Tuck the blouse into the pleated trouser and button only the top button of the jacket.
 
-TOP: Ivory textured cotton shirt with a tonal dobby weave. BOTTOM: Deep burgundy wide-leg trousers in wool-blend suiting. BELT: Chocolate leather belt. SHOES: Chocolate slingbacks. BAG: Tan top-handle bag. ACCESSORIES: Gold sculptural earrings, brown sunglasses, burgundy scarf on bag. STYLING LINE: Roll the sleeves to mid-forearm and keep the belt visible for polish.
+TOP: Ivory textured cotton shirt with a tonal dobby weave. BOTTOM: Deep burgundy wide-leg trousers in wool-blend suiting. BELT: Chocolate leather belt. SHOES: Chocolate slingbacks. BAG: Tan top-handle bag. ACCESSORIES: Gold sculptural earrings, brown sunglasses. STYLING LINE: Roll the sleeves to mid-forearm and keep the belt visible for polish.
 
-TOP: Charcoal compact rib top with a soft V-neck. LAYER: Powder-blue cropped blazer with a single statement button. BOTTOM: Black straight-leg trousers. BELT: Black slim belt. SHOES: Black loafers. BAG: Cognac structured tote. ACCESSORIES: Silver hoops, black sunglasses, powder-blue printed scarf tied on the tote handle. STYLING LINE: Tuck the knit cleanly and use the scarf to make the solid blazer-trouser combination feel styled.
+TOP: Charcoal compact rib top with a soft V-neck. LAYER: Powder-blue cropped blazer with a single oversized horn button. BOTTOM: Black straight-leg trousers. BELT: Black slim belt. SHOES: Black loafers. BAG: Cognac structured tote. ACCESSORIES: Silver hoops, black sunglasses, powder-blue printed scarf tied on the tote handle. STYLING LINE: Tuck the knit cleanly and use the scarf to make the solid blazer-trouser combination feel styled.
 
-TOP: White cotton-poplin shirt with a black banker stripe. LAYER: Black sleeveless waistcoat with an asymmetric button line. BOTTOM: Black wide-leg trousers. BELT: Black leather belt. SHOES: Nude pointed flats. BAG: Cognac tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, rectangular watch. STYLING LINE: Fully tuck the shirt and let the asymmetric waistcoat make the look more designed.
+TOP: White cotton-poplin shirt with a black banker stripe. LAYER: Black sleeveless waistcoat with an asymmetric button line. BOTTOM: Black wide-leg trousers. BELT: Black leather belt. SHOES: Nude pointed flats. BAG: Burgundy structured tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, rectangular watch. STYLING LINE: Fully tuck the shirt and let the asymmetric waistcoat make the look more designed.
 
 TOP: Dusty rose matte crepe blouse with a soft split neckline. BOTTOM: Charcoal houndstooth straight trousers. BELT: Chocolate leather belt. SHOES: Chocolate kitten heels. BAG: Olive structured handbag. ACCESSORIES: Pearl studs, brown sunglasses, slim gold watch. STYLING LINE: Tuck the blouse fully and keep jewellery small because the trouser pattern is already strong.
 
 TOP: Cool ivory blouse with a navy vertical border running down one side. LAYER: Navy cropped blazer with bracelet sleeves. BOTTOM: Navy tailored flares. BELT: Navy leather belt. SHOES: Nude pumps. BAG: Tan structured tote. ACCESSORIES: Blue-stone earrings, tortoiseshell sunglasses. STYLING LINE: Tuck the blouse and position the border slightly off-centre under the blazer.
 
-TOP: Chocolate ponte knit with a soft square neckline. LAYER: Oatmeal long cardigan-jacket with structured shoulders and gold buttons. BOTTOM: Slate-grey wide-leg trousers. BELT: Chocolate belt. SHOES: Dark brown pointed slingbacks. BAG: Cognac woven tote. ACCESSORIES: Gold cuff, brown sunglasses, small hoops, chocolate-slate printed scarf on the bag. STYLING LINE: Tuck the knit, belt the trousers, and use the scarf to break the solid colour blocking.
+TOP: Chocolate ponte knit with a soft square neckline. LAYER: Oatmeal long cardigan-jacket with structured shoulders and gold buttons. BOTTOM: Slate-grey wide-leg trousers. BELT: Chocolate belt. SHOES: Dark brown pointed slingbacks. BAG: Cognac woven tote. ACCESSORIES: Gold cuff, brown sunglasses, small hoops. STYLING LINE: Tuck the knit, belt the trousers, and let the woven bag texture break the solid colour blocking.
 
 TOP: Emerald and white micro-geometric blouse in matte crepe. BOTTOM: Ivory straight-leg trousers in structured twill. BELT: Tan slim belt. SHOES: Nude pointed heels. BAG: Chocolate top-handle bag. ACCESSORIES: Gold hoops, amber sunglasses, slim watch. STYLING LINE: Tuck the blouse completely and skip neck jewellery so the micro-print stays clean.
 
-TOP: Slate-blue cotton-sateen shirt with a concealed placket. LAYER: Charcoal cropped utility-style jacket in refined suiting fabric with flap pockets. BOTTOM: Charcoal pinstripe trousers. BELT: Black leather belt. SHOES: Black pointed loafers. BAG: Cognac tote. ACCESSORIES: Silver hoops, black sunglasses, slim watch. STYLING LINE: Tuck the shirt and keep the jacket open so the concealed placket looks minimal but not basic.
+DRESS: Ink-navy tailored jumpsuit with soft lapels, bracelet sleeves, and full-length wide legs. BELT: Slim black leather belt. SHOES: Black pointed pumps. BAG: Taupe structured tote. ACCESSORIES: Silver hoops, slim watch. STYLING LINE: Press the trouser crease sharp and keep jewellery minimal so the jumpsuit reads boardroom, not lounge.
 
 TOP: Warm ivory compact knit with a scoop neckline. LAYER: Cobalt cropped jacket with sculpted shoulders and a curved front. BOTTOM: Black A-line midi skirt. BELT: Black waist belt. SHOES: Black slingback heels. BAG: Tan structured handbag. ACCESSORIES: Gold studs, black sunglasses, slim bracelet, cobalt-and-tan scarf tied on the handbag. STYLING LINE: Tuck the knit and let the waist belt connect the skirt to the cropped jacket.
 
 TOP: Burgundy matte crepe blouse with bracelet sleeves. BOTTOM: Cool grey windowpane wide-leg trousers. BELT: Chocolate belt. SHOES: Chocolate pointed pumps. BAG: Cognac top-handle bag. ACCESSORIES: Gold hoops, tortoiseshell sunglasses. STYLING LINE: Tuck the blouse cleanly and keep the belt narrow so it doesn’t fight the windowpane pattern.
 
-TOP: White cotton shirt with a structured bib front. LAYER: Forest green cropped blazer with a single gold button. BOTTOM: Navy full-length straight trousers. BELT: Cognac slim belt. SHOES: Tan pointed slingbacks. BAG: Cognac work tote. ACCESSORIES: Gold watch, brown sunglasses, small hoops, forest-and-navy scarf on the tote. STYLING LINE: Tuck the shirt fully and let the bib front add texture under the blazer.
+TOP: White cotton shirt with a structured bib front. LAYER: Forest green cropped blazer with a single gold button. BOTTOM: Navy full-length straight trousers. BELT: Cognac slim belt. SHOES: Tan pointed slingbacks. BAG: Cognac work tote. ACCESSORIES: Gold watch, brown sunglasses, small hoops. STYLING LINE: Tuck the shirt fully and let the bib front add texture under the blazer.
 
-TOP: Black matte crepe blouse with vertical pintucks. BOTTOM: Stone wide-leg trousers with side tabs. SHOES: Black pointed flats. BAG: Ivory structured top-handle bag. ACCESSORIES: Pearl drops, black sunglasses, gold cuff, black-and-stone silk scarf tied on the bag. STYLING LINE: Wear the blouse untucked only if the hem is curved and ends above the hip; otherwise tuck it and add a black belt.
+TOP: Black matte crepe blouse with vertical pintucks. BOTTOM: Stone wide-leg trousers with side tabs. SHOES: Black pointed flats. BAG: Ivory structured top-handle bag. ACCESSORIES: Pearl drops, black sunglasses, gold cuff. STYLING LINE: Wear the blouse untucked only if the hem is curved and ends above the hip; otherwise tuck it and add a black belt.
 
-TOP: Teal fine-rib knit with a collared zip neckline. LAYER: Mushroom-grey short blazer with a curved hem. BOTTOM: Mushroom-grey tailored trousers. BELT: Cognac leather belt. SHOES: Chocolate loafers. BAG: Cognac tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, teal-mushroom printed scarf on bag. STYLING LINE: Keep the zip slightly open and tuck the knit so the belt keeps it office-sharp.
-TOP: Optic white shirt with black contrast piping at collar and cuff. BOTTOM: Black pleated wide-leg trousers. BELT: Black leather belt with a gold buckle. SHOES: Nude pointed slingbacks. BAG: Cognac structured tote. ACCESSORIES: Black sunglasses, small gold studs, slim watch. STYLING LINE: Tuck the shirt fully and let the piping act like built-in jewellery.
+TOP: Teal fine-rib knit with a collared zip neckline. LAYER: Mushroom-grey short blazer with a curved hem. BOTTOM: Mushroom-grey tailored trousers. BELT: Cognac leather belt. SHOES: Chocolate loafers. BAG: Cognac tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses. STYLING LINE: Keep the zip slightly open and tuck the knit so the belt keeps it office-sharp.
+TOP: Optic white shirt with black contrast piping at collar and cuff. BOTTOM: Black pleated wide-leg trousers. BELT: Black leather belt with a gold buckle. SHOES: Nude pointed slingbacks. BAG: Black structured tote. ACCESSORIES: Black sunglasses, small gold studs, slim watch. STYLING LINE: Tuck the shirt fully and let the piping act like built-in jewellery.
 
-TOP: Plum cotton-sateen shirt with a curved hem. LAYER: Charcoal glen-plaid cropped jacket. BOTTOM: Charcoal straight-leg trousers. BELT: Black slim belt. SHOES: Black pointed pumps. BAG: Tan top-handle bag. ACCESSORIES: Gold hoops, black sunglasses. STYLING LINE: Tuck the shirt and pull only a slight blouse effect over the belt so it doesn’t look stiff.
+TOP: Plum cotton-sateen shirt with a curved hem. LAYER: Charcoal glen-plaid cropped jacket. BOTTOM: Charcoal glen-plaid A-line midi skirt matching the jacket. SHOES: Black pointed pumps. BAG: Tan top-handle bag. ACCESSORIES: Gold hoops, black sunglasses. STYLING LINE: Tuck the shirt and let the matched skirt-suit carry the pattern so the plum stays the only colour note.
 
-TOP: Powder-pink matte crepe blouse with a soft gathered shoulder. LAYER: Navy belted blazer with a defined waist. BOTTOM: Navy wide-leg trousers. BELT: Built-in navy blazer belt. SHOES: Chocolate slingbacks. BAG: Cognac woven tote. ACCESSORIES: Pearl hoops, brown sunglasses, slim gold watch, pink-navy printed scarf on tote. STYLING LINE: Tie the blazer belt flat to one side and let the scarf stop the navy suit from becoming too plain.
+TOP: Powder-pink matte crepe blouse with a soft gathered shoulder. LAYER: Navy belted blazer with a defined waist. BOTTOM: Navy wide-leg trousers. BELT: Built-in navy blazer belt. SHOES: Chocolate slingbacks. BAG: Ivory structured tote. ACCESSORIES: Pearl hoops, brown sunglasses, slim gold watch, pink-navy printed scarf on tote. STYLING LINE: Tie the blazer belt flat to one side and let the scarf stop the navy suit from becoming too plain.
 
 TOP: Ivory fine-stripe shirt in cotton-poplin. BOTTOM: Deep teal bootcut trousers. BELT: Chocolate leather belt. SHOES: Nude pumps. BAG: Chocolate structured tote. ACCESSORIES: Blue-stone studs, tortoiseshell sunglasses. STYLING LINE: Front-tuck the shirt, keep the belt visible, and leave the back slightly relaxed for movement.
 
-TOP: Black compact knit polo with a sharp placket. LAYER: Cream tweed-lite cropped jacket with gold dome buttons. BOTTOM: Charcoal tailored flares. BELT: Black leather belt. SHOES: Black pointed loafers. BAG: Cognac shoulder bag. ACCESSORIES: Gold hoops, black sunglasses, slim watch. STYLING LINE: Tuck the polo fully and button the jacket only at the top for a more editorial frame.
+TOP: Black compact knit polo with a sharp placket. LAYER: Cream tweed-lite cropped jacket with gold dome buttons. BOTTOM: Charcoal tailored flares. BELT: Black leather belt. SHOES: Black pointed loafers. BAG: Burgundy shoulder bag. ACCESSORIES: Gold hoops, black sunglasses, slim watch. STYLING LINE: Tuck the polo fully and button the jacket only at the top for a more editorial frame.
 
 TOP: Sapphire and white vertical-stripe shirt with a split curved hem. LAYER: Stone sculpted waistcoat with a high-low hem. BOTTOM: Chocolate straight-leg trousers. BELT: Chocolate belt. SHOES: Nude pointed heels. BAG: Tan structured tote. ACCESSORIES: Gold earrings, amber sunglasses. STYLING LINE: Tuck the front panels of the shirt and leave the split back out under the waistcoat.
 
 TOP: Charcoal matte crepe blouse with a soft cowl neckline. BOTTOM: Ivory herringbone wide-leg trousers. BELT: Taupe leather belt. SHOES: Chocolate pointed heels. BAG: Olive structured top-handle bag. ACCESSORIES: Pearl studs, brown sunglasses, gold cuff. STYLING LINE: Tuck the blouse fully and keep the cowl clean with no necklace.
 
-TOP: Cool white cotton shirt with tonal jacquard stripes. LAYER: Black cropped military-inspired jacket with matte gold buttons. BOTTOM: Slate-blue wide-leg trousers. BELT: Black leather belt. SHOES: Black slingback flats. BAG: Cognac work tote. ACCESSORIES: Silver hoops, black sunglasses, slim watch. STYLING LINE: Fully tuck the shirt and leave the jacket open so the buttons frame the torso instead of closing it.
+TOP: Cool white cotton shirt with tonal jacquard stripes. LAYER: Black cropped military-inspired jacket with matte gold buttons. BOTTOM: Slate-blue wide-leg trousers. BELT: Black leather belt. SHOES: Black slingback flats. BAG: Taupe work tote. ACCESSORIES: Silver hoops, black sunglasses, slim watch. STYLING LINE: Fully tuck the shirt and leave the jacket open so the buttons frame the torso instead of closing it.
 
 TOP: Deep berry matte crepe blouse with bracelet sleeves and a shallow split neckline. LAYER: Taupe wrap-front blazer in suiting twill. BOTTOM: Black full-length tailored trousers. BELT: Black leather belt. SHOES: Nude pointed pumps. BAG: Chocolate top-handle bag. ACCESSORIES: Gold sculptural earrings, tortoiseshell sunglasses, slim watch, berry-taupe printed scarf on the bag. STYLING LINE: Tuck the blouse, belt the trousers, and wrap the blazer loosely enough that the belt still shows.
+
+TOP: Ivory fine merino crew-neck knit. LAYER: Deep burgundy single-breasted blazer with structured shoulders. BOTTOM: Matching burgundy tailored straight trousers. SHOES: Black Mary-Jane block heels. BAG: Black structured top-handle bag. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Tuck the knit cleanly and keep every accessory black so the burgundy suit stays the only colour story.
+
+DRESS: Deep olive ponte sheath dress with a square neckline, elbow sleeves, and a knee-grazing hem. SHOES: Chocolate slingback kitten heels. BAG: Tan structured shoulder bag. ACCESSORIES: Gold hoops, thin gold bangle. STYLING LINE: Keep the dress unbelted and let the square neckline plus warm leather do the finishing.
+
+TOP: Oatmeal fine turtleneck knit. BOTTOM: Chocolate straight wool midi skirt with a back slit. SHOES: Chocolate knee boots with a low block heel. BAG: Black structured shoulder bag. ACCESSORIES: Gold sculptural earrings, slim watch. STYLING LINE: Tuck the knit and keep the column tonal so the black bag reads as a deliberate full stop.
+
+TOP: Powder-blue cotton-silk blouse with a soft neck bow that ties flat. BOTTOM: Navy pencil midi skirt with a clean back vent. SHOES: Nude almond-toe pumps. BAG: Navy structured tote. ACCESSORIES: Pearl studs, gold watch. STYLING LINE: Tuck the blouse, tie the bow loose and low, and keep the leg line unbroken with the nude shoe.
+
+TOP: Rust compact-knit polo with tonal buttons. BOTTOM: Mid-grey flannel wide-leg trousers. BELT: Chocolate leather belt. SHOES: Chocolate loafers. BAG: Olive structured tote. ACCESSORIES: Gold hoops, tortoiseshell hair claw. STYLING LINE: Tuck the polo fully and let the rust-against-grey pairing replace jewellery as the interest.
 
 INDO-WESTERN / MODERN ETHNIC
 
@@ -94,7 +104,7 @@ INDO-WESTERN / MODERN ETHNIC
 
 046. TOP: Sapphire cotton kurta with side slits. LAYER: Ivory sleeveless longline vest. BOTTOM: Sapphire straight palazzos. SHOES: Blue embroidered juttis. BAG: Ivory top-handle. ACCESSORIES: Blue stone earrings.
 
-047. TOP: Cream shirt kurta. LAYER: Olive raw-silk curved waistcoat. BOTTOM: Olive wide-leg trousers. SHOES: Tan slingbacks. BAG: Tan woven tote. ACCESSORIES: Gold hoops, scarf on bag.
+047. TOP: Cream shirt kurta. LAYER: Olive raw-silk curved waistcoat. BOTTOM: Olive wide-leg trousers. SHOES: Tan slingbacks. BAG: Ivory woven tote. ACCESSORIES: Gold hoops, slim brass cuff.
 
 048. TOP: Wine silk wrap kurta. BOTTOM: Champagne flared palazzo trousers. SHOES: Bronze heels. BAG: Chocolate clutch. ACCESSORIES: Pearl chandeliers, cocktail ring.
 
@@ -152,7 +162,7 @@ INDO-WESTERN / MODERN ETHNIC
 
 075. TOP: Sapphire raw-silk blouse. LAYER: Champagne long cape. BOTTOM: Sapphire wide trousers. SHOES: Gold heels. BAG: Ivory clutch. ACCESSORIES: Pearl drops, blue stone ring.
 
-076. TOP: Chocolate silk kurta. LAYER: Olive block-print waistcoat. BOTTOM: Ivory straight pants. SHOES: Tan mules. BAG: Cognac tote. ACCESSORIES: Brass earrings, printed scarf on handle.
+076. TOP: Chocolate silk kurta. LAYER: Olive block-print waistcoat. BOTTOM: Ivory straight pants. SHOES: Tan mules. BAG: Cognac tote. ACCESSORIES: Brass earrings, stacked rings.
 
 077. TOP: Fuchsia embroidered peplum kurta. BOTTOM: Cream flared palazzos. SHOES: Nude heels. BAG: Gold potli. ACCESSORIES: Kundan earrings, gold bangles.
 
@@ -198,7 +208,7 @@ BOHO / ARTISTIC / PRINT-LED
 
 097. TOP: Terracotta tie-neck blouse. BOTTOM: Cream linen palazzos. SHOES: Tan wedges. BAG: Olive shoulder bag. ACCESSORIES: Gold layered chains, sunglasses.
 
-098. TOP: Emerald block-print blouse. BOTTOM: Camel linen culottes. SHOES: Brown mules. BAG: Chocolate tote. ACCESSORIES: Gold hoops, printed scarf on bag.
+098. TOP: Emerald block-print blouse. BOTTOM: Camel linen culottes. SHOES: Brown mules. BAG: Chocolate tote. ACCESSORIES: Gold hoops, wooden bangle.
 
 099. TOP: Ivory painterly floral blouse in cobalt and plum. BOTTOM: Chocolate satin trousers. SHOES: Bronze sandals. BAG: Cognac woven clutch. ACCESSORIES: Blue stone earrings, bangles.
 
@@ -228,7 +238,7 @@ BOHO / ARTISTIC / PRINT-LED
 
 112. TOP: Terracotta crinkled shirt. LAYER: Ivory sleeveless crochet vest. BOTTOM: White denim skirt. SHOES: Brown sandals. BAG: Natural raffia bag. ACCESSORIES: Shell hoops, sunglasses.
 
-113. TOP: Olive hand-block blouse. BOTTOM: Chocolate satin palazzos. SHOES: Tan mules. BAG: Cognac tote. ACCESSORIES: Brass earrings, scarf on bag.
+113. TOP: Olive hand-block blouse. BOTTOM: Chocolate satin palazzos. SHOES: Tan mules. BAG: Olive suede shoulder bag. ACCESSORIES: Brass earrings, stacked bangles.
 
 114. TOP: Raspberry peasant blouse with tassel neck. BOTTOM: Stone wide-leg denim. SHOES: Brown woven flats. BAG: Olive slouchy shoulder bag. ACCESSORIES: Turquoise drops, stacked cuffs.
 
@@ -262,7 +272,7 @@ RESORT / VACATION / BRUNCH
 
 128. TOP: Peacock blue open-collar shirt. LAYER: Ivory sleeveless vest. BOTTOM: Champagne linen trousers. SHOES: Tan block sandals. BAG: Raffia shopper. ACCESSORIES: Gold pendant, sunglasses.
 
-129. DRESS: Terracotta tiered cotton midi dress. LAYER: Cream linen overshirt. SHOES: Brown wedges. BAG: Chocolate woven sling. ACCESSORIES: Brass hoops, scarf on bag.
+129. DRESS: Terracotta tiered cotton midi dress. LAYER: Cream linen overshirt. SHOES: Brown wedges. BAG: Chocolate woven sling. ACCESSORIES: Brass hoops, shell bracelet.
 
 130. TOP: White striped poplin shirt with curved hem. BOTTOM: Olive linen wide-leg pants. SHOES: Tan sandals. BAG: Cognac tote. ACCESSORIES: Gold chain, tortoiseshell sunglasses.
 
@@ -288,21 +298,21 @@ RESORT / VACATION / BRUNCH
 
 ELEVATED EVERYDAY
 
-TOP: Blue banker-stripe oversized cotton shirt with a curved hem and structured cuffs. BOTTOM: Dark indigo wide-leg jeans with a clean full-length fall. BELT: Cognac leather belt. SHOES: White leather sneakers with a slim profile. BAG: Cognac crossbody bag. ACCESSORIES: Gold chain, tortoiseshell sunglasses, navy-ivory scarf tied on the bag. STYLING LINE: Front-tuck the shirt, keep the back loose, and let the belt stop the oversized shirt from looking sloppy.
+TOP: Blue banker-stripe oversized cotton shirt with a curved hem and structured cuffs. BOTTOM: Dark indigo wide-leg jeans with a clean full-length fall. BELT: Cognac leather belt. SHOES: White leather sneakers with a slim profile. BAG: Cognac crossbody bag. ACCESSORIES: Gold chain, tortoiseshell sunglasses. STYLING LINE: Front-tuck the shirt, keep the back loose, and let the belt stop the oversized shirt from looking sloppy.
 
-TOP: Cream ribbed tank with a square neckline. LAYER: Powder-blue cropped denim shacket with contrast stitching. BOTTOM: Cream wide-leg linen trousers. BELT: Tan woven belt. SHOES: Brown woven slides. BAG: Tan shoulder bag. ACCESSORIES: Gold hoops, stacked bangles, blue-and-tan printed scarf on the bag. STYLING LINE: Tuck the tank fully and wear the shacket open so the cream column stays long.
+TOP: Cream ribbed tank with a square neckline. LAYER: Powder-blue cropped denim shacket with contrast stitching. BOTTOM: Cream wide-leg linen trousers. BELT: Tan woven belt. SHOES: Brown woven slides. BAG: Tan shoulder bag. ACCESSORIES: Gold hoops, stacked bangles. STYLING LINE: Tuck the tank fully and wear the shacket open so the cream column stays long.
 
 TOP: Black soft V-neck compact knit. LAYER: Saffron cropped jacket with sculpted shoulders and matte gold buttons. BOTTOM: Indigo denim maxi skirt with a front slit. BELT: Black leather belt. SHOES: Bronze block heels. BAG: Black structured bag. ACCESSORIES: Gold hoops, black sunglasses. STYLING LINE: Tuck the knit, keep the jacket open, and let the saffron jacket act as the hero piece.
 
 TOP: Pink-and-white striped oversized shirt with a curved hem. BOTTOM: Light-wash cropped wide-leg jeans. BELT: White belt with a slim gold buckle. SHOES: Pink ballet flats. BAG: White belt bag with a printed scarf wrapped through the strap. ACCESSORIES: Gold layered necklaces, pink-tinted sunglasses. STYLING LINE: Half-tuck only one side of the shirt so the look feels styled instead of school-like.
 
-TOP: Terracotta cotton-silk shirt with a concealed placket. LAYER: Cream linen overshirt with large patch pockets. BOTTOM: Dark indigo wide-leg denim. BELT: Brown leather belt. SHOES: Nude loafers. BAG: Cognac tote. ACCESSORIES: Layered necklace, brown sunglasses, printed scarf on tote. STYLING LINE: Tuck the shirt fully and leave the overshirt open to create a soft utility frame.
+TOP: Terracotta cotton-silk shirt with a concealed placket. LAYER: Cream linen overshirt with large patch pockets. BOTTOM: Dark indigo wide-leg denim. BELT: Brown leather belt. SHOES: Nude loafers. BAG: Chocolate saddle bag. ACCESSORIES: Layered necklace, brown sunglasses. STYLING LINE: Tuck the shirt fully and leave the overshirt open to create a soft utility frame.
 
-TOP: Forest green ribbed knit with a soft scoop neckline. LAYER: Ivory cropped denim jacket with tan topstitching. BOTTOM: White wide-leg jeans. BELT: Chocolate belt. SHOES: Tan mules. BAG: Chocolate shoulder bag. ACCESSORIES: Gold hoops, forest-ivory scarf on bag, tortoiseshell sunglasses. STYLING LINE: Tuck the knit and belt the white jeans so the light bottom does not look unfinished.
+TOP: Forest green ribbed knit with a soft scoop neckline. LAYER: Ivory cropped denim jacket with tan topstitching. BOTTOM: White wide-leg jeans. BELT: Chocolate belt. SHOES: Tan mules. BAG: Chocolate shoulder bag. ACCESSORIES: Gold hoops, tortoiseshell sunglasses. STYLING LINE: Tuck the knit and belt the white jeans so the light bottom does not look unfinished.
 
 TOP: Ivory eyelet blouse with elbow sleeves and a scalloped hem. BOTTOM: Dark denim A-line midi skirt. BELT: Tan leather belt. SHOES: Brown block sandals. BAG: Tan saddle bag. ACCESSORIES: Gold pendant, brown sunglasses, turquoise ring. STYLING LINE: Tuck only the front of the blouse and let the scalloped side hem stay visible.
 
-TOP: Plum matte crepe shirt with a curved hem and bracelet sleeves. BOTTOM: Mid-blue bootcut jeans. BELT: Espresso belt. SHOES: Nude pointed heels. BAG: Espresso tote. ACCESSORIES: Pearl hoops, gold watch, plum-cream scarf on tote. STYLING LINE: Front-tuck the shirt and keep the bootcut jeans full length to elongate the leg.
+TOP: Plum matte crepe shirt with a curved hem and bracelet sleeves. BOTTOM: Mid-blue bootcut jeans. BELT: Espresso belt. SHOES: Nude pointed heels. BAG: Espresso tote. ACCESSORIES: Pearl hoops, gold watch. STYLING LINE: Front-tuck the shirt and keep the bootcut jeans full length to elongate the leg.
 
 TOP: Mustard cotton blouse with gathered sleeves and a square neckline. BOTTOM: Cream denim culottes with a structured fall. BELT: Olive slim belt. SHOES: Brown fisherman sandals. BAG: Olive bucket bag. ACCESSORIES: Brass bangles, olive sunglasses, printed scarf at low ponytail. STYLING LINE: Tuck the blouse fully and use the olive belt to connect the warm top to the bag.
 
@@ -320,7 +330,7 @@ TOP: Coral wrap shirt with bracelet sleeves. LAYER: Stone sculpted waistcoat wit
 
 TOP: Black structured peplum blouse with a clean open neckline. BOTTOM: Dark indigo flared jeans. SHOES: Black pointed heels. BAG: Black top-handle bag. ACCESSORIES: Gold cuff, black sunglasses, leopard-print silk scarf on bag. STYLING LINE: Do not tuck the peplum; let it sit over the jeans and use the scarf to stop the black-denim look from going flat.
 
-TOP: Cobalt oversized poplin shirt with a curved split hem. BOTTOM: White straight jeans. BELT: Chocolate belt. SHOES: Tan loafers. BAG: Chocolate tote. ACCESSORIES: Gold pendant, tortoiseshell sunglasses, cobalt-chocolate scarf on tote. STYLING LINE: Tuck the front panels and leave the split back untucked for controlled volume.
+TOP: Cobalt oversized poplin shirt with a curved split hem. BOTTOM: White straight jeans. BELT: Chocolate belt. SHOES: Tan loafers. BAG: Chocolate tote. ACCESSORIES: Gold pendant, tortoiseshell sunglasses. STYLING LINE: Tuck the front panels and leave the split back untucked for controlled volume.
 
 TOP: Cream knit polo with a sharp open placket. LAYER: Rust suede cropped jacket. BOTTOM: Dark denim maxi skirt. BELT: Cognac belt. SHOES: Brown ankle boots. BAG: Cognac satchel. ACCESSORIES: Gold hoops, brown sunglasses. STYLING LINE: Tuck the polo and let the rust suede jacket create the texture contrast.
 
@@ -330,7 +340,7 @@ TOP: Chocolate off-shoulder compact knit. BOTTOM: Forest green satin-column skir
 
 TOP: White striped short-sleeve shirt with a curved hem. LAYER: Beige cropped utility vest with refined pocket detailing. BOTTOM: Beige pleated A-line midi skirt. BELT: Tan leather belt. SHOES: Black pointed pumps. BAG: Tan top-handle tote. ACCESSORIES: Gold hoops, layered necklace, black sunglasses. STYLING LINE: Tuck the shirt fully and use the vest to make the beige skirt feel styled, not plain.
 
-TOP: Taupe wrap blouse with an asymmetrical waist tie. BOTTOM: Mid-wash flare jeans. BELT: Slim chocolate belt under the wrap edge. SHOES: Nude strappy block heels. BAG: Ivory structured shoulder bag. ACCESSORIES: Gold bracelet, tortoiseshell sunglasses, taupe-ivory scarf on bag. STYLING LINE: Tie the wrap flat to one side and keep the flare jeans long enough to cover the shoe break.
+TOP: Taupe wrap blouse with an asymmetrical waist tie. BOTTOM: Mid-wash flare jeans. BELT: Slim chocolate belt under the wrap edge. SHOES: Nude strappy block heels. BAG: Ivory structured shoulder bag. ACCESSORIES: Gold bracelet, tortoiseshell sunglasses. STYLING LINE: Tie the wrap flat to one side and keep the flare jeans long enough to cover the shoe break.
 
 TOP: Black sculpted peplum blouse with short structured sleeves. BOTTOM: Antique gold A-line midi skirt in matte jacquard, not shiny satin. SHOES: Black pointed heels. BAG: Black structured mini top-handle. ACCESSORIES: Gold cuff, cocktail ring, black sunglasses. STYLING LINE: Let the peplum sit over the skirt waistband and avoid a belt because the top already creates waist architecture.
 
@@ -342,14 +352,14 @@ TOP: Dusty coral draped wrap blouse. LAYER: Camel cropped jacket with bracelet s
 
 TOP: Wine cowl-neck blouse in matte crepe. BOTTOM: Black pleated midi skirt. BELT: Slim black belt with a gold buckle. SHOES: Bronze heels. BAG: Espresso structured shoulder bag. ACCESSORIES: Gold drop earrings, cuff, wine-black scarf on bag. STYLING LINE: Tuck the blouse fully and keep the cowl clean with no necklace.
 
-TOP: Cream blouse with an embroidered collar and soft elbow sleeves. BOTTOM: Rust A-line midi skirt. BELT: Chocolate leather belt. SHOES: Brown block heels. BAG: Olive handbag. ACCESSORIES: Brass hoops, rust-olive scarf on bag, brown sunglasses. STYLING LINE: Tuck the blouse and let the embroidered collar replace heavy jewellery.
+TOP: Cream blouse with an embroidered collar and soft elbow sleeves. BOTTOM: Rust A-line midi skirt. BELT: Chocolate leather belt. SHOES: Brown block heels. BAG: Olive handbag. ACCESSORIES: Brass hoops, brown sunglasses. STYLING LINE: Tuck the blouse and let the embroidered collar replace heavy jewellery.
 
 TOP: Sapphire cotton-sateen shirt with a curved hem. BOTTOM: Stone wrap midi skirt with a side button detail. BELT: Stone self-belt. SHOES: Nude pumps. BAG: Tan structured bag. ACCESSORIES: Pearl hoops, gold chain, sapphire sunglasses. STYLING LINE: Front-tuck the shirt and tie the skirt belt flat, not into a bow.
 
-TOP: Olive knit top with a soft square neckline. LAYER: Ivory cropped textured jacket. BOTTOM: Ivory pleated midi skirt. BELT: Brown belt. SHOES: Tan sandals. BAG: Cognac crossbody. ACCESSORIES: Gold hoops, brown sunglasses, olive-ivory scarf tied on the bag. STYLING LINE: Tuck the knit and use the brown belt to break the ivory-on-ivory softness.
+TOP: Olive knit top with a soft square neckline. LAYER: Ivory cropped textured jacket. BOTTOM: Ivory pleated midi skirt. BELT: Brown belt. SHOES: Tan sandals. BAG: Cognac crossbody. ACCESSORIES: Gold hoops, brown sunglasses. STYLING LINE: Tuck the knit and use the brown belt to break the ivory-on-ivory softness.
 
 DRESS: Forest green linen shirt dress with a structured collar and slightly flared midi hem. BELT: Tan leather belt. SHOES: Nude block heels. BAG: Cognac tote. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, slim bracelet. STYLING LINE: Replace the fabric belt with the tan leather belt and roll the sleeves once.
-DRESS: Wine wrap midi dress with elbow sleeves and a clean flat tie. SHOES: Bronze pointed heels. BAG: Chocolate structured shoulder bag. ACCESSORIES: Gold drop earrings, cocktail ring, brown sunglasses, wine-chocolate scarf on bag. STYLING LINE: Tie the wrap flat at the side and keep the neckline open without adding a necklace.
+DRESS: Wine wrap midi dress with elbow sleeves and a clean flat tie. SHOES: Bronze pointed heels. BAG: Chocolate structured shoulder bag. ACCESSORIES: Gold drop earrings, cocktail ring, brown sunglasses. STYLING LINE: Tie the wrap flat at the side and keep the neckline open without adding a necklace.
 
 DRESS: Ivory cotton midi dress with cobalt botanical print and a soft waist seam. SHOES: Tan wedges. BAG: Straw-structured tote with leather handles. ACCESSORIES: Blue-stone earrings, tortoiseshell sunglasses, gold cuff. STYLING LINE: Keep the waist seam visible and add the structured tote so the print does not become too resort-like.
 
@@ -361,69 +371,67 @@ DRESS: Emerald crepe A-line midi dress with a soft V-neck and elbow sleeves. LAY
 
 DRESS: Navy wrap shirt dress with a pleated skirt and structured cuffs. BELT: Cognac belt. SHOES: Tan block heels. BAG: Cognac handbag. ACCESSORIES: Gold hoops, tortoiseshell sunglasses, slim watch. STYLING LINE: Replace the fabric tie with the cognac belt and keep the sleeves rolled to mid-forearm.
 
-DRESS: Raspberry tiered cotton midi dress with a controlled waist seam. LAYER: Cream cropped jacket with gold buttons. SHOES: Tan espadrilles. BAG: Straw clutch-style shoulder bag. ACCESSORIES: Gold hoops, brown sunglasses, raspberry-cream scarf tied to the bag. STYLING LINE: Keep the jacket cropped and structured so the tiered dress does not look too casual.
+DRESS: Raspberry tiered cotton midi dress with a controlled waist seam. LAYER: Cream cropped jacket with gold buttons. SHOES: Tan espadrilles. BAG: Straw clutch-style shoulder bag. ACCESSORIES: Gold hoops, brown sunglasses. STYLING LINE: Keep the jacket cropped and structured so the tiered dress does not look too casual.
 
-DRESS: Olive matte crepe draped midi dress with bracelet sleeves. BELT: Chocolate slim belt. SHOES: Bronze heels. BAG: Chocolate structured bag. ACCESSORIES: Sculptural earrings, brown sunglasses, printed scarf on handle. STYLING LINE: Belt the dress lightly at the narrowest point and avoid heavy neck jewellery.
+DRESS: Olive matte crepe draped midi dress with bracelet sleeves. BELT: Chocolate slim belt. SHOES: Bronze heels. BAG: Chocolate structured bag. ACCESSORIES: Sculptural earrings, brown sunglasses. STYLING LINE: Belt the dress lightly at the narrowest point and avoid heavy neck jewellery.
 
-DRESS: Peacock blue cotton kaftan-style midi dress with a defined waist tie and structured side slits. SHOES: Gold sandals. BAG: Ivory structured shoulder bag. ACCESSORIES: Blue-stone earrings, stacked rings, ivory-blue scarf on bag, dark brown sunglasses. STYLING LINE: Tie the waist firmly and keep the structured bag so the kaftan shape feels elevated everyday, not beachwear.
+DRESS: Peacock blue cotton kaftan-style midi dress with a defined waist tie and structured side slits. SHOES: Gold sandals. BAG: Ivory structured shoulder bag. ACCESSORIES: Blue-stone earrings, stacked rings, dark brown sunglasses. STYLING LINE: Tie the waist firmly and keep the structured bag so the kaftan shape feels elevated everyday, not beachwear.
 
 WESTERN EVENING / DINNER / COCKTAIL
 
-TOP: Black corset-inspired peplum blouse in structured crepe with a soft open neckline. BOTTOM: Deep wine bias-cut midi skirt in matte satin, not high-shine. SHOES: Black pointed pumps. BAG: Black-and-gold jacquard box clutch. ACCESSORIES: Gold cuff bracelet, small wine-stone studs. STYLING LINE: Let the peplum sit over the skirt waistband; do not tuck it, because the blouse itself creates the waist architecture.
+TOP: Taupe-and-black leopard print sleeveless draped top in soft matte jersey with a high bateau neckline and asymmetric pointed hem. BOTTOM: Black satin bias-cut midi skirt with a fluid ankle-length fall. FOOTWEAR: Black pointed pumps. BAG: Deep brown structured shoulder bag. ACCESSORIES: Gold stacked bangles, small gold hoops. STYLING LINE: Keep everything besides the print quiet so the leopard reads elegant, not loud.
 
-TOP: Chocolate off-shoulder compact knit with a fold-over neckline. BOTTOM: Forest green column skirt in satin-back crepe with a clean fall. BELT: Slim dark-brown leather belt with a brushed-gold buckle. SHOES: Dark brown pointed heels. BAG: Olive structured mini shoulder bag. ACCESSORIES: Sculptural gold earrings, stacked gold rings. STYLING LINE: Keep the knit fitted and use the belt to make the skirt feel styled instead of just dressy.
+TOP: Deep wine one-shoulder draped cape top in soft crepe with an elegant fluid overlay. BOTTOM: Dark chocolate high-waist wide-leg trousers with a clean full-length front. FOOTWEAR: Oxblood pointed heels. BAG: Structured wine top-handle bag. ACCESSORIES: Gold bracelet, slim hoop earrings. STYLING LINE: Let the cape drape carry the drama and keep the jewellery small.
 
-TOP: Berry embroidered peplum jacket with tonal threadwork and a curved hem. BOTTOM: Matching berry wide-leg trousers in matte crepe. SHOES: Champagne pointed heels. BAG: Berry hard-case clutch. ACCESSORIES: Crystal studs, cocktail ring. STYLING LINE: Wear the jacket fully closed like a top, so the embroidery becomes the outfit’s main architecture.
+TOP: Black sleeveless tailored waistcoat top with a sculpted fit and gold buttons. BOTTOM: Black satin flared bias midi skirt. FOOTWEAR: Nude pointed pumps. BAG: Black envelope clutch. ACCESSORIES: Gold button earrings, sleek cuff bracelet. STYLING LINE: Button the waistcoat fully and let structure-against-fluidity keep the monochrome interesting.
 
-TOP: Emerald draped blouse in matte crepe with a soft asymmetric shoulder fold. BOTTOM: Black tuxedo-style wide-leg trousers with a satin side stripe. SHOES: Bronze heels. BAG: Gold mesh minaudière. ACCESSORIES: Emerald drop earrings, gold cuff. STYLING LINE: Tuck the blouse loosely at the centre front and let the tuxedo stripe sharpen the look.
+TOP: Emerald green ruched one-shoulder top in soft stretch satin with an asymmetric neckline. BOTTOM: Warm ivory wide-leg tailored trousers with a pressed crease. FOOTWEAR: Metallic gold heels. BAG: Mini gold clutch. ACCESSORIES: Gold earrings, delicate ring stack. STYLING LINE: Keep the trousers full length and let the emerald shoulder line be the single focal point.
 
-TOP: Wine cowl-neck blouse in matte crepe. BOTTOM: Champagne jacquard palazzo trousers with a subtle tonal floral weave. SHOES: Nude heels. BAG: Chocolate woven clutch. ACCESSORIES: Gold chandeliers, slim bracelet. STYLING LINE: Keep the cowl clean with no necklace and let the jacquard trousers carry the pattern.
+DRESS: Black midi dress with tonal polka dot mesh overlay, fitted bodice, sheer sleeves, and a softly flared hem. FOOTWEAR: Black slingback heels. BAG: Black satin clutch. ACCESSORIES: Pearl drop earrings, fine bracelet. STYLING LINE: Let the sheer texture carry the pattern and keep jewellery pearl-quiet.
 
-TOP: Ivory silk blouse with plum painterly floral print and bracelet sleeves. BOTTOM: Black satin-back crepe straight trousers. SHOES: Black slingbacks. BAG: Plum structured clutch. ACCESSORIES: Pearl drops, cocktail ring. STYLING LINE: Tuck the blouse fully and keep the trousers straight so the print does not become too soft or romantic.
+TOP: Champagne satin shirt with a soft open collar and relaxed refined fit. BOTTOM: Ink navy straight midi skirt with a front slit and clean tailored waist. FOOTWEAR: Nude patent heels. BAG: Navy mini bag. ACCESSORIES: Gold watch, geometric earrings. STYLING LINE: Tuck the shirt softly at the front so the sheen stays elegant, not sleepwear.
 
-TOP: Deep teal wrap blouse with controlled bishop sleeves and a flat side closure. BOTTOM: Antique gold A-line midi skirt in textured jacquard. SHOES: Bronze sandals. BAG: Teal structured clutch. ACCESSORIES: Gold cuff, teal-stone earrings. STYLING LINE: Wrap the blouse flat with no bow and let the gold jacquard skirt become the evening statement.
+TOP: Ivory blouse with black abstract brushstroke print, draped neckline, and full cuffed sleeves. BOTTOM: Black full-length wide-leg trousers in fluid suiting fabric. FOOTWEAR: Black pointed heels. BAG: Ivory structured clutch. ACCESSORIES: Sculptural gold earrings. STYLING LINE: Keep the base clean so the brushstroke print does the talking.
 
-TOP: Plum velvet peplum top with an open neckline and elbow sleeves. BOTTOM: Cream tailored wide-leg trousers in heavy crepe. SHOES: Nude pumps. BAG: Espresso clutch. ACCESSORIES: Pearl hoops, gold rings. STYLING LINE: Do not belt the peplum; keep the waist clean and let the velvet texture do the work.
+TOP: Burnt rust satin sleeveless shell top with a high neckline and softly tucked fit. BOTTOM: Espresso brown bias midi skirt with a liquid fall. FOOTWEAR: Dark brown pointed pumps. BAG: Bronze mini shoulder bag. ACCESSORIES: Gold hoop earrings, slim bangle. STYLING LINE: Keep the palette tonal and warm so it reads richer than default black eveningwear.
 
-TOP: Sapphire one-shoulder draped blouse in matte satin-back crepe. BOTTOM: Black palazzo trousers with a clean full-length fall. SHOES: Black heels. BAG: Black lacquer clutch. ACCESSORIES: Blue crystal earrings. STYLING LINE: Keep the trousers simple and high-waisted so the one-shoulder neckline remains the only drama.
+DRESS: Deep plum midi dress with soft drape through the bodice, cap sleeves, and a waist contouring seam. FOOTWEAR: Burgundy pointed heels. BAG: Plum satin clutch. ACCESSORIES: Gold earrings, delicate pendant. STYLING LINE: Keep the shoes tonal with the dress so the column stays long.
 
-TOP: Rust silk-blend wrap blouse with bracelet sleeves. BOTTOM: Chocolate textured crepe midi skirt with a slight flare. BELT: Dark brown slim belt. SHOES: Bronze heels. BAG: Cognac hard clutch. ACCESSORIES: Brass earrings, cuff bracelet. STYLING LINE: Use the belt to anchor the wrap blouse so the rust and chocolate pairing looks deliberate, not soft.
+TOP: Ivory halter-neck draped top with a silky matte finish and clean neckline. BOTTOM: Black high-waist palazzo trousers with a long vertical fall. FOOTWEAR: Black strappy heels. BAG: Black box clutch. ACCESSORIES: Statement earrings, slim gold cuff. STYLING LINE: Keep the halter line sharp and the trousers full length for maximum height.
 
-TOP: Black lace-panel blouse with a modest V neckline and sheer lace sleeves. BOTTOM: Ivory wide-leg trousers in structured crepe. SHOES: Black pointed heels. BAG: Black velvet clutch. ACCESSORIES: Pearl studs, gold cuff. STYLING LINE: Tuck the blouse fully and let the black lace against ivory trousers create the evening contrast.
+TOP: Deep teal satin wrap-style top with waist drape, V neckline, and 3/4 sleeves. BOTTOM: Charcoal grey straight wide-leg trousers. FOOTWEAR: Gunmetal pointed heels. BAG: Charcoal clutch. ACCESSORIES: Silver-toned earrings, sleek bracelet. STYLING LINE: Tie the wrap flat and keep the metals cool so the teal stays refined.
 
-DRESS: Deep emerald crepe column dress with a soft square neckline and elbow sleeves. LAYER: Black cropped velvet jacket with bracelet sleeves. SHOES: Black slingbacks. BAG: Emerald clutch. ACCESSORIES: Gold drop earrings, slim cuff. STYLING LINE: Wear the jacket open and cropped exactly at the waist so the dress stays long and clean.
+DRESS: Black midi dress with subtle tonal floral jacquard, fitted bodice, and a gentle flare at the hem. FOOTWEAR: Black pumps. BAG: Textured black clutch. ACCESSORIES: Crystal studs, simple bracelet. STYLING LINE: Let the jacquard texture do the patterning and keep everything else minimal.
 
-TOP: Ivory satin-back blouse with black contrast piping at the collar and cuff. BOTTOM: Black pleated midi skirt with a soft sheen. BELT: Black patent belt. SHOES: Black pointed pumps. BAG: Ivory structured clutch. ACCESSORIES: Gold hoops, black enamel ring. STYLING LINE: Tuck the blouse and let the piping, belt, and pleats create a sharp dinner look without loud colour.
+TOP: Oxblood off-shoulder structured top with a clean fold-over neckline. BOTTOM: Dark camel satin bias midi skirt. FOOTWEAR: Oxblood pointed heels. BAG: Chocolate shoulder bag. ACCESSORIES: Gold earrings, cocktail ring. STYLING LINE: Keep the fold-over neckline crisp and repeat the oxblood only in the shoe.
 
-TOP: Magenta matte crepe blouse with sculpted shoulder gathers. BOTTOM: Charcoal metallic-thread wide-leg trousers with a subtle shimmer. SHOES: Silver pointed heels. BAG: Charcoal beaded clutch. ACCESSORIES: Silver-gold mixed earrings, cocktail ring. STYLING LINE: Keep the blouse tucked and let the trouser shimmer replace heavy jewellery.
+TOP: Midnight navy knit top with subtle tonal sequin texture, short sleeves, and a clean fit. BOTTOM: Cream tailored wide-leg trousers. FOOTWEAR: Silver pointed heels. BAG: Navy clutch. ACCESSORIES: Silver hoops, sleek watch. STYLING LINE: Keep the sparkle tonal and the trousers matte so the shine stays controlled.
 
-TOP: Black structured bustier-style top with wide straps. LAYER: Ivory cropped tuxedo jacket. BOTTOM: Black full-length straight trousers. SHOES: Black pointed heels. BAG: Gold hard-case clutch. ACCESSORIES: Gold collar-style necklace, small studs. STYLING LINE: Wear the jacket open and let the ivory layer frame the black column.
+TOP: Cocoa brown sleeveless blazer-style top with a lapel collar, cinched waist, and wrap closure. BOTTOM: Warm ivory straight satin midi skirt. FOOTWEAR: Beige pointed heels. BAG: Cocoa structured bag. ACCESSORIES: Gold hoops, slim bracelet. STYLING LINE: Keep the wrap closure flat so the tailored top stays sharp over the fluid skirt.
 
-TOP: Cobalt silk-blend blouse with a soft waterfall drape on one side. BOTTOM: Stone satin-back crepe midi skirt with a side slit. SHOES: Nude pointed heels. BAG: Cobalt clutch. ACCESSORIES: Blue-stone earrings, gold bracelet. STYLING LINE: Tuck only the non-draped side of the blouse so the waterfall detail falls cleanly.
+TOP: Soft gold micro-pleated top with a high neckline and fluid cap sleeves. BOTTOM: Black ankle-length cigarette trousers with a slim tailored fit. FOOTWEAR: Black stilettos. BAG: Black satin box clutch. ACCESSORIES: Gold drop earrings. STYLING LINE: Let the pleats catch the light and keep the base strictly black.
 
-DRESS: Wine wrap midi dress in matte crepe with elbow sleeves and a flat waist tie. SHOES: Bronze pointed heels. BAG: Chocolate structured evening bag. ACCESSORIES: Gold drop earrings, cocktail ring. STYLING LINE: Tie the wrap flat at the side and avoid a necklace so the neckline stays elongated.
+DRESS: Emerald satin slip midi dress with a clean neckline and bias cut. LAYER: Black cropped tailored jacket with a sharp shoulder line. FOOTWEAR: Black pointed heels. BAG: Black clutch. ACCESSORIES: Gold studs, slim bracelet. STYLING LINE: Keep the jacket cropped and open so the slip dress line stays visible.
 
-TOP: Forest green velvet blouse with a soft sweetheart neckline. BOTTOM: Black jacquard cigarette trousers with a tonal floral weave. SHOES: Black slingback heels. BAG: Forest green clutch. ACCESSORIES: Gold sculptural earrings, slim cuff. STYLING LINE: Keep the blouse tucked and let the jacquard trousers add quiet pattern.
+TOP: Burgundy blouse with a small-scale geometric print, a soft gathered tie neckline, and long sleeves. BOTTOM: Black straight midi column skirt with a back slit. FOOTWEAR: Burgundy pumps. BAG: Black structured mini bag. ACCESSORIES: Gold earrings, slim ring stack. STYLING LINE: Tie the neck detail loose and flat so the print stays polished.
 
-TOP: Champagne cowl-neck blouse in satin-back crepe. LAYER: Deep wine cropped jacket with tonal embroidery at the cuffs. BOTTOM: Deep wine straight trousers. SHOES: Nude heels. BAG: Champagne structured clutch. ACCESSORIES: Pearl drops, gold bracelet. STYLING LINE: Keep the jacket open and let the champagne blouse brighten the face while the wine column gives structure.
+DRESS: Charcoal satin midi shirt dress with fluid fabric, waist tie, and a soft collar. FOOTWEAR: Black pointed heels. BAG: Black clutch. ACCESSORIES: Silver drop earrings, cuff bracelet. STYLING LINE: Tie the waist flat at the side and roll the sleeves once.
 
-DRESS: Black midi dress with a square neckline, sculpted waist seam, and soft A-line fall. LAYER: Gold-thread cropped brocade jacket. SHOES: Black pointed pumps. BAG: Black clutch with gold hardware. ACCESSORIES: Gold hoops, cuff bracelet. STYLING LINE: Keep the brocade jacket cropped and open so it looks festive without becoming ethnic.
+TOP: Black asymmetric-shoulder top with structured drape and a sleek fit. BOTTOM: Deep olive high-waist wide-leg trousers. FOOTWEAR: Black heels. BAG: Black box clutch. ACCESSORIES: Gold earrings, cocktail ring. STYLING LINE: Let the olive trousers replace the expected black so the look feels deliberate.
 
-TOP: Teal halter-inspired blouse with a high gathered neckline and covered shoulders. BOTTOM: Ivory wide-leg trousers in heavy crepe. BELT: Gold metal belt. SHOES: Gold sandals. BAG: Teal clutch. ACCESSORIES: Gold studs, stacked rings. STYLING LINE: Use the gold belt as the one jewellery-like styling move and keep earrings small.
+TOP: Pearl ivory satin blouse with a draped neckline and full cuffed sleeves. BOTTOM: Bronze bias-cut midi skirt with a softly reflective finish. FOOTWEAR: Taupe pointed heels. BAG: Bronze clutch. ACCESSORIES: Pearl studs, gold bracelet. STYLING LINE: Keep both metallics soft so the outfit shimmers without costume shine.
 
-TOP: Burgundy velvet wrap top with a flat side closure. BOTTOM: Black satin-back crepe maxi skirt with a soft flare. SHOES: Black heels. BAG: Burgundy beaded clutch. ACCESSORIES: Gold chandeliers, slim bracelet. STYLING LINE: Keep the wrap flat and let the beaded clutch add pattern so the solid colours don’t feel plain.
+TOP: Black velvet fitted top with a square neckline and full sleeves. BOTTOM: Ivory full-length palazzo trousers. FOOTWEAR: Black pointed pumps. BAG: Black box clutch. ACCESSORIES: Gold chandelier earrings. STYLING LINE: Let the velvet-against-ivory contrast carry the evening richness.
 
-TOP: Ivory blouse with a black abstract brushstroke print. BOTTOM: Chocolate tailored palazzo trousers. BELT: Chocolate leather belt. SHOES: Bronze block heels. BAG: Cognac structured clutch. ACCESSORIES: Gold hoops, brown-stone ring. STYLING LINE: Fully tuck the printed blouse and keep the belt visible so the palazzos feel evening-polished.
+TOP: Cobalt blue draped sleeveless top with a gathered shoulder detail. BOTTOM: Black satin straight bias midi skirt. FOOTWEAR: Black pointed heels. BAG: Black mini shoulder bag. ACCESSORIES: Silver-toned earrings, sleek bracelet. STYLING LINE: Keep the base black and quiet so the cobalt shoulder is the single bright note.
 
-DRESS: Sapphire pleated midi dress with a soft V neckline and defined waist. SHOES: Nude slingbacks. BAG: Silver beaded clutch. ACCESSORIES: Sapphire studs, silver-gold cuff. STYLING LINE: Keep the waist seam visible and let the beaded clutch add texture against the solid dress.
+TOP: Fine-gauge black-and-ivory striped knit top with a fitted body and bateau neckline. BOTTOM: Black high-waist flared trousers. FOOTWEAR: Black pumps. BAG: Black structured handbag. ACCESSORIES: Gold hoops, watch. STYLING LINE: Keep the stripe as the only pattern and the flare full length.
 
-TOP: Black satin-back shirt with a curved hem and concealed placket. BOTTOM: Emerald sequin-panel midi skirt with sequins concentrated at the side panels, not all over. SHOES: Black pointed heels. BAG: Black velvet clutch. ACCESSORIES: Emerald earrings, gold cuff. STYLING LINE: Front-tuck the shirt and let the side sequin panels create movement without looking loud.
+DRESS: Rosewood pink midi dress with a softly draped bodice, asymmetric sleeve detail, and waist definition. FOOTWEAR: Nude pointed heels. BAG: Rose-gold clutch. ACCESSORIES: Gold earrings, delicate bracelet. STYLING LINE: Keep the accessories nude and warm so the rosewood stays soft, not sugary.
 
-TOP: Dusty rose velvet blouse with a square neckline and elbow sleeves. BOTTOM: Charcoal wide-leg trousers with a metallic pinstripe. SHOES: Silver pointed pumps. BAG: Rose-gold clutch. ACCESSORIES: Crystal studs, slim bracelet. STYLING LINE: Tuck the blouse fully and let the metallic pinstripe make the look dinner-ready.
+DRESS: Black wide-leg jumpsuit in fluid crepe with a modest V neckline and a self-tie waist. FOOTWEAR: Metallic gold strappy heels. BAG: Gold box clutch. ACCESSORIES: Gold sculptural earrings. STYLING LINE: Tie the waist flat and keep gold as the only accent family.
 
-DRESS: Chocolate satin-back crepe slip-inspired midi dress with wide straps and a soft cowl neckline. LAYER: Ivory cropped textured jacket. SHOES: Brown pointed heels. BAG: Chocolate clutch. ACCESSORIES: Gold sculptural earrings, stacked rings. STYLING LINE: Wear the jacket over the slip-style dress so it becomes elegant dinnerwear, not bedroom-dressing.
-
-TOP: Emerald off-shoulder blouse with a folded neckline. BOTTOM: Black velvet wide-leg trousers. SHOES: Gold heels. BAG: Emerald hard clutch. ACCESSORIES: Gold cuff, emerald ring. STYLING LINE: Keep the trousers high-waisted and the blouse fitted so the off-shoulder neckline feels controlled.
+TOP: Ivory silk blouse with a soft neck bow tied loose. LAYER: Midnight-blue velvet blazer with a satin lapel. BOTTOM: Midnight-blue slim tailored trousers. FOOTWEAR: Black patent kitten heels. BAG: Black satin clutch. ACCESSORIES: Pearl drops, slim watch. STYLING LINE: Keep the velvet suit matched and let the bow blouse soften the tailoring.
 
 
 INDIAN FESTIVE / FAMILY OCCASION

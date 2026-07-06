@@ -1,11 +1,38 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search, RefreshCw, Users, FileCheck, Clock, AlertCircle, ChevronLeft, ChevronRight, Zap, Loader2, RotateCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  FileCheck,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Sparkles,
+  Users,
+  Zap,
+} from 'lucide-react';
 
-// ── Types ──────────────────────────────────────────────────────────────────
+const S = {
+  bg: '#F4EFE5',
+  card: '#EDE5D2',
+  border: 'rgba(44,38,34,0.1)',
+  rowBorder: 'rgba(44,38,34,0.07)',
+  ink: '#2C2622',
+  muted: 'rgba(44,38,34,0.4)',
+  slate: '#94A6AD',
+  slateDeep: '#7E9098',
+  gold: '#C9A96E',
+  success: '#5A8B6A',
+  error: '#C4645A',
+};
 
 interface LatestReport {
   id: string;
@@ -20,7 +47,7 @@ interface LatestReport {
 
 interface Submission {
   id: string;
-  customer_email: string;
+  customer_email: string | null;
   customer_phone: string | null;
   face_shape: string | null;
   body_shape: string | null;
@@ -33,73 +60,101 @@ interface Submission {
   latest_report: LatestReport | null;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
 const STATUS_FILTER_OPTIONS = [
-  { value: '',           label: 'All' },
-  { value: 'none',       label: 'No Report' },
+  { value: '', label: 'All review buckets' },
+  { value: 'none', label: 'Needs Generation' },
   { value: 'generating', label: 'Generating' },
-  { value: 'draft_ready',label: 'Draft Ready' },
-  { value: 'in_review',  label: 'In Review' },
-  { value: 'approved',   label: 'Approved' },
-  { value: 'sent',       label: 'Sent' },
-  { value: 'error',      label: 'Error' },
+  { value: 'draft_ready', label: 'Needs Review - Draft Ready' },
+  { value: 'in_review', label: 'Needs Review - In Review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'error', label: 'Error' },
 ];
+
+function stageName(stage: string | null) {
+  const map: Record<string, string> = {
+    classifying: 'Classifying...',
+    generating_s0: 'Snapshot...',
+    analysing_face: 'Analysing face...',
+    generating_s1: 'Face...',
+    analysing_body: 'Analysing body...',
+    generating_s2: 'Body...',
+    mapping_colour: 'Mapping colour...',
+    generating_s3: 'Colour...',
+    generating_outfits: 'Outfits...',
+    generating_s4: 'Outfits...',
+    generating_s4_combo_grids: 'Combination grids...',
+    generating_s5: 'Style rules...',
+    generating_s5_shopping: 'Shopping...',
+    generating_s5_grooming_skin: 'Grooming...',
+    generating_s6: 'Identity...',
+    generating_images: 'Images...',
+    repairing_section4: 'Repairing outfits...',
+    finalising: 'Finalising...',
+  };
+  return stage ? map[stage] ?? 'Generating...' : 'Generating...';
+}
+
+function isStuck(report: LatestReport) {
+  return report.status === 'generating' && (Date.now() - new Date(report.created_at).getTime()) > 10 * 60 * 1000;
+}
 
 function ReportBadge({ report }: { report: LatestReport | null }) {
   if (!report) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
-        style={{ background: '#1e1e1e', color: '#6b5f4a' }}>
+      <span className="rounded-full px-2.5 py-1 iconik-mono capitalize" style={{ fontSize: '10px', background: S.card, color: S.muted }}>
         No Report
       </span>
     );
   }
 
-  const isStuck = report.status === 'generating' &&
-    (Date.now() - new Date(report.created_at).getTime()) > 10 * 60 * 1000;
-
-  const configs: Record<string, { bg: string; color: string; label: string; dot?: boolean }> = {
-    pending:     { bg: '#1e1e1e',  color: '#6b5f4a',  label: 'Pending' },
-    generating:  { bg: isStuck ? '#2a1500' : '#2a2010', color: isStuck ? '#fb923c' : '#c9a96e', label: isStuck ? 'Stuck?' : (report.progress_stage ? stageName(report.progress_stage) : 'Generating…'), dot: true },
-    draft_ready: { bg: '#2a2010',  color: '#e8c17a',  label: 'Draft Ready' },
-    in_review:   { bg: '#0e1e2a',  color: '#60a5fa',  label: 'In Review' },
-    approved:    { bg: '#0e2010',  color: '#4ade80',  label: 'Approved' },
-    sent:        { bg: '#0e2010',  color: '#22c55e',  label: 'Sent ✓' },
-    error:       { bg: '#2a0e0e',  color: '#f87171',  label: 'Error' },
-  };
-
-  const cfg = configs[report.status] ?? configs.pending;
+  const stuck = isStuck(report);
+  const label = stuck ? 'Stuck?' : report.status === 'generating' ? stageName(report.progress_stage) : report.status.replace(/_/g, ' ');
+  const color = report.status === 'error' ? S.error
+    : report.status === 'sent' || report.status === 'approved' ? S.success
+      : stuck ? '#B86D2A'
+        : report.status === 'generating' ? S.gold
+          : S.slate;
 
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
-      style={{ background: cfg.bg, color: cfg.color }}>
-      {cfg.dot && (
-        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: cfg.color }} />
-      )}
-      {cfg.label}
+    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 iconik-mono capitalize" style={{ fontSize: '10px', background: `${color}18`, color }}>
+      {report.status === 'generating' && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: color }} />}
+      {label}
     </span>
   );
 }
 
-function stageName(s: string) {
-  const map: Record<string, string> = {
-    analysing_face:    'Analysing face…',
-    analysing_body:    'Analysing body…',
-    mapping_colour:    'Mapping colour…',
-    generating_outfits:'Generating outfits…',
-    finalising:        'Finalising…',
-  };
-  return map[s] ?? 'Generating…';
+function StatCard({ label, value, icon: Icon, color, loading }: {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  color: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border p-5 flex items-center gap-4" style={{ background: S.card, borderColor: S.border }}>
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18` }}>
+        <Icon size={18} style={{ color }} />
+      </div>
+      <div>
+        {loading
+          ? <div className="h-7 w-10 rounded-md animate-pulse mb-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
+          : <p className="iconik-display" style={{ fontSize: '26px', color: S.ink }}>{value}</p>
+        }
+        <p className="iconik-micro" style={{ color: S.muted }}>{label}</p>
+      </div>
+    </div>
+  );
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function formatSeason(s: string | null) {
-  if (!s) return '—';
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+function formatValue(value: string | null | undefined) {
+  if (!value) return '-';
+  return value.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 }
 
 function getMissingPhotos(submission: Pick<Submission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
@@ -109,34 +164,15 @@ function getMissingPhotos(submission: Pick<Submission, 'photo_fullbody_url' | 'p
   ].filter(Boolean) as string[];
 }
 
-function StatCard({ label, value, icon: Icon, color, loading }: {
-  label: string; value: number; icon: React.ElementType; color: string; loading: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border p-5 flex items-center gap-4"
-      style={{ background: '#111111', borderColor: '#1e1e1e' }}>
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: color + '22' }}>
-        <Icon size={19} style={{ color }} />
-      </div>
-      <div>
-        {loading
-          ? <div className="h-6 w-10 rounded-md animate-pulse mb-1" style={{ background: '#2a2a2a' }} />
-          : <p className="text-2xl font-bold" style={{ color: '#f0ebe0' }}>{value}</p>
-        }
-        <p className="text-[11px] font-medium uppercase tracking-wide" style={{ color: '#6b5f4a' }}>{label}</p>
-      </div>
-    </div>
-  );
+function clientLabel(item: Submission) {
+  return item.customer_email || item.customer_phone || 'Man blueprint client';
 }
-
-// ── Main page ──────────────────────────────────────────────────────────────
 
 export default function ManSubmissionsDashboard() {
   const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [total, setTotal]   = useState(0);
-  const [page, setPage]     = useState(1);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -150,7 +186,7 @@ export default function ManSubmissionsDashboard() {
         ...(search ? { search } : {}),
         ...(statusFilter ? { status: statusFilter } : {}),
       });
-      const res  = await fetch(`/api/man-admin/submissions?${params}`);
+      const res = await fetch(`/api/man-admin/submissions?${params}`, { cache: 'no-store' });
       const data = await res.json();
       setSubmissions(data.submissions ?? []);
       setTotal(data.total ?? 0);
@@ -159,328 +195,282 @@ export default function ManSubmissionsDashboard() {
     }
   }, [page, search, statusFilter]);
 
-  useEffect(() => { fetchSubmissions(); }, [fetchSubmissions]);
+  useEffect(() => { void fetchSubmissions(); }, [fetchSubmissions]);
 
-  // Derived stats from loaded submissions (rough — not full-DB counts)
   const stats = {
-    total:         total,
-    sent:          submissions.filter(s => s.latest_report?.status === 'sent').length,
-    awaitingReview: submissions.filter(s => ['draft_ready','in_review'].includes(s.latest_report?.status ?? '')).length,
-    errors:        submissions.filter(s => s.latest_report?.status === 'error').length,
+    total,
+    needsGeneration: submissions.filter(item => !item.latest_report).length,
+    generating: submissions.filter(item => item.latest_report?.status === 'generating').length,
+    approved: submissions.filter(item => item.latest_report?.status === 'approved').length,
+    sent: submissions.filter(item => item.latest_report?.status === 'sent').length,
+    review: submissions.filter(item => ['draft_ready', 'in_review'].includes(item.latest_report?.status ?? '')).length,
+    errors: submissions.filter(item => item.latest_report?.status === 'error').length,
   };
 
   const handleGenerate = async (submissionId: string, reportId?: string) => {
     setGeneratingIds(prev => new Set(prev).add(submissionId));
     try {
-      const res  = await fetch(
+      const res = await fetch(
         reportId ? `/api/man-report/${reportId}/resume-text` : `/api/man-report/generate/${submissionId}`,
         { method: 'POST' },
       );
       const data = await res.json();
       if (res.ok && data.reportId) {
         router.push(`/man/admin/report/${data.reportId}`);
+        return;
       }
+      await fetchSubmissions();
     } finally {
-      setGeneratingIds(prev => { const next = new Set(prev); next.delete(submissionId); return next; });
+      setGeneratingIds(prev => {
+        const next = new Set(prev);
+        next.delete(submissionId);
+        return next;
+      });
     }
   };
 
-  const totalPages = Math.ceil(total / 20);
-
-  const thStyle = { color: '#6b5f4a', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, padding: '12px 16px', borderBottom: '1px solid #1e1e1e', background: '#0f0f0f' };
-  const tdStyle = { padding: '14px 16px', borderBottom: '1px solid #181818', color: '#c8bfae', fontSize: 13 };
+  const totalPages = Math.max(1, Math.ceil(total / 20));
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-7">
+      <div className="flex items-center justify-between gap-4 mb-7">
         <div>
-          <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: '#c9a96e' }}>
-            ICONIK Man
-          </p>
-          <h1 className="text-3xl font-light tracking-wide" style={{ color: '#f0ebe0' }}>
-            Submissions
-          </h1>
+          <div className="iconik-micro mb-2" style={{ color: S.muted }}>ICONIK Man</div>
+          <h1 className="iconik-display" style={{ fontSize: '28px', color: S.ink }}>Blueprint Submissions</h1>
         </div>
         <button
-          onClick={fetchSubmissions}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-          style={{ background: '#1e1a14', color: '#c9a96e', border: '1px solid #2a2010' }}
+          onClick={() => void fetchSubmissions()}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body transition"
+          style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
         >
-          <RefreshCw size={14} />
-          Refresh
+          <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-        <StatCard label="Total submissions"  value={stats.total}          icon={Users}       color="#c9a96e"  loading={loading} />
-        <StatCard label="Reports sent"        value={stats.sent}           icon={FileCheck}   color="#22c55e"  loading={loading} />
-        <StatCard label="Awaiting review"     value={stats.awaitingReview} icon={Clock}       color="#60a5fa"  loading={loading} />
-        <StatCard label="Errors"              value={stats.errors}         icon={AlertCircle} color="#f87171"  loading={loading} />
+      <div className="grid grid-cols-2 xl:grid-cols-7 gap-4 mb-7">
+        <StatCard label="Completed intakes" value={stats.total} icon={Users} color={S.gold} loading={loading} />
+        <StatCard label="Needs generation" value={stats.needsGeneration} icon={Sparkles} color={S.slateDeep} loading={loading} />
+        <StatCard label="Generating" value={stats.generating} icon={RefreshCw} color={S.gold} loading={loading} />
+        <StatCard label="Needs review" value={stats.review} icon={Clock} color={S.slate} loading={loading} />
+        <StatCard label="Approved" value={stats.approved} icon={CheckCircle2} color={S.success} loading={loading} />
+        <StatCard label="Sent" value={stats.sent} icon={FileCheck} color={S.success} loading={loading} />
+        <StatCard label="Errors" value={stats.errors} icon={AlertCircle} color={S.error} loading={loading} />
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#6b5f4a' }} />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: S.muted }} />
           <input
-            type="text"
-            placeholder="Search by email…"
             value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
-            style={{ background: '#111111', border: '1px solid #2a2a2a', color: '#f0ebe0' }}
+            onChange={event => { setSearch(event.target.value); setPage(1); }}
+            placeholder="Search email or phone..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none luxury-body"
+            style={{ background: S.card, border: `1px solid ${S.border}`, color: S.ink }}
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {STATUS_FILTER_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => { setStatusFilter(opt.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
-              style={{
-                background: statusFilter === opt.value ? '#1e1a14' : '#111111',
-                color: statusFilter === opt.value ? '#c9a96e' : '#6b5f4a',
-                border: `1px solid ${statusFilter === opt.value ? '#2a2010' : '#2a2a2a'}`,
-              }}
-            >
-              {opt.label}
-            </button>
+        <select
+          value={statusFilter}
+          onChange={event => { setStatusFilter(event.target.value); setPage(1); }}
+          className="px-4 py-2.5 rounded-xl text-sm outline-none luxury-body"
+          style={{ background: S.card, border: `1px solid ${S.border}`, color: S.ink }}
+        >
+          {STATUS_FILTER_OPTIONS.map(option => (
+            <option key={option.value} value={option.value}>{option.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: '#1e1e1e' }}>
+      <div className="rounded-2xl border overflow-hidden" style={{ background: S.bg, borderColor: S.border }}>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
+          <table className="w-full min-w-[980px]">
+            <thead style={{ background: S.card }}>
               <tr>
-                <th style={thStyle}>Photo</th>
-                <th style={thStyle}>Contact</th>
-                <th style={thStyle}>Submitted</th>
-                <th style={thStyle}>Profile</th>
-                <th style={thStyle}>Report</th>
-                <th style={thStyle}>Actions</th>
+                {['Client', 'Submitted', 'Profile', 'Photos', 'Report', 'Actions'].map(head => (
+                  <th key={head} className="text-left px-4 py-3 iconik-micro" style={{ color: S.muted }}>{head}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {loading && (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <td key={j} style={tdStyle}>
-                        <div className="h-4 rounded-md animate-pulse" style={{ background: '#1e1e1e', width: j === 0 ? 40 : '80%' }} />
+              {loading ? (
+                Array.from({ length: 5 }).map((_, rowIndex) => (
+                  <tr key={rowIndex} className="border-t" style={{ borderColor: S.rowBorder }}>
+                    {Array.from({ length: 6 }).map((__, colIndex) => (
+                      <td key={colIndex} className="px-4 py-4">
+                        <div className="h-4 rounded-md animate-pulse" style={{ background: 'rgba(44,38,34,0.08)', width: colIndex === 0 ? '70%' : '55%' }} />
                       </td>
                     ))}
                   </tr>
                 ))
-              )}
-              {!loading && submissions.length === 0 && (
+              ) : submissions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ ...tdStyle, textAlign: 'center', padding: '40px 16px', color: '#4a4030' }}>
-                    No submissions found.
-                  </td>
+                  <td colSpan={6} className="px-4 py-10 text-center luxury-body text-sm" style={{ color: S.muted }}>No submissions found.</td>
                 </tr>
-              )}
-              {!loading && submissions.map(sub => {
-                const missingPhotos = getMissingPhotos(sub);
+              ) : submissions.map(item => {
+                const missingPhotos = getMissingPhotos(item);
                 const hasRequiredPhotos = missingPhotos.length === 0;
+                const report = item.latest_report;
+                const stuck = report ? isStuck(report) : false;
 
                 return (
-                <tr key={sub.id} style={{ background: '#0d0d0d' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#111111'}
-                  onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = '#0d0d0d'}
-                >
-                  {/* Photo */}
-                  <td style={tdStyle}>
-                    {sub.photo_headshot_url ? (
-                      <img
-                        src={sub.photo_headshot_url}
-                        alt=""
-                        className="w-10 h-10 rounded-lg object-cover"
-                        style={{ border: '1px solid #2a2a2a' }}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xs"
-                        style={{ background: '#1e1e1e', color: '#4a4030' }}>
-                        —
-                      </div>
-                    )}
-                    <div className="mt-2 flex flex-col gap-1">
-                      <span className="text-[10px]" style={{ color: sub.photo_fullbody_url ? '#22c55e' : '#f87171' }}>
-                        Body {sub.photo_fullbody_url ? '✓' : 'missing'}
-                      </span>
-                      <span className="text-[10px]" style={{ color: sub.photo_headshot_url ? '#22c55e' : '#f87171' }}>
-                        Headshot {sub.photo_headshot_url ? '✓' : 'missing'}
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* Contact */}
-                  <td style={tdStyle}>
-                    <p className="font-medium" style={{ color: '#f0ebe0', fontSize: 13 }}>{sub.customer_email}</p>
-                    {sub.customer_phone && (
-                      <p className="text-xs mt-0.5" style={{ color: '#6b5f4a' }}>{sub.customer_phone}</p>
-                    )}
-                  </td>
-
-                  {/* Submitted */}
-                  <td style={tdStyle}>
-                    <span style={{ color: '#8a7a60', fontSize: 12 }}>{formatDate(sub.created_at)}</span>
-                  </td>
-
-                  {/* Profile */}
-                  <td style={tdStyle}>
-                    <div className="space-y-0.5">
-                      {sub.face_shape && (
-                        <p className="text-xs capitalize" style={{ color: '#c8bfae' }}>
-                          <span style={{ color: '#6b5f4a' }}>Face: </span>{sub.face_shape.replace(/_/g, ' ')}
-                        </p>
-                      )}
-                      {sub.body_shape && (
-                        <p className="text-xs capitalize" style={{ color: '#c8bfae' }}>
-                          <span style={{ color: '#6b5f4a' }}>Body: </span>{sub.body_shape.replace(/_/g, ' ')}
-                        </p>
-                      )}
-                      {sub.derived_colour_season && (
-                        <p className="text-xs" style={{ color: '#c9a96e' }}>{formatSeason(sub.derived_colour_season)}</p>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Report status */}
-                  <td style={tdStyle}>
-                    <ReportBadge report={sub.latest_report} />
-                  </td>
-
-                  {/* Actions */}
-                  <td style={tdStyle}>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {!hasRequiredPhotos && (
-                        <Link
-                          href={`/man/admin/dashboard/${sub.id}`}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
-                          style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
-                          title={`Missing: ${missingPhotos.join(', ')}`}
-                        >
-                          <AlertCircle size={11} />
-                          Add photos
-                        </Link>
-                      )}
-
-                      {/* No report — inline Generate */}
-                      {!sub.latest_report && hasRequiredPhotos && (
-                        <button
-                          onClick={() => handleGenerate(sub.id)}
-                          disabled={generatingIds.has(sub.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
-                          style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
-                        >
-                          {generatingIds.has(sub.id) ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
-                          Generate
-                        </button>
-                      )}
-
-                      {/* Generating — View Live or Force Restart if stuck */}
-                      {hasRequiredPhotos && sub.latest_report?.status === 'generating' && sub.latest_report.id && (() => {
-                        const stuck = (Date.now() - new Date(sub.latest_report.created_at).getTime()) > 10 * 60 * 1000;
-                        return stuck ? (
-                          <button
-                            onClick={() => handleGenerate(sub.id, sub.latest_report?.id)}
-                            disabled={generatingIds.has(sub.id)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
-                            style={{ background: '#2a1500', color: '#fb923c', border: '1px solid #3a2000' }}
-                          >
-                            {generatingIds.has(sub.id) ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
-                            Force Restart
-                          </button>
-                        ) : (
-                          <Link
-                            href={`/man/admin/report/${sub.latest_report.id}`}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                            style={{ background: '#2a2010', color: '#c9a96e', border: '1px solid #3a3010' }}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: '#c9a96e' }} />
-                            View Live
-                          </Link>
-                        );
-                      })()}
-
-                      {/* Error — Retry inline */}
-                      {hasRequiredPhotos && sub.latest_report?.status === 'error' && (
-                        <button
-                          onClick={() => handleGenerate(sub.id, sub.latest_report?.id)}
-                          disabled={generatingIds.has(sub.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity disabled:opacity-60"
-                          style={{ background: '#2a0e0e', color: '#f87171', border: '1px solid #3a1010' }}
-                        >
-                          {generatingIds.has(sub.id) ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
-                          Retry
-                        </button>
-                      )}
-
-                      {/* Draft Ready / In Review / Approved — Review deeplink */}
-                      {['draft_ready', 'in_review', 'approved'].includes(sub.latest_report?.status ?? '') && sub.latest_report?.id && (
-                        <Link
-                          href={`/man/admin/report/${sub.latest_report.id}`}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
-                          style={{ background: 'linear-gradient(135deg, #c9a96e 0%, #8a6820 100%)', color: '#fff' }}
-                        >
-                          Review →
-                        </Link>
-                      )}
-
-                      {/* Sent — Report external link */}
-                      {sub.latest_report?.status === 'sent' && (
-                        <Link
-                          href={`/man/report/${sub.latest_report.share_token}`}
-                          target="_blank"
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                          style={{ background: '#0e2010', color: '#22c55e', border: '1px solid #1a3a1a' }}
-                        >
-                          Report ↗
-                        </Link>
-                      )}
-
-                      {/* View always available (dimmer) */}
+                  <tr key={item.id} className="border-t transition-colors" style={{ borderColor: S.rowBorder }}>
+                    <td className="px-4 py-4">
                       <Link
-                        href={`/man/admin/dashboard/${sub.id}`}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                        style={{ background: '#1e1e1e', color: '#6b5f4a' }}
+                        href={`/man/admin/dashboard/${item.id}`}
+                        className="luxury-body hover:underline"
+                        style={{ color: S.ink, fontWeight: 500 }}
                       >
-                        View
+                        {clientLabel(item)}
                       </Link>
-                    </div>
-                  </td>
-                </tr>
+                      <p className="luxury-body text-xs mt-0.5" style={{ color: S.muted, fontWeight: 300 }}>
+                        {item.customer_phone || 'No phone'}
+                      </p>
+                    </td>
+                    <td className="px-4 py-4 iconik-mono" style={{ fontSize: '11px', color: S.muted }}>
+                      {formatDate(item.created_at)}
+                    </td>
+                    <td className="px-4 py-4 luxury-body text-sm" style={{ color: S.muted }}>
+                      <div className="space-y-0.5">
+                        <p><span style={{ color: S.ink }}>Face:</span> {formatValue(item.face_shape)}</p>
+                        <p><span style={{ color: S.ink }}>Body:</span> {formatValue(item.body_shape)}</p>
+                        <p style={{ color: S.gold }}>{formatValue(item.derived_colour_season)}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="iconik-mono" style={{ fontSize: '10px', color: item.photo_fullbody_url ? S.success : S.error }}>
+                          Body {item.photo_fullbody_url ? 'ready' : 'missing'}
+                        </span>
+                        <span className="iconik-mono" style={{ fontSize: '10px', color: item.photo_headshot_url ? S.success : S.error }}>
+                          Headshot {item.photo_headshot_url ? 'ready' : 'missing'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4"><ReportBadge report={report} /></td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        {!hasRequiredPhotos && (
+                          <Link
+                            href={`/man/admin/dashboard/${item.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                            style={{ background: `${S.error}12`, color: S.error, border: `1px solid ${S.error}25` }}
+                            title={`Missing: ${missingPhotos.join(', ')}`}
+                          >
+                            <AlertCircle size={11} /> Add photos
+                          </Link>
+                        )}
+
+                        {!report && hasRequiredPhotos && (
+                          <button
+                            onClick={() => void handleGenerate(item.id)}
+                            disabled={generatingIds.has(item.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body disabled:opacity-50 transition"
+                            style={{ background: S.slateDeep, color: S.bg }}
+                          >
+                            {generatingIds.has(item.id) ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                            Generate
+                          </button>
+                        )}
+
+                        {hasRequiredPhotos && report?.status === 'generating' && (
+                          stuck ? (
+                            <button
+                              onClick={() => void handleGenerate(item.id, report.id)}
+                              disabled={generatingIds.has(item.id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body disabled:opacity-50 transition"
+                              style={{ background: '#B86D2A18', color: '#B86D2A', border: '1px solid #B86D2A30' }}
+                            >
+                              {generatingIds.has(item.id) ? <Loader2 size={11} className="animate-spin" /> : <RotateCcw size={11} />}
+                              Force Restart
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/man/admin/report/${report.id}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                              style={{ background: `${S.gold}18`, color: S.gold, border: `1px solid ${S.gold}30` }}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: S.gold }} />
+                              Open Report
+                            </Link>
+                          )
+                        )}
+
+                        {hasRequiredPhotos && report?.status === 'error' && (
+                          <button
+                            onClick={() => void handleGenerate(item.id, report.id)}
+                            disabled={generatingIds.has(item.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body disabled:opacity-50 transition"
+                            style={{ background: `${S.error}12`, color: S.error, border: `1px solid ${S.error}25` }}
+                          >
+                            {generatingIds.has(item.id) ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                            Retry
+                          </button>
+                        )}
+
+                        {['draft_ready', 'in_review', 'approved'].includes(report?.status ?? '') && report && (
+                          <Link
+                            href={`/man/admin/report/${report.id}`}
+                            className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                            style={{ background: S.ink, color: S.bg }}
+                          >
+                            Open Report
+                          </Link>
+                        )}
+
+                        {report?.status === 'sent' && (
+                          <>
+                            <Link
+                              href={`/man/admin/report/${report.id}`}
+                              className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                              style={{ background: S.ink, color: S.bg }}
+                            >
+                              Open Report
+                            </Link>
+                            <Link
+                              href={`/man/report/${report.share_token}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                              style={{ background: `${S.success}18`, color: S.success, border: `1px solid ${S.success}30` }}
+                            >
+                              Client Link <ExternalLink size={11} />
+                            </Link>
+                          </>
+                        )}
+
+                        <Link
+                          href={`/man/admin/dashboard/${item.id}`}
+                          className="px-3 py-1.5 rounded-lg text-xs luxury-body transition"
+                          style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
+                        >
+                          Intake
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3.5 border-t" style={{ borderColor: '#1e1e1e', background: '#0f0f0f' }}>
-            <p className="text-xs" style={{ color: '#6b5f4a' }}>
+          <div className="flex items-center justify-between px-5 py-3.5 border-t" style={{ borderColor: S.border, background: S.card }}>
+            <p className="iconik-mono" style={{ fontSize: '11px', color: S.muted }}>
               Page {page} of {totalPages} · {total} total
             </p>
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-                className="p-2 rounded-lg disabled:opacity-30 transition-opacity hover:opacity-80"
-                style={{ background: '#1e1e1e', color: '#c8bfae' }}
+                onClick={() => setPage(current => Math.max(1, current - 1))}
+                className="p-2 rounded-lg disabled:opacity-30 transition"
+                style={{ background: S.bg, color: S.muted, border: `1px solid ${S.border}` }}
               >
                 <ChevronLeft size={14} />
               </button>
               <button
                 disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}
-                className="p-2 rounded-lg disabled:opacity-30 transition-opacity hover:opacity-80"
-                style={{ background: '#1e1e1e', color: '#c8bfae' }}
+                onClick={() => setPage(current => Math.min(totalPages, current + 1))}
+                className="p-2 rounded-lg disabled:opacity-30 transition"
+                style={{ background: S.bg, color: S.muted, border: `1px solid ${S.border}` }}
               >
                 <ChevronRight size={14} />
               </button>
