@@ -1,24 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArticleGrowthTracker,
+  TrackedArticleCtaView,
+  TrackedArticleLink,
+} from "@/components/ArticleGrowthTracker";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Which Colours Suit Dark Indian Skin? Full Palette by Undertone",
-  description: "Jewel tones for cool undertones, earthy rich shades for warm — the complete colour palette for dark Indian skin, with the exact shades to avoid for each undertone.",
-  keywords: "best colours for dark skin Indian women, colour guide dark skin India, what colours suit dark skin India, dark skin colour palette India, clothing colours for dark complexion India",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india" },
-  openGraph: {
-    title: "Which Colours Suit Dark Indian Skin? Full Palette by Undertone",
-    description: "Complete colour guide for dark skin Indian women — by undertone. Warm, cool, and neutral dark skin each have a distinct palette.",
-    url: "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour guide for dark skin Indian women — Iconik" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Which Colours Suit Dark Indian Skin? Full Palette by Undertone",
-    description: "Complete colour guide for dark skin Indian women — by undertone.",
-    images: ["/og-image.webp"],
-  },
+const path = "/colour-analysis/dark-skin-colour-guide-india";
+const growthTracking = {
+  article_id: "dark_skin_colour_guide_india",
+  content_cluster: "colour_intelligence",
+  audience: "women" as const,
+  hook_type: "depth_contrast_undertone",
+  content_source: "seo_dark_skin_article",
 };
+const glowTestHref =
+  "/tools/glow-test?source=seo_dark_skin_article&article_id=dark_skin_colour_guide_india&content_cluster=colour_intelligence&audience=women&hook_type=depth_contrast_undertone";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Best Clothing Colours for Dark Indian Skin by Undertone",
+  description:
+    "A practical clothing-colour guide for deep Indian skin: warm, cool, neutral and olive undertones, contrast, whites, pastels, jewellery and Indian occasion wear.",
+  path,
+  type: "article",
+  keywords: [
+    "best colours for dark skin Indian women",
+    "which colour suits dark skin female Indian",
+    "dark skin tone dress colour",
+    "Indian dark skin colour palette",
+  ],
+});
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -34,8 +46,8 @@ const jsonLd = {
         "name": "Iconik",
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
-      "datePublished": "2025-01-01",
-      "dateModified": "2025-06-01",
+      "datePublished": "2026-03-23",
+      "dateModified": "2026-07-11",
       "mainEntityOfPage": "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india",
     },
     {
@@ -98,6 +110,7 @@ export default function DarkSkinColourGuidePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ArticleGrowthTracker {...growthTracking} />
 
       <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
         {/* Breadcrumb */}
@@ -109,6 +122,23 @@ export default function DarkSkinColourGuidePage() {
         <p className="text-lg text-gray-600 mb-8">
           The best colours for dark skin Indian women are not a single list — they depend on your undertone. Two women with equally deep skin tones can have completely different undertones, which means completely different colour palettes. This guide covers how to find your undertone and which colours will genuinely flatter your skin.
         </p>
+        <div className="mb-8 flex flex-wrap gap-2 text-xs text-gray-600">
+          <span className="rounded-full border border-gray-200 px-3 py-1">Published 23 March 2026</span>
+          <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 11 July 2026</span>
+          <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
+        </div>
+
+        <aside className="mb-10 overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#9aabb2_0%,#71858e_100%)] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.18)]">
+          <div className="rounded-[1.8rem] border border-white/45 bg-white/10 p-6 text-white backdrop-blur-xl md:p-8">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/65">The short answer</p>
+            <p className="font-serif text-2xl leading-relaxed text-[#fffaf1]">
+              Deep skin can carry warm, cool, neutral, or olive undertones. Choose colour temperature from undertone, then use contrast and saturation to control how strongly the outfit frames the face.
+            </p>
+            <p className="mt-4 leading-relaxed text-white/75">
+              Warm deep skin often harmonises with terracotta, coral, olive, and warm cream. Cool deep skin often suits cobalt, emerald, berry, and clean white. Pastels can work when their temperature and clarity support the wearer.
+            </p>
+          </div>
+        </aside>
 
         {/* The fundamental principle */}
         <section className="mb-10">
@@ -120,7 +150,7 @@ export default function DarkSkinColourGuidePage() {
             The colours that will genuinely flatter you are determined primarily by your undertone, not your skin depth. Getting the undertone right is step one.
           </p>
           <p>
-            <strong>Additionally:</strong> Deep skin tones provide high contrast with light and bright colours, which means dark-skinned Indian women can generally wear rich, saturated, and bold colours very effectively. Pastels — which are designed for lighter skin — are the category that works least well.
+            <strong>Additionally:</strong> Deep skin can create striking contrast with light and bright colours. Saturated colours are useful, but intensity still needs to match the wearer&apos;s undertone and natural contrast. Pastels are not prohibited; some need clearer colour or intentional contrast elsewhere in the outfit.
           </p>
         </section>
 
@@ -222,7 +252,7 @@ export default function DarkSkinColourGuidePage() {
             <li><strong>Both gold and silver jewellery</strong> — rose gold is a particularly good metal for neutral undertones</li>
           </ul>
           <p>
-            Avoid pastels and muted, desaturated tones — deep skin needs depth and saturation to look vibrant.
+            Test very pale or muted colours near the face. If they flatten contrast, restore definition through a deeper neckline, jacket, dupatta, jewellery metal, or lip colour rather than discarding the entire colour family.
           </p>
         </section>
 
@@ -270,7 +300,7 @@ export default function DarkSkinColourGuidePage() {
             </div>
             <div>
               <h3 className="font-medium mb-1">Can dark skin Indian women wear pastels?</h3>
-              <p>Pastels are generally not the most flattering choice for dark skin. They are low-saturation colours designed for light skin and tend to look washed out. Choose deeply saturated versions of any colour you love instead.</p>
+              <p>Yes. Pastels work best when their undertone is compatible and the outfit preserves enough contrast near the face. Compare a clear lilac with dusty lavender, or warm peach with icy pink, and keep the version that makes the eyes and skin appear clearer.</p>
             </div>
             <div>
               <h3 className="font-medium mb-1">What is the difference between dark skin and dusky skin in colour analysis?</h3>
@@ -280,22 +310,27 @@ export default function DarkSkinColourGuidePage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-stone-50 border border-stone-200 rounded-xl p-6 mb-10">
-          <h2 className="text-xl font-semibold mb-2">Know Your Undertone Precisely</h2>
+        <section className="mb-10 overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
+          <TrackedArticleCtaView tracking={growthTracking} />
+          <div className="rounded-[1.8rem] border border-white/15 bg-white/10 p-7 text-white backdrop-blur-xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#f0cb80]">Free three-minute diagnostic</p>
+          <h2 className="mb-2 font-serif text-3xl text-[#fffaf1]">Compare colours from your own wardrobe</h2>
           <p className="mb-4">
-            Knowing your undertone is the foundation of a flattering wardrobe. Iconik&rsquo;s Chromatic Harmony Mapping™ analyses your specific skin depth, undertone, and contrast level to give you a personalised colour palette — not a generic skin-tone category, but the exact shades of every colour that will work for you. Delivered in 48 hours.
+            Use the Glow Test to compare tops, dupattas, scarves, or saree fabrics in the same daylight and score clarity, lift, shadows, and dullness.
           </p>
-          <Link
-            href="/#pricing"
-            className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+          <TrackedArticleLink
+            href={glowTestHref}
+            tracking={growthTracking}
+            className="inline-block rounded-full bg-[#f0cb80] px-6 py-3 font-semibold text-[#27353b] transition hover:bg-[#f6d99e]"
           >
-            Get Your Colour Palette — ₹3,299
-          </Link>
+            Take the Free Glow Test →
+          </TrackedArticleLink>
+          </div>
         </section>
 
         {/* Cite */}
         <section className="border-t pt-6 mb-8 text-sm text-gray-500">
-          <p><strong>Cite this guide:</strong> Iconik. &ldquo;Best Colours for Dark Skin Indian Women.&rdquo; iconik.pro/colour-analysis/dark-skin-colour-guide-india. Updated 2025.</p>
+          <p><strong>Cite this guide:</strong> Navalakha, Mithil. &ldquo;Best Clothing Colours for Dark Indian Skin by Undertone.&rdquo; Iconik. Reviewed 11 July 2026.</p>
         </section>
 
         {/* Related */}

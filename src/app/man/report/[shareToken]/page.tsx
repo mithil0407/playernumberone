@@ -42,6 +42,7 @@ export default async function PublicReportPage({ params }: PageProps) {
           viewerMode="public"
           motionMode="standard"
           deferSections
+          shopping={result.shopping_data}
         />
 
         <ManEditPanel shareToken={shareToken} reportData={result.report_data} />

@@ -18,6 +18,11 @@ import {
 import {
   type StylistBlueprintImagePaths,
 } from '@/lib/stylistBlueprintImageGenerator';
+import {
+  generateStylistOutfitScienceApplication,
+  isScienceBlueprintReport,
+  isStylistOutfitScienceHarnessEnabled,
+} from '@/lib/stylistOutfitScience';
 
 export const maxDuration = 300;
 
@@ -107,7 +112,11 @@ export async function POST(
     let nextReportData: StylistBlueprintReportData | null = null;
     let lastValidationError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const replacementPages = await generateStylistBlueprintReplacementOutfits(
+      const scienceEnabled = isScienceBlueprintReport(reportData) || isStylistOutfitScienceHarnessEnabled();
+      const scienceResult = scienceEnabled
+        ? await generateStylistOutfitScienceApplication(submission as StylistIntakeSubmission, reportData)
+        : null;
+      const replacementPages = scienceResult?.pages ?? await generateStylistBlueprintReplacementOutfits(
         submission as StylistIntakeSubmission,
         reportData,
         attempt === 0 ? reason : `${reason || 'Admin requested replacement outfits.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate the outfit set and fix that issue.`,
@@ -117,6 +126,7 @@ export async function POST(
         ...reportData,
         generated_at: new Date().toISOString(),
         pages: reportData.pages.map(page => replacementByNumber.get(page.page_number) ?? page),
+        outfit_engine: scienceResult?.outfit_engine ?? reportData.outfit_engine,
       };
       try {
         validateStylistBlueprintReport(candidateReportData, {

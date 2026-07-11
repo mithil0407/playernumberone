@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArticleGrowthTracker, TrackedConsultationLink } from "@/components/ArticleGrowthTracker";
 
 interface CityLandingPageProps {
   city: string;
   cityContext: string;
-  testimonial: { name: string; text: string };
+  testimonial?: { name: string; text: string };
   localHighlights?: string[];
   wardrobeContexts?: { title: string; description: string }[];
   faqs?: { q: string; a: string }[];
@@ -242,6 +243,14 @@ export default function CityLandingPage({
   faqs,
 }: CityLandingPageProps) {
   const cityDefaults = cityLocalContent[city];
+  const cityId = city.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  const growthTracking = {
+    article_id: `personal_stylist_${cityId}`,
+    content_cluster: "local_personal_styling",
+    audience: "women" as const,
+    hook_type: "city_service_intent",
+    content_source: `seo_personal_stylist_${cityId}`,
+  };
   const resolvedHighlights = localHighlights ?? cityDefaults?.highlights ?? defaultHighlights;
   const resolvedWardrobeContexts = wardrobeContexts ?? cityDefaults?.contexts ?? [];
   const cityFaqs = faqs ?? cityDefaults?.faqs ?? [
@@ -261,6 +270,7 @@ export default function CityLandingPage({
 
   return (
     <main className="min-h-screen bg-white px-4 py-16 md:py-24">
+      <ArticleGrowthTracker {...growthTracking} />
       <div className="mx-auto max-w-3xl">
 
         <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
@@ -355,7 +365,7 @@ export default function CityLandingPage({
           </ul>
         </section>
 
-        <section className="mb-12">
+        {testimonial && <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             What {city} Clients Say
           </h2>
@@ -363,7 +373,7 @@ export default function CityLandingPage({
             <p className="text-gray-700 text-lg italic mb-3">&ldquo;{testimonial.text}&rdquo;</p>
             <cite className="text-gray-500 text-sm not-italic">— {testimonial.name}</cite>
           </blockquote>
-        </section>
+        </section>}
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -410,22 +420,23 @@ export default function CityLandingPage({
 
         <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            8 slots open for {city} women this week
+            Build a wardrobe system for life in {city}
           </h2>
           <p className="text-gray-600 mb-6">
             Science-backed styling. Delivered in 48 hours. ₹3,299.
           </p>
-          <Link
+          <TrackedConsultationLink
             href="/"
+            tracking={growthTracking}
             className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors"
           >
             Get My Style Blueprint
-          </Link>
+          </TrackedConsultationLink>
         </div>
 
         <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
           <p className="font-medium text-gray-700 mb-1">Cite this page:</p>
-          <p>Iconik Styling Team. &quot;Personal Stylist in {city} — Iconik Style Blueprint.&quot; Iconik LLP, 2025.</p>
+          <p>Iconik Styling Team. &quot;Personal Stylist in {city} — Iconik Style Blueprint.&quot; Iconik, reviewed 2026.</p>
         </div>
 
       </div>

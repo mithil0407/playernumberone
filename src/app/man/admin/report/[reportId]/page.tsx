@@ -5,11 +5,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ManReport, { getManReportSlideMeta, type ManReportSlideMeta } from '@/components/ManReport';
+import ManReport, { getManReportSlideMeta, type ManReportSlideMeta, type ShoppingSelectPayload } from '@/components/ManReport';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, FaceImageKind } from '@/lib/manImageGenerator';
 import type { ComboGridKind } from '@/lib/manComboGridSection';
+import {
+  collectGarmentSlots,
+  diffStaleSlotKeys,
+  isShoppingFetchInFlight,
+  isShoppingSlotCurrent,
+  type ManShoppingSlotName,
+  type ManShoppingState,
+} from '@/lib/manShopping';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -29,6 +37,7 @@ interface Report {
   image_urls: ResolvedImageUrls | null;
   share_token: string;
   section_approvals: SectionApprovals;
+  shopping_data: ManShoppingState | null;
   submission_id: string;
   created_at: string;
   updated_at: string;
@@ -51,6 +60,8 @@ interface ReportStatusSnapshot {
     eyewearDone: number;
     outfitDone: number;
     comboGridDone?: number;
+    diagnosticDone?: number;
+    deliverableDone?: number;
   };
 }
 
@@ -69,6 +80,14 @@ interface OutfitSaveTextResult {
 
 interface ComboGridSaveTextResult {
   updatedComboGridText: string;
+}
+
+interface RedoAllOutfitsResult {
+  updatedS4Outfits: string;
+  updatedComboGridText: string;
+  qa?: ReportData['qa'];
+  status?: string;
+  updatedAt?: string;
 }
 
 interface ComboGridRegenerationResult {
@@ -186,6 +205,7 @@ const SECTION_FIELD_MAP: Record<SectionKey, SectionField> = {
 
 function buildSafeReportData(reportData: ReportData): ReportData {
   return {
+    report_version: reportData.report_version,
     classification: reportData.classification,
     sections: {
       s0_snapshot:  reportData.sections?.s0_snapshot  ?? '',
@@ -199,6 +219,8 @@ function buildSafeReportData(reportData: ReportData): ReportData {
       s5_grooming_skin: reportData.sections?.s5_grooming_skin ?? '',
       s6_identity: reportData.sections?.s6_identity ?? '',
     } as ReportSections,
+    diagnostics: reportData.diagnostics,
+    deliverables: reportData.deliverables,
     generated_at: reportData.generated_at,
     qa: reportData.qa,
   };
@@ -223,6 +245,15 @@ function countApprovedPages(approvals: SectionApprovals, slides: ManReportSlideM
   return slides.filter(slide => pageApproved(approvals, slide)).length;
 }
 
+// Approvals are stored per page (p{n} keys), but the server fires the shopping
+// links pipeline off the aggregate s4 flag — keep it derived: s4 is true only
+// while every outfit slide is approved.
+function withOutfitSectionFlag(next: SectionApprovals, slides: ManReportSlideMeta[]): SectionApprovals {
+  const outfitSlides = slides.filter(slide => slide.slideType === 'outfit' || slide.slideType === 'outfit_system');
+  if (outfitSlides.length === 0) return next;
+  return { ...next, s4: outfitSlides.every(slide => pageApproved(next, slide)) };
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function AdminReportPage({ params }: { params: Promise<{ reportId: string }> }) {
@@ -242,8 +273,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [error, setError]                 = useState('');
   const [terminating, setTerminating]       = useState(false);
   const [retrying, setRetrying]             = useState(false);
+  const [redoingOutfits, setRedoingOutfits] = useState(false);
   const [rejecting, setRejecting]           = useState(false);
   const [confirmingReject, setConfirmingReject] = useState(false);
+  const [confirmingRedoOutfits, setConfirmingRedoOutfits] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
   const [imageGenerationPending, setImageGenerationPending] = useState(false);
   const [imageModel, setImageModel]         = useState<'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image'>('gemini-3.1-flash-image-preview');
@@ -265,6 +298,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         eyewearDone:   data.report.image_urls?.eyewearCards?.[0] ? 1 : 0,
         outfitDone:    (data.report.image_urls?.outfitCards    ?? []).filter(Boolean).length,
         comboGridDone: Object.values(data.report.image_urls?.comboGridCards ?? {}).filter(Boolean).length,
+        diagnosticDone: Object.values(data.report.image_urls?.diagnostic ?? {}).filter(Boolean).length,
+        deliverableDone: [
+          data.report.image_urls?.deliverables?.beforeImage,
+          data.report.image_urls?.deliverables?.afterImage,
+          data.report.image_urls?.deliverables?.linkedinHeadshot,
+          ...(data.report.image_urls?.deliverables?.datingProfileShots ?? []),
+        ].filter(Boolean).length,
       });
       // Only re-render when DB actually changed — suppress polling jank
       setReport(prev => {
@@ -374,15 +414,71 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     return () => clearInterval(t);
   }, [report?.progress_stage, report?.status, report?.updated_at]);
 
+  // ── Shopping links (Apify product links per garment) ─────────────────
+
+  const shoppingSummary = useMemo(() => {
+    const s4Text = report?.report_data?.sections?.s4_outfits ?? '';
+    if (!s4Text.trim()) return null;
+    const state = report?.shopping_data ?? null;
+    const garments = collectGarmentSlots(s4Text);
+    let doneCount = 0;
+    let flaggedCount = 0;
+    for (const garment of garments) {
+      const slot = state?.slots?.[garment.key];
+      if (!isShoppingSlotCurrent(slot, garment.hash)) continue;
+      if (slot!.status === 'low_confidence') flaggedCount += 1;
+      else doneCount += 1;
+    }
+    return {
+      total: garments.length,
+      doneCount,
+      flaggedCount,
+      staleCount: diffStaleSlotKeys(state, s4Text).length,
+      inFlight: isShoppingFetchInFlight(state),
+      hasState: !!state,
+      error: state?.status === 'error' ? (state.error ?? 'Link fetch failed') : null,
+    };
+  }, [report?.report_data, report?.shopping_data]);
+
+  const selectShoppingLink = useCallback(async (
+    outfitNumber: number,
+    slot: ManShoppingSlotName,
+    payload: ShoppingSelectPayload,
+  ): Promise<boolean> => {
+    const res = await fetch(`/api/man-report/${reportId}/shopping/select`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outfitNumber, slot, ...payload }),
+    });
+    if (!res.ok) return false;
+    await load({ fresh: true, force: true });
+    return true;
+  }, [reportId, load]);
+
+  const fetchShoppingLinks = useCallback(async () => {
+    setError('');
+    const res = await fetch(`/api/man-report/${reportId}/shopping/fetch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? 'Could not start the shopping link fetch.');
+      return;
+    }
+    await load({ fresh: true, force: true });
+  }, [reportId, load]);
+
   // ── Page approval ─────────────────────────────────────────────────────
 
   const togglePageApproval = async (slide: ManReportSlideMeta | null) => {
     if (!report || !slide) return;
     const pageKey = approvalKeyForPage(slide.pageNumber);
-    const next = {
+    const next = withOutfitSectionFlag({
       ...report.section_approvals,
       [pageKey]: !pageApproved(report.section_approvals, slide),
-    };
+    }, slideMeta);
     setReport(r => r ? { ...r, section_approvals: next } : r);
     await fetch(`/api/man-report/${reportId}`, {
       method: 'PATCH',
@@ -394,10 +490,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const approveAndNext = async () => {
     if (!report || !activeSlide) return;
     const pageKey = approvalKeyForPage(activeSlide.pageNumber);
-    const next = {
+    const next = withOutfitSectionFlag({
       ...report.section_approvals,
       [pageKey]: true,
-    };
+    }, slideMeta);
     setReport(r => r ? { ...r, section_approvals: next } : r);
     await fetch(`/api/man-report/${reportId}`, {
       method: 'PATCH',
@@ -417,10 +513,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   const approveAll = async () => {
     if (!report) return;
-    const next: SectionApprovals = { ...report.section_approvals };
+    let next: SectionApprovals = { ...report.section_approvals };
     slideMeta.forEach(slide => {
       next[approvalKeyForPage(slide.pageNumber)] = true;
     });
+    next = withOutfitSectionFlag(next, slideMeta);
     setReport(r => r ? { ...r, section_approvals: next } : r);
     await fetch(`/api/man-report/${reportId}`, {
       method: 'PATCH',
@@ -467,7 +564,19 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // ── Send to client ─────────────────────────────────────────────────────
 
   const sendToClient = async () => {
-    if (!report || !allPagesApproved(report.section_approvals, slideMeta)) return;
+    if (!report || !allPagesApproved(report.section_approvals, slideMeta) || !qualityGatePassed) return;
+    // Soft gate only: missing/flagged shopping links warn but never block send.
+    if (shoppingSummary) {
+      const linkIssues = [
+        shoppingSummary.inFlight ? 'links are still being fetched' : null,
+        shoppingSummary.staleCount > 0 ? `${shoppingSummary.staleCount} garments have no up-to-date links` : null,
+        shoppingSummary.flaggedCount > 0 ? `${shoppingSummary.flaggedCount} garments have unreviewed low-confidence links` : null,
+        shoppingSummary.error ? 'the last link fetch failed' : null,
+      ].filter(Boolean);
+      if (linkIssues.length > 0 && !window.confirm(`Shopping links: ${linkIssues.join(', ')}. Send anyway?`)) {
+        return;
+      }
+    }
     setSending(true);
     setError('');
     try {
@@ -1011,7 +1120,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   }, [activePageNumber, slideMeta]);
 
   const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
-  const ready        = allPagesApproved(approvals, slideMeta);
+  const outfitQuality = report?.report_data?.qa?.section4?.quality;
+  const qualityGateRequired = report?.report_data?.outfit_library?.version === 'v2-9plus';
+  const qualityGatePassed = !qualityGateRequired || Boolean(outfitQuality?.passed);
+  const ready        = allPagesApproved(approvals, slideMeta) && qualityGatePassed;
   const isGenerating = report?.status === 'generating';
   const isError      = report?.status === 'error';
   const isStuck      = isGenerating && elapsedSecs > 600;
@@ -1023,19 +1135,34 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const isImageStuck = imageProgressAgeMs > 10 * 60 * 1000;
 
   const expectedOutfitCount = report?.report_data?.classification?.outfit_split?.total ?? 20;
+  const requiresV2Images = report?.report_data?.report_version === 'man_blueprint_v2';
   const imageCounts = {
     hairstyleDone: report?.image_urls?.hairstyleCards?.[0] ? 1 : 0,
     beardDone:     report?.image_urls?.beardCards?.[0] ? 1 : 0,
     eyewearDone:   report?.image_urls?.eyewearCards?.[0] ? 1 : 0,
     outfitDone:    (report?.image_urls?.outfitCards    ?? []).filter(Boolean).length,
     comboGridDone: Object.values(report?.image_urls?.comboGridCards ?? {}).filter(Boolean).length,
+    diagnosticDone: [
+      report?.image_urls?.diagnostic?.faceGeometry,
+      report?.image_urls?.diagnostic?.frameFront,
+      report?.image_urls?.diagnostic?.colourDrape,
+    ].filter(Boolean).length,
+    deliverableDone: [
+      report?.image_urls?.deliverables?.beforeImage,
+      report?.image_urls?.deliverables?.afterImage,
+      report?.image_urls?.deliverables?.linkedinHeadshot,
+      ...(report?.image_urls?.deliverables?.datingProfileShots ?? []),
+    ].filter(Boolean).length,
   };
   const activeGroomingDone = imageCounts.hairstyleDone;
   const activeGroomingLabel = 'hairstyle grid';
-  const hasImageAttempt = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone > 0 ||
+  const v2ImageDone = imageCounts.diagnosticDone + imageCounts.deliverableDone;
+  const imageDoneTotal = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone + (requiresV2Images ? v2ImageDone : 0);
+  const imageExpectedTotal = expectedOutfitCount + (requiresV2Images ? 15 : 6);
+  const hasImageAttempt = imageDoneTotal > 0 ||
     Boolean(report?.error_message?.startsWith('Image generation'));
   const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
-  const imageProgressText = `${activeGroomingDone}/1 ${activeGroomingLabel} · ${imageCounts.beardDone}/1 beard grid · ${imageCounts.eyewearDone}/1 eyewear grid · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids`;
+  const imageProgressText = `${activeGroomingDone}/1 ${activeGroomingLabel} · ${imageCounts.beardDone}/1 beard grid · ${imageCounts.eyewearDone}/1 eyewear grid · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids${requiresV2Images ? ` · ${imageCounts.diagnosticDone}/3 diagnostics · ${imageCounts.deliverableDone}/6 deliverables` : ''}`;
   const hasPartialText = !!report?.report_data?.classification ||
     Object.values(report?.report_data?.sections ?? {}).some(value => typeof value === 'string' && value.trim().length > 0);
 
@@ -1045,7 +1172,11 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     imageCounts.beardDone >= 1 &&
     imageCounts.eyewearDone >= 1 &&
     imageCounts.outfitDone >= expectedOutfitCount &&
-    imageCounts.comboGridDone >= 3
+    imageCounts.comboGridDone >= 3 &&
+    (!requiresV2Images || (
+      imageCounts.diagnosticDone >= 3 &&
+      imageCounts.deliverableDone >= 6
+    ))
   );
 
   // ── Reject & retry (discard current report, start fresh) ─────────────
@@ -1150,6 +1281,85 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       setRetrying(false);
     }
   };
+
+  // ── Redo only Section 4 outfits and dependent outfit imagery ─────────
+  const handleRedoAllOutfits = useCallback(async () => {
+    if (!report || redoingOutfits || isGenerating || report.progress_stage || !report.report_data) return;
+
+    setRedoingOutfits(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/man-report/${reportId}/redo-outfits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json() as Partial<RedoAllOutfitsResult> & { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? 'Could not redo all outfits.');
+        return;
+      }
+
+      if (!data.updatedS4Outfits || !data.updatedComboGridText) {
+        setError('Redo all outfits returned an incomplete response.');
+        return;
+      }
+
+      setConfirmingRedoOutfits(false);
+      setReport(prev => {
+        if (!prev?.report_data) return prev;
+
+        const existingImageUrls = prev.image_urls ?? {
+          hairstyleCards: [],
+          beardCards: [],
+          eyewearCards: [],
+          outfitCards: [],
+          comboGridCards: {},
+          baseModel: null,
+        };
+        const datingShotCount = Math.max(existingImageUrls.deliverables?.datingProfileShots?.length ?? 0, 3);
+        const nextImageUrls: ResolvedImageUrls = {
+          ...existingImageUrls,
+          outfitCards: Array.from({ length: expectedOutfitCount }, () => null),
+          comboGridCards: {
+            office: null,
+            evening: null,
+            relaxed: null,
+          },
+          deliverables: {
+            ...(existingImageUrls.deliverables ?? {}),
+            beforeImage: null,
+            afterImage: null,
+            beforeAfter: null,
+            datingProfileShots: Array.from({ length: datingShotCount }, () => null),
+          },
+        };
+
+        return {
+          ...prev,
+          status: data.status ?? (prev.status === 'sent' ? 'in_review' : prev.status),
+          progress_stage: null,
+          error_message: null,
+          updated_at: data.updatedAt ?? prev.updated_at,
+          image_urls: nextImageUrls,
+          report_data: {
+            ...prev.report_data,
+            qa: data.qa ?? prev.report_data.qa,
+            sections: {
+              ...prev.report_data.sections,
+              s4_outfits: data.updatedS4Outfits,
+              s4_combo_grids: data.updatedComboGridText,
+            } as ReportSections,
+          },
+        };
+      });
+
+      await load({ fresh: true, force: true });
+    } catch {
+      setError('Could not redo all outfits. Please try again.');
+    } finally {
+      setRedoingOutfits(false);
+    }
+  }, [report, redoingOutfits, isGenerating, reportId, expectedOutfitCount, load]);
 
   // ── Generate images (decoupled from text pipeline) ───────────────────
   const handleGenerateImages = useCallback(async (options?: { automatic?: boolean }) => {
@@ -1344,6 +1554,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Eyewear</span><Pill tone={imageCounts.eyewearDone >= 1 ? 'success' : 'gold'}>{imageCounts.eyewearDone}/1</Pill></div>
             <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Outfits</span><Pill tone={imageCounts.outfitDone >= expectedOutfitCount ? 'success' : 'gold'}>{imageCounts.outfitDone}/{expectedOutfitCount}</Pill></div>
             <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Grids</span><Pill tone={imageCounts.comboGridDone >= 3 ? 'success' : 'gold'}>{imageCounts.comboGridDone}/3</Pill></div>
+            {requiresV2Images && <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Diagnostics</span><Pill tone={imageCounts.diagnosticDone >= 3 ? 'success' : 'gold'}>{imageCounts.diagnosticDone}/3</Pill></div>}
+            {requiresV2Images && <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Deliverables</span><Pill tone={imageCounts.deliverableDone >= 6 ? 'success' : 'gold'}>{imageCounts.deliverableDone}/6</Pill></div>}
           </div>
         </div>
         <div className="px-4 py-4 border-t" style={{ borderColor: S.border }}>
@@ -1360,11 +1572,29 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               <div className="iconik-micro mb-1" style={{ color: S.muted }}>Men Blueprint Report</div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>{selectedSlideTitle}</h2>
-                <Pill tone={hasAllImages ? 'success' : 'gold'}>Images {imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone}/{expectedOutfitCount + 6}</Pill>
+                <Pill tone={hasAllImages ? 'success' : 'gold'}>Images {imageDoneTotal}/{imageExpectedTotal}</Pill>
+                {qualityGateRequired && <Pill tone={qualityGatePassed ? 'success' : 'error'}>Outfit Quality {outfitQuality?.overallScore?.toFixed(1) ?? 'Pending'}/10</Pill>}
+                {shoppingSummary && (shoppingSummary.hasState || shoppingSummary.inFlight) && (
+                  <Pill tone={
+                    shoppingSummary.inFlight ? 'gold'
+                    : shoppingSummary.error ? 'error'
+                    : shoppingSummary.staleCount > 0 || shoppingSummary.flaggedCount > 0 ? 'gold'
+                    : 'success'
+                  }>
+                    {shoppingSummary.inFlight
+                      ? 'Links fetching…'
+                      : shoppingSummary.error
+                        ? 'Links failed'
+                        : `Links ${shoppingSummary.doneCount}/${shoppingSummary.total}${shoppingSummary.flaggedCount > 0 ? ` · ${shoppingSummary.flaggedCount} flagged` : ''}`}
+                  </Pill>
+                )}
                 {isGenerating && <Pill tone={isStuck ? 'error' : 'gold'}>{isStuck ? 'Stuck ' + elapsedLabel : 'Live ' + elapsedLabel}</Pill>}
               </div>
               {report.error_message && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
+              {qualityGateRequired && !qualityGatePassed && outfitQuality?.failedCriteria?.length ? (
+                <p className="luxury-body text-xs mt-2" style={{ color: S.error }}>{outfitQuality.failedCriteria.join(' ')}</p>
+              ) : null}
               {!isGenerating && report.progress_stage && <p className="luxury-body text-xs mt-2" style={{ color: isImageStuck ? S.gold : S.muted }}>{STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')} · {imageProgressText}</p>}
             </div>
             <div className="admin-toolbar">
@@ -1388,6 +1618,35 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 {isStuck && (
                   <ActionButton onClick={() => handleTerminate()} disabled={terminating} tone="danger" title="Cancel the stuck generation job.">
                     {terminating ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />} Cancel
+                  </ActionButton>
+                )}
+                {['draft_ready', 'in_review', 'approved', 'sent'].includes(report.status) && report.report_data && (confirmingRedoOutfits ? (
+                  <>
+                    <ActionButton onClick={() => setConfirmingRedoOutfits(false)} disabled={redoingOutfits}>Cancel Redo</ActionButton>
+                    <ActionButton
+                      onClick={() => { void handleRedoAllOutfits(); }}
+                      disabled={redoingOutfits || isGenerating || Boolean(report.progress_stage)}
+                      tone="primary"
+                      title="Regenerate all 20 outfit recommendations and clear outfit-dependent images."
+                    >
+                      {redoingOutfits ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Redo
+                    </ActionButton>
+                  </>
+                ) : (
+                  <ActionButton
+                    onClick={() => setConfirmingRedoOutfits(true)}
+                    disabled={redoingOutfits || isGenerating || Boolean(report.progress_stage)}
+                    title="Regenerate only the outfit recommendation text using the current v6.1 system."
+                  >
+                    <RotateCcw size={14} /> Redo All Outfits
+                  </ActionButton>
+                ))}
+                {shoppingSummary && !shoppingSummary.inFlight && (shoppingSummary.error || shoppingSummary.staleCount > 0) && (
+                  <ActionButton
+                    onClick={() => { void fetchShoppingLinks(); }}
+                    title="Fetch shopping links for garments that have none or whose text changed."
+                  >
+                    <Zap size={14} /> {shoppingSummary.error ? 'Retry Links' : 'Fetch Links'}
                   </ActionButton>
                 )}
                 {['draft_ready', 'in_review', 'approved'].includes(report.status) && (confirmingReject ? (
@@ -1418,7 +1677,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                   <option value="gemini-2.5-flash-image">2.5 Flash</option>
                 </select>
                 {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
-                  <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages} title="Generate missing report images.">
+                  <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages || !qualityGatePassed} title={qualityGatePassed ? 'Generate missing report images.' : 'Outfit quality must pass 9/10 before image generation.'}>
                     {generatingImages ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />} {imageButtonLabel}
                   </ActionButton>
                 )}
@@ -1456,6 +1715,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 onRetryMissingImages={handleGenerateImages}
                 onCopyImagePrompt={copyImagePrompt}
                 onUploadManualImage={uploadManualImage}
+                shopping={report.shopping_data}
+                onSelectShoppingLink={selectShoppingLink}
               />
             </div>
           )}
@@ -1476,7 +1737,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
               <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success"><CheckCheck size={14} /> Approve and Next</ActionButton>
               <ActionButton onClick={approveAll} disabled={isGenerating} tone="success"><CheckCheck size={14} /> Approve All</ActionButton>
-              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={ready ? 'Send the report email to the client.' : 'Approve every visible page before sending.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
+              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={!qualityGatePassed ? 'Outfit quality must pass 9/10 before sending.' : ready ? 'Send the report email to the client.' : 'Approve every visible page before sending.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
             </div>
           </div>
         </footer>

@@ -12,6 +12,7 @@ export interface ManIntakeSubmission {
     customer_phone?: string;
     photo_fullbody_url?: string;
     photo_headshot_url?: string;
+    photo_side_profile_url?: string;
     // Section 1 — Basics
     primary_goal?: string;
     style_relationship?: string;

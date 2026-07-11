@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Save, CheckCircle, Sparkles, Upload, X } from 'lucide-react';
 import type { ClientProfile, BudgetLevel } from '@/lib/supabase';
+import { CLUB, primaryButtonClass } from '@/components/IconikClubAdminUI';
 
 const RESTRICTION_OPTIONS = [
   { value: 'no_sleeveless', label: 'No sleeveless' },
@@ -216,14 +217,14 @@ export default function AdminClientEditPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-3xl pb-20">
 
       {/* Back */}
       <button
         onClick={() => router.push('/iconik-club/admin/clients')}
         className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-[#4a2c3e]/40 hover:text-[#4a2c3e] transition-colors mb-7"
       >
-        <ArrowLeft size={12} /> All Clients
+        <ArrowLeft size={12} /> All members
       </button>
 
       {/* Header */}
@@ -237,7 +238,7 @@ export default function AdminClientEditPage() {
           </div>
         )}
         <div>
-          <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-0.5">Edit Client</p>
+          <p className="iconik-micro mb-1" style={{ color: CLUB.gold }}>Member profile</p>
           <h2 className="luxury-heading text-2xl text-[#4a2c3e]">{client.name}</h2>
           <p className="text-xs text-[#4a2c3e]/40 mt-0.5">{client.email}</p>
         </div>
@@ -352,7 +353,7 @@ export default function AdminClientEditPage() {
 
         {/* ── Basic info ──────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
-          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-5">Basic info</p>
+          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-5">Profile</p>
           <div className="space-y-4">
             <div>
               <label className={labelCls}>Name</label>
@@ -404,7 +405,7 @@ export default function AdminClientEditPage() {
 
         {/* ── Style ───────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
-          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-5">Style</p>
+          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-5">Preferences</p>
           <div className="space-y-5">
 
             <div>
@@ -557,13 +558,9 @@ export default function AdminClientEditPage() {
         </div>
 
         {/* ── Save ────────────────────────────────────── */}
-        {error && <p className="text-xs text-red-500 text-center">{error}</p>}
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#ff6b9d] hover:bg-[#e85a8a] disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#ff6b9d]/20"
-        >
+        <div className="sticky bottom-3 z-10 rounded-2xl border p-3 shadow-xl" style={{ background: CLUB.surface, borderColor: CLUB.border }}>
+        {error && <p className="mb-2 text-center text-xs text-red-500">{error}</p>}
+        <button onClick={handleSave} disabled={saving} className={`${primaryButtonClass} w-full`}>
           {saving ? (
             <><Loader2 size={15} className="animate-spin" /> Saving…</>
           ) : saved ? (
@@ -571,7 +568,7 @@ export default function AdminClientEditPage() {
           ) : (
             <><Save size={15} /> Save changes</>
           )}
-        </button>
+        </button></div>
 
       </div>
     </div>

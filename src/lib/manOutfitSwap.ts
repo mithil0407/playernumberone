@@ -85,16 +85,11 @@ LITERAL COPY RULES:
 - If a detail is not visible or not specified, write "Not visible in reference" or "Not specified by admin" instead of inventing it.
 - Keep the same outfit number and same context.
 - Output the same field structure used by the report so image generation can apply this exact outfit to the person.
-- Include TOP, LAYER, BOTTOM, FOOTWEAR, ACCESSORIES or ACCESSORY, FIT NOTE, COLOUR LOGIC, OCCASION ANCHOR, SHOPPING TRANSLATION, ACCEPTABLE SUBSTITUTES, and DO NOT BUY.
+- Include TOP, LAYER, BOTTOM, FOOTWEAR, ACCESSORIES or ACCESSORY, and OCCASION ANCHOR.
 
 Field-writing rules:
 - TOP/BOTTOM/LAYER/FOOTWEAR/ACCESSORIES must be literal extraction fields.
-- FIT NOTE may say how the visible/source garment fits, but must not recommend a different fit.
-- COLOUR LOGIC may name the copied colours, but must not justify or change them for the client.
 - OCCASION ANCHOR may be copied from admin text if supplied; otherwise write "Not specified by admin."
-- SHOPPING TRANSLATION may name the copied key items only.
-- ACCEPTABLE SUBSTITUTES must be "Not specified by admin" unless admin gave substitutes.
-- DO NOT BUY must be "Not specified by admin" unless admin gave avoid instructions.
 
 Rejected current outfit block:
 ${currentBlock}
@@ -161,7 +156,16 @@ export async function generateOutfitSwapDraft(input: OutfitSwapDraftInput): Prom
     throw new Error(`Could not project replacement for Outfit ${input.outfitNumber}`);
   }
 
-  const qa = validateManReportSection4(projectedSection4, input.classification);
+  const patternWaiver = /\b(no|avoid|dislike|hate)\b.{0,24}\b(pattern|print|stripe|check)/i.test(
+    `${input.classification.style_brief.anti_preferences} ${input.classification.colour.pattern_guidance}`,
+  );
+  const antiPreferences = input.classification.style_brief.anti_preferences;
+  const qa = validateManReportSection4(projectedSection4, input.classification, {
+    enforceV2: true,
+    patternWaiver,
+    suitWaiver: /\b(no|avoid|dislike|hate)\b.{0,18}\bsuits?\b/i.test(antiPreferences),
+    tieWaiver: /\b(no|avoid|dislike|hate)\b.{0,18}\bties?\b/i.test(antiPreferences),
+  });
 
   return {
     candidateBlock,

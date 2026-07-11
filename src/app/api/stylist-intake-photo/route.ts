@@ -28,6 +28,20 @@ function isMissingBucket(error: unknown) {
   return /bucket not found|not found/i.test(message);
 }
 
+function errorSummary(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return { message: String(error ?? 'Unknown error') };
+  }
+
+  const record = error as Record<string, unknown>;
+  return {
+    code: typeof record.code === 'string' ? record.code : undefined,
+    message: typeof record.message === 'string' ? record.message : String(error),
+    statusCode: typeof record.statusCode === 'number' ? record.statusCode : undefined,
+    name: typeof record.name === 'string' ? record.name : undefined,
+  };
+}
+
 async function uploadToBucket(path: string, buffer: Buffer, contentType: string) {
   return supabaseAdmin.storage
     .from(BUCKET)
@@ -38,14 +52,24 @@ async function uploadToBucket(path: string, buffer: Buffer, contentType: string)
 }
 
 export async function POST(request: NextRequest) {
+  const uploadContext: {
+    fileName?: string;
+    mimeType?: string;
+    size?: number;
+    pathPrefix?: string;
+  } = {};
+
   try {
     const formData = await request.formData();
     const file = formData.get('file');
     const fileName = safeFileName(String(formData.get('fileName') || 'stylist-upload.jpg'));
+    uploadContext.fileName = fileName;
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: 'Missing image file' }, { status: 400 });
     }
+    uploadContext.mimeType = file.type || undefined;
+    uploadContext.size = file.size;
 
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ error: 'Only image uploads are supported' }, { status: 400 });
@@ -53,6 +77,7 @@ export async function POST(request: NextRequest) {
 
     const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
     const path = `public/${Date.now()}_${safeFileName(fileName).replace(/\.[^.]+$/, '')}.${extension}`;
+    uploadContext.pathPrefix = path.slice(0, 40);
     const buffer = Buffer.from(await file.arrayBuffer());
 
     if (!bucketReady) {
@@ -73,9 +98,12 @@ export async function POST(request: NextRequest) {
     const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(data.path);
     return NextResponse.json({ url: publicData.publicUrl, path: data.path });
   } catch (error) {
-    console.error('[stylist-intake-photo] upload failed:', error);
+    console.error('[stylist-intake-photo] upload failed:', {
+      ...uploadContext,
+      error: errorSummary(error),
+    });
     return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Photo upload failed',
+      error: 'We could not upload this photo. Please try a JPG, PNG, WEBP, HEIC, or HEIF image under 12MB.',
     }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, Loader2, CheckCircle, X, Send, MessageCircle } from 'lucide-react';
+import { CLUB, primaryButtonClass } from '@/components/IconikClubAdminUI';
 
 type Step = 'form' | 'generating' | 'done';
 
@@ -251,22 +252,22 @@ export default function NewClientPage() {
 
   // ── Form ──────────────────────────────────────────────────────────────────
   return (
-    <div>
+    <div className="pb-20">
       <div className="flex items-center gap-4 mb-7">
         <Link href="/iconik-club/admin/clients" className="p-2 rounded-xl border border-[#ffb3d1] text-[#4a2c3e]/50 hover:bg-[#fff0f5] transition-colors">
           <ArrowLeft size={14} />
         </Link>
         <div>
           <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-0.5">New</p>
-          <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Add Client</h2>
+          <h2 className="iconik-display text-3xl" style={{ color: CLUB.ink }}>Add member</h2>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
 
         {/* Client details */}
         <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm space-y-4">
-          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Client details</p>
+          <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-1">Profile</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -447,6 +448,7 @@ export default function NewClientPage() {
           </div>
         </div>
 
+        <div className="sticky bottom-3 z-10 rounded-2xl border p-3 shadow-xl" style={{ background: CLUB.surface, borderColor: CLUB.border }}>
         {error && (
           <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</p>
         )}
@@ -454,14 +456,14 @@ export default function NewClientPage() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full flex items-center justify-center gap-2 bg-[#ff6b9d] text-white font-semibold text-sm rounded-2xl py-4 hover:bg-[#ff4d8d] disabled:opacity-60 transition-colors shadow-sm shadow-[#ff6b9d]/20"
+          className={`${primaryButtonClass} mt-2 w-full`}
         >
           {saving ? (
             <><Loader2 size={16} className="animate-spin" /> Creating client…</>
           ) : (
-            'Save & Generate Outfits'
+            'Save member & generate outfits'
           )}
-        </button>
+        </button></div>
       </form>
     </div>
   );

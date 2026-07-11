@@ -104,7 +104,12 @@ export async function POST(
       }
 
       filename = `outfit_${outfitNumber}.jpg`;
-      const path = await uploadManualManReportImage(reportId, Buffer.from(await file.arrayBuffer()), filename);
+      const path = await uploadManualManReportImage(
+        reportId,
+        Buffer.from(await file.arrayBuffer()),
+        filename,
+        true,
+      );
       const outfitPatch: (string | null | undefined)[] = [];
       outfitPatch[outfitNumber - 1] = path;
       patch = { outfitCards: outfitPatch };

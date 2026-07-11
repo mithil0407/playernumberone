@@ -17,6 +17,7 @@ const WOMEN_OUTFIT_SKILL = readFileSync(
 );
 
 export const WOMEN_OUTFIT_ENGINE_VERSION = 'women-skill-v1';
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
 
 type RestrictionKey = 'no_sleeveless' | 'cover_tummy';
 type SlotKey = 'singlePiece' | 'top' | 'layer' | 'bottom' | 'shoes' | 'bag' | 'accessory';
@@ -121,7 +122,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3, baseDelayMs =
 async function callGeminiJSON<T>(prompt: string, maxOutputTokens = 32768): Promise<T> {
   return withRetry(async () => {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: TEXT_MODEL,
       contents: [{ parts: [{ text: prompt }] }],
       config: { temperature: 0.2, topP: 0.8, maxOutputTokens },
     });

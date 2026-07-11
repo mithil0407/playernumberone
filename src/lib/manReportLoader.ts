@@ -14,6 +14,7 @@ import {
   type ResolvedImageUrls,
 } from './manImageGenerator';
 import type { ReportData } from './manReportGenerator';
+import type { ManShoppingState } from './manShopping';
 
 const PUBLIC_VIEWABLE_STATUSES = ['sent', 'draft_ready', 'in_review', 'approved'] as const;
 
@@ -25,6 +26,7 @@ export interface AdminLoadedManReport {
   image_urls: ResolvedImageUrls | null;
   share_token: string;
   section_approvals: Record<string, boolean> | null;
+  shopping_data: ManShoppingState | null;
   submission_id: string;
   created_at: string;
   updated_at: string;
@@ -39,6 +41,7 @@ export interface PublicLoadedManReport {
   report_data: ReportData | null;
   image_urls: ResolvedImageUrls | null;
   share_token: string;
+  shopping_data: ManShoppingState | null;
   sent_at: string | null;
 }
 
@@ -75,7 +78,7 @@ export async function loadAdminManReportByIdFresh(reportId: string): Promise<Adm
 async function loadPublicReportByShareToken(shareToken: string): Promise<PublicLoadedManReport | null> {
   const { data, error } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, report_data, image_urls, share_token, sent_at')
+    .select('id, status, report_data, image_urls, share_token, shopping_data, sent_at')
     .eq('share_token', shareToken)
     .in('status', [...PUBLIC_VIEWABLE_STATUSES])
     .single();

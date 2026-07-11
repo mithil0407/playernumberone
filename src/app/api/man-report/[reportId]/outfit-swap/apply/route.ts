@@ -18,6 +18,7 @@ import {
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { getLiteralSwapBlockingIssues } from '@/lib/manOutfitSwap';
+import { markStaleShoppingSlots } from '@/lib/manShoppingPipeline';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 
@@ -191,6 +192,10 @@ export async function POST(
   }
 
   await revalidateManReportCache(reportId, saved.share_token ?? report.share_token ?? null);
+
+  // Swapped garments invalidate any shopping links fetched for the old text;
+  // refetch happens when the stylist re-approves Section 4.
+  await markStaleShoppingSlots(reportId, newS4);
 
   const resolved = await resolveManReportImageUrls(saved.image_urls as ManReportImagePaths);
 

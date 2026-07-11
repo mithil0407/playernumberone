@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import type { FashionItem, FashionItemStyleTags, ItemCategory } from './supabase';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
 
 export interface FashionItemAIResult {
   brand: string | null;
@@ -78,7 +79,7 @@ export async function parseItemWithGemini(
     : ITEM_PARSE_PROMPT;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: TEXT_MODEL,
     contents: [
       {
         parts: [
@@ -161,7 +162,7 @@ Return ONLY the JSON object. No markdown, no explanation.`;
   const mimeType = imageRes.headers.get('content-type') || 'image/jpeg';
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: TEXT_MODEL,
     contents: [
       {
         parts: [
@@ -223,7 +224,7 @@ Write the paragraph only — no JSON, no bullet points, no heading. Be specific 
   const mimeType = imageRes.headers.get('content-type') || 'image/jpeg';
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: TEXT_MODEL,
     contents: [
       {
         parts: [

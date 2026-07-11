@@ -13,6 +13,7 @@ import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
 import { enrichManOutfitEdit } from '@/lib/manOutfitEdit';
+import { markStaleShoppingSlots } from '@/lib/manShoppingPipeline';
 
 function clearOutfitImageSlot(
   paths: ManReportImagePaths | null,
@@ -125,6 +126,10 @@ export async function POST(
   }
 
   await revalidateManReportCache(reportId, report.share_token ?? null);
+
+  // Regenerated garment text invalidates shopping links fetched for the old
+  // text; refetch happens when the stylist re-approves Section 4.
+  await markStaleShoppingSlots(reportId, newS4);
 
   // Fetch full-body photo URL from the submission after the text has been saved.
   const { data: submission, error: subErr } = await supabaseAdmin

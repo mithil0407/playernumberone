@@ -1,24 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArticleGrowthTracker,
+  TrackedArticleCtaView,
+  TrackedArticleLink,
+} from "@/components/ArticleGrowthTracker";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Best Colours for Wheatish Skin: What Works & What Washes You Out",
-  description: "Wheatish skin suits far more colours than most guides admit — the right list depends on your undertone. Full warm and cool palettes for medium Indian skin, plus the shades that dull it.",
-  keywords: "best colours for wheatish skin India, colours for wheatish skin Indian women, what to wear wheatish skin India, colour guide medium skin Indian women, wheatish complexion colour palette India",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india" },
-  openGraph: {
-    title: "Best Colours for Wheatish Skin: What Works & What Washes You Out",
-    description: "Why undertone — not surface depth — determines your palette. Complete colour guide for wheatish skin Indian women.",
-    url: "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Best colours for wheatish skin India — Iconik" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Best Colours for Wheatish Skin: What Works & What Washes You Out",
-    description: "Why undertone — not surface depth — determines your palette. Complete colour guide for wheatish skin Indian women.",
-    images: ["/og-image.webp"],
-  },
+const path = "/colour-analysis/best-colours-wheatish-skin-india";
+const growthTracking = {
+  article_id: "best_colours_wheatish_skin_india",
+  content_cluster: "colour_intelligence",
+  audience: "women" as const,
+  hook_type: "wheatish_meaning_undertone",
+  content_source: "seo_wheatish_skin_article",
 };
+const glowTestHref =
+  "/tools/glow-test?source=seo_wheatish_skin_article&article_id=best_colours_wheatish_skin_india&content_cluster=colour_intelligence&audience=women&hook_type=wheatish_meaning_undertone";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Wheatish Skin Tone: Meaning, Undertones and Best Colours",
+  description:
+    "What does wheatish skin tone mean? Find clothing colours for warm, cool, neutral and olive wheatish Indian skin, including pastels, whites and jewellery.",
+  path,
+  type: "article",
+  keywords: [
+    "wheatish skin tone meaning",
+    "best colours for wheatish skin India",
+    "wheatish skin colour palette",
+    "clothing colours for wheatish skin",
+  ],
+});
 
 const faqs = [
   {
@@ -58,8 +70,8 @@ export default function BestColoursWheatishSkinPage() {
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
-        "datePublished": "2025-03-01",
-        "dateModified": new Date().toISOString().split("T")[0],
+        "datePublished": "2026-03-21",
+        "dateModified": "2026-07-11",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india" },
       },
       {
@@ -84,6 +96,7 @@ export default function BestColoursWheatishSkinPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ArticleGrowthTracker {...growthTracking} />
       <main className="min-h-screen bg-white px-4 py-16 md:py-24">
         <div className="mx-auto max-w-3xl">
 
@@ -99,12 +112,36 @@ export default function BestColoursWheatishSkinPage() {
 
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Best Colours for Wheatish Skin: Indian Women&apos;s Guide
+              Wheatish Skin Tone: Meaning, Undertones and Best Colours
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
               &quot;Wheatish&quot; describes a surface skin depth — medium, between fair and dusky. It says nothing about your undertone. And it is undertone — warm, cool, or neutral — that determines which colours create harmony with your complexion. Two women with identical wheatish skin can need completely different colour palettes.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-600">
+              <span className="rounded-full border border-gray-200 px-3 py-1">Published 21 March 2026</span>
+              <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 11 July 2026</span>
+              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
+            </div>
           </header>
+
+          <aside className="mb-12 overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#9aabb2_0%,#71858e_100%)] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.18)]">
+            <div className="rounded-[1.8rem] border border-white/45 bg-white/10 p-6 text-white backdrop-blur-xl md:p-8">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/65">The short answer</p>
+              <p className="font-serif text-2xl leading-relaxed text-[#fffaf1]">
+                Wheatish describes a medium beige-to-brown surface depth, often with a golden or olive cast. It is not an undertone diagnosis.
+              </p>
+              <p className="mt-4 leading-relaxed text-white/75">
+                Warm wheatish skin often harmonises with terracotta, olive, coral, and cream; cool wheatish skin often suits navy, berry, emerald, and crisp white. Neutral or olive skin benefits from controlled fabric comparisons rather than a rigid label.
+              </p>
+            </div>
+          </aside>
+
+          <section className="mb-12">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">What Does Wheatish Skin Tone Mean in India?</h2>
+            <p className="leading-relaxed text-gray-600">
+              In Indian usage, wheatish usually describes a medium complexion between common descriptions of fair and dusky. The term is subjective and should not be used to predict undertone, ethnicity, or one universal palette. For clothing decisions, treat it as skin depth and test temperature, clarity, and contrast separately.
+            </p>
+          </section>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Is Colour Advice for Wheatish Skin So Generic?</h2>
@@ -220,17 +257,21 @@ export default function BestColoursWheatishSkinPage() {
             </ul>
           </section>
 
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your exact colour palette in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Iconik&apos;s Chromatic Harmony Mapping™ identifies your undertone within wheatish skin and builds an exact 10-colour palette — part of your personalised Style Blueprint.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
+          <section className="mb-10 overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
+            <TrackedArticleCtaView tracking={growthTracking} />
+            <div className="rounded-[1.8rem] border border-white/15 bg-white/10 p-7 text-white backdrop-blur-xl">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#f0cb80]">Free three-minute diagnostic</p>
+              <h2 className="mb-3 font-serif text-3xl text-[#fffaf1]">Test colours already in your wardrobe</h2>
+              <p className="mb-6 leading-relaxed text-white/75">Compare tops, dupattas, scarves, or saree fabrics in consistent daylight and score what happens to facial clarity, lift, shadows, and dullness.</p>
+              <TrackedArticleLink href={glowTestHref} tracking={growthTracking} className="inline-block rounded-full bg-[#f0cb80] px-7 py-3 font-semibold text-[#27353b] transition hover:bg-[#f6d99e]">
+                Take the Free Glow Test →
+              </TrackedArticleLink>
+            </div>
+          </section>
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Best Colours for Wheatish Skin: Indian Women&apos;s Guide.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india</p>
+            <p>Navalakha, Mithil. &quot;Wheatish Skin Tone: Meaning, Undertones and Best Colours.&quot; Iconik, reviewed 11 July 2026. https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india</p>
           </div>
 
         </div>

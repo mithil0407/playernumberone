@@ -17,6 +17,7 @@ interface FormState {
     phone: string;
     photoFullBody: File | null;
     photoHeadshot: File | null;
+    photoSideProfile: File | null;
     // Section 1 — Basics
     primaryGoal: string;
     styleRelationship: string;
@@ -473,6 +474,7 @@ function ManIntakePageInner() {
         phone: '',
         photoFullBody: null,
         photoHeadshot: null,
+        photoSideProfile: null,
         primaryGoal: '',
         styleRelationship: '',
         dressingContext: [],
@@ -565,11 +567,14 @@ function ManIntakePageInner() {
                 return;
             }
 
-            // Upload both photos in parallel
+            // Upload required photos plus the optional side profile in parallel.
             const ts = Date.now();
-            const [photoFullBodyUrl, photoHeadshotUrl] = await Promise.all([
+            const [photoFullBodyUrl, photoHeadshotUrl, photoSideProfileUrl] = await Promise.all([
                 uploadManIntakePhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`),
                 uploadManIntakePhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`),
+                form.photoSideProfile
+                    ? uploadManIntakePhoto(form.photoSideProfile, `${ts}_side_profile_${form.photoSideProfile.name.replace(/\.[^.]+$/, '')}.jpg`)
+                    : Promise.resolve<string | null>(null),
             ]);
 
             if (!photoFullBodyUrl || !photoHeadshotUrl) {
@@ -589,6 +594,7 @@ function ManIntakePageInner() {
                 customer_phone: form.phone,
                 photo_fullbody_url: photoFullBodyUrl,
                 photo_headshot_url: photoHeadshotUrl,
+                ...(photoSideProfileUrl ? { photo_side_profile_url: photoSideProfileUrl } : {}),
                 primary_goal: form.primaryGoal,
                 style_relationship: form.styleRelationship,
                 dressing_context: form.dressingContext.join(','),
@@ -798,6 +804,11 @@ function ManIntakePageInner() {
                                     </div>
                                     <PhotoUploadField label="Full body photo" instruction="Stand facing camera · Natural light · Fitted clothes · No baggy fits" file={form.photoFullBody} onChange={f => setForm(p => ({ ...p, photoFullBody: f }))} required />
                                     {!form.photoFullBody && <p className="iconik-micro mt-3 text-center" style={{ color: '#94A6AD' }}>A full-length photo is required to complete your Blueprint analysis.</p>}
+                                    <div className="mt-7 pt-7" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
+                                        <h3 className="iconik-display mb-2" style={{ fontSize: '20px', color: '#2C2622', lineHeight: 1.2 }}>Optional side-profile photo.</h3>
+                                        <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.52, marginBottom: '18px', lineHeight: 1.65 }}>Stand sideways in the same fitted clothes. This lets us build a more honest posture and midsection tailoring slide. Skip it if you do not have one.</p>
+                                        <PhotoUploadField label="Side profile photo" instruction="Side view · Head to toe · Same outfit if possible · Optional" file={form.photoSideProfile} onChange={f => setForm(p => ({ ...p, photoSideProfile: f }))} />
+                                    </div>
                                 </div>
                             )}
 

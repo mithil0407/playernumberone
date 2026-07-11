@@ -3,10 +3,8 @@
 import { useEffect, useMemo, useState, type Dispatch, type ElementType, type SetStateAction } from 'react';
 import {
   AlertCircle,
-  ArrowDownRight,
-  ArrowUpRight,
   BarChart3,
-  CalendarDays,
+  ChevronDown,
   CreditCard,
   Database,
   Download,
@@ -14,10 +12,10 @@ import {
   Loader2,
   RefreshCw,
   Search,
-  TrendingUp,
   Users,
   WalletCards,
 } from 'lucide-react';
+import { AdminCard, AdminPageHeader, CLUB, primaryButtonClass, secondaryButtonClass } from '@/components/IconikClubAdminUI';
 
 type Currency = 'INR' | 'AUD' | 'USD';
 type Market = 'india' | 'au' | 'global' | 'globe' | 'stylist';
@@ -151,6 +149,7 @@ type DashboardFilters = {
   source: string;
   campaign: string;
 };
+type Period = '7d' | '30d' | 'mtd' | 'custom';
 
 type Tone = 'brand' | 'emerald' | 'amber' | 'sky' | 'slate' | 'violet' | 'red';
 
@@ -239,7 +238,7 @@ function FormLabel({ children }: { children: React.ReactNode }) {
 }
 
 function controlClass() {
-  return 'h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#ff6b9d] focus:ring-2 focus:ring-[#ff6b9d]/15';
+  return 'h-10 w-full rounded-xl border border-[rgba(44,38,34,0.13)] bg-[#FBF8F1] px-3 text-xs font-medium text-[#2C2622] outline-none transition focus:border-[#A9874F] focus:ring-2 focus:ring-[rgba(169,135,79,0.18)]';
 }
 
 function MetricCard({
@@ -256,18 +255,18 @@ function MetricCard({
   tone?: Tone;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <AdminCard className="p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase text-slate-500">{label}</p>
-          <p className="mt-2 truncate text-2xl font-semibold text-slate-950 tabular-nums">{value}</p>
-          {helper && <p className="mt-1 truncate text-xs font-medium text-slate-500">{helper}</p>}
+          <p className="iconik-micro" style={{ color: CLUB.muted }}>{label}</p>
+          <p className="iconik-display mt-3 truncate text-[27px] tabular-nums" style={{ color: CLUB.ink }}>{value}</p>
+          {helper && <p className="mt-1 truncate text-xs" style={{ color: CLUB.muted }}>{helper}</p>}
         </div>
         <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border ${toneClasses[tone].icon}`}>
           <Icon size={18} />
         </div>
       </div>
-    </div>
+    </AdminCard>
   );
 }
 
@@ -284,94 +283,62 @@ function FilterToolbar({
   filterOptions?: RevenueAnalytics['filters'];
   generatedAt: string;
   loading: boolean;
-  onApply: () => void;
+  onApply: (filters?: DashboardFilters) => void;
 }) {
+  const [period, setPeriod] = useState<Period>('30d');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const advancedCount = [filters.market, filters.product, filters.source, filters.campaign].filter(value => value !== 'all').length;
+
+  const dateValue = (date: Date) => {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+
+  const choosePeriod = (nextPeriod: Period) => {
+    setPeriod(nextPeriod);
+    if (nextPeriod === 'custom') return;
+    const today = new Date();
+    const from = new Date(today);
+    if (nextPeriod === '7d') from.setDate(today.getDate() - 6);
+    if (nextPeriod === '30d') from.setDate(today.getDate() - 29);
+    if (nextPeriod === 'mtd') from.setDate(1);
+    const next = { ...filters, from: dateValue(from), to: dateValue(today) };
+    setFilters(next);
+    onApply(next);
+  };
+
+  const resetAdvanced = () => {
+    const next = { ...filters, market: 'all', product: 'all', source: 'all', campaign: 'all' };
+    setFilters(next);
+    onApply(next);
+  };
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
-            <Filter size={16} />
+    <AdminCard className="p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="flex flex-wrap gap-2">
+            {([['7d', '7 days'], ['30d', '30 days'], ['mtd', 'Month to date'], ['custom', 'Custom']] as Array<[Period, string]>).map(([value, label]) => <button key={value} onClick={() => choosePeriod(value)} className={period === value ? primaryButtonClass : secondaryButtonClass}>{label}</button>)}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-950">Reporting filters</p>
-            <p className="text-xs font-medium text-slate-500">Generated {formatGeneratedAt(generatedAt)}</p>
-          </div>
+          <p className="mt-2 text-xs" style={{ color: CLUB.muted }}>Updated {formatGeneratedAt(generatedAt)}</p>
         </div>
-        <button
-          onClick={onApply}
-          disabled={loading}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          {loading ? 'Refreshing' : 'Apply filters'}
-        </button>
+        <button onClick={() => setMoreOpen(value => !value)} className={secondaryButtonClass} aria-expanded={moreOpen}><Filter size={14} /> More filters {advancedCount > 0 && <span className="rounded-full bg-[#2C2622] px-1.5 py-0.5 text-[10px] text-white">{advancedCount}</span>}<ChevronDown size={14} className={`transition ${moreOpen ? 'rotate-180' : ''}`} /></button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <label className="space-y-1.5">
-          <FormLabel>From</FormLabel>
-          <input
-            type="date"
-            value={filters.from}
-            onChange={event => setFilters(prev => ({ ...prev, from: event.target.value }))}
-            className={controlClass()}
-          />
-        </label>
-        <label className="space-y-1.5">
-          <FormLabel>To</FormLabel>
-          <input
-            type="date"
-            value={filters.to}
-            onChange={event => setFilters(prev => ({ ...prev, to: event.target.value }))}
-            className={controlClass()}
-          />
-        </label>
-        <label className="space-y-1.5">
-          <FormLabel>Market</FormLabel>
-          <select
-            value={filters.market}
-            onChange={event => setFilters(prev => ({ ...prev, market: event.target.value }))}
-            className={controlClass()}
-          >
-            {MARKETS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <label className="space-y-1.5">
-          <FormLabel>Product</FormLabel>
-          <select
-            value={filters.product}
-            onChange={event => setFilters(prev => ({ ...prev, product: event.target.value }))}
-            className={controlClass()}
-          >
-            <option value="all">All products</option>
-            {(filterOptions?.products ?? []).map(value => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
-        <label className="space-y-1.5">
-          <FormLabel>Source</FormLabel>
-          <select
-            value={filters.source}
-            onChange={event => setFilters(prev => ({ ...prev, source: event.target.value }))}
-            className={controlClass()}
-          >
-            <option value="all">All sources</option>
-            {(filterOptions?.sources ?? []).map(value => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
-        <label className="space-y-1.5">
-          <FormLabel>Campaign</FormLabel>
-          <select
-            value={filters.campaign}
-            onChange={event => setFilters(prev => ({ ...prev, campaign: event.target.value }))}
-            className={controlClass()}
-          >
-            <option value="all">All campaigns</option>
-            {(filterOptions?.campaigns ?? []).map(value => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
-      </div>
-    </div>
+      {(period === 'custom' || moreOpen) && <div className="mt-4 border-t pt-4" style={{ borderColor: CLUB.border }}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <label className="space-y-1.5"><FormLabel>From</FormLabel><input type="date" value={filters.from} onChange={event => { setPeriod('custom'); setFilters(prev => ({ ...prev, from: event.target.value })); }} className={controlClass()} /></label>
+          <label className="space-y-1.5"><FormLabel>To</FormLabel><input type="date" value={filters.to} onChange={event => { setPeriod('custom'); setFilters(prev => ({ ...prev, to: event.target.value })); }} className={controlClass()} /></label>
+          {moreOpen && <>
+            <label className="space-y-1.5"><FormLabel>Market</FormLabel><select value={filters.market} onChange={event => setFilters(prev => ({ ...prev, market: event.target.value }))} className={controlClass()}>{MARKETS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+            <label className="space-y-1.5"><FormLabel>Product</FormLabel><select value={filters.product} onChange={event => setFilters(prev => ({ ...prev, product: event.target.value }))} className={controlClass()}><option value="all">All products</option>{(filterOptions?.products ?? []).map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+            <label className="space-y-1.5"><FormLabel>Source</FormLabel><select value={filters.source} onChange={event => setFilters(prev => ({ ...prev, source: event.target.value }))} className={controlClass()}><option value="all">All sources</option>{(filterOptions?.sources ?? []).map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+            <label className="space-y-1.5"><FormLabel>Campaign</FormLabel><select value={filters.campaign} onChange={event => setFilters(prev => ({ ...prev, campaign: event.target.value }))} className={controlClass()}><option value="all">All campaigns</option>{(filterOptions?.campaigns ?? []).map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+          </>}
+        </div>
+        <div className="mt-4 flex justify-end gap-2">{advancedCount > 0 && <button onClick={resetAdvanced} className={secondaryButtonClass}>Reset filters</button>}<button onClick={() => onApply()} disabled={loading} className={primaryButtonClass}><RefreshCw size={14} className={loading ? 'animate-spin' : ''} />{loading ? 'Refreshing' : 'Apply'}</button></div>
+      </div>}
+    </AdminCard>
   );
 }
 
@@ -720,14 +687,20 @@ export default function RevenueDashboardPage() {
   const [currency, setCurrency] = useState<Currency>('INR');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState<DashboardFilters>({ from: '', to: '', market: 'all', product: 'all', source: 'all', campaign: 'all' });
+  const [filters, setFilters] = useState<DashboardFilters>(() => {
+    const today = new Date();
+    const from = new Date(today);
+    from.setDate(today.getDate() - 29);
+    const value = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    return { from: value(from), to: value(today), market: 'all', product: 'all', source: 'all', campaign: 'all' };
+  });
 
-  const fetchRevenue = async () => {
+  const fetchRevenue = async (nextFilters: DashboardFilters = filters) => {
     setLoading(true);
     setError('');
     try {
       const params = new URLSearchParams({ currencyView: 'inr' });
-      Object.entries(filters).forEach(([key, value]) => {
+      Object.entries(nextFilters).forEach(([key, value]) => {
         if (value && value !== 'all') params.set(key, value);
       });
       const response = await fetch(`/api/iconik-club/admin/revenue?${params.toString()}`, { cache: 'no-store' });
@@ -746,15 +719,24 @@ export default function RevenueDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const growthPositive = (data?.inrKpis.dayOverDayGrowthPct ?? 0) >= 0;
   const filterOptions = useMemo(() => data?.filters, [data]);
+  const productRows = useMemo(() => {
+    const totals = new Map<string, { amountInrMinor: number; paidCount: number }>();
+    for (const row of data?.attribution.sourceProduct ?? []) {
+      const current = totals.get(row.productLabel) ?? { amountInrMinor: 0, paidCount: 0 };
+      current.amountInrMinor += row.amountInrMinor;
+      current.paidCount += row.paidCount;
+      totals.set(row.productLabel, current);
+    }
+    return Array.from(totals, ([label, values]) => ({ label, ...values })).sort((a, b) => b.amountInrMinor - a.amountInrMinor);
+  }, [data]);
 
   if (loading && !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-96 items-center justify-center">
         <div className="text-center">
-          <Loader2 size={28} className="mx-auto animate-spin text-[#ff6b9d]" />
-          <p className="mt-3 text-sm font-medium text-slate-500">Loading revenue analytics...</p>
+          <Loader2 size={28} className="mx-auto animate-spin" style={{ color: CLUB.gold }} />
+          <p className="mt-3 text-sm" style={{ color: CLUB.muted }}>Loading revenue analytics…</p>
         </div>
       </div>
     );
@@ -762,38 +744,26 @@ export default function RevenueDashboardPage() {
 
   if (error && !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md rounded-lg border border-red-100 bg-white p-6 text-center shadow-sm">
+      <div className="flex min-h-96 items-center justify-center p-6">
+        <AdminCard className="max-w-md p-6 text-center">
           <AlertCircle size={28} className="mx-auto text-red-500" />
           <h1 className="mt-3 text-lg font-semibold text-slate-950">Revenue dashboard unavailable</h1>
           <p className="mt-2 text-sm font-medium text-slate-500">{error}</p>
-          <button onClick={fetchRevenue} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-sm font-bold text-white">
+          <button onClick={() => void fetchRevenue()} className={`${primaryButtonClass} mt-4`}>
             <RefreshCw size={14} /> Retry
           </button>
-        </div>
+        </AdminCard>
       </div>
     );
   }
 
   if (!data) return null;
+  const hasQualityWarnings = (data.dataQuality.fxWarnings?.length ?? 0) > 0 || (data.dataQuality.missingTables?.length ?? 0) > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 text-slate-950 lg:p-6 xl:p-8">
-      <div className="mx-auto max-w-[1680px] space-y-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-[10px] font-bold uppercase text-[#b83267]">Revenue</p>
-            <h1 className="mt-1 text-3xl font-semibold text-slate-950">Analytics Dashboard</h1>
-            <p className="mt-2 text-sm font-medium text-slate-500">
-              INR executive reporting, daily performance, attribution, and native ledger reconciliation across markets.
-            </p>
-          </div>
-          {error && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
-              Last refresh failed: {error}
-            </div>
-          )}
-        </div>
+    <div className="mx-auto max-w-[1480px] space-y-5">
+        <AdminPageHeader eyebrow="Business health" title="Revenue" description="A focused view of income, subscriptions and acquisition performance." />
+        {error && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">Last refresh failed: {error}</div>}
 
         <FilterToolbar
           filters={filters}
@@ -804,50 +774,29 @@ export default function RevenueDashboardPage() {
           onApply={fetchRevenue}
         />
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <MetricCard label="Last 30 days" value={formatInr(data.inrKpis.last30RevenueInrMinor)} helper={`${data.dataQuality.returnedEvents} filtered events`} icon={WalletCards} tone="brand" />
-          <MetricCard label="MTD revenue" value={formatInr(data.inrKpis.mtdRevenueInrMinor)} helper={`Projected ${formatInr(data.inrKpis.projectedMonthEndRevenueInrMinor)}`} icon={TrendingUp} tone="emerald" />
-          <MetricCard label="Today" value={formatInr(data.inrKpis.todayRevenueInrMinor)} helper={`Yesterday ${formatInr(data.inrKpis.yesterdayRevenueInrMinor)}`} icon={CalendarDays} tone="sky" />
-          <MetricCard label="DoD growth" value={formatPercent(data.inrKpis.dayOverDayGrowthPct)} helper={growthPositive ? 'Revenue up vs yesterday' : 'Revenue down vs yesterday'} icon={growthPositive ? ArrowUpRight : ArrowDownRight} tone={growthPositive ? 'emerald' : 'amber'} />
-          <MetricCard label="AOV" value={formatInr(data.inrKpis.averageOrderValueInrMinor)} helper={`${data.inrKpis.paidOrderCount} paid orders`} icon={CreditCard} tone="violet" />
-          <MetricCard label="MRR" value={formatInr(data.inrKpis.monthlyRecurringRevenueInrMinor)} helper={`ARR ${formatInr(data.inrKpis.annualRecurringRevenueInrMinor)}`} icon={BarChart3} tone="slate" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Selected-period revenue" value={formatInr(data.inrKpis.totalRevenueInrMinor)} helper={`${data.inrKpis.paidOrderCount} paid orders`} icon={WalletCards} tone="brand" />
+          <MetricCard label="Monthly recurring revenue" value={formatInr(data.inrKpis.monthlyRecurringRevenueInrMinor)} helper={`ARR ${formatInr(data.inrKpis.annualRecurringRevenueInrMinor)}`} icon={BarChart3} tone="slate" />
+          <MetricCard label="Active subscriptions" value={String(data.summaryCounts.activeSubscriptions)} helper={`${data.summaryCounts.newSubscriptionsThisMonth} new this month`} icon={Users} tone="emerald" />
+          <MetricCard label="Average order value" value={formatInr(data.inrKpis.averageOrderValueInrMinor)} helper={`${data.summaryCounts.customerCount} customers`} icon={CreditCard} tone="violet" />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="All filtered revenue" value={formatInr(data.inrKpis.totalRevenueInrMinor)} helper="Converted INR view" icon={WalletCards} tone="brand" />
-          <MetricCard label="Customers" value={String(data.summaryCounts.customerCount)} helper={`${data.summaryCounts.newCustomersThisMonth} new this month`} icon={Users} tone="sky" />
-          <MetricCard label="Active subscriptions" value={String(data.summaryCounts.activeSubscriptions)} helper={`${data.summaryCounts.newSubscriptionsThisMonth} new this month`} icon={CalendarDays} tone="emerald" />
-          <MetricCard label="Churn" value={formatPercent(data.summaryCounts.subscriptionChurnRatePct)} helper={`${data.summaryCounts.subscriptionCancellationsThisMonth} cancellations`} icon={AlertCircle} tone="amber" />
+        {hasQualityWarnings && <DataQualityBanner data={data.dataQuality} />}
+
+        <div className="overflow-x-auto"><RevenueTrendChart rows={data.daily} /></div>
+
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <RankingList title="Top products" rows={productRows} />
+          <RankingList title="Top acquisition sources" rows={data.attribution.bySource} />
         </div>
 
-        <DataQualityBanner data={data.dataQuality} />
-
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-          <div className="overflow-x-auto xl:col-span-2">
-            <RevenueTrendChart rows={data.daily} />
-          </div>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-1">
-            <RankingList title="Top sources" rows={data.attribution.bySource} />
-            <RankingList title="Top campaigns" rows={data.attribution.byCampaign} />
-          </div>
+        <div className="space-y-3 pt-2">
+          <p className="iconik-micro" style={{ color: CLUB.muted }}>Detailed reporting</p>
+          <details className="group rounded-2xl border" style={{ background: CLUB.surface, borderColor: CLUB.border }}><summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 [&::-webkit-details-marker]:hidden"><div><p className="text-sm font-medium" style={{ color: CLUB.ink }}>Attribution details</p><p className="mt-1 text-xs" style={{ color: CLUB.muted }}>Campaigns, mediums, landing pages and source-to-product performance</p></div><ChevronDown size={16} className="transition group-open:rotate-180" /></summary><div className="grid grid-cols-1 gap-5 border-t p-5 lg:grid-cols-3" style={{ borderColor: CLUB.border }}><RankingList title="Top campaigns" rows={data.attribution.byCampaign} /><RankingList title="Top mediums" rows={data.attribution.byMedium} /><RankingList title="Top landing pages" rows={data.attribution.byLandingPage} /></div></details>
+          <details className="group rounded-2xl border" style={{ background: CLUB.surface, borderColor: CLUB.border }}><summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 [&::-webkit-details-marker]:hidden"><div><p className="text-sm font-medium" style={{ color: CLUB.ink }}>Currency reconciliation</p><p className="mt-1 text-xs" style={{ color: CLUB.muted }}>Review native INR, AUD and USD ledger totals</p></div><ChevronDown size={16} className="transition group-open:rotate-180" /></summary><div className="border-t p-5" style={{ borderColor: CLUB.border }}><CurrencyReconciliation data={data} currency={currency} setCurrency={setCurrency} /></div></details>
+          <details className="group rounded-2xl border" style={{ background: CLUB.surface, borderColor: CLUB.border }}><summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 [&::-webkit-details-marker]:hidden"><div><p className="text-sm font-medium" style={{ color: CLUB.ink }}>Data quality</p><p className="mt-1 text-xs" style={{ color: CLUB.muted }}>{hasQualityWarnings ? 'Warnings need review' : 'No current warnings'}</p></div><ChevronDown size={16} className="transition group-open:rotate-180" /></summary><div className="border-t p-5" style={{ borderColor: CLUB.border }}><DataQualityBanner data={data.dataQuality} /></div></details>
+          <details className="group rounded-2xl border" style={{ background: CLUB.surface, borderColor: CLUB.border }}><summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 [&::-webkit-details-marker]:hidden"><div><p className="text-sm font-medium" style={{ color: CLUB.ink }}>Revenue event ledger</p><p className="mt-1 text-xs" style={{ color: CLUB.muted }}>Search, filter and export individual payment events</p></div><ChevronDown size={16} className="transition group-open:rotate-180" /></summary><div className="border-t p-3 sm:p-5" style={{ borderColor: CLUB.border }}><RevenueEventsTable events={data.recentEvents} /></div></details>
         </div>
-
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <RankingList title="Top mediums" rows={data.attribution.byMedium} />
-          <RankingList title="Top landing pages" rows={data.attribution.byLandingPage} />
-          <RankingList
-            title="Source x product"
-            rows={data.attribution.sourceProduct.map(row => ({
-              label: `${row.source} / ${row.productLabel}`,
-              amountInrMinor: row.amountInrMinor,
-              paidCount: row.paidCount,
-            }))}
-          />
-        </div>
-
-        <CurrencyReconciliation data={data} currency={currency} setCurrency={setCurrency} />
-        <RevenueEventsTable events={data.recentEvents} />
-      </div>
     </div>
   );
 }

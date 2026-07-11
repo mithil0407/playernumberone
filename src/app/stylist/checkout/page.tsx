@@ -202,7 +202,6 @@ export default function StylistCheckoutPage() {
     useEffect(() => {
         trackPageView('Stylist Checkout');
         trackInitiateCheckout(BLUEPRINT_PRICE, 1, 'ICONIK Style Blueprint', 'USD', 'Style Scan Funnel');
-        window.fbq?.('trackCustom', 'checkout_started', { funnel: 'style_scan', amount: BLUEPRINT_PRICE });
         const savedEmail = localStorage.getItem('stylist_customerEmail') || '';
         const savedPhone = localStorage.getItem('stylist_customerPhone') || '';
         if (savedEmail) setEmail(savedEmail);

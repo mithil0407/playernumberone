@@ -35,6 +35,8 @@ export async function GET(
     eyewearCards?: (string | null)[];
     outfitCards?: (string | null)[];
     comboGridCards?: { office?: string | null; evening?: string | null; relaxed?: string | null };
+    diagnostic?: { faceGeometry?: string | null; frameFront?: string | null; frameSide?: string | null; colourDrape?: string | null };
+    deliverables?: { beforeImage?: string | null; afterImage?: string | null; beforeAfter?: string | null; linkedinHeadshot?: string | null; datingProfileShots?: (string | null)[] };
   } | null;
 
   return NextResponse.json({
@@ -51,6 +53,13 @@ export async function GET(
       eyewearDone:   imageUrls?.eyewearCards?.[0] ? 1 : 0,
       outfitDone:    (imageUrls?.outfitCards    ?? []).filter(Boolean).length,
       comboGridDone: Object.values(imageUrls?.comboGridCards ?? {}).filter(Boolean).length,
+      diagnosticDone: Object.values(imageUrls?.diagnostic ?? {}).filter(Boolean).length,
+      deliverableDone: [
+        imageUrls?.deliverables?.beforeImage,
+        imageUrls?.deliverables?.afterImage,
+        imageUrls?.deliverables?.linkedinHeadshot,
+        ...(imageUrls?.deliverables?.datingProfileShots ?? []),
+      ].filter(Boolean).length,
     },
   });
 }

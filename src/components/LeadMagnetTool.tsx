@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Camera, CheckCircle, LockKeyhole, Ruler, Sparkles, Upload } from "lucide-react";
 import { getAttributionPayload } from "@/lib/attribution";
+import { readGrowthContextFromUrl, trackGrowthEvent } from "@/lib/growthAnalytics";
 import {
   computeLeadMagnetResult,
   LeadMagnetAnswers,
@@ -16,12 +17,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type ToolProps = {
   tool: LeadMagnetDefinition;
 };
-
-function track(event: string, payload: Record<string, unknown>) {
-  if (typeof window === "undefined") return;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).fbq?.("trackCustom", event, payload);
-}
 
 function PreviewUpload({
   label,
@@ -308,6 +303,7 @@ function isReady(tool: LeadMagnetDefinition, answers: LeadMagnetAnswers) {
 }
 
 export default function LeadMagnetTool({ tool }: ToolProps) {
+  const [contentSource, setContentSource] = useState("lead_magnet");
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<LeadMagnetAnswers>({});
   const [result, setResult] = useState<LeadMagnetResult | null>(null);
@@ -316,6 +312,11 @@ export default function LeadMagnetTool({ tool }: ToolProps) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+
+  useEffect(() => {
+    const source = new URLSearchParams(window.location.search).get("source")?.trim();
+    if (source) setContentSource(source);
+  }, []);
 
   useEffect(() => {
     const raw = typeof window !== "undefined" ? localStorage.getItem(`iconik_tool_${tool.id}`) : null;
@@ -339,7 +340,11 @@ export default function LeadMagnetTool({ tool }: ToolProps) {
 
   function start() {
     setStarted(true);
-    track("lead_magnet_start", { tool_id: tool.id, slug: tool.slug });
+    trackGrowthEvent("quiz_start", {
+      ...readGrowthContextFromUrl(),
+      tool_id: tool.id,
+      content_source: contentSource,
+    });
   }
 
   function reveal() {
@@ -349,7 +354,12 @@ export default function LeadMagnetTool({ tool }: ToolProps) {
     if (typeof window !== "undefined") {
       localStorage.setItem(`iconik_tool_${tool.id}`, JSON.stringify({ answers, result: nextResult, unlocked }));
     }
-    track("lead_magnet_result_view", { tool_id: tool.id, result_key: nextResult.key });
+    trackGrowthEvent("quiz_result_view", {
+      ...readGrowthContextFromUrl(),
+      tool_id: tool.id,
+      result_key: nextResult.key,
+      content_source: contentSource,
+    });
   }
 
   async function submitLead() {
@@ -364,7 +374,12 @@ export default function LeadMagnetTool({ tool }: ToolProps) {
     }
     setSaving(true);
     setError("");
-    track("lead_magnet_email_submit", { tool_id: tool.id, result_key: result.key });
+    trackGrowthEvent("quiz_lead_submit", {
+      ...readGrowthContextFromUrl(),
+      tool_id: tool.id,
+      result_key: result.key,
+      content_source: contentSource,
+    });
     try {
       const response = await fetch("/api/lead-magnets", {
         method: "POST",
@@ -376,7 +391,7 @@ export default function LeadMagnetTool({ tool }: ToolProps) {
           email,
           answers,
           result,
-          source: "lead_magnet",
+          source: contentSource,
           attribution: getAttributionPayload(),
         }),
       });
@@ -497,7 +512,12 @@ export default function LeadMagnetTool({ tool }: ToolProps) {
                     </Link>
                     <Link
                       href="/stylist/checkout"
-                      onClick={() => track("lead_magnet_blueprint_cta", { tool_id: tool.id, result_key: result.key })}
+                      onClick={() => trackGrowthEvent("consultation_cta_click", {
+                        ...readGrowthContextFromUrl(),
+                        tool_id: tool.id,
+                        result_key: result.key,
+                        content_source: contentSource,
+                      })}
                       className="rounded-full bg-black px-6 py-3 font-semibold text-white"
                     >
                       {result.paidCta}

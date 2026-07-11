@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Search, Pencil, Trash2, ExternalLink, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FashionItem, ItemStatus } from '@/lib/supabase';
+import { ActionMenu, AdminCard, AdminPageHeader, CLUB, ConfirmDialog, controlClass, EmptyState, FilterBar, LoadingState, primaryButtonClass, quietButtonClass, StatusBadge, secondaryButtonClass } from '@/components/IconikClubAdminUI';
 
 const STATUS_COLORS: Record<ItemStatus, string> = {
   active:   'bg-emerald-50 text-emerald-600 border border-emerald-100',
@@ -22,6 +23,7 @@ function AdminItemsContent() {
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [archiveId, setArchiveId] = useState<string | null>(null);
 
   const status   = searchParams.get('status')   ?? 'all';
   const category = searchParams.get('category') ?? '';
@@ -46,11 +48,11 @@ function AdminItemsContent() {
   useEffect(() => { fetchItems(); }, [fetchItems]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Archive this item?')) return;
     setDeleting(id);
     await fetch(`/api/iconik-club/items/${id}`, { method: 'DELETE' });
     await fetchItems();
     setDeleting(null);
+    setArchiveId(null);
   };
 
   const setParam = (key: string, value: string) => {
@@ -61,81 +63,53 @@ function AdminItemsContent() {
   };
 
   const totalPages = Math.ceil(total / limit);
-  const selectCls = "px-3 py-2 text-sm border border-[#ffb3d1] rounded-xl bg-white text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition";
-
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-7">
-        <div>
-          <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-1">Catalog</p>
-          <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Items</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/iconik-club/admin/items/bulk"
-            className="flex items-center gap-2 px-4 py-2.5 border border-[#ffb3d1] text-[#4a2c3e] text-sm font-semibold rounded-xl hover:bg-[#fff0f5] transition-colors"
-          >
-            <Plus size={15} />
-            Bulk upload
-          </Link>
-          <Link
-            href="/iconik-club/admin/items/upload"
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#ff6b9d] hover:bg-[#e85a8a] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#ff6b9d]/20"
-          >
-            <Plus size={15} />
-            Upload item
-          </Link>
-        </div>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader eyebrow="Wardrobe library" title="Catalogue" description="Review the pieces available for outfit generation." actions={<><Link href="/iconik-club/admin/items/bulk" className={secondaryButtonClass}>Bulk upload</Link><Link href="/iconik-club/admin/items/upload" className={primaryButtonClass}><Plus size={14} /> Upload item</Link></>} />
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-4 mb-5 flex flex-wrap gap-3 shadow-sm">
+      <FilterBar>
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a2c3e]/30" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: CLUB.faint }} />
           <input
             type="text"
             defaultValue={search}
             onKeyDown={e => { if (e.key === 'Enter') setParam('search', (e.target as HTMLInputElement).value); }}
             placeholder="Search items…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[#ffb3d1] rounded-xl bg-[#fff9f5] text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition"
+            aria-label="Search catalogue"
+            className={`${controlClass} pl-10`}
           />
         </div>
-        <select value={status} onChange={e => setParam('status', e.target.value)} className={selectCls}>
+        <select aria-label="Item status" value={status} onChange={e => setParam('status', e.target.value)} className={`${controlClass} sm:w-auto`}>
           <option value="all">All statuses</option>
           <option value="active">Active</option>
           <option value="draft">Draft</option>
           <option value="archived">Archived</option>
         </select>
-        <select value={category || 'all'} onChange={e => setParam('category', e.target.value)} className={`${selectCls} capitalize`}>
+        <select aria-label="Item category" value={category || 'all'} onChange={e => setParam('category', e.target.value)} className={`${controlClass} capitalize sm:w-auto`}>
           {CATEGORIES.map(c => (
             <option key={c} value={c} className="capitalize">{c === 'all' ? 'All categories' : c}</option>
           ))}
         </select>
-      </div>
+      </FilterBar>
 
       {/* Count */}
       {!loading && (
-        <p className="text-xs text-[#4a2c3e]/40 mb-3 font-medium">{total} item{total !== 1 ? 's' : ''}</p>
+        <p className="mb-3 text-xs" style={{ color: CLUB.muted }}>{total} item{total !== 1 ? 's' : ''}</p>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 overflow-hidden shadow-sm">
+      <AdminCard className="overflow-visible">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={22} className="animate-spin text-[#ff6b9d]" />
-          </div>
+          <LoadingState label="Loading catalogue…" />
         ) : items.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-[#4a2c3e]/40 text-sm mb-2">No items found.</p>
-            <Link href="/iconik-club/admin/items/upload" className="text-[#ff6b9d] text-sm font-medium hover:underline">
-              Upload your first item →
-            </Link>
-          </div>
+          <EmptyState title="No catalogue items found" description="Try changing the filters or add a new piece." action={<Link href="/iconik-club/admin/items/upload" className={primaryButtonClass}>Upload item</Link>} />
         ) : (
-          <table className="w-full text-sm">
+          <>
+          <div className="divide-y md:hidden" style={{ borderColor: CLUB.border }}>{items.map(item => <div key={item.id} className="flex items-start gap-3 p-4"><div className="h-16 w-14 shrink-0 overflow-hidden rounded-xl" style={{ background: CLUB.card }}>{item.image_url && <img src={item.image_url} alt="" className="h-full w-full object-cover" />}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium" style={{ color: CLUB.ink }}>{item.item_name}</p><p className="mt-0.5 text-xs capitalize" style={{ color: CLUB.muted }}>{item.brand || item.category || 'Uncategorised'}</p><div className="mt-2"><StatusBadge tone={item.status === 'active' ? 'success' : item.status === 'draft' ? 'warning' : 'neutral'}>{item.status}</StatusBadge></div></div><ActionMenu label="Actions">{item.purchase_link && <a href={item.purchase_link} target="_blank" rel="noopener noreferrer" className={`${quietButtonClass} w-full justify-start`}><ExternalLink size={14} /> Open product</a>}<Link href={`/iconik-club/admin/items/${item.id}`} className={`${quietButtonClass} w-full justify-start`}><Pencil size={14} /> Edit item</Link><button className={`${quietButtonClass} w-full justify-start text-[#B45E55]`} onClick={() => setArchiveId(item.id!)}><Trash2 size={14} /> Archive</button></ActionMenu></div>)}</div>
+          <table className="hidden w-full text-sm md:table">
             <thead>
-              <tr className="border-b border-[#ffb3d1]/50 bg-[#fff9f5]">
+              <tr style={{ background: CLUB.card, borderBottom: `1px solid ${CLUB.border}` }}>
                 <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Item</th>
                 <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden md:table-cell">Category</th>
                 <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden lg:table-cell">Price</th>
@@ -143,9 +117,9 @@ function AdminItemsContent() {
                 <th className="text-right px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#ffb3d1]/30">
+            <tbody className="divide-y" style={{ borderColor: CLUB.border }}>
               {items.map(item => (
-                <tr key={item.id} className="hover:bg-[#fff9f5] transition-colors group">
+                <tr key={item.id} className="transition-colors hover:bg-black/[0.025]">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       {item.image_url ? (
@@ -176,38 +150,16 @@ function AdminItemsContent() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-1">
-                      {item.purchase_link && (
-                        <a
-                          href={item.purchase_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-[#4a2c3e]/30 hover:text-[#ff6b9d] rounded-lg hover:bg-[#fff0f5] transition-all"
-                        >
-                          <ExternalLink size={14} />
-                        </a>
-                      )}
-                      <Link
-                        href={`/iconik-club/admin/items/${item.id}`}
-                        className="p-2 text-[#4a2c3e]/30 hover:text-[#ff6b9d] rounded-lg hover:bg-[#fff0f5] transition-all"
-                      >
-                        <Pencil size={14} />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(item.id!)}
-                        disabled={deleting === item.id}
-                        className="p-2 text-[#4a2c3e]/30 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all disabled:opacity-40"
-                      >
-                        {deleting === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                      </button>
-                    </div>
+                    <div className="flex justify-end"><ActionMenu label="Actions">{item.purchase_link && <a href={item.purchase_link} target="_blank" rel="noopener noreferrer" className={`${quietButtonClass} w-full justify-start`}><ExternalLink size={14} /> Open product</a>}<Link href={`/iconik-club/admin/items/${item.id}`} className={`${quietButtonClass} w-full justify-start`}><Pencil size={14} /> Edit item</Link><button className={`${quietButtonClass} w-full justify-start text-[#B45E55]`} onClick={() => setArchiveId(item.id!)}><Trash2 size={14} /> Archive</button></ActionMenu></div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></>
         )}
-      </div>
+      </AdminCard>
+
+      <ConfirmDialog open={Boolean(archiveId)} title="Archive this item?" description="It will be hidden from the active catalogue. You can still find it using the Archived filter." confirmLabel="Archive item" busy={Boolean(deleting)} onCancel={() => setArchiveId(null)} onConfirm={() => archiveId && void handleDelete(archiveId)} />
 
       {/* Pagination */}
       {totalPages > 1 && (

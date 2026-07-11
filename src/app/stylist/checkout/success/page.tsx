@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { trackPageView } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
+import { trackGrowthEvent } from '@/lib/growthAnalytics';
 
 // ── Razorpay types ────────────────────────────────────────────────────────────
 
@@ -160,6 +161,12 @@ function StylistSuccessInner() {
         const trackedAmount = Number.isFinite(purchaseAmount) ? purchaseAmount : 149;
         window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: trackedAmount, currency: 'USD', payment_id: paymentId });
         window.fbq?.('track', 'Purchase', { value: trackedAmount, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
+        trackGrowthEvent('purchase', {
+            value: trackedAmount,
+            currency: 'USD',
+            transaction_id: paymentId || undefined,
+            content_source: 'style_scan',
+        });
         sessionStorage.removeItem('stylist_purchaseTracked');
 
         // Read Edit state from localStorage

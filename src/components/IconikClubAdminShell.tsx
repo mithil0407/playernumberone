@@ -12,15 +12,15 @@ import {
   LogOut,
   Menu,
   X,
-  Sparkles,
 } from 'lucide-react';
+import { CLUB } from '@/components/IconikClubAdminUI';
 
 const NAV = [
-  { href: '/iconik-club/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/iconik-club/admin/revenue', label: 'Revenue', icon: BarChart3 },
-  { href: '/iconik-club/admin/items', label: 'Items', icon: ShoppingBag },
-  { href: '/iconik-club/admin/clients', label: 'Clients', icon: Users },
+  { href: '/iconik-club/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/iconik-club/admin/clients', label: 'Members', icon: Users },
   { href: '/iconik-club/admin/outfits', label: 'Outfits', icon: Shirt },
+  { href: '/iconik-club/admin/items', label: 'Catalogue', icon: ShoppingBag },
+  { href: '/iconik-club/admin/revenue', label: 'Revenue', icon: BarChart3 },
 ];
 
 export default function IconikClubAdminShell({ children }: { children: React.ReactNode }) {
@@ -39,29 +39,23 @@ export default function IconikClubAdminShell({ children }: { children: React.Rea
   if (isLoginPage) return <>{children}</>;
 
   return (
-    <div className="min-h-screen flex bg-[#f8f5f7]" style={{ fontFamily: 'var(--font-inter)' }}>
+    <div className="iconik-club-admin min-h-screen flex" style={{ background: CLUB.bg, fontFamily: 'var(--font-inter, system-ui)' }}>
       {open && (
         <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={() => setOpen(false)} />
       )}
 
       <aside
         className={`
-        fixed top-0 left-0 h-full z-30 w-60 bg-white border-r border-[#ffb3d1]/60
-        flex flex-col transition-transform duration-200 shadow-lg shadow-black/5
+        fixed top-0 left-0 h-full z-30 w-56
+        flex flex-col transition-transform duration-200
         ${open ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0 lg:shadow-none
       `}
+        style={{ background: CLUB.card, borderRight: `1px solid ${CLUB.border}` }}
       >
-        <div className="px-5 py-5 border-b border-[#ffb3d1]/60">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a] rounded-xl flex items-center justify-center shadow-sm shadow-[#ff6b9d]/30 flex-shrink-0">
-              <Sparkles size={14} className="text-white" />
-            </div>
-            <div className="leading-none">
-              <p className="text-[11px] font-bold text-[#4a2c3e] tracking-[0.15em] uppercase">Iconik</p>
-              <p className="text-[9px] text-[#ff6b9d] tracking-[0.2em] uppercase font-semibold">Admin</p>
-            </div>
-          </div>
+        <div className="px-5 py-5" style={{ borderBottom: `1px solid ${CLUB.border}` }}>
+          <div className="iconik-display" style={{ fontSize: 13, letterSpacing: '0.32em', color: CLUB.ink }}>I C O N I K</div>
+          <div className="iconik-micro mt-1.5" style={{ color: CLUB.muted }}>Club · Admin</div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -72,27 +66,21 @@ export default function IconikClubAdminShell({ children }: { children: React.Rea
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${
-                    active
-                      ? 'bg-[#fff0f5] text-[#ff6b9d] shadow-sm'
-                      : 'text-[#4a2c3e]/60 hover:bg-[#fff8fb] hover:text-[#4a2c3e]'
-                  }
-                `}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all"
+                style={{ background: active ? CLUB.ink : 'transparent', color: active ? CLUB.bg : CLUB.muted }}
               >
-                <Icon size={17} className={active ? 'text-[#ff6b9d]' : 'text-[#4a2c3e]/40'} />
-                {label}
-                {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#ff6b9d]" />}
+                <Icon size={15} />
+                <span className="luxury-body" style={{ fontWeight: active ? 500 : 400 }}>{label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#ffb3d1]/60">
+        <div className="px-3 py-4" style={{ borderTop: `1px solid ${CLUB.border}` }}>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[#4a2c3e]/50 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm rounded-lg luxury-body transition-all hover:bg-black/5"
+            style={{ color: CLUB.muted }}
           >
             <LogOut size={16} />
             Sign out
@@ -101,24 +89,19 @@ export default function IconikClubAdminShell({ children }: { children: React.Rea
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3.5 bg-white border-b border-[#ffb3d1]/60">
-          <button onClick={() => setOpen(true)} className="text-[#4a2c3e]/60 hover:text-[#4a2c3e]">
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3.5" style={{ background: CLUB.card, borderBottom: `1px solid ${CLUB.border}` }}>
+          <button onClick={() => setOpen(true)} aria-label="Open navigation" style={{ color: CLUB.muted }}>
             <Menu size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a] rounded-lg flex items-center justify-center">
-              <Sparkles size={11} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-[#4a2c3e] tracking-wide">Iconik Admin</span>
-          </div>
+          <span className="iconik-display" style={{ fontSize: 13, letterSpacing: '0.28em', color: CLUB.ink }}>I C O N I K</span>
           {open && (
-            <button onClick={() => setOpen(false)} className="ml-auto text-[#4a2c3e]/60">
+            <button onClick={() => setOpen(false)} aria-label="Close navigation" className="ml-auto" style={{ color: CLUB.muted }}>
               <X size={20} />
             </button>
           )}
         </header>
 
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-8" style={{ background: CLUB.bg }}>{children}</main>
       </div>
     </div>
   );

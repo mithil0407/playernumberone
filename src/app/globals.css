@@ -50,6 +50,22 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* ICONIK Club admin compatibility layer. Older workflow screens retain their
+   behavior while inheriting the shared editorial admin palette. */
+.iconik-club-admin .bg-white { background-color: #FBF8F1; }
+.iconik-club-admin [class~="bg-[#fff9f5]"],
+.iconik-club-admin [class~="bg-[#fff0f5]"] { background-color: #EDE5D2; }
+.iconik-club-admin [class~="bg-[#ff6b9d]"],
+.iconik-club-admin [class~="bg-[#e85a8a]"] { background-color: #2C2622; }
+.iconik-club-admin [class~="text-[#ff6b9d]"],
+.iconik-club-admin [class~="text-[#b83267]"] { color: #A9874F; }
+.iconik-club-admin [class~="text-[#4a2c3e]"] { color: #2C2622; }
+.iconik-club-admin [class*="border-[#ffb3d1]"] { border-color: rgba(44, 38, 34, 0.12); }
+.iconik-club-admin [class*="shadow-[#ff6b9d]"] { --tw-shadow-color: rgba(44, 38, 34, 0.14); }
+.iconik-club-admin input,
+.iconik-club-admin select,
+.iconik-club-admin textarea { accent-color: #A9874F; }
+
 .dark {
   --background: #4a2c3e;
   --foreground: #fff9f5;

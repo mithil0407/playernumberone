@@ -1,18 +1,36 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArticleGrowthTracker,
+  TrackedArticleCtaView,
+  TrackedArticleLink,
+} from "@/components/ArticleGrowthTracker";
+import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Modest Office Wear for Indian Women: Polished, Never Boring",
-  description: "How to dress modestly for Indian professional environments without sacrificing style. Coverage-first formulas for corporate, startup, and traditional workplaces — ethnic and western.",
-  keywords: "modest professional fashion India, modest work clothes Indian women, covered office wear India, conservative dress code India, modest corporate fashion Indian women",
-  alternates: { canonical: "https://www.iconik.pro/style-guides/modest-professional-fashion-india" },
-  openGraph: {
-    title: "Modest Office Wear for Indian Women: Polished, Never Boring",
-    description: "Coverage-first office formulas for Indian professional women — ethnic and western wear that is both modest and authoritative.",
-    url: "https://www.iconik.pro/style-guides/modest-professional-fashion-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Modest professional fashion India — Iconik" }],
-  },
+const path = "/style-guides/modest-professional-fashion-india";
+const growthTracking = {
+  article_id: "modest_professional_fashion_india",
+  content_cluster: "work_occasion_dressing",
+  audience: "women" as const,
+  hook_type: "coverage_through_design",
+  content_source: "seo_modest_professional_article",
 };
+const silhouetteQuizHref =
+  "/tools/silhouette-scan?source=seo_modest_professional_article&article_id=modest_professional_fashion_india&content_cluster=work_occasion_dressing&audience=women&hook_type=coverage_through_design";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Modest Office Wear for Indian Women: 12 Polished Formulas",
+  description:
+    "Modest professional outfit formulas for Indian offices: ethnic and western options, summer fabrics, sleeves, dupattas, fit and authority without unnecessary bulk.",
+  path,
+  type: "article",
+  keywords: [
+    "modest office wear India",
+    "modest professional attire women",
+    "modest work clothes Indian women",
+    "professional modest outfits",
+  ],
+});
 
 const faqs = [
   {
@@ -43,7 +61,8 @@ export default function ModestProfessionalFashionPage() {
         "description": "Coverage-first professional style guide for Indian women — modest dressing that maintains authority.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
         "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-21",
+        "dateModified": "2026-07-11",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/modest-professional-fashion-india" },
       },
       {
@@ -68,6 +87,7 @@ export default function ModestProfessionalFashionPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ArticleGrowthTracker {...growthTracking} />
       <main className="min-h-screen bg-white px-4 py-16 md:py-24">
         <div className="mx-auto max-w-3xl">
 
@@ -83,12 +103,29 @@ export default function ModestProfessionalFashionPage() {
 
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Modest Fashion That Doesn&apos;t Look Boring: The Indian Professional
+              Modest Office Wear for Indian Women: 12 Polished Formulas
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Modest professional dressing is not a constraint — it is a design challenge with excellent solutions. Indian garment traditions are built around coverage-first aesthetics, and the most authoritative professional outfits in Indian culture are also the most modest. This guide gives you coverage-first formulas that project confidence, authority, and style simultaneously.
+              Modest professional dressing works best when coverage comes from garment design rather than simply adding size. Clean shoulders, breathable opaque fabric, deliberate sleeve and hem lengths, and one controlled silhouette create polish across Indian ethnic and western office wardrobes.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-600">
+              <span className="rounded-full border border-gray-200 px-3 py-1">Published 21 March 2026</span>
+              <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 11 July 2026</span>
+              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
+            </div>
           </header>
+
+          <aside className="mb-12 overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#9aabb2_0%,#71858e_100%)] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.18)]">
+            <div className="rounded-[1.8rem] border border-white/45 bg-white/10 p-6 text-white backdrop-blur-xl md:p-8">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/65">The short answer</p>
+              <p className="font-serif text-2xl leading-relaxed text-[#fffaf1]">
+                Build modest office outfits with coverage by construction: a fitted shoulder, opaque breathable fabric, intentional sleeve and hem lengths, and a visible or implied waist.
+              </p>
+              <p className="mt-4 leading-relaxed text-white/75">
+                Reliable formulas include a straight kurta with tonal trousers, a structured blouse with wide-leg trousers, a shirt dress with a controlled waist, or a saree with a secure blouse and practical drape.
+              </p>
+            </div>
+          </aside>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Does Modest Dressing Often Look Frumpy — And How Do You Fix It?</h2>
@@ -107,7 +144,7 @@ export default function ModestProfessionalFashionPage() {
             </p>
             <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
               <li><strong>Straight-cut churidar kameez:</strong> The churidar provides full leg coverage; the kameez covers the torso. In crepe or cotton-linen, this is the single most versatile modest professional outfit.</li>
-              <li><strong>Anarkali suits:</strong> Full arm and leg coverage, structured silhouette, formal enough for any meeting level. The most authoritative modest Indian office garment.</li>
+              <li><strong>Controlled A-line or Anarkali suits:</strong> Full coverage with movement; choose restrained flare, practical length, and low-volume embellishment for formal offices.</li>
               <li><strong>Palazzo kameez sets:</strong> Wide palazzo provides full leg coverage; pairs well with a straight or A-line kameez. Cooler than churidars in summer.</li>
               <li><strong>Sarees with full-sleeve blouse:</strong> A saree with a full-sleeve blouse in the same or tonal colour is the most formal modest professional outfit available.</li>
               <li><strong>Patiala salwar with structured kameez:</strong> Traditional full coverage with volume in the salwar — visually interesting without compromising coverage.</li>
@@ -167,17 +204,21 @@ export default function ModestProfessionalFashionPage() {
             </ul>
           </section>
 
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint includes modest-dressing formulas specific to your silhouette, undertone palette, and workplace context.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
+          <section className="mb-10 overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
+            <TrackedArticleCtaView tracking={growthTracking} />
+            <div className="rounded-[1.8rem] border border-white/15 bg-white/10 p-7 text-white backdrop-blur-xl">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#f0cb80]">Free silhouette diagnostic</p>
+              <h2 className="mb-3 font-serif text-3xl text-[#fffaf1]">Choose coverage that follows your proportions</h2>
+              <p className="mb-6 leading-relaxed text-white/75">The Silhouette Scan uses four simple measurements to identify where your outfit needs structure, ease, and visual balance.</p>
+              <TrackedArticleLink href={silhouetteQuizHref} tracking={growthTracking} className="inline-block rounded-full bg-[#f0cb80] px-7 py-3 font-semibold text-[#27353b] transition hover:bg-[#f6d99e]">
+                Take the Free Silhouette Scan →
+              </TrackedArticleLink>
+            </div>
+          </section>
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Modest Fashion That Doesn&apos;t Look Boring: The Indian Professional.&quot; Iconik LLP, 2025. https://www.iconik.pro/style-guides/modest-professional-fashion-india</p>
+            <p>Navalakha, Mithil. &quot;Modest Office Wear for Indian Women: 12 Polished Formulas.&quot; Iconik, reviewed 11 July 2026. https://www.iconik.pro/style-guides/modest-professional-fashion-india</p>
           </div>
 
         </div>

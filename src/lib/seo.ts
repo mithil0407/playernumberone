@@ -14,6 +14,12 @@ type BuildMetadataOptions = {
   locale?: string;
   type?: "website" | "article";
   noIndex?: boolean;
+  image?: {
+    path: string;
+    width: number;
+    height: number;
+    alt: string;
+  };
 };
 
 export function absoluteUrl(path: string) {
@@ -33,9 +39,23 @@ export function buildMetadata({
   locale,
   type = "website",
   noIndex = false,
+  image,
 }: BuildMetadataOptions): Metadata {
   const url = absoluteUrl(path);
   const fullTitle = withSiteTitle(title);
+  const socialImage = image
+    ? {
+        url: absoluteUrl(image.path),
+        width: image.width,
+        height: image.height,
+        alt: image.alt,
+      }
+    : {
+        url: OG_IMAGE_URL,
+        width: 1200,
+        height: 630,
+        alt: fullTitle,
+      };
 
   return {
     title: fullTitle,
@@ -51,20 +71,13 @@ export function buildMetadata({
       type,
       siteName: SITE_NAME,
       locale,
-      images: [
-        {
-          url: OG_IMAGE_URL,
-          width: 1200,
-          height: 630,
-          alt: fullTitle,
-        },
-      ],
+      images: [socialImage],
     },
     twitter: {
       card: "summary_large_image",
       title: fullTitle,
       description,
-      images: [OG_IMAGE_URL],
+      images: [socialImage.url],
     },
     robots: noIndex
       ? {

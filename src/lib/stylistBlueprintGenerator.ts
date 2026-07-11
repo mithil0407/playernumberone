@@ -47,6 +47,12 @@ import {
   isLatestStylistBlueprintVersion,
 } from './stylistBlueprintSchema';
 import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2';
+import {
+  generateStylistOutfitScienceApplication,
+  isScienceBlueprintReport,
+  isStylistOutfitScienceHarnessEnabled,
+  type OutfitScienceEngineMetadata,
+} from './stylistOutfitScience';
 
 export {
   STYLIST_BLUEPRINT_36_PAGE_COUNT,
@@ -203,7 +209,7 @@ looks. Classy, realistic, and shoppable beats novel or experimental every time.
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const STYLIST_BLUEPRINT_TEXT_MODEL = process.env.GEMINI_STYLIST_TEXT_MODEL || 'gemini-3-flash-preview';
-const STYLIST_BLUEPRINT_OUTFIT_TEXT_MODEL = process.env.GEMINI_STYLIST_OUTFIT_MODEL || 'gemini-3.1-pro-preview';
+const STYLIST_BLUEPRINT_OUTFIT_TEXT_MODEL = process.env.GEMINI_STYLIST_OUTFIT_MODEL || 'gemini-3-flash-preview';
 const GEMINI_TEXT_TIMEOUT_MS = 75_000;
 const GEMINI_OUTFIT_TEXT_TIMEOUT_MS = Number(process.env.GEMINI_STYLIST_OUTFIT_TIMEOUT_MS || 150_000);
 
@@ -418,6 +424,7 @@ export interface StylistBlueprintReportData {
   analysis: StylistBlueprintAnalysis;
   classification: StylistBlueprintClassification;
   pages: BlueprintPage[];
+  outfit_engine?: OutfitScienceEngineMetadata;
 }
 
 type AnyRecord = Record<string, unknown>;
@@ -5696,7 +5703,7 @@ export async function generateStylistBlueprintPages(
   submission: StylistIntakeSubmission,
   reportData: StylistBlueprintReportData,
   act: 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing',
-): Promise<BlueprintPage[]> {
+): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata }> {
   const libraryContext = await loadOutfitLibraryContext();
   const culturalMode = getStylistOutfitCulturalMode(submission);
   const stylistOutfitLibrary = outfitLibraryPromptForContext(libraryContext);
@@ -5710,6 +5717,9 @@ export async function generateStylistBlueprintPages(
   const outfitsPerCapsule = outfitCount / 4;
   const outfitDiversityPlan = buildOutfitDiversityPlan(reportData, libraryContext, culturalMode);
   if (act === 'application') {
+    if (isStylistOutfitScienceHarnessEnabled() || isScienceBlueprintReport(reportData)) {
+      return generateStylistOutfitScienceApplication(submission, reportData, libraryContext.outfits);
+    }
     if (isLatestStylistBlueprintVersion(reportData)) {
       const previewPlans = buildTransformationPreviewPlans(reportData, outfitDiversityPlan);
       const detailedPlans = buildDetailedHarnessPlansAfterTransformation(outfitDiversityPlan);

@@ -4,6 +4,8 @@
 import { GoogleGenAI } from '@google/genai';
 import type { MenFashionItem, MenOutfitOccasion } from './supabaseClubMen';
 
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
+
 function getAI() {
   const key = process.env.GOOGLE_AI_API_KEY;
   if (!key) throw new Error('GOOGLE_AI_API_KEY is not set in environment variables');
@@ -156,7 +158,7 @@ Return ONLY the JSON. No markdown, no explanation.`;
 
   try {
     const response = await getAI().models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: TEXT_MODEL,
       contents: [{ parts: [{ text: prompt }] }],
     });
     const text = response.text ?? '';
@@ -296,7 +298,7 @@ Return ONLY a valid JSON array of exactly 6 objects:
 Return ONLY the JSON array. No markdown, no explanation.`;
 
   const response = await getAI().models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: TEXT_MODEL,
     contents: [{ parts: [{ text: prompt }] }],
   });
 
@@ -383,7 +385,7 @@ Return ONLY a valid JSON array of exactly 6 objects:
 Return ONLY the JSON array. No markdown, no explanation.`;
 
   const response = await getAI().models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: TEXT_MODEL,
     contents: [{ parts: [{ text: prompt }] }],
   });
 

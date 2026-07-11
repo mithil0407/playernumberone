@@ -5,12 +5,12 @@ import {
   runSection1,
   runSection2,
   runSection3,
-  runSection4,
   runSection5,
   runSection6,
   runSection6Shopping,
   runSection7GroomingSkin,
-  repairSection4OutfitsUntilQaPass,
+  buildManBlueprintV2StructuredData,
+  generateSection4AtQualityFloor,
   type ClassificationResult,
   type ReportData,
   type ReportSections,
@@ -19,7 +19,6 @@ import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { supabaseAdmin } from '@/lib/supabase';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
-import { validateManReportSection4 } from '@/lib/manReportQa';
 
 type SectionField = keyof ReportSections;
 type PartialSections = Partial<Record<SectionField, string>>;
@@ -60,7 +59,8 @@ function section4HasBlockingQa(qa: ReportData['qa']): boolean {
 function section4NeedsQa(reportData: ReportData | null | undefined): boolean {
   return hasText(reportData?.sections?.s4_outfits) && (
     !reportData?.qa?.section4 ||
-    section4HasBlockingQa(reportData.qa)
+    section4HasBlockingQa(reportData.qa) ||
+    (reportData?.outfit_library?.version === 'v2-9plus' && !reportData.qa.section4.quality?.passed)
   );
 }
 
@@ -103,12 +103,14 @@ async function writePartialData(
   sections: PartialSections,
   nextStage: string,
   qa?: ReportData['qa'],
+  selectionSalt = '',
 ) {
   await supabaseAdmin
     .from('man_reports')
     .update({
       status: 'generating',
       report_data: {
+        ...buildManBlueprintV2StructuredData(classification, selectionSalt),
         classification,
         sections: { ...sections },
         generated_at: new Date().toISOString(),
@@ -134,6 +136,7 @@ export async function runManReportTextPipeline(
   let classification = state.classification;
   const sections = state.sections;
   let qa = state.qa;
+  let selectionSalt = existingReportData?.outfit_library?.selectionProfile?.selectionSalt ?? '';
 
   try {
     if (!classification) {
@@ -175,35 +178,32 @@ export async function runManReportTextPipeline(
     if (!hasText(sections.s4_outfits) || section4NeedsQa({ classification, sections: sections as ReportSections, generated_at: new Date().toISOString(), qa })) {
       currentStage = 'generating_s4';
       await updateStage(reportId, currentStage, shareToken);
-      if (!hasText(sections.s4_outfits)) {
-        sections.s4_outfits = await runSection4(classification, submission);
-      }
-      sections.s4_outfits = normaliseSequentialManOutfitNumbers(sections.s4_outfits);
-      const section4Repair = await repairSection4OutfitsUntilQaPass(classification, sections.s4_outfits);
-      sections.s4_outfits = normaliseSequentialManOutfitNumbers(section4Repair.section4);
-      qa = { ...(qa ?? {}), section4: validateManReportSection4(sections.s4_outfits, classification) };
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s4_combo_grids', qa);
+      const section4Result = await generateSection4AtQualityFloor(classification, submission, sections.s4_outfits ?? '', selectionSalt);
+      sections.s4_outfits = normaliseSequentialManOutfitNumbers(section4Result.section4);
+      selectionSalt = section4Result.selectionSalt;
+      qa = { ...(qa ?? {}), section4: section4Result.qa };
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s4_combo_grids', qa, selectionSalt);
     }
 
     if (!hasText(sections.s4_combo_grids)) {
       currentStage = 'generating_s4_combo_grids';
       await updateStage(reportId, currentStage, shareToken);
       sections.s4_combo_grids = await runSection5(classification, submission);
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_shopping', qa);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_shopping', qa, selectionSalt);
     }
 
     if (!hasText(sections.s5_shopping) && !hasText(sections.s5_rules)) {
       currentStage = 'generating_s5_shopping';
       await updateStage(reportId, currentStage, shareToken);
       sections.s5_shopping = await runSection6Shopping(classification, submission);
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_grooming_skin', qa);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s5_grooming_skin', qa, selectionSalt);
     }
 
     if (!hasText(sections.s5_grooming_skin)) {
       currentStage = 'generating_s5_grooming_skin';
       await updateStage(reportId, currentStage, shareToken);
       sections.s5_grooming_skin = await runSection7GroomingSkin(classification, submission);
-      await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa);
+      await writePartialData(reportId, shareToken, classification, sections, 'generating_s6', qa, selectionSalt);
     }
 
     if (!hasText(sections.s6_identity)) {
@@ -232,6 +232,7 @@ export async function runManReportTextPipeline(
         progress_stage: null,
         error_message: null,
         report_data: {
+          ...buildManBlueprintV2StructuredData(classification, selectionSalt),
           classification,
           sections: completeSections,
           generated_at: new Date().toISOString(),

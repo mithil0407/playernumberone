@@ -7,6 +7,7 @@ import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { normaliseSequentialManOutfitNumbers, replaceOutfitBlock } from '@/lib/manOutfitSection';
 import { enrichManOutfitEdit } from '@/lib/manOutfitEdit';
+import { markStaleShoppingSlots } from '@/lib/manShoppingPipeline';
 
 export async function POST(
   request: NextRequest,
@@ -102,6 +103,10 @@ export async function POST(
   }
 
   await revalidateManReportCache(reportId, report.share_token ?? null);
+
+  // Shopping links fetched against the old garment text are now stale; the
+  // refetch itself only happens when the stylist re-approves Section 4.
+  await markStaleShoppingSlots(reportId, newS4);
 
   return NextResponse.json({
     updatedS4Outfits: newS4,

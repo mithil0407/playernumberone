@@ -24,6 +24,21 @@ function missingRequiredPhotoLabels(photos: Record<string, unknown>) {
     return required.filter(([key]) => !hasPhotoUrl(photos, key)).map(([, label]) => label);
 }
 
+function errorSummary(error: unknown) {
+    if (!error || typeof error !== 'object') {
+        return { message: String(error ?? 'Unknown error') };
+    }
+
+    const record = error as Record<string, unknown>;
+    return {
+        code: typeof record.code === 'string' ? record.code : undefined,
+        message: typeof record.message === 'string' ? record.message : String(error),
+        details: typeof record.details === 'string' ? record.details : undefined,
+        hint: typeof record.hint === 'string' ? record.hint : undefined,
+        name: typeof record.name === 'string' ? record.name : undefined,
+    };
+}
+
 async function findPaidOrder(email: string) {
     const { data, error } = await supabaseStyleScan
         .from('stylist_orders')
@@ -47,8 +62,8 @@ async function findPaidOrder(email: string) {
 }
 
 export async function GET(request: NextRequest) {
+    const email = cleanEmail(request.nextUrl.searchParams.get('email'));
     try {
-        const email = cleanEmail(request.nextUrl.searchParams.get('email'));
         if (!email) {
             return NextResponse.json({ success: false, error: 'Missing email' }, { status: 400 });
         }
@@ -68,15 +83,26 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ success: true, order, existingIntake });
     } catch (error) {
-        console.error('Stylist intake access error:', error);
+        console.error('Stylist intake access error:', {
+            email,
+            error: errorSummary(error),
+        });
         return NextResponse.json({ success: false, error: 'Unable to verify purchase' }, { status: 500 });
     }
 }
 
 export async function POST(request: NextRequest) {
+    const logContext: {
+        email?: string;
+        orderId?: unknown;
+        photoUrlKeys?: string[];
+        completionPercentage?: number;
+    } = {};
+
     try {
         const body = await request.json();
         const email = cleanEmail(body.customer_email);
+        logContext.email = email;
         if (!email) {
             return NextResponse.json({ success: false, error: 'Missing customer_email' }, { status: 400 });
         }
@@ -85,8 +111,10 @@ export async function POST(request: NextRequest) {
         if (!order) {
             return NextResponse.json({ success: false, error: 'No paid Stylist Blueprint order found for this email.' }, { status: 403 });
         }
+        logContext.orderId = order.id;
 
         const photoUrls = asRecord(body.photo_urls);
+        logContext.photoUrlKeys = Object.keys(photoUrls);
         const missingPhotos = missingRequiredPhotoLabels(photoUrls);
         if (missingPhotos.length) {
             return NextResponse.json({
@@ -96,6 +124,7 @@ export async function POST(request: NextRequest) {
         }
 
         const completionPercentage = Math.max(0, Math.min(100, Math.round(Number(body.completion_percentage ?? 0))));
+        logContext.completionPercentage = completionPercentage;
         const now = new Date().toISOString();
         const payload = {
             order_id: order.id,
@@ -176,10 +205,13 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, intake: data, email_status: emailStatus });
     } catch (error) {
-        console.error('Stylist intake submit error:', error);
+        console.error('Stylist intake submit error:', {
+            ...logContext,
+            error: errorSummary(error),
+        });
         return NextResponse.json({
             success: false,
-            error: error instanceof Error ? error.message : 'Unable to save intake',
+            error: 'We could not save your intake. Please refresh the page and try again, or contact ICONIK support if this repeats.',
         }, { status: 500 });
     }
 }

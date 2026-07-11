@@ -1702,6 +1702,7 @@ export interface ManIntakeNotificationData {
   customer_phone: string;
   photo_fullbody_url?: string;
   photo_headshot_url?: string;
+  photo_side_profile_url?: string;
   // Section 1 — Basics
   primary_goal?: string;
   style_relationship?: string;
@@ -1777,6 +1778,7 @@ export async function sendManIntakeNotificationEmail(
     ${row('Email', data.customer_email)}
     ${row('Phone', data.customer_phone)}
     ${photoLink('Full Body Photo', data.photo_fullbody_url)}
+    ${photoLink('Side Profile Photo', data.photo_side_profile_url)}
     ${photoLink('Headshot', data.photo_headshot_url)}
 
     ${section('Section 1 — Basics')}
@@ -1835,6 +1837,7 @@ export async function sendManIntakeNotificationEmail(
       `Email: ${data.customer_email}\n` +
       `Phone: ${data.customer_phone}\n` +
       (data.photo_fullbody_url ? `Full body: ${data.photo_fullbody_url}\n` : '') +
+      (data.photo_side_profile_url ? `Side profile: ${data.photo_side_profile_url}\n` : '') +
       (data.photo_headshot_url ? `Headshot: ${data.photo_headshot_url}\n` : '') +
       `\n— Section 1: Basics —\n` +
       (data.primary_goal ? `Primary goal: ${data.primary_goal}\n` : '') +

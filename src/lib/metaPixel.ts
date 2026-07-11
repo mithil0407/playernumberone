@@ -1,5 +1,7 @@
 // Clean Meta Pixel Implementation for ICONIK
 // Pixel ID: 1373360484073939
+import { trackGrowthEvent } from '@/lib/growthAnalytics';
+
 export const META_PIXEL_ID = '1373360484073939';
 export const MAN_BLUEPRINT_PRODUCT_ID = 'iconik_man_style_blueprint';
 export const MAN_OUTFIT_PREVIEW_PRODUCT_ID = 'outfit_preview_on_you';
@@ -147,6 +149,11 @@ export const trackInitiateCheckout = (
   contentCategory?: string,
   contentIds: string[] = ['iconik_style_consultation']
 ) => {
+  trackGrowthEvent('checkout_started', {
+    value,
+    currency,
+    content_source: contentCategory,
+  });
   trackEvent('InitiateCheckout', {
     value: value,
     currency: currency,
@@ -169,6 +176,12 @@ export const trackPurchase = (
   transactionId?: string,
   eventId?: string
 ) => {
+  trackGrowthEvent('purchase', {
+    value,
+    currency,
+    transaction_id: transactionId,
+    content_source: contentCategory,
+  });
   trackEvent('Purchase', {
     value: value,
     currency: currency,

@@ -70,8 +70,10 @@ DO NOT BUY: Not specified by stylist`,
     'reuses previous valid occasion rationale',
   );
   invariant(!/Not specified by stylist/i.test(placeholderRationale), 'removes placeholder rationale');
+  invariant(!placeholderRationale.includes('FIT NOTE:'), 'does not output legacy fit note');
+  invariant(!placeholderRationale.includes('SHOPPING TRANSLATION:'), 'does not output legacy shopping translation');
 
-  const missingShoppingFields = completeManOutfitEditDeterministically({
+  const missingOccasionField = completeManOutfitEditDeterministically({
     classification,
     currentSection4,
     outfitNumber: 2,
@@ -83,12 +85,11 @@ FOOTWEAR: Dark brown loafer
 ACCESSORIES: Minimal watch`,
   });
 
-  invariant(missingShoppingFields.includes('TOP: Ecru knit polo'), 'preserves edited garments with missing fields');
-  invariant(missingShoppingFields.includes('FIT NOTE:'), 'fills missing fit note');
-  invariant(missingShoppingFields.includes('SHOPPING TRANSLATION:'), 'fills missing shopping translation');
-  invariant(missingShoppingFields.includes('ACCEPTABLE SUBSTITUTES:'), 'fills missing acceptable substitutes');
-  invariant(missingShoppingFields.includes('DO NOT BUY:'), 'fills missing do-not-buy guidance');
-  invariant(!missingShoppingFields.includes('SHOPPING TRANSLATION: —'), 'does not leave shopping placeholder');
+  invariant(missingOccasionField.includes('TOP: Ecru knit polo'), 'preserves edited garments with missing fields');
+  invariant(missingOccasionField.includes('OCCASION ANCHOR:'), 'fills missing occasion anchor');
+  invariant(!missingOccasionField.includes('FIT NOTE:'), 'does not fill legacy fit note');
+  invariant(!missingOccasionField.includes('ACCEPTABLE SUBSTITUTES:'), 'does not fill legacy substitutes');
+  invariant(!missingOccasionField.includes('DO NOT BUY:'), 'does not fill legacy do-not-buy guidance');
 
   let wrongNumberFailed = false;
   try {

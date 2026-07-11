@@ -23,7 +23,8 @@ export const organizationNode = {
   areaServed: ["IN", "AE", "AU"],
   serviceType: "Personal Styling",
   sameAs: [
-    "https://www.instagram.com/iconik.pro",
+    "https://www.instagram.com/iconik.style/",
+    "https://www.instagram.com/iconik.men/",
     "https://www.linkedin.com/company/iconik-llp",
   ],
 };
@@ -53,12 +54,14 @@ export function articleNode({
   path,
   datePublished = "2025-01-01",
   dateModified = "2026-06-04",
+  images,
 }: {
   title: string;
   description: string;
   path: string;
   datePublished?: string;
   dateModified?: string;
+  images?: string[];
 }) {
   return {
     "@type": "Article",
@@ -69,6 +72,7 @@ export function articleNode({
     publisher: { "@id": `${SITE_URL}/#organization` },
     datePublished,
     dateModified,
+    image: images?.length ? images.map(absoluteUrl) : [OG_IMAGE_URL],
     mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(path) },
   };
 }

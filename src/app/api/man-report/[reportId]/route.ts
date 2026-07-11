@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
@@ -6,9 +6,14 @@ import { sendMenBlueprintReportEmail } from '@/lib/emailMen';
 import type { ReportData } from '@/lib/manReportGenerator';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { getAdminManReportById, loadAdminManReportByIdFresh } from '@/lib/manReportLoader';
-import { withManReportSection4Qa } from '@/lib/manReportQa';
+import { manReportOutfitQualityGatePassed, withManReportSection4Qa } from '@/lib/manReportQa';
 import { normaliseComboGridText } from '@/lib/manComboGridSection';
 import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
+import { shoppingNeedsFetch, type ManShoppingState } from '@/lib/manShopping';
+import { runManShoppingPipeline } from '@/lib/manShoppingPipeline';
+
+// Background budget for the shopping-links pipeline triggered on S4 approval.
+export const maxDuration = 300;
 
 // ── GET — fetch full report (admin) ────────────────────────────────────────
 
@@ -79,7 +84,7 @@ export async function PATCH(
 
   const { data: existingReport, error: existingError } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, sent_at, share_token, report_data, man_intake_submissions(customer_email)')
+    .select('id, status, sent_at, share_token, report_data, section_approvals, shopping_data, man_intake_submissions(customer_email)')
     .eq('id', reportId)
     .single();
 
@@ -124,6 +129,21 @@ export async function PATCH(
     });
   }
 
+  if (body.status === 'sent') {
+    const candidate = (update.report_data ?? existingReport.report_data) as ReportData | null;
+    if (candidate?.classification && candidate.sections?.s4_outfits) {
+      const checked = withManReportSection4Qa(candidate);
+      update.report_data = checked;
+      if (!manReportOutfitQualityGatePassed(checked)) {
+        return NextResponse.json({
+          error: 'This v2 outfit portfolio is below the ICONIK 9/10 quality floor. Resolve the outfit QA issues before sending.',
+          quality: checked.qa?.section4?.quality,
+          issues: checked.qa?.section4?.issues.filter(item => item.severity === 'error') ?? [],
+        }, { status: 400 });
+      }
+    }
+  }
+
   // When status transitions to 'sent', stamp sent_at
   if (body.status === 'sent' && !body.sent_at) {
     update.sent_at = new Date().toISOString();
@@ -155,6 +175,22 @@ export async function PATCH(
   }
 
   await revalidateManReportCache(reportId, existingReport.share_token);
+
+  // Section 4 approval is the (only) trigger for the shopping-links pipeline —
+  // fetching product links before outfits are final would pay Apify for
+  // garments that get regenerated or swapped. Re-approval after edits refetches
+  // only slots whose descriptors actually changed; re-approval with fresh
+  // links is a no-op.
+  const s4JustApproved = body.section_approvals?.s4 === true
+    && (existingReport.section_approvals as Record<string, boolean> | null)?.s4 !== true;
+  if (s4JustApproved) {
+    const s4Text = ((update.report_data ?? existingReport.report_data) as ReportData | null)?.sections?.s4_outfits ?? '';
+    if (s4Text.trim() && shoppingNeedsFetch(existingReport.shopping_data as ManShoppingState | null, s4Text)) {
+      after(async () => {
+        await runManShoppingPipeline(reportId);
+      });
+    }
+  }
 
   if (isFirstSend && recipientEmail) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';

@@ -2,119 +2,111 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, CheckCircle, FileEdit, Archive, Plus, ArrowRight, Users, UserCheck, Clock } from 'lucide-react';
+import { AlertCircle, ArrowRight, Clock, IndianRupee, PackageOpen, Plus, Shirt, Sparkles, Users } from 'lucide-react';
+import { AdminCard, AdminPageHeader, CLUB, LoadingState, primaryButtonClass, StatusBadge } from '@/components/IconikClubAdminUI';
 
-interface ItemStats   { total: number; active: number; draft: number; archived: number; }
-interface ClientStats { total: number; active: number; pending: number; }
+interface OverviewStats {
+  members: number;
+  pendingMembers: number;
+  outfits: number;
+  generatingOutfits: number;
+  failedOutfits: number;
+  catalogue: number;
+  draftItems: number;
+  revenueMinor: number;
+}
 
-function StatCard({
-  label, value, icon: Icon, gradient, loading,
-}: {
-  label: string; value: number; icon: React.ElementType; gradient: string; loading: boolean;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${gradient}`}>
-        <Icon size={20} className="text-white" />
-      </div>
-      <div>
-        {loading
-          ? <div className="h-7 w-12 bg-[#ffb3d1]/30 rounded-lg animate-pulse mb-1" />
-          : <p className="text-2xl font-bold text-[#4a2c3e]">{value}</p>
-        }
-        <p className="text-xs text-[#4a2c3e]/50 font-medium uppercase tracking-wide">{label}</p>
-      </div>
-    </div>
-  );
+const EMPTY: OverviewStats = { members: 0, pendingMembers: 0, outfits: 0, generatingOutfits: 0, failedOutfits: 0, catalogue: 0, draftItems: 0, revenueMinor: 0 };
+
+function money(minor: number) {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(minor / 100);
 }
 
 export default function AdminDashboard() {
-  const [itemStats,   setItemStats]   = useState<ItemStats>({ total: 0, active: 0, draft: 0, archived: 0 });
-  const [clientStats, setClientStats] = useState<ClientStats>({ total: 0, active: 0, pending: 0 });
+  const [stats, setStats] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/iconik-club/items/list?status=all&limit=1').then(r => r.json()),
-      fetch('/api/iconik-club/items/list?status=active&limit=1').then(r => r.json()),
-      fetch('/api/iconik-club/items/list?status=draft&limit=1').then(r => r.json()),
-      fetch('/api/iconik-club/items/list?status=archived&limit=1').then(r => r.json()),
-      fetch('/api/iconik-club/admin/clients?limit=1').then(r => r.json()),
-      fetch('/api/iconik-club/admin/clients?limit=1&onboarding_complete=true').then(r => r.json()),
-      fetch('/api/iconik-club/admin/clients?limit=1&onboarding_complete=false').then(r => r.json()),
-    ])
-      .then(([all, active, draft, archived, allClients, activeClients, pendingClients]) => {
-        setItemStats({
-          total:    all.total      ?? 0,
-          active:   active.total   ?? 0,
-          draft:    draft.total    ?? 0,
-          archived: archived.total ?? 0,
+    const load = async () => {
+      setError('');
+      try {
+        const urls = [
+          '/api/iconik-club/admin/clients?limit=1',
+          '/api/iconik-club/admin/clients?limit=1&onboarding_complete=false',
+          '/api/iconik-club/admin/outfits?limit=1',
+          '/api/iconik-club/admin/outfits?limit=1&status=generating',
+          '/api/iconik-club/admin/outfits?limit=1&status=failed',
+          '/api/iconik-club/items/list?limit=1&status=all',
+          '/api/iconik-club/items/list?limit=1&status=draft',
+          '/api/iconik-club/admin/revenue?currencyView=inr',
+        ];
+        const responses = await Promise.all(urls.map(url => fetch(url, { cache: 'no-store' })));
+        if (responses.some(response => !response.ok)) throw new Error('Some overview data could not be loaded.');
+        const [members, pending, outfits, generating, failed, catalogue, drafts, revenue] = await Promise.all(responses.map(response => response.json()));
+        setStats({
+          members: members.total ?? 0,
+          pendingMembers: pending.total ?? 0,
+          outfits: outfits.total ?? 0,
+          generatingOutfits: generating.total ?? 0,
+          failedOutfits: failed.total ?? 0,
+          catalogue: catalogue.total ?? 0,
+          draftItems: drafts.total ?? 0,
+          revenueMinor: revenue.inrKpis?.last30RevenueInrMinor ?? 0,
         });
-        setClientStats({
-          total:   allClients.total     ?? 0,
-          active:  activeClients.total  ?? 0,
-          pending: pendingClients.total ?? 0,
-        });
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Overview could not be loaded.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
   }, []);
 
+  const work = [
+    { label: 'Members awaiting onboarding', count: stats.pendingMembers, href: '/iconik-club/admin/clients?onboarding=pending', icon: Clock, tone: 'warning' as const, action: 'Review members' },
+    { label: 'Outfits currently generating', count: stats.generatingOutfits, href: '/iconik-club/admin/outfits?status=generating', icon: Sparkles, tone: 'accent' as const, action: 'View progress' },
+    { label: 'Outfit generations needing attention', count: stats.failedOutfits, href: '/iconik-club/admin/outfits?status=failed', icon: AlertCircle, tone: 'danger' as const, action: 'Resolve failures' },
+    { label: 'Catalogue drafts to review', count: stats.draftItems, href: '/iconik-club/admin/items?status=draft', icon: PackageOpen, tone: 'neutral' as const, action: 'Review drafts' },
+  ];
+
+  const summary = [
+    { label: 'Members', value: String(stats.members), icon: Users },
+    { label: 'Outfits', value: String(stats.outfits), icon: Shirt },
+    { label: 'Catalogue', value: String(stats.catalogue), icon: PackageOpen },
+    { label: 'Revenue · 30 days', value: money(stats.revenueMinor), icon: IndianRupee },
+  ];
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-1">Overview</p>
-          <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Dashboard</h2>
-        </div>
-        <Link
-          href="/iconik-club/admin/items/upload"
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#ff6b9d] hover:bg-[#e85a8a] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#ff6b9d]/20"
-        >
-          <Plus size={15} />
-          Upload item
-        </Link>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader eyebrow="ICONIK Club" title="Overview" description="The work that needs attention across members, outfits and the catalogue." actions={<Link href="/iconik-club/admin/clients/new" className={primaryButtonClass}><Plus size={15} /> Add member</Link>} />
 
-      {/* Client stats */}
-      <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-3">Members</p>
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard label="Total members"     value={clientStats.total}   icon={Users}       gradient="bg-gradient-to-br from-violet-400 to-violet-600"  loading={loading} />
-        <StatCard label="Onboarded"         value={clientStats.active}  icon={UserCheck}   gradient="bg-gradient-to-br from-emerald-400 to-emerald-600"  loading={loading} />
-        <StatCard label="Pending onboarding" value={clientStats.pending} icon={Clock}       gradient="bg-gradient-to-br from-amber-400 to-amber-500"      loading={loading} />
-      </div>
+      {error && <div role="alert" className="mb-5 rounded-xl border px-4 py-3 text-sm" style={{ color: CLUB.red, borderColor: 'rgba(180,94,85,.2)', background: 'rgba(180,94,85,.06)' }}>{error}</div>}
 
-      {/* Item stats */}
-      <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-3">Catalogue items</p>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total items" value={itemStats.total}    icon={ShoppingBag} gradient="bg-gradient-to-br from-[#ff6b9d] to-[#e85a8a]"    loading={loading} />
-        <StatCard label="Active"      value={itemStats.active}   icon={CheckCircle} gradient="bg-gradient-to-br from-emerald-400 to-emerald-600"   loading={loading} />
-        <StatCard label="Drafts"      value={itemStats.draft}    icon={FileEdit}    gradient="bg-gradient-to-br from-amber-400 to-amber-500"        loading={loading} />
-        <StatCard label="Archived"    value={itemStats.archived} icon={Archive}     gradient="bg-gradient-to-br from-slate-400 to-slate-500"        loading={loading} />
-      </div>
+      {loading ? <LoadingState label="Preparing your work queue…" /> : (
+        <>
+          <div className="mb-8">
+            <div className="mb-3 flex items-center justify-between"><h2 className="iconik-micro" style={{ color: CLUB.muted }}>Work queue</h2><span className="text-xs" style={{ color: CLUB.faint }}>Open a queue to continue</span></div>
+            <AdminCard className="divide-y" >
+              {work.map(({ label, count, href, icon: Icon, tone, action }) => (
+                <Link key={label} href={href} className="group flex items-center gap-4 px-4 py-4 transition hover:bg-black/[0.025] sm:px-5" style={{ borderColor: CLUB.border }}>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: CLUB.card, color: count ? CLUB.ink : CLUB.faint }}><Icon size={17} /></span>
+                  <div className="min-w-0 flex-1"><p className="text-sm font-medium" style={{ color: CLUB.ink }}>{label}</p><p className="mt-0.5 text-xs" style={{ color: CLUB.muted }}>{count ? action : 'Nothing needs attention'}</p></div>
+                  <StatusBadge tone={count ? tone : 'success'}>{count}</StatusBadge>
+                  <ArrowRight size={15} className="transition group-hover:translate-x-0.5" style={{ color: CLUB.faint }} />
+                </Link>
+              ))}
+            </AdminCard>
+          </div>
 
-      {/* Quick actions */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 shadow-sm">
-        <p className="text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest mb-4">Quick actions</p>
-        <div className="flex flex-wrap gap-3">
-          {[
-            { label: 'View all clients',  href: '/iconik-club/admin/clients' },
-            { label: 'Pending onboarding', href: '/iconik-club/admin/clients?onboarding=false' },
-            { label: 'Upload new item',   href: '/iconik-club/admin/items/upload' },
-            { label: 'Review drafts',     href: '/iconik-club/admin/items?status=draft' },
-            { label: 'Browse all items',  href: '/iconik-club/admin/items' },
-          ].map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-[#ffb3d1] text-[#4a2c3e] rounded-xl hover:bg-[#fff0f5] hover:border-[#ff6b9d] hover:text-[#ff6b9d] transition-all group"
-            >
-              {label}
-              <ArrowRight size={13} className="opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
-            </Link>
-          ))}
-        </div>
-      </div>
+          <div>
+            <h2 className="iconik-micro mb-3" style={{ color: CLUB.muted }}>Business summary</h2>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {summary.map(({ label, value, icon: Icon }) => <AdminCard key={label} className="p-4 sm:p-5"><div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: CLUB.card, color: CLUB.gold }}><Icon size={16} /></div><p className="iconik-display text-2xl sm:text-[28px]" style={{ color: CLUB.ink }}>{value}</p><p className="iconik-micro mt-2" style={{ color: CLUB.muted }}>{label}</p></AdminCard>)}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

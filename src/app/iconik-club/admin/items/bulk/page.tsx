@@ -7,6 +7,7 @@ import {
   X, Zap, SkipForward, ChevronDown,
 } from 'lucide-react';
 import type { ItemCategory } from '@/lib/supabase';
+import { WorkflowSteps } from '@/components/IconikClubAdminUI';
 
 const CATEGORIES: ItemCategory[] = [
   'top', 'bottom', 'dress', 'outerwear', 'shoes',
@@ -176,6 +177,7 @@ export default function BulkUploadPage() {
             <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Bulk upload</h2>
           </div>
         </div>
+        <WorkflowSteps steps={['Add images', 'Review extraction', 'Activate']} current={0} />
 
         <div
           onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
@@ -239,6 +241,7 @@ export default function BulkUploadPage() {
           onChange={e => { if (e.target.files) addFiles(e.target.files); }}
         />
       </div>
+      <WorkflowSteps steps={['Add images', 'Review extraction', 'Activate']} current={activated > 0 ? 2 : (processing > 0 || done > 0 ? 1 : 0)} />
 
       {/* Status bar */}
       <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 px-5 py-3.5 mb-5 shadow-sm flex flex-wrap items-center gap-4">

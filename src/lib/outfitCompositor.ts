@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import { createSupabaseAdminServerClient } from './supabaseServer';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
 
 export interface OutfitItem {
   imageUrl: string;
@@ -161,7 +162,7 @@ Return ONLY the description as a single plain-text paragraph. No headings, no bu
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: TEXT_MODEL,
       contents: [{ parts }],
     });
     const text = response.text?.trim();

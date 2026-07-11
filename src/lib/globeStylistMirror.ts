@@ -3,6 +3,7 @@ import { supabaseGlobe } from '@/lib/supabaseGlobe';
 import { saveStylistOrder, supabaseStyleScan } from '@/lib/supabaseStyleScan';
 
 type DbRow = Record<string, unknown>;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function cleanCustomerEmail(value: unknown) {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
@@ -10,6 +11,10 @@ export function cleanCustomerEmail(value: unknown) {
 
 function cleanString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function isUuid(value: string) {
+  return UUID_PATTERN.test(value);
 }
 
 function normalizeAmount(value: unknown) {
@@ -22,16 +27,21 @@ async function findPaidGlobeOrder(input: {
   razorpayOrderId?: string | null;
   customerEmail?: string | null;
 }) {
-  if (input.globeOrderId && input.globeOrderId !== 'mock-order-id') {
+  const globeOrderId = cleanString(input.globeOrderId);
+  if (globeOrderId && globeOrderId !== 'mock-order-id' && isUuid(globeOrderId)) {
     const { data, error } = await supabaseGlobe
       .from('globe_orders')
       .select('*')
-      .eq('id', input.globeOrderId)
+      .eq('id', globeOrderId)
       .eq('status', 'paid')
       .maybeSingle();
 
     if (error) throw error;
     if (data) return data as DbRow;
+  } else if (globeOrderId && globeOrderId !== 'mock-order-id') {
+    console.warn('[globe-stylist-mirror] Ignoring non-UUID globeOrderId', {
+      globeOrderIdPrefix: globeOrderId.slice(0, 8),
+    });
   }
 
   if (input.razorpayOrderId) {
@@ -102,16 +112,22 @@ export async function mirrorPaidGlobeOrderToStylist(input: {
     ...attributionFromRow(globeOrder),
   };
 
-  if (input.stylistOrderId && input.stylistOrderId !== 'mock-stylist-order-id') {
+  const stylistOrderId = cleanString(input.stylistOrderId);
+  if (stylistOrderId && stylistOrderId !== 'mock-stylist-order-id' && isUuid(stylistOrderId)) {
     const { data, error } = await supabaseStyleScan
       .from('stylist_orders')
       .update(payload)
-      .eq('id', input.stylistOrderId)
+      .eq('id', stylistOrderId)
       .select()
       .maybeSingle();
 
     if (error) throw error;
     if (data) return data as DbRow;
+  } else if (stylistOrderId && stylistOrderId !== 'mock-stylist-order-id') {
+    console.warn('[globe-stylist-mirror] Ignoring non-UUID stylistOrderId', {
+      stylistOrderIdPrefix: stylistOrderId.slice(0, 8),
+      razorpayOrderId: razorpayOrderId || null,
+    });
   }
 
   if (razorpayOrderId) {

@@ -38,6 +38,14 @@ import {
 
 type StylistBlueprintAct = 'opening' | 'diagnosis' | 'prescription' | 'application' | 'closing';
 
+type GeneratedBlueprintPagesResult = Awaited<ReturnType<typeof generateStylistBlueprintPages>>;
+
+function normaliseGeneratedPagesResult(result: GeneratedBlueprintPagesResult) {
+  return Array.isArray(result)
+    ? { pages: result, outfit_engine: undefined }
+    : result;
+}
+
 const ACT_STAGES: Array<{
   stage: string;
   act: StylistBlueprintAct;
@@ -151,11 +159,12 @@ export async function runStylistBlueprintTextPipeline(
       currentStage = item.stage;
       await updateReport(reportId, { progress_stage: currentStage }, shareToken);
 
-      const pages = await generateStylistBlueprintPages(submission, reportData, item.act);
+      const generated = normaliseGeneratedPagesResult(await generateStylistBlueprintPages(submission, reportData, item.act));
       reportData = {
         ...reportData,
         generated_at: new Date().toISOString(),
-        pages: mergeBlueprintPages(reportData.pages, pages),
+        pages: mergeBlueprintPages(reportData.pages, generated.pages),
+        outfit_engine: generated.outfit_engine ?? reportData.outfit_engine,
       };
       if (item.act === 'application') {
         reportData = await attachSilhouetteRuleOutfitExamples(reportData, submission);
@@ -248,11 +257,12 @@ export async function runStylistBlueprintRepairPipeline(
       currentStage = item.stage;
       await updateReport(reportId, { progress_stage: currentStage }, shareToken);
 
-      const pages = await generateStylistBlueprintPages(submission, reportData, item.act);
+      const generated = normaliseGeneratedPagesResult(await generateStylistBlueprintPages(submission, reportData, item.act));
       reportData = {
         ...reportData,
         generated_at: new Date().toISOString(),
-        pages: mergeBlueprintPages(reportData.pages, pages),
+        pages: mergeBlueprintPages(reportData.pages, generated.pages),
+        outfit_engine: generated.outfit_engine ?? reportData.outfit_engine,
       };
       if (item.act === 'application') {
         reportData = await attachSilhouetteRuleOutfitExamples(reportData, submission);

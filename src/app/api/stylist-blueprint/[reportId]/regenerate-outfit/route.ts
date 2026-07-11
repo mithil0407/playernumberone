@@ -17,6 +17,10 @@ import {
   regenerateStylistBlueprintImageSlot,
   type StylistBlueprintImageSlotKey,
 } from '@/lib/stylistBlueprintImageGenerator';
+import {
+  generateStylistOutfitScienceApplication,
+  isScienceBlueprintReport,
+} from '@/lib/stylistOutfitScience';
 
 export const maxDuration = 300;
 
@@ -88,17 +92,24 @@ export async function POST(
     let nextReplacementPage = null as Awaited<ReturnType<typeof generateStylistBlueprintReplacementOutfit>> | null;
     let lastValidationError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const replacementPage = await generateStylistBlueprintReplacementOutfit(
-        submission as StylistIntakeSubmission,
-        reportData,
-        pageNumber,
-        attempt === 0 ? reason : `${reason || 'Admin requested outfit replacement.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate this outfit and fix that issue.`,
-      );
+      const scienceResult = isScienceBlueprintReport(reportData)
+        ? await generateStylistOutfitScienceApplication(submission as StylistIntakeSubmission, reportData)
+        : null;
+      const replacementPage = scienceResult
+        ? scienceResult.pages.find(page => page.page_number === pageNumber)
+        : await generateStylistBlueprintReplacementOutfit(
+          submission as StylistIntakeSubmission,
+          reportData,
+          pageNumber,
+          attempt === 0 ? reason : `${reason || 'Admin requested outfit replacement.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate this outfit and fix that issue.`,
+        );
+      if (!replacementPage) throw new Error(`Science outfit replacement did not return page ${pageNumber}`);
 
       const candidateReportData: StylistBlueprintReportData = {
         ...reportData,
         generated_at: new Date().toISOString(),
         pages: reportData.pages.map(page => page.page_number === pageNumber ? replacementPage : page),
+        outfit_engine: scienceResult?.outfit_engine ?? reportData.outfit_engine,
       };
       try {
         validateStylistBlueprintReport(candidateReportData, {

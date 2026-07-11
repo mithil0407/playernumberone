@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, ImagePlus, Loader2, CheckCircle, AlertCircle, ArrowLeft, X, Plus } from 'lucide-react';
 import type { FashionItem, ItemCategory } from '@/lib/supabase';
+import { WorkflowSteps } from '@/components/IconikClubAdminUI';
 
 const CATEGORIES: ItemCategory[] = ['top','bottom','dress','outerwear','shoes','bag','accessory','jumpsuit','skirt','other'];
 const SIZES = ['XXS','XS','S','M','L','XL','XXL','One Size'];
@@ -224,9 +225,10 @@ export default function UploadItemPage() {
         <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-400/25">
           <CheckCircle size={28} className="text-white" />
         </div>
-        <h2 className="luxury-heading text-3xl text-[#4a2c3e] mb-2">
+          <h2 className="luxury-heading text-3xl text-[#4a2c3e] mb-2">
           {variants.length === 1 ? 'Item activated!' : `${variants.length} variants activated!`}
-        </h2>
+          </h2>
+          <WorkflowSteps steps={['Add images', 'Review extraction', 'Activate']} current={2} />
         <p className="text-sm text-[#4a2c3e]/55 mb-8">
           {variants.length === 1
             ? 'The item is now live in the catalog.'
@@ -272,6 +274,7 @@ export default function UploadItemPage() {
             </p>
           </div>
         </div>
+        <WorkflowSteps steps={['Add images', 'Review extraction', 'Activate']} current={1} />
 
         <div className="space-y-5">
           {/* Shared fields */}
@@ -445,6 +448,7 @@ export default function UploadItemPage() {
           <p className="text-sm text-[#4a2c3e]/50">Drop one image per colour variant — Gemini extracts the details.</p>
         </div>
       </div>
+      <WorkflowSteps steps={['Add images', 'Review extraction', 'Activate']} current={0} />
 
       <div className="space-y-4">
         {/* Dropzone */}

@@ -39,6 +39,36 @@ const SUPPORTED_GEMINI_INPUT_MIME_TYPES = new Set([
   'image/heic',
   'image/heif',
 ]);
+const ICONIK_SLATE = '#94A6AD';
+const ABSOLUTE_NO_TEXT_RULE = 'Absolutely no text, letters, words, typography, captions, labels, numbers, annotations, arrows, callouts, logos, signage, watermarks, UI marks, brand marks, readable symbols, product cards, before/after captions, or title text anywhere in the image. Do not place labels inside grid cells.';
+const REALISTIC_MALE_GROOMING_RULE = 'This must be a realistic same-person grooming transformation, not a makeover fantasy: preserve the exact identity, face shape, skin tone, facial features, natural proportions, hairline, hair density limits, beard density limits, and age. Keep changes low-delta and barber-executable from the source photo. Do not add impossible hair volume, change the hairline, fill bald/thin areas unrealistically, invent beard coverage, reshape the jaw, slim the face, beautify skin, or make the client look like a different person.';
+const MAN_STUDIO_BACKGROUND_RULE = `Use the exact same light studio background as the ICONIK stylist-admin outfit images: one flat, uniform, matte light desaturated blue-grey field in HEX ${ICONIK_SLATE} (RGB 148, 166, 173). This is a high-key light background, never charcoal, dark grey, black, moody, or vignetted. It must be a clean professional studio image with no visible flooring or room. No floor plane, floor texture, floor-to-wall seam, horizon line, baseboard, cyclorama sweep line, platform, carpet, rug, tile, wood, concrete, wall panels, corners, furniture, windows, props, architectural details, spotlight pool, shadow gradient, or background gradient. The identical flat ${ICONIK_SLATE} colour continues uninterrupted behind the subject and beneath the feet; allow only a very faint tight contact shadow directly under the shoes.`;
+const MEN_STYLIST_REPORT_IMAGE_STYLE = [
+  MAN_STUDIO_BACKGROUND_RULE,
+  'Premium high-key studio fashion editorial with a confident, natural menswear pose.',
+  'Portrait vertical 2:3 composition. Final image must be tall, not landscape or square.',
+  'Full outfit visible from head to toe, centered in frame, with generous margin above the head and below the footwear. Both shoes and all footwear details must be fully visible.',
+  `${ABSOLUTE_NO_TEXT_RULE} No extra people or mannequin.`,
+  'Natural realistic fabric behavior and correct garment construction.',
+  'Practical colour realism: if the outfit mentions sneakers, they must be white, off-white, cream, or grey-neutral with no coloured trim.',
+  'Bags and shoes must be one realistic leather/suede colour: black, espresso, chocolate, cognac, tan, taupe, burgundy, cream, or restrained grey. Never add contrasting tags, stripes, piping, panels, hardware, stitching, soles, or decorative coloured details.',
+  'Accent colours belong on garments, knitwear, scarves, belts, jewellery details, garment prints, or an evening clutch — never as a small coloured detail added to an otherwise neutral bag or shoe.',
+].join('\n- ');
+
+const OUTFIT_POSE_DIRECTIONS = [
+  'Use a relaxed editorial weight shift with one foot slightly forward and shoulders open to camera.',
+  'Use a confident three-quarter stance while naturally adjusting one cuff or the watch; keep the torso and outfit unobstructed.',
+  'Use a relaxed three-quarter stance with one hand lightly in a trouser pocket and the other arm naturally visible.',
+  'Use a controlled mid-step editorial pose with both feet and the complete outfit sharply visible.',
+  'Use a polished three-quarter stance while lightly adjusting the jacket lapel or outer layer; if there is no layer, use an open relaxed hand position instead.',
+  'Use an easy editorial stance with one foot forward, a subtle body angle, and calm confident posture.',
+] as const;
+
+function outfitPoseDirection(outfitNumber: number): string {
+  return OUTFIT_POSE_DIRECTIONS[Math.max(0, outfitNumber - 1) % OUTFIT_POSE_DIRECTIONS.length];
+}
+
+const OUTFIT_POSE_VISIBILITY_RULE = 'The pose must remain realistic and wearable and must not hide the neckline, torso fit, waistband, layering, accessories, trouser silhouette, or footwear. No seated, crouched, arms-crossed, hands-behind-back, jumping, exaggerated runway, or garment-obscuring pose.';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public types
@@ -50,6 +80,19 @@ export interface ManReportImagePaths {
   beardCards:     (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
   eyewearCards:   (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
   outfitCards:    (string | null)[];
+  diagnostic?: {
+    faceGeometry?: string | null;
+    frameFront?: string | null;
+    frameSide?: string | null;
+    colourDrape?: string | null;
+  };
+  deliverables?: {
+    beforeImage?: string | null;
+    afterImage?: string | null;
+    beforeAfter?: string | null;
+    linkedinHeadshot?: string | null;
+    datingProfileShots?: (string | null)[];
+  };
   comboGridCards?: {
     office?: string | null;
     evening?: string | null;
@@ -64,6 +107,19 @@ export interface ResolvedImageUrls {
   beardCards:     (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
   eyewearCards:   (string | null)[]; // new reports store one 2x2 grid at index 0; old reports may have 2 cards
   outfitCards:    (string | null)[];
+  diagnostic?: {
+    faceGeometry?: string | null;
+    frameFront?: string | null;
+    frameSide?: string | null;
+    colourDrape?: string | null;
+  };
+  deliverables?: {
+    beforeImage?: string | null;
+    afterImage?: string | null;
+    beforeAfter?: string | null;
+    linkedinHeadshot?: string | null;
+    datingProfileShots?: (string | null)[];
+  };
   comboGridCards?: {
     office?: string | null;
     evening?: string | null;
@@ -80,6 +136,8 @@ interface PartialImagePathPatch {
   eyewearCards?: (string | null | undefined)[];
   outfitCards?: (string | null | undefined)[];
   comboGridCards?: ManReportImagePaths['comboGridCards'];
+  diagnostic?: ManReportImagePaths['diagnostic'];
+  deliverables?: ManReportImagePaths['deliverables'];
   baseModel?: string | null;
 }
 interface StoredImagePathState {
@@ -111,6 +169,19 @@ function normaliseImagePaths(paths: ManReportImagePaths | null | undefined): Man
     beardCards:     (paths?.beardCards     ?? []).map(normaliseImagePath),
     eyewearCards:   (paths?.eyewearCards   ?? []).map(normaliseImagePath),
     outfitCards:    (paths?.outfitCards    ?? []).map(normaliseImagePath),
+    diagnostic: {
+      faceGeometry: normaliseImagePath(paths?.diagnostic?.faceGeometry),
+      frameFront: normaliseImagePath(paths?.diagnostic?.frameFront),
+      frameSide: normaliseImagePath(paths?.diagnostic?.frameSide),
+      colourDrape: normaliseImagePath(paths?.diagnostic?.colourDrape),
+    },
+    deliverables: {
+      beforeImage: normaliseImagePath(paths?.deliverables?.beforeImage),
+      afterImage: normaliseImagePath(paths?.deliverables?.afterImage),
+      beforeAfter: normaliseImagePath(paths?.deliverables?.beforeAfter),
+      linkedinHeadshot: normaliseImagePath(paths?.deliverables?.linkedinHeadshot),
+      datingProfileShots: (paths?.deliverables?.datingProfileShots ?? []).map(normaliseImagePath),
+    },
     comboGridCards: {
       office: normaliseImagePath(paths?.comboGridCards?.office),
       evening: normaliseImagePath(paths?.comboGridCards?.evening),
@@ -131,6 +202,22 @@ export function mergeManReportImagePaths(
     beardCards:     mergeImagePathArrays(base.beardCards, incoming?.beardCards),
     eyewearCards:   mergeImagePathArrays(base.eyewearCards, incoming?.eyewearCards),
     outfitCards:    mergeImagePathArrays(base.outfitCards, incoming?.outfitCards),
+    diagnostic: {
+      faceGeometry: normaliseImagePath(incoming?.diagnostic?.faceGeometry) ?? base.diagnostic?.faceGeometry ?? null,
+      frameFront: normaliseImagePath(incoming?.diagnostic?.frameFront) ?? base.diagnostic?.frameFront ?? null,
+      frameSide: normaliseImagePath(incoming?.diagnostic?.frameSide) ?? base.diagnostic?.frameSide ?? null,
+      colourDrape: normaliseImagePath(incoming?.diagnostic?.colourDrape) ?? base.diagnostic?.colourDrape ?? null,
+    },
+    deliverables: {
+      beforeImage: normaliseImagePath(incoming?.deliverables?.beforeImage) ?? base.deliverables?.beforeImage ?? null,
+      afterImage: normaliseImagePath(incoming?.deliverables?.afterImage) ?? base.deliverables?.afterImage ?? null,
+      beforeAfter: normaliseImagePath(incoming?.deliverables?.beforeAfter) ?? base.deliverables?.beforeAfter ?? null,
+      linkedinHeadshot: normaliseImagePath(incoming?.deliverables?.linkedinHeadshot) ?? base.deliverables?.linkedinHeadshot ?? null,
+      datingProfileShots: mergeImagePathArrays(
+        base.deliverables?.datingProfileShots,
+        incoming?.deliverables?.datingProfileShots,
+      ),
+    },
     comboGridCards: {
       office: normaliseImagePath(incoming?.comboGridCards?.office) ?? base.comboGridCards?.office ?? null,
       evening: normaliseImagePath(incoming?.comboGridCards?.evening) ?? base.comboGridCards?.evening ?? null,
@@ -267,49 +354,57 @@ function formatGridOptions(options: string[]): string {
 }
 
 function buildHairstyleGridPrompt(options: string[], faceShape: string, hairPresence: string | undefined): string {
-  return `Create a realistic men's grooming recommendation grid from the uploaded headshot.
+  return `Use the uploaded client headshot as the source image. Create a realistic men's grooming recommendation grid.
 
-Output: one clean 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. No text, no labels, no captions, no watermarks.
+Output: one clean square 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. Fill the square composition evenly with no blank bands. ${ABSOLUTE_NO_TEXT_RULE}
 
 Grid mapping:
 ${formatGridOptions(options)}
 
 Rules:
-- Preserve the client's facial features, skin tone, expression, and general headshot framing.
+- ${REALISTIC_MALE_GROOMING_RULE}
+- Preserve the client's facial features, skin tone, expression, and general headshot framing in every cell.
 - Each quadrant must show only its mapped hairstyle/grooming option.
 - The top-left option is the safest and most achievable default.
-- Recommendations must look conservative, realistic, barber-executable, and suitable for a ${faceShape} face.
+- Recommendations must look conservative, realistic, barber-executable, and suitable for a ${faceShape} face. Avoid dramatic celebrity hair, fantasy volume, wet-look editorial styling, and dense hair replacement.
 - Hair presence: ${hairPresence ?? 'unclear'}. Do not add unrealistic density, volume, fringe, quiff, or fullness beyond what the source hair can support.
-- If the client is bald or closely shaved, show scalp/close-shave grooming variants only; do not add scalp hair.
-- Keep clothing and background simple and consistent enough that the grooming differences are easy to compare.
+- Keep each recommendation close to the client's current visible hair length, texture, density, and hairline unless the written option explicitly asks for a shorter cut. If the source hair is short, show short variations only.
+- If the client is bald or closely shaved, show scalp/close-shave grooming variants only; do not add scalp hair or shadow hair.
+- Matte ICONIK slate background ${ICONIK_SLATE} in every quadrant.
+- Premium studio grooming editorial, clean head-and-shoulders front/three-quarter pose.
+- Keep clothing simple and consistent enough that the grooming differences are easy to compare.
 
-Professional editorial lighting, natural grooming, premium but understated finish.`;
+Professional editorial lighting, natural grooming, premium but understated finish. No written labels in or around the grid.`;
 }
 
 function buildBeardGridPrompt(options: string[], faceShape: string, facialHairPresence: string | undefined): string {
-  return `Create a realistic men's beard and facial-hair recommendation grid from the uploaded headshot.
+  return `Use the uploaded client headshot as the source image. Create a realistic men's beard and facial-hair recommendation grid.
 
-Output: one clean 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. No text, no labels, no captions, no watermarks.
+Output: one clean square 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. Fill the square composition evenly with no blank bands. ${ABSOLUTE_NO_TEXT_RULE}
 
 Grid mapping:
 ${formatGridOptions(options)}
 
 Rules:
+- ${REALISTIC_MALE_GROOMING_RULE}
 - Preserve the client's facial features, skin tone, scalp hair, expression, and general headshot framing.
 - Each quadrant must show only its mapped beard/facial-hair option.
 - The top-left option is the safest and most achievable default.
 - Recommendations must look conservative, realistic, barber-executable, and suitable for a ${faceShape} face.
 - Visible facial hair state: ${facialHairPresence ?? 'unclear'}. Do not invent impossible beard density or coverage.
-- Beard, moustache, stubble, cheek line, and neckline must look natural, clean, and maintainable.
-- Keep clothing and background simple and consistent enough that the grooming differences are easy to compare.
+- Keep beard, moustache, stubble, cheek line, and neckline close to what the source photo can realistically grow. If coverage is patchy, keep it patchy but cleaner; do not fill cheeks, jaw, moustache, or chin beyond visible density.
+- Beard, moustache, stubble, cheek line, and neckline must look natural, clean, and maintainable. Avoid heavy airbrushed beard fills, fake sharp paint-like lines, and dramatic facial reshaping.
+- Matte ICONIK slate background ${ICONIK_SLATE} in every quadrant.
+- Premium studio grooming editorial, clean head-and-shoulders front/three-quarter pose.
+- Keep clothing simple and consistent enough that the grooming differences are easy to compare.
 
-Professional editorial lighting, natural grooming, premium but understated finish.`;
+Professional editorial lighting, natural grooming, premium but understated finish. No written labels in or around the grid.`;
 }
 
 function buildEyewearGridPrompt(options: string[], faceShape: string): string {
-  return `Create a realistic men's eyewear recommendation grid from the uploaded headshot.
+  return `Use the uploaded client headshot as the source image. Create a realistic men's eyewear recommendation grid.
 
-Output: one clean 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. No text, no labels, no captions, no watermarks.
+Output: one clean square 2x2 grid image, four equal quadrants, same man in each quadrant, head and upper shoulders only. Fill the square composition evenly with no blank bands. ${ABSOLUTE_NO_TEXT_RULE}
 
 Grid mapping:
 Top left optical frame: ${options[0] || 'Conservative optical eyeglass frame with clear lenses'}
@@ -319,25 +414,30 @@ Bottom right sunglasses: ${options[3] || 'Second classic sunglasses option with 
 
 Rules:
 - Preserve the client's facial features, skin tone, hair, beard, expression, and general headshot framing.
+- Preserve grooming exactly from the source headshot; this grid changes eyewear only.
 - The top row must be optical eyeglasses with clear, untinted lenses.
 - The bottom row must be sunglasses with realistic tinted lenses.
 - Frames must sit naturally on the nose bridge and suit a ${faceShape} face.
 - Eyewear should look premium, realistic, and wearable, not cartoonish or costume-like.
-- Keep clothing and background simple and consistent enough that the frame differences are easy to compare.
+- Matte ICONIK slate background ${ICONIK_SLATE} in every quadrant.
+- Premium studio eyewear editorial, clean head-and-shoulders front/three-quarter pose.
+- Keep clothing simple and consistent enough that the frame differences are easy to compare.
 
-Professional editorial lighting, clean realistic eyewear rendering.`;
+Professional editorial lighting, clean realistic eyewear rendering. No written labels in or around the grid.`;
 }
 
 function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): string {
   const garmentLines = [
     `Top: ${outfit.top}`,
     `Bottom: ${outfit.bottom}`,
-    outfit.layer ? `Layer: ${outfit.layer}` : null,
+    outfit.layer ? `Layer: ${outfit.layer}` : 'Layer: None',
     `Footwear: ${outfit.footwear}`,
     outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
   ].filter(Boolean).join('\n');
 
-  const fitNote = outfit.fitNote ? `\nFit context: ${outfit.fitNote}` : '';
+  const layerInstruction = outfit.layer
+    ? ''
+    : '\nLayer instruction: no layer is specified; do not add any jacket, blazer, vest, overshirt, coat, cardigan, hoodie, scarf, or third-piece layer.';
   const accessoryInstruction = outfit.accessories
     ? `\nAccessory rendering is mandatory: the accessories listed in the outfit specification must be visibly included where naturally visible (${outfit.accessories}). Do not omit them as optional styling hints.`
     : '';
@@ -345,40 +445,43 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
   const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
   const defaultBeard = c.face.beard_style_recommendations?.[0];
   const groomingTextInstruction = [
-    defaultHairstyle ? `Default hairstyle/scalp grooming: ${defaultHairstyle}` : null,
-    defaultBeard ? `Default beard/facial-hair grooming: ${defaultBeard}` : null,
+    defaultHairstyle ? `Subtle hairstyle/scalp grooming: ${defaultHairstyle}` : null,
+    defaultBeard ? `Subtle beard/facial-hair grooming: ${defaultBeard}` : null,
   ].filter(Boolean).join('\n');
 
-  return `Professional editorial fashion catalogue photography.
+  return `Professional editorial fashion catalogue photography for the ICONIK men's Style Blueprint.
 
-Two reference photos are provided: the first is a full-body photo, the second is the client's original headshot.
+Reference photos are provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
 
-STERNLY IGNORE and COMPLETELY DISCARD the original background from both reference photos.
-
-Extract the subject's face, skin tone, facial features, and current hair/facial-hair constraints from the HEADSHOT (second image). Extract the body proportions and shape from the FULL-BODY photo (first image). Preserve their exact skin tone, facial features, and body shape — do not alter, slim, or idealise.
+Extract the client's face, skin tone, facial features, current hair/facial-hair constraints, and identity from the headshot when provided. Extract body proportions, body shape, and scale from the full-body reference, but do not copy its stance. Preserve the client's exact skin tone, facial features, body proportions, and identity. Do not alter, slim, age, beautify, or idealise the client.
 
 CRITICAL CLOTHING INSTRUCTION:
-- Remove and discard the original clothing from BOTH reference photos
-- Do not preserve, copy, blend, reinterpret, or borrow any garments, shoes, accessories, collars, lapels, colours, or silhouettes from either reference image
-- The outfit specification below is the ONLY authority for what the subject wears
+- Remove and discard the original clothing from the reference photos.
+- Do not preserve, copy, blend, reinterpret, or borrow garments, shoes, accessories, colours, collars, sleeves, silhouettes, logos, or prints from the reference photos.
+- The outfit specification below is the only authority for what the client wears. Render only those listed pieces.
+- Do not add Indianwear, ethnicwear, kurtas, bandhgalas, Nehru jackets, festive Indian garments, sandals, or cultural accessories unless the outfit text explicitly names that exact item.
+- Render at most one pair of eyewear on the client. If eyewear or sunglasses appear in more than one place, use only the accessory line. Never draw two pairs of glasses.
 
-Place the subject against our brand studio cyclorama wall in #94a6ad (cool slate grey). Clean seamless backdrop, no texture, no gradient.
+Background and style:
+- ${MEN_STYLIST_REPORT_IMAGE_STYLE}
 
-Apply polished grooming using these TEXT recommendations as the only grooming styling direction:
-${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
-Do not use any generated grooming grid as reference. Do not blend multiple hairstyle or beard options. No changes to facial features or skin tone.
+Assigned editorial pose:
+- ${outfitPoseDirection(outfit.index)}
+- ${OUTFIT_POSE_VISIBILITY_RULE}
 
-Dress the subject in this specific outfit:
-${garmentLines}${fitNote}
+Minimal grooming direction:
+${groomingTextInstruction || 'Keep grooming clean, subtle, realistic, and very close to the original headshot.'}
+- Apply only a low-delta, realistic tidy-up. Preserve the original hairline, hair density limits, beard density limits, face, skin tone, and age.
+- Do not use a generated grooming grid as a reference or blend multiple grooming options.
+- Do not reshape, retouch, beautify, or make the client look like a different person.
+
+Compact outfit formula to render:
+${garmentLines}${layerInstruction}
 ${accessoryInstruction}
 
 Garment rendering: Clothes should look pressed, tailored, and naturally worn on this body — not floating, not distorted. Colour accuracy is critical — match the described colours precisely. No logos or brand markings visible. Garments must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}. If there is any conflict between the reference photos and the outfit specification, the outfit specification wins.
 
-Pose: Standing upright, confident, arms relaxed at sides, facing the camera directly. Full body head to feet visible, subject centred in frame.
-
-The lighting must be professional studio high-key lighting for a clean lookbook aesthetic. Even, soft, no harsh shadows, no blown highlights.
-
-Portrait format. Aspect ratio 3:4 (taller than wide). The subject must fill the vertical frame from head to toe with minimal headroom and no cropping at the feet.`;
+The lighting must match the stylist report image style: professional high-key studio lighting, even and soft, no harsh shadows, no blown highlights, premium catalogue realism.`;
 }
 
 export interface ComboGridRegenerationImagesResult {
@@ -430,7 +533,7 @@ function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: C
       `Footwear: ${outfit.footwear}`,
       outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
     ].filter(Boolean).join('; ');
-    return `Column ${index + 1}: ${pieces}`;
+    return `Column ${index + 1}: ${pieces}\nPose: ${outfitPoseDirection(index + 1)}`;
   }).join('\n');
 
   const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
@@ -442,12 +545,13 @@ function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: C
 
   return `Create one customised editorial styling grid image for ICONIK.
 
-Two reference photos are provided: the first is the client's full-body photo and the second is the client's original headshot.
+Reference photos are provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
 Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply these TEXT grooming directions consistently in all three columns:
 ${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
+${REALISTIC_MALE_GROOMING_RULE}
 Do not use a generated grooming grid as reference and do not blend multiple grooming options.
 
-The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client standing full-body, facing camera, in a different outfit combination. No text, no labels, no product cards, no flat-lay items.
+The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client full-body in its assigned stylish editorial pose and a different outfit combination. ${OUTFIT_POSE_VISIBILITY_RULE} ${ABSOLUTE_NO_TEXT_RULE} No flat-lay items.
 
 Grid theme: ${title[kind]}.
 
@@ -463,7 +567,12 @@ Customisation rules:
 - No logos or brand markings.
 - FOOTWEAR IS MANDATORY: Every column must show the specified footwear rendered visibly and completely on both feet. Do not omit, blur, or crop the shoes. Do not leave the subject barefoot. The footwear must match the exact description given (colour, style, material).
 
-Scene: clean premium studio lookbook, seamless cool slate grey cyclorama backdrop and floor (#94a6ad). The cyclorama sweep continues under the subject's feet — the floor is the same seamless cool slate grey as the backdrop. No mats, no rugs, no wooden floor, no tiles, no studio floor markings, no shadow gradient under the feet. Even high-key studio lighting.
+Background and style:
+- ${MAN_STUDIO_BACKGROUND_RULE}
+- Premium high-key studio fashion editorial with a different confident menswear pose in every column.
+- No extra people or mannequin. ${ABSOLUTE_NO_TEXT_RULE}
+- Natural realistic fabric behavior and correct garment construction.
+- Even high-key studio lighting.
 
 Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet. The subject's feet and footwear must be fully visible at the bottom of each column.`;
 }
@@ -474,6 +583,7 @@ function buildEditedComboGridPrompt(group: ParsedComboGridGroup, c: Classificati
     `Outfit summary: ${look.outfitSummary}`,
     `Styling logic: ${look.logic}`,
     `Source context: ${look.source}`,
+    `Pose: ${outfitPoseDirection(index + 1)}`,
   ].join('\n')).join('\n\n');
 
   const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
@@ -485,12 +595,13 @@ function buildEditedComboGridPrompt(group: ParsedComboGridGroup, c: Classificati
 
   return `Create one customised editorial styling grid image for ICONIK.
 
-Two reference photos are provided: the first is the client's full-body photo and the second is the client's original headshot.
+Reference photos are provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
 Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply these TEXT grooming directions consistently in all three columns:
 ${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
+${REALISTIC_MALE_GROOMING_RULE}
 Do not use a generated grooming grid as reference and do not blend multiple grooming options.
 
-The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client standing full-body, facing camera, in a different outfit combination. No text, no labels, no product cards, no flat-lay items.
+The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client full-body in its assigned stylish editorial pose and a different outfit combination. ${OUTFIT_POSE_VISIBILITY_RULE} ${ABSOLUTE_NO_TEXT_RULE} No flat-lay items.
 
 Grid theme: ${group.title}.
 
@@ -506,7 +617,12 @@ Customisation rules:
 - No logos or brand markings.
 - FOOTWEAR IS MANDATORY: Every column must show footwear rendered visibly and completely on both feet. Do not omit, blur, or crop the shoes. Do not leave the subject barefoot.
 
-Scene: clean premium studio lookbook, seamless cool slate grey cyclorama backdrop and floor (#94a6ad). The cyclorama sweep continues under the subject's feet — the floor is the same seamless cool slate grey as the backdrop. No mats, no rugs, no wooden floor, no tiles, no studio floor markings, no shadow gradient under the feet. Even high-key studio lighting.
+Background and style:
+- ${MAN_STUDIO_BACKGROUND_RULE}
+- Premium high-key studio fashion editorial with a different confident menswear pose in every column.
+- No extra people or mannequin. ${ABSOLUTE_NO_TEXT_RULE}
+- Natural realistic fabric behavior and correct garment construction.
+- Even high-key studio lighting.
 
 Composition: wide horizontal image, aspect ratio 16:9, one row, three equal columns. Each column must leave enough vertical room for a full-body portrait. The full body must be visible head-to-toe in each column with minimal headroom and no cropped feet. The subject's feet and footwear must be fully visible at the bottom of each column.`;
 }
@@ -559,6 +675,133 @@ export function buildComboGridImagePromptForReport(
     throw new Error(`Not enough outfits found to build the ${kind} combination grid prompt`);
   }
   return buildComboGridPrompt(kind, selected, classification);
+}
+
+function buildDiagnosticPrompt(
+  kind: 'faceGeometry' | 'frameFront' | 'frameSide' | 'colourDrape',
+  classification: ClassificationResult,
+): string {
+  const base = `Create a premium ICONIK clinical-editorial diagnostic image. Preserve the source client's identity, skin tone, facial features, and body shape. Add clean warm-white analytical overlays on matte slate ${ICONIK_SLATE}: thin measurement lines, small dot terminators, calibrated marks. ${ABSOLUTE_NO_TEXT_RULE}`;
+
+  if (kind === 'faceGeometry') {
+    return `${base} Use the headshot as the underlying image. Overlay forehead width, cheekbone width, jaw width, face length, and facial thirds for ${classification.face.face_shape} facial architecture. Keep the face natural and recognisable.`;
+  }
+
+  if (kind === 'frameFront') {
+    return `${base} Use the front full-body photo as the underlying image. Overlay shoulder span, waist span, vertical centre line, hip/stance width, and jacket-length guide for a ${classification.body.silhouette_type} frame. Keep the full body head-to-toe visible with feet and footwear uncropped.`;
+  }
+
+  if (kind === 'frameSide') {
+    return `${base} Use the side-profile full-body photo as the underlying image. Overlay posture line, abdomen projection guide, natural waist marker, shoulder-to-hip fall line, and centre-of-gravity dot. Keep the full body head-to-toe visible with feet and footwear uncropped. Use honest tailoring geometry, no body judgement language or visual exaggeration.`;
+  }
+
+  const best = classification.colour.primary_palette?.[0];
+  const avoid = classification.colour.colours_to_avoid?.[0];
+  return `Create one strict professional colour-analysis comparison image in portrait 4:5 format.
+
+LAYOUT — NON-NEGOTIABLE:
+- Show exactly two separate, equal-width head-and-shoulders portraits of the same client side by side: one complete portrait in the left column and one complete portrait in the right column.
+- Do not create one person wearing a half-blue/half-green garment. Do not split one face or one body down the centre. Do not merge the two drapes into one shawl, scarf, shirt, or garment.
+- Duplicate the original headshot composition precisely in both columns: identical face size, head position, eye line, shoulders, expression, grooming, camera distance, crop, exposure, white balance, shadows, and skin rendering.
+- Preserve the client's exact identity, facial features, natural skin texture, skin tone, hair, beard, eyewear, face shape, age, and proportions. No beautification or facial changes.
+
+DRAPES:
+- Left portrait only: place one plain matte professional colour-analysis drape across the upper chest and shoulders in ${avoid?.name ?? 'the least flattering high-risk colour'} ${avoid?.hex ?? ''}.
+- Right portrait only: place one plain matte professional colour-analysis drape across the upper chest and shoulders in ${best?.name ?? 'the strongest palette colour'} ${best?.hex ?? ''}.
+- Each drape is a simple single-colour fabric panel below the collarbone. It is not clothing and must not wrap around the neck, cover the chin, form lapels, resemble a scarf, or extend vertically down the body.
+- The drape colour is the ONLY difference between the two portraits. Do not brighten, darken, smooth, warm, cool, glow, dull, or recolour either face.
+
+STUDIO:
+- ${MAN_STUDIO_BACKGROUND_RULE}
+- No room, wall, doorway, furniture, plant, lamp, ceiling light, interior detail, or environmental reflection.
+- Soft, flat, neutral colour-analysis lighting with no dramatic highlights.
+
+${ABSOLUTE_NO_TEXT_RULE}`;
+}
+
+function outfitSpecForDeliverable(sections: ReportSections, outfitNumber: number): string {
+  const outfit = parseOutfitsFromSection(sections.s4_outfits ?? '').find(item => item.index === outfitNumber);
+  if (!outfit) return `Use Outfit ${outfitNumber} from the report.`;
+  return [
+    `Top: ${outfit.top}`,
+    `Bottom: ${outfit.bottom}`,
+    outfit.layer ? `Layer: ${outfit.layer}` : null,
+    `Footwear: ${outfit.footwear}`,
+    outfit.accessories ? `Accessories: ${outfit.accessories}` : null,
+  ].filter(Boolean).join('\n');
+}
+
+function buildBeforeAfterComparisonPrompt(classification: ClassificationResult, sections: ReportSections): string {
+  return `Create one locked before/after transformation comparison for ICONIK as a single horizontal 4:3 image containing exactly two equal portrait 2:3 panels.
+
+ALIGNMENT — ABSOLUTELY NON-NEGOTIABLE:
+- LEFT panel is BEFORE. RIGHT panel is AFTER.
+- Render the same client twice in exactly the same full-body pose and at exactly the same scale and coordinates.
+- The two silhouettes must overlay perfectly when stacked: identical head top, eye line, face size, shoulder line, hand positions, elbows, hips, knees, foot positions, body angle, expression, camera height, focal length, distance, crop, headroom, and space below the shoes.
+- Treat the right panel as a clothing-only edit of the left panel, not a second photoshoot. Do not move, re-pose, resize, rotate, widen, narrow, slim, age, beautify, or idealise the client.
+- Preserve the exact identity, facial features, natural skin texture, skin tone, body proportions, original pose, and expression from the source references.
+
+BEFORE — LEFT PANEL:
+- Keep the original clothing, footwear, accessories, hair, and facial hair from the uploaded full-body reference exactly as shown. Do not improve or restyle them.
+
+AFTER — RIGHT PANEL:
+- Change only the clothing and low-delta grooming to the specification below while preserving the locked body and pose.
+- Outfit:
+${outfitSpecForDeliverable(sections, 1)}
+- Grooming: ${classification.face.hairstyle_recommendations?.[0] ?? 'clean realistic grooming'}; ${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? 'preserve realistic facial hair'}.
+- ${REALISTIC_MALE_GROOMING_RULE}
+
+STUDIO AND CANVAS:
+- ${MAN_STUDIO_BACKGROUND_RULE}
+- Both panels use the exact same flat background pixels and the exact same high-key exposure and shadows.
+- Full body visible head-to-toe in both panels, including both shoes, with matching headroom and footroom.
+- No divider, border, gutter, frame, line, labels, or gap between panels. The canvas midpoint is only the invisible crop boundary.
+
+${ABSOLUTE_NO_TEXT_RULE}`;
+}
+
+function buildLinkedinHeadshotPrompt(classification: ClassificationResult): string {
+  const best = classification.colour.primary_palette?.[0] ?? classification.colour.neutral_base_colours?.[0];
+  return `Create a professional LinkedIn headshot from the uploaded headshot. Preserve the client's exact identity, facial features, skin tone, and natural proportions. Apply realistic polished grooming: ${classification.face.hairstyle_recommendations?.[0] ?? 'clean haircut or scalp grooming'} and ${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? 'clean facial hair lines'}.
+${REALISTIC_MALE_GROOMING_RULE}
+
+Wardrobe: premium blazer, shirt, or overshirt near the face in ${best?.name ?? 'the strongest palette colour'} ${best?.hex ?? ''}, no logos. Studio background in warm neutral slate, soft professional light, confident approachable expression, crop from chest to head, profile-ready resolution. ${ABSOLUTE_NO_TEXT_RULE}`;
+}
+
+function buildSocialMediaInspirationPrompt(
+  classification: ClassificationResult,
+  sections: ReportSections,
+  shotIndex: number,
+): string {
+  const specs = [
+    {
+      outfitNumber: 11,
+      scene: 'warm restaurant terrace or rooftop evening setting, flattering ambient light, confident relaxed three-quarter pose',
+    },
+    {
+      outfitNumber: 16,
+      scene: 'outdoor cafe or walkable street in golden-hour light, natural candid mid-walk pose, approachable expression',
+    },
+    {
+      outfitNumber: 18,
+      scene: 'bookstore, gallery, coffee counter, or weekend activity setting with natural light and easy body language',
+    },
+  ];
+  const spec = specs[Math.max(0, Math.min(specs.length - 1, shotIndex))];
+  return `Create a realistic Instagram-ready social media style inspiration photo of the same client.
+
+Two reference photos are provided: full-body photo first, headshot second. Preserve identity, facial features, skin tone, and body proportions. Do not slim, age, or idealise. Use realistic lifestyle photography, not a fashion render.
+
+Scene: ${spec.scene}.
+Outfit to apply:
+${outfitSpecForDeliverable(sections, spec.outfitNumber)}
+
+Grooming:
+${classification.face.hairstyle_recommendations?.[0] ?? 'clean realistic grooming'}
+${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? ''}
+${REALISTIC_MALE_GROOMING_RULE}
+
+Composition: natural portrait or full-body lifestyle crop suitable for a premium personal Instagram inspiration grid, no other people, no readable signage, no logos. ${ABSOLUTE_NO_TEXT_RULE} The image must look like a real recent social post, not a dating-app photo and not a studio catalogue render.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -715,6 +958,29 @@ async function fetchFirstUsableImageAsBase64(
   throw new Error(`No usable source photo found for Gemini image edit (${errors.join(' | ') || 'no URLs available'})`);
 }
 
+async function splitBeforeAfterComparison(base64Data: string): Promise<{ before: string; after: string }> {
+  const source = Buffer.from(base64Data, 'base64');
+  const oriented = await sharp(source, { failOn: 'none' })
+    .rotate()
+    .toBuffer({ resolveWithObject: true });
+  const width = oriented.info.width;
+  const height = oriented.info.height;
+  const halfWidth = Math.floor(width / 2);
+  if (halfWidth < 1 || height < 1) throw new Error('Generated before/after comparison has invalid dimensions');
+
+  const renderPanel = (left: number) => sharp(oriented.data, { failOn: 'none' })
+    .extract({ left, top: 0, width: halfWidth, height })
+    .resize({ width: 1024, height: 1536, fit: 'contain', background: ICONIK_SLATE })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+
+  const [before, after] = await Promise.all([
+    renderPanel(0),
+    renderPanel(width - halfWidth),
+  ]);
+  return { before: before.toString('base64'), after: after.toString('base64') };
+}
+
 async function uploadToStorage(reportId: string, base64Data: string, filename: string): Promise<string> {
   const path   = `${reportId}/${filename}`;
   const buffer = Buffer.from(base64Data, 'base64');
@@ -727,20 +993,49 @@ async function uploadToStorage(reportId: string, base64Data: string, filename: s
   return path;
 }
 
+/**
+ * Keep men's outfit cards on the same final canvas used by the stylist
+ * Blueprint outfit pipeline. Gemini does not reliably obey an aspect-ratio
+ * instruction, so prompt parity alone is not enough.
+ */
+async function uploadOutfitPortraitToStorage(
+  reportId: string,
+  base64Data: string,
+  filename: string,
+): Promise<string> {
+  const source = Buffer.from(base64Data, 'base64');
+  const portrait = await sharp(source, { failOn: 'none' })
+    .rotate()
+    .resize({
+      width: 1024,
+      height: 1536,
+      fit: 'contain',
+      background: ICONIK_SLATE,
+    })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+
+  return uploadToStorage(reportId, portrait.toString('base64'), filename);
+}
+
 export async function uploadManualManReportImage(
   reportId: string,
   fileBuffer: Buffer,
   filename: string,
+  portraitOutfit = false,
 ): Promise<string> {
   if (fileBuffer.length === 0) {
     throw new Error('Cannot upload an empty image file');
   }
 
   const path = `${reportId}/${filename}`;
-  const output = await sharp(fileBuffer, { failOn: 'none' })
-    .rotate()
-    .jpeg({ quality: 92, mozjpeg: true })
-    .toBuffer();
+  const image = sharp(fileBuffer, { failOn: 'none' }).rotate();
+  const output = portraitOutfit
+    ? await image
+      .resize({ width: 1024, height: 1536, fit: 'contain', background: ICONIK_SLATE })
+      .jpeg({ quality: 92 })
+      .toBuffer()
+    : await image.jpeg({ quality: 92, mozjpeg: true }).toBuffer();
 
   const { error } = await supabaseAdmin.storage
     .from(BUCKET)
@@ -1040,7 +1335,7 @@ export async function generateAllOutfitImages(
           3,
           4_000,
         );
-        const path = await uploadToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
+        const path = await uploadOutfitPortraitToStorage(reportId, outputBase64, `outfit_${outfit.index}.jpg`);
         partialPaths[taskIdx] = path;
         console.log(`[manImageGenerator] Outfit ${outfit.index} saved: ${path}`);
         queueProgressWrite(taskIdx, path);
@@ -1130,6 +1425,179 @@ export async function generateComboGridImages(
   }
 
   return result;
+}
+
+export async function generateManBlueprintV2Images(
+  reportId: string,
+  submission: Pick<ManIntakeSubmission, 'photo_fullbody_url' | 'photo_headshot_url' | 'photo_side_profile_url'>,
+  classification: ClassificationResult,
+  sections: ReportSections,
+  imageModel: string = MODEL,
+  existingPaths: ManReportImagePaths | null = null,
+  softDeadlineMs: number = Date.now() + 260_000,
+): Promise<Pick<ManReportImagePaths, 'diagnostic' | 'deliverables'>> {
+  const current = normaliseImagePaths(existingPaths);
+  const diagnostic = { ...(current.diagnostic ?? {}) };
+  const deliverables = {
+    ...(current.deliverables ?? {}),
+    datingProfileShots: [...(current.deliverables?.datingProfileShots ?? [])],
+  };
+
+  const headshotUrl = submission.photo_headshot_url;
+  const fullBodyUrl = submission.photo_fullbody_url;
+  if (!headshotUrl || !fullBodyUrl) {
+    throw new Error('Both headshot and full-body photos are required before v2 image generation');
+  }
+
+  const [{ data: headData, mimeType: headMime }, { data: bodyData, mimeType: bodyMime }, sideRef] = await Promise.all([
+    fetchAsBase64(headshotUrl),
+    fetchAsBase64(fullBodyUrl),
+    submission.photo_side_profile_url
+      ? fetchAsBase64(submission.photo_side_profile_url).catch(err => {
+          console.warn('[manImageGenerator] Side-profile source unusable; side diagnostic will use fallback text only:', err instanceof Error ? err.message : err);
+          return undefined;
+        })
+      : Promise.resolve(undefined),
+  ]);
+
+  const generateWithOutput = async (
+    label: string,
+    filename: string,
+    primary: { data: string; mimeType: string },
+    prompt: string,
+    extra?: { data: string; mimeType: string },
+  ): Promise<{ path: string; image: { data: string; mimeType: string } } | null> => {
+    if (Date.now() >= softDeadlineMs) {
+      console.warn(`[manImageGenerator] Soft deadline reached before ${label} — leaving slot for retry`);
+      return null;
+    }
+
+    try {
+      const outputBase64 = await withRetry(
+        () => callGeminiImageEdit(primary.data, primary.mimeType, prompt, imageModel, extra),
+        3,
+        4_000,
+      );
+      const path = await uploadToStorage(reportId, outputBase64, filename);
+      console.log(`[manImageGenerator] ${label} saved: ${path}`);
+      return { path, image: { data: outputBase64, mimeType: 'image/jpeg' } };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[manImageGenerator] ${label} FAILED (model: ${imageModel}): ${message}`);
+      void supabaseAdmin
+        .from('man_reports')
+        .update({ error_message: `${label} failed: ${message.slice(0, 500)}`, updated_at: new Date().toISOString() })
+        .eq('id', reportId)
+        .then(null, () => {});
+      return null;
+    }
+  };
+
+  const generate = async (
+    label: string,
+    filename: string,
+    primary: { data: string; mimeType: string },
+    prompt: string,
+    extra?: { data: string; mimeType: string },
+  ): Promise<string | null> => (await generateWithOutput(label, filename, primary, prompt, extra))?.path ?? null;
+
+  if (!diagnostic.faceGeometry) {
+    diagnostic.faceGeometry = await generate(
+      'Face geometry diagnostic',
+      'diagnostic_face_geometry.jpg',
+      { data: headData, mimeType: headMime },
+      buildDiagnosticPrompt('faceGeometry', classification),
+    );
+    await mergeManReportImagePathsForReport(reportId, { diagnostic });
+  }
+
+  if (!diagnostic.frameFront) {
+    diagnostic.frameFront = await generate(
+      'Front frame diagnostic',
+      'diagnostic_frame_front.jpg',
+      { data: bodyData, mimeType: bodyMime },
+      buildDiagnosticPrompt('frameFront', classification),
+    );
+    await mergeManReportImagePathsForReport(reportId, { diagnostic });
+  }
+
+  if (!diagnostic.frameSide && sideRef) {
+    diagnostic.frameSide = await generate(
+      'Side frame diagnostic',
+      'diagnostic_frame_side.jpg',
+      sideRef,
+      buildDiagnosticPrompt('frameSide', classification),
+    );
+    await mergeManReportImagePathsForReport(reportId, { diagnostic });
+  }
+
+  if (!diagnostic.colourDrape) {
+    diagnostic.colourDrape = await generate(
+      'Colour drape diagnostic',
+      'diagnostic_colour_drape.jpg',
+      { data: headData, mimeType: headMime },
+      buildDiagnosticPrompt('colourDrape', classification),
+    );
+    await mergeManReportImagePathsForReport(reportId, { diagnostic });
+  }
+
+  if ((!deliverables.beforeImage || !deliverables.afterImage) && Date.now() < softDeadlineMs) {
+    try {
+      const comparisonBase64 = await withRetry(
+        () => callGeminiImageEdit(
+          bodyData,
+          bodyMime,
+          buildBeforeAfterComparisonPrompt(classification, sections),
+          imageModel,
+          { data: headData, mimeType: headMime },
+        ),
+        3,
+        4_000,
+      );
+      const panels = await splitBeforeAfterComparison(comparisonBase64);
+      const [beforePath, afterPath] = await Promise.all([
+        uploadToStorage(reportId, panels.before, 'deliverable_before.jpg'),
+        uploadToStorage(reportId, panels.after, 'deliverable_after.jpg'),
+      ]);
+      deliverables.beforeImage = beforePath;
+      deliverables.afterImage = afterPath;
+      await mergeManReportImagePathsForReport(reportId, { deliverables });
+      console.log(`[manImageGenerator] Locked before/after comparison saved: ${beforePath}, ${afterPath}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[manImageGenerator] Locked before/after comparison FAILED (model: ${imageModel}): ${message}`);
+      void supabaseAdmin
+        .from('man_reports')
+        .update({ error_message: `Before/after comparison failed: ${message.slice(0, 500)}`, updated_at: new Date().toISOString() })
+        .eq('id', reportId)
+        .then(null, () => {});
+    }
+  }
+
+  if (!deliverables.linkedinHeadshot) {
+    deliverables.linkedinHeadshot = await generate(
+      'LinkedIn headshot',
+      'deliverable_linkedin_headshot.jpg',
+      { data: headData, mimeType: headMime },
+      buildLinkedinHeadshotPrompt(classification),
+    );
+    await mergeManReportImagePathsForReport(reportId, { deliverables });
+  }
+
+  for (let index = 0; index < 3; index++) {
+    if (deliverables.datingProfileShots?.[index]) continue;
+    const path = await generate(
+      `Social media inspiration image ${index + 1}`,
+      `deliverable_social_${index + 1}.jpg`,
+      { data: bodyData, mimeType: bodyMime },
+      buildSocialMediaInspirationPrompt(classification, sections, index),
+      { data: headData, mimeType: headMime },
+    );
+    deliverables.datingProfileShots[index] = path;
+    await mergeManReportImagePathsForReport(reportId, { deliverables });
+  }
+
+  return { diagnostic, deliverables };
 }
 
 export async function regenerateComboGridImagesFromText(
@@ -1254,7 +1722,7 @@ export async function regenerateSingleOutfitImage(
   const prompt       = buildOutfitImagePromptFromText(outfitText, classification, outfitNumber);
   const outputBase64 = await callGeminiImageEdit(baseData, baseMime, prompt, imageModel, hairstyleRef ?? undefined);
 
-  return uploadToStorage(reportId, outputBase64, storageFilename ?? `outfit_${outfitNumber}.jpg`);
+  return uploadOutfitPortraitToStorage(reportId, outputBase64, storageFilename ?? `outfit_${outfitNumber}.jpg`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1287,6 +1755,15 @@ export async function resolveManReportImageUrls(
     ...beardPaths,
     ...(paths.eyewearCards ?? []),
     ...(paths.outfitCards  ?? []),
+    paths.diagnostic?.faceGeometry ?? null,
+    paths.diagnostic?.frameFront ?? null,
+    paths.diagnostic?.frameSide ?? null,
+    paths.diagnostic?.colourDrape ?? null,
+    paths.deliverables?.beforeImage ?? null,
+    paths.deliverables?.afterImage ?? null,
+    paths.deliverables?.beforeAfter ?? null,
+    paths.deliverables?.linkedinHeadshot ?? null,
+    ...(paths.deliverables?.datingProfileShots ?? []),
     paths.comboGridCards?.office ?? null,
     paths.comboGridCards?.evening ?? null,
     paths.comboGridCards?.relaxed ?? null,
@@ -1332,6 +1809,19 @@ export async function resolveManReportImageUrls(
     beardCards:     beardPaths.map(resolve),
     eyewearCards:   (paths.eyewearCards ?? []).map(resolve),
     outfitCards:    (paths.outfitCards  ?? []).map(resolve),
+    diagnostic: {
+      faceGeometry: resolve(paths.diagnostic?.faceGeometry),
+      frameFront: resolve(paths.diagnostic?.frameFront),
+      frameSide: resolve(paths.diagnostic?.frameSide),
+      colourDrape: resolve(paths.diagnostic?.colourDrape),
+    },
+    deliverables: {
+      beforeImage: resolve(paths.deliverables?.beforeImage),
+      afterImage: resolve(paths.deliverables?.afterImage),
+      beforeAfter: resolve(paths.deliverables?.beforeAfter),
+      linkedinHeadshot: resolve(paths.deliverables?.linkedinHeadshot),
+      datingProfileShots: (paths.deliverables?.datingProfileShots ?? []).map(resolve),
+    },
     comboGridCards: {
       office: resolve(paths.comboGridCards?.office),
       evening: resolve(paths.comboGridCards?.evening),

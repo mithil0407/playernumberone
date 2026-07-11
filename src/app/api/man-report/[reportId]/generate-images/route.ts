@@ -16,11 +16,12 @@ import {
   regenerateMissingFaceSlots,
   generateAllOutfitImages,
   generateComboGridImages,
+  generateManBlueprintV2Images,
   getStoredManReportImagePaths,
   mergeManReportImagePathsForReport,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
-import { repairSection4OutfitsUntilQaPass, type ClassificationResult, type ReportData } from '@/lib/manReportGenerator';
+import { buildManBlueprintV2StructuredData, generateSection4AtQualityFloor, MAN_BLUEPRINT_V2_VERSION, type ClassificationResult, type ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
@@ -49,17 +50,35 @@ function getImageCounts(paths: ManReportImagePaths | null | undefined) {
     eyewearDone:   paths?.eyewearCards?.[0] ? 1 : 0,
     outfitDone:    (paths?.outfitCards    ?? []).filter(Boolean).length,
     comboGridDone: Object.values(paths?.comboGridCards ?? {}).filter(Boolean).length,
+    diagnosticDone: Object.values(paths?.diagnostic ?? {}).filter(Boolean).length,
+    deliverableDone: [
+      paths?.deliverables?.beforeImage,
+      paths?.deliverables?.afterImage,
+      paths?.deliverables?.linkedinHeadshot,
+      ...(paths?.deliverables?.datingProfileShots ?? []),
+    ].filter(Boolean).length,
   };
 }
 
-function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount: number): string | null {
+function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount: number, requireV2Assets: boolean): string | null {
   const missingHairstyle = paths.hairstyleCards?.[0] ? 0 : 1;
   const missingBeard = paths.beardCards?.[0] ? 0 : 1;
   const missingEyewear = paths.eyewearCards?.[0] ? 0 : 1;
   const missingOutfits   = Math.max(0, expectedOutfitCount - paths.outfitCards.filter(Boolean).length);
   const missingComboGrids = Math.max(0, 3 - Object.values(paths.comboGridCards ?? {}).filter(Boolean).length);
+  const missingDiagnostics = requireV2Assets ? Math.max(0, 3 - [
+    paths.diagnostic?.faceGeometry,
+    paths.diagnostic?.frameFront,
+    paths.diagnostic?.colourDrape,
+  ].filter(Boolean).length) : 0;
+  const missingDeliverables = requireV2Assets ? Math.max(0, 6 - [
+    paths.deliverables?.beforeImage,
+    paths.deliverables?.afterImage,
+    paths.deliverables?.linkedinHeadshot,
+    ...(paths.deliverables?.datingProfileShots ?? []),
+  ].filter(Boolean).length) : 0;
 
-  if (missingHairstyle === 0 && missingBeard === 0 && missingEyewear === 0 && missingOutfits === 0 && missingComboGrids === 0) return null;
+  if (missingHairstyle === 0 && missingBeard === 0 && missingEyewear === 0 && missingOutfits === 0 && missingComboGrids === 0 && missingDiagnostics === 0 && missingDeliverables === 0) return null;
 
   const parts = [
     missingHairstyle ? `${missingHairstyle} hairstyle grid` : null,
@@ -67,6 +86,8 @@ function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount:
     missingEyewear ? `${missingEyewear} eyewear grid` : null,
     missingOutfits ? `${missingOutfits} outfit` : null,
     missingComboGrids ? `${missingComboGrids} combo grid` : null,
+    missingDiagnostics ? `${missingDiagnostics} diagnostic` : null,
+    missingDeliverables ? `${missingDeliverables} deliverable` : null,
   ].filter(Boolean);
 
   return `Image generation incomplete: ${parts.join(', ')} image${parts.length === 1 ? '' : 's'} still missing. Retry missing images when Gemini capacity is available.`;
@@ -80,6 +101,7 @@ async function runImagePipeline(
   sections:       ReportData['sections'],
   imageModel:     string,
   existingImageUrls: ManReportImagePaths | null,
+  generateV2Assets: boolean,
 ) {
   try {
     const softDeadlineMs = Date.now() + 260_000;
@@ -164,10 +186,34 @@ async function runImagePipeline(
       currentBeforeComboGrids?.comboGridCards ?? {},
     );
 
+    const currentBeforeV2Images = await getStoredManReportImagePaths(reportId);
+    const v2ImagePaths = generateV2Assets
+      ? await generateManBlueprintV2Images(
+          reportId,
+          submission,
+          classification,
+          sections,
+          imageModel,
+          currentBeforeV2Images,
+          softDeadlineMs,
+        )
+      : {
+          diagnostic: currentBeforeV2Images?.diagnostic,
+          deliverables: currentBeforeV2Images?.deliverables,
+        };
+
     // ── Done ──────────────────────────────────────────────────────────────────
     const mergedImagePaths = await mergeManReportImagePathsForReport(
       reportId,
-      { hairstyleCards: hairstylePaths, beardCards: beardPaths, eyewearCards: eyewearPaths, outfitCards: outfitPaths, comboGridCards: comboGridPaths },
+      {
+        hairstyleCards: hairstylePaths,
+        beardCards: beardPaths,
+        eyewearCards: eyewearPaths,
+        outfitCards: outfitPaths,
+        comboGridCards: comboGridPaths,
+        diagnostic: v2ImagePaths.diagnostic,
+        deliverables: v2ImagePaths.deliverables,
+      },
       {
         progress_stage: null,
         error_message: getMissingImageSummary(
@@ -177,8 +223,11 @@ async function runImagePipeline(
             eyewearCards: eyewearPaths,
             outfitCards: outfitPaths,
             comboGridCards: comboGridPaths,
+            diagnostic: v2ImagePaths.diagnostic,
+            deliverables: v2ImagePaths.deliverables,
           },
           classification.outfit_split?.total ?? outfitPaths.length,
+          generateV2Assets,
         ),
       },
     );
@@ -318,13 +367,16 @@ export async function POST(
     await revalidateManReportCache(reportId, repairLease.share_token ?? report.share_token ?? null);
 
     try {
-      const repaired = await repairSection4OutfitsUntilQaPass(
+      const repaired = await generateSection4AtQualityFloor(
         reportDataWithQa.classification,
+        submission as ManIntakeSubmission,
         reportDataWithQa.sections.s4_outfits ?? '',
+        reportDataWithQa.outfit_library?.selectionProfile?.selectionSalt ?? '',
       );
 
       reportDataWithQa = withManReportSection4Qa({
         ...reportDataWithQa,
+        ...buildManBlueprintV2StructuredData(reportDataWithQa.classification, repaired.selectionSalt),
         sections: {
           ...reportDataWithQa.sections,
           s4_outfits: normaliseSequentialManOutfitNumbers(repaired.section4),
@@ -372,6 +424,7 @@ export async function POST(
           reportDataWithQa.sections,
           imageModel,
           existingImageUrls,
+          reportDataWithQa.report_version === MAN_BLUEPRINT_V2_VERSION,
         );
       });
 
@@ -443,6 +496,7 @@ export async function POST(
       reportDataWithQa.sections,
       imageModel,
       existingImageUrls,
+      reportDataWithQa.report_version === MAN_BLUEPRINT_V2_VERSION,
     );
   });
 

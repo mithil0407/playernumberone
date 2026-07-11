@@ -49,18 +49,6 @@ function pickField(edited: string, current: string, fallback: string): string {
   return fallback;
 }
 
-function getPrimaryColour(input: EnrichManOutfitEditInput): string {
-  return (
-    input.classification.colour?.neutral_base_colours?.[0]?.name ||
-    input.classification.colour?.primary_palette?.[0]?.name ||
-    'your strongest neutral'
-  );
-}
-
-function getFitDirective(input: EnrichManOutfitEditInput): string {
-  return input.classification.body?.fit_directive || 'clean structure';
-}
-
 function getRegister(input: EnrichManOutfitEditInput): string {
   return input.classification.style_brief?.register || 'the occasion';
 }
@@ -68,28 +56,14 @@ function getRegister(input: EnrichManOutfitEditInput): string {
 function fallbackRationale(
   input: EnrichManOutfitEditInput,
   editedParsed: ParsedManOutfit,
-  field: 'fitNote' | 'colourLogic' | 'whyItWorks' | 'shoppingTranslation' | 'acceptableSubstitutes' | 'doNotBuy',
+  field: 'whyItWorks',
 ): string {
-  const primaryColour = getPrimaryColour(input);
-  const fitDirective = getFitDirective(input);
   const register = getRegister(input);
-  const top = hasUsableValue(editedParsed.top) ? editedParsed.top : 'the top';
-  const bottom = hasUsableValue(editedParsed.bottom) ? editedParsed.bottom : 'the trouser';
   const footwear = hasUsableValue(editedParsed.footwear) ? editedParsed.footwear : 'clean footwear';
 
   switch (field) {
-    case 'fitNote':
-      return `${top} and ${bottom} keep the fit aligned with ${fitDirective}.`;
-    case 'colourLogic':
-      return `${primaryColour} keeps the palette grounded while the outfit stays cohesive.`;
     case 'whyItWorks':
       return `Use this for ${register}; it reads intentional without looking overworked.`;
-    case 'shoppingTranslation':
-      return `Prioritise the same silhouette, fabric weight, and colour depth.`;
-    case 'acceptableSubstitutes':
-      return `Swap within the same colour family and similar fit.`;
-    case 'doNotBuy':
-      return `Avoid skinny cuts, shiny finishes, or loud contrast details.`;
     default:
       return `Keep the replacement close to ${footwear} in polish and weight.`;
   }
@@ -106,35 +80,10 @@ function completeEditedOutfitBlock(
   const layer = pickField(editedParsed.layer, currentParsed?.layer ?? '', 'No layer');
   const footwear = pickField(editedParsed.footwear, currentParsed?.footwear ?? '', 'Clean leather loafer');
   const accessories = pickField(editedParsed.accessories, currentParsed?.accessories ?? '', 'Minimal watch or belt');
-  const fitNote = pickField(
-    editedParsed.fitNote,
-    currentParsed?.fitNote ?? '',
-    fallbackRationale(input, editedParsed, 'fitNote'),
-  );
-  const colourLogic = pickField(
-    editedParsed.colourLogic,
-    currentParsed?.colourLogic ?? '',
-    fallbackRationale(input, editedParsed, 'colourLogic'),
-  );
   const whyItWorks = pickField(
     editedParsed.whyItWorks,
     currentParsed?.whyItWorks ?? '',
     fallbackRationale(input, editedParsed, 'whyItWorks'),
-  );
-  const shoppingTranslation = pickField(
-    editedParsed.shoppingTranslation,
-    currentParsed?.shoppingTranslation ?? '',
-    fallbackRationale(input, editedParsed, 'shoppingTranslation'),
-  );
-  const acceptableSubstitutes = pickField(
-    editedParsed.acceptableSubstitutes,
-    currentParsed?.acceptableSubstitutes ?? '',
-    fallbackRationale(input, editedParsed, 'acceptableSubstitutes'),
-  );
-  const doNotBuy = pickField(
-    editedParsed.doNotBuy,
-    currentParsed?.doNotBuy ?? '',
-    fallbackRationale(input, editedParsed, 'doNotBuy'),
   );
 
   return enforceConciseOutfitEditFields(`OUTFIT ${input.outfitNumber} — ${context.toUpperCase()}
@@ -143,12 +92,7 @@ BOTTOM: ${bottom}
 LAYER: ${layer}
 FOOTWEAR: ${footwear}
 ACCESSORIES: ${accessories}
-FIT NOTE: ${fitNote}
-COLOUR LOGIC: ${colourLogic}
-OCCASION ANCHOR: ${whyItWorks}
-SHOPPING TRANSLATION: ${shoppingTranslation}
-ACCEPTABLE SUBSTITUTES: ${acceptableSubstitutes}
-DO NOT BUY: ${doNotBuy}`);
+OCCASION ANCHOR: ${whyItWorks}`);
 }
 
 function conciseSentence(value: string, maxWords: number): string {
@@ -161,12 +105,7 @@ function conciseSentence(value: string, maxWords: number): string {
 
 function enforceConciseOutfitEditFields(block: string): string {
   const limits: Array<[RegExp, number]> = [
-    [/FIT\s+NOTE/i, 16],
-    [/COLOU?R\s+LOGIC/i, 16],
     [/OCCASION\s+ANCHOR/i, 18],
-    [/SHOPPING\s+TRANSLATION/i, 14],
-    [/ACCEPTABLE\s+SUBSTITUTES/i, 14],
-    [/DO\s+NOT\s+BUY/i, 14],
   ];
 
   return limits.reduce((text, [labelPattern, maxWords]) => {
@@ -201,18 +140,13 @@ Rules:
 - Preserve the admin-edited garment choices, colours, fabrics, fit descriptors, footwear, accessories, and styling details wherever they are concrete.
 - Do not revert admin garment edits to the previous saved outfit.
 - Keep the same outfit number and same context.
-- Use the existing report field contract exactly.
+- Use the simplified report field contract exactly.
 - Replace placeholders such as "-", "N/A", "Not specified by admin", "Not specified by stylist", "Not visible in reference", "TBD", or empty explanatory fields with polished ICONIK stylist copy.
-- Never output placeholder text in FIT NOTE, COLOUR LOGIC, OCCASION ANCHOR, SHOPPING TRANSLATION, ACCEPTABLE SUBSTITUTES, or DO NOT BUY.
+- Never output placeholder text in OCCASION ANCHOR.
 - If the admin did not specify a layer or accessories, you may write "No layer" or "No accessories" only in those garment fields.
 - Keep every field short and to the point. No paragraphs.
 - Garment fields should be compact phrases, not styling essays.
-- FIT NOTE must be one direct sentence, max 16 words.
-- COLOUR LOGIC must be one direct sentence, max 16 words.
 - OCCASION ANCHOR must be one direct sentence, max 18 words.
-- SHOPPING TRANSLATION must be one direct sentence, max 14 words.
-- ACCEPTABLE SUBSTITUTES must be one direct sentence, max 14 words.
-- DO NOT BUY must be one direct sentence, max 14 words.
 - Keep the writing direct, specific, second-person, and client-facing. No brand names. No filler.
 
 Required output structure:
@@ -222,12 +156,7 @@ BOTTOM: ...
 LAYER: ...
 FOOTWEAR: ...
 ACCESSORIES: ...
-FIT NOTE: ...
-COLOUR LOGIC: ...
-OCCASION ANCHOR: ...
-SHOPPING TRANSLATION: ...
-ACCEPTABLE SUBSTITUTES: ...
-DO NOT BUY: ...`;
+OCCASION ANCHOR: ...`;
 }
 
 export function completeManOutfitEditDeterministically(input: EnrichManOutfitEditInput): string {

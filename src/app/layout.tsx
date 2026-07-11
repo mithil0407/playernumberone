@@ -6,11 +6,12 @@ import MetaPixelProvider from "@/components/MetaPixelProvider";
 import { META_PIXEL_ID } from "@/lib/metaPixel";
 import "./globals.css";
 
-const GA_MEASUREMENT_IDS = [
+const GA_MEASUREMENT_IDS = Array.from(new Set([
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   "G-LHX425PH4B",
   "G-V4126JH4EJ",
   "G-94CVS6PDTF",
-] as const;
+].filter((id): id is string => Boolean(id))));
 
 const inter = Inter({
   subsets: ["latin"],
@@ -122,13 +123,6 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
-        {/* Preload LCP image: the hero carousel image shown above the fold */}
-        <link
-          rel="preload"
-          as="image"
-          href="/transformation-1.webp"
-          fetchPriority="high"
-        />
       </head>
       <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${inter.className}`}>
         {/* Google Analytics — single gtag init shared across both properties */}
@@ -140,6 +134,7 @@ export default function RootLayout({
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
             gtag('js', new Date());
             ${GA_MEASUREMENT_IDS.map((id) => `gtag('config', '${id}');`).join("\n            ")}
           `}
@@ -203,7 +198,8 @@ export default function RootLayout({
                     "availableLanguage": ["English", "Hindi"],
                   },
                   "sameAs": [
-                    "https://www.instagram.com/iconik.pro",
+                    "https://www.instagram.com/iconik.style/",
+                    "https://www.instagram.com/iconik.men/",
                     "https://www.linkedin.com/company/iconik-llp",
                   ],
                 },

@@ -1,24 +1,47 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArticleGrowthTracker,
+  TrackedArticleCtaView,
+  TrackedArticleLink,
+} from "@/components/ArticleGrowthTracker";
+import { buildMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "Best Colours for Dusky Skin: 16 Shades That Work (& What to Avoid)",
-  description: "Yes, dusky skin can wear pastels — if they match your undertone. 16 colours that flatter dusky Indian skin, split by warm and cool undertone, plus the exact shades that wash you out.",
-  keywords: "best colours for dusky skin tone India, colours for dark skin Indian women, what to wear dusky skin India, colour guide dusky skin Indian women, fashion for dark complexion India",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin" },
-  openGraph: {
-    title: "Best Colours for Dusky Skin: 16 Shades That Work (& What to Avoid)",
-    description: "16 colours that flatter dusky Indian skin, split by warm and cool undertone — plus the shades that wash you out.",
-    url: "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Best colours for dusky skin tone India — Iconik" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Best Colours for Dusky Skin: 16 Shades That Work (& What to Avoid)",
-    description: "16 colours that flatter dusky Indian skin, split by warm and cool undertone — plus the shades that wash you out.",
-    images: ["/og-image.webp"],
-  },
+const path = "/colour-analysis/best-colours-dusky-skin";
+const growthTracking = {
+  article_id: "best_colours_dusky_skin",
+  content_cluster: "colour_intelligence",
+  audience: "women" as const,
+  hook_type: "undertone_not_depth",
+  visual_id: "dusky_skin_drape_test",
+  visual_variant: "article_4x5",
+  content_source: "seo_dusky_skin_article",
 };
+const glowTestHref =
+  "/tools/glow-test?source=seo_dusky_skin_article&article_id=best_colours_dusky_skin&content_cluster=colour_intelligence&audience=women&hook_type=undertone_not_depth&visual_id=dusky_skin_drape_test&visual_variant=article_4x5";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Dusky Skin Tone: Meaning, Undertones & 16 Best Colours",
+  description:
+    "What does dusky skin tone mean? Learn how warm, cool, and neutral undertones change the colours, pastels, whites, and jewellery that suit dusky Indian skin.",
+  path,
+  type: "article",
+  keywords: [
+    "dusky skin tone",
+    "dusky skin tone meaning",
+    "best colours for dusky skin",
+    "colours for dusky skin tone",
+    "dusky skin colour palette",
+  ],
+});
 
 const faqs = [
   {
@@ -35,51 +58,34 @@ const faqs = [
   },
   {
     q: "How do I know my undertone if I have deep skin?",
-    a: "The inner wrist vein test — checked in natural daylight — is the most reliable. Blue-purple veins indicate cool undertone; green veins indicate warm. The white paper test is also effective: hold a white sheet near your bare face in natural light and note whether your skin appears golden/olive or pinkish/greyish by comparison.",
+    a: "No single at-home test is definitive. Compare several clues in indirect daylight: whether gold or silver looks more harmonious, whether warm or cool drapes make the face look clearer, and whether white or ivory is more flattering. If the signals conflict, your undertone may be neutral or olive.",
   },
 ];
 
 export default function BestColoursDuskySkinPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin#article",
-        "headline": "Best Colours for Dusky Skin: Indian Women's Guide",
-        "description": "Colour science for dusky skin tone Indian women — undertone identification and Chromatic Harmony Mapping™.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
-        },
-        "datePublished": "2025-01-01",
-        "dateModified": new Date().toISOString().split("T")[0],
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Colour Analysis", "item": "https://www.iconik.pro/colour-analysis" },
-          { "@type": "ListItem", "position": 3, "name": "Best Colours for Dusky Skin", "item": "https://www.iconik.pro/colour-analysis/best-colours-dusky-skin" },
-        ],
-      },
-    ],
-  };
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title: "Dusky Skin Tone: Meaning, Undertones & 16 Best Colours",
+      description:
+        "A practical guide to the meaning of dusky skin tone and the colours that work across warm, cool, and neutral undertones.",
+      path,
+      datePublished: "2026-03-21",
+      dateModified: "2026-07-11",
+    }),
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Colour Analysis", path: "/colour-analysis" },
+      { name: "Dusky Skin Tone", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ArticleGrowthTracker {...growthTracking} />
       <main className="min-h-screen bg-white px-4 py-16 md:py-24">
         <div className="mx-auto max-w-3xl">
 
@@ -95,12 +101,41 @@ export default function BestColoursDuskySkinPage() {
 
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Best Colours for Dusky Skin Tone: Indian Women&apos;s Complete Guide
+              Dusky Skin Tone: Meaning, Undertones &amp; 16 Best Colours
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              The word &quot;dusky&quot; describes surface skin depth — it says nothing about your undertone. And it is undertone, not surface depth, that determines which colours create harmony with your complexion. This guide explains the science, breaks the myths, and gives you an exact colour framework for medium-to-deep Indian skin tones.
+              Dusky skin tone usually describes a medium-to-deep brown surface complexion. It does not tell you whether the undertone is warm, cool, neutral, or olive—and that undertone strongly influences which clothing colours create harmony near the face.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-600">
+              <span className="rounded-full border border-gray-200 px-3 py-1">Published 21 March 2026</span>
+              <span className="rounded-full border border-gray-200 px-3 py-1">Updated 11 July 2026</span>
+              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">
+                Reviewed by Mithil Navalakha, Iconik founder
+              </Link>
+            </div>
           </header>
+
+          <aside className="mb-12 overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#9aabb2_0%,#71858e_100%)] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.18)]">
+            <div className="rounded-[1.8rem] border border-white/45 bg-white/10 p-6 text-white backdrop-blur-xl md:p-8">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/60">The short answer</p>
+              <p className="font-serif text-2xl leading-relaxed text-[#fffaf1] md:text-3xl">
+                There is no single palette for dusky skin. Start with undertone, then adjust colour intensity and contrast for your skin depth.
+              </p>
+              <p className="mt-4 leading-relaxed text-white/75">
+                Warm undertones tend to harmonise with terracotta, olive, coral, mustard, and warm cream. Cool undertones often suit cobalt, emerald, magenta, burgundy, and crisp white. Neutral and olive undertones need a balanced test rather than a rigid warm-or-cool label.
+              </p>
+            </div>
+          </aside>
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Does Dusky Skin Tone Mean?</h2>
+            <p className="text-gray-600 mb-4 leading-relaxed">
+              In Indian beauty and fashion language, &quot;dusky&quot; is commonly used for brown complexions that sit between medium and deep skin depth. It is a description of visible depth, not a scientific undertone category and not a complete colour diagnosis.
+            </p>
+            <p className="text-gray-600 leading-relaxed">
+              Two people can both be described as dusky while one has a golden undertone, another has a cooler red-blue undertone, and a third has an olive or neutral cast. Treating them as one palette is why generic dusky-skin colour lists often contradict one another.
+            </p>
+          </section>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Is Most &quot;Best Colours for Dusky Skin&quot; Advice Wrong?</h2>
@@ -118,7 +153,7 @@ export default function BestColoursDuskySkinPage() {
               Surface tone is what you see: the depth of your skin&apos;s colour, which changes with sun exposure and seasons. Undertone is the fixed hue beneath the surface — warm (yellow/golden), cool (pink/blue), or neutral — and it never changes.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Two women with identical dusky surface tones can have opposite undertones. Colour harmony is determined entirely by undertone. This is the foundational principle behind Chromatic Harmony Mapping™.
+              Two women with similar dusky surface tones can have different undertones. Undertone is therefore a stronger starting point than depth alone, while contrast, hair depth, eye depth, and the colour&apos;s intensity refine the final palette.
             </p>
           </section>
 
@@ -163,6 +198,25 @@ export default function BestColoursDuskySkinPage() {
           </section>
 
           <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">What About Neutral or Olive Dusky Skin?</h2>
+            <p className="text-gray-600 mb-5 leading-relaxed">
+              Neutral and olive undertones often receive conflicting results from simple vein or jewellery tests. Instead of forcing a label, compare controlled drapes near the face and watch for changes in shadows, sallowness, redness, and eye clarity.
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                { name: "Balanced neutrals", colours: "Mushroom, stone, soft navy, cocoa" },
+                { name: "Muted colour", colours: "Dusty rose, teal, aubergine, sage" },
+                { name: "Test carefully", colours: "Very yellow mustard, icy grey, neon brights" },
+              ].map((item) => (
+                <div key={item.name} className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                  <h3 className="mb-2 font-semibold text-gray-900">{item.name}</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">{item.colours}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Can Dusky Skin Wear Pastels?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Yes — with the right pastels. The myth that dusky women should avoid pastels is based on icy, washed-out pastels in the wrong temperature. A cool undertone dusky woman can wear muted lavender, dusty rose, or a soft powder blue. A warm undertone dusky woman can wear a muted peach or a soft warm green.
@@ -177,6 +231,24 @@ export default function BestColoursDuskySkinPage() {
             <p className="text-gray-600 leading-relaxed">
               CHM maps two variables simultaneously: undertone (warm, cool, or neutral) and melanin depth. For deeper Indian skin tones, it specifically recommends colours with sufficient chromatic intensity to create visual harmony — very pale icy tints can look washed out against deeper melanin regardless of undertone temperature. The output is a 10-colour palette calibrated for both your undertone type and your melanin depth.
             </p>
+          </section>
+
+          <section className="mb-12 overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
+            <TrackedArticleCtaView tracking={growthTracking} />
+            <div className="rounded-[1.8rem] border border-white/15 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] p-7 text-white backdrop-blur-xl md:p-9">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#f0cb80]">Free 3-minute test</p>
+              <h2 className="mb-3 font-serif text-3xl text-[#fffaf1]">Test colours from your own wardrobe</h2>
+              <p className="mb-6 max-w-2xl leading-relaxed text-white/70">
+                The Glow Test helps you compare tops, dupattas, scarves, or saree fabrics in the same daylight and identify which colours make your face look clearer, lifted, dull, or shadowed.
+              </p>
+              <TrackedArticleLink
+                href={glowTestHref}
+                tracking={growthTracking}
+                className="inline-flex rounded-full bg-[#f0cb80] px-7 py-3 font-semibold text-[#27353b] transition hover:bg-[#f6d99e]"
+              >
+                Take the Free Glow Test →
+              </TrackedArticleLink>
+            </div>
           </section>
 
           <section className="mb-12">
@@ -212,7 +284,7 @@ export default function BestColoursDuskySkinPage() {
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Best Colours for Dusky Skin: Indian Women&apos;s Guide.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/best-colours-dusky-skin</p>
+            <p>Navalakha, Mithil. &quot;Dusky Skin Tone: Meaning, Undertones &amp; 16 Best Colours.&quot; Iconik, updated 11 July 2026. https://www.iconik.pro/colour-analysis/best-colours-dusky-skin</p>
           </div>
 
         </div>

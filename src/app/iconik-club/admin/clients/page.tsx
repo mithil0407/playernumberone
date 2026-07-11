@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Loader2, ChevronLeft, ChevronRight, Plus, Send, ExternalLink, MessageCircle, RefreshCw } from 'lucide-react';
 import type { ClientProfile } from '@/lib/supabase';
+import { ActionMenu, AdminCard, AdminPageHeader, CLUB, controlClass, EmptyState, FilterBar, LoadingState, primaryButtonClass, quietButtonClass, StatusBadge } from '@/components/IconikClubAdminUI';
 
 type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired' | 'pending';
 
@@ -35,6 +36,7 @@ function AdminClientsContent() {
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   const search = searchParams.get('search') ?? '';
+  const onboarding = searchParams.get('onboarding') ?? 'all';
   const page   = parseInt(searchParams.get('page') ?? '1');
   const limit  = 20;
 
@@ -42,13 +44,14 @@ function AdminClientsContent() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set('search', search);
+    if (onboarding !== 'all') params.set('onboarding_complete', onboarding === 'active' ? 'true' : 'false');
 
     const res  = await fetch(`/api/iconik-club/admin/clients?${params}`);
     const data = await res.json();
     setClients(data.clients ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
-  }, [search, page]);
+  }, [search, onboarding, page]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
@@ -112,68 +115,61 @@ function AdminClientsContent() {
   };
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-7">
-        <div>
-          <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-1">Manage</p>
-          <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Clients</h2>
-        </div>
-        <Link
-          href="/iconik-club/admin/clients/new"
-          className="flex items-center gap-2 bg-[#ff6b9d] text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-[#ff4d8d] transition-colors shadow-sm shadow-[#ff6b9d]/20"
-        >
-          <Plus size={13} />
-          Add Client
-        </Link>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader eyebrow="Relationships" title="Members" description="Manage member profiles, onboarding and outfit delivery." actions={<Link href="/iconik-club/admin/clients/new" className={primaryButtonClass}><Plus size={14} /> Add member</Link>} />
 
       {/* Search */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-4 mb-5 flex flex-wrap gap-3 shadow-sm">
+      <FilterBar>
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a2c3e]/30" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: CLUB.faint }} />
           <input
             type="text"
             defaultValue={search}
             onKeyDown={e => { if (e.key === 'Enter') setParam('search', (e.target as HTMLInputElement).value); }}
-            placeholder="Search by name or email…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[#ffb3d1] rounded-xl bg-[#fff9f5] text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition"
+            placeholder="Search members…"
+            aria-label="Search members"
+            className={`${controlClass} pl-10`}
           />
         </div>
-      </div>
+        <select aria-label="Onboarding status" value={onboarding} onChange={e => setParam('onboarding', e.target.value)} className={`${controlClass} sm:w-auto`}>
+          <option value="all">All members</option>
+          <option value="active">Onboarded</option>
+          <option value="pending">Pending onboarding</option>
+        </select>
+      </FilterBar>
 
       {/* Count */}
       {!loading && (
-        <p className="text-xs text-[#4a2c3e]/40 mb-3 font-medium">{total} client{total !== 1 ? 's' : ''}</p>
+        <p className="mb-3 text-xs" style={{ color: CLUB.muted }}>{total} member{total !== 1 ? 's' : ''}</p>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 overflow-hidden shadow-sm">
+      <AdminCard className="overflow-visible">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={22} className="animate-spin text-[#ff6b9d]" />
-          </div>
+          <LoadingState label="Loading members…" />
         ) : clients.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-[#4a2c3e]/40 text-sm">No clients found.</p>
-          </div>
+          <EmptyState title="No members found" description="Try changing the search or onboarding filter." />
         ) : (
-          <table className="w-full text-sm">
+          <>
+          <div className="divide-y md:hidden" style={{ borderColor: CLUB.border }}>
+            {clients.map(client => <div key={client.id} className="p-4" onClick={() => router.push(`/iconik-club/admin/clients/${client.id}`)}><div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full" style={{ background: CLUB.card, color: CLUB.gold }}>{client.headshot_url ? <img src={client.headshot_url} alt="" className="h-full w-full object-cover" /> : client.name?.charAt(0)?.toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium" style={{ color: CLUB.ink }}>{client.name}</p><p className="truncate text-xs" style={{ color: CLUB.muted }}>{client.email}</p><div className="mt-2"><StatusBadge tone={client.onboarding_complete ? 'success' : 'warning'}>{client.onboarding_complete ? 'Onboarded' : 'Pending'}</StatusBadge></div></div>{client.onboarding_complete && <ActionMenu label="Actions"><button className={`${quietButtonClass} w-full justify-start`} onClick={e => sendPreview(client.id!, e)}><Send size={14} /> {sentIds.has(client.id!) ? 'Preview sent' : 'Email preview'}</button>{client.phone && client.preview_token && <button className={`${quietButtonClass} w-full justify-start`} onClick={e => openWhatsApp(client, e)}><MessageCircle size={14} /> WhatsApp</button>}<button className={`${quietButtonClass} w-full justify-start`} onClick={e => regenerateOutfits(client, e)}><RefreshCw size={14} /> Regenerate outfits</button></ActionMenu>}</div></div>)}
+          </div>
+          <table className="hidden w-full text-sm md:table">
             <thead>
-              <tr className="border-b border-[#ffb3d1]/50 bg-[#fff9f5]">
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Client</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden md:table-cell">Phone</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest hidden lg:table-cell">Measurements</th>
-                <th className="text-left px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Status</th>
-                <th className="text-right px-5 py-3.5 text-[10px] font-bold text-[#4a2c3e]/40 uppercase tracking-widest">Actions</th>
+              <tr style={{ background: CLUB.card, borderBottom: `1px solid ${CLUB.border}` }}>
+                <th className="text-left px-5 py-3.5 iconik-micro" style={{ color: CLUB.muted }}>Member</th>
+                <th className="text-left px-5 py-3.5 iconik-micro" style={{ color: CLUB.muted }}>Phone</th>
+                <th className="hidden text-left px-5 py-3.5 iconik-micro lg:table-cell" style={{ color: CLUB.muted }}>Measurements</th>
+                <th className="text-left px-5 py-3.5 iconik-micro" style={{ color: CLUB.muted }}>Status</th>
+                <th className="text-right px-5 py-3.5 iconik-micro" style={{ color: CLUB.muted }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#ffb3d1]/30">
+            <tbody className="divide-y" style={{ borderColor: CLUB.border }}>
               {clients.map(client => (
                 <tr
                   key={client.id}
                   onClick={() => router.push(`/iconik-club/admin/clients/${client.id}`)}
-                  className="hover:bg-[#fff9f5] transition-colors group cursor-pointer"
+                  className="cursor-pointer transition-colors hover:bg-black/[0.025]"
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -190,8 +186,8 @@ function AdminClientsContent() {
                         </div>
                       )}
                       <div>
-                        <p className="font-semibold text-[#4a2c3e]">{client.name}</p>
-                        <p className="text-xs text-[#4a2c3e]/40 font-medium">{client.email}</p>
+                        <p className="font-medium" style={{ color: CLUB.ink }}>{client.name}</p>
+                        <p className="text-xs" style={{ color: CLUB.muted }}>{client.email}</p>
                         {client.subscriptions && (
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             {(client.subscriptions.created_at || client.subscriptions.start_date) && (
@@ -234,68 +230,18 @@ function AdminClientsContent() {
                     ) : '—'}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                      client.onboarding_complete
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                        : 'bg-amber-50 text-amber-600 border border-amber-100'
-                    }`}>
-                      {client.onboarding_complete ? 'Active' : 'Pending'}
-                    </span>
+                    <StatusBadge tone={client.onboarding_complete ? 'success' : 'warning'}>{client.onboarding_complete ? 'Onboarded' : 'Pending'}</StatusBadge>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {client.onboarding_complete && (
-                        <button
-                          onClick={e => regenerateOutfits(client, e)}
-                          disabled={regeneratingId === client.id}
-                          title="Regenerate outfits (use if generation failed or to refresh)"
-                          className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-[#f0f4ff] text-[#4a6cf7] border border-[#4a6cf7]/20 hover:bg-[#e0e8ff] disabled:opacity-50 transition-colors"
-                        >
-                          {regeneratingId === client.id ? (
-                            <Loader2 size={11} className="animate-spin" />
-                          ) : (
-                            <><RefreshCw size={11} /> Regenerate</>
-                          )}
-                        </button>
-                      )}
-                      {client.onboarding_complete && client.phone && client.preview_token && (
-                        <button
-                          onClick={e => openWhatsApp(client, e)}
-                          title="Open WhatsApp with pre-filled message"
-                          className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-[#e7f9ef] text-[#25D366] border border-[#25D366]/20 hover:bg-[#d0f5e2] transition-colors"
-                        >
-                          <MessageCircle size={11} />
-                          WhatsApp
-                        </button>
-                      )}
-                      {client.onboarding_complete && (
-                        <button
-                          onClick={e => sendPreview(client.id!, e)}
-                          disabled={sendingId === client.id}
-                          title={sentIds.has(client.id!) ? 'Email sent — link also copied' : 'Send preview email + copy link'}
-                          className={`flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                            sentIds.has(client.id!)
-                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                              : 'bg-[#fff0f5] text-[#ff6b9d] border border-[#ffb3d1] hover:bg-[#ffe0ec]'
-                          }`}
-                        >
-                          {sendingId === client.id ? (
-                            <Loader2 size={11} className="animate-spin" />
-                          ) : sentIds.has(client.id!) ? (
-                            <><ExternalLink size={11} /> Sent</>
-                          ) : (
-                            <><Send size={11} /> Email</>
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {client.onboarding_complete ? <ActionMenu label="Actions"><button className={`${quietButtonClass} w-full justify-start`} disabled={sendingId === client.id} onClick={e => sendPreview(client.id!, e)}>{sendingId === client.id ? <Loader2 size={14} className="animate-spin" /> : sentIds.has(client.id!) ? <ExternalLink size={14} /> : <Send size={14} />} {sentIds.has(client.id!) ? 'Preview sent' : 'Email preview'}</button>{client.phone && client.preview_token && <button className={`${quietButtonClass} w-full justify-start`} onClick={e => openWhatsApp(client, e)}><MessageCircle size={14} /> WhatsApp</button>}<button className={`${quietButtonClass} w-full justify-start`} disabled={regeneratingId === client.id} onClick={e => regenerateOutfits(client, e)}><RefreshCw size={14} /> Regenerate outfits</button></ActionMenu> : <span style={{ color: CLUB.faint }}>—</span>}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </>
         )}
-      </div>
+      </AdminCard>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -363,7 +309,7 @@ export default function AdminClientsPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={22} className="animate-spin text-[#ff6b9d]" />
+        <Loader2 size={22} className="animate-spin" style={{ color: CLUB.gold }} />
       </div>
     }>
       <AdminClientsContent />

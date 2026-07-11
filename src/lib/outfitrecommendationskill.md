@@ -1,3 +1,625 @@
+# ICONIK Men's Blueprint Engine — v6.1 ELEVATION UPDATE
+
+## V2-9PLUS PORTFOLIO OVERRIDE — CONTROLLING
+
+The attached `v2-9plus` library assignment is the controlling portfolio specification. These rules override every older context formula or quota below when they conflict.
+
+- **Office / Formal:** strict corporate formal only. Exactly 2 matched suits, 2 blazer-and-tailored-trouser looks, and 2 dress-shirt-and-tailored-trouser looks. At least 3 looks name a tie. If the client explicitly rejects suits, replace the 2 suit slots with 2 climate-appropriate formal layers; if he rejects ties, remove ties without relaxing any other formal rule. No tee, polo, denim, sneaker, drawstring, cargo, camp collar, casual overshirt, or rolled sleeve.
+- **Smart Casual:** exactly one tailored-polo, one shirt/chino, one layered-smart, and one expressive/resort-smart archetype.
+- **Evening:** visibly night-out, never ordinary coffee/weekend casual. Mild/temperate/cool requires 2 statement outerwear looks; hot/monsoon requires 1 lightweight statement outerwear look plus patterned/tailored statement. At most 2 no-layer looks and 1 plain no-layer polo.
+- **Relaxed Casual:** exactly 2 Resort/Riviera, 2 Daily Old-Money, and 1 Urban/Travel. At most 2 plain tee-led looks and 2 open overshirt/utility silhouettes.
+- **Portfolio:** 5-7 patterned pieces, with minima of Formal 1, Smart Casual 1, Evening 1, Relaxed 2, unless the classification explicitly rejects patterns. At least 6 footwear types and 4 layer types when climate permits. No silhouette family more than twice inside a context or three times overall.
+- A tonal varsity jacket is a standard commercial garment exception: matte cotton-twill or wool-blend, plain body, tonal sleeves, restrained ribbing, no logos, patches, lettering, shine, or loud contrast. It counts as one statement garment.
+- Preserve the mandatory source's ARCHETYPE and SILHOUETTE FAMILY. Do not turn a suit into separates, a statement jacket look into a plain polo, or a Resort/Riviera look into generic tee-and-chinos.
+- Every rationale must state the client-specific body/colour/context mechanism in at least one complete sentence. Do not expose scores, moves, library IDs, archetype labels, or internal QA language in client-facing copy.
+
+**Version:** 6.1 — Reality-Anchored + Elevation Mandate
+**Scope:** Automated Blueprint report generation — men's outfit recommendation section only
+**Output:** Exactly **20 outfits**: 6 Office/Formal · 4 Smart Casual · 5 Evening · 5 Relaxed Casual
+**Supersedes:** v6.0. All v6.0 rules remain in force. This update REPLACES Section 01's Self-Style Gate, ADDS Sections 01C–01F, and REPLACES the ICONIK axis definition in Section 24 and the prompt template in Section 26.
+
+## Why v6.0 output was boring — the diagnosis, so this never regresses
+
+The Garment Reality Rule constrained WHAT garments exist but gave the engine nothing new to be interesting WITH. Starved of its old trick (inventing exotic garments), the model retreated to the safest legal combinations: white shirt + navy trouser + black shoe. That is the mall-mannequin failure mode.
+
+**The correction principle:** Elevation never comes from inventing garments. It comes from EXECUTION with real garments — colour sophistication, a third element, texture pairing, proportion, and one directed styling move. A Rs.1,500 ecru poplin shirt with high-rise ink pleated trousers and dark brown suede loafers reads three tiers more expensive than a Rs.5,000 white shirt with flat navy chinos and black derbies. Same reality constraint. Completely different outcome.
+
+Every rule below is buildable from garments that pass the Nameability Test.
+
+## SECTION 01 SELF-STYLE GATE — v6.1 REPLACEMENT
+
+Every outfit must contain a **minimum of two elevation moves** from Section 01D, at least one from categories A-C. Use a maximum of four total moves. The move must be visible in the final outfit line itself, not only implied in reasoning.
+
+The client should feel that the outfit is reachable, but not something he would have assembled alone. A correct outfit with zero visible elevation is a failed outfit.
+
+---
+
+# SECTION 01C — THE BASIC COMBO BAN (NEW HARD RULE)
+
+The following default combinations are BANNED unless rescued by at least TWO moves from the Elevation Move Bank (01D). These are the outfits every man already wears — recommending them scores ICONIK <= 4 automatically:
+
+1. White shirt + navy/black trouser + black shoe (and nothing else)
+2. Light blue shirt + navy chino + brown shoe (and nothing else)
+3. Navy polo + beige chino + white sneaker
+4. Black polo + black/grey trouser
+5. White tee + blue denim + white sneaker (no layer)
+6. Grey tee or grey polo + navy trouser
+7. Check shirt + blue denim + sneaker (no layer, no styling)
+8. Navy blazer + white shirt + navy trouser + black shoe (the wedding-guest default)
+9. Plain crewneck + denim (no visible shirt, no third element)
+10. Any outfit whose entire palette is white + navy + black with no third colour, no texture event, and no styling move
+
+**The mannequin test:** if this exact outfit could appear on a mall mannequin at a mid-tier brand, it is banned as-is. It must earn its place through elevation moves.
+
+---
+
+# SECTION 01D — THE ELEVATION MOVE BANK (NEW — CORE ASSET)
+
+Every outfit must contain a MINIMUM of TWO moves from this bank, at least one from categories A-C (visible sophistication), maximum four total. All moves use real, purchasable garments.
+
+## A. COLOUR MOVES
+- **A1. Kill the defaults:** replace white -> ecru / warm ivory / chalk; replace navy -> ink navy / dark olive / espresso; replace beige -> stone / taupe / oatmeal; replace black shoe -> dark brown suede / burgundy leather. One substitution = one move.
+- **A2. The unexpected-but-safe pairing:** sage or pistachio-green knit polo + espresso trouser; dusty pink Oxford + olive chino; butter-yellow knit polo + chocolate pleated trouser; powder blue + tobacco; burgundy merino + mid-grey flannel; ecru + ink + cognac.
+- **A3. Three-depth build:** the outfit occupies three clearly distinguishable depths, not two.
+- **A4. The dark-column inversion:** dark near face + light bottom + dark shoe re-anchor. Riviera logic, only for Medium/Deep clients.
+- **A5. Burgundy resolution:** burgundy loafer or belt as the piece that quietly resolves an otherwise neutral outfit.
+
+## B. THIRD-ELEMENT MOVES
+- **B1. The open layer** as vertical panel: overshirt, unstructured blazer, chore jacket, suede jacket.
+- **B2. The drape:** fine knit draped over shoulders, only for Formula 29/46 clients.
+- **B3. The visible underlayer:** stripe Oxford collar + cuffs showing under a crewneck; white tee collar at the neck of a quarter-zip.
+- **B4. The eyewear event:** face-shape-calibrated tortoiseshell or panto frames written as a deliberate accessory.
+- **B5. HOT-climate third element:** textured statement shoe, pleated trouser, or draped knit where layers are rationed.
+
+## C. PROPORTION & FIT MOVES
+- **C1. High-rise pleated trouser** with a clean full-length fall.
+- **C2. Fuller tapered leg** instead of the default slim.
+- **C3. The deliberate tuck geometry:** tucked + belted + open layer for Office; clean straight-hem untucked for casual.
+- **C4. Sleeve discipline:** linen/Oxford sleeves rolled cleanly to below-elbow, once.
+- **C5. Longer-line outer layer** hitting below the hip to create an unbroken vertical.
+
+## D. TEXTURE MOVES
+- **D1. Texture pairing:** linen shirt + suede loafer; fine merino + flannel trouser; knit polo + linen-cotton trouser; corduroy overshirt + brushed cotton tee.
+- **D2. Tonal texture contrast:** two pieces near the same colour family but in clearly different textures and depths.
+- **D3. The suede event:** suede as the outfit's single statement fabric, on the shoe or jacket, never both.
+
+## E. STYLING DETAIL MOVES
+Use max one per outfit from this category.
+- **E1.** Top button open on a dress shirt with no tie.
+- **E2.** Overshirt worn fully open, hem past the hip.
+- **E3.** Belt leather matched exactly to shoe leather.
+- **E4.** Watch metal matched to outfit temperature.
+- **E5.** Collar of a polo worn open and sitting over a blazer lapel, resort smart only.
+
+---
+
+# SECTION 01E — THE ELEVATED COLOUR VOCABULARY (NEW)
+
+The engine must name colours from this vocabulary whenever it fits the client's season, context and anti-preferences. Generic colour words are the first symptom of a basic outfit.
+
+| Instead of | Use (all real, all searchable) |
+|---|---|
+| white | ecru, warm ivory, chalk white, off-white, bone |
+| blue | ink navy, slate blue, powder blue, dusty blue, chambray blue |
+| green | dark olive, sage, forest, pistachio (knits only) |
+| brown | espresso, chocolate, tobacco, cognac, dark taupe |
+| beige | stone, oatmeal, sand, warm taupe, camel |
+| grey | mid-grey flannel, charcoal, warm grey, slate |
+| red family | burgundy, muted terracotta, brick (overshirts only) |
+| yellow | butter yellow (soft knits only — never mustard) |
+| pink | dusty pink (Oxford shirts and fine knits only — Cool and Neutral clients) |
+
+**Rule:** each colour word stays a SINGLE name ("oatmeal", never "oat stone"). Compound colour inventions remain banned under the Garment Reality Rule.
+
+**Palette sophistication quota:** across the 20 outfits, at least 6 outfits must use a colour from outside the {white, navy, black, beige, grey} default set as a PRIMARY piece (top or layer), subject to the client's season priors and anti-preferences.
+
+---
+
+# SECTION 01F — WORKED BASIC → ELEVATED PAIRS (RUBRIC ANCHORS)
+
+These pairs define the ICONIK axis. The delta is never a new garment type; it is execution.
+
+**PAIR 1 — Office**
+- BASIC (ICONIK 4): White cotton shirt, tucked + navy flat-front trouser + black Derby + black belt.
+- ELEVATED (ICONIK 9): Ecru cotton poplin shirt, tucked, top button open + ink navy high-rise single-pleat trouser, full clean fall + dark brown suede penny loafer + dark brown belt matched to shoe + tortoiseshell panto optical frames per face shape.
+- Delta: A1, C1, E1, E3, B4.
+
+**PAIR 2 — Smart Casual, HOT**
+- BASIC (4): Navy polo + beige chino + white sneaker.
+- ELEVATED (9): Sage fine-knit open-collar polo, structured + espresso pleated linen-cotton trouser + cognac leather penny loafer + gold watch.
+- Delta: A2, C1, D1, E4.
+
+**PAIR 3 — Relaxed Casual, Oval client**
+- BASIC (4): Check shirt + blue jeans + sneaker.
+- ELEVATED (9): Off-white brushed cotton tee + tobacco linen overshirt worn fully open past the belly + dark indigo straight relaxed denim + dark brown suede loafer.
+- Delta: B1, A1, D1, and belly geometry.
+
+**PAIR 4 — Evening, HOT**
+- BASIC (4): Black shirt + black trouser + black shoe.
+- ELEVATED (9): Espresso linen shirt, top button open, untucked straight hem + ivory linen-cotton tailored trouser + dark brown suede loafer + thin silver chain.
+- Delta: A4, A3, D1, deliberate accessory.
+
+**PAIR 5 — TEMPERATE Smart Casual**
+- BASIC (4): Grey crewneck + blue jeans + white sneaker.
+- ELEVATED (9): Burgundy fine-merino crewneck + white fine-stripe Oxford, collar and cuffs visible + mid-grey flannel tailored trouser + dark brown suede Chelsea boot.
+- Delta: A2, B3, D1, C2.
+
+---
+
+# SECTION 24 — v6.1 ICONIK AXIS REPLACEMENT
+
+**ICONIK (0-10) — the aspiration delta. Weight highest. Kill threshold is 8 for Smart Casual and Evening; 7 for Office and Relaxed Casual.**
+
+- 0-4: Fails the mannequin test, or matches a Basic Combo Ban entry without two rescue moves. He owns this already.
+- 5-6: Correct and clean but the elevation is generic. He would nod, not screenshot.
+- 7-8: Two-plus elevation moves, palette from the elevated vocabulary, one clear non-obvious decision. Reads a full tier more expensive than his current wardrobe.
+- 9-10: A compound move he could never construct himself, where colour story, third element and proportion all resolve each other. Screenshot-and-send tier.
+
+**Scoring instruction:** the evaluator pass must check each outfit against the Basic Combo Ban first, then count elevation moves, then judge the compound quality. An outfit with zero moves from categories A-C cannot score above 5 regardless of correctness.
+
+---
+
+# SECTION 26 — v6.1 PROMPT TEMPLATE ADDITIONS
+
+Add to PASS 1 constraints:
+
+```
+8. ELEVATION MANDATE: Every outfit must contain 2-4 moves from the Elevation Move Bank (Sections 01D), at least one from categories A-C. The Basic Combo Ban (01C) is absolute: no banned default combination without two rescue moves. Use the Elevated Colour Vocabulary (01E) — never plain "white/navy/beige" when an elevated equivalent fits the client's season. Palette sophistication quota: >=6 of the final 20 outfits carry a non-default colour as a primary piece.
+9. The Garment Reality Rule is unchanged and absolute. Elevation is achieved ONLY through execution with real garments — colour, third element, texture pairing, proportion, styling detail — never through invented garments or invented details.
+```
+
+Add to PASS 2 instructions:
+
+```
+Score ICONIK using the recalibrated rubric and the five worked Basic→Elevated pairs in Section 01F as anchors. Apply the mannequin test first. Kill threshold: ICONIK >= 8 for Smart Casual and Evening, >= 7 for Office and Relaxed Casual, Realism >= 7, Relevance >= 7.
+```
+
+## TENSION GOVERNANCE — how Reality and Elevation coexist
+
+1. Reality is the floor. No move from the Elevation Bank may violate the Nameability Test.
+2. Elevation is the target. Within the real-garment space, choose the elevated execution over the default one.
+3. When an elevation move conflicts with a body-shape precondition, search the technique grammar for the enabler.
+4. When an elevation move conflicts with an anti-preference or climate rule, the move dies, never the rule. Pick a different move.
+
+*Reality bounds the space. Elevation picks the point. The render still decides.*
+
+---
+
+# ICONIK Men's Blueprint — Outfit Recommendation Engine v6.0 Base
+
+**Version:** 6.0 — Reality-Anchored + Four-Axis Evaluation
+**Scope:** Automated Blueprint report generation — men's outfit recommendation section only
+**Output:** Exactly **20 outfits**: 6 Office/Formal · 4 Smart Casual · 5 Evening · 5 Relaxed Casual
+**Supersedes:** v5.1. All v5.1 bans, climate rules, footwear rules and formulas remain in force unless explicitly changed here.
+
+**What v6.0 changes:**
+1. **Garment Reality Rule** — hard anti-hallucination layer. Every piece must be a real, purchasable, searchable garment. This kills outputs like "oat stone cobalt blue draped sleeveless top with gathered shoulder detail."
+2. **Colour Physics Layer** — value > contrast > chroma > temperature, zone-weighted. Season palettes become priors, not filters.
+3. **Four-Axis Evaluation** — Realism, Relevance, ICONIK (aspiration delta), Diversity — replaces the flat sophistication score. Generation and scoring are separate passes.
+4. **Technique Grammar** — body-shape rules restated as preconditions + enablers, so the engine finds the rescue move instead of just banning things.
+5. **Suit Exception** — matched suits are now legal in Office/Formal (the old monochrome ban accidentally outlawed all suits).
+6. **Expanded Formula + Reference Library** — 12 new formulas and 10 new references for genuine diversity across the 20 outfits.
+
+---
+
+# SECTION 00 — PRIORITY HIERARCHY
+
+When rules conflict, follow this exact order:
+
+1. **Anti-preferences** — never include a blocked item, colour, fit or category.
+2. **Garment Reality Rule** — every item must pass the nameability test (Section 0A). An unreal garment is worse than a boring one.
+3. **Climate rules**
+4. **Body shape and fat-storage rules** (via technique grammar — Section 06)
+5. **Monochrome prohibition for separates** (suits exempt — Section 05)
+6. **Height and proportion rules**
+7. **Colour physics** (value > contrast > chroma > temperature), then season palette as prior
+8. **Face-shape eyewear rules**
+9. **Context rules**
+10. **Style poles**
+11. **Diversity quotas**
+
+---
+
+# SECTION 0A — GARMENT REALITY RULE (NEW — HARD CONSTRAINT)
+
+The single worst failure mode of a generative outfit engine is inventing garments that do not exist in retail. A recommendation the client cannot buy is a zero, no matter how correct its geometry. Every piece in every outfit must pass all five tests below.
+
+## 1. The Nameability Test
+Every garment must be expressible as:
+
+`[ONE colour] + [ONE fabric] + [ONE standard garment type] (+ one standard cut word)`
+
+Examples that pass: "navy linen-cotton blazer", "white cotton Oxford shirt", "dark indigo straight-leg denim", "camel fine-merino quarter-zip".
+Examples that fail: "oat stone cobalt draped top with gathered shoulder detail", "espresso panelled hybrid overshirt with contrast trim".
+
+**The search test:** if you typed this exact phrase into Myntra, Marks & Spencer, Uniqlo, Massimo Dutti or Zara, would it appear on page one? If not, the garment does not exist. Regenerate.
+
+## 2. One Colour Per Garment
+Every garment is a single colour. The ONLY exceptions are standard commercial patterns:
+- fine stripe / Bengal stripe / pinstripe
+- muted check / gingham / glen check
+- herringbone / melange / heather
+
+**Banned forever:** colour-blocked pieces, contrast panels, contrast piping, contrast trims, "a hint of [second colour]", two-tone garments, inserted colour details. If an outfit needs a second colour, it comes from a second garment — never from inside one garment.
+
+## 3. No Invented Design Details
+Banned descriptors: draped, gathered, twist-front, asymmetric, cutout, statement sleeve, panelled, deconstructed, wrap-effect, ruched, cascading, architectural.
+Design details are allowed ONLY when they are the defining feature of a standard garment type: pleats on a pleated trouser, cables on a cable knit, a quarter-zip's zip, an Oxford's button-down collar, a Harrington's ribbed hem. If the detail needs explaining, it doesn't exist.
+
+## 4. One Statement Fabric Per Outfit
+Suede, leather, corduroy, and flannel are statement fabrics. Maximum ONE per outfit (footwear excluded from the count — suede loafers pair fine with a corduroy overshirt is the ONLY allowed doubling, and only when tones differ). Never suede jacket + corduroy trouser. Never leather jacket + flannel trouser + suede boot. Register collisions read costume, not premium.
+
+## 5. Closed Vocabulary
+Generate only from the garment-type vocabulary in this file (formulas, references, approved lists in Sections 19–21). If a garment type is not named anywhere in this file and is not a universally standard menswear item (white Oxford shirt, navy chino), it may not appear. The library is the boundary of reality.
+
+---
+
+# SECTION 01 — ICONIK MEN'S STYLE PHILOSOPHY
+
+Unchanged from v5.1: ICONIK prescribes visual architecture, not fashion. Every outfit must solve at least one of: Geometric Silhouette, Chromatic Harmony, Context Register, Mature Polish, Facial Architecture. Direction: clean, premium, masculine, mature, wearable, non-flashy, texture-rich, proportion-aware.
+
+## The Self-Style Gate (v6.1 replacement)
+Every outfit must contain **2-4 visible elevation moves** from Section 01D, with at least one move from categories A-C. One non-obvious decision is no longer enough. A correct outfit that feels like a mall mannequin fails the ICONIK axis and must be regenerated.
+
+## Classy Modern Visual DNA
+Retained in full from v5.1 (Riviera smart casual, old-money casual, quiet luxury, soft tailoring, etc.), including the use-more/use-less lists, Premium Texture Rule and Rich-Man Casual Calibration.
+
+---
+
+# SECTION 02 — ABSOLUTE NEVER LIST
+
+Retained in full from v5.1: no satin/silk/shiny shirts of any colour, no jewel-tone shiny shirts, no neon, no mustard, no loud prints, no skinny jeans, no cropped/ankle trousers, no band collars anywhere, camp collars only in HOT Relaxed/Evening in linen, no waistcoats, no brown/tan/coloured sneakers, no over-accessorising.
+
+**Added in v6.0:**
+- No multi-colour single garments (Section 0A.2)
+- No invented design details (Section 0A.3)
+- No two statement fabrics in one outfit (Section 0A.4)
+- No garment type outside the closed vocabulary (Section 0A.5)
+
+---
+
+# SECTION 03 — FORM INPUT MAP
+
+All v5.1 variables carry forward, except climate is now supplied as the date-aware `CLIMATE_MODE` rather than a country-level `CLIMATE_ZONE`. Valid modes include HOT, MONSOON, MILD, TEMPERATE, and COOL; current regional season always overrides an assumption that a country is hot year-round.
+
+---
+
+# SECTION 04 — COLOUR PHYSICS (REWRITTEN)
+
+## 4.1 The Priority Order
+When evaluating any colour choice, the four matches rank:
+
+1. **VALUE (depth) match** — is the colour's lightness/darkness compatible with the client's skin depth? Deep clients drown in pale-on-pale; light clients are overpowered by very deep saturated colour near the face. Value errors are the most visible errors.
+2. **CONTRAST match** — does the outfit's internal light/dark contrast reproduce the client's natural contrast (skin–hair–eye delta)? High-contrast man (dark hair, medium-deep skin): white shirt + navy = correct. Low-contrast man: tonal, blended depth steps.
+3. **CHROMA match** — muted colouring gets muted colour; clear colouring can carry saturation. All ICONIK men's colours are muted-to-mid chroma anyway (never list handles the rest).
+4. **TEMPERATURE match** — warm/cool harmony. Real but WEAKEST. A deep cool navy on a warm-deep client is correct when value and contrast win — which they usually do.
+
+The season palettes in 4.3 encode temperature + value together. They are **priors, not filters**: the engine may cross temperature lines when it can state the mechanism ("navy passes on this Warm Deep client because value match and contrast dominate; warm resolution comes from the cognac loafer and camel layer").
+
+## 4.2 Zone Weighting
+Colour-to-skin interaction decays with distance from the face.
+
+| Match | Near face (shirt, polo, knit, collar zone) | Away from face (trousers, shoes, belt) |
+|---|---|---|
+| Value | ×3 | ×1 |
+| Contrast | ×3 | ×2 |
+| Chroma | ×2 | ×1 |
+| Temperature | ×2 | ×0.5 |
+
+Consequences the engine must respect:
+- The near-face piece is where the palette actually binds. Trousers and shoes are almost temperature-free zones.
+- **The Warm-Leather Bridge:** cognac, tan, chocolate and burgundy leather footwear and belts are legal in ALL outfits including cool-toned ones. Undertone rules govern garments near the face — never leather accessories. A cool navy-and-white outfit with dark brown suede loafers is correct, not a violation.
+- "Avoid black near face" for Warm Light clients does not ban black trousers or black shoes.
+
+## 4.3 Season Palettes (Priors)
+The v5.1 derivation (vein test → undertone; undertone × depth → season) and all seven palettes (Cool Light through Neutral) are retained verbatim as priors. The v6.0 change is only their status: a colour outside the palette may be used near the face when the engine explicitly wins on value + contrast and resolves temperature elsewhere in the outfit.
+
+## 4.4 Occasion Palette (Hard-ish)
+Office/Formal lives inside the socially defined corporate space: whites, blues, navies, greys, subtle stripes, plus ICONIK's earthy extensions (olive, camel, taupe) where the office register allows. The engine optimises WITHIN this space — choosing warm ivory vs pure white, ink navy vs slate, stripe contrast width — never against it.
+
+## 4.5 Premium Colour Pairing Bank
+Retained in full from v5.1 (Warm/Neutral, Cool/Neutral, Evening banks + the 7 pairing rules). These pairings are pre-validated three-colour structures: anchor + soft contrast + bridge. Default to the bank; deviate only with stated mechanism.
+
+---
+
+# SECTION 05 — COLOUR HIERARCHY RULE
+
+Retained from v5.1 (anchor/accent/bridge roles, one accent max, depth contrast mandatory, footwear resolves temperature) with one correction:
+
+## The Suit Exception (NEW)
+The monochrome prohibition applies to **separates**. A matched suit (same-fabric jacket + trouser) is a deliberate garment system, not a monochrome error, and is legal in Office/Formal and Evening — PROVIDED the shirt or knit inside creates clear depth contrast against the suit, and footwear + belt follow the bank. Navy suit + white shirt = correct. Navy suit + navy shirt = still banned. Tonal separates that merely imitate a suit (olive polo + olive trouser) remain banned for all body shapes.
+
+---
+
+# SECTION 06 — BODY SHAPE TECHNIQUE GRAMMAR (REWRITTEN)
+
+Body-shape logic is now stated as techniques with **functions, preconditions, enablers and contraindications**. The engine's job when a precondition fails is to search enablers before discarding — this is how a real stylist reasons.
+
+## The Function Vocabulary
+- VERTICAL-LINE — create an unbroken eye-path downward
+- DARK-ANCHOR(zone) — deepen a zone to recede it
+- STRUCTURE(shoulder) — build the shoulder line
+- BALANCE — counterweight one zone against another
+- DIFFUSE(zone) — pull attention away from a zone
+- POLISH — read finished and deliberate
+
+## OVAL / ROUND (primary ICONIK male client — belly-dominant)
+**Demand list:** VERTICAL-LINE, DIFFUSE(midsection), DARK-ANCHOR(bottom), POLISH.
+
+**TECHNIQUE: Open layer as vertical channel** (the master move)
+- FUNCTIONS: VERTICAL-LINE, DIFFUSE(midsection)
+- PRECONDITIONS: layer hem falls BELOW the widest belly point; layer stays open; base underneath is plain and clean
+- ENABLERS: none needed — this is the native solution
+- CONTRAINDICATIONS: crop-length jackets; closed overshirts
+
+**TECHNIQUE: Tucked shirt**
+- FUNCTIONS: POLISH, waist definition
+- PRECONDITIONS: midsection is NOT the minimise zone
+- ENABLERS (when midsection IS the minimise zone — Office/Formal only): open blazer or jacket over the tuck creating a vertical panel that covers the sides of the midsection + mandatory belt + shirt in relaxed (not slim) fit. The tuck and the open jacket are ONE compound move — never prescribe the tuck without the jacket.
+- CONTRAINDICATIONS: tucked shirt with no layer in any context; tucking in Smart Casual/Evening/Relaxed for Oval — no enabler rescues these.
+
+**TECHNIQUE: Knit polo**
+- PRECONDITIONS: real fabric structure, does not cling ("would this hug a belly?" test)
+- ENABLERS: if cling is in doubt, either add an open layer over it, or switch to open linen shirt + tee (Formula 04)
+- CONTRAINDICATIONS: thin jersey polos, fitted-cut knit polos
+
+**Hard rules retained:** bottom zone always equal-to-or-darker than base-layer top; never light-on-light; never a closed overshirt; never a jacket ending at the belly; pleats only when dark and clean-falling; no wide-leg denim under 5'9".
+
+## RECTANGLE
+Demand: STRUCTURE(shoulder), avoid boxiness. Tools: structured jackets, open layers, contrast between zones, clean trouser line. Contraindications: boxy-on-boxy, monochrome separates.
+
+## ATHLETIC / V-SHAPE
+Demand: BALANCE (don't exaggerate shoulders). Tools: soft unstructured jackets, open collars, relaxed straight/wider trousers. Contraindications: padded shoulders, wide lapels, horizontal chest stripes, too-tight tops.
+
+## SLIM / LEAN
+Demand: add controlled visual mass. Tools: layers, cable knits, vests, texture, relaxed-straight bottoms. Contraindications: skinny cuts, clingy thin tops, unstructured oversize.
+
+## TRIANGLE
+Demand: STRUCTURE(shoulder) + clean dark lower half. Tools: structured upper layers, lighter tops, dark slim-straight trousers. Contraindications: light tight bottoms, wide legs, cargo bulk, tops ending at widest hip.
+
+Fat-storage camouflage table and highlight-zone table from v5.1 are retained.
+
+---
+
+# SECTIONS 07–08 — HEIGHT AND CLIMATE RULES
+
+Retained verbatim from v5.1 (height bands and proportion rules; HOT/TEMPERATE fabric lists, prohibitions, layer counts, the HOT no-layer-dominant rule).
+
+---
+
+# SECTIONS 09–15 — CAMOUFLAGE, HIGHLIGHT, FIT, POLES, EYEWEAR, BELT, CAMP COLLAR
+
+Retained verbatim from v5.1, including: the mandatory calibrated eyewear format, belt rules for tucked Office shirts, camp-collar restrictions, and the Style Poles rule that poles lean 6–8 anchor outfits and never override the diversity mandate.
+
+---
+
+# SECTION 16 — FORMULA LIBRARY
+
+Formulas 01–35 from v5.1 are retained in full and unchanged. The following are ADDED for diversity. Every formula obeys the Garment Reality Rule by construction.
+
+## FORMULA 36 — THE MATCHED SUIT (Office / Evening)
+**Structure:** Navy, charcoal, or (HOT) taupe/stone unlined cotton or linen-blend suit, jacket worn open + white or powder-blue shirt (clear depth contrast against suit) + dark leather Derby or penny loafer + slim belt if tucked.
+**Suit Exception applies:** legal despite matched tones because the shirt carries the contrast.
+**Oval rule:** jacket stays open; shirt relaxed fit; belt mandatory.
+**Best for:** Office/Formal, Evening (dark suits). Max 2 suits across 20 outfits.
+
+## FORMULA 37 — BENGAL STRIPE SHIRT + PLAIN DARK TROUSER
+**Structure:** Blue-and-white Bengal stripe cotton shirt (tucked with belt in Office; untucked straight-hem for Oval casual contexts) + plain navy or charcoal tailored trouser + dark brown leather loafer.
+**Contrast logic:** the stripe IS the contrast event — everything else stays plain. One pattern per outfit.
+**Best for:** Office, Smart Casual. Works for all shapes (Oval: untucked or open-blazer enabler).
+
+## FORMULA 38 — MERINO CREWNECK OVER SHIRT + FLANNEL TROUSER (TEMPERATE)
+**Structure:** Navy, forest or charcoal fine-merino crewneck + white or fine-stripe Oxford shirt with collar and cuffs visible + mid-grey flannel tailored trouser (clearly lighter/different from knit) + dark brown suede Chelsea boot or black loafer.
+**Best for:** TEMPERATE Office / Smart Casual. Works for: Slim, Rectangle, Athletic; Oval if knit is relaxed.
+
+## FORMULA 39 — MATTE BOMBER + TEE + CHINO
+**Structure:** Olive, navy or dark brown matte cotton (never satin, never shiny nylon) bomber jacket worn open + white plain crew-neck tee + stone or dark contrasting straight chino + white clean leather sneaker or brown suede loafer.
+**Oval rule:** bomber must hit below the widest belly point — if the cut is short, switch to Formula 21 (utility jacket).
+**Best for:** Relaxed Casual, Evening Casual.
+
+## FORMULA 40 — DARK DENIM SHIRT + STONE CHINO
+**Structure:** Dark rinse denim or chambray shirt, untucked straight hem, sleeves rolled + stone/warm beige straight chino + dark brown leather loafer or white sneaker.
+**Depth logic:** dark top / light bottom inversion — allowed because the loafer re-anchors. For Oval: allowed (dark sits on the midsection, which is correct).
+**Best for:** Smart Casual, Relaxed Casual. One denim-shirt outfit max per 20.
+
+## FORMULA 41 — BRETON STRIPE TEE + OPEN OVERSHIRT + DARK TROUSER
+**Structure:** Navy-and-white fine Breton stripe cotton tee + plain navy, olive or sand cotton overshirt worn fully open + dark straight trouser or dark indigo denim + white leather sneaker or brown suede loafer.
+**Pattern rule:** the Breton is the outfit's one pattern and one styling move.
+**Best for:** Relaxed Casual, HOT and TEMPERATE. Oval: overshirt open past belly, trouser darker than tee stripes' base.
+
+## FORMULA 42 — CHORE JACKET + PLAIN TEE + CONTRAST TROUSER
+**Structure:** Navy, olive or duck-brown cotton chore jacket worn open + white or off-white tee + clearly contrasting straight trouser + loafer or white sneaker.
+**Best for:** Relaxed Casual, Smart Casual (elevated versions). All shapes; Oval with the open-layer preconditions.
+
+## FORMULA 43 — CREAM/IVORY BLAZER EVENING LOOK
+**Structure:** Cream or ivory unlined cotton-linen blazer worn open + black or espresso structured knit polo or dark shirt + dark charcoal, black or espresso tailored trouser + dark brown or black loafer.
+**Logic:** light blazer + dark column underneath = high-contrast evening authority without shine.
+**Best for:** HOT Evening, resort evening. Slim, Athletic, Rectangle; Oval works well (dark inner column diffuses midsection, light blazer is the open vertical frame).
+
+## FORMULA 44 — LONG-SLEEVE KNIT POLO UNDER BLAZER
+**Structure:** Fine-knit long-sleeve polo in taupe, slate, espresso or navy (structured, not clingy) + contrasting unstructured blazer worn open + tailored trouser in a third compatible depth + leather loafer.
+**Three-depth rule:** polo, blazer, trouser must occupy three distinguishable depths.
+**Best for:** Office (modern), Smart Casual, Evening. TEMPERATE or indoor HOT.
+
+## FORMULA 45 — DARK LINEN SHIRT + CREAM TROUSER (HOT EVENING)
+**Structure:** Espresso, dark olive or deep navy linen shirt, top button open, tucked with belt OR untucked straight hem by body shape + cream/ivory tailored linen-cotton trouser + dark brown suede loafer.
+**Logic:** the classic riviera inversion — dark near face (only for clients whose depth supports it: Medium and Deep), light bottom, dark shoe re-anchors.
+**Best for:** HOT Evening, resort. Oval: untucked, and the dark shirt on the midsection is correct.
+
+## FORMULA 46 — POLO + PLEATED TROUSER + DRAPED KNIT (RESORT SMART)
+**Structure:** Structured knit polo in ivory, taupe or powder blue + single-pleat tailored trouser in navy or espresso (clearly darker) + navy or espresso knit draped over shoulders (must differ in depth from trouser) + suede loafer.
+**Two-move ceiling:** the drape + the pleat are the outfit's two moves. Nothing else.
+**Best for:** HOT polished Smart Casual. Not for conservative clients or strong belly-concern Oval.
+
+## FORMULA 47 — OVERCOAT + ROLL-NECK + FLANNEL (TEMPERATE EVENING)
+**Structure:** Camel or charcoal wool overcoat worn open + black or cream fine-merino roll-neck (clear contrast with coat) + grey flannel or dark tailored trouser + black Chelsea boot.
+**Counts against:** overcoat max (2) and the turtleneck slot.
+**Best for:** TEMPERATE Evening/Formal. All shapes with open coat.
+
+---
+
+# SECTION 17 — REFERENCE OUTFIT LIBRARY
+
+References M01–M16 from v5.1 are retained in full. ADDED:
+
+## REFERENCE M17 — Navy Cotton Suit + Powder Blue Shirt
+Navy unlined cotton suit worn open · powder-blue cotton poplin shirt tucked, relaxed fit · slim dark brown belt · dark brown leather Derby · steel watch. Office/Formal, all climates (linen-blend for HOT). Oval: jacket open at all times.
+
+## REFERENCE M18 — Bengal Stripe + Charcoal Trouser
+Blue-white Bengal stripe cotton shirt, tucked, belt · charcoal flat-front tailored trouser · black leather penny loafer · black rectangular optical frames calibrated to face shape. Office. The stripe is the single contrast event.
+
+## REFERENCE M19 — Breton Tee + Sand Overshirt + Dark Indigo Denim
+Navy-white fine Breton stripe tee · sand cotton overshirt worn fully open · dark indigo straight denim · white clean leather sneaker. Relaxed Casual. Oval-legal: overshirt past belly, dark anchor below.
+
+## REFERENCE M20 — Espresso Linen Shirt + Ivory Trouser
+Espresso linen shirt, top button open, untucked straight hem · ivory linen-cotton tailored trouser, clean full break · dark brown suede penny loafer · gold watch. HOT Evening. Medium/Deep clients only.
+
+## REFERENCE M21 — Cream Blazer + Black Knit Polo + Charcoal Trouser
+Cream cotton-linen unlined blazer worn open · black structured knit polo · charcoal tailored trouser · black leather loafer. HOT/indoor Evening. High-contrast clients.
+
+## REFERENCE M22 — Olive Matte Bomber + White Tee + Stone Chino
+Olive matte cotton bomber worn open · white crew-neck tee · stone straight chino · white leather sneaker · dark sunglasses calibrated to face shape. Relaxed Casual.
+
+## REFERENCE M23 — Navy Merino Crew + Stripe Shirt + Grey Flannel
+Navy fine-merino crewneck · white fine-stripe Oxford collar/cuffs visible · mid-grey flannel trouser · dark brown suede Chelsea boot. TEMPERATE Office/Smart Casual.
+
+## REFERENCE M24 — Chambray Shirt + Beige Chino
+Dark chambray shirt, untucked, sleeves rolled · warm beige straight chino · dark brown leather loafer · brown-strap watch. HOT Smart Casual.
+
+## REFERENCE M25 — Chore Jacket + Off-White Tee + Espresso Trouser
+Navy cotton chore jacket worn open · off-white tee · espresso straight cotton trouser · white sneaker. Relaxed Casual, all shapes.
+
+## REFERENCE M26 — Camel Overcoat + Black Roll-Neck + Grey Flannel (TEMPERATE)
+Camel wool overcoat worn open · black fine-merino roll-neck · mid-grey flannel trouser · black Chelsea boot · black panto optical frames per face shape. TEMPERATE Evening.
+
+---
+
+# SECTION 18 — CONTEXT RULES
+
+Retained from v5.1 with these additions to the allowed-formula lists:
+- **Office/Formal:** add Formulas 36 (suit), 37 (Bengal stripe), 38 (merino over shirt — TEMPERATE), 44 (knit polo under blazer)
+- **Smart Casual:** add 37, 38, 40, 44, 46
+- **Evening:** add 36 (dark suit), 39, 43, 45, 47
+- **Relaxed Casual:** add 39, 40, 41, 42
+
+All v5.1 context hard rules stand (no sneakers/denim/camp collars in Office, leather shoes only in Office, evening never means shiny, no blazers or dress shoes in Relaxed Casual, etc.).
+
+---
+
+# SECTIONS 19–23 — LAYERING, BOTTOMS, FOOTWEAR, ACCESSORIES, ANTI-PREFERENCES
+
+Retained verbatim from v5.1 (layer counts, blazer max 5, overcoat max 2, vest max 2, scarf max 1, approved bottoms, footwear lists per context, footwear hard rules including white/off-white/grey sneakers only, accessory limits, anti-preference hard block). Additions:
+- Matte cotton bomber and chore jacket join the Approved Layers list.
+- Suit jacket counts toward the blazer max.
+- Denim shirt / chambray shirt max 1 across 20.
+- Breton stripe tee max 1 across 20.
+
+---
+
+# SECTION 24 — FOUR-AXIS EVALUATION (v6.1 REPLACES SOPHISTICATION SCORE)
+
+Generation and evaluation are **two separate passes**. Pass 1 over-generates ~30 candidate outfits using the formulas, grammar, colour physics, Basic Combo Ban, Elevated Colour Vocabulary and Elevation Move Bank. Pass 2 scores every candidate blind against the four axes with no attachment to the generation reasoning.
+
+Kill threshold: any outfit below 7 on Realism or Relevance dies. ICONIK threshold is 8 for Smart Casual and Evening, and 7 for Office/Formal and Relaxed Casual.
+
+## AXIS 1 — REALISM (0–10): can he actually buy and wear this?
+- Every piece passes the Nameability Test and the closed vocabulary check.
+- Pieces are findable in his market at mid-premium retail (Myntra premium / M&S / Massimo Dutti / Uniqlo tier).
+- No tailoring dependencies beyond a standard trouser hem.
+- **Anchors:** 3 = contains an invented or unfindable garment ("draped panel overshirt") — automatic fail. 6 = real garments but one piece is genuinely hard to source (ivory suede slip-ons in tier-2 India). 9 = every piece findable this week in his city or online.
+
+## AXIS 2 — RELEVANCE (0–10): will he wear it, there?
+- Context register correct, climate correct, anti-preferences respected, age-appropriate for 28–55, culturally right for his market.
+- **Anchors:** 3 = technically fine but he'd feel costumed (draped knit on a conservative Indore businessman). 6 = wearable but slightly off-register for the stated occasion. 9 = feels like the best version of what that room expects from a man like him.
+
+## AXIS 3 — ICONIK (0–10): the aspiration delta — WEIGHT THIS HIGHEST
+- Score distance closed toward "sharper, more expensive, more composed" relative to what he likely wears now (use WARDROBE_BASE).
+- Check the Basic Combo Ban first. A banned default combination without at least two visible rescue moves scores ICONIK <= 4 automatically.
+- Count elevation moves next. Every outfit needs 2-4 moves from Section 01D, with at least one from categories A-C.
+- **Anchors:** 0-4 = mall mannequin / he owns this already. 5-6 = correct but generic. 7-8 = two-plus visible elevation moves, elevated colour vocabulary, one non-obvious decision. 9-10 = colour story, third element and proportion resolve each other into a compound move he could not build alone.
+- An outfit scoring 9/9 on Realism/Relevance but below its ICONIK threshold is a failed outfit. Regenerate.
+
+## AXIS 4 — DIVERSITY (portfolio-level — scores the SET of 20, not the item)
+Hard coverage quotas across the final 20:
+- No formula used more than twice; no silhouette family (e.g., "open overshirt + tee + trouser") more than 3 times total
+- ≥ 8 distinct colour families across the set; no exact colour in more than 3 outfits (retained)
+- ≥ 2 and ≤ 4 patterned pieces (stripe/check) across the set
+- ≥ 5 distinct footwear types; no single shoe in more than 4 outfits
+- Layer diversity: at least 3 different layer types where climate allows
+- Accessory diversity: not the same watch metal in every outfit
+- Each context block internally varied: no two adjacent outfits should feel like siblings
+
+Final selection = the 20 candidates that maximise total ICONIK score subject to the Diversity quotas and the kill thresholds.
+
+---
+
+# SECTION 25 — OUTPUT FORMAT
+
+Retained from v5.1 (TOP / LAYER / BOTTOM / FOOTWEAR / ACCESSORY / OCCASION ANCHOR, ICONIK language rules, no generic praise) with one addition:
+
+Every line must read as a purchasable product: `[colour] [fabric] [garment type] — [fit] — [one styling instruction]`.
+**Correct:** `TOP: White cotton Oxford shirt — relaxed slim fit — worn untucked with top button open`
+**Incorrect:** `TOP: Oat stone draped top with gathered shoulder detail` ← Nameability fail. Never output this class of garment.
+
+---
+
+# SECTION 26 — GENERATION PROMPT TEMPLATE v6.1
+
+```
+You are the ICONIK Men's Blueprint Outfit Engine v6.1. You operate in TWO PASSES.
+
+PASS 1 — GENERATE: Produce ~30 candidate outfits for this client (roughly 9 Office, 6 Smart Casual, 8 Evening, 7 Relaxed Casual), each traceable to a formula from the ICONIK Formula Library (01–47). Generate inside the real garment space, then elevate through execution.
+
+CLIENT PROFILE: [all variables as v5.1]
+
+GENERATION CONSTRAINTS (non-negotiable):
+1. GARMENT REALITY RULE: every piece = [one colour] + [one fabric] + [one standard garment type]. One colour per garment (standard stripes/checks excepted). No invented details (draped, gathered, panelled, asymmetric, colour-blocked, contrast trim — banned words). If the exact phrase would not appear on page one of Myntra / M&S / Massimo Dutti / Uniqlo, the garment does not exist. One statement fabric (suede/leather/corduroy/flannel) per outfit.
+2. All v5.1 absolute bans (no shine, no band collars, no skinny/cropped, sneaker colour rules, context shoe rules).
+3. Body-shape technique grammar: when a precondition fails, search the listed enabler before discarding (e.g., Oval + tuck = only with open jacket + belt in Office; otherwise untucked). Open layer past the belly is the Oval master move.
+4. Colour physics: value > contrast > chroma > temperature, zone-weighted. Season palette is a prior — cross it near the face only with a stated mechanism, and resolve temperature via footwear/layers. Cognac/tan/chocolate/burgundy leather footwear and belts are legal in ALL outfits (Warm-Leather Bridge).
+5. Suit Exception: matched suits legal in Office/Evening with contrasting shirt; monochrome ban still applies to separates.
+6. ELEVATION MANDATE: every outfit contains 2-4 visible moves from the Elevation Move Bank (Section 01D), at least one from categories A-C.
+7. Climate, height, eyewear calibration, belt rules per the skill file.
+8. Basic Combo Ban: no banned default combination from Section 01C unless rescued by at least two visible elevation moves.
+9. Elevated Colour Vocabulary: never plain "white/navy/beige" when an elevated equivalent fits the client's season and anti-preferences. At least 6 final outfits must use a non-default colour as a primary top or layer.
+10. Reality remains absolute. Elevation comes only from colour, third element, texture pairing, proportion and styling detail — never invented garments.
+
+PASS 2 — SCORE (perform as if a separate strict evaluator who did not generate these):
+Score every candidate 0-10 on REALISM, RELEVANCE, ICONIK using Section 24 and the Basic→Elevated pairs in Section 01F as anchors. Apply the mannequin test first. Kill threshold: ICONIK >= 8 for Smart Casual and Evening, ICONIK >= 7 for Office and Relaxed Casual, Realism >= 7, Relevance >= 7. Then select the final 20 (6/4/5/5) maximising total ICONIK score subject to ALL Diversity quotas: no formula >2 uses, no silhouette family >3, >=8 colour families, no exact colour >3 outfits, 2-4 patterned pieces, >=5 footwear types, layer and accessory variety.
+
+OUTPUT: the final 20 outfits in the exact Section 25 format. Do not show candidates, scores or reasoning.
+```
+
+---
+
+# SECTION 27 — QUALITY CHECKLIST v6.1
+
+All v5.1 checks retained, PLUS:
+- [ ] Every garment passes the Nameability Test (searchable retail phrase)
+- [ ] Zero multi-colour single garments; zero invented design details
+- [ ] Max one statement fabric per outfit
+- [ ] Every outfit has 2-4 visible elevation moves, with at least one from categories A-C
+- [ ] Zero Basic Combo Ban outfits unless rescued by at least two visible elevation moves
+- [ ] At least 6 outfits use a non-default elevated colour as a primary top or layer
+- [ ] Suits (if any): max 2, contrasting shirt inside, count toward blazer max
+- [ ] No formula used more than twice; no silhouette family more than 3 times
+- [ ] ≥ 8 colour families; ≥ 5 footwear types; 2–4 patterned pieces across the 20
+- [ ] Warm-leather footwear used freely across warm AND cool outfits
+- [ ] Any palette-crossing near-face colour has a stated value/contrast mechanism
+- [ ] Pass 2 scoring performed separately from generation
+
+---
+
+*ICONIK Men's Blueprint Outfit Recommendation Engine — v6.1*
+*Built for ICONIK LLP.*
+*Same body. Different science.*
+
+---
+
+# RETAINED V5.1 REFERENCE APPENDIX
+
+The v6.1 rules above are controlling. Use the retained v5.1 material below only where v6.0/v6.1 explicitly says a section, formula, reference, list, or rule is retained. If any instruction conflicts, v6.1 wins. The old v5.1 output template/checklist sections are intentionally excluded; use the v6.1 Section 24-27 evaluation and output rules above.
+
 # ICONIK Men's Blueprint — Outfit Recommendation Engine
 
 **Version:** 5.1 — Classy Modern Upgrade  
@@ -41,10 +663,7 @@ BOTTOM:
 FOOTWEAR:
 ACCESSORY:
 
-WHY IT WORKS FOR YOU:
-SHOPPING TRANSLATION:
-ACCEPTABLE SUBSTITUTES:
-DO NOT BUY:
+OCCASION ANCHOR:
 ```
 
 Never generate an outfit that violates a constraint rule. The constraints are the science. The copy is the expression.
@@ -374,7 +993,7 @@ Reject anything below 8/10.
 | Eye Colour | `EYES` | Colour season input |
 | Face Shape | `FACE_SHAPE` | Eyewear and collar calibration |
 | Dressing Contexts | `CONTEXTS` | Context allocation |
-| Location | `CLIMATE_ZONE` | HOT or TEMPERATE |
+| Location + current date | `CLIMATE_MODE` | HOT, MONSOON, MILD, TEMPERATE, or COOL; determines weather-appropriate fabric, layer, and footwear choices |
 | Wardrobe Composition | `WARDROBE_BASE` | Starting point |
 | Primary Style Goal | `STYLE_GOAL` | Copy tone |
 | Style Tribes | `STYLE_TRIBES` | Off Duty / Urban / Classic / Old Money signals |
@@ -1545,203 +2164,6 @@ If an anti-preference conflicts with ideal silhouette logic, choose the closest 
 
 ---
 
-# SECTION 24 — QUALITY PROHIBITIONS SUMMARY
-
-Before generating any outfit, confirm it does NOT contain:
-
-- [ ] Monochrome top + bottom (same tone or same colour at similar depth) — banned for ALL body shapes
-- [ ] Any shiny satin or silk shirt of any colour
-- [ ] Any bright or jewel-tone shiny shirt (bright green, cobalt blue, etc.)
-- [ ] Band-collar shirt (banned in all contexts)
-- [ ] Camp-collar / resort-collar shirt in Office or Smart Casual (banned)
-- [ ] Clingy knit polo on Oval body shape
-- [ ] Tucked shirt without a belt in Office/Formal context
-- [ ] Olive polo + olive trouser or any same-colour top + bottom pairing
-- [ ] Ankle-cut or cropped trousers
-- [ ] Skinny jeans
-- [ ] Brown, tan, coloured or logo sneakers
-- [ ] Sneakers in Formal/Office context
-- [ ] Overshirt worn closed as a top (must be open as a layer)
-- [ ] Wide-leg denim on client under 5'6"
-- [ ] Mustard or neon tones
-- [ ] Generic eyewear description ("sunglasses") without face-shape calibration
-
----
-
-# SECTION 25 — OUTPUT FORMAT
-
-Use this exact format for every outfit:
-
-```
----
-OUTFIT [NUMBER] — [CONTEXT NAME]
-
-TOP: [Specific item — colour + fabric + fit + collar/neckline + sleeve + styling note]
-LAYER: [Specific item — colour + fabric + how it is worn] or None
-BOTTOM: [Specific item — colour + fabric + fit + trouser cut + break]
-FOOTWEAR: [Specific item — colour + material + shoe type]
-ACCESSORY: [Belt if tucked formal + watch / eyewear with face-shape note / or None]
-
-WHY IT WORKS FOR YOU: [1–2 sentences. Must reference at least one of: body shape, fat storage zone, undertone, face shape, height, style goal, colour season.]
-SHOPPING TRANSLATION: [1 sentence naming the 1–2 key items to prioritise buying.]
-ACCEPTABLE SUBSTITUTES: [1 sentence with practical replacements that preserve silhouette and colour logic.]
-DO NOT BUY: [1 sentence naming the common wrong version of this outfit.]
----
-```
-
-Writing rules:
-- Mention at least one client variable in every "Why It Works."
-- Use ICONIK language: geometric balance, vertical line, depth contrast, chromatic harmony, shoulder-to-hip balance, midsection control, undertone alignment, facial architecture, open vertical channel.
-- Keep copy concise — no generic praise.
-- Never write "This outfit looks great" — state the geometry and the reason.
-
----
-
-# SECTION 26 — GENERATION PROMPT TEMPLATE
-
-```
-You are the ICONIK Men's Blueprint Outfit Engine v5.0. Generate exactly 20 outfit recommendations for a male client. You are operating within strict constraint rules. Output must be precise, mature, scientific in tone, premium and personal to this client.
-
-CLIENT PROFILE:
-- Height: [HEIGHT]
-- Body Shape: [BODY_SHAPE]
-- Fat Storage Zone: [MINIMISE_ZONE]
-- Highlight Zone: [HIGHLIGHT_ZONE]
-- Secondary Minimise Zone: [MINIMISE_ZONE_2]
-- Fit Preference: [FIT_PREF]
-- Skin Tone: [SKIN_TONE]
-- Undertone: [UNDERTONE]
-- Colour Season: [COLOUR_SEASON]
-- Hair Colour: [HAIR]
-- Eye Colour: [EYES]
-- Face Shape: [FACE_SHAPE]
-- Primary Style Goal: [STYLE_GOAL]
-- Style Tribes Selected: [STYLE_TRIBES]
-- Style Poles: Structure [1–5], Expression [1–5], Tone [1–5], Register [1–5]
-- Anti-Preferences: [ANTI_PREFS]
-- Wardrobe Base: [WARDROBE_BASE]
-- Climate Zone: [HOT or TEMPERATE]
-
-PRIORITY HIERARCHY:
-Anti-preferences > climate > body shape/fat storage > monochrome prohibition > height > colour season > face shape eyewear > context > style poles > variety.
-
-NON-NEGOTIABLE CONSTRAINTS:
-1. Output exactly 20 outfits: 6 Office/Formal, 4 Smart Casual, 5 Evening, 5 Relaxed Casual.
-2. Every outfit must be traceable to a formula from the ICONIK Formula Library.
-3. ZERO monochrome outfits — every outfit must have clear tonal contrast between top zone and bottom zone. This applies to all body shapes without exception.
-4. Never include band-collar shirts.
-5. Never include camp-collar/resort-collar shirts in Office or Smart Casual.
-6. Never include shiny satin or silk shirts of any colour.
-7. Never include bright jewel-tone shiny shirts.
-8. Prioritise linen, cotton, wool, merino, suede, leather, denim, cotton twill and mature matte textures.
-9. Follow body-shape rules. For Oval body: open layers are the primary silhouette tool. Knit polos only if structured and non-clingy. Never tucked in casual contexts.
-10. Follow fat-storage camouflage rules.
-11. Follow height and trouser rules.
-12. Follow HOT/TEMPERATE climate rules.
-13. Follow undertone and colour-season palette.
-14. Apply face-shape eyewear calibration whenever sunglasses/glasses are included — write full description with face-shape rationale.
-15. No skinny jeans. No cropped trousers. No ankle-cut trousers.
-16. No sneakers in Formal/Office.
-17. Sneakers must be white/off-white/grey-neutral only. No brown, tan, coloured or logo sneakers.
-18. No Oxford/Derby shoes in Relaxed Casual.
-19. No blazers in Relaxed Casual.
-20. Belt is mandatory in every Office/Formal outfit where the shirt is tucked. Write it explicitly.
-21. Accessories: max 1 except Evening max 2.
-22. No two outfits in the same context should feel similar.
-23. Every "Why It Works" must reference at least one client variable.
-24. The rust corduroy overshirt formula (or its HOT climate equivalent) is the primary template for Oval belly-zone clients in Relaxed Casual. Use it or a close variant.
-25. Apply the Classy Modern Visual DNA section. Every outfit must feel premium, mature, wearable and aspirational.
-26. Every outfit should include one intentional styling move.
-27. Use the Premium Colour Pairing Bank where it fits the client's undertone and season.
-28. Reject any outfit that feels merely basic, mall-brand, overly young, overly corporate, too streetwear or not aspirational.
-29. Internally score each outfit for sophistication. Reject anything below 8/10.
-
-OUTPUT: Generate all 20 outfits using the exact output format.
-```
-
----
-
-# SECTION 27 — QUALITY CHECKLIST (Run Before Finalising)
-
-- [ ] Exactly 20 outfits
-- [ ] 6 Office/Formal, 4 Smart Casual, 5 Evening, 5 Relaxed Casual
-- [ ] Every outfit traceable to formula library
-- [ ] Zero monochrome outfits (all body shapes)
-- [ ] No band-collar shirts
-- [ ] No camp-collar shirts in Office or Smart Casual
-- [ ] No shiny satin/silk shirts
-- [ ] No bright jewel-tone shiny shirts
-- [ ] No mustard tops
-- [ ] No neon colours
-- [ ] No skinny jeans
-- [ ] No cropped or ankle-cut trousers
-- [ ] Oval body: no clingy knit polos, open layers used, untucked in casual
-- [ ] Climate rules followed
-- [ ] Body shape rules followed
-- [ ] Fat-storage zone addressed
-- [ ] Height rules followed
-- [ ] Colour season respected
-- [ ] Depth contrast present in every outfit
-- [ ] One accent maximum per outfit
-- [ ] Footwear fits context
-- [ ] No sneakers in Formal/Office
-- [ ] No Oxfords/Derbys in Relaxed Casual
-- [ ] Sneakers are white/off-white/grey only
-- [ ] Eyewear written with face-shape calibration (not generic)
-- [ ] Belt present in every tucked Office/Formal outfit
-- [ ] Blazer count max 5
-- [ ] No blazers in Relaxed Casual
-- [ ] HOT layer count max 7
-- [ ] TEMPERATE layer count 8–11
-- [ ] Overcoat max 2
-- [ ] Vest max 2
-- [ ] Scarf max 1
-- [ ] No item from anti-preferences
-- [ ] Accessories within context limit
-- [ ] Fabric named specifically
-- [ ] "Why It Works" references client variable
-- [ ] Shopping Translation, Acceptable Substitutes and Do Not Buy present
-
----
-
-# SECTION 28 — SAMPLE OUTPUT (OVAL BODY, HOT CLIMATE, WARM MEDIUM)
-
-Input profile:
-5'7" · Oval body shape · belly storage · Warm Medium · round face · HOT climate · relaxed fit preference.
-
-```
----
-OUTFIT 1 — OFFICE / FORMAL
-
-TOP: Warm ivory fine cotton poplin Oxford shirt — relaxed slim fit — spread collar — worn untucked with top button open
-LAYER: Camel unlined linen-cotton blazer — single-breasted notch lapel — worn open throughout
-BOTTOM: Dark olive flat-front cotton trousers — slim-straight cut — clean full-length break
-FOOTWEAR: Dark brown suede penny loafers
-ACCESSORY: Slim dark brown leather belt (shirt tucked inside trouser under blazer) + gold minimalist watch
-
-WHY IT WORKS FOR YOU: The open camel blazer runs a vertical channel from shoulder to hip, pulling attention away from the belly zone. Warm ivory, camel and dark olive sit inside your Warm Medium palette — the depth contrast between the ivory shirt and dark olive trouser ensures this reads structured, not soft. The round face benefits from the spread collar, which introduces horizontal width at the jaw.
-SHOPPING TRANSLATION: Prioritise an unlined linen-cotton blazer in camel and flat-front trousers in dark olive.
-ACCEPTABLE SUBSTITUTES: Swap camel blazer for warm taupe unstructured blazer if you want a quieter office tone.
-DO NOT BUY: A fitted or semi-fitted blazer that closes at the button — it will cut across the midsection and collapse the vertical line.
----
-
-OUTFIT 16 — RELAXED CASUAL
-
-TOP: White plain crew-neck tee — relaxed fit — not clingy
-LAYER: Rust linen-cotton overshirt — worn fully open as a vertical panel — straight hem hanging below widest belly point
-BOTTOM: Dark indigo straight-leg relaxed denim — clean full break at ankle
-FOOTWEAR: Dark brown suede penny loafers
-ACCESSORY: Gold-toned watch
-
-WHY IT WORKS FOR YOU: The rust overshirt worn open creates a warm-toned vertical channel that draws the eye down rather than across the midsection — your Warm Medium undertone responds well to rust and tobacco tones. The white tee provides the depth contrast needed against the dark indigo denim. This is the most wearable everyday formula for your belly zone without adding bulk.
-SHOPPING TRANSLATION: The key purchase is a linen-cotton overshirt in rust or tobacco — look for a straight hem and relaxed shoulder.
-ACCEPTABLE SUBSTITUTES: Swap rust for tobacco brown or terracotta if preferred; the structure remains identical.
-DO NOT BUY: A closed overshirt worn as a top, or a linen shirt tucked in — both collapse the vertical line and highlight the midsection.
----
-```
-
----
-
 
 
 ## REFERENCE M15 — Butter Yellow Knit Polo + Cream Linen Trouser
@@ -1760,8 +2182,3 @@ BOTTOM: Navy tailored trousers — must be a visibly different depth or texture 
 FOOTWEAR: Off-white suede slip-on loafers or dark brown suede penny loafers.  
 ACCESSORY: Brown panto optical frames or sunglasses calibrated to face shape + minimalist watch.  
 Works for: HOT polished Smart Casual / Resort Smart / Elevated Daytime. Avoid if the client dislikes expressive styling or has strong Oval belly concerns with a tucked shirt.
-
-
-*ICONIK Men's Blueprint Outfit Recommendation Engine — v5.1*  
-*Built for ICONIK LLP.*  
-*Same body. Different science.*

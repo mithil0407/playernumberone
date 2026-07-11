@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
+import { AdminCard, AdminPageHeader, CLUB, controlClass, EmptyState, FilterBar, LoadingState, StatusBadge } from '@/components/IconikClubAdminUI';
 
 type OutfitStatus = 'pending' | 'generating' | 'ready' | 'failed';
 
@@ -65,13 +66,6 @@ interface OutfitRow {
   created_at?: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  ready:      'bg-emerald-50 text-emerald-600 border border-emerald-100',
-  pending:    'bg-amber-50 text-amber-600 border border-amber-100',
-  generating: 'bg-blue-50 text-blue-600 border border-blue-100',
-  failed:     'bg-red-50 text-red-500 border border-red-100',
-};
-
 function BlueprintPanel({ bp }: { bp: OutfitBlueprint }) {
   const slots = [
     bp.singlePiece && { label: 'One piece', value: bp.singlePiece },
@@ -123,9 +117,9 @@ function OutfitCard({ outfit }: { outfit: OutfitRow }) {
   const [openDiagnostics, setOpenDiagnostics] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col">
+    <AdminCard className="group flex flex-col overflow-hidden transition-shadow hover:shadow-md">
       {/* Image */}
-      <div className="relative w-full aspect-[2/3] bg-[#fff0f5]">
+      <div className="relative w-full aspect-[2/3]" style={{ background: CLUB.card }}>
         {outfit.outfit_card_url ? (
           <Image
             src={outfit.outfit_card_url}
@@ -145,21 +139,19 @@ function OutfitCard({ outfit }: { outfit: OutfitRow }) {
         {/* Status badge */}
         {outfit.status && (
           <div className="absolute top-2.5 right-2.5">
-            <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${STATUS_COLORS[outfit.status] ?? ''}`}>
-              {outfit.status}
-            </span>
+            <StatusBadge tone={outfit.status === 'ready' ? 'success' : outfit.status === 'failed' ? 'danger' : outfit.status === 'generating' ? 'accent' : 'warning'}>{outfit.status}</StatusBadge>
           </div>
         )}
       </div>
 
       {/* Caption */}
-      <div className="p-3 border-t border-[#ffb3d1]/30">
+      <div className="border-t p-3" style={{ borderColor: CLUB.border }}>
         {outfit.occasion && (
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#ff6b9d]/60 mb-0.5">
+          <p className="iconik-micro mb-1" style={{ color: CLUB.gold }}>
             {outfit.occasion}
           </p>
         )}
-        <p className="text-xs font-semibold text-[#4a2c3e] leading-snug line-clamp-2 mb-1.5">
+        <p className="mb-1.5 line-clamp-2 text-xs font-medium leading-snug" style={{ color: CLUB.ink }}>
           {outfit.ai_style_note || `Outfit #${outfit.id.slice(0, 8)}`}
         </p>
         <div className="flex items-center justify-between gap-2">
@@ -177,9 +169,11 @@ function OutfitCard({ outfit }: { outfit: OutfitRow }) {
         <>
           <button
             onClick={() => setOpenBlueprint(o => !o)}
-            className="flex items-center justify-between w-full px-3 py-2 border-t border-[#ffb3d1]/30 text-[10px] font-semibold text-[#4a2c3e]/50 hover:text-[#ff6b9d] hover:bg-[#fff0f5] transition-colors"
+            className="flex w-full items-center justify-between border-t px-3 py-2 text-[11px] transition-colors hover:bg-black/[0.03]"
+            style={{ borderColor: CLUB.border, color: CLUB.muted }}
+            aria-expanded={openBlueprint}
           >
-            <span>Gemini blueprint</span>
+            <span>Outfit details</span>
             {openBlueprint ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
           {openBlueprint && <BlueprintPanel bp={outfit.ai_blueprint} />}
@@ -190,7 +184,9 @@ function OutfitCard({ outfit }: { outfit: OutfitRow }) {
         <>
           <button
             onClick={() => setOpenDiagnostics(o => !o)}
-            className="flex items-center justify-between w-full px-3 py-2 border-t border-[#ffb3d1]/30 text-[10px] font-semibold text-[#4a2c3e]/50 hover:text-[#ff6b9d] hover:bg-[#fff0f5] transition-colors"
+            className="flex w-full items-center justify-between border-t px-3 py-2 text-[11px] transition-colors hover:bg-black/[0.03]"
+            style={{ borderColor: CLUB.border, color: CLUB.muted }}
+            aria-expanded={openDiagnostics}
           >
             <span>Diagnostics</span>
             {openDiagnostics ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -269,7 +265,7 @@ function OutfitCard({ outfit }: { outfit: OutfitRow }) {
           )}
         </>
       )}
-    </div>
+    </AdminCard>
   );
 }
 
@@ -307,45 +303,33 @@ function AdminOutfitsContent() {
   };
 
   const totalPages = Math.ceil(total / limit);
-  const selectCls = "px-3 py-2 text-sm border border-[#ffb3d1] rounded-xl bg-white text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition";
-
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-7">
-        <div>
-          <p className="text-[10px] font-bold text-[#ff6b9d] tracking-[0.2em] uppercase mb-1">Styling</p>
-          <h2 className="luxury-heading text-3xl text-[#4a2c3e]">Outfits</h2>
-        </div>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader eyebrow="Styling delivery" title="Outfits" description="Review generated looks, progress and any generation issues." />
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-4 mb-5 flex flex-wrap gap-3 shadow-sm">
-        <select value={status} onChange={e => setParam('status', e.target.value)} className={selectCls}>
+      <FilterBar>
+        <select aria-label="Outfit status" value={status} onChange={e => setParam('status', e.target.value)} className={`${controlClass} sm:w-auto`}>
           <option value="all">All statuses</option>
           <option value="ready">Ready</option>
           <option value="pending">Pending</option>
           <option value="generating">Generating</option>
           <option value="failed">Failed</option>
         </select>
-      </div>
+      </FilterBar>
 
       {/* Count */}
       {!loading && (
-        <p className="text-xs text-[#4a2c3e]/40 mb-4 font-medium">{total} outfit{total !== 1 ? 's' : ''}</p>
+        <p className="mb-4 text-xs" style={{ color: CLUB.muted }}>{total} outfit{total !== 1 ? 's' : ''}</p>
       )}
 
       {/* Grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-32">
-          <Loader2 size={28} className="animate-spin text-[#ff6b9d]" />
-        </div>
+        <LoadingState label="Loading outfits…" />
       ) : outfits.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 text-center py-24 shadow-sm">
-          <p className="text-[#4a2c3e]/40 text-sm">No outfits found.</p>
-        </div>
+        <AdminCard><EmptyState title="No outfits found" description="Try changing the status filter." /></AdminCard>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 min-[430px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
           {outfits.map(outfit => (
             <OutfitCard key={outfit.id} outfit={outfit} />
           ))}
@@ -416,7 +400,7 @@ function AdminOutfitsContent() {
 
 export default function AdminOutfitsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-32"><Loader2 size={28} className="animate-spin text-[#ff6b9d]" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-32"><Loader2 size={28} className="animate-spin" style={{ color: CLUB.gold }} /></div>}>
       <AdminOutfitsContent />
     </Suspense>
   );

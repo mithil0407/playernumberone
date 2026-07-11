@@ -50,12 +50,15 @@ interface Report {
 }
 
 type OutfitFeedbackVote = 'like' | 'dislike';
+type OutfitScienceQaVerdict = 'PASS' | 'PASS_SURPRISE' | 'KILL_EYE' | 'KILL_WOW' | 'KILL_REAL';
 
 interface OutfitFeedbackState {
   id: string;
-  vote: OutfitFeedbackVote;
+  vote?: OutfitFeedbackVote;
+  verdict?: OutfitScienceQaVerdict;
   reason?: string | null;
   library_entry_id?: string | null;
+  candidate_id?: string | null;
   updated_at?: string;
 }
 
@@ -123,7 +126,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [editingOutfitPage, setEditingOutfitPage] = useState<number | null>(null);
   const [outfitInstruction, setOutfitInstruction] = useState('');
   const [outfitFeedbackByPage, setOutfitFeedbackByPage] = useState<Record<number, OutfitFeedbackState | null>>({});
-  const [savingOutfitFeedback, setSavingOutfitFeedback] = useState<OutfitFeedbackVote | null>(null);
+  const [savingOutfitFeedback, setSavingOutfitFeedback] = useState<OutfitFeedbackVote | OutfitScienceQaVerdict | null>(null);
   const [replacingAllOutfits, setReplacingAllOutfits] = useState(false);
   const [regeneratingPalette, setRegeneratingPalette] = useState(false);
   const [imageGroup, setImageGroup] = useState<StylistBlueprintImageGroup>('all');
@@ -236,6 +239,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     activePageNumber <= getStylistBlueprintOutfitEndPage(versioned),
   );
   const activePageIsPalette = Boolean(versioned && activePageNumber === getStylistBlueprintPalettePage(versioned));
+  const activeReportUsesScienceHarness = Boolean(versioned?.outfit_engine);
   const hasUnsavedEdits = dirtyPages.size > 0 || reportDataDirty;
   const currentOutfitFeedback = outfitFeedbackByPage[activePageNumber] ?? null;
   const imageGroups = hideContinuationPage
@@ -416,18 +420,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setError(reason ? `${actionLabel} is unavailable: ${reason}` : `${actionLabel} is unavailable right now.`);
   };
 
-  const submitOutfitFeedback = async (vote: OutfitFeedbackVote) => {
+  const submitOutfitFeedback = async (feedback: OutfitFeedbackVote | OutfitScienceQaVerdict) => {
     if (!activePageIsOutfit || !activePage) return;
     const blockReason = busyReason();
     if (blockReason) {
       setBlockedError('Outfit feedback', blockReason);
       return;
     }
+    const isScienceVerdict = ['PASS', 'PASS_SURPRISE', 'KILL_EYE', 'KILL_WOW', 'KILL_REAL'].includes(feedback);
     let reason = '';
-    if (vote === 'dislike') {
-      reason = window.prompt('Why is this outfit not good enough? This reason will block similar formulas and guide future recommendations.')?.trim() ?? '';
+    if (feedback === 'dislike' || (isScienceVerdict && String(feedback).startsWith('KILL'))) {
+      reason = window.prompt(
+        activeReportUsesScienceHarness
+          ? 'What failed in the render or recommendation? This will be stored as science QA, not added to the outfit library.'
+          : 'Why is this outfit not good enough? This reason will block similar formulas and guide future recommendations.',
+      )?.trim() ?? '';
       if (reason.length < 6) {
-        setError('Please add a short reason before disliking an outfit.');
+        setError('Please add a short reason before saving this outfit feedback.');
         return;
       }
     }
@@ -435,13 +444,15 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     const saved = await saveChangedPages();
     if (!saved) return;
 
-    setSavingOutfitFeedback(vote);
+    setSavingOutfitFeedback(feedback);
     setError('');
     try {
       const res = await fetch(`/api/stylist-blueprint/${reportId}/outfit-feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pageNumber: activePage.page_number, vote, reason }),
+        body: JSON.stringify(isScienceVerdict
+          ? { pageNumber: activePage.page_number, verdict: feedback, reason }
+          : { pageNumber: activePage.page_number, vote: feedback, reason }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save outfit feedback');
@@ -1306,26 +1317,81 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                     {replacingOutfitPage === activePageNumber ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                     {replacingOutfitPage === activePageNumber ? 'Replacing...' : 'Replace Outfit'}
                   </ActionButton>
-                  <ActionButton
-                    onClick={() => submitOutfitFeedback('like')}
-                    disabled={Boolean(currentBusyReason)}
-                    title={currentBusyReason || 'Save this outfit as a good recommendation.'}
-                    tone={currentOutfitFeedback?.vote === 'like' ? 'success' : 'neutral'}
-                  >
-                    {savingOutfitFeedback === 'like' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsUp size={14} />}
-                    {savingOutfitFeedback === 'like' ? 'Saving...' : 'Like'}
-                  </ActionButton>
-                  <ActionButton
-                    onClick={() => submitOutfitFeedback('dislike')}
-                    disabled={Boolean(currentBusyReason)}
-                    title={currentBusyReason || 'Block this outfit logic from future recommendations.'}
-                    tone={currentOutfitFeedback?.vote === 'dislike' ? 'danger' : 'neutral'}
-                  >
-                    {savingOutfitFeedback === 'dislike' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsDown size={14} />}
-                    {savingOutfitFeedback === 'dislike' ? 'Saving...' : 'Dislike'}
-                  </ActionButton>
-                  {currentOutfitFeedback?.vote === 'like' && <Pill tone="success">Learned</Pill>}
-                  {currentOutfitFeedback?.vote === 'dislike' && <Pill tone="error">Blocked</Pill>}
+                  {activeReportUsesScienceHarness ? (
+                    <>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('PASS')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Mark this science outfit as passing QA.'}
+                        tone={currentOutfitFeedback?.verdict === 'PASS' ? 'success' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'PASS' ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                        Pass
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('PASS_SURPRISE')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Mark this as a surprising pass worth reviewing as a new enabler.'}
+                        tone={currentOutfitFeedback?.verdict === 'PASS_SURPRISE' ? 'success' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'PASS_SURPRISE' ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />}
+                        Surprise
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('KILL_EYE')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Render fails the visual eye test.'}
+                        tone={currentOutfitFeedback?.verdict === 'KILL_EYE' ? 'danger' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'KILL_EYE' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsDown size={14} />}
+                        Eye
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('KILL_WOW')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Correct but not strong enough for ICONIK.'}
+                        tone={currentOutfitFeedback?.verdict === 'KILL_WOW' ? 'danger' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'KILL_WOW' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsDown size={14} />}
+                        Wow
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('KILL_REAL')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Too hard to source or execute.'}
+                        tone={currentOutfitFeedback?.verdict === 'KILL_REAL' ? 'danger' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'KILL_REAL' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsDown size={14} />}
+                        Real
+                      </ActionButton>
+                      {currentOutfitFeedback?.verdict === 'PASS' && <Pill tone="success">QA Pass</Pill>}
+                      {currentOutfitFeedback?.verdict === 'PASS_SURPRISE' && <Pill tone="success">Surprise Pass</Pill>}
+                      {currentOutfitFeedback?.verdict?.startsWith('KILL') && <Pill tone="error">{currentOutfitFeedback.verdict.replace('_', ' ')}</Pill>}
+                    </>
+                  ) : (
+                    <>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('like')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Save this outfit as a good recommendation.'}
+                        tone={currentOutfitFeedback?.vote === 'like' ? 'success' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'like' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsUp size={14} />}
+                        {savingOutfitFeedback === 'like' ? 'Saving...' : 'Like'}
+                      </ActionButton>
+                      <ActionButton
+                        onClick={() => submitOutfitFeedback('dislike')}
+                        disabled={Boolean(currentBusyReason)}
+                        title={currentBusyReason || 'Block this outfit logic from future recommendations.'}
+                        tone={currentOutfitFeedback?.vote === 'dislike' ? 'danger' : 'neutral'}
+                      >
+                        {savingOutfitFeedback === 'dislike' ? <Loader2 size={14} className="animate-spin" /> : <ThumbsDown size={14} />}
+                        {savingOutfitFeedback === 'dislike' ? 'Saving...' : 'Dislike'}
+                      </ActionButton>
+                      {currentOutfitFeedback?.vote === 'like' && <Pill tone="success">Learned</Pill>}
+                      {currentOutfitFeedback?.vote === 'dislike' && <Pill tone="error">Blocked</Pill>}
+                    </>
+                  )}
                 </div>
               )}
             </div>

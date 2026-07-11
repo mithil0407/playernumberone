@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Save, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
 import type { FashionItem, ItemCategory } from '@/lib/supabase';
+import { ActionMenu, AdminCard, AdminPageHeader, CLUB, ConfirmDialog, controlClass, dangerButtonClass, LoadingState, primaryButtonClass, secondaryButtonClass } from '@/components/IconikClubAdminUI';
 
 const CATEGORIES: ItemCategory[] = ['top','bottom','dress','outerwear','shoes','bag','accessory','jumpsuit','skirt','other'];
 const SIZES = ['XXS','XS','S','M','L','XL','XXL','One Size'];
@@ -18,6 +19,7 @@ export default function ItemDetailPage() {
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
   const [toast, setToast]       = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
@@ -52,7 +54,6 @@ export default function ItemDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Archive this item? It will be hidden from the catalog.')) return;
     setDeleting(true);
     await fetch(`/api/iconik-club/items/${id}`, { method: 'DELETE' });
     router.push('/iconik-club/admin/items');
@@ -73,14 +74,12 @@ export default function ItemDetailPage() {
       };
     });
 
-  const inputCls = "w-full px-3.5 py-2.5 text-sm border border-[#ffb3d1] rounded-xl bg-[#fff9f5] text-[#4a2c3e] outline-none focus:ring-2 focus:ring-[#ff6b9d]/30 focus:border-[#ff6b9d] transition";
+  const inputCls = controlClass;
   const labelCls = "block text-[10px] font-bold text-[#4a2c3e]/50 uppercase tracking-widest mb-1.5";
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 size={24} className="animate-spin text-[#ff6b9d]" />
-      </div>
+      <LoadingState label="Loading item…" />
     );
   }
 
@@ -94,7 +93,7 @@ export default function ItemDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="mx-auto max-w-3xl pb-20">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all ${toast.type === 'success' ? 'bg-emerald-500 shadow-emerald-500/25' : 'bg-red-500 shadow-red-500/25'}`}>
@@ -103,26 +102,10 @@ export default function ItemDetailPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-7">
-        <Link href="/iconik-club/admin/items" className="p-2 mt-0.5 text-[#4a2c3e]/40 hover:text-[#4a2c3e] hover:bg-[#fff0f5] rounded-xl transition-all flex-shrink-0">
-          <ArrowLeft size={18} />
-        </Link>
-        <div className="flex-1 min-w-0">
-          <h2 className="luxury-heading text-3xl text-[#4a2c3e] truncate">{item.item_name}</h2>
-          <p className="text-sm text-[#4a2c3e]/45 capitalize mt-0.5">{item.status} · {item.category ?? 'uncategorised'}</p>
-        </div>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-400 border border-red-200 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50 flex-shrink-0"
-        >
-          {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          Archive
-        </button>
-      </div>
+      <Link href="/iconik-club/admin/items" className={`${secondaryButtonClass} mb-5`}><ArrowLeft size={14} /> Catalogue</Link>
+      <AdminPageHeader eyebrow="Catalogue item" title={item.item_name} description={`${item.status} · ${item.category ?? 'uncategorised'}`} actions={<ActionMenu><button className={dangerButtonClass} onClick={() => setConfirmArchive(true)}><Trash2 size={14} /> Archive item</button></ActionMenu>} />
 
-      <div className="bg-white rounded-2xl border border-[#ffb3d1]/60 p-6 space-y-5 shadow-sm">
+      <AdminCard className="space-y-5 p-5 sm:p-6">
         {/* Image preview */}
         {item.image_url && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -194,17 +177,15 @@ export default function ItemDetailPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-3 pt-4 border-t border-[#ffb3d1]/50">
-          <button onClick={() => handleSave()} disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium border border-[#ffb3d1] text-[#4a2c3e] rounded-xl hover:bg-[#fff0f5] transition-all disabled:opacity-60"
-          >
+        <div className="sticky bottom-3 z-10 flex flex-wrap justify-end gap-3 rounded-2xl border p-3 shadow-xl" style={{ background: CLUB.surface, borderColor: CLUB.border }}>
+          <button onClick={() => handleSave()} disabled={saving} className={primaryButtonClass}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Save changes
           </button>
 
           {item.status !== 'active' && (
             <button onClick={() => handleSave('active')} disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-[#ff6b9d] hover:bg-[#e85a8a] text-white rounded-xl transition-all disabled:opacity-60 shadow-md shadow-[#ff6b9d]/20"
+              className={secondaryButtonClass}
             >
               <CheckCircle size={14} />
               Activate
@@ -213,13 +194,14 @@ export default function ItemDetailPage() {
 
           {item.status === 'active' && (
             <button onClick={() => handleSave('draft')} disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-amber-400 hover:bg-amber-500 text-white rounded-xl transition-all disabled:opacity-60"
+              className={secondaryButtonClass}
             >
               Move to draft
             </button>
           )}
         </div>
-      </div>
+      </AdminCard>
+      <ConfirmDialog open={confirmArchive} title="Archive this item?" description="It will be hidden from the active catalogue and remain available through the Archived filter." confirmLabel="Archive item" busy={deleting} onCancel={() => setConfirmArchive(false)} onConfirm={() => void handleDelete()} />
     </div>
   );
 }
