@@ -6,9 +6,9 @@
 
 import { useState, useMemo, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pencil, X, Loader2, AlertCircle, Copy, Upload } from 'lucide-react';
+import { Pencil, X, Loader2, AlertCircle, Copy, Upload, RotateCcw } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
-import type { ResolvedImageUrls } from '@/lib/manImageGenerator';
+import type { ResolvedImageUrls, ManV2ImageTarget } from '@/lib/manImageGenerator';
 import { SPRING } from '@/lib/reportAnimations';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { FaceImageKind } from '@/lib/manImageGenerator';
@@ -98,6 +98,10 @@ export type ManReportSlideGroup = 'Opening' | 'Diagnosis' | 'Prescription' | 'Ou
 
 export interface ManReportSlideMeta {
   pageNumber: number;
+  /** Stable approval identity. Unlike page numbers, this survives slide insertions/removals. */
+  approvalKey: string;
+  /** Page number used by reports approved before stable approval identities were introduced. */
+  legacyPageNumber: number;
   title: string;
   group: ManReportSlideGroup;
   sectionKey: ManReportSectionKey;
@@ -111,7 +115,6 @@ export interface ManReportSlideMeta {
     | 'beard_grid'
     | 'skin_grooming_system'
     | 'frame_analysis'
-    | 'side_profile'
     | 'frame_training'
     | 'colour_drape'
     | 'face'
@@ -134,6 +137,8 @@ export interface ManReportSlideMeta {
   outfitNumber?: number;
   outfitIdentityKey?: string;
 }
+
+type ManReportSlideDraft = Omit<ManReportSlideMeta, 'pageNumber' | 'approvalKey' | 'legacyPageNumber'>;
 
 // Strips hex colour codes like (FFFDD0) or (#FFFDD0) from outfit text
 function stripHex(text: string): string {
@@ -266,7 +271,7 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
   const isV2 = data.report_version === MAN_BLUEPRINT_V2_VERSION;
 
   if (isV2) {
-    const slides: Omit<ManReportSlideMeta, 'pageNumber'>[] = [
+    const slides: ManReportSlideDraft[] = [
       { title: 'Cover', group: 'Opening', sectionKey: 's0', slideType: 'cover' },
       { title: 'Your Scorecard', group: 'Opening', sectionKey: 's0', slideType: 'overview' },
       { title: 'Face Geometry Analysis', group: 'Diagnosis', sectionKey: 's1', slideType: 'face_geometry' },
@@ -275,7 +280,6 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
       { title: 'Eyewear Grid', group: 'Diagnosis', sectionKey: 's1', slideType: 'eyewear_direction' },
       { title: 'Skin & Grooming System', group: 'Prescription', sectionKey: 's5g', slideType: 'skin_grooming_system' },
       { title: 'Frame Analysis', group: 'Diagnosis', sectionKey: 's2', slideType: 'frame_analysis' },
-      { title: 'Side Profile', group: 'Diagnosis', sectionKey: 's2', slideType: 'side_profile' },
       { title: 'Frame Training Direction', group: 'Prescription', sectionKey: 's2', slideType: 'frame_training' },
       { title: 'Fit Rules', group: 'Prescription', sectionKey: 's2', slideType: 'fit_rules' },
       { title: 'Colour Drape Comparison', group: 'Diagnosis', sectionKey: 's3', slideType: 'colour_drape' },
@@ -304,10 +308,23 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
       { title: 'Shopping + Identity Close', group: 'Closing', sectionKey: 's5s', slideType: 'shopping_identity' },
     );
 
-    return slides.map((slide, index) => ({ ...slide, pageNumber: index + 1 }));
+    return slides.map((slide, index) => {
+      const pageNumber = index + 1;
+      // V2 previously contained Side Profile at page 9. Keep the old position
+      // available so already-reviewed reports do not silently approve the wrong page.
+      const legacyPageNumber = pageNumber >= 9 ? pageNumber + 1 : pageNumber;
+      return {
+        ...slide,
+        pageNumber,
+        legacyPageNumber,
+        approvalKey: slide.slideType === 'outfit'
+          ? `slide:outfit:${slide.outfitIdentityKey ?? slide.outfitNumber ?? pageNumber}`
+          : `slide:${slide.slideType}`,
+      };
+    });
   }
 
-  const slides: Omit<ManReportSlideMeta, 'pageNumber'>[] = [
+  const slides: ManReportSlideDraft[] = [
     { title: 'Cover', group: 'Opening', sectionKey: 's0', slideType: 'cover' },
     { title: 'Overview', group: 'Opening', sectionKey: 's0', slideType: 'overview' },
     { title: 'How To Read This Report', group: 'Opening', sectionKey: 's0', slideType: 'reading_guide' },
@@ -351,7 +368,17 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
   }
   slides.push({ title: 'Identity Statement', group: 'Closing', sectionKey: 's6', slideType: 'identity' });
 
-  return slides.map((slide, index) => ({ ...slide, pageNumber: index + 1 }));
+  return slides.map((slide, index) => {
+    const pageNumber = index + 1;
+    return {
+      ...slide,
+      pageNumber,
+      legacyPageNumber: pageNumber,
+      approvalKey: slide.slideType === 'outfit'
+        ? `slide:outfit:${slide.outfitIdentityKey ?? slide.outfitNumber ?? pageNumber}`
+        : `slide:${slide.slideType}`,
+    };
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1813,7 +1840,7 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
   );
 }
 
-function FitRulesPage({ cls, text }: { cls: ClassificationResult; text?: string }) {
+function FitRulesPage({ cls, text, pageNumber, totalSlides }: { cls: ClassificationResult; text?: string; pageNumber?: number; totalSlides?: number }) {
   const { body } = cls;
   const always = body.silhouette_rules?.filter(Boolean).slice(0, 4) ?? [];
   const never = body.avoid_cuts?.filter(Boolean).slice(0, 4) ?? [];
@@ -1830,7 +1857,7 @@ function FitRulesPage({ cls, text }: { cls: ClassificationResult; text?: string 
         <div className="man-small-caps corner-title">Silhouette Rules</div>
       </div>
       <div className="corner-tr">
-        <div className="man-mono corner-kicker">08</div>
+        <div className="man-mono corner-kicker">{String(pageNumber ?? 8).padStart(2, '0')}{totalSlides ? ` / ${totalSlides}` : ''}</div>
       </div>
       <div className="man-page-inner">
         <h2>
@@ -1839,27 +1866,27 @@ function FitRulesPage({ cls, text }: { cls: ClassificationResult; text?: string 
         </h2>
         <div className="rule" style={{ marginBottom: 40 }} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="glass-dark rounded-3xl p-7">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: '#F4EFE5' }}>
-              Always build around
+          <div className="fit-rule-panel fit-rule-panel-always rounded-3xl p-7">
+            <p className="fit-rule-heading text-[11px] font-medium uppercase tracking-[0.18em] mb-5">
+              <span className="fit-rule-heading-icon" aria-hidden="true">✓</span> Always build around
             </p>
             <div className="space-y-4">
               {always.map((rule, index) => (
                 <div key={`${rule}-${index}`} className="flex items-start gap-3">
-                  <span style={{ color: SAGE }}>✓</span>
+                  <span className="fit-rule-item-icon" aria-hidden="true">✓</span>
                   <p className="text-[13px] leading-relaxed">{rule}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="glass-dark rounded-3xl p-7">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: '#F4EFE5' }}>
-              Avoid immediately
+          <div className="fit-rule-panel fit-rule-panel-avoid rounded-3xl p-7">
+            <p className="fit-rule-heading text-[11px] font-medium uppercase tracking-[0.18em] mb-5">
+              <span className="fit-rule-heading-icon" aria-hidden="true">×</span> Avoid immediately
             </p>
             <div className="space-y-4">
               {never.map((rule, index) => (
                 <div key={`${rule}-${index}`} className="flex items-start gap-3">
-                  <span style={{ color: OXBLOOD }}>✗</span>
+                  <span className="fit-rule-item-icon" aria-hidden="true">×</span>
                   <p className="text-[13px] leading-relaxed">{rule}</p>
                 </div>
               ))}
@@ -1873,7 +1900,7 @@ function FitRulesPage({ cls, text }: { cls: ClassificationResult; text?: string 
             ['Priority zone', `Highlight ${body.highlight_zone}; reduce focus on ${body.minimise_zone}.`],
             ...extra.map((item, index) => [`RTW check ${index + 1}`, item] as [string, string]),
           ].slice(0, 6).map(([label, value]) => (
-            <div key={label} className="glass-dark rounded-2xl p-5">
+            <div key={label} className="fit-support-card rounded-2xl p-5">
               <DataLabel>{label}</DataLabel>
               <p className="text-[13px] leading-relaxed">{value}</p>
             </div>
@@ -1986,13 +2013,16 @@ function EvidenceImage({
   src,
   alt,
   fallback,
+  onRedo,
 }: {
   src?: string | null;
   alt: string;
   fallback: string;
+  onRedo?: () => Promise<unknown>;
 }) {
   return (
     <div className="v2-evidence-frame">
+      {onRedo && <ImageRedoButton onRedo={onRedo} label={`Redo ${alt}`} />}
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt} loading="lazy" decoding="async" />
@@ -2003,6 +2033,27 @@ function EvidenceImage({
         </div>
       )}
     </div>
+  );
+}
+
+function ImageRedoButton({ onRedo, label = 'Redo image' }: { onRedo: () => Promise<unknown>; label?: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      className="image-redo-button"
+      onClick={async () => {
+        if (busy) return;
+        setBusy(true);
+        try { await onRedo(); } finally { setBusy(false); }
+      }}
+      disabled={busy}
+      aria-label={label}
+      title={label}
+    >
+      {busy ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+      <span>{busy ? 'Redoing…' : 'Redo image'}</span>
+    </button>
   );
 }
 
@@ -2038,6 +2089,7 @@ function V2DiagnosticSlide({
   dos,
   avoids,
   variant = 'ivory',
+  onRedoImage,
 }: {
   title: string;
   italic: string;
@@ -2051,6 +2103,7 @@ function V2DiagnosticSlide({
   dos: string[];
   avoids: string[];
   variant?: 'ivory' | 'bone' | 'slate';
+  onRedoImage?: () => Promise<unknown>;
 }) {
   return (
     <section className={`iconik-page man-page ${variant}`} data-blueprint-page-number={pageNumber}>
@@ -2069,7 +2122,7 @@ function V2DiagnosticSlide({
         </h2>
         <div className="rule" style={{ marginBottom: 32 }} />
         <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-7 items-start">
-          <EvidenceImage src={imageUrl} alt={imageAlt} fallback={fallback} />
+          <EvidenceImage src={imageUrl} alt={imageAlt} fallback={fallback} onRedo={onRedoImage} />
           <div className={variant === 'slate' ? 'glass-dark rounded-3xl p-7' : 'rounded-3xl p-7'} style={variant === 'slate' ? undefined : { background: '#fff', border: `1px solid ${BORDER}` }}>
             <DataLabel>Verdict</DataLabel>
             <p className="display-it text-[26px] leading-snug" style={{ color: variant === 'slate' ? '#F4EFE5' : INK }}>
@@ -2085,24 +2138,206 @@ function V2DiagnosticSlide({
   );
 }
 
+function V2FaceGridAdvancedEditor({
+  kind,
+  optionIndex,
+  currentStyle,
+  onDraft,
+  onApply,
+  onApplied,
+}: {
+  kind: FaceImageKind;
+  optionIndex: number;
+  currentStyle: string;
+  onDraft: NonNullable<ManReportProps['onDraftFaceStyleSwap']>;
+  onApply: NonNullable<ManReportProps['onApplyFaceStyleSwap']>;
+  onApplied: (result: FaceStyleSwapApplyResult) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [notes, setNotes] = useState('');
+  const [replacementText, setReplacementText] = useState(currentStyle);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [draft, setDraft] = useState<FaceStyleSwapDraftResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [applying, setApplying] = useState(false);
+
+  const resetDraft = () => {
+    setDraft(null);
+    setError(null);
+  };
+  const close = (force = false) => {
+    if (!force && (drafting || applying)) return;
+    setOpen(false);
+    setReason('');
+    setNotes('');
+    setReplacementText(currentStyle);
+    setFile(null);
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setDraft(null);
+    setError(null);
+  };
+  const selectFile = (nextFile: File | null) => {
+    setFile(nextFile);
+    resetDraft();
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(nextFile ? URL.createObjectURL(nextFile) : null);
+  };
+  const createDraft = async () => {
+    setDrafting(true);
+    resetDraft();
+    try {
+      const result = await onDraft({
+        kind,
+        optionIndex,
+        reason,
+        notes,
+        replacementText,
+        inspirationImage: file,
+      });
+      if (!result) setError('Could not draft a replacement style. Please try again.');
+      else setDraft(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not draft a replacement style.');
+    } finally {
+      setDrafting(false);
+    }
+  };
+  const applyDraft = async () => {
+    if (!draft) return;
+    setApplying(true);
+    setError(null);
+    try {
+      const result = await onApply({
+        kind,
+        optionIndex,
+        candidateStyle: draft.candidateStyle,
+        baseUpdatedAt: draft.baseUpdatedAt,
+        currentStyleHash: draft.currentStyleHash,
+        reason,
+        notes,
+      });
+      if (!result) setError('Could not apply the replacement. Generate a fresh draft and try again.');
+      else {
+        onApplied(result);
+        close(true);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not apply the replacement.');
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setReplacementText(currentStyle);
+          setOpen(true);
+        }}
+        className="face-grid-edit-button"
+        aria-label={`Advanced edit ${kind} option ${optionIndex}`}
+      >
+        <Pencil size={11} /> Advanced edit
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: 'rgba(27,24,21,0.58)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Advanced edit ${kind} option ${optionIndex}`}
+              className="w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
+              style={{ background: IVORY, maxHeight: '90vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={SPRING}
+            >
+              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                <div>
+                  <DataLabel>Advanced edit · {kind} option {optionIndex}</DataLabel>
+                  <p className="text-xl leading-tight" style={{ fontFamily: SERIF, color: INK }}>Replace one recommendation and regenerate the full 2×2 grid.</p>
+                </div>
+                <button type="button" onClick={() => close()} disabled={drafting || applying} className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40" style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }} aria-label="Close advanced edit"><X size={14} /></button>
+              </div>
+              <div className="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-4">
+                  <label className="block rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Reason</DataLabel>
+                    <input value={reason} onChange={event => { setReason(event.target.value); resetDraft(); }} placeholder="What needs to change?" className="w-full rounded-xl px-3 py-2 text-[12px] outline-none" style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }} />
+                  </label>
+                  <label className="block rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Replacement style</DataLabel>
+                    <textarea value={replacementText} onChange={event => { setReplacementText(event.target.value); resetDraft(); }} className="w-full min-h-[120px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none" style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }} />
+                  </label>
+                  <label className="block rounded-2xl p-4 cursor-pointer" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Inspiration image</DataLabel>
+                    <input type="file" accept="image/*" className="hidden" onChange={event => selectFile(event.target.files?.[0] ?? null)} />
+                    {preview ? <img src={preview} alt="Style inspiration preview" className="w-full aspect-[4/3] object-cover rounded-xl" /> : <span className="flex min-h-24 items-center justify-center rounded-xl text-[12px]" style={{ background: SHELL, color: INK_SOFT, border: `1px dashed ${ACCENT}66` }}><Upload size={14} className="mr-2" /> Upload reference</span>}
+                  </label>
+                  <label className="block rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                    <DataLabel>Internal notes</DataLabel>
+                    <textarea value={notes} onChange={event => { setNotes(event.target.value); resetDraft(); }} placeholder="Optional" className="w-full min-h-20 rounded-xl px-3 py-2 text-[12px] outline-none resize-none" style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }} />
+                  </label>
+                </div>
+                <div className="rounded-2xl p-5 min-h-72" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
+                  <DataLabel>Replacement preview</DataLabel>
+                  {error && <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-4" style={{ background: '#fff2f2', color: OXBLOOD }}><AlertCircle size={13} className="mt-0.5 shrink-0" /><p className="text-[11px] leading-relaxed">{error}</p></div>}
+                  {drafting ? <div className="min-h-52 flex flex-col items-center justify-center gap-3"><Loader2 size={22} className="animate-spin" style={{ color: ACCENT }} /><p className="text-[12px]" style={{ color: INK_SOFT }}>Drafting replacement…</p></div>
+                    : draft ? <div className="space-y-4"><div><DataLabel>Current</DataLabel><p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>{draft.currentStyle}</p></div><HairRule /><div><DataLabel>Replacement</DataLabel><p className="text-xl leading-snug" style={{ fontFamily: SERIF, color: INK }}>{draft.candidateStyle}</p></div></div>
+                    : <div className="min-h-52 flex items-center justify-center text-center"><p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>Draft the replacement first. Nothing changes until you apply it.</p></div>}
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
+                <button type="button" onClick={() => close()} disabled={drafting || applying} className="px-4 py-2 rounded-full text-[12px] disabled:opacity-40" style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}>Cancel</button>
+                <button type="button" onClick={createDraft} disabled={drafting || applying || (!reason && !notes && !replacementText && !file)} className="px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40" style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}>{drafting ? 'Drafting…' : 'Draft style'}</button>
+                <button type="button" onClick={applyDraft} disabled={drafting || applying || !draft} className="px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40" style={{ background: ACCENT, color: '#fff' }}>{applying ? 'Applying + generating…' : 'Apply replacement'}</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 function V2FaceGridSlide({
   cls,
   kind,
   imageUrl,
   pageNumber,
   totalSlides,
+  adminMode,
+  onRegenerateFaceImage,
+  onDraftFaceStyleSwap,
+  onApplyFaceStyleSwap,
 }: {
   cls: ClassificationResult;
   kind: 'hairstyle' | 'beard' | 'eyewear';
   imageUrl?: string | null;
   pageNumber?: number;
   totalSlides: number;
+  adminMode?: boolean;
+  onRegenerateFaceImage?: ManReportProps['onRegenerateFaceImage'];
+  onDraftFaceStyleSwap?: ManReportProps['onDraftFaceStyleSwap'];
+  onApplyFaceStyleSwap?: ManReportProps['onApplyFaceStyleSwap'];
 }) {
-  const options = kind === 'hairstyle'
+  const sourceOptions = kind === 'hairstyle'
     ? cls.face.hairstyle_recommendations ?? []
     : kind === 'beard'
       ? cls.face.beard_style_recommendations ?? []
       : cls.face.eyewear_shapes ?? [];
+  const [imageOverride, setImageOverride] = useState<string | null>(null);
+  const [optionOverrides, setOptionOverrides] = useState<Record<number, string>>({});
+  const options = sourceOptions.map((option, index) => optionOverrides[index + 1] ?? option);
   const title = kind === 'hairstyle' ? 'Hairstyle' : kind === 'beard' ? 'Beard' : 'Eyewear';
   const italic = kind === 'eyewear' ? 'grid.' : 'direction.';
   const verdict = kind === 'hairstyle'
@@ -2128,7 +2363,16 @@ function V2FaceGridSlide({
         </h2>
         <div className="rule" style={{ marginBottom: 32 }} />
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-7">
-          <EvidenceImage src={imageUrl} alt={`${title} recommendation grid`} fallback={`${title} grid pending. Retry image generation when Gemini capacity is available.`} />
+          <EvidenceImage
+            src={imageOverride ?? imageUrl}
+            alt={`${title} recommendation grid`}
+            fallback={`${title} grid pending. Retry image generation when Gemini capacity is available.`}
+            onRedo={adminMode && onRegenerateFaceImage ? async () => {
+              const result = await onRegenerateFaceImage(kind, 1);
+              if (result?.imageUrl) setImageOverride(result.imageUrl);
+              return result;
+            } : undefined}
+          />
           <div>
             <div className="rounded-3xl p-6 mb-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
               <DataLabel>Verdict</DataLabel>
@@ -2139,6 +2383,19 @@ function V2FaceGridSlide({
                 <div key={`${option}-${index}`} className="visual-card-light">
                   <DataLabel>{kind === 'eyewear' ? (index < 2 ? `Optical ${index + 1}` : `Sunglasses ${index - 1}`) : `Option ${index + 1}`}</DataLabel>
                   <p>{option}</p>
+                  {adminMode && onDraftFaceStyleSwap && onApplyFaceStyleSwap && (
+                    <V2FaceGridAdvancedEditor
+                      kind={kind}
+                      optionIndex={index + 1}
+                      currentStyle={option}
+                      onDraft={onDraftFaceStyleSwap}
+                      onApply={onApplyFaceStyleSwap}
+                      onApplied={result => {
+                        if (result.imageUrl) setImageOverride(result.imageUrl);
+                        setOptionOverrides(previous => ({ ...previous, [result.optionIndex]: result.candidateStyle }));
+                      }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -2261,7 +2518,7 @@ function BeforeAfterComparison({
   );
 }
 
-function V2BeforeAfterSlide({ beforeImage, afterImage, legacyImage, pageNumber, totalSlides }: { beforeImage?: string | null; afterImage?: string | null; legacyImage?: string | null; pageNumber?: number; totalSlides: number }) {
+function V2BeforeAfterSlide({ beforeImage, afterImage, legacyImage, pageNumber, totalSlides, onRedoImage }: { beforeImage?: string | null; afterImage?: string | null; legacyImage?: string | null; pageNumber?: number; totalSlides: number; onRedoImage?: () => Promise<unknown> }) {
   return (
     <section className="iconik-page man-page bone" data-blueprint-page-number={pageNumber}>
       <div className="grain" />
@@ -2271,7 +2528,10 @@ function V2BeforeAfterSlide({ beforeImage, afterImage, legacyImage, pageNumber, 
         <h2><span className="display">Slide to see</span><span className="display-it">the transformation.</span></h2>
         <div className="rule" style={{ marginBottom: 32 }} />
         <div className="grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr] gap-7 items-start">
-          <BeforeAfterComparison beforeImage={beforeImage} afterImage={afterImage} legacyImage={legacyImage} />
+          <div className="v2-image-with-redo">
+            {onRedoImage && <ImageRedoButton onRedo={onRedoImage} label="Redo before and after images" />}
+            <BeforeAfterComparison beforeImage={beforeImage} afterImage={afterImage} legacyImage={legacyImage} />
+          </div>
           <div className="rounded-3xl p-7" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
             <DataLabel>Transformation benchmark</DataLabel>
             <p className="display-it text-[27px] leading-snug mb-6" style={{ color: INK }}>Your strongest outfit, grooming, and colour direction should read as one immediate transformation.</p>
@@ -2283,7 +2543,7 @@ function V2BeforeAfterSlide({ beforeImage, afterImage, legacyImage, pageNumber, 
   );
 }
 
-function V2LinkedinSlide({ data, imageUrl, pageNumber, totalSlides }: { data: ReportData; imageUrl?: string | null; pageNumber?: number; totalSlides: number }) {
+function V2LinkedinSlide({ data, imageUrl, pageNumber, totalSlides, onRedoImage }: { data: ReportData; imageUrl?: string | null; pageNumber?: number; totalSlides: number; onRedoImage?: () => Promise<unknown> }) {
   const headline = data.classification.style_brief.primary_brief || data.classification.style_brief.key_aspiration || 'Polished professional presence';
   const location = data.classification.client.location_region || 'Your location';
   return (
@@ -2295,6 +2555,7 @@ function V2LinkedinSlide({ data, imageUrl, pageNumber, totalSlides }: { data: Re
         <h2><span className="display">LinkedIn</span><span className="display-it">headshot.</span></h2>
         <div className="rule" style={{ marginBottom: 32 }} />
         <div className="linkedin-profile-mock">
+          {onRedoImage && <ImageRedoButton onRedo={onRedoImage} label="Redo LinkedIn headshot" />}
           <div className="linkedin-cover"><span className="linkedin-in-badge">in</span></div>
           <div className="linkedin-profile-body">
             <div className="linkedin-avatar">
@@ -2322,7 +2583,7 @@ function V2LinkedinSlide({ data, imageUrl, pageNumber, totalSlides }: { data: Re
   );
 }
 
-function V2DatingSlide({ data, imageUrls, avatarUrl, pageNumber, totalSlides }: { data: ReportData; imageUrls?: (string | null)[]; avatarUrl?: string | null; pageNumber?: number; totalSlides: number }) {
+function V2DatingSlide({ data, imageUrls, avatarUrl, pageNumber, totalSlides, onRedoImage }: { data: ReportData; imageUrls?: (string | null)[]; avatarUrl?: string | null; pageNumber?: number; totalSlides: number; onRedoImage?: (index: number) => Promise<unknown> }) {
   const shots = data.deliverables?.datingProfileShots ?? [];
   return (
     <section className="iconik-page man-page bone" data-blueprint-page-number={pageNumber}>
@@ -2349,11 +2610,15 @@ function V2DatingSlide({ data, imageUrls, avatarUrl, pageNumber, totalSlides }: 
           <div className="instagram-grid">
             {[0, 1, 2].map(index => imageUrls?.[index] ? (
               <div className="instagram-tile" key={index}>
+                {onRedoImage && <ImageRedoButton onRedo={() => onRedoImage(index)} label={`Redo social image ${index + 1}`} />}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imageUrls[index] ?? ''} alt={shots[index]?.title ?? `Social media inspiration ${index + 1}`} />
               </div>
             ) : (
-              <div className="instagram-tile instagram-tile-empty" key={index}>Post {index + 1}<span>pending</span></div>
+              <div className="instagram-tile instagram-tile-empty" key={index}>
+                {onRedoImage && <ImageRedoButton onRedo={() => onRedoImage(index)} label={`Generate social image ${index + 1}`} />}
+                Post {index + 1}<span>pending</span>
+              </div>
             ))}
           </div>
           <div className="instagram-downloads">
@@ -4391,6 +4656,7 @@ interface ManReportProps {
     kind: FaceImageKind,
     optionIndex: number,
   ) => Promise<FaceImageRegenerationResult | null>;
+  onRegenerateV2Image?: (target: ManV2ImageTarget) => Promise<ResolvedImageUrls | null>;
   onDraftFaceStyleSwap?: (input: {
     kind: FaceImageKind;
     optionIndex: number;
@@ -4660,6 +4926,7 @@ function ManReport({
   onDraftOutfitSwap,
   onApplyOutfitSwap,
   onRegenerateFaceImage,
+  onRegenerateV2Image,
   onDraftFaceStyleSwap,
   onApplyFaceStyleSwap,
   onCopyImagePrompt,
@@ -4931,6 +5198,7 @@ function ManReport({
             'Do not add height or width without geometric reason.',
             'Do not let grooming lines look accidental or unfinished.',
           ]}
+          onRedoImage={isAdminViewer && onRegenerateV2Image ? () => onRegenerateV2Image('faceGeometry') : undefined}
         />
       ),
     },
@@ -4940,7 +5208,7 @@ function ManReport({
       label: 'Hairstyle Grid',
       estimatedHeight: 900,
       background: '#ffffff',
-      node: <V2FaceGridSlide key="hairstyle_grid" cls={cls} kind="hairstyle" imageUrl={imageUrls?.hairstyleCards?.[0]} pageNumber={pageNumberFor('hairstyle_grid')} totalSlides={totalSlides} />,
+      node: <V2FaceGridSlide key="hairstyle_grid" cls={cls} kind="hairstyle" imageUrl={imageUrls?.hairstyleCards?.[0]} pageNumber={pageNumberFor('hairstyle_grid')} totalSlides={totalSlides} adminMode={isAdminViewer} onRegenerateFaceImage={onRegenerateFaceImage} onDraftFaceStyleSwap={onDraftFaceStyleSwap} onApplyFaceStyleSwap={onApplyFaceStyleSwap} />,
     },
     {
       key: 'beard_grid',
@@ -4948,7 +5216,7 @@ function ManReport({
       label: 'Beard Grid',
       estimatedHeight: 900,
       background: '#ffffff',
-      node: <V2FaceGridSlide key="beard_grid" cls={cls} kind="beard" imageUrl={imageUrls?.beardCards?.[0]} pageNumber={pageNumberFor('beard_grid')} totalSlides={totalSlides} />,
+      node: <V2FaceGridSlide key="beard_grid" cls={cls} kind="beard" imageUrl={imageUrls?.beardCards?.[0]} pageNumber={pageNumberFor('beard_grid')} totalSlides={totalSlides} adminMode={isAdminViewer} onRegenerateFaceImage={onRegenerateFaceImage} onDraftFaceStyleSwap={onDraftFaceStyleSwap} onApplyFaceStyleSwap={onApplyFaceStyleSwap} />,
     },
     {
       key: 'eyewear_direction',
@@ -4956,7 +5224,7 @@ function ManReport({
       label: 'Eyewear Grid',
       estimatedHeight: 900,
       background: '#ffffff',
-      node: <V2FaceGridSlide key="eyewear_direction" cls={cls} kind="eyewear" imageUrl={imageUrls?.eyewearCards?.[0]} pageNumber={pageNumberFor('eyewear_direction')} totalSlides={totalSlides} />,
+      node: <V2FaceGridSlide key="eyewear_direction" cls={cls} kind="eyewear" imageUrl={imageUrls?.eyewearCards?.[0]} pageNumber={pageNumberFor('eyewear_direction')} totalSlides={totalSlides} adminMode={isAdminViewer} onRegenerateFaceImage={onRegenerateFaceImage} onDraftFaceStyleSwap={onDraftFaceStyleSwap} onApplyFaceStyleSwap={onApplyFaceStyleSwap} />,
     },
     {
       key: 'skin_grooming_system',
@@ -4987,33 +5255,7 @@ function ManReport({
           dos={cls.body.silhouette_rules ?? []}
           avoids={cls.body.avoid_cuts ?? []}
           variant="bone"
-        />
-      ),
-    },
-    {
-      key: 'side_profile',
-      slideType: 'side_profile',
-      label: 'Side Profile',
-      estimatedHeight: 900,
-      background: '#ffffff',
-      node: (
-        <V2DiagnosticSlide
-          key="side_profile"
-          title="Side"
-          italic="profile."
-          kicker="Pillar 2"
-          pageNumber={pageNumberFor('side_profile')}
-          totalSlides={totalSlides}
-          imageUrl={imageUrls?.diagnostic?.frameSide}
-          imageAlt="Side profile diagnostic overlay"
-          fallback={data.diagnostics?.frameSideFallback ?? 'No side-profile photo was supplied; use front-frame rules and tailoring notes instead.'}
-          verdict={imageUrls?.diagnostic?.frameSide ? (data.diagnostics?.frameSideVerdict ?? 'Side profile validates posture, abdomen projection, and layer drape.') : (data.diagnostics?.frameSideFallback ?? 'No side-profile photo was supplied.')}
-          dos={[
-            cls.body.fit_directive,
-            cls.body.silhouette_rules?.[0] ?? 'Use layers that fall cleanly from shoulder to hem.',
-            cls.body.height_adjustment,
-          ].filter(Boolean)}
-          avoids={cls.body.avoid_cuts ?? []}
+          onRedoImage={isAdminViewer && onRegenerateV2Image ? () => onRegenerateV2Image('frameFront') : undefined}
         />
       ),
     },
@@ -5031,7 +5273,7 @@ function ManReport({
       label: 'Fit Rules',
       estimatedHeight: 760,
       background: '#ffffff',
-      node: <FitRulesPage key="fit_rules" cls={cls} text={sections.s2_body} />,
+      node: <FitRulesPage key="fit_rules" cls={cls} text={sections.s2_body} pageNumber={pageNumberFor('fit_rules')} totalSlides={totalSlides} />,
     },
     {
       key: 'colour_drape',
@@ -5058,6 +5300,7 @@ function ManReport({
           ].filter(Boolean)}
           avoids={(cls.colour.colours_to_avoid ?? []).map(item => `${item.name}: ${item.reason}`)}
           variant="bone"
+          onRedoImage={isAdminViewer && onRegenerateV2Image ? () => onRegenerateV2Image('colourDrape') : undefined}
         />
       ),
     },
@@ -5102,7 +5345,7 @@ function ManReport({
       label: 'Before / After Transformation',
       estimatedHeight: 900,
       background: '#ffffff',
-      node: <V2BeforeAfterSlide key="before_after" beforeImage={imageUrls?.deliverables?.beforeImage} afterImage={imageUrls?.deliverables?.afterImage} legacyImage={imageUrls?.deliverables?.beforeAfter} pageNumber={pageNumberFor('before_after')} totalSlides={totalSlides} />,
+      node: <V2BeforeAfterSlide key="before_after" beforeImage={imageUrls?.deliverables?.beforeImage} afterImage={imageUrls?.deliverables?.afterImage} legacyImage={imageUrls?.deliverables?.beforeAfter} pageNumber={pageNumberFor('before_after')} totalSlides={totalSlides} onRedoImage={isAdminViewer && onRegenerateV2Image ? () => onRegenerateV2Image('beforeAfter') : undefined} />,
     },
     {
       key: 'linkedin_headshot',
@@ -5110,7 +5353,7 @@ function ManReport({
       label: 'LinkedIn Headshot',
       estimatedHeight: 900,
       background: '#ffffff',
-      node: <V2LinkedinSlide key="linkedin_headshot" data={data} imageUrl={imageUrls?.deliverables?.linkedinHeadshot} pageNumber={pageNumberFor('linkedin_headshot')} totalSlides={totalSlides} />,
+      node: <V2LinkedinSlide key="linkedin_headshot" data={data} imageUrl={imageUrls?.deliverables?.linkedinHeadshot} pageNumber={pageNumberFor('linkedin_headshot')} totalSlides={totalSlides} onRedoImage={isAdminViewer && onRegenerateV2Image ? () => onRegenerateV2Image('linkedinHeadshot') : undefined} />,
     },
     {
       key: 'dating_profile_shots',
@@ -5118,7 +5361,7 @@ function ManReport({
       label: 'Social Media Inspiration',
       estimatedHeight: 900,
       background: '#ffffff',
-      node: <V2DatingSlide key="dating_profile_shots" data={data} imageUrls={imageUrls?.deliverables?.datingProfileShots} avatarUrl={imageUrls?.deliverables?.linkedinHeadshot} pageNumber={pageNumberFor('dating_profile_shots')} totalSlides={totalSlides} />,
+      node: <V2DatingSlide key="dating_profile_shots" data={data} imageUrls={imageUrls?.deliverables?.datingProfileShots} avatarUrl={imageUrls?.deliverables?.linkedinHeadshot} pageNumber={pageNumberFor('dating_profile_shots')} totalSlides={totalSlides} onRedoImage={isAdminViewer && onRegenerateV2Image ? index => onRegenerateV2Image((`social${index + 1}`) as ManV2ImageTarget) : undefined} />,
     },
     {
       key: 'shopping_identity',
@@ -5494,6 +5737,32 @@ function ManBlueprintStyles() {
         object-fit: cover;
         display: block;
       }
+      .v2-image-with-redo,
+      .linkedin-profile-mock { position: relative; }
+      .image-redo-button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 12;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 8px 11px;
+        border: 1px solid rgba(255,255,255,0.42);
+        border-radius: 999px;
+        background: rgba(27,24,21,0.76);
+        color: #fff;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 24px rgba(27,24,21,0.2);
+        font-size: 10px;
+        font-weight: 650;
+        line-height: 1;
+      }
+      .image-redo-button:hover:not(:disabled) { background: rgba(27,24,21,0.9); }
+      .image-redo-button:disabled { opacity: 0.72; cursor: wait; }
+      .linkedin-profile-mock > .image-redo-button { left: 12px; right: auto; }
       .v2-evidence-fallback {
         position: absolute;
         inset: 0;
@@ -5524,12 +5793,12 @@ function ManBlueprintStyles() {
       .before-after-label-after { right: 16px; }
       .before-after-range { position: absolute; z-index: 5; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; }
 
-      .linkedin-profile-mock { max-width: 760px; margin: 0 auto; overflow: hidden; border: 1px solid #d0d7de; border-radius: 18px; background: #fff; box-shadow: 0 18px 52px rgba(0,0,0,0.1); }
+      .linkedin-profile-mock { max-width: 680px; margin: 0 auto; overflow: hidden; border: 1px solid #d0d7de; border-radius: 18px; background: #fff; box-shadow: 0 18px 52px rgba(0,0,0,0.1); }
       .linkedin-cover { position: relative; height: 132px; background: linear-gradient(125deg, #0a66c2, #3d7fb8 52%, ${SLATE_LIGHT}); }
       .linkedin-in-badge { position: absolute; right: 24px; top: 22px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 4px; background: rgba(255,255,255,0.94); color: #0a66c2; font: 800 21px/1 Arial, sans-serif; }
       .linkedin-profile-body { position: relative; padding: 70px 28px 28px; }
       .linkedin-avatar { position: absolute; top: -70px; left: 28px; width: 132px; height: 132px; overflow: hidden; border: 5px solid #fff; border-radius: 50%; background: ${SHELL}; display: grid; place-items: center; color: ${INK_SOFT}; }
-      .linkedin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      .linkedin-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 24%; }
       .linkedin-actions { position: absolute; top: 18px; right: 26px; display: flex; gap: 8px; }
       .linkedin-actions span { padding: 7px 14px; border: 1px solid #0a66c2; border-radius: 999px; color: #0a66c2; font: 700 11px/1 Arial, sans-serif; }
       .linkedin-actions span:first-child { background: #0a66c2; color: #fff; }
@@ -5539,11 +5808,11 @@ function ManBlueprintStyles() {
       .linkedin-about { margin: 22px -8px 18px; padding: 20px; border: 1px solid #e6e6e6; border-radius: 12px; }
       .linkedin-about p { margin: 6px 0 0; color: #333; font: 400 13px/1.55 Arial, sans-serif; }
 
-      .instagram-profile-mock { max-width: 720px; margin: 0 auto; overflow: hidden; border: 1px solid #dbdbdb; border-radius: 18px; background: #fff; color: #1b1b1b; box-shadow: 0 18px 52px rgba(44,38,34,0.1); }
+      .instagram-profile-mock { width: min(100%, 440px); margin: 0 auto; overflow: hidden; border: 1px solid #dbdbdb; border-radius: 24px; background: #fff; color: #1b1b1b; box-shadow: 0 18px 52px rgba(44,38,34,0.1); }
       .instagram-topbar { display: flex; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #efefef; font: 600 14px/1.2 Arial, sans-serif; }
       .instagram-profile-header { display: grid; grid-template-columns: 94px 70px 1fr; gap: 18px; align-items: center; padding: 22px 28px 14px; }
       .instagram-avatar { width: 86px; height: 86px; padding: 3px; overflow: hidden; border: 3px solid transparent; border-radius: 50%; background: linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7) border-box; display: grid; place-items: center; font: 700 10px/1 Arial, sans-serif; }
-      .instagram-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+      .instagram-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: 50% 22%; }
       .instagram-stat, .instagram-private-note { display: flex; flex-direction: column; gap: 3px; }
       .instagram-stat strong { font: 700 18px/1 Arial, sans-serif; }
       .instagram-stat span, .instagram-private-note span { color: #737373; font: 400 11px/1.35 Arial, sans-serif; }
@@ -5552,21 +5821,49 @@ function ManBlueprintStyles() {
       .instagram-bio strong { font-weight: 600; }
       .instagram-tabs { display: flex; justify-content: center; gap: 9px; padding: 11px; border-top: 1px solid #efefef; color: #555; font: 600 10px/1 Arial, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
       .instagram-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; background: #fff; }
-      .instagram-tile { position: relative; aspect-ratio: 1; overflow: hidden; background: ${SHELL}; }
-      .instagram-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .instagram-tile { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: linear-gradient(145deg, ${SHELL}, ${BONE}); }
+      .instagram-tile img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
       .instagram-tile-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; color: ${INK_SOFT}; font: 600 11px/1.3 Arial, sans-serif; }
       .instagram-tile-empty span { font-weight: 400; }
-      .instagram-downloads { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; border-top: 1px solid #efefef; }
+      .instagram-downloads { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #efefef; overflow-x: auto; scrollbar-width: none; }
+      .instagram-downloads::-webkit-scrollbar { display: none; }
+      .instagram-downloads .v2-download { flex: 0 0 auto; padding: 9px 12px; font-size: 10px; }
+
+      .face-grid-edit-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+        padding: 7px 11px;
+        border: 1px solid ${BORDER};
+        border-radius: 999px;
+        background: ${SHELL};
+        color: ${INK_SOFT};
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .face-grid-edit-button:hover { border-color: ${ACCENT}; color: ${ACCENT_INK}; }
 
       @media (max-width: 640px) {
-        .linkedin-cover { height: 108px; }
-        .linkedin-profile-body { padding: 66px 18px 22px; }
-        .linkedin-avatar { left: 18px; width: 112px; height: 112px; top: -58px; }
-        .linkedin-actions { right: 16px; top: 16px; }
-        .linkedin-actions span { padding: 6px 9px; font-size: 9px; }
-        .instagram-profile-header { grid-template-columns: 72px 52px 1fr; gap: 12px; padding: 18px 16px 12px; }
-        .instagram-avatar { width: 68px; height: 68px; }
+        .linkedin-profile-mock { border-radius: 14px; }
+        .linkedin-cover { height: 84px; }
+        .linkedin-in-badge { right: 14px; top: 14px; width: 30px; height: 30px; font-size: 17px; }
+        .linkedin-profile-body { padding: 56px 14px 16px; }
+        .linkedin-avatar { left: 14px; width: 92px; height: 92px; top: -46px; border-width: 4px; }
+        .linkedin-actions { right: 12px; top: 12px; }
+        .linkedin-actions span { padding: 6px 8px; font-size: 8px; }
+        .linkedin-profile-copy h3 { font-size: 21px; }
+        .linkedin-headline { font-size: 13px; }
+        .linkedin-about { margin: 16px 0 14px; padding: 14px; }
+        .linkedin-about p { font-size: 12px; }
+        .instagram-profile-mock { border-radius: 16px; }
+        .instagram-topbar { padding: 12px 14px; font-size: 12px; }
+        .instagram-profile-header { grid-template-columns: 64px 44px 1fr; gap: 9px; padding: 14px 12px 10px; }
+        .instagram-avatar { width: 60px; height: 60px; }
+        .instagram-private-note strong { font-size: 11px; }
+        .instagram-stat span, .instagram-private-note span { font-size: 9px; }
         .instagram-bio { padding-left: 16px; padding-right: 16px; }
+        .instagram-tabs { padding: 9px; font-size: 8px; }
       }
       .v2-download {
         display: inline-flex;
@@ -6024,6 +6321,38 @@ function ManBlueprintStyles() {
         background: rgba(244,239,229,0.07);
       }
 
+      /* Semantic Fit Rules must survive the generic slate card overrides above. */
+      .man-page.slate .man-page-inner .fit-rule-panel {
+        border: 1px solid transparent !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1) !important;
+      }
+      .man-page.slate .man-page-inner .fit-rule-panel-always {
+        background: rgba(31, 92, 62, 0.30) !important;
+        border-color: rgba(187, 225, 196, 0.48) !important;
+      }
+      .man-page.slate .man-page-inner .fit-rule-panel-avoid {
+        background: rgba(112, 31, 38, 0.38) !important;
+        border-color: rgba(255, 177, 177, 0.62) !important;
+      }
+      .fit-rule-heading { display: flex; align-items: center; gap: 10px; color: #fff !important; }
+      .fit-rule-heading-icon {
+        width: 24px;
+        height: 24px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 999px;
+        font-size: 16px;
+        line-height: 1;
+      }
+      .man-page.slate .man-page-inner .fit-rule-panel-always .fit-rule-heading-icon { background: #dcebdc; color: #235b39 !important; }
+      .man-page.slate .man-page-inner .fit-rule-panel-avoid .fit-rule-heading-icon { background: #ffdada; color: #812f35 !important; }
+      .man-page.slate .man-page-inner .fit-rule-panel-always .fit-rule-item-icon { color: #d9f1dc !important; font-weight: 800; }
+      .man-page.slate .man-page-inner .fit-rule-panel-avoid .fit-rule-item-icon { color: #ffd0d0 !important; font-weight: 800; font-size: 18px; line-height: 1; }
+      .man-page.slate .man-page-inner .fit-support-card {
+        background: rgba(244,239,229,0.08) !important;
+        border: 1px solid rgba(244,239,229,0.16) !important;
+      }
+
       /* ── Responsive ────────────────────────────────────────── */
       @media (max-width: 900px) {
         .man-report,
@@ -6136,14 +6465,41 @@ function ManBlueprintStyles() {
         }
         .formula-grid {
           grid-template-columns: 1fr;
+          gap: 8px;
         }
+        .formula-label { margin-bottom: 12px; }
         .formula-card {
           min-height: 0;
-          padding: 12px;
+          display: grid;
+          grid-template-columns: 22px minmax(72px, 0.65fr) minmax(0, 1.35fr);
+          align-items: center;
+          gap: 8px;
+          padding: 10px 11px;
+          border-radius: 12px;
+        }
+        .formula-card .swatch-dot {
+          width: 18px;
+          height: 18px;
+          margin: 0;
+        }
+        .formula-card .dossier-label {
+          margin: 0;
+          font-size: 8px;
+          line-height: 1.35;
+          letter-spacing: 0.06em;
         }
         .formula-card .display {
-          font-size: 18px;
+          margin: 0;
+          font-size: 14px;
+          line-height: 1.25;
         }
+        .formula-card .shop-links,
+        .formula-card .shop-status,
+        .formula-card .shop-selected,
+        .formula-card .shop-actions,
+        .formula-card .shop-picker,
+        .formula-card .shop-manual,
+        .formula-card .shop-error { grid-column: 2 / -1; }
         .man-outfit-title {
           font-size: clamp(34px, 11vw, 52px);
         }

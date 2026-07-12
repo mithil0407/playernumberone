@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ManReport, { getManReportSlideMeta, type ManReportSlideMeta, type ShoppingSelectPayload } from '@/components/ManReport';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
-import type { ResolvedImageUrls, FaceImageKind } from '@/lib/manImageGenerator';
+import type { ResolvedImageUrls, FaceImageKind, ManV2ImageTarget } from '@/lib/manImageGenerator';
 import type { ComboGridKind } from '@/lib/manComboGridSection';
 import {
   collectGarmentSlots,
@@ -230,10 +230,16 @@ function approvalKeyForPage(pageNumber: number) {
   return `p${pageNumber}`;
 }
 
+function approvalKeyForSlide(slide: ManReportSlideMeta) {
+  return slide.approvalKey;
+}
+
 function pageApproved(approvals: SectionApprovals, slide: ManReportSlideMeta | null | undefined): boolean {
   if (!slide) return false;
-  const pageKey = approvalKeyForPage(slide.pageNumber);
-  if (approvals[pageKey] !== undefined) return Boolean(approvals[pageKey]);
+  const stableKey = approvalKeyForSlide(slide);
+  if (approvals[stableKey] !== undefined) return Boolean(approvals[stableKey]);
+  const legacyPageKey = approvalKeyForPage(slide.legacyPageNumber);
+  if (approvals[legacyPageKey] !== undefined) return Boolean(approvals[legacyPageKey]);
   return Boolean(approvals[slide.sectionKey]);
 }
 
@@ -474,7 +480,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   const togglePageApproval = async (slide: ManReportSlideMeta | null) => {
     if (!report || !slide) return;
-    const pageKey = approvalKeyForPage(slide.pageNumber);
+    const pageKey = approvalKeyForSlide(slide);
     const next = withOutfitSectionFlag({
       ...report.section_approvals,
       [pageKey]: !pageApproved(report.section_approvals, slide),
@@ -489,7 +495,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   const approveAndNext = async () => {
     if (!report || !activeSlide) return;
-    const pageKey = approvalKeyForPage(activeSlide.pageNumber);
+    const pageKey = approvalKeyForSlide(activeSlide);
     const next = withOutfitSectionFlag({
       ...report.section_approvals,
       [pageKey]: true,
@@ -515,7 +521,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     if (!report) return;
     let next: SectionApprovals = { ...report.section_approvals };
     slideMeta.forEach(slide => {
-      next[approvalKeyForPage(slide.pageNumber)] = true;
+      next[approvalKeyForSlide(slide)] = true;
     });
     next = withOutfitSectionFlag(next, slideMeta);
     setReport(r => r ? { ...r, section_approvals: next } : r);
@@ -1003,6 +1009,23 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       optionIndex: responseOptionIndex,
       imageUrl,
     };
+  }, [reportId, imageModel]);
+
+  const regenerateV2Image = useCallback(async (target: ManV2ImageTarget): Promise<ResolvedImageUrls | null> => {
+    const res = await fetch(`/api/man-report/${reportId}/regenerate-v2-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target, imageModel }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.imageUrls) {
+      setError(data.error ?? 'Could not regenerate image.');
+      return null;
+    }
+    const imageUrls = data.imageUrls as ResolvedImageUrls;
+    setError('');
+    setReport(previous => previous ? { ...previous, image_urls: imageUrls, error_message: null } : previous);
+    return imageUrls;
   }, [reportId, imageModel]);
 
   const draftFaceStyleSwap = useCallback(async (input: {
@@ -1704,6 +1727,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 deferSections={viewMode === 'full'}
                 focusPageNumber={viewMode === 'page' ? activePageNumber : undefined}
                 onRegenerateFaceImage={regenerateFaceImage}
+                onRegenerateV2Image={regenerateV2Image}
                 onDraftFaceStyleSwap={draftFaceStyleSwap}
                 onApplyFaceStyleSwap={applyFaceStyleSwap}
                 onRegenerateOutfit={regenerateOutfit}

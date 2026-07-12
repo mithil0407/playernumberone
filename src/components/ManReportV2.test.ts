@@ -130,11 +130,14 @@ function report(): ReportData {
 
 export function runManReportV2Assertions() {
   const slides = getManReportSlideMeta(report());
-  invariant(slides.length === 37, `v2 report has 37 slides, got ${slides.length}`);
+  invariant(slides.length === 36, `v2 report has 36 slides, got ${slides.length}`);
   invariant(slides[0].slideType === 'cover', 'first slide is cover');
   invariant(slides[1].slideType === 'overview', 'second slide is scorecard/overview');
   invariant(slides[2].slideType === 'face_geometry', 'face geometry starts the face pillar');
-  invariant(slides.some(slide => slide.slideType === 'side_profile'), 'side-profile fallback slide exists even when image is absent');
+  invariant(!slides.some(slide => slide.title === 'Side Profile'), 'side-profile slide is removed even when legacy data exists');
+  invariant(slides.every((slide, index) => slide.pageNumber === index + 1), 'visible v2 page numbers stay contiguous');
+  invariant(slides[8].legacyPageNumber === 10, 'the first slide after removed side profile maps to its old approval page');
+  invariant(slides[8].approvalKey === 'slide:frame_training', 'stable approval identity does not depend on page number');
   invariant(!slides.some(slide => slide.slideType === 'combo_grids'), 'combo grids are folded out of standalone v2 slide metadata');
   invariant(slides.filter(slide => slide.slideType === 'outfit').length === 20, 'v2 keeps 20 outfit slides');
   invariant(slides.some(slide => slide.title === 'Social Media Inspiration'), 'customer-facing social slide does not use dating language');

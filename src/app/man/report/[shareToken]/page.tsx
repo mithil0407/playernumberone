@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
-import ManReport from '@/components/ManReport';
-import ManEditPanel from '@/components/ManEditPanel';
+import PublicManReportExperience from '@/components/PublicManReportExperience';
 import { getPublicManReportByShareToken, type PublicLoadedManReport } from '@/lib/manReportLoader';
 
 interface PageProps {
@@ -34,26 +33,14 @@ export default async function PublicReportPage({ params }: PageProps) {
 
       <div
         className="min-h-screen min-h-dvh"
-        style={{ background: '#FBF8F4', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ background: '#FBF8F4' }}
       >
-        <ManReport
+        <PublicManReportExperience
+          shareToken={shareToken}
           data={result.report_data}
           imageUrls={result.image_urls}
-          viewerMode="public"
-          motionMode="standard"
-          deferSections
           shopping={result.shopping_data}
         />
-
-        <ManEditPanel shareToken={shareToken} reportData={result.report_data} />
-
-        {/* Confidentiality footnote — the rebuilt ManReport now renders its own
-            branded footer, so this strip is just a quiet sign-off. */}
-        <div className="px-5 md:px-12 py-6 text-center" style={{ background: '#FBF8F4' }}>
-          <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: '#5A524A' }}>
-            For your eyes only
-          </p>
-        </div>
       </div>
     </>
   );

@@ -1600,6 +1600,99 @@ export async function generateManBlueprintV2Images(
   return { diagnostic, deliverables };
 }
 
+export type ManV2ImageTarget =
+  | 'faceGeometry'
+  | 'frameFront'
+  | 'colourDrape'
+  | 'beforeAfter'
+  | 'linkedinHeadshot'
+  | 'social1'
+  | 'social2'
+  | 'social3';
+
+/** Regenerate one V2 diagnostic/deliverable target without touching unrelated images. */
+export async function regenerateManBlueprintV2Image(
+  reportId: string,
+  submission: Pick<ManIntakeSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>,
+  classification: ClassificationResult,
+  sections: ReportSections,
+  target: ManV2ImageTarget,
+  imageModel: string = MODEL,
+): Promise<Partial<Pick<ManReportImagePaths, 'diagnostic' | 'deliverables'>>> {
+  if (!submission.photo_headshot_url || !submission.photo_fullbody_url) {
+    throw new Error('Both headshot and full-body photos are required before image regeneration');
+  }
+
+  const [{ data: headData, mimeType: headMime }, { data: bodyData, mimeType: bodyMime }] = await Promise.all([
+    fetchAsBase64(submission.photo_headshot_url),
+    fetchAsBase64(submission.photo_fullbody_url),
+  ]);
+  const stamp = Date.now();
+  const generate = async (
+    filename: string,
+    primary: { data: string; mimeType: string },
+    prompt: string,
+    extra?: { data: string; mimeType: string },
+  ) => {
+    const output = await withRetry(
+      () => callGeminiImageEdit(primary.data, primary.mimeType, prompt, imageModel, extra),
+      3,
+      4_000,
+    );
+    return uploadToStorage(reportId, output, filename);
+  };
+
+  if (target === 'faceGeometry' || target === 'frameFront' || target === 'colourDrape') {
+    const useHeadshot = target !== 'frameFront';
+    const path = await generate(
+      `diagnostic_${target}_${stamp}.jpg`,
+      useHeadshot ? { data: headData, mimeType: headMime } : { data: bodyData, mimeType: bodyMime },
+      buildDiagnosticPrompt(target, classification),
+    );
+    return { diagnostic: { [target]: path } };
+  }
+
+  if (target === 'beforeAfter') {
+    const comparison = await withRetry(
+      () => callGeminiImageEdit(
+        bodyData,
+        bodyMime,
+        buildBeforeAfterComparisonPrompt(classification, sections),
+        imageModel,
+        { data: headData, mimeType: headMime },
+      ),
+      3,
+      4_000,
+    );
+    const panels = await splitBeforeAfterComparison(comparison);
+    const [beforeImage, afterImage] = await Promise.all([
+      uploadToStorage(reportId, panels.before, `deliverable_before_${stamp}.jpg`),
+      uploadToStorage(reportId, panels.after, `deliverable_after_${stamp}.jpg`),
+    ]);
+    return { deliverables: { beforeImage, afterImage } };
+  }
+
+  if (target === 'linkedinHeadshot') {
+    const linkedinHeadshot = await generate(
+      `deliverable_linkedin_headshot_${stamp}.jpg`,
+      { data: headData, mimeType: headMime },
+      buildLinkedinHeadshotPrompt(classification),
+    );
+    return { deliverables: { linkedinHeadshot } };
+  }
+
+  const socialIndex = Number(target.slice(-1)) - 1;
+  const socialPath = await generate(
+    `deliverable_social_${socialIndex + 1}_${stamp}.jpg`,
+    { data: bodyData, mimeType: bodyMime },
+    buildSocialMediaInspirationPrompt(classification, sections, socialIndex),
+    { data: headData, mimeType: headMime },
+  );
+  const datingProfileShots: (string | null)[] = [];
+  datingProfileShots[socialIndex] = socialPath;
+  return { deliverables: { datingProfileShots } };
+}
+
 export async function regenerateComboGridImagesFromText(
   reportId: string,
   comboGridText: string,
