@@ -55,6 +55,8 @@ export function articleNode({
   datePublished = "2025-01-01",
   dateModified = "2026-06-04",
   images,
+  reviewedBy = founderPerson,
+  about,
 }: {
   title: string;
   description: string;
@@ -62,6 +64,8 @@ export function articleNode({
   datePublished?: string;
   dateModified?: string;
   images?: string[];
+  reviewedBy?: Record<string, unknown>;
+  about?: string[];
 }) {
   return {
     "@type": "Article",
@@ -69,10 +73,16 @@ export function articleNode({
     headline: title,
     description,
     author: { "@id": `${SITE_URL}/about#founder` },
+    reviewedBy: reviewedBy["@id"]
+      ? { "@id": reviewedBy["@id"] }
+      : reviewedBy,
     publisher: { "@id": `${SITE_URL}/#organization` },
     datePublished,
     dateModified,
     image: images?.length ? images.map(absoluteUrl) : [OG_IMAGE_URL],
+    ...(about?.length ? { about } : {}),
+    isAccessibleForFree: true,
+    inLanguage: "en-IN",
     mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(path) },
   };
 }

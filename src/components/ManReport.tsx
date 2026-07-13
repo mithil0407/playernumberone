@@ -4,7 +4,7 @@
 // Renders the full ICONIK Men's Blueprint report.
 // Design matches the embedded report preview on /man landing page exactly.
 
-import { useState, useMemo, memo, useRef } from 'react';
+import { Fragment, useState, useMemo, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, X, Loader2, AlertCircle, Copy, Upload, RotateCcw } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
@@ -379,6 +379,78 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
         : `slide:${slide.slideType}`,
     };
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Chapters — contiguous slide groups used by the mobile scroll
+// experience (sticky nav, contents sheet, divider bands).
+// ─────────────────────────────────────────────────────────────
+
+export type ManChapterId = 'opening' | 'face' | 'frame' | 'colour' | 'outfits' | 'closing';
+
+export interface ManReportChapter {
+  id: ManChapterId;
+  /** Short name shown in the sticky nav, e.g. "Face". */
+  label: string;
+  /** Editorial title used on divider bands, e.g. "The face." */
+  title: string;
+  slides: ManReportSlideMeta[];
+}
+
+const CHAPTER_DEFS: Record<ManChapterId, { label: string; title: string }> = {
+  opening: { label: 'Opening', title: 'The blueprint.' },
+  face:    { label: 'Face',    title: 'The face.' },
+  frame:   { label: 'Frame',   title: 'The frame.' },
+  colour:  { label: 'Colour',  title: 'The colour.' },
+  outfits: { label: 'Outfits', title: 'The outfits.' },
+  closing: { label: 'Reveal',  title: 'The reveal.' },
+};
+
+const CHAPTER_FOR_SLIDE_TYPE: Record<ManReportSlideMeta['slideType'], ManChapterId> = {
+  cover: 'opening',
+  overview: 'opening',
+  reading_guide: 'opening',
+  snapshot: 'opening',
+  face_geometry: 'face',
+  hairstyle_grid: 'face',
+  beard_grid: 'face',
+  eyewear_direction: 'face',
+  skin_grooming_system: 'face',
+  face: 'face',
+  grooming_direction: 'face',
+  grooming: 'face',
+  frame_analysis: 'frame',
+  frame_training: 'frame',
+  fit_rules: 'frame',
+  body: 'frame',
+  colour_drape: 'colour',
+  colour: 'colour',
+  fabric: 'colour',
+  outfit_system: 'outfits',
+  outfit: 'outfits',
+  combo_grids: 'outfits',
+  shopping: 'closing',
+  before_after: 'closing',
+  linkedin_headshot: 'closing',
+  dating_profile_shots: 'closing',
+  shopping_identity: 'closing',
+  identity: 'closing',
+};
+
+export function getManChapterId(slideType: ManReportSlideMeta['slideType']): ManChapterId {
+  return CHAPTER_FOR_SLIDE_TYPE[slideType] ?? 'closing';
+}
+
+/** Groups slides into contiguous chapters, preserving report order. */
+export function getManReportChapters(slides: ManReportSlideMeta[]): ManReportChapter[] {
+  const chapters: ManReportChapter[] = [];
+  for (const slide of slides) {
+    const id = getManChapterId(slide.slideType);
+    const last = chapters[chapters.length - 1];
+    if (last?.id === id) last.slides.push(slide);
+    else chapters.push({ id, ...CHAPTER_DEFS[id], slides: [slide] });
+  }
+  return chapters;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -4620,6 +4692,10 @@ interface ManReportProps {
   viewerMode?: 'admin' | 'public';
   motionMode?: 'reduced' | 'standard';
   deferSections?: boolean;
+  /** Hides the built-in public sticky header (the mobile scroll shell renders its own nav). */
+  suppressStickyHeader?: boolean;
+  /** Renders editorial divider bands where a new chapter begins (mobile scroll experience, V2 only). */
+  chapterMarkers?: boolean;
   adminMode?: boolean;
   onRegenerateOutfit?: (
     outfitNumber: number,
@@ -4911,6 +4987,19 @@ function ReadingGuideSection({ totalSlides }: { totalSlides: number }) {
   );
 }
 
+// Editorial divider between chapters — dark band on the report's ink
+// background, giving the mobile scroll a sense of parts and rhythm.
+function ManChapterBand({ part, chapterId }: { part: number; chapterId: ManChapterId }) {
+  const def = CHAPTER_DEFS[chapterId];
+  return (
+    <div className="man-chapter-band" aria-hidden="true">
+      <div className="man-mono band-kicker">Part {String(part).padStart(2, '0')} · {def.label}</div>
+      <p className="man-display-it band-title">{def.title}</p>
+      <span className="band-rule" />
+    </div>
+  );
+}
+
 function ManReport({
   data,
   imageUrls,
@@ -4918,6 +5007,8 @@ function ManReport({
   viewerMode = 'public',
   motionMode = 'standard',
   deferSections = false,
+  suppressStickyHeader = false,
+  chapterMarkers = false,
   adminMode,
   onRegenerateOutfit,
   onSaveOutfitText,
@@ -5375,13 +5466,29 @@ function ManReport({
 
   const sectionConfigs = isV2 ? v2SectionConfigs : legacySectionConfigs;
 
+  // Divider bands mark the start of each chapter in the mobile scroll
+  // experience. V2 only — the legacy slide order interleaves chapters.
+  const chapterBands = new Map<string, { part: number; id: ManChapterId }>();
+  if (chapterMarkers && isV2 && !focusPageNumber) {
+    let prev: ManChapterId = 'opening';
+    let part = 0;
+    for (const section of sectionConfigs) {
+      const id = getManChapterId(section.slideType);
+      if (id !== prev) {
+        part += 1;
+        chapterBands.set(section.key, { part, id });
+        prev = id;
+      }
+    }
+  }
+
   return (
     <div
       className="iconik-report man-report overflow-x-hidden"
       style={{ color: INK }}
     >
       {/* Sticky Nav */}
-      {viewerMode === 'public' && !focusPageNumber && (motionMode === 'standard' ? (
+      {viewerMode === 'public' && !focusPageNumber && !suppressStickyHeader && (motionMode === 'standard' ? (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -5446,17 +5553,24 @@ function ManReport({
       {sectionConfigs
         .filter(section => section.key === 's4' ? (!focusPageNumber || slideMeta.find(item => item.pageNumber === focusPageNumber)?.sectionKey === 's4') : shouldRenderSlide(section.slideType))
         .map((section, index) => (
-        <DeferredSection
-          key={section.key}
-          label={section.label}
-          estimatedHeight={section.estimatedHeight}
-          background={section.background}
-          motionMode={motionMode}
-          defer={deferSections && index >= 2}
-          pageNumber={section.key === 's4' ? undefined : pageNumberFor(section.slideType)}
-        >
-          {section.node}
-        </DeferredSection>
+        <Fragment key={section.key}>
+          {chapterBands.has(section.key) && (
+            <ManChapterBand
+              part={chapterBands.get(section.key)!.part}
+              chapterId={chapterBands.get(section.key)!.id}
+            />
+          )}
+          <DeferredSection
+            label={section.label}
+            estimatedHeight={section.estimatedHeight}
+            background={section.background}
+            motionMode={motionMode}
+            defer={deferSections && index >= 2}
+            pageNumber={section.key === 's4' ? undefined : pageNumberFor(section.slideType)}
+          >
+            {section.node}
+          </DeferredSection>
+        </Fragment>
       ))}
 
       {/* Footer */}
@@ -5523,6 +5637,33 @@ function ManBlueprintStyles() {
 
       .man-cover {
         min-height: 720px;
+      }
+
+      /* ── Chapter divider bands (mobile scroll experience) ──── */
+      .man-chapter-band {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 88px 24px 66px;
+        text-align: center;
+        color: #F4EFE5;
+      }
+      .man-chapter-band .band-kicker {
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        opacity: 0.5;
+      }
+      .man-chapter-band .band-title {
+        font-size: clamp(38px, 10vw, 56px);
+        margin: 14px 0 0;
+        line-height: 1;
+      }
+      .man-chapter-band .band-rule {
+        display: block;
+        width: 44px;
+        height: 1px;
+        margin: 28px auto 0;
+        background: rgba(244, 239, 229, 0.35);
       }
 
       /* ── Grain texture ─────────────────────────────────────── */
@@ -5811,8 +5952,8 @@ function ManBlueprintStyles() {
       .instagram-profile-mock { width: min(100%, 440px); margin: 0 auto; overflow: hidden; border: 1px solid #dbdbdb; border-radius: 24px; background: #fff; color: #1b1b1b; box-shadow: 0 18px 52px rgba(44,38,34,0.1); }
       .instagram-topbar { display: flex; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #efefef; font: 600 14px/1.2 Arial, sans-serif; }
       .instagram-profile-header { display: grid; grid-template-columns: 94px 70px 1fr; gap: 18px; align-items: center; padding: 22px 28px 14px; }
-      .instagram-avatar { width: 86px; height: 86px; padding: 3px; overflow: hidden; border: 3px solid transparent; border-radius: 50%; background: linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7) border-box; display: grid; place-items: center; font: 700 10px/1 Arial, sans-serif; }
-      .instagram-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: 50% 22%; }
+      .instagram-avatar { box-sizing: border-box; width: 86px; height: 86px; padding: 3px; overflow: hidden; border: 3px solid transparent; border-radius: 50%; background: linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7) border-box; display: grid; place-items: center; font: 700 10px/1 Arial, sans-serif; }
+      .instagram-avatar img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; border-radius: 50%; object-fit: cover; object-position: center; }
       .instagram-stat, .instagram-private-note { display: flex; flex-direction: column; gap: 3px; }
       .instagram-stat strong { font: 700 18px/1 Arial, sans-serif; }
       .instagram-stat span, .instagram-private-note span { color: #737373; font: 400 11px/1.35 Arial, sans-serif; }

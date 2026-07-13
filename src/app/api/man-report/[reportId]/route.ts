@@ -134,9 +134,10 @@ export async function PATCH(
     if (candidate?.classification && candidate.sections?.s4_outfits) {
       const checked = withManReportSection4Qa(candidate);
       update.report_data = checked;
-      if (!manReportOutfitQualityGatePassed(checked)) {
+      if (!manReportOutfitQualityGatePassed(checked) && body.quality_override !== true) {
         return NextResponse.json({
           error: 'This v2 outfit portfolio is below the ICONIK 9/10 quality floor. Resolve the outfit QA issues before sending.',
+          requiresQualityOverride: true,
           quality: checked.qa?.section4?.quality,
           issues: checked.qa?.section4?.issues.filter(item => item.severity === 'error') ?? [],
         }, { status: 400 });

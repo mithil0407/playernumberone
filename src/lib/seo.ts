@@ -20,9 +20,13 @@ type BuildMetadataOptions = {
     height: number;
     alt: string;
   };
+  publishedTime?: string;
+  modifiedTime?: string;
+  authors?: string[];
 };
 
 export function absoluteUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) return path;
   if (!path || path === "/") return SITE_URL;
   return `${SITE_URL}${path}`;
 }
@@ -40,6 +44,9 @@ export function buildMetadata({
   type = "website",
   noIndex = false,
   image,
+  publishedTime,
+  modifiedTime,
+  authors,
 }: BuildMetadataOptions): Metadata {
   const url = absoluteUrl(path);
   const fullTitle = withSiteTitle(title);
@@ -72,6 +79,13 @@ export function buildMetadata({
       siteName: SITE_NAME,
       locale,
       images: [socialImage],
+      ...(type === "article"
+        ? {
+            publishedTime,
+            modifiedTime,
+            authors: authors?.map(absoluteUrl),
+          }
+        : {}),
     },
     twitter: {
       card: "summary_large_image",
@@ -93,6 +107,30 @@ export function buildMetadata({
         }
       : undefined,
   };
+}
+
+export type BuildArticleMetadataOptions = Omit<
+  BuildMetadataOptions,
+  "type" | "publishedTime" | "modifiedTime" | "authors"
+> & {
+  datePublished: string;
+  dateModified: string;
+  authorPath?: string;
+};
+
+export function buildArticleMetadata({
+  datePublished,
+  dateModified,
+  authorPath = "/about#founder",
+  ...options
+}: BuildArticleMetadataOptions): Metadata {
+  return buildMetadata({
+    ...options,
+    type: "article",
+    publishedTime: datePublished,
+    modifiedTime: dateModified,
+    authors: [authorPath],
+  });
 }
 
 export const noIndexMetadata: Metadata = {

@@ -765,7 +765,7 @@ function buildLinkedinHeadshotPrompt(classification: ClassificationResult): stri
   return `Create a professional LinkedIn headshot from the uploaded headshot. Preserve the client's exact identity, facial features, skin tone, and natural proportions. Apply realistic polished grooming: ${classification.face.hairstyle_recommendations?.[0] ?? 'clean haircut or scalp grooming'} and ${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? 'clean facial hair lines'}.
 ${REALISTIC_MALE_GROOMING_RULE}
 
-Wardrobe: premium blazer, shirt, or overshirt near the face in ${best?.name ?? 'the strongest palette colour'} ${best?.hex ?? ''}, no logos. Studio background in warm neutral slate, soft professional light, confident approachable expression, crop from chest to head, profile-ready resolution. ${ABSOLUTE_NO_TEXT_RULE}`;
+Wardrobe: premium blazer, shirt, or overshirt near the face in ${best?.name ?? 'the strongest palette colour'} ${best?.hex ?? ''}, no logos. Studio background in warm neutral slate, soft professional light, confident approachable expression. Compose as a square 1:1 headshot with the face centred, balanced headroom, shoulders visible, and generous safe space on every side so the portrait remains natural inside a circular LinkedIn or Instagram crop. Keep the head and chin comfortably away from the crop edge. Profile-ready resolution. ${ABSOLUTE_NO_TEXT_RULE}`;
 }
 
 function buildSocialMediaInspirationPrompt(

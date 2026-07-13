@@ -570,7 +570,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   // ── Send to client ─────────────────────────────────────────────────────
 
   const sendToClient = async () => {
-    if (!report || !allPagesApproved(report.section_approvals, slideMeta) || !qualityGatePassed) return;
+    if (!report || !allPagesApproved(report.section_approvals, slideMeta)) return;
+    if (!qualityGatePassed) {
+      const issueSummary = outfitQaErrors
+        .filter(item => item.code !== 'quality_floor')
+        .slice(0, 6)
+        .map(item => `• ${item.message}`)
+        .join('\n');
+      const confirmed = window.confirm(
+        `Automated outfit QA scored this report ${outfitQuality?.overallScore?.toFixed(1) ?? 'below 9.0'}/10.\n\n${issueSummary || outfitQuality?.failedCriteria?.join('\n') || 'Quality checks need review.'}\n\nYou have approved every report page. Send it anyway?`,
+      );
+      if (!confirmed) return;
+    }
     // Soft gate only: missing/flagged shopping links warn but never block send.
     if (shoppingSummary) {
       const linkIssues = [
@@ -589,7 +600,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       const res  = await fetch(`/api/man-report/${reportId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'sent' }),
+        body: JSON.stringify({
+          status: 'sent',
+          quality_override: !qualityGatePassed,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -1144,9 +1158,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
 
   const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
   const outfitQuality = report?.report_data?.qa?.section4?.quality;
+  const outfitQaErrors = (report?.report_data?.qa?.section4?.issues ?? []).filter(item => item.severity === 'error');
   const qualityGateRequired = report?.report_data?.outfit_library?.version === 'v2-9plus';
   const qualityGatePassed = !qualityGateRequired || Boolean(outfitQuality?.passed);
-  const ready        = allPagesApproved(approvals, slideMeta) && qualityGatePassed;
+  const ready        = allPagesApproved(approvals, slideMeta);
   const isGenerating = report?.status === 'generating';
   const isError      = report?.status === 'error';
   const isStuck      = isGenerating && elapsedSecs > 600;
@@ -1596,7 +1611,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>{selectedSlideTitle}</h2>
                 <Pill tone={hasAllImages ? 'success' : 'gold'}>Images {imageDoneTotal}/{imageExpectedTotal}</Pill>
-                {qualityGateRequired && <Pill tone={qualityGatePassed ? 'success' : 'error'}>Outfit Quality {outfitQuality?.overallScore?.toFixed(1) ?? 'Pending'}/10</Pill>}
+                {qualityGateRequired && <Pill tone={qualityGatePassed ? 'success' : 'gold'}>Outfit Quality {outfitQuality?.overallScore?.toFixed(1) ?? 'Pending'}/10</Pill>}
                 {shoppingSummary && (shoppingSummary.hasState || shoppingSummary.inFlight) && (
                   <Pill tone={
                     shoppingSummary.inFlight ? 'gold'
@@ -1616,7 +1631,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               {report.error_message && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
               {qualityGateRequired && !qualityGatePassed && outfitQuality?.failedCriteria?.length ? (
-                <p className="luxury-body text-xs mt-2" style={{ color: S.error }}>{outfitQuality.failedCriteria.join(' ')}</p>
+                <div className="luxury-body text-xs mt-2 space-y-1" style={{ color: S.gold }}>
+                  <p>{outfitQuality.failedCriteria.filter(item => item !== 'Deterministic outfit QA has blocking errors.').join(' ')}</p>
+                  {outfitQaErrors.filter(item => item.code !== 'quality_floor').length > 0 && (
+                    <p>{outfitQaErrors.filter(item => item.code !== 'quality_floor').map(item => item.message).join(' ')}</p>
+                  )}
+                  <p>Review the flagged outfits. Once every page is approved, Send will ask for confirmation instead of blocking the report.</p>
+                </div>
               ) : null}
               {!isGenerating && report.progress_stage && <p className="luxury-body text-xs mt-2" style={{ color: isImageStuck ? S.gold : S.muted }}>{STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')} · {imageProgressText}</p>}
             </div>
@@ -1761,7 +1782,7 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
               <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
               <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success"><CheckCheck size={14} /> Approve and Next</ActionButton>
               <ActionButton onClick={approveAll} disabled={isGenerating} tone="success"><CheckCheck size={14} /> Approve All</ActionButton>
-              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={!qualityGatePassed ? 'Outfit quality must pass 9/10 before sending.' : ready ? 'Send the report email to the client.' : 'Approve every visible page before sending.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
+              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={!ready ? 'Approve every visible page before sending.' : !qualityGatePassed ? 'Review the automated outfit findings, then confirm whether to send.' : 'Send the report email to the client.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
             </div>
           </div>
         </footer>

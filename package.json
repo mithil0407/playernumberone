@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "seo:images": "node scripts/build-seo-images.mjs",
     "indexnow": "node scripts/submit-indexnow.mjs",
     "migrate:au-globe": "node scripts/migrate-au-globe-to-primary.mjs",
     "start": "next start",

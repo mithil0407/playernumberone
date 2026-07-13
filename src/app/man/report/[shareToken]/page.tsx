@@ -4,6 +4,7 @@ import { getPublicManReportByShareToken, type PublicLoadedManReport } from '@/li
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 type LoadedPublicReport = PublicLoadedManReport & {
@@ -16,8 +17,9 @@ async function getReport(shareToken: string): Promise<LoadedPublicReport | null>
   return report as LoadedPublicReport;
 }
 
-export default async function PublicReportPage({ params }: PageProps) {
+export default async function PublicReportPage({ params, searchParams }: PageProps) {
   const { shareToken } = await params;
+  const query = (await searchParams) ?? {};
   const result = await getReport(shareToken);
 
   if (!result) notFound();
@@ -40,6 +42,7 @@ export default async function PublicReportPage({ params }: PageProps) {
           data={result.report_data}
           imageUrls={result.image_urls}
           shopping={result.shopping_data}
+          forceDeck={query.view === 'deck'}
         />
       </div>
     </>
