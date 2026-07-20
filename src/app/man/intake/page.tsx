@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
-import { saveManIntakeSubmission, uploadManIntakePhoto } from '@/lib/supabaseMan';
+import {
+    getManIntakePhotoValidationError,
+    ManIntakeApiError,
+    saveManIntakeSubmission,
+    uploadManIntakePhoto,
+} from '@/lib/supabaseMan';
 import { trackPageView, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
 import { MAN_PRICING } from '@/lib/manPricing';
 
@@ -423,9 +428,35 @@ function CheckCard({ selected, onClick, children }: { selected: boolean; onClick
     );
 }
 
-function PhotoUploadField({ label, instruction, file, onChange, required }: {
-    label: string; instruction: string; file: File | null; onChange: (file: File | null) => void; required?: boolean;
+function PhotoUploadField({ label, instruction, file, onChange, error, onError, required }: {
+    label: string;
+    instruction: string;
+    file: File | null;
+    onChange: (file: File | null) => void;
+    error?: string;
+    onError: (error: string) => void;
+    required?: boolean;
 }) {
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0] ?? null;
+        if (!selectedFile) {
+            onError('');
+            onChange(null);
+            return;
+        }
+
+        const validationError = getManIntakePhotoValidationError(selectedFile);
+        if (validationError) {
+            onError(validationError);
+            onChange(null);
+            event.target.value = '';
+            return;
+        }
+
+        onError('');
+        onChange(selectedFile);
+    };
+
     return (
         <label className="block cursor-pointer group">
             <div
@@ -453,8 +484,9 @@ function PhotoUploadField({ label, instruction, file, onChange, required }: {
                         <div className="iconik-micro mt-1 opacity-35" style={{ color: '#2C2622' }}>JPG · PNG · HEIC · Max 20MB</div>
                     </div>
                 )}
-                <input type="file" accept=".jpg,.jpeg,.png,.heic,.heif" className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} required={required} />
+                <input type="file" accept=".jpg,.jpeg,.png,.heic,.heif" className="hidden" onChange={handleFileChange} required={required} />
             </div>
+            {error && <p className="mt-3 text-center text-sm" style={{ color: '#A13D46' }}>{error}</p>}
         </label>
     );
 }
@@ -468,6 +500,7 @@ function ManIntakePageInner() {
     const [submitError, setSubmitError] = useState('');
     const [direction, setDirection] = useState(1);
     const [contactPrefilled, setContactPrefilled] = useState(false);
+    const [photoErrors, setPhotoErrors] = useState({ fullBody: '', headshot: '', sideProfile: '' });
 
     const [form, setForm] = useState<FormState>({
         email: '',
@@ -561,19 +594,38 @@ function ManIntakePageInner() {
     const handleSubmit = async () => {
         setSubmitting(true);
         setSubmitError('');
+        let submissionStage: 'upload' | 'save' = 'upload';
         try {
             if (!form.photoFullBody || !form.photoHeadshot) {
                 setSubmitError('Please upload both your full body photo and headshot before submitting.');
                 return;
             }
 
+            const selectedPhotoError = [
+                getManIntakePhotoValidationError(form.photoFullBody),
+                getManIntakePhotoValidationError(form.photoHeadshot),
+                form.photoSideProfile ? getManIntakePhotoValidationError(form.photoSideProfile) : null,
+            ].find(Boolean);
+            if (selectedPhotoError) {
+                setSubmitError(selectedPhotoError);
+                return;
+            }
+
             // Upload required photos plus the optional side profile in parallel.
             const ts = Date.now();
+            const uploadPhoto = async (file: File, fileName: string, label: string) => {
+                try {
+                    return await uploadManIntakePhoto(file, fileName);
+                } catch (error) {
+                    const detail = error instanceof Error ? error.message : 'Upload failed';
+                    throw new Error(`${label}: ${detail}`);
+                }
+            };
             const [photoFullBodyUrl, photoHeadshotUrl, photoSideProfileUrl] = await Promise.all([
-                uploadManIntakePhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`),
-                uploadManIntakePhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`),
+                uploadPhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`, 'Full body photo'),
+                uploadPhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`, 'Headshot'),
                 form.photoSideProfile
-                    ? uploadManIntakePhoto(form.photoSideProfile, `${ts}_side_profile_${form.photoSideProfile.name.replace(/\.[^.]+$/, '')}.jpg`)
+                    ? uploadPhoto(form.photoSideProfile, `${ts}_side_profile_${form.photoSideProfile.name.replace(/\.[^.]+$/, '')}.jpg`, 'Side-profile photo')
                     : Promise.resolve<string | null>(null),
             ]);
 
@@ -627,6 +679,7 @@ function ManIntakePageInner() {
                 free_text_note: form.freeTextNote || undefined,
             };
 
+            submissionStage = 'save';
             await saveManIntakeSubmission(submissionPayload);
 
             trackCompleteRegistration(MAN_PRICING.IN.basePrice, 'ICONIK Blueprint Man — Intake Submitted', MAN_PRICING.IN.currency);
@@ -647,7 +700,14 @@ function ManIntakePageInner() {
 
         } catch (err) {
             console.error('Man intake submit error:', err);
-            setSubmitError('We could not submit your intake. Please check both photos and try again, or email help.iconikfashion@gmail.com');
+            if (submissionStage === 'upload') {
+                const detail = err instanceof Error ? err.message : 'One or more uploads failed.';
+                setSubmitError(`We could not upload your photos. ${detail} Please try again.`);
+            } else if (err instanceof ManIntakeApiError && err.code === 'INVALID_INTAKE') {
+                setSubmitError('We could not validate your intake. Your answers are still here; please review them and retry.');
+            } else {
+                setSubmitError('Your photos were uploaded, but we could not save your intake. Your answers are still here; please retry or email help.iconikfashion@gmail.com.');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -802,12 +862,27 @@ function ManIntakePageInner() {
                                             <span className="px-2 py-0.5 rounded-full iconik-micro" style={{ background: 'rgba(44,38,34,0.6)', color: '#F4EFE5' }}>Example</span>
                                         </div>
                                     </div>
-                                    <PhotoUploadField label="Full body photo" instruction="Stand facing camera · Natural light · Fitted clothes · No baggy fits" file={form.photoFullBody} onChange={f => setForm(p => ({ ...p, photoFullBody: f }))} required />
+                                    <PhotoUploadField
+                                        label="Full body photo"
+                                        instruction="Stand facing camera · Natural light · Fitted clothes · No baggy fits"
+                                        file={form.photoFullBody}
+                                        onChange={f => setForm(p => ({ ...p, photoFullBody: f }))}
+                                        error={photoErrors.fullBody}
+                                        onError={error => setPhotoErrors(current => ({ ...current, fullBody: error }))}
+                                        required
+                                    />
                                     {!form.photoFullBody && <p className="iconik-micro mt-3 text-center" style={{ color: '#94A6AD' }}>A full-length photo is required to complete your Blueprint analysis.</p>}
                                     <div className="mt-7 pt-7" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
                                         <h3 className="iconik-display mb-2" style={{ fontSize: '20px', color: '#2C2622', lineHeight: 1.2 }}>Optional side-profile photo.</h3>
                                         <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.52, marginBottom: '18px', lineHeight: 1.65 }}>Stand sideways in the same fitted clothes. This lets us build a more honest posture and midsection tailoring slide. Skip it if you do not have one.</p>
-                                        <PhotoUploadField label="Side profile photo" instruction="Side view · Head to toe · Same outfit if possible · Optional" file={form.photoSideProfile} onChange={f => setForm(p => ({ ...p, photoSideProfile: f }))} />
+                                        <PhotoUploadField
+                                            label="Side profile photo"
+                                            instruction="Side view · Head to toe · Same outfit if possible · Optional"
+                                            file={form.photoSideProfile}
+                                            onChange={f => setForm(p => ({ ...p, photoSideProfile: f }))}
+                                            error={photoErrors.sideProfile}
+                                            onError={error => setPhotoErrors(current => ({ ...current, sideProfile: error }))}
+                                        />
                                     </div>
                                 </div>
                             )}
@@ -823,7 +898,15 @@ function ManIntakePageInner() {
                                             <span className="px-2 py-0.5 rounded-full iconik-micro" style={{ background: 'rgba(44,38,34,0.6)', color: '#F4EFE5' }}>Example</span>
                                         </div>
                                     </div>
-                                    <PhotoUploadField label="Headshot / selfie" instruction="Face the camera · No sunglasses · Natural or indoor light · Selfie is fine" file={form.photoHeadshot} onChange={f => setForm(p => ({ ...p, photoHeadshot: f }))} required />
+                                    <PhotoUploadField
+                                        label="Headshot / selfie"
+                                        instruction="Face the camera · No sunglasses · Natural or indoor light · Selfie is fine"
+                                        file={form.photoHeadshot}
+                                        onChange={f => setForm(p => ({ ...p, photoHeadshot: f }))}
+                                        error={photoErrors.headshot}
+                                        onError={error => setPhotoErrors(current => ({ ...current, headshot: error }))}
+                                        required
+                                    />
                                 </div>
                             )}
 

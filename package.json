@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "check:man-intake-schema": "node scripts/check-man-intake-schema.mjs",
+    "test:man-intake": "node --experimental-strip-types --test src/lib/manIntakeSubmission.test.ts",
     "seo:images": "node scripts/build-seo-images.mjs",
     "indexnow": "node scripts/submit-indexnow.mjs",
     "migrate:au-globe": "node scripts/migrate-au-globe-to-primary.mjs",

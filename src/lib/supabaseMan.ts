@@ -1,6 +1,9 @@
 // supabaseMan.ts — uses the main Supabase project, man_* tables
 
 import { supabase as supabaseMain } from '@/lib/supabase';
+import { getManIntakePhotoValidationError } from '@/lib/manIntakePhoto';
+
+export { getManIntakePhotoValidationError, MAN_INTAKE_MAX_PHOTO_BYTES } from '@/lib/manIntakePhoto';
 
 export { supabaseMain as supabaseMan };
 
@@ -53,6 +56,20 @@ export interface ManIntakeSubmission {
 
 // ── Database operations ────────────────────────────────────────────────────
 
+export type ManIntakeApiErrorCode = 'INVALID_INTAKE' | 'INTAKE_SAVE_FAILED' | 'UNKNOWN_ERROR';
+
+export class ManIntakeApiError extends Error {
+    code: ManIntakeApiErrorCode;
+    status: number;
+
+    constructor(message: string, code: ManIntakeApiErrorCode = 'UNKNOWN_ERROR', status = 500) {
+        super(message);
+        this.name = 'ManIntakeApiError';
+        this.code = code;
+        this.status = status;
+    }
+}
+
 export const saveManIntakeSubmission = async (submission: ManIntakeSubmission) => {
     const response = await fetch('/api/man-intake-submit', {
         method: 'POST',
@@ -60,8 +77,18 @@ export const saveManIntakeSubmission = async (submission: ManIntakeSubmission) =
         body: JSON.stringify(submission),
     });
 
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to save intake submission');
+    const result = await response.json().catch(() => ({})) as {
+        data?: ManIntakeSubmission;
+        error?: string;
+        code?: ManIntakeApiErrorCode;
+    };
+    if (!response.ok) {
+        throw new ManIntakeApiError(
+            result.error || 'Failed to save intake submission',
+            result.code || 'UNKNOWN_ERROR',
+            response.status,
+        );
+    }
     return result.data;
 };
 
@@ -69,12 +96,8 @@ export const uploadManIntakePhoto = async (
     file: File,
     fileName: string
 ): Promise<string> => {
-    if (file.size === 0) {
-        throw new Error('Cannot upload an empty photo file');
-    }
-    if (file.type && !file.type.startsWith('image/')) {
-        throw new Error('Only image files can be uploaded');
-    }
+    const validationError = getManIntakePhotoValidationError(file);
+    if (validationError) throw new Error(validationError);
 
     const storagePath = `public/${fileName}`;
     const contentType = file.type || 'application/octet-stream';

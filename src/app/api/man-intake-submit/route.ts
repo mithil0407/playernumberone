@@ -3,33 +3,85 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import {
+    persistManIntakeWithRollback,
+    validateManIntakeSubmission,
+} from '@/lib/manIntakeSubmission';
+
+const PHOTO_BUCKET = 'man-intake-photos';
+
+function invalidIntake(error: string) {
+    return NextResponse.json({
+        success: false,
+        code: 'INVALID_INTAKE',
+        error,
+    }, { status: 400 });
+}
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-
-        if (!body.customer_email) {
-            return NextResponse.json({ error: 'Missing customer_email' }, { status: 400 });
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return invalidIntake('The request body must be valid JSON.');
         }
 
-        if (!body.photo_fullbody_url || !body.photo_headshot_url) {
-            return NextResponse.json({ error: 'Both full body and headshot photos are required' }, { status: 400 });
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const validation = validateManIntakeSubmission(body, supabaseUrl);
+        if (!validation.ok) {
+            return invalidIntake(validation.error);
         }
 
-        const { data, error } = await supabaseAdmin
-            .from('man_intake_submissions')
-            .insert([body])
-            .select()
-            .single();
+        const result = await persistManIntakeWithRollback({
+            submission: validation.data,
+            supabaseUrl,
+            insert: async (payload) => {
+                const { data, error } = await supabaseAdmin
+                    .from('man_intake_submissions')
+                    .insert([payload])
+                    .select()
+                    .single();
+                return { data, error };
+            },
+            remove: async (paths) => {
+                const { error } = await supabaseAdmin.storage.from(PHOTO_BUCKET).remove(paths);
+                return { error };
+            },
+        });
 
-        if (error) {
-            console.error('Man intake DB error:', error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+        if (result.error) {
+            console.error('Man intake persistence failed', {
+                stage: 'database_insert',
+                code: result.error.code,
+                message: result.error.message,
+                details: result.error.details,
+                hint: result.error.hint,
+                uploadedPhotosRolledBack: result.removedPaths.length,
+            });
+            if (result.cleanupError) {
+                console.error('Man intake photo rollback failed', {
+                    stage: 'storage_cleanup',
+                    code: result.cleanupError.code,
+                    message: result.cleanupError.message,
+                    details: result.cleanupError.details,
+                    hint: result.cleanupError.hint,
+                });
+            }
+            return NextResponse.json({
+                success: false,
+                code: 'INTAKE_SAVE_FAILED',
+                error: 'We could not save your intake. Your answers are still on this page; please retry.',
+            }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, data });
+        return NextResponse.json({ success: true, data: result.data });
     } catch (error) {
         console.error('Man intake submit API error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({
+            success: false,
+            code: 'INTAKE_SAVE_FAILED',
+            error: 'We could not save your intake. Your answers are still on this page; please retry.',
+        }, { status: 500 });
     }
 }
