@@ -26,6 +26,7 @@ function PublicReportPendingPage({
   return (
     <>
       <meta httpEquiv="refresh" content="20" />
+      <meta name="referrer" content="no-referrer" />
       <div
         className="iconik-theme min-h-screen min-h-dvh flex items-center justify-center px-6"
         style={{ background: 'var(--luxury-warm-white)', color: 'var(--luxury-charcoal)' }}
@@ -65,6 +66,7 @@ export default async function StylistPublicReportPage({ params }: PageProps) {
 
   return (
     <>
+      <meta name="referrer" content="no-referrer" />
       <style>{`
         html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
         body { overscroll-behavior-y: none; }
@@ -97,6 +99,7 @@ export async function generateMetadata({ params }: PageProps) {
       title: 'Your ICONIK Blueprint is being prepared',
       description: 'Your personalised ICONIK women Style Blueprint is being prepared.',
       robots: { index: false, follow: false },
+      referrer: 'no-referrer',
     };
   }
 
@@ -107,5 +110,6 @@ export async function generateMetadata({ params }: PageProps) {
     title: `Your ICONIK Blueprint — ${titleSuffix}`,
     description: `Your personalised ICONIK women Style Blueprint.`,
     robots: { index: false, follow: false },
+    referrer: 'no-referrer',
   };
 }

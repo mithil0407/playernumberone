@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
   generateStylistBlueprintReplacementOutfits,
@@ -23,6 +22,7 @@ import {
   isScienceBlueprintReport,
   isStylistOutfitScienceHarnessEnabled,
 } from '@/lib/stylistOutfitScience';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -48,12 +48,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
 
@@ -93,6 +91,7 @@ export async function POST(
     if (submissionError || !submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
+    const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -108,16 +107,16 @@ export async function POST(
     const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
     const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
     const outfitCount = getStylistBlueprintOutfitCount(reportData);
-    const culturalMode = getStylistOutfitCulturalMode(submission as StylistIntakeSubmission);
+    const culturalMode = getStylistOutfitCulturalMode(resolvedSubmission);
     let nextReportData: StylistBlueprintReportData | null = null;
     let lastValidationError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       const scienceEnabled = isScienceBlueprintReport(reportData) || isStylistOutfitScienceHarnessEnabled();
       const scienceResult = scienceEnabled
-        ? await generateStylistOutfitScienceApplication(submission as StylistIntakeSubmission, reportData)
+        ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
         : null;
       const replacementPages = scienceResult?.pages ?? await generateStylistBlueprintReplacementOutfits(
-        submission as StylistIntakeSubmission,
+        resolvedSubmission,
         reportData,
         attempt === 0 ? reason : `${reason || 'Admin requested replacement outfits.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate the outfit set and fix that issue.`,
       );
@@ -155,6 +154,9 @@ export async function POST(
         report_data: nextReportData,
         image_urls: clearedImagePaths,
         section_approvals: nextApprovals,
+        status: 'in_review',
+        published_at: null,
+        delivered_at: null,
         progress_stage: null,
         error_message: null,
         updated_at: new Date().toISOString(),

@@ -320,7 +320,7 @@ function MobileScrollExperience({ shareToken, data, imageUrls, shopping }: Omit<
         shopping={shopping}
       />
 
-      <RecapBand data={data} />
+      <RecapBand data={data} onBrowse={openToc} />
       <ManEditPanel shareToken={shareToken} reportData={data} />
       <ConfidentialityFootnote />
 
@@ -691,14 +691,18 @@ function MobileScrollExperience({ shareToken, data, imageUrls, shopping }: Omit<
           line-height: 1.3;
           text-align: right;
         }
-        .man-scroll-recap-next {
+        .man-scroll-recap-browse {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          margin: 34px 0 0;
+          margin-top: 34px;
+          padding: 11px 22px;
+          border: 1px solid rgba(244, 239, 229, 0.28);
+          border-radius: 999px;
+          color: ${IVORY};
           font-size: 11px;
-          letter-spacing: 0.04em;
-          color: rgba(244, 239, 229, 0.66);
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -764,9 +768,9 @@ function TocSheet({
   );
 }
 
-// A closing beat after the last page: the blueprint in one glance,
-// flowing straight into Iconik Edit below.
-function RecapBand({ data }: { data: ManReportProps['data'] }) {
+// A closing beat after the last page: the blueprint in one glance.
+// When Iconik Edit is active for this report, its panel renders below.
+function RecapBand({ data, onBrowse }: { data: ManReportProps['data']; onBrowse: () => void }) {
   const cls = data.classification;
   const palette = (cls.colour.primary_palette ?? []).slice(0, 5);
   const facts = [
@@ -796,10 +800,9 @@ function RecapBand({ data }: { data: ManReportProps['data'] }) {
           ))}
         </div>
       )}
-      <p className="man-scroll-recap-next">
-        Questions, swaps, monthly edits — continue with Iconik Edit
-        <ChevronDown size={14} />
-      </p>
+      <button type="button" className="man-scroll-recap-browse" onClick={onBrowse}>
+        Revisit a chapter
+      </button>
     </section>
   );
 }

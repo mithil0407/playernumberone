@@ -1,18 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import RegisteredSeoArticle from "@/components/seo/RegisteredSeoArticle";
+import { buildSeoArticleMetadata } from "@/lib/seoArticle";
+import { getSeoArticle } from "@/lib/seoArticleRegistry";
 
-export const metadata: Metadata = {
-  title: "Office Wear for Indian Women: The Complete Professional Style Guide — Iconik",
-  description: "The complete professional style guide for Indian working women. Body-type-specific office outfit formulas, best fabrics for Indian work culture, and how to build a professional wardrobe that actually works.",
-  keywords: "office wear Indian women, professional fashion India, work clothes Indian women 2025, corporate outfit Indian women, what to wear work India",
-  alternates: { canonical: "https://www.iconik.pro/style-guides/office-wear-indian-women" },
-  openGraph: {
-    title: "Office Wear for Indian Women: The Complete Professional Style Guide — Iconik",
-    description: "Body-type-specific office outfit formulas for Indian working women — ethnic and western wear, fabrics, and the 10-piece professional capsule.",
-    url: "https://www.iconik.pro/style-guides/office-wear-indian-women",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Office wear guide for Indian women — Iconik" }],
-  },
-};
+const article = getSeoArticle("/style-guides/office-wear-indian-women");
+export const metadata = buildSeoArticleMetadata(article);
 
 const faqs = [
   {
@@ -34,63 +25,18 @@ const faqs = [
 ];
 
 export default function OfficeWearIndianWomenPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "headline": "Office Wear for Indian Women: The Complete Professional Style Guide",
-        "description": "Body-type-specific professional style guide for Indian working women.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/office-wear-indian-women" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Style Guides", "item": "https://www.iconik.pro/style-guides" },
-          { "@type": "ListItem", "position": 3, "name": "Office Wear for Indian Women", "item": "https://www.iconik.pro/style-guides/office-wear-indian-women" },
-        ],
-      },
-    ],
-  };
-
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
-
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/style-guides" className="hover:underline">Style Guides</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Office Wear for Indian Women</li>
-            </ol>
-          </nav>
-
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Office Wear for Indian Women: The Complete Professional Style Guide
-            </h1>
-            <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Indian office wear sits at the intersection of professionalism, cultural context, climate, and body-specific fit. Generic workwear guides built for Western offices miss every one of these variables. This guide builds your professional wardrobe from first principles — using your silhouette, your undertone, and your specific work environment.
-            </p>
-          </header>
-
-          <section className="mb-12">
+    <RegisteredSeoArticle
+      article={article}
+      faqs={faqs}
+      quickAnswer={<>Professional dressing begins with fit and context—not with choosing between ethnic and western clothing.</>}
+      quickAnswerDetail={<>Use clean construction, climate-appropriate fabric, a controlled colour palette, and an outfit formula that supports your silhouette and workplace culture.</>}
+      cta={{
+        title: "Build a professional wardrobe that already works together.",
+        description: "Your Iconik Style Blueprint includes office outfit formulas calibrated to your silhouette, undertone, role, and real dress code.",
+      }}
+    >
+          <section id="why-generic-advice-fails" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Does Generic Work Fashion Advice Fail Indian Women?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Western workwear guides assume air-conditioned offices with European temperatures, western garment categories, and a limited size range. Indian professional culture spans a much wider spectrum: traditional corporate (law, banking, government) where sarees and Anarkalis are appropriate daily; tech-startup culture (smart casual); and multinational corporate (western-leaning with occasional formal).
@@ -100,7 +46,7 @@ export default function OfficeWearIndianWomenPage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="body-type-formulas" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the Body-Type Office Formula for Each Silhouette?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Each silhouette type has a specific office formula that maximises both professionalism and fit:
@@ -114,7 +60,7 @@ export default function OfficeWearIndianWomenPage() {
             </ul>
           </section>
 
-          <section className="mb-12">
+          <section id="ethnic-office-wear" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the Best Indian Ethnic Office Wear?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               The most professional Indian ethnic outfits share three characteristics: clean silhouette, muted or jewel-tone colours from your CHM™ palette, and minimal embellishment that doesn&apos;t distract.
@@ -131,7 +77,7 @@ export default function OfficeWearIndianWomenPage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="western-office-wear" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the Best Western Office Wear for Indian Women?</h2>
             <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
               <li>Tailored straight or wide-leg trousers + structured blazer</li>
@@ -145,7 +91,7 @@ export default function OfficeWearIndianWomenPage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="professional-colours" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Colours Work Best for Indian Office Wear?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Build your professional wardrobe from your Chromatic Harmony Mapping™ palette. An understated professional palette has: 2–3 neutrals as the wardrobe foundation (navy, charcoal, camel, or cream depending on undertone), and 2–3 accent colours for statement pieces.
@@ -155,7 +101,7 @@ export default function OfficeWearIndianWomenPage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="professional-capsule" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the 10-Piece Indian Professional Capsule Wardrobe?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Ten pieces that create 30+ work outfits:
@@ -188,43 +134,6 @@ export default function OfficeWearIndianWomenPage() {
             </p>
           </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed faq-answer">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones</Link></li>
-              <li>→ <Link href="/style-guides/capsule-wardrobe-india" className="underline hover:opacity-70">Capsule Wardrobe for Indian Women</Link></li>
-              <li>→ <Link href="/faq" className="underline hover:opacity-70">Frequently Asked Questions</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint includes work outfit formulas specific to your silhouette, your undertone palette, and your lifestyle context.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Office Wear for Indian Women: The Complete Professional Style Guide.&quot; Iconik LLP, 2025. https://www.iconik.pro/style-guides/office-wear-indian-women</p>
-          </div>
-
-        </div>
-      </main>
-    </>
+    </RegisteredSeoArticle>
   );
 }

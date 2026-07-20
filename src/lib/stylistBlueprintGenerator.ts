@@ -566,7 +566,7 @@ function intakeDisplayName(submission: Pick<StylistIntakeSubmission, 'full_name'
 }
 
 export function isManualStylistBlueprintSubmission(submission?: Pick<StylistIntakeSubmission, 'intake_source'> | null) {
-  return submission?.intake_source === 'manual_admin';
+  return submission?.intake_source === 'manual_admin' || submission?.intake_source === 'india_consultation';
 }
 
 function isIndianStylistIntake(submission: Pick<StylistIntakeSubmission, 'country' | 'intake_source'>) {

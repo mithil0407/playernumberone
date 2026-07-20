@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
   getCompletedStylistBlueprintTextActs,
@@ -13,6 +12,7 @@ import {
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -22,13 +22,10 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  const cookieValue = cookieStore.get(ADMIN_COOKIE)?.value;
-  if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
 
   const { data: report, error: reportError } = await supabaseAdmin
     .from('stylist_blueprint_reports')
@@ -68,6 +65,7 @@ export async function POST(
   if (submissionError || !submission) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
+  const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
   if (!nextStage && reportData) {
     const now = new Date().toISOString();
@@ -111,7 +109,7 @@ export async function POST(
   after(async () => {
     await runStylistBlueprintTextPipeline(
       reportId,
-      submission as StylistIntakeSubmission,
+      resolvedSubmission,
       report.share_token ?? null,
       reportData,
     );

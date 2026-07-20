@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { loadStylistBlueprintReportByIdFresh, getStylistBlueprintReportById } from '@/lib/stylistBlueprintLoader';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { sendStylistBlueprintReportEmail } from '@/lib/email';
@@ -14,10 +13,6 @@ import {
   type StylistIntakeSubmission,
   type StylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
-
-function authed(cookieValue: string | undefined) {
-  return isAdminAuthenticatedFromCookieValue(cookieValue);
-}
 
 function firstString(...values: Array<unknown>) {
   for (const value of values) {
@@ -35,12 +30,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!authed(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const fresh = request.nextUrl.searchParams.get('fresh') === '1';
   const report = fresh
     ? await loadStylistBlueprintReportByIdFresh(reportId)
@@ -54,18 +47,31 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!authed(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
-  const allowedStatuses = new Set(['pending', 'generating', 'draft_ready', 'in_review', 'approved', 'sent', 'error']);
+  const allowedStatuses = new Set(['pending', 'generating', 'draft_ready', 'in_review', 'approved', 'sent', 'delivered', 'error']);
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const expectedRevision = Number(body.expectedRevision);
+  const { data: currentRevisionRow, error: revisionError } = await supabaseAdmin
+    .from('stylist_blueprint_reports')
+    .select('revision')
+    .eq('id', reportId)
+    .single();
+  if (revisionError || !currentRevisionRow) {
+    return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+  }
+  if (Number.isInteger(expectedRevision)) {
+    if (currentRevisionRow.revision !== expectedRevision) {
+      return NextResponse.json({ error: 'This report changed in another session. Reload before saving.', conflict: true }, { status: 409 });
+    }
+  }
+  patch.revision = Number(currentRevisionRow.revision ?? 0) + 1;
 
   if (body.status) {
     if (!allowedStatuses.has(body.status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
@@ -73,13 +79,25 @@ export async function PATCH(
     if (body.status === 'sent') patch.sent_at = new Date().toISOString();
   }
   if (body.section_approvals) patch.section_approvals = body.section_approvals;
-  if (body.page_approvals) patch.section_approvals = body.page_approvals;
-  if (body.report_data) patch.report_data = body.report_data;
+  if (body.page_approvals) {
+    patch.section_approvals = body.page_approvals;
+    if (Object.values(body.page_approvals as Record<string, unknown>).some(value => value === false)) {
+      patch.published_at = null;
+      patch.delivered_at = null;
+      patch.status = 'in_review';
+    }
+  }
+  if (body.report_data) {
+    patch.report_data = body.report_data;
+    patch.published_at = null;
+    patch.delivered_at = null;
+    patch.status = 'in_review';
+  }
   if (body.clear_progress_stage) patch.progress_stage = null;
   if (body.page) {
     const { data: existing } = await supabaseAdmin
       .from('stylist_blueprint_reports')
-      .select('report_data, submission_id, stylist_intake_responses(*)')
+      .select('report_data, section_approvals, submission_id, stylist_intake_responses(*)')
       .eq('id', reportId)
       .single();
     const reportData = existing?.report_data as StylistBlueprintReportData | null;
@@ -98,14 +116,23 @@ export async function PATCH(
       return NextResponse.json({ error: message }, { status: 400 });
     }
     patch.report_data = nextData;
+    patch.published_at = null;
+    patch.delivered_at = null;
+    patch.status = 'in_review';
+    patch.section_approvals = {
+      ...((existing?.section_approvals as Record<string, boolean> | null) ?? {}),
+      [`p${incoming.page_number}`]: false,
+    };
   }
   if (body.error_message !== undefined) patch.error_message = body.error_message;
 
-  const { data, error } = await supabaseAdmin
+  let updateQuery = supabaseAdmin
     .from('stylist_blueprint_reports')
     .update(patch)
-    .eq('id', reportId)
-    .select('id, share_token, status, sent_at, section_approvals, report_data')
+    .eq('id', reportId);
+  if (Number.isInteger(expectedRevision)) updateQuery = updateQuery.eq('revision', expectedRevision);
+  const { data, error } = await updateQuery
+    .select('id, share_token, status, sent_at, published_at, delivered_at, revision, section_approvals, report_data')
     .single();
 
   if (error || !data) {
@@ -121,12 +148,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!authed(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const action = body.action;
 

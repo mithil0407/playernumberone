@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
   buildLearnedOutfitPayload,
@@ -39,10 +38,6 @@ interface LearnedEntryRow {
   status: string;
   like_count: number | null;
   dislike_count: number | null;
-}
-
-function authed(cookieValue: string | undefined) {
-  return isAdminAuthenticatedFromCookieValue(cookieValue);
 }
 
 async function loadReport(reportId: string): Promise<StylistBlueprintReportData | null> {
@@ -89,12 +84,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!authed(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const pageNumber = Number(request.nextUrl.searchParams.get('pageNumber'));
   if (!Number.isInteger(pageNumber)) {
     return NextResponse.json({ error: 'pageNumber is required' }, { status: 400 });
@@ -114,12 +107,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!authed(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const pageNumber = Number(body.pageNumber);
   const vote = body.vote === 'like' || body.vote === 'dislike' ? body.vote as Vote : null;

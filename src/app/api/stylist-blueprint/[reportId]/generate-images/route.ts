@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 import { generateStylistBlueprintImages, type StylistBlueprintImageGroup } from '@/lib/stylistBlueprintImageGenerator';
 import type { StylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
 
@@ -11,12 +11,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const allowedGroups = new Set(['diagnosis', 'prescription', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing', 'all']);
   const group = allowedGroups.has(body.group) ? body.group as StylistBlueprintImageGroup : 'all';
@@ -39,11 +37,12 @@ export async function POST(
       .eq('id', report.submission_id)
       .maybeSingle();
 
+    const resolvedSubmission = submission ? await resolveConsultationIntakePhotos(submission) : null;
     const imagePaths = await generateStylistBlueprintImages(
       reportId,
       report.report_data as StylistBlueprintReportData,
       report.share_token ?? null,
-      { group, force, submission: submission ?? null },
+      { group, force, submission: resolvedSubmission },
     );
     return NextResponse.json({ success: true, imagePaths });
   } catch (err) {

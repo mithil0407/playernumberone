@@ -1,24 +1,10 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import RegisteredSeoArticle from "@/components/seo/RegisteredSeoArticle";
+import { buildSeoArticleMetadata } from "@/lib/seoArticle";
+import { getSeoArticle } from "@/lib/seoArticleRegistry";
 
-export const metadata: Metadata = {
-  title: "Best Colours for Olive Skin Indian Women — Iconik",
-  description: "Olive skin is a surface quality, not an undertone. Complete colour guide for olive-skinned Indian women — how to identify your undertone within olive skin and build the right palette.",
-  keywords: "olive skin colour guide India, best colours for olive skin Indian women, olive skin tone India, olive complexion colours India, olive skin undertone India, olive skin palette Indian women",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/olive-skin-india" },
-  openGraph: {
-    title: "Best Colours for Olive Skin Indian Women — Iconik",
-    description: "Olive skin is a surface quality, not an undertone. How to identify your undertone within olive skin and choose the right colour palette.",
-    url: "https://www.iconik.pro/colour-analysis/olive-skin-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Olive skin colour guide for Indian women — Iconik" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Best Colours for Olive Skin Indian Women — Iconik",
-    description: "Olive skin is a surface quality, not an undertone. How to identify your undertone within olive skin and choose the right colour palette.",
-    images: ["/og-image.webp"],
-  },
-};
+const article = getSeoArticle("/colour-analysis/olive-skin-india");
+export const metadata = buildSeoArticleMetadata(article);
 
 const faqs = [
   {
@@ -44,69 +30,18 @@ const faqs = [
 ];
 
 export default function OliveSkinIndiaPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/olive-skin-india#article",
-        "headline": "Best Colours for Olive Skin Indian Women",
-        "description": "Complete colour guide for olive-skinned Indian women — understanding that olive is a surface quality not an undertone, and how to identify and dress for your specific undertone within olive skin.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
-        },
-        "datePublished": "2025-04-01",
-        "dateModified": new Date().toISOString().split("T")[0],
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/olive-skin-india" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Colour Analysis", "item": "https://www.iconik.pro/colour-analysis" },
-          { "@type": "ListItem", "position": 3, "name": "Olive Skin India", "item": "https://www.iconik.pro/colour-analysis/olive-skin-india" },
-        ],
-      },
-    ],
-  };
-
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
-
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Olive Skin India</li>
-            </ol>
-          </nav>
-
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Best Colours for Olive Skin Indian Women
-            </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Olive skin is one of the most misunderstood skin descriptors in colour analysis — because most women (and most guides) treat it as an undertone category when it is actually a surface quality. Olive skin can have a warm, cool, or neutral undertone beneath it. Until you know which undertone lies under your olive surface tone, any colour advice you follow is a guess. This guide explains the distinction and gives you a palette framework based on your actual undertone.
-            </p>
-          </header>
-
-          <section className="mb-12">
+    <RegisteredSeoArticle
+      article={article}
+      faqs={faqs}
+      quickAnswer={<>Olive describes a green-grey surface cast. It does not tell you whether the undertone beneath it is warm, cool, or neutral.</>}
+      quickAnswerDetail={<>Use fabric draping and jewellery comparisons to identify the underlying direction, then choose saturated, nuanced colours that support both undertone and contrast level.</>}
+      cta={{
+        title: "Separate your olive surface tone from your actual undertone.",
+        description: "Chromatic Harmony Mapping identifies your underlying direction and turns it into a practical wardrobe palette.",
+      }}
+    >
+          <section id="olive-is-a-surface-quality" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is Olive Skin — and Why It Is Not an Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Olive skin describes a greenish or greyish-green cast on the surface of the skin. It is particularly common in South Asian, Southeast Asian, Mediterranean, and Middle Eastern women. The olive quality is caused by a combination of melanin pigment and carotenoids (yellow-orange pigments from diet) that together create a slightly muted, greenish-toned surface appearance.
@@ -119,7 +54,7 @@ export default function OliveSkinIndiaPage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="identify-olive-undertone" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How to Identify Your Undertone Within Olive Skin</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Standard undertone tests are less reliable on olive skin because the greenish surface cast interferes. The most reliable methods for olive skin:
@@ -143,7 +78,7 @@ export default function OliveSkinIndiaPage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="warm-olive-colours" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Colours for Olive Skin with Warm Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Warm olive skin responds to golden, earthy, and rich warm colours. These harmonise with both the surface olive quality and the warm undertone beneath it, creating a cohesive glow.
@@ -167,7 +102,7 @@ export default function OliveSkinIndiaPage() {
             </div>
           </section>
 
-          <section className="mb-12">
+          <section id="cool-olive-colours" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Colours for Olive Skin with Cool Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Cool olive skin has an interesting quality: the blue-pink undertone beneath the greenish surface creates a complex, unusual complexion that responds best to saturated cool colours. These cut through the surface olive cast and make the skin look luminous rather than dull.
@@ -191,7 +126,7 @@ export default function OliveSkinIndiaPage() {
             </div>
           </section>
 
-          <section className="mb-12">
+          <section id="neutral-olive-colours" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Colours for Olive Skin with Neutral Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Neutral olive skin has flexibility across both palettes, but tends to look best in slightly muted, complex colours — those with some grey or depth rather than pure bright saturation. The greenish surface tone plus a balanced undertone creates a complexion that suits sophisticated, nuanced colours particularly well.
@@ -213,45 +148,6 @@ export default function OliveSkinIndiaPage() {
             </div>
           </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones — Full Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">How to Find Your Undertone: 3 At-Home Tests</Link></li>
-              <li>→ <Link href="/colour-analysis/warm-undertone" className="underline hover:opacity-70">Warm Undertone Colour Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/cool-undertone" className="underline hover:opacity-70">Cool Undertone Colour Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/indian-skin-tones" className="underline hover:opacity-70">Why Standard Colour Analysis Fails Indian Women</Link></li>
-              <li>→ <Link href="/colour-analysis/best-colours-wheatish-skin-india" className="underline hover:opacity-70">Best Colours for Wheatish Skin</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your undertone identified precisely</h2>
-            <p className="text-gray-600 mb-6">Olive skin is one of the hardest skin types to self-analyse accurately. Chromatic Harmony Mapping™ identifies whether your olive skin is warm, cool, or neutral underneath — and builds your exact 10-colour palette from there.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Best Colours for Olive Skin Indian Women.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/olive-skin-india</p>
-          </div>
-
-        </div>
-      </main>
-    </>
+    </RegisteredSeoArticle>
   );
 }

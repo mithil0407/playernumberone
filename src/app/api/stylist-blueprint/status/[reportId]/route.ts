@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
@@ -17,7 +16,7 @@ const STALE_PROGRESS_MS = 6 * 60 * 1000;
 function readReport(reportId: string) {
   return supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, report_data, image_urls, stylist_intake_responses(photo_urls, one_outfit_image_url, intake_source)')
+    .select('id, status, progress_stage, error_message, generated_at, share_token, updated_at, report_data, image_urls, stylist_intake_responses(photo_urls, source_photo_paths, one_outfit_image_url, intake_source)')
     .eq('id', reportId)
     .single();
 }
@@ -26,13 +25,10 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  const cookieValue = cookieStore.get(ADMIN_COOKIE)?.value;
-  if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
 
   // The dashboard polls this every few seconds while a long generation runs, so a
   // single transient Supabase "fetch failed" must not look like a deleted report.
@@ -59,10 +55,11 @@ export async function GET(
     ? data.stylist_intake_responses[0]
     : data.stylist_intake_responses;
   const photoUrls = (intake?.photo_urls ?? {}) as Record<string, string | null | undefined>;
-  const hasFrontPhoto = Boolean(photoUrls.full_body_front);
-  const hasSidePhoto = Boolean(photoUrls.full_body_side);
-  const hasHeadshot = Boolean(photoUrls.headshot);
-  const hasClientPhoto = Boolean(photoUrls.full_body_front || photoUrls.full_body_side || photoUrls.headshot || photoUrls.one_outfit || intake?.one_outfit_image_url);
+  const sourcePaths = (intake?.source_photo_paths ?? {}) as Record<string, string | null | undefined>;
+  const hasFrontPhoto = Boolean(photoUrls.full_body_front || sourcePaths.full_body_front);
+  const hasSidePhoto = Boolean(photoUrls.full_body_side || sourcePaths.full_body_side);
+  const hasHeadshot = Boolean(photoUrls.headshot || sourcePaths.headshot);
+  const hasClientPhoto = Boolean(hasFrontPhoto || hasSidePhoto || hasHeadshot || photoUrls.one_outfit || sourcePaths.one_outfit || intake?.one_outfit_image_url);
   const includeClosingEditTeaser = !isManualStylistBlueprintSubmission(intake);
   const outfitCount = isVersionedStylistBlueprintReportData(data.report_data)
     ? getStylistBlueprintOutfitCount(data.report_data)

@@ -1,24 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import RegisteredSeoArticle from "@/components/seo/RegisteredSeoArticle";
+import { buildSeoArticleMetadata } from "@/lib/seoArticle";
+import { getSeoArticle } from "@/lib/seoArticleRegistry";
 
-export const metadata: Metadata = {
-  title: "Saree Colours by Undertone: Complete Indian Guide — Iconik",
-  description: "Which saree colours suit your skin undertone? Complete guide to saree colour selection for warm, cool, and neutral undertone Indian women — including silk, cotton, and bridal sarees.",
-  keywords: "saree colour by skin tone, best saree colour for warm undertone, saree for cool undertone India, which saree colour suits me, saree colour guide Indian women, saree for wheatish skin, saree for fair skin, saree for dusky skin undertone",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/saree-colours-by-undertone" },
-  openGraph: {
-    title: "Saree Colours by Undertone: Complete Indian Guide — Iconik",
-    description: "Which saree colours suit your skin undertone? Warm, cool, and neutral undertone saree colour guides for Indian women.",
-    url: "https://www.iconik.pro/colour-analysis/saree-colours-by-undertone",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Saree colours by undertone — Iconik" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Saree Colours by Undertone: Complete Indian Guide — Iconik",
-    description: "Which saree colours suit your skin undertone? Warm, cool, and neutral undertone saree colour guides for Indian women.",
-    images: ["/og-image.webp"],
-  },
-};
+const article = getSeoArticle("/colour-analysis/saree-colours-by-undertone");
+export const metadata = buildSeoArticleMetadata(article);
 
 const faqs = [
   {
@@ -44,69 +29,18 @@ const faqs = [
 ];
 
 export default function SareeColoursByUndertonePage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/saree-colours-by-undertone#article",
-        "headline": "Saree Colours by Undertone: Complete Indian Guide",
-        "description": "Complete guide to choosing saree colours by skin undertone for Indian women — warm, cool, and neutral, including bridal sarees and zari guidance.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
-        },
-        "datePublished": "2025-04-01",
-        "dateModified": new Date().toISOString().split("T")[0],
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/saree-colours-by-undertone" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Colour Analysis", "item": "https://www.iconik.pro/colour-analysis" },
-          { "@type": "ListItem", "position": 3, "name": "Saree Colours by Undertone", "item": "https://www.iconik.pro/colour-analysis/saree-colours-by-undertone" },
-        ],
-      },
-    ],
-  };
-
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
-
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Saree Colours by Undertone</li>
-            </ol>
-          </nav>
-
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Saree Colours by Undertone: The Complete Indian Guide
-            </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              The most common saree colour mistake Indian women make is choosing by skin depth — fair, wheatish, dusky — rather than by undertone. Undertone is the warm, cool, or neutral base beneath your skin, and it determines which saree colours harmonise with your complexion and which create a subtle clash. This guide breaks down the best saree colours by undertone, including guidance on zari, borders, and bridal choices.
-            </p>
-          </header>
-
-          <section className="mb-12">
+    <RegisteredSeoArticle
+      article={article}
+      faqs={faqs}
+      quickAnswer={<>Choose the undertone direction first, then the saree hue, border, and zari as one complete colour relationship.</>}
+      quickAnswerDetail={<>Warm undertones generally harmonise with golden and earthy versions of colour; cool undertones with blue-based jewel tones and silver; neutral undertones with balanced or muted combinations.</>}
+      cta={{
+        title: "Build a saree palette around your actual undertone.",
+        description: "Chromatic Harmony Mapping identifies the hues, metallics, and contrast levels that work across festive, bridal, and everyday sarees.",
+      }}
+    >
+          <section id="undertone-over-depth" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Undertone Matters More Than Skin Depth for Sarees</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Most advice you&apos;ll find online says things like &quot;bright colours suit dark skin&quot; or &quot;pastels suit fair skin.&quot; This is surface-level advice that ignores the single most important variable: undertone.
@@ -119,7 +53,7 @@ export default function SareeColoursByUndertonePage() {
             </p>
           </section>
 
-          <section className="mb-12">
+          <section id="warm-undertone-sarees" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Saree Colours for Warm Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Warm undertone skin has a golden, peachy, or olive base. The most flattering saree colours share this warmth — they harmonise rather than contrast with the skin&apos;s base tone.
@@ -147,7 +81,7 @@ export default function SareeColoursByUndertonePage() {
             </div>
           </section>
 
-          <section className="mb-12">
+          <section id="cool-undertone-sarees" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Saree Colours for Cool Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Cool undertone skin has a pink, blue, or rosy base. The most flattering saree colours have a blue-based or jewel-toned quality — they share the cool wavelength of your skin and make your complexion appear bright and luminous.
@@ -175,7 +109,7 @@ export default function SareeColoursByUndertonePage() {
             </div>
           </section>
 
-          <section className="mb-12">
+          <section id="neutral-undertone-sarees" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Best Saree Colours for Neutral Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Neutral undertone women can wear both warm and cool colours — but look their best in muted, slightly greyed versions of both palettes rather than full-saturation extremes. The widest colour range of any undertone, but with specific saturation preferences.
@@ -201,7 +135,7 @@ export default function SareeColoursByUndertonePage() {
             </div>
           </section>
 
-          <section className="mb-12">
+          <section id="bridal-sarees" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Bridal Sarees by Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Bridal saree colour is one of the most significant styling decisions an Indian woman makes. Most brides default to the traditional red — but the <em>shade</em> of red makes an enormous difference to how well it harmonises with your skin.
@@ -222,45 +156,6 @@ export default function SareeColoursByUndertonePage() {
             </div>
           </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones — Full Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">How to Find Your Undertone: 3 At-Home Tests</Link></li>
-              <li>→ <Link href="/colour-analysis/warm-undertone" className="underline hover:opacity-70">Warm Undertone Colour Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/cool-undertone" className="underline hover:opacity-70">Cool Undertone Colour Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/neutral-undertone" className="underline hover:opacity-70">Neutral Undertone Colour Guide</Link></li>
-              <li>→ <Link href="/style-guides/saree-draping-body-type" className="underline hover:opacity-70">Saree Draping by Body Type</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your personalised saree colour palette</h2>
-            <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ identifies your exact undertone and builds a 10-colour palette — including specific saree colour and zari recommendations — as part of your Iconik Style Blueprint.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Saree Colours by Undertone: The Complete Indian Guide.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/saree-colours-by-undertone</p>
-          </div>
-
-        </div>
-      </main>
-    </>
+    </RegisteredSeoArticle>
   );
 }

@@ -15,9 +15,9 @@ import {
 } from './stylistBlueprintImageGenerator';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from './stylistBlueprintGenerator';
 
-const ADMIN_REPORT_SELECT_WITH_SOURCE = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)';
+const ADMIN_REPORT_SELECT_WITH_SOURCE = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source, consultation_id)';
 const ADMIN_REPORT_SELECT_LEGACY = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name)';
-const PUBLIC_REPORT_SELECT_WITH_SOURCE = 'id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)';
+const PUBLIC_REPORT_SELECT_WITH_SOURCE = 'id, status, report_data, image_urls, share_token, sent_at, published_at, delivered_at, revision, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source)';
 const PUBLIC_REPORT_SELECT_LEGACY = 'id, status, report_data, image_urls, share_token, sent_at, section_approvals, submission_id, created_at, updated_at, error_message, progress_stage, stylist_intake_responses(id, customer_email, customer_phone, full_name)';
 
 export interface LoadedStylistBlueprintReport {
@@ -33,7 +33,10 @@ export interface LoadedStylistBlueprintReport {
   updated_at: string;
   error_message: string | null;
   sent_at: string | null;
-  stylist_intake_responses: { id: string; customer_email: string | null; customer_phone: string | null; full_name: string | null; intake_source?: string | null } | null;
+  published_at?: string | null;
+  delivered_at?: string | null;
+  revision?: number;
+  stylist_intake_responses: { id: string; customer_email: string | null; customer_phone: string | null; full_name: string | null; intake_source?: string | null; consultation_id?: string | null } | null;
 }
 
 type RawStylistBlueprintReport = Omit<LoadedStylistBlueprintReport, 'image_urls'> & {
@@ -88,7 +91,12 @@ async function loadPublicByShareToken(shareToken: string): Promise<LoadedStylist
     .maybeSingle();
 
   if (!result.error && result.data) {
-    return resolveRowImages(result.data as unknown as RawStylistBlueprintReport);
+    const row = result.data as unknown as RawStylistBlueprintReport;
+    const intake = Array.isArray(row.stylist_intake_responses)
+      ? row.stylist_intake_responses[0]
+      : row.stylist_intake_responses;
+    if (intake?.intake_source === 'india_consultation' && !row.published_at) return null;
+    return resolveRowImages(row);
   }
 
   if (isMissingIntakeSourceError(result.error)) {

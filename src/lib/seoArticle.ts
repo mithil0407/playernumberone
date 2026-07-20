@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import type { GrowthEventParameters } from "@/lib/growthAnalytics";
 import { buildArticleMetadata } from "@/lib/seo";
 import type { SeoArticleRecord } from "@/lib/seoArticleRegistry";
@@ -10,9 +12,23 @@ import {
   organizationNode,
 } from "@/lib/structuredData";
 
-function openGraphPath(article: SeoArticleRecord) {
+function publicAssetExists(assetPath: string | undefined) {
+  if (!assetPath?.startsWith("/")) return false;
+  return existsSync(path.join(process.cwd(), "public", assetPath.slice(1)));
+}
+
+export function resolveSeoArticleVisual(article: SeoArticleRecord) {
   if (!article.visual) return undefined;
-  return article.visual.src.replace(/\.webp$/, "-og.webp");
+  if (publicAssetExists(article.visual.src)) return article.visual.src;
+  if (publicAssetExists(article.visual.fallbackSrc)) return article.visual.fallbackSrc;
+  return undefined;
+}
+
+function openGraphPath(article: SeoArticleRecord) {
+  const visualPath = resolveSeoArticleVisual(article);
+  if (!visualPath) return undefined;
+  const ogPath = visualPath.replace(/\.webp$/, "-og.webp");
+  return publicAssetExists(ogPath) ? ogPath : undefined;
 }
 
 export function buildSeoArticleMetadata(article: SeoArticleRecord) {
@@ -45,8 +61,9 @@ export function buildSeoArticleGraph(
     about?: string[];
   } = {},
 ) {
-  const visualImages = article.visual
-    ? [article.visual.src, openGraphPath(article)].filter((item): item is string => Boolean(item))
+  const visualPath = resolveSeoArticleVisual(article);
+  const visualImages = visualPath
+    ? [visualPath, openGraphPath(article)].filter((item): item is string => Boolean(item))
     : undefined;
 
   return graph([

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import {
   isStylistBlueprintImageSlotKey,
   regenerateStylistBlueprintImageSlot,
 } from '@/lib/stylistBlueprintImageGenerator';
 import { getStylistBlueprintOutfitCount, isVersionedStylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -14,12 +14,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const slotKey = body.slotKey;
 
@@ -62,11 +60,12 @@ export async function POST(
       .eq('id', report.submission_id)
       .maybeSingle();
 
+    const resolvedSubmission = submission ? await resolveConsultationIntakePhotos(submission) : null;
     const result = await regenerateStylistBlueprintImageSlot(
       reportId,
       report.report_data,
       slotKey,
-      { shareToken: report.share_token ?? null, submission: submission ?? null },
+      { shareToken: report.share_token ?? null, submission: resolvedSubmission },
     );
 
     await supabaseAdmin

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
   generateStylistBlueprintReplacementPalette,
@@ -12,6 +11,7 @@ import {
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -19,12 +19,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
 
@@ -59,6 +57,7 @@ export async function POST(
     if (submissionError || !submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
+    const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -72,7 +71,7 @@ export async function POST(
 
     const reportData = report.report_data as StylistBlueprintReportData;
     const nextReportData = await generateStylistBlueprintReplacementPalette(
-      submission as StylistIntakeSubmission,
+      resolvedSubmission,
       reportData,
       reason,
     );
@@ -92,6 +91,9 @@ export async function POST(
       .update({
         report_data: nextReportData,
         section_approvals: nextApprovals,
+        status: 'in_review',
+        published_at: null,
+        delivered_at: null,
         progress_stage: null,
         error_message: null,
         updated_at: new Date().toISOString(),

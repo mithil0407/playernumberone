@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintSubmission } from '@/lib/stylistWorkspaceAuth';
 import { runStylistBlueprintTextPipeline } from '@/lib/stylistBlueprintTextPipeline';
 import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
 import { STYLIST_BLUEPRINT_PAGE_COUNT, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -12,13 +12,10 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ submissionId: string }> },
 ) {
-  const cookieStore = await cookies();
-  const cookieValue = cookieStore.get(ADMIN_COOKIE)?.value;
-  if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
+  const { submissionId } = await params;
+  if (!(await canAccessBlueprintSubmission(submissionId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { submissionId } = await params;
   const { data: submission, error: submissionError } = await supabaseAdmin
     .from('stylist_intake_responses')
     .select('*')
@@ -28,6 +25,7 @@ export async function POST(
   if (submissionError || !submission) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
+  const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
   const { data: existingReports } = await supabaseAdmin
     .from('stylist_blueprint_reports')
@@ -65,7 +63,7 @@ export async function POST(
   }
 
   after(async () => {
-    const intake = submission as StylistIntakeSubmission;
+    const intake = resolvedSubmission;
     const reportData = await runStylistBlueprintTextPipeline(report.id, intake, report.share_token ?? null, null);
     if (reportData) {
       try {

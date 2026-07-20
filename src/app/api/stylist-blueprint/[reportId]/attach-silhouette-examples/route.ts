@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { supabaseAdmin } from '@/lib/supabase';
 import { generateStylistBlueprintSilhouetteProofImages } from '@/lib/stylistBlueprintImageGenerator';
@@ -13,6 +12,7 @@ import {
   type StylistIntakeSubmission,
 } from '@/lib/stylistBlueprintGenerator';
 import type { StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 function countSilhouetteExamples(reportData: StylistBlueprintReportData) {
   const rulesPageNumber = getStylistBlueprintRulesStartPage(reportData);
@@ -55,12 +55,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const dryRun = Boolean(body.dry_run);
   const generateImages = Boolean(body.generate_images);
@@ -95,10 +93,11 @@ export async function POST(
   if (submissionError || !submission) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
+  const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
   const reportData = report.report_data as StylistBlueprintReportData;
   const beforeCount = countSilhouetteExamples(reportData);
-  const nextReportData = await attachSilhouetteRuleOutfitExamples(reportData, submission as StylistIntakeSubmission);
+  const nextReportData = await attachSilhouetteRuleOutfitExamples(reportData, resolvedSubmission);
   const afterCount = countSilhouetteExamples(nextReportData);
 
   if (dryRun) {
@@ -130,7 +129,7 @@ export async function POST(
   if (generateImages) {
     await generateStylistBlueprintSilhouetteProofImages(reportId, nextReportData, report.share_token ?? null, {
       force: true,
-      submission: submission as StylistIntakeSubmission,
+      submission: resolvedSubmission,
     });
     imagesGenerated = true;
   }

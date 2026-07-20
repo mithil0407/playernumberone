@@ -288,6 +288,7 @@
 }
 
 .seo-mobile-nav {
+  display: flex;
   gap: 1.35rem;
   overflow-x: auto;
   padding: 0 1rem 0.8rem;
@@ -407,6 +408,106 @@
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.95rem;
   line-height: 1.7;
+}
+
+.seo-visual-placeholder {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 4 / 5;
+  max-width: 64rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.18), transparent 36%),
+    linear-gradient(145deg, #a7b6bc 0%, #748891 100%);
+  box-shadow: 0 28px 80px rgba(38, 52, 58, 0.24);
+  color: white;
+}
+
+.seo-visual-placeholder::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.12) 1px, transparent 0) 0 0 / 4px 4px;
+  content: "";
+}
+
+.seo-visual-placeholder-header {
+  position: absolute;
+  inset-inline: 0;
+  top: 5%;
+  z-index: 2;
+  text-align: center;
+}
+
+.seo-visual-placeholder-header p {
+  font-family: var(--font-playfair, Georgia, serif);
+  font-size: clamp(1.8rem, 7vw, 4rem);
+  letter-spacing: 0.28em;
+  line-height: 1;
+}
+
+.seo-visual-placeholder-header span,
+.seo-visual-placeholder-header small {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: clamp(0.5rem, 1.2vw, 0.7rem);
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.seo-visual-placeholder-header small { color: rgba(255,255,255,0.55); }
+
+.seo-visual-placeholder-stage {
+  position: absolute;
+  inset: 24% 12% 14%;
+}
+
+.seo-visual-placeholder-stage span {
+  position: absolute;
+  bottom: 0;
+  width: 37%;
+  height: 78%;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 45% 45% 18% 18% / 20% 20% 10% 10%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04));
+  backdrop-filter: blur(2px);
+}
+
+.seo-visual-placeholder-stage span:first-child { left: 7%; }
+.seo-visual-placeholder-stage span:nth-child(2) { right: 7%; }
+.seo-visual-placeholder-stage i {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 38%;
+  height: 1px;
+  translate: -50% -50%;
+  background: rgba(255,255,255,0.5);
+}
+
+.seo-visual-placeholder-labels {
+  position: absolute;
+  inset-inline: 5%;
+  bottom: 4%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.seo-visual-placeholder-labels span {
+  border: 1px solid rgba(255,255,255,0.34);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.1);
+  padding: 0.55rem 0.8rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
 }
 
 .seo-article-grid {

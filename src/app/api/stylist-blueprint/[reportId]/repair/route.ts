@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { runStylistBlueprintRepairPipeline } from '@/lib/stylistBlueprintTextPipeline';
 import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
 import { isVersionedStylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -12,12 +12,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   if (body.mode && body.mode !== 'rebalance') {
     return NextResponse.json({ error: 'Unsupported repair mode' }, { status: 400 });
@@ -53,10 +51,11 @@ export async function POST(
   if (submissionError || !submission) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
+  const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
   const repaired = await runStylistBlueprintRepairPipeline(
     reportId,
-    submission as StylistIntakeSubmission,
+    resolvedSubmission,
     report.share_token ?? null,
     report.report_data,
     report.section_approvals as Record<string, unknown> | null,
@@ -72,7 +71,7 @@ export async function POST(
       await generateStylistBlueprintImages(reportId, repaired, report.share_token ?? null, {
         group,
         force: true,
-        submission: submission as StylistIntakeSubmission,
+        submission: resolvedSubmission,
       });
     }
     return NextResponse.json({ success: true, reportData: repaired, imagesRegenerated: true });

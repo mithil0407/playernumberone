@@ -1,30 +1,11 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { ArticleGrowthTracker, TrackedConsultationLink } from "@/components/ArticleGrowthTracker";
-import { buildMetadata } from "@/lib/seo";
+import RegisteredSeoArticle from "@/components/seo/RegisteredSeoArticle";
+import { buildSeoArticleMetadata } from "@/lib/seoArticle";
+import { getSeoArticle } from "@/lib/seoArticleRegistry";
 
 const path = "/faq/how-much-does-personal-stylist-cost-india";
-const growthTracking = {
-  article_id: "personal_stylist_cost_india",
-  content_cluster: "personal_styling_service",
-  audience: "women" as const,
-  hook_type: "price_comparison",
-  content_source: "seo_personal_stylist_cost_article",
-};
+const article = getSeoArticle(path);
 
-export const metadata: Metadata = buildMetadata({
-  title: "Personal Stylist Cost in India: 2026 Price Guide",
-  description:
-    "Compare indicative 2026 prices for virtual styling, wardrobe consultations, personal shopping, occasion styling and ongoing support in India.",
-  path,
-  type: "article",
-  keywords: [
-    "personal stylist cost India",
-    "personal styling price India",
-    "wardrobe consultation cost India",
-    "online personal stylist India price",
-  ],
-});
+export const metadata = buildSeoArticleMetadata(article);
 
 const serviceTypes = [
   {
@@ -64,110 +45,38 @@ const serviceTypes = [
   },
 ];
 
+const faqs = [
+  {
+    q: "How much does a personal stylist cost in India?",
+    a: "Public prices vary substantially by scope and stylist. Examples reviewed in July 2026 showed virtual or entry services from roughly ₹1,000–₹5,000, basic wardrobe consultations around ₹1,500–₹5,000, shopping sessions around ₹5,000–₹20,000, and monthly support around ₹3,000–₹10,000. Bespoke or multi-session engagements can cost much more.",
+  },
+  {
+    q: "Is ₹3,299 a reasonable price for a personal stylist in India?",
+    a: "₹3,299 sits within the broad range of entry and virtual styling offers visible in India in July 2026. Whether it is reasonable depends on the deliverables, review process, personalisation, revision policy, and whether the output gives reusable guidance rather than a short call alone.",
+  },
+  {
+    q: "What is included in an online style blueprint?",
+    a: "An online style blueprint typically covers body type identification, a colour palette based on undertone analysis, outfit formulas for your shape and colouring, and shopping guidance. Iconik's Style Blueprint includes Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and outfit recommendations including Indian ethnic wear.",
+  },
+  {
+    q: "Is an online stylist as good as an in-person stylist?",
+    a: "Online styling is useful for documented wardrobe strategy, measurement-led proportion guidance, and remote outfit planning. In-person work has an advantage when physical colour draping, garment fitting, wardrobe handling, or shopping accompaniment is required. Quality depends more on method, evidence, deliverables, and stylist skill than format alone.",
+  },
+];
+
 export default function PersonalStylistCostIndiaPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "headline": "Personal Stylist Cost in India: 2026 Price Guide",
-        "description": "An indicative comparison of public personal-styling prices in India by service format.",
-        "datePublished": "2026-03-23",
-        "dateModified": "2026-07-11",
-        "author": { "@type": "Person", "name": "Mithil Navalakha" },
-        "publisher": { "@type": "Organization", "name": "Iconik" },
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/faq/how-much-does-personal-stylist-cost-india" }
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How much does a personal stylist cost in India?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Public prices vary substantially by scope and stylist. Examples reviewed in July 2026 showed virtual or entry services from roughly ₹1,000–₹5,000, basic wardrobe consultations around ₹1,500–₹5,000, shopping sessions around ₹5,000–₹20,000, and monthly support around ₹3,000–₹10,000. Bespoke or multi-session engagements can cost much more.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "Is ₹3,299 a reasonable price for a personal stylist in India?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "₹3,299 sits within the broad range of entry and virtual styling offers visible in India in July 2026. Whether it is reasonable depends on the deliverables, review process, personalisation, revision policy, and whether the output gives reusable guidance rather than a short call alone.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "What is included in an online style blueprint?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An online style blueprint typically covers: body type identification (using measurements or photos), colour palette based on undertone analysis, outfit formulas for your specific shape and colouring, and shopping guidance for building your wardrobe. Iconik's Style Blueprint specifically includes Geometric Silhouette Profiling™ for body type, Chromatic Harmony Mapping™ for colour palette (calibrated for Indian skin), 16+ outfit recommendations including Indian ethnic wear, and jewellery and accessory guidance.",
-            },
-          },
-          {
-            "@type": "Question",
-            "name": "Is an online stylist as good as an in-person stylist?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Online styling is useful for documented wardrobe strategy, measurement-led proportion guidance, and remote outfit planning. In-person work has a clear advantage when the service requires physical colour draping, garment fitting, wardrobe handling, or shopping accompaniment. Quality depends more on method, evidence, deliverables, and stylist skill than format alone.",
-            },
-          },
-        ],
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "FAQ", "item": "https://www.iconik.pro/faq" },
-          { "@type": "ListItem", "position": 3, "name": "Personal Stylist Cost India", "item": "https://www.iconik.pro/faq/how-much-does-personal-stylist-cost-india" },
-        ],
-      },
-    ],
-  };
-
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ArticleGrowthTracker {...growthTracking} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
-
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/faq" className="hover:underline">FAQ</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Personal Stylist Cost India</li>
-            </ol>
-          </nav>
-
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              How Much Does a Personal Stylist Cost in India?
-            </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Personal styling prices in India vary by scope, format, stylist experience, city, shopping involvement, and the depth of the final deliverable. Publicly listed entry services can begin around ₹1,500, while multi-session, event, or end-to-end engagements cost considerably more.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-600">
-              <span className="rounded-full border border-gray-200 px-3 py-1">Published 23 March 2026</span>
-              <span className="rounded-full border border-gray-200 px-3 py-1">Prices reviewed 11 July 2026</span>
-              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
-            </div>
-          </header>
-
-          <aside className="mb-12 overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#9aabb2_0%,#71858e_100%)] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.18)]">
-            <div className="rounded-[1.8rem] border border-white/45 bg-white/10 p-6 text-white backdrop-blur-xl md:p-8">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/65">The short answer</p>
-              <p className="font-serif text-2xl leading-relaxed text-[#fffaf1]">
-                In 2026, basic or virtual styling services in India commonly begin in the low thousands of rupees. Shopping, occasion, executive, and multi-session work increases the price because it adds live time, sourcing, fittings, or ongoing access.
-              </p>
-              <p className="mt-4 leading-relaxed text-white/75">Compare the actual deliverable—not only the number of calls. Look for scope, personalisation, written output, revisions, shopping involvement, and post-delivery support.</p>
-            </div>
-          </aside>
-
-          <section className="mb-12">
+    <RegisteredSeoArticle
+      article={article}
+      faqs={faqs}
+      quickAnswer={<>Basic or virtual styling commonly begins in the low thousands of rupees. Shopping, occasion, executive, and multi-session work costs more because it adds live time, sourcing, fittings, or ongoing access.</>}
+      quickAnswerDetail={<>Compare scope, personalisation, written deliverables, revisions, shopping involvement, and post-delivery support—not only the number of calls.</>}
+      cta={{
+        title: "Compare the deliverable, then choose the service format.",
+        description: "Iconik combines silhouette, colour, and outfit direction in one documented Style Blueprint with human review.",
+      }}
+    >
+          <section id="styling-costs" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Personal Styling Services and Costs in India</h2>
             <div className="space-y-5">
               {serviceTypes.map((s) => (
@@ -186,7 +95,7 @@ export default function PersonalStylistCostIndiaPage() {
             </div>
           </section>
 
-          <section className="mb-12">
+          <section id="price-factors" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Determines the Price?</h2>
             <ul className="space-y-3 text-gray-600 list-disc list-inside">
               <li><strong>Service format:</strong> Online services are often lower cost because they remove travel and live shopping time. Format alone does not establish quality; compare the method and deliverables.</li>
@@ -197,7 +106,7 @@ export default function PersonalStylistCostIndiaPage() {
             </ul>
           </section>
 
-          <section className="mb-12 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-sm leading-relaxed text-gray-600">
+          <section id="price-sources" className="mb-12 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-sm leading-relaxed text-gray-600">
             <h2 className="mb-3 text-lg font-semibold text-gray-900">Price sources and limitations</h2>
             <p className="mb-3">These are indicative market examples, not a regulated tariff or promise that every stylist will quote within the range. Prices were reviewed on 11 July 2026 and can change.</p>
             <ul className="space-y-2">
@@ -207,7 +116,7 @@ export default function PersonalStylistCostIndiaPage() {
             </ul>
           </section>
 
-          <section className="mb-12">
+          <section id="choose-service" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Which Service Type Is Right for You?</h2>
             <div className="space-y-3">
               {[
@@ -225,26 +134,6 @@ export default function PersonalStylistCostIndiaPage() {
             </div>
           </section>
 
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/blog/is-personal-stylist-worth-it-india" className="underline hover:opacity-70">Is a Personal Stylist Worth It in India?</Link></li>
-              <li>→ <Link href="/vs/online-vs-inperson-styling" className="underline hover:opacity-70">Online vs In-Person Styling — What&apos;s the Difference?</Link></li>
-              <li>→ <Link href="/faq/what-is-iconik-style-blueprint" className="underline hover:opacity-70">What Is the Iconik Style Blueprint?</Link></li>
-              <li>→ <Link href="/faq" className="underline hover:opacity-70">All FAQ</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Complete body + colour + outfit analysis — ₹3,299</h2>
-            <p className="text-gray-600 mb-6">Iconik&apos;s Style Blueprint covers everything: Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and 16+ personalised outfit recommendations including Indian ethnic wear. Delivered in 48 hours.</p>
-            <TrackedConsultationLink href="/" tracking={growthTracking} className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </TrackedConsultationLink>
-          </div>
-
-        </div>
-      </main>
-    </>
+    </RegisteredSeoArticle>
   );
 }

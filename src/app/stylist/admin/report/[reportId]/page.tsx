@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Check,
@@ -30,6 +30,7 @@ import {
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintPageCount,
   getStylistBlueprintPalettePage,
+  getStylistBlueprintRulesStartPage,
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
@@ -46,7 +47,10 @@ interface Report {
   updated_at: string;
   error_message: string | null;
   sent_at: string | null;
-  stylist_intake_responses: { customer_email: string | null; customer_phone: string | null; full_name: string | null; intake_source?: string | null } | null;
+  published_at?: string | null;
+  delivered_at?: string | null;
+  revision?: number;
+  stylist_intake_responses: { customer_email: string | null; customer_phone: string | null; full_name: string | null; intake_source?: string | null; consultation_id?: string | null } | null;
 }
 
 type OutfitFeedbackVote = 'like' | 'dislike';
@@ -74,7 +78,7 @@ const IMAGE_GROUPS: Array<{ value: StylistBlueprintImageGroup; label: string }> 
 ];
 
 function isManualReportIntake(intake: Report['stylist_intake_responses']) {
-  return intake?.intake_source === 'manual_admin';
+  return intake?.intake_source === 'manual_admin' || intake?.intake_source === 'india_consultation';
 }
 
 async function readJsonBody<T>(response: Response): Promise<T | null> {
@@ -110,6 +114,10 @@ function stageLabel(stage: string | null) {
 export default function StylistBlueprintAdminReportPage({ params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = use(params);
   const router = useRouter();
+  const pathname = usePathname();
+  const workspaceMatch = pathname.match(/^\/stylist\/([^/]+)\/reports\//);
+  const workspaceSlug = workspaceMatch?.[1] ?? null;
+  const isWorkspace = Boolean(workspaceSlug);
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePageNumber, setActivePageNumber] = useState(1);
@@ -118,6 +126,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [dirtyPages, setDirtyPages] = useState<Set<number>>(() => new Set());
   const [reportDataDirty, setReportDataDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveConflict, setSaveConflict] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
   const [refreshingSilhouetteProofs, setRefreshingSilhouetteProofs] = useState(false);
   const [rebuildingReport, setRebuildingReport] = useState(false);
@@ -134,9 +143,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [unlockingProgress, setUnlockingProgress] = useState(false);
   const [resumingText, setResumingText] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deliveryPrepared, setDeliveryPrepared] = useState<{ reportUrl: string; whatsappUrl: string; clientName?: string | null } | null>(null);
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
   const unsavedEditsRef = useRef(false);
+  const saveChangedPagesRef = useRef<() => Promise<boolean>>(async () => true);
   const reportCanvasRef = useRef<HTMLDivElement | null>(null);
   const visiblePageNumberRef = useRef(1);
   const pendingFullReportPageRef = useRef<number | null>(null);
@@ -337,6 +349,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   }, [activePageIsOutfit, activePageNumber, reportId]);
 
   const handlePageChange = (page: StylistBlueprintReportData['pages'][number]) => {
+    setSaveConflict(false);
     setDraftData(prev => {
       if (!prev) return prev;
       return {
@@ -348,8 +361,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   };
 
   const handleReportDataChange = (data: StylistBlueprintReportData) => {
+    setSaveConflict(false);
     setDraftData(data);
     setReportDataDirty(true);
+    setDirtyPages(prev => new Set(prev).add(activePageNumber));
   };
 
   const saveChangedPages = async () => {
@@ -357,30 +372,26 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setSaving(true);
     setError('');
     try {
-      if (reportDataDirty) {
-        const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ report_data: draftData }),
-        });
-        const data = await readJsonBody<{ error?: string }>(res);
-        if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
-      } else {
-        for (const pageNumber of Array.from(dirtyPages)) {
-          const page = draftData.pages.find(item => item.page_number === pageNumber);
-          if (!page) continue;
-          const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ page }),
-          });
-          const data = await readJsonBody<{ error?: string }>(res);
-          if (!res.ok) throw new Error(responseErrorMessage(data, `Failed to save page ${pageNumber}`));
-        }
+      const nextApprovals = { ...(report?.section_approvals ?? {}) };
+      for (const pageNumber of dirtyPages) nextApprovals[`p${pageNumber}`] = false;
+      const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          report_data: draftData,
+          page_approvals: nextApprovals,
+          expectedRevision: report?.revision ?? 0,
+        }),
+      });
+      const data = await readJsonBody<{ error?: string }>(res);
+      if (!res.ok) {
+        if (res.status === 409) setSaveConflict(true);
+        throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
       }
       await load(true);
       setDirtyPages(new Set());
       setReportDataDirty(false);
+      setSaveConflict(false);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save report edits.');
@@ -389,6 +400,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       setSaving(false);
     }
   };
+  saveChangedPagesRef.current = saveChangedPages;
+
+  useEffect(() => {
+    if (!isWorkspace || !hasUnsavedEdits || saving || saveConflict) return;
+    const timer = window.setTimeout(() => { void saveChangedPagesRef.current(); }, 800);
+    return () => window.clearTimeout(timer);
+  }, [draftData, dirtyPages, hasUnsavedEdits, isWorkspace, reportDataDirty, saveConflict, saving]);
 
   const saveBeforeAction = async (actionLabel: string) => {
     if (!hasUnsavedEdits) return true;
@@ -464,15 +482,37 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     }
   };
 
-  const setApproval = async (pageNumber: number, approved: boolean) => {
+  const persistApprovals = async (next: Record<string, boolean>) => {
     if (!report) return;
-    const next = { ...(report.section_approvals ?? {}), [`p${pageNumber}`]: approved };
     setReport({ ...report, section_approvals: next });
-    await fetch(`/api/stylist-blueprint/${reportId}`, {
+    const response = await fetch(`/api/stylist-blueprint/${reportId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page_approvals: next }),
     });
+    const data = await readJsonBody<{ report?: Pick<Report, 'revision' | 'section_approvals'>; error?: string }>(response);
+    if (!response.ok) {
+      setError(responseErrorMessage(data, 'Could not update page approval.'));
+      await load(true);
+      return;
+    }
+    setReport(prev => prev ? {
+      ...prev,
+      section_approvals: data?.report?.section_approvals ?? next,
+      revision: data?.report?.revision ?? prev.revision,
+    } : prev);
+  };
+
+  const setApproval = async (pageNumber: number, approved: boolean) => {
+    if (!report) return;
+    await persistApprovals({ ...(report.section_approvals ?? {}), [`p${pageNumber}`]: approved });
+  };
+
+  const invalidatePages = async (pageNumbers: number[]) => {
+    if (!report || !pageNumbers.length) return;
+    const next = { ...(report.section_approvals ?? {}) };
+    for (const pageNumber of pageNumbers) next[`p${pageNumber}`] = false;
+    await persistApprovals(next);
   };
 
   const toggleCurrentApproval = async () => {
@@ -514,12 +554,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     const saved = await saveChangedPages();
     if (!saved) return;
     const next = Object.fromEntries(Array.from({ length: totalPageCount }, (_, index) => [`p${index + 1}`, true]));
-    setReport({ ...report, section_approvals: next });
-    await fetch(`/api/stylist-blueprint/${reportId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_approvals: next }),
-    });
+    await persistApprovals(next);
   };
 
   const generateImages = async (force = false) => {
@@ -547,6 +582,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Image generation failed');
+      if (force) {
+        const outfitPages = pages.filter(page => page.page_number >= getStylistBlueprintOutfitStartPage(versioned) && page.page_number <= getStylistBlueprintOutfitEndPage(versioned));
+        const capsuleNumber = Number(imageGroup.replace('capsule_', ''));
+        const affected = imageGroup === 'all'
+          ? pages.map(page => page.page_number)
+          : imageGroup === 'diagnosis' || imageGroup === 'prescription' || imageGroup === 'closing'
+            ? pages.filter(page => pageGroup(page.page_number, versioned).toLowerCase() === imageGroup).map(page => page.page_number)
+            : Number.isInteger(capsuleNumber)
+              ? outfitPages.slice((capsuleNumber - 1) * 5, capsuleNumber * 5).map(page => page.page_number)
+              : [activePageNumber];
+        await invalidatePages(affected);
+      }
       await refreshGeneratedImages();
       const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
       if (statusRes.ok) setImageCounts((await statusRes.json()).imageCounts ?? null);
@@ -593,6 +640,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Silhouette proof refresh failed');
+      await invalidatePages([getStylistBlueprintRulesStartPage(versioned)]);
       await load(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Silhouette proof refresh failed');
@@ -639,7 +687,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setResumingText(true);
     setError('');
     try {
-      const res = await fetch(`/api/stylist-blueprint/${reportId}/resume-text`, { method: 'POST' });
+      const res = await fetch(
+        isWorkspace && report.status === 'error'
+          ? `/api/stylist-workspace/reports/${reportId}/retry`
+          : `/api/stylist-blueprint/${reportId}/resume-text`,
+        { method: 'POST' },
+      );
       const data = await readJsonBody<{ error?: string; progressStage?: string; status?: string }>(res);
       if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to resume text generation'));
       setReport(prev => prev ? {
@@ -678,7 +731,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       const res = await fetch(`/api/stylist-blueprint/generate/${report.submission_id}`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Report rebuild failed');
-      if (data.reportId) router.push(`/stylist/admin/report/${data.reportId}`);
+      if (data.reportId) router.push(isWorkspace && workspaceSlug ? `/stylist/${workspaceSlug}/reports/${data.reportId}` : `/stylist/admin/report/${data.reportId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Report rebuild failed');
     } finally {
@@ -709,6 +762,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Image regeneration failed');
+      await invalidatePages([activePageNumber]);
       if (data.imageUrls) {
         setReport(prev => prev ? {
           ...prev,
@@ -990,6 +1044,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setSending(true);
     setError('');
     try {
+      if (isWorkspace) {
+        const deliveryRes = await fetch(`/api/stylist-workspace/reports/${reportId}/delivery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'prepare' }),
+        });
+        const deliveryData = await deliveryRes.json();
+        if (!deliveryRes.ok) throw new Error(deliveryData.error || 'Could not prepare WhatsApp delivery');
+        setDeliveryPrepared(deliveryData);
+        setReport(prev => prev ? { ...prev, status: 'approved', published_at: new Date().toISOString() } : prev);
+        return;
+      }
       const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1015,6 +1081,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const copyLink = () => {
     if (!report) return;
     navigator.clipboard.writeText(`${window.location.origin}/stylist/report/${report.share_token}`);
+    if (isWorkspace) {
+      void fetch(`/api/stylist-workspace/reports/${reportId}/delivery`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'copied' }),
+      });
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
@@ -1032,8 +1103,34 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   };
 
   const logout = async () => {
-    await fetch('/api/iconik-club/admin/logout', { method: 'POST' });
-    window.location.href = '/stylist/admin/login';
+    await fetch(isWorkspace ? '/api/stylist-workspace/auth/logout' : '/api/iconik-club/admin/logout', { method: 'POST' });
+    window.location.href = isWorkspace ? '/stylist/login' : '/stylist/admin/login';
+  };
+
+  const openWhatsApp = async () => {
+    if (!deliveryPrepared) return;
+    await fetch(`/api/stylist-workspace/reports/${reportId}/delivery`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'opened' }),
+    });
+    window.open(deliveryPrepared.whatsappUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const confirmWhatsAppDelivery = async () => {
+    setConfirmingDelivery(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/stylist-workspace/reports/${reportId}/delivery`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'confirm' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not confirm delivery');
+      setReport(prev => prev ? { ...prev, status: 'delivered', delivered_at: data.deliveredAt } : prev);
+      setDeliveryPrepared(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not confirm delivery');
+    } finally {
+      setConfirmingDelivery(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" style={{ color: S.muted }} /></div>;
@@ -1056,7 +1153,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     || recipientEmail
     || report.stylist_intake_responses?.customer_phone
     || 'Client';
-  const sendDisabledReason = !recipientEmail
+  const sendDisabledReason = !isWorkspace && !recipientEmail
     ? 'No client email is attached to this intake. Use Copy Link instead.'
     : !allApproved
     ? 'Approve every page before sending.'
@@ -1065,7 +1162,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       : currentBusyReason
         ? currentBusyReason
         : sending
-          ? 'Sending report email.'
+          ? (isWorkspace ? 'Preparing WhatsApp delivery.' : 'Sending report email.')
           : '';
   const saveDisabledReason = saving
     ? 'Saving edits.'
@@ -1078,28 +1175,30 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
         <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
           <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
-          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>Stylist - Review</div>
+          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>{isWorkspace ? 'Jazz · Report Review' : 'Stylist - Review'}</div>
         </div>
         <div className="px-4 py-3 border-b space-y-1" style={{ borderColor: S.border }}>
-          <Link href="/stylist/admin/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          <Link href={isWorkspace && workspaceSlug ? `/stylist/${workspaceSlug}/dashboard` : '/stylist/admin/dashboard'} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <LayoutDashboard size={15} /> Blueprints
           </Link>
-          <Link href="/stylist/admin/manual" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          {!isWorkspace && <Link href="/stylist/admin/manual" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <FilePlus2 size={15} /> Manual Reports
-          </Link>
-          <Link href="/stylist/admin/edit" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          </Link>}
+          {!isWorkspace && <Link href="/stylist/admin/edit" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <Mail size={15} /> ICONIK Edit
-          </Link>
+          </Link>}
         </div>
         <div className="px-5 py-4 border-b" style={{ borderColor: S.border }}>
-          <Link href={`/stylist/admin/dashboard/${report.submission_id}`} className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
+          <Link href={isWorkspace && workspaceSlug && report.stylist_intake_responses?.consultation_id
+            ? `/stylist/${workspaceSlug}/consultations/${report.stylist_intake_responses.consultation_id}`
+            : `/stylist/admin/dashboard/${report.submission_id}`} className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
             <ArrowLeft size={14} /> Back to intake
           </Link>
           <h1 className="iconik-display truncate" style={{ fontSize: '22px', color: S.ink }}>
             {clientDisplayName}
           </h1>
           <div className="flex flex-wrap gap-2 mt-3">
-            <Pill tone={report.status === 'error' ? 'error' : report.status === 'sent' ? 'success' : report.status === 'generating' ? 'gold' : 'slate'}>
+            <Pill tone={report.status === 'error' ? 'error' : report.status === 'sent' || report.status === 'delivered' ? 'success' : report.status === 'generating' ? 'gold' : 'slate'}>
               {report.progress_stage ? stageLabel(report.progress_stage) : report.status.replace(/_/g, ' ')}
             </Pill>
             {versioned && <Pill tone={allApproved ? 'success' : 'muted'}>Approved {approvedCount}/{totalPageCount}</Pill>}
@@ -1166,7 +1265,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         <header className="sticky top-0 z-20 border-b px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div>
-              <div className="iconik-micro mb-1" style={{ color: S.muted }}>Women Blueprint Report</div>
+              <div className="iconik-micro mb-1" style={{ color: S.muted }}>{isWorkspace ? 'Jazz · Women Blueprint Report' : 'Women Blueprint Report'}</div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>
                   {viewMode === 'full' ? 'Full report' : activePage ? `Page ${activePage.page_number}: ${activePage.title || 'Untitled'}` : 'Report'}
@@ -1198,11 +1297,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   <ActionButton
                     onClick={resumeTextGeneration}
                     disabled={resumingText}
-                    title="Resume text generation in this report and skip pages that already exist."
+                    title={isWorkspace && report.status === 'error' ? 'Retry the failed durable report job from its completed checkpoints.' : 'Resume text generation in this report and skip pages that already exist.'}
                     tone="primary"
                   >
                     {resumingText ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    {resumingText ? 'Resuming...' : 'Resume Text'}
+                    {resumingText ? 'Resuming...' : isWorkspace && report.status === 'error' ? 'Retry Generation' : 'Resume Text'}
                   </ActionButton>
                 )}
                 {report.progress_stage && (
@@ -1442,8 +1541,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               </Pill>
               <span className="luxury-body text-xs" style={{ color: S.muted }}>
                 {hasUnsavedEdits
-                  ? `${dirtyPages.size + (reportDataDirty ? 1 : 0)} report area${dirtyPages.size + (reportDataDirty ? 1 : 0) === 1 ? '' : 's'} with unsaved edits.`
-                  : 'Click report text to edit in the original design.'}
+                  ? saveConflict
+                    ? 'A newer revision exists. Reload the report before editing again.'
+                    : isWorkspace && saving
+                      ? 'Saving changes...'
+                      : `${dirtyPages.size} page${dirtyPages.size === 1 ? '' : 's'} waiting to save.`
+                  : isWorkspace
+                    ? 'All changes saved.'
+                    : 'Click report text to edit in the original design.'}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1474,12 +1579,36 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               >
                 <CheckCheck size={14} /> Approve All
               </ActionButton>
-              <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || 'Send the report email to the client.'} tone="primary">
-                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}
+              <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || (isWorkspace ? 'Publish and prepare WhatsApp delivery.' : 'Send the report email to the client.')} tone="primary">
+                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? (isWorkspace ? 'Preparing...' : 'Sending...') : isWorkspace ? (report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & Deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}
               </ActionButton>
             </div>
           </div>
         </footer>
+      )}
+
+      {deliveryPrepared && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(44,38,34,.56)' }}>
+          <div className="w-full max-w-lg rounded-3xl p-7 md:p-8" style={{ background: S.bg, border: `1px solid ${S.border}`, boxShadow: '0 24px 80px rgba(44,38,34,.24)' }}>
+            <div className="iconik-micro mb-2" style={{ color: S.gold }}>REPORT PUBLISHED</div>
+            <h3 className="iconik-display text-3xl" style={{ color: S.ink }}>Deliver on WhatsApp</h3>
+            <p className="luxury-body text-sm leading-6 mt-3" style={{ color: S.muted }}>
+              The private report link is ready{deliveryPrepared.clientName ? ` for ${deliveryPrepared.clientName}` : ''}. Open WhatsApp, send the prepared message, then return here to confirm delivery.
+            </p>
+            <div className="rounded-2xl p-4 mt-5 break-all luxury-body text-xs" style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}>
+              {deliveryPrepared.reportUrl}
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 mt-6">
+              <button onClick={() => void openWhatsApp()} className="rounded-xl px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2" style={{ background: '#2F7D4A', color: '#fff' }}>
+                <Send size={15} /> Open WhatsApp
+              </button>
+              <button onClick={() => void confirmWhatsAppDelivery()} disabled={confirmingDelivery} className="rounded-xl px-5 py-3.5 luxury-body text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: S.ink, color: S.bg }}>
+                {confirmingDelivery ? <Loader2 size={15} className="animate-spin" /> : <CheckCheck size={15} />} Mark Delivered
+              </button>
+            </div>
+            <button onClick={() => setDeliveryPrepared(null)} className="w-full mt-3 rounded-xl px-5 py-3 luxury-body text-sm" style={{ color: S.muted }}>Close and confirm later</button>
+          </div>
+        </div>
       )}
 
       <style jsx global>{`
