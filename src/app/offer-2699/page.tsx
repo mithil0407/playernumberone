@@ -3,14 +3,15 @@ import LandingPageContent from '../LandingPageContent';
 export default function Offer2699Page() {
   return (
     <LandingPageContent
+      variant="offer2699"
       headline={
         <>
-          Discover Your <span className="text-luxury-green">Signature Style</span> in <span className="text-luxury-charcoal">24 hours</span>
+          Stop Guessing What Flatters You.
         </>
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">20 personalized outfits</span>, your <span className="font-semibold text-luxury-green">color palette</span>, and a <span className="font-semibold text-luxury-accent">1-on-1 stylist call</span>
+          Get <span className="font-semibold text-luxury-accent">20 personalised outfits</span>, your <span className="font-semibold text-luxury-green">colour palette</span> and a <span className="font-semibold text-luxury-accent">30-minute video consultation</span>.
         </>
       }
       checkoutHref="/offer-2699/checkout"
