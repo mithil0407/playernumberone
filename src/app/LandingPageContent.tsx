@@ -22,6 +22,7 @@ import { useState, useEffect, useMemo, type ReactNode } from 'react';
 interface LandingPageContentProps {
   headline: ReactNode;
   subheadline: ReactNode;
+  variant?: 'default' | 'offer2699';
   headlineClassName?: string;
   checkoutHref?: string;
   basePrice?: number;
@@ -33,12 +34,14 @@ interface LandingPageContentProps {
 export default function LandingPageContent({
   headline,
   subheadline,
+  variant = 'default',
   checkoutHref = '/checkout',
   basePrice = 3299,
   originalPrice = 5999,
   displayBasePrice,
   displayOriginalPrice,
 }: LandingPageContentProps) {
+  const isOffer2699 = variant === 'offer2699';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState({ minutes: 5, seconds: 0 });
@@ -61,6 +64,7 @@ export default function LandingPageContent({
   const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
 
   useEffect(() => {
+    if (isOffer2699) return;
     const timer = setInterval(() => {
       setTimeLeft(prevTime => {
         if (prevTime.minutes === 0 && prevTime.seconds === 0) return { minutes: 5, seconds: 0 };
@@ -69,7 +73,7 @@ export default function LandingPageContent({
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isOffer2699]);
 
   useEffect(() => {
     const timer = setInterval(nextImage, 4000);
@@ -80,14 +84,19 @@ export default function LandingPageContent({
   const faqs = [
     { question: 'Will this really help me look more elegant and confident?', answer: "Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We've helped 200+ women discover their signature style." },
     { question: "What if the style suggestions don't feel like me?", answer: "We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level." },
-    { question: 'How quickly will I see results?', answer: 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.' },
+    {
+      question: isOffer2699 ? 'What will I receive?' : 'How quickly will I see results?',
+      answer: isOffer2699
+        ? 'You receive 20 personalised outfits, your personal colour palette, body-shape and concern-zone guidance, plus hair and makeup recommendations.'
+        : 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.',
+    },
   ];
 
   const blueprintItems = [
     { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Geometric Silhouette Profile™', desc: 'Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame.' },
     { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Facial Architecture Analysis™', desc: 'Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance.' },
     { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Chromatic Harmony Map™', desc: '10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio.' },
-    { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '16 Outfit Formulas', desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
+    { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: isOffer2699 ? '20 Personalised Outfits' : '16 Outfit Formulas', desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
     { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Concern Zone Solutions', desc: 'Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it.' },
     { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '30-Minute Stylist Consultation', desc: 'A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first.' },
   ];
@@ -117,6 +126,11 @@ export default function LandingPageContent({
           </div>
 
           {/* Headline */}
+          {isOffer2699 && (
+            <div className="iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
+              SCIENTIFIC PERSONAL STYLING FOR INDIAN WOMEN
+            </div>
+          )}
           <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(32px, 7vw, 72px)', color: '#2C2622' }}>
             {headline}
           </h1>
@@ -157,10 +171,10 @@ export default function LandingPageContent({
           {/* CTA */}
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India')}
+            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India')}
             className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-10 py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform mb-8"
           >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>Begin Your Transformation</span>
+            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
             <ArrowRight className="h-4 w-4 opacity-60" />
           </Link>
 
@@ -169,11 +183,17 @@ export default function LandingPageContent({
             <div className="flex gap-0.5">
               {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: '#9a7d4a' }} />)}
             </div>
-            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 200+ women across India</span>
-            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
-            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>7-Day Guarantee</span>
+            {isOffer2699 ? (
+              <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>200+ women styled · Rated 4.9/5</span>
+            ) : (
+              <>
+                <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 200+ women across India</span>
+                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
+                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>7-Day Guarantee</span>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -186,7 +206,7 @@ export default function LandingPageContent({
               { num: '200+', label: 'Transformations' },
               { num: '95%', label: 'Confidence Elevation' },
               { num: '4.9', label: 'Client Satisfaction', star: true },
-              { num: '2-3', label: 'Weeks to Elegance' },
+              isOffer2699 ? { num: '20', label: 'Personalised Outfits' } : { num: '2-3', label: 'Weeks to Elegance' },
             ].map((s) => (
               <div key={s.label}>
                 <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
@@ -246,7 +266,7 @@ export default function LandingPageContent({
                 <div className="flex flex-wrap gap-3 mt-4">
                   <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass Profile</span>
                   <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
-                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>14 Ensembles</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{isOffer2699 ? '20 Outfits' : '14 Ensembles'}</span>
                 </div>
               </div>
 
@@ -375,7 +395,7 @@ export default function LandingPageContent({
               {/* Section 04: Outfit teaser */}
               <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#faf9f6' }}>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR 14 OUTFIT FORMULAS</span>
+                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {isOffer2699 ? '20 PERSONALISED OUTFITS' : '14 OUTFIT FORMULAS'}</span>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
               </div>
               {[
@@ -439,7 +459,7 @@ export default function LandingPageContent({
               ))}
 
               <div className="px-6 md:px-10 py-10 text-center" style={{ background: '#fff' }}>
-                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ 12 More Ensembles in Your Blueprint</span>
+                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {isOffer2699 ? '18 More Outfits' : '12 More Ensembles'} in Your Blueprint</span>
               </div>
             </div>
 
@@ -477,7 +497,7 @@ export default function LandingPageContent({
               onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', 'India')}
               className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
             >
-              <span className="iconik-display" style={{ fontSize: '15px' }}>Get Your Style Consultation</span>
+              <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Get Your Style Consultation'}</span>
               <ArrowRight className="h-4 w-4 opacity-60" />
             </Link>
           </div>
@@ -572,7 +592,7 @@ export default function LandingPageContent({
             onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', 'India')}
             className="inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
           >
-            <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>Get Your Style Consultation — {formattedBasePrice}</span>
+            <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : `Get Your Style Consultation — ${formattedBasePrice}`}</span>
             <ArrowRight className="h-4 w-4 opacity-60" style={{ color: '#F4EFE5' }} />
           </Link>
         </div>
@@ -661,11 +681,14 @@ export default function LandingPageContent({
       <section className="py-24 px-4 md:px-6 text-center me-slate relative">
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#F4EFE5', lineHeight: 1.1 }}>
-            Ready to Discover Your{' '}
-            <span className="iconik-display-it opacity-55">Signature Style?</span>
+            {isOffer2699 ? (
+              'Stop Guessing What Flatters You.'
+            ) : (
+              <>Ready to Discover Your <span className="iconik-display-it opacity-55">Signature Style?</span></>
+            )}
           </div>
           <p style={{ fontSize: '17px', color: '#F4EFE5', opacity: 0.75, marginTop: '16px', marginBottom: '40px', lineHeight: 1.85 }}>
-            Join 200+ women who have already transformed their confidence and discovered their elegant style.
+            {isOffer2699 ? 'Get 20 personalised outfits, your colour palette and a 30-minute video consultation.' : 'Join 200+ women who have already transformed their confidence and discovered their elegant style.'}
           </p>
           <Link
             href={checkoutHref}
@@ -674,14 +697,20 @@ export default function LandingPageContent({
           >
             <span className="iconik-display" style={{ fontSize: '28px', color: '#F4EFE5' }}>{formattedBasePrice}</span>
             <div className="w-px h-7" style={{ background: 'rgba(244,239,229,0.25)' }} />
-            <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>Start Your Transformation →</span>
+            <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>{isOffer2699 ? 'Get My Style Blueprint →' : 'Start Your Transformation →'}</span>
           </Link>
           <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
-            <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ Trusted by 200+ women across India</span>
-            <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-            <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>24-Hour Delivery</span>
-            <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-            <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>7-Day Money-Back Guarantee</span>
+            {isOffer2699 ? (
+              <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ 200+ women styled · Rated 4.9/5</span>
+            ) : (
+              <>
+                <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ Trusted by 200+ women across India</span>
+                <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
+                <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>24-Hour Delivery</span>
+                <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
+                <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>7-Day Money-Back Guarantee</span>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -744,19 +773,23 @@ export default function LandingPageContent({
                 <span className="line-through" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</span>
               </div>
             </div>
-            <div className="text-right ml-2">
-              <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Expires:</div>
-              <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>
-                {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+            {isOffer2699 ? (
+              <div className="text-right ml-2 iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.55 }}>30-minute video consultation</div>
+            ) : (
+              <div className="text-right ml-2">
+                <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Expires:</div>
+                <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>
+                  {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <Link
             href={checkoutHref}
             onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', 'India')}
             className="w-full inline-flex items-center justify-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-6 py-4 rounded-full transition-all duration-300 block"
           >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>Begin Your Transformation</span>
+            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
           </Link>
         </div>
       </div>
