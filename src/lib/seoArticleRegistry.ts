@@ -14,6 +14,7 @@ export type SeoVisualVariant = "comparison" | "palette" | "editorial";
 export type SeoArticleVisualConfig = {
   variant: SeoVisualVariant;
   src: string;
+  ogSrc?: string;
   fallbackSrc?: string;
   fallbackIsComposed?: boolean;
   isComposed?: boolean;
@@ -108,6 +109,7 @@ const records = {
     visual: {
       variant: "editorial",
       src: "/images/seo/how-to-look-taller-clothing-hero-iconik.webp",
+      ogSrc: "/images/seo/how-to-look-taller-clothing-hero-iconik-og.webp",
       isComposed: true,
       alt: "Indian woman beside a visual line diagram explaining how continuous garment lines can create a taller impression",
       width: 1672,
@@ -164,6 +166,7 @@ const records = {
     visual: {
       variant: "editorial",
       src: "/seo/style-guide/office-wear-indian-women.webp",
+      ogSrc: "/seo/style-guide/office-wear-indian-women-og.webp",
       alt: "A fictional Indian professional woman shown in three polished office outfit formulas spanning tailored western and structured ethnic workwear",
       width: 1003,
       height: 1568,
@@ -220,6 +223,7 @@ const records = {
     visual: {
       variant: "palette",
       src: "/seo/colour-analysis/olive-skin-india.webp",
+      ogSrc: "/seo/colour-analysis/olive-skin-india-og.webp",
       alt: "A fictional olive-skinned Indian woman beside warm, cool, and neutral fabric drapes that demonstrate how undertone changes colour harmony",
       width: 1003,
       height: 1568,
@@ -332,6 +336,7 @@ const records = {
     visual: {
       variant: "palette",
       src: "/seo/colour-analysis/saree-colours-by-undertone.webp",
+      ogSrc: "/seo/colour-analysis/saree-colours-by-undertone-og.webp",
       alt: "Three fictional Indian women with varied skin depths wearing warm, cool, and neutral undertone saree palettes with matching zari direction",
       width: 1003,
       height: 1568,
@@ -386,6 +391,7 @@ const records = {
     visual: {
       variant: "editorial",
       src: "/seo/faq/personal-stylist-cost-india.webp",
+      ogSrc: "/seo/faq/personal-stylist-cost-india-og.webp",
       alt: "A fictional Indian client and personal stylist reviewing a structured wardrobe plan, colour palette, and outfit selections during a premium consultation",
       width: 1003,
       height: 1568,

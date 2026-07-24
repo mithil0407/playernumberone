@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import type { GrowthEventParameters } from "@/lib/growthAnalytics";
 import { buildArticleMetadata } from "@/lib/seo";
 import type { SeoArticleRecord } from "@/lib/seoArticleRegistry";
@@ -12,23 +10,12 @@ import {
   organizationNode,
 } from "@/lib/structuredData";
 
-function publicAssetExists(assetPath: string | undefined) {
-  if (!assetPath?.startsWith("/")) return false;
-  return existsSync(path.join(process.cwd(), "public", assetPath.slice(1)));
-}
-
 export function resolveSeoArticleVisual(article: SeoArticleRecord) {
-  if (!article.visual) return undefined;
-  if (publicAssetExists(article.visual.src)) return article.visual.src;
-  if (publicAssetExists(article.visual.fallbackSrc)) return article.visual.fallbackSrc;
-  return undefined;
+  return article.visual?.src;
 }
 
 function openGraphPath(article: SeoArticleRecord) {
-  const visualPath = resolveSeoArticleVisual(article);
-  if (!visualPath) return undefined;
-  const ogPath = visualPath.replace(/\.webp$/, "-og.webp");
-  return publicAssetExists(ogPath) ? ogPath : undefined;
+  return article.visual?.ogSrc;
 }
 
 export function buildSeoArticleMetadata(article: SeoArticleRecord) {
