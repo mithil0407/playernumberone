@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Clock, Loader2, Lock, Shield, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Loader2, Lock, Shield, Sparkles } from 'lucide-react';
 import { getAttributionPayload } from '@/lib/attribution';
 import { trackInitiateCheckout, trackPageView, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
@@ -271,9 +271,9 @@ export default function GlobeCheckoutPage() {
           className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8"
         >
           {[
-            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '500+ Women Worldwide' },
+            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '5,000+ Clients' },
             { icon: <Lock className="w-3.5 h-3.5" />, text: '100% Secure' },
-            { icon: <Star className="w-3.5 h-3.5" />, text: '4.9 / 5 Rating' },
+            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '10+ Countries' },
           ].map(({ icon, text }) => (
             <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(148,166,173,0.12)', border: '1px solid rgba(148,166,173,0.2)', color: INK }}>
               <span style={{ color: C.slate }}>{icon}</span>
@@ -434,7 +434,7 @@ export default function GlobeCheckoutPage() {
               <div className="space-y-3">
                 {[
                   { icon: <Shield className="w-4 h-4" style={{ color: C.slate }} />, text: 'Secure payment with Razorpay' },
-                  { icon: <Clock className="w-4 h-4" style={{ color: C.slate }} />, text: 'Blueprint delivered within 72 hours of your intake form' },
+                  { icon: <Clock className="w-4 h-4" style={{ color: C.slate }} />, text: 'Blueprint delivered within 5 working days after your 30-minute consultation' },
                   { icon: <Sparkles className="w-4 h-4" style={{ color: C.slate }} />, text: 'After payment, you go directly to the women Blueprint intake' },
                 ].map(({ icon, text }) => (
                   <div key={text} className="flex items-center gap-3">

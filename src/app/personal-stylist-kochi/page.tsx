@@ -3,19 +3,19 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Kochi — Iconik Style Blueprint",
-  description: "Online personal styling for Kochi women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 16+ outfit recommendations for Kochi's professional and lifestyle context. Delivered in 48 hours.",
+  description: "Online personal styling for Kochi women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 20 outfit formulas for Kochi's professional and lifestyle context. Delivered within 5 working days after consultation.",
   keywords: "personal stylist Kochi, online personal styling Kochi, style consultation Kochi, body type analysis Kochi, wardrobe consultation Kochi, personal stylist Cochin, personal stylist Kerala",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-kochi" },
   openGraph: {
     title: "Personal Stylist in Kochi — Iconik Style Blueprint",
-    description: "Science-backed personal styling for Kochi women. Blueprint delivered in 48 hours.",
+    description: "Science-backed personal styling for Kochi women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-kochi",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Kochi — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Personal Stylist in Kochi — Iconik Style Blueprint",
-    description: "Science-backed personal styling for Kochi women. Blueprint delivered in 48 hours.",
+    description: "Science-backed personal styling for Kochi women. Blueprint delivered within 5 working days after consultation.",
     images: ["/og-image.webp"],
   },
 };
@@ -29,7 +29,7 @@ const jsonLd = {
       "provider": { "@type": "Organization", "name": "Iconik" },
       "areaServed": { "@type": "City", "name": "Kochi" },
       "description": "Online personal styling service for women in Kochi. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™.",
-      "offers": { "@type": "Offer", "price": "3299", "priceCurrency": "INR" },
+      "offers": { "@type": "Offer", "price": "2699", "priceCurrency": "INR" },
     },
     {
       "@type": "BreadcrumbList",
@@ -47,7 +47,7 @@ export default function KochiPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <CityLandingPage
         city="Kochi"
-        cityContext="Kochi's women navigate a distinctive wardrobe context — a city that blends a thriving corporate and startup scene with a deep appreciation for Kerala's textile traditions, including kasavu sarees and the elegant minimalism of traditional Kerala dress. Whether you are in Infopark's tech offices, Marine Drive's social scene, or preparing for a Kerala wedding, your wardrobe needs to work across both worlds. Iconik's Style Blueprint gives you the science-backed colour and silhouette framework to do exactly that — delivered in 48 hours."
+        cityContext="Kochi's women navigate a distinctive wardrobe context — a city that blends a thriving corporate and startup scene with a deep appreciation for Kerala's textile traditions, including kasavu sarees and the elegant minimalism of traditional Kerala dress. Whether you are in Infopark's tech offices, Marine Drive's social scene, or preparing for a Kerala wedding, your wardrobe needs to work across both worlds. Iconik's Style Blueprint gives you the science-backed colour and silhouette framework to do exactly that — delivered within 5 working days after consultation."
         testimonial={{
           name: "Lakshmi N., Edapally, Kochi",
           text: "I always struggled to balance my professional wardrobe with my love for traditional Kerala wear. The Blueprint gave me a single colour framework that works for both — I shop with so much more confidence now.",

@@ -1,17 +1,34 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   breadcrumbList,
+  coFounderPerson,
   founderPerson,
   graph,
   organizationNode,
 } from "@/lib/structuredData";
+import {
+  BLUEPRINT_OFFER,
+  BUSINESS_HOURS,
+  CLIENT_PROOF,
+  FOUNDERS,
+  GOOGLE_BUSINESS_PROFILE_URL,
+  LEGAL_ENTITY_NAME,
+  SUPPORT_EMAIL,
+  SUPPORT_WHATSAPP_DISPLAY,
+  SUPPORT_WHATSAPP_URL,
+} from "@/lib/siteFacts";
+import {
+  SeoBlueprintCta,
+  SeoEditorialFooter,
+  SeoEditorialHeader,
+} from "@/components/seo/SeoEditorial";
 
 const proofPoints = [
-  "Personalised Style Blueprint delivered digitally after intake and stylist review.",
-  "Three-part analysis: body geometry, colour harmony, and face-shape guidance.",
-  "Recommendations built for Indian wardrobes, including ethnic, western, fusion, work, and occasion wear.",
-  "Clear business identity, support contact, privacy policy, terms, and refund policy.",
+  `${CLIENT_PROOF.totalClients.toLocaleString("en-IN")}+ women and men styled across ${CLIENT_PROOF.countriesServed}+ countries.`,
+  `${BLUEPRINT_OFFER.outfitFormulas} personalised outfit formulas with colour, hairstyle, and eyewear guidance.`,
+  `${BLUEPRINT_OFFER.consultationMinutes}-minute stylist consultation before the Blueprint is prepared.`,
+  `Delivery within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation.`,
+  "Revisions included until the Blueprint reflects the original consultation scope.",
 ];
 
 const methods = [
@@ -19,19 +36,19 @@ const methods = [
     title: "Geometric Silhouette Profiling",
     href: "/methodology/geometric-silhouette-profiling",
     description:
-      "Maps shoulder, waist, hip, limb, and soft-tissue proportions into practical silhouette rules for Indian garments.",
+      "Maps shoulder, waist, hip, torso, and vertical proportions into practical silhouette and fit decisions.",
   },
   {
     title: "Chromatic Harmony Mapping",
     href: "/methodology/chromatic-harmony-mapping",
     description:
-      "Separates undertone, skin depth, and contrast so Indian skin tones are not forced into generic colour advice.",
+      "Separates undertone, skin depth, and contrast so Indian skin tones are not forced into generic colour lists.",
   },
   {
     title: "Facial Architecture Analysis",
     href: "/methodology/facial-architecture-analysis",
     description:
-      "Connects face shape to necklines, earrings, collars, and hair direction so outfits work close to the face.",
+      "Connects facial proportions to necklines, eyewear, earrings, collars, and hairstyle direction.",
   },
 ];
 
@@ -39,10 +56,11 @@ export default function AboutPage() {
   const jsonLd = graph([
     organizationNode,
     founderPerson,
+    coFounderPerson,
     {
       "@type": "AboutPage",
       "@id": "https://www.iconik.pro/about#webpage",
-      name: "About Iconik",
+      name: "About ICONIK",
       url: "https://www.iconik.pro/about",
       mainEntity: { "@id": "https://www.iconik.pro/#organization" },
     },
@@ -55,107 +73,136 @@ export default function AboutPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-5xl">
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="font-medium text-gray-800">About Iconik</li>
-            </ol>
-          </nav>
-
-          <header className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-center">
-            <div>
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-gray-400">
-                About Iconik
+      <div className="seo-editorial min-h-screen">
+        <SeoEditorialHeader />
+        <main>
+          <div className="seo-editorial-shell">
+            <header className="seo-article-hero">
+              <nav aria-label="Breadcrumb" className="seo-breadcrumbs">
+                <Link href="/">Home</Link> / <span aria-current="page">About ICONIK</span>
+              </nav>
+              <p className="seo-eyebrow">About ICONIK</p>
+              <h1>Personal styling built to become a usable system.</h1>
+              <p className="seo-dek">
+                ICONIK combines a human stylist consultation with documented colour, silhouette,
+                facial-architecture, hair, eyewear, and outfit guidance—so clients leave with a
+                reference they can use while dressing and shopping.
               </p>
-              <h1 className="mb-5 text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
-                A personal styling service built around evidence, not guesswork.
-              </h1>
-              <p className="text-lg leading-relaxed text-gray-600">
-                Iconik helps Indian women understand what suits them through a documented Style Blueprint: body-shape analysis, undertone-led colour guidance, face-shape recommendations, and outfit formulas for real wardrobes.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-              <Image
-                src="/tripti.png"
-                alt="Iconik founder and stylist profile"
-                width={640}
-                height={640}
-                className="mb-5 aspect-square w-full rounded-xl object-cover"
-                priority
-              />
-              <p className="text-sm font-semibold text-gray-900">Reviewed by Mithil Navalakha</p>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Founder, Iconik. Responsible for Iconik&apos;s methodology, style report structure, and client experience.
-              </p>
-            </div>
-          </header>
+            </header>
 
-          <section className="mt-16 rounded-2xl border border-gray-200 bg-gray-50 p-7">
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">Who is Iconik for?</h2>
-            <p className="mb-4 leading-relaxed text-gray-600">
-              Iconik is for women who want a repeatable styling system: what colours to wear, which silhouettes to choose, what to avoid, and how to build outfits across work, casual, ethnic, and occasion contexts.
-            </p>
-            <ul className="grid gap-3 text-gray-600 md:grid-cols-2">
-              {proofPoints.map((point) => (
-                <li key={point} className="flex gap-3">
-                  <span className="font-bold text-green-600">✓</span>
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="mt-14">
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">How the methodology works</h2>
-            <p className="mb-6 leading-relaxed text-gray-600">
-              Iconik&apos;s proprietary terms are backed by a specific styling process. Each method translates an observable variable into wardrobe decisions a client can use while shopping or getting dressed.
-            </p>
-            <div className="grid gap-4 md:grid-cols-3">
-              {methods.map((method) => (
-                <Link key={method.href} href={method.href} className="rounded-xl border border-gray-200 p-5 hover:bg-gray-50">
-                  <h3 className="mb-2 text-lg font-semibold text-gray-900">{method.title}</h3>
-                  <p className="text-sm leading-relaxed text-gray-600">{method.description}</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="mt-14 grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 p-7">
-              <h2 className="mb-4 text-2xl font-bold text-gray-900">Business identity</h2>
-              <dl className="space-y-3 text-gray-600">
-                <div>
-                  <dt className="font-semibold text-gray-900">Brand</dt>
-                  <dd>Iconik</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Industry</dt>
-                  <dd>Personal styling and wardrobe strategy</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-gray-900">Support</dt>
-                  <dd><a href="mailto:help.iconikfashion@gmail.com" className="underline">help.iconikfashion@gmail.com</a></dd>
-                </div>
-              </dl>
-            </div>
-            <div className="rounded-2xl border border-gray-200 p-7">
-              <h2 className="mb-4 text-2xl font-bold text-gray-900">Policies and trust</h2>
-              <p className="mb-4 leading-relaxed text-gray-600">
-                Iconik publishes its core commercial policies so clients can evaluate the service before paying.
-              </p>
-              <div className="space-y-2 text-gray-700">
-                <Link href="/terms" className="block underline">Terms of Service</Link>
-                <Link href="/privacy-policy" className="block underline">Privacy Policy</Link>
-                <Link href="/refund-policy" className="block underline">Refund Policy</Link>
-                <Link href="/contact" className="block underline">Contact</Link>
+            <section className="seo-quick-answer">
+              <p className="seo-eyebrow text-white/70">What we deliver</p>
+              <div className="seo-quick-answer-lead">
+                A personal Blueprint, not a generic quiz result.
               </div>
-            </div>
-          </section>
-        </div>
-      </main>
+              <div className="seo-quick-answer-detail">
+                Every Blueprint is shaped by the client&apos;s photos, measurements, preferences,
+                lifestyle, goals, and a conversation with an ICONIK stylist.
+              </div>
+            </section>
+
+            <section className="mb-24">
+              <p className="seo-eyebrow">Leadership</p>
+              <h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-4xl font-light tracking-[-0.04em] md:text-6xl">
+                The people accountable for the work
+              </h2>
+              <div className="mt-10 grid gap-5 md:grid-cols-2">
+                {FOUNDERS.map((founder) => (
+                  <article
+                    id={founder.name === FOUNDERS[0].name ? "jasmine-rana" : "mithil-navalakha"}
+                    key={founder.name}
+                    className="rounded-[1.6rem] border border-[#2C2622]/10 bg-white/35 p-7"
+                  >
+                    <div className="grid h-14 w-14 place-items-center rounded-full bg-[#1A2228] font-[family-name:var(--font-fraunces)] text-lg text-[#B79A67]">
+                      {founder.name.split(/\s+/).map((part) => part[0]).join("")}
+                    </div>
+                    <h3 className="mt-7 font-[family-name:var(--font-fraunces)] text-3xl font-light">{founder.name}</h3>
+                    <p className="mt-2 text-sm text-[#9A7D4A]">{founder.title}</p>
+                    <p className="mt-5 leading-7 text-[#2C2622]/65">
+                      {founder.name === FOUNDERS[0].name
+                        ? "Jasmine leads the styling perspective behind ICONIK's client recommendations and editorial review."
+                        : "Mithil leads ICONIK's product, operations, and the systems that turn consultation inputs into a usable client experience."}
+                    </p>
+                    <a
+                      href={founder.linkedIn}
+                      rel="noopener noreferrer"
+                      className="mt-6 inline-flex text-sm underline decoration-[#B79A67] underline-offset-4"
+                    >
+                      LinkedIn profile →
+                    </a>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="mb-24 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-[1.6rem] bg-[#EDE5D2] p-7 md:p-10">
+                <p className="seo-eyebrow">Service facts</p>
+                <h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-4xl font-light tracking-[-0.04em]">
+                  What clients can verify before paying
+                </h2>
+                <ul className="mt-7 space-y-4">
+                  {proofPoints.map((point) => (
+                    <li key={point} className="flex gap-3 leading-7 text-[#2C2622]/70">
+                      <span className="text-[#9A7D4A]">✓</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-[1.6rem] bg-[#1A2228] p-7 text-[#F7F3ED] md:p-10">
+                <p className="seo-eyebrow text-white/55">Business identity</p>
+                <dl className="mt-7 space-y-5 text-sm">
+                  <div>
+                    <dt className="text-white/45">Registered name</dt>
+                    <dd className="mt-1 text-base">{LEGAL_ENTITY_NAME}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-white/45">Support</dt>
+                    <dd className="mt-1"><a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></dd>
+                    <dd><a href={SUPPORT_WHATSAPP_URL}>WhatsApp {SUPPORT_WHATSAPP_DISPLAY}</a></dd>
+                  </div>
+                  <div>
+                    <dt className="text-white/45">Business hours</dt>
+                    <dd className="mt-1">{BUSINESS_HOURS.display}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-white/45">Public business profile</dt>
+                    <dd className="mt-1"><a href={GOOGLE_BUSINESS_PROFILE_URL}>View Google profile →</a></dd>
+                  </div>
+                </dl>
+              </div>
+            </section>
+
+            <section className="mb-24">
+              <p className="seo-eyebrow">Methodology</p>
+              <h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-4xl font-light tracking-[-0.04em] md:text-6xl">
+                Observable inputs, practical decisions
+              </h2>
+              <p className="mt-5 max-w-3xl leading-8 text-[#2C2622]/65">
+                ICONIK&apos;s named methods organise what a stylist observes. They are a styling
+                framework—not a medical diagnosis—and each method must end in a wardrobe decision
+                the client can understand and reuse.
+              </p>
+              <div className="seo-related-grid">
+                {methods.map((method) => (
+                  <Link key={method.href} href={method.href}>
+                    <span className="seo-related-arrow" aria-hidden="true">↗</span>
+                    <h3>{method.title}</h3>
+                    <p>{method.description}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            <SeoBlueprintCta
+              title="See exactly what the ICONIK Blueprint includes."
+              description={`${BLUEPRINT_OFFER.outfitFormulas} outfit formulas, colour analysis, hairstyle and eyewear guidance, plus a ${BLUEPRINT_OFFER.consultationMinutes}-minute consultation.`}
+            />
+          </div>
+        </main>
+        <SeoEditorialFooter />
+      </div>
     </>
   );
 }

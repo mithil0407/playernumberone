@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Rectangle Body Shape: How to Create Curves with Clothing — Iconik",
@@ -10,7 +11,23 @@ export const metadata: Metadata = {
     title: "Rectangle Body Shape: How to Create Curves with Clothing — Iconik",
     description: "Exact Indian garment formulas for the rectangle body shape — how to create a defined waist and curves without shapewear.",
     url: "https://www.iconik.pro/body-type-styling/rectangle-body-shape-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Rectangle body shape guide for Indian women — Iconik" }],
+    type: "article",
+    siteName: "Iconik",
+    locale: "en_IN",
+    publishedTime: "2025-01-01",
+    modifiedTime: "2026-07-24",
+    images: [{
+      url: "/images/seo/rectangle-body-shape-placement-iconik-og.webp",
+      width: 1200,
+      height: 630,
+      alt: "Rectangle body-shape styling through waist, shoulder and hem placement — Iconik",
+    }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rectangle Body Shape: How to Create Curves with Clothing — Iconik",
+    description: "Exact Indian garment formulas for the rectangle body shape — how to create a defined waist and curves without shapewear.",
+    images: ["/images/seo/rectangle-body-shape-placement-iconik-og.webp"],
   },
 };
 
@@ -44,6 +61,8 @@ export default function RectangleBodyShapeIndiaPage() {
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
         "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
         "datePublished": "2025-01-01",
+        "dateModified": "2026-07-24",
+        "image": "https://www.iconik.pro/images/seo/rectangle-body-shape-placement-iconik.webp",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/rectangle-body-shape-india" },
       },
       {
@@ -89,6 +108,15 @@ export default function RectangleBodyShapeIndiaPage() {
               A rectangle body shape has shoulders, waist, and hips in roughly equal width, with minimal natural waist definition. The styling goal is to create the illusion of a more defined waist and add visual curve — using structure, draping, and strategic cut. No shapewear required.
             </p>
           </header>
+
+          <SeoTeachingVisual
+            src="/images/seo/rectangle-body-shape-placement-iconik.webp"
+            alt="Indian woman with rectangle proportions showing wrap seam, waist shaping, clean shoulder and flared hem placement."
+            caption="Garment architecture creates selected points of shape while the underlying body remains unchanged."
+            width={1024}
+            height={1536}
+            priority
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is a Rectangle Body Shape?</h2>
@@ -180,10 +208,10 @@ export default function RectangleBodyShapeIndiaPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint — body analysis, colour palette, and 16+ outfit recommendations specific to your rectangle silhouette.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you within 5 working days after the consultation?</h2>
+            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint — body analysis, colour palette, and 20 outfit formulas specific to your rectangle silhouette.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

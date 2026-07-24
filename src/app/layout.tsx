@@ -4,6 +4,18 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
 import { META_PIXEL_ID } from "@/lib/metaPixel";
+import {
+  ACTIVE_PUBLIC_MARKETS,
+  BLUEPRINT_OFFER,
+  BUSINESS_HOURS,
+  CLIENT_PROOF,
+  FOUNDERS,
+  GOOGLE_BUSINESS_PROFILE_URL,
+  INSTAGRAM_URL,
+  LEGAL_ENTITY_NAME,
+  SUPPORT_EMAIL,
+  SUPPORT_WHATSAPP_E164,
+} from "@/lib/siteFacts";
 import "./globals.css";
 
 const GA_MEASUREMENT_IDS = Array.from(new Set([
@@ -49,22 +61,17 @@ export const metadata: Metadata = {
     default: "Iconik — Scientific Personal Styling for Indian Women",
     template: "%s",
   },
-  description: "India's scientific personal styling service. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — delivered in your personalised Style Blueprint in 48 hours.",
+  description: `India's scientific personal styling service. Get 20 personalised outfit formulas, colour, hairstyle and eyewear guidance, plus a 30-minute consultation. Delivered within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation.`,
   keywords: "personal stylist India, online personal styling India, body type styling India, colour analysis Indian skin tone, style blueprint India, personal stylist online, Indian women fashion",
   authors: [{ name: "Iconik Styling Team", url: "https://www.iconik.pro" }],
-  creator: "Iconik LLP",
-  publisher: "Iconik LLP",
+  creator: LEGAL_ENTITY_NAME,
+  publisher: LEGAL_ENTITY_NAME,
   alternates: {
     canonical: "https://www.iconik.pro",
-    languages: {
-      "en-IN": "https://www.iconik.pro",
-      "en-AE": "https://www.iconik.pro/uae",
-      "en-AU": "https://www.iconik.pro/au",
-    },
   },
   openGraph: {
     title: "Iconik — Scientific Personal Styling for Indian Women",
-    description: "India's scientific personal styling service. Get your personalised Style Blueprint in 48 hours — body analysis, colour palette, and 16+ outfit recommendations.",
+    description: `India's scientific personal styling service. Get 20 personalised outfit formulas and a 30-minute stylist consultation, delivered within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation.`,
     type: "website",
     url: "https://www.iconik.pro",
     siteName: "Iconik",
@@ -81,7 +88,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Iconik — Scientific Personal Styling for Indian Women",
-    description: "India's scientific personal styling service. Get your personalised Style Blueprint in 48 hours.",
+    description: `India's scientific personal styling service. Get your personalised ICONIK Blueprint within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation.`,
     images: ["/og-image.webp"],
   },
   robots: {
@@ -121,7 +128,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
       </head>
       <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${inter.className}`}>
@@ -177,30 +183,40 @@ export default function RootLayout({
                   "@type": "Organization",
                   "@id": "https://www.iconik.pro/#organization",
                   "name": "Iconik",
-                  "legalName": "ICONIK LLP",
+                  "legalName": LEGAL_ENTITY_NAME,
                   "url": "https://www.iconik.pro",
                   "logo": {
                     "@type": "ImageObject",
                     "url": "https://www.iconik.pro/og-image.webp",
                   },
-                  "description": "India's scientific personal styling service for women. Using proprietary methodologies — Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™ — Iconik creates personalised Style Blueprints that translate body science into actionable outfit recommendations. Founded in 2024 by Mithil Navalakha, Iconik serves clients across India and the UAE.",
-                  "foundingDate": "2024",
-                  "founder": {
+                  "description": `Scientific personal styling for women and men. ICONIK has served ${CLIENT_PROOF.totalClients.toLocaleString("en-IN")}+ clients across ${CLIENT_PROOF.countriesServed}+ countries with personalised colour, silhouette, facial-architecture and outfit guidance.`,
+                  "founder": FOUNDERS.map((founder) => ({
                     "@type": "Person",
-                    "name": "Mithil Navalakha",
-                  },
-                  "areaServed": ["IN", "AE", "AU"],
+                    "name": founder.name,
+                    "jobTitle": founder.title,
+                    "sameAs": founder.linkedIn,
+                  })),
+                  "areaServed": ACTIVE_PUBLIC_MARKETS,
                   "serviceType": "Personal Styling",
                   "contactPoint": {
                     "@type": "ContactPoint",
-                    "email": "help.iconikfashion@gmail.com",
+                    "email": SUPPORT_EMAIL,
+                    "telephone": SUPPORT_WHATSAPP_E164,
                     "contactType": "customer service",
                     "availableLanguage": ["English", "Hindi"],
+                    "hoursAvailable": {
+                      "@type": "OpeningHoursSpecification",
+                      "dayOfWeek": BUSINESS_HOURS.days,
+                      "opens": BUSINESS_HOURS.opens,
+                      "closes": BUSINESS_HOURS.closes,
+                    },
                   },
                   "sameAs": [
-                    "https://www.instagram.com/iconik.style/",
+                    INSTAGRAM_URL,
                     "https://www.instagram.com/iconik.men/",
                     "https://www.linkedin.com/company/iconik-llp",
+                    GOOGLE_BUSINESS_PROFILE_URL,
+                    ...FOUNDERS.map((founder) => founder.linkedIn),
                   ],
                 },
                 {

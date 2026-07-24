@@ -1416,7 +1416,7 @@ function ManIntakePageInner() {
                                     </motion.div>
                                     <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Your intake is complete.</div>
                                     <p style={{ fontSize: '16px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, maxWidth: '420px', margin: '0 auto 20px' }}>
-                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>72 hours</strong>.
+                                        After your 30-minute consultation, your ICONIK Man Blueprint will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>5 working days</strong>.
                                     </p>
                                     <p className="iconik-micro" style={{ color: '#2C2622', opacity: 0.4 }}>Check your spam folder just in case.</p>
                                 </div>

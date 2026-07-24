@@ -51,8 +51,8 @@ const faqs = [
     a: "Public prices vary substantially by scope and stylist. Examples reviewed in July 2026 showed virtual or entry services from roughly ₹1,000–₹5,000, basic wardrobe consultations around ₹1,500–₹5,000, shopping sessions around ₹5,000–₹20,000, and monthly support around ₹3,000–₹10,000. Bespoke or multi-session engagements can cost much more.",
   },
   {
-    q: "Is ₹3,299 a reasonable price for a personal stylist in India?",
-    a: "₹3,299 sits within the broad range of entry and virtual styling offers visible in India in July 2026. Whether it is reasonable depends on the deliverables, review process, personalisation, revision policy, and whether the output gives reusable guidance rather than a short call alone.",
+    q: "Is ₹2,699 a reasonable price for a personal stylist in India?",
+    a: "₹2,699 sits within the broad range of entry and virtual styling offers visible in India in July 2026. Whether it is reasonable depends on the deliverables, review process, personalisation, revision policy, and whether the output gives reusable guidance rather than a short call alone.",
   },
   {
     q: "What is included in an online style blueprint?",
@@ -81,14 +81,14 @@ export default function PersonalStylistCostIndiaPage() {
             <div className="space-y-5">
               {serviceTypes.map((s) => (
                 <div key={s.type} className={`border rounded-xl p-5 ${s.iconik ? "border-gray-900 bg-gray-50" : "border-gray-200"}`}>
-                  <div className="flex items-start justify-between gap-4 mb-2">
+                  <div className="mb-2 flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:justify-between sm:gap-4">
                     <p className="font-semibold text-gray-900">{s.type}</p>
-                    <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">{s.range}</span>
+                    <span className="text-sm font-semibold text-gray-700 sm:whitespace-nowrap">{s.range}</span>
                   </div>
                   <p className="text-sm text-gray-600 mb-2 leading-relaxed">{s.what}</p>
                   <p className="text-sm text-gray-500"><span className="font-medium text-gray-700">Best for:</span> {s.bestFor}</p>
                   {s.iconik && (
-                    <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">Iconik&apos;s Style Blueprint is in this category — at ₹3,299, it covers body type, colour palette, and 16+ outfit recommendations including ethnic wear.</p>
+                    <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-200">Iconik&apos;s Style Blueprint is in this category — at ₹2,699, it covers body type, colour palette, and 20 outfit formulas including ethnic wear.</p>
                   )}
                 </div>
               ))}
@@ -124,7 +124,7 @@ export default function PersonalStylistCostIndiaPage() {
                 { situation: "You have a full wardrobe and want to know what to keep and what to remove", recommendation: "Wardrobe audit — a stylist reviews what you have in person" },
                 { situation: "You are preparing for a major event or season", recommendation: "Personal shopping or a one-time in-person consultation" },
                 { situation: "You are in a high-visibility role and need ongoing support", recommendation: "Monthly retainer" },
-                { situation: "You want maximum value for a complete framework — body, colour, outfits", recommendation: "Iconik's Style Blueprint — covers all three at ₹3,299" },
+                { situation: "You want maximum value for a complete framework — body, colour, outfits", recommendation: "Iconik's Style Blueprint — covers all three at ₹2,699" },
               ].map((item) => (
                 <div key={item.situation} className="border border-gray-200 rounded-xl p-4">
                   <p className="text-sm font-semibold text-gray-900 mb-1">{item.situation}</p>

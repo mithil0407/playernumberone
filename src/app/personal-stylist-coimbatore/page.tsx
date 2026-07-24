@@ -3,19 +3,19 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Coimbatore — Iconik Style Blueprint",
-  description: "Online personal styling for Coimbatore women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 16+ outfit recommendations for Coimbatore's professional and traditional lifestyle. Delivered in 48 hours.",
+  description: "Online personal styling for Coimbatore women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 20 outfit formulas for Coimbatore's professional and traditional lifestyle. Delivered within 5 working days after consultation.",
   keywords: "personal stylist Coimbatore, online personal styling Coimbatore, style consultation Coimbatore, body type analysis Coimbatore, wardrobe consultation Coimbatore, personal stylist Tamil Nadu",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-coimbatore" },
   openGraph: {
     title: "Personal Stylist in Coimbatore — Iconik Style Blueprint",
-    description: "Science-backed personal styling for Coimbatore women. Blueprint delivered in 48 hours.",
+    description: "Science-backed personal styling for Coimbatore women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-coimbatore",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Coimbatore — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Personal Stylist in Coimbatore — Iconik Style Blueprint",
-    description: "Science-backed personal styling for Coimbatore women. Blueprint delivered in 48 hours.",
+    description: "Science-backed personal styling for Coimbatore women. Blueprint delivered within 5 working days after consultation.",
     images: ["/og-image.webp"],
   },
 };
@@ -29,7 +29,7 @@ const jsonLd = {
       "provider": { "@type": "Organization", "name": "Iconik" },
       "areaServed": { "@type": "City", "name": "Coimbatore" },
       "description": "Online personal styling service for women in Coimbatore. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™.",
-      "offers": { "@type": "Offer", "price": "3299", "priceCurrency": "INR" },
+      "offers": { "@type": "Offer", "price": "2699", "priceCurrency": "INR" },
     },
     {
       "@type": "BreadcrumbList",
@@ -47,7 +47,7 @@ export default function CoimbatorePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <CityLandingPage
         city="Coimbatore"
-        cityContext="Coimbatore — the Manchester of South India — is a city of industrialists, entrepreneurs, and an educated professional class with a deep appreciation for quality and value. The city's women balance a strong Kongu cultural tradition (silk sarees, temple jewellery, Tamil festival occasions) with an increasingly modern professional wardrobe. Coimbatore's climate, warmer than Chennai for much of the year, also makes fabric choice consequential. Iconik's Style Blueprint delivers a personalised colour and silhouette analysis that works for both your Pongal silk and your boardroom wardrobe — in 48 hours, from anywhere in Coimbatore."
+        cityContext="Coimbatore — the Manchester of South India — is a city of industrialists, entrepreneurs, and an educated professional class with a deep appreciation for quality and value. The city's women balance a strong Kongu cultural tradition (silk sarees, temple jewellery, Tamil festival occasions) with an increasingly modern professional wardrobe. Coimbatore's climate, warmer than Chennai for much of the year, also makes fabric choice consequential. Iconik's Style Blueprint delivers a personalised colour and silhouette analysis that works for both your Pongal silk and your boardroom wardrobe — within 5 working days after consultation, from anywhere in Coimbatore."
         testimonial={{
           name: "Kavitha S., RS Puram, Coimbatore",
           text: "I always shopped well but without direction. The Blueprint finally told me exactly which colours work for my skin and which silhouettes suit my body. My sarees and my work clothes now make sense together.",

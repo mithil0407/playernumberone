@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "What does the Iconik Style Blueprint tell you?",
-    a: "It tells you three things: (1) Your exact body type based on 7 measurements — not a personality label but a geometric classification with specific outfit formulas. (2) Your exact colour palette based on undertone and contrast analysis — not 'wear warm colours' but the specific 10 colours that create harmony with your complexion. (3) 16+ outfit formulas that combine your body type and colour palette for Indian and western garments across your lifestyle contexts.",
+    a: "It tells you three things: (1) Your exact body type based on 7 measurements — not a personality label but a geometric classification with specific outfit formulas. (2) Your exact colour palette based on undertone and contrast analysis — not 'wear warm colours' but the specific 10 colours that create harmony with your complexion. (3) 20 outfit formulas that combine your body type and colour palette for Indian and western garments across your lifestyle contexts.",
   },
   {
     q: "Can I use a style quiz result to shop or get dressed more effectively?",
@@ -108,7 +108,7 @@ export default function StyleBlueprintVsQuizPage() {
               <li><strong>Undertone and contrast via Chromatic Harmony Mapping™:</strong> This identifies the warm/cool/neutral base of your complexion and your contrast level. These produce a specific 10-colour palette — not a vague direction like &quot;you suit warm colours&quot; but the exact hues that create harmony with your specific complexion.</li>
             </ul>
             <p className="text-gray-600 leading-relaxed">
-              Combined, these produce 16+ outfit formulas: specific garment silhouettes in specific colour combinations for specific occasions (work, casual, formal, occasion). This is a dressing framework, not a label.
+              Combined, these produce 20 outfit formulas: specific garment silhouettes in specific colour combinations for specific occasions (work, casual, formal, occasion). This is a dressing framework, not a label.
             </p>
           </section>
 
@@ -170,9 +170,9 @@ export default function StyleBlueprintVsQuizPage() {
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get the framework, not just the label</h2>
-            <p className="text-gray-600 mb-6">Body analysis, colour palette, and 16+ outfit formulas — a complete dressing framework delivered in 48 hours.</p>
+            <p className="text-gray-600 mb-6">Body analysis, colour palette, and 20 outfit formulas — a complete dressing framework delivered within 5 working days after the consultation.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

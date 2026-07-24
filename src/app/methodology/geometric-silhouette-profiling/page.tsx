@@ -1,35 +1,36 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import { SeoEditorialFooter, SeoEditorialHeader } from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import { FOUNDERS } from "@/lib/siteFacts";
 
-export const metadata: Metadata = {
-  title: "What is Geometric Silhouette Profiling™? — Iconik's Body Analysis Method",
-  description: "Geometric Silhouette Profiling™ (GSP) is Iconik's proprietary body analysis methodology. Full explanation of what it is, how it works, and how it differs from standard body shape quizzes.",
-  keywords: "geometric silhouette profiling, what is geometric silhouette profiling, Iconik body analysis method, GSP body type analysis, scientific body type profiling India",
-  alternates: { canonical: "https://www.iconik.pro/methodology/geometric-silhouette-profiling" },
-  openGraph: {
-    title: "What is Geometric Silhouette Profiling™? — Iconik's Body Analysis Method",
-    description: "The full definition of Geometric Silhouette Profiling™ — how it works, what makes it different, and how it is applied in the Iconik Style Blueprint.",
-    url: "https://www.iconik.pro/methodology/geometric-silhouette-profiling",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Geometric Silhouette Profiling — Iconik methodology" }],
-  },
-};
+export const metadata: Metadata = buildArticleMetadata({
+  title: "Geometric Silhouette Profiling: ICONIK's Proportion Method",
+  description: "The canonical explanation of ICONIK's proportion styling framework: the measurements it considers, how it informs garments, and what it does not claim.",
+  path: "/methodology/geometric-silhouette-profiling",
+  datePublished: "2025-01-01",
+  dateModified: "2026-07-24",
+  authorPath: "/about#jasmine-rana",
+  keywords: ["Geometric Silhouette Profiling", "ICONIK proportion method", "body type styling India"],
+});
 
 const faqs = [
   {
     q: "Who developed Geometric Silhouette Profiling™?",
-    a: "Geometric Silhouette Profiling™ was developed by the Iconik methodology team, led by founder Mithil Navalakha, specifically to address the gap between Western body type systems and the styling needs of Indian women. It accounts for Indian garment categories, Indian frame structures, and the Indian lifestyle context.",
+    a: "Geometric Silhouette Profiling™ was developed by the ICONIK methodology team and is reviewed by Jasmine Rana, Co-Founder and Head Stylist. It applies proportion concepts to Indian, western and fusion garment categories.",
   },
   {
-    q: "Is Geometric Silhouette Profiling™ scientifically validated?",
-    a: "GSP is grounded in established principles of proportion geometry and biomechanical frame analysis. It extends these principles into a practical styling framework specific to Indian women. Every Blueprint applying GSP is reviewed by a certified Iconik stylist before delivery to ensure recommendations are both analytically sound and practically wearable.",
+    q: "Is Geometric Silhouette Profiling™ a scientific or medical assessment?",
+    a: "No. GSP is a proprietary styling framework, not a clinical, biomechanical or scientifically validated diagnostic tool. It uses measurements and visual proportion to make garment recommendations, which should still be adapted to comfort, mobility, taste and the way a specific garment fits.",
   },
   {
     q: "How is GSP™ applied in an Iconik Blueprint?",
-    a: "During your Blueprint intake, your stylist applies GSP to your measurements and photos to determine your primary silhouette archetype and any hybrid characteristics. The result is a precise styling prescription at the garment level — specific cuts, lengths, silhouettes, and Indian garment categories for your exact profile.",
+    a: "During your Blueprint intake, a stylist uses measurements, photos and consultation context to identify useful proportion patterns. The output is a set of garment-level options—cuts, lengths, silhouettes and Indian-wear categories—to test against your preferences and real fit.",
   },
   {
     q: "Can I do Geometric Silhouette Profiling™ myself?",
-    a: "A simplified version is possible with careful measurement and the Iconik body type guide. However, the full GSP assessment — including hybrid profiling and Indian garment prescription — is conducted by a certified Iconik stylist as part of the Style Blueprint. Self-assessment typically misses the hybrid dimension.",
+    a: "Yes. Careful measurement and the ICONIK body-type guide can provide a useful starting point. A Blueprint adds stylist review, hybrid proportion notes and Indian-garment application, but a self-assessment can still help you test one garment variable at a time.",
   },
 ];
 
@@ -40,10 +41,22 @@ export default function GeometricSilhouetteProfilingPage() {
       {
         "@type": "Article",
         "headline": "What is Geometric Silhouette Profiling™?",
-        "description": "The definitive explanation of Geometric Silhouette Profiling™ — Iconik's proprietary body analysis methodology for Indian women.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
+        "description": "The canonical explanation of ICONIK's proprietary proportion styling framework.",
+        "author": {
+          "@type": "Person",
+          "name": FOUNDERS[0].name,
+          "jobTitle": FOUNDERS[0].title,
+          "sameAs": FOUNDERS[0].linkedIn,
+        },
+        "reviewedBy": {
+          "@type": "Person",
+          "name": FOUNDERS[0].name,
+          "jobTitle": FOUNDERS[0].title,
+          "sameAs": FOUNDERS[0].linkedIn,
+        },
         "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
         "datePublished": "2025-01-01",
+        "dateModified": "2026-07-24",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/methodology/geometric-silhouette-profiling" },
       },
       {
@@ -66,10 +79,11 @@ export default function GeometricSilhouetteProfilingPage() {
   };
 
   return (
-    <>
+    <div className="seo-editorial min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoEditorialHeader />
+      <main className="px-4 py-16 md:py-24">
+        <div className="seo-classic-article mx-auto max-w-3xl">
 
           <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
             <ol className="flex items-center gap-2 flex-wrap">
@@ -83,22 +97,35 @@ export default function GeometricSilhouetteProfilingPage() {
 
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              What is Geometric Silhouette Profiling™?
+              Geometric Silhouette Profiling™: ICONIK&apos;s Proportion Method
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Geometric Silhouette Profiling™ (GSP) is Iconik&apos;s proprietary body analysis methodology. It maps the proportional geometry of the human frame — shoulder width, bust span, waist-to-hip differential, and limb length — to five primary silhouette archetypes. Unlike traditional body shape quizzes, GSP accounts for both skeletal structure and soft tissue distribution, producing a precise styling prescription rather than a generic category label.
+              Geometric Silhouette Profiling™ (GSP) is ICONIK&apos;s proprietary styling framework for comparing shoulder, bust, waist and hip relationships, torso and limb proportion, and current garment fit. It turns those observations into options to test—not a diagnosis or a rule that the body must be corrected.
             </p>
+            <p className="mt-4 text-sm text-gray-500">Updated 24 July 2026 · Reviewed by Jasmine Rana, Co-Founder and Head Stylist</p>
           </header>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Was Geometric Silhouette Profiling™ Developed?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Standard body type quizzes are self-reported, use a maximum of four categories, and are based entirely on Western silhouette norms. They do not account for Indian women&apos;s average frame structures, the way Indian women carry weight due to genetic and hormonal factors, or the garment categories — sarees, kurtas, salwars, Anarkalis — that Indian women actually wear.
+              Many body-type quizzes use only a few self-reported questions and illustrate their advice with jeans, dresses and blazers. They rarely explain how the same proportion principle changes kurta length, saree drape, salwar shape or dupatta placement.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Geometric Silhouette Profiling™ was developed specifically to address this gap. It produces a styling prescription that works for Indian bodies, in Indian garments, for Indian lifestyles.
+              GSP was developed to translate proportion observations into Indian, western and fusion wardrobes while keeping the client&apos;s comfort, taste and lifestyle in the decision.
             </p>
           </section>
+
+          <figure className="mb-12">
+            <Image
+              src="/body-type-diagram.webp"
+              alt="Five broad proportion patterns used as starting points in Geometric Silhouette Profiling"
+              width={1200}
+              height={500}
+              className="w-full rounded-xl"
+              priority
+            />
+            <figcaption className="mt-3 text-sm leading-6 text-gray-500">The five patterns are descriptive starting points. People can sit between them, and plus size is a size range rather than a separate body shape.</figcaption>
+          </figure>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How Does Geometric Silhouette Profiling™ Work?</h2>
@@ -110,7 +137,7 @@ export default function GeometricSilhouetteProfilingPage() {
               <li><strong>Soft tissue assessment:</strong> Identifying where volume is distributed — midsection, hip and thigh zone, bust, upper arm.</li>
               <li><strong>Silhouette classification:</strong> Mapping the measurements to one of five primary archetypes: Apple, Pear, Rectangle, Hourglass, or Inverted Triangle.</li>
               <li><strong>Hybrid profiling:</strong> Many women fall between archetypes. GSP identifies the primary and secondary type and weights the recommendations accordingly. An apple-pear hybrid gets a different prescription than a pure apple.</li>
-              <li><strong>Styling prescription:</strong> Garment categories, cuts, silhouettes, and lengths mapped to the exact profile — specifically including Indian ethnic wear categories.</li>
+              <li><strong>Garment options:</strong> Cuts, silhouettes and lengths selected for the observed proportions, with Indian ethnic-wear categories included.</li>
             </ol>
           </section>
 
@@ -184,20 +211,21 @@ export default function GeometricSilhouetteProfilingPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want GSP™ applied to your body in 48 hours?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want GSP™ applied to your body within 5 working days after the consultation?</h2>
             <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint uses all three methodologies — GSP™, CHM™, and FAA™ — to produce a complete, precise styling prescription.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+            <Link href="/offer-2699" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this article:</p>
-            <p>Iconik Styling Team. &quot;What is Geometric Silhouette Profiling™?&quot; Iconik LLP, 2025. https://www.iconik.pro/methodology/geometric-silhouette-profiling</p>
+            <p>Rana, Jasmine. &quot;Geometric Silhouette Profiling™: ICONIK&apos;s Proportion Method.&quot; ICONIK LLP. Updated 24 July 2026. https://www.iconik.pro/methodology/geometric-silhouette-profiling</p>
           </div>
 
         </div>
       </main>
-    </>
+      <SeoEditorialFooter />
+    </div>
   );
 }

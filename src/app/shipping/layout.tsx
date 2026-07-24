@@ -1,4 +1,5 @@
 import { buildMetadata } from "@/lib/seo";
+import SeoSectionChrome from "@/components/seo/SeoSectionChrome";
 
 export const metadata = buildMetadata({
   title: "Delivery Policy",
@@ -8,5 +9,5 @@ export const metadata = buildMetadata({
 });
 
 export default function ShippingLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <SeoSectionChrome>{children}</SeoSectionChrome>;
 }

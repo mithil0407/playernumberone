@@ -3,10 +3,11 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Eye, Lock, Database, UserCheck } from 'lucide-react';
+import { LEGAL_ENTITY_NAME } from '@/lib/siteFacts';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="seo-policy-page min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -22,7 +23,7 @@ export default function PrivacyPolicyPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
+          className="seo-policy-card bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
         >
           {/* Header */}
           <div className="text-center mb-12">
@@ -41,7 +42,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
               <p className="leading-relaxed">
-                ICONIK (Player Number One), operated by <strong>MITHIL NILESH NAVALAKHA</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;),
+                ICONIK, operated by <strong>{LEGAL_ENTITY_NAME}</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;),
                 is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose,
                 and safeguard your information when you use our website, style consultation services, and subscription services.
               </p>
@@ -364,7 +365,7 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <div className="space-y-2">
                   <p><strong>Business Name:</strong> ICONIK (Player Number One)</p>
-                  <p><strong>Operated by:</strong> MITHIL NILESH NAVALAKHA</p>
+                  <p><strong>Operated by:</strong> {LEGAL_ENTITY_NAME}</p>
                   <p><strong>Privacy Officer:</strong> <a href="mailto:privacy@iconik.pro" className="text-blue-600 hover:underline">privacy@iconik.pro</a></p>
                   <p><strong>General Support:</strong> <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a></p>
                 </div>

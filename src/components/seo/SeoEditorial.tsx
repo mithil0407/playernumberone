@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
+import { BLUEPRINT_OFFER, FOUNDERS } from "@/lib/siteFacts";
 
 export type SeoBreadcrumb = {
   href?: string;
@@ -38,7 +40,7 @@ export function SeoEditorialHeader() {
             </Link>
           ))}
         </nav>
-        <Link href="/checkout" className="seo-header-cta">
+        <Link href={BLUEPRINT_OFFER.offerPath} className="seo-header-cta">
           Get My Blueprint
         </Link>
       </div>
@@ -170,6 +172,36 @@ export function SeoInsightCard({
   );
 }
 
+export function SeoTeachingVisual({
+  src,
+  alt,
+  caption,
+  width,
+  height,
+  priority = false,
+}: {
+  src: string;
+  alt: string;
+  caption: string;
+  width: number;
+  height: number;
+  priority?: boolean;
+}) {
+  return (
+    <figure className="seo-teaching-visual">
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        sizes="(max-width: 768px) 100vw, 768px"
+        priority={priority}
+      />
+      <figcaption>{caption}</figcaption>
+    </figure>
+  );
+}
+
 export function SeoFaqSection({ faqs }: { faqs: { q: string; a: string }[] }) {
   return (
     <section className="seo-faq" aria-labelledby="frequently-asked-questions">
@@ -188,23 +220,28 @@ export function SeoFaqSection({ faqs }: { faqs: { q: string; a: string }[] }) {
 }
 
 export function SeoAuthorReview({
-  name = "Mithil Navalakha",
-  role = "Founder, Iconik",
+  name = FOUNDERS[0].name,
+  role = FOUNDERS[0].title,
+  profileHref = FOUNDERS[0].linkedIn,
   children,
 }: {
   name?: string;
   role?: string;
+  profileHref?: string;
   children?: ReactNode;
 }) {
   return (
     <aside className="seo-author-review">
-      <div aria-hidden="true" className="seo-author-monogram">MN</div>
+      <div aria-hidden="true" className="seo-author-monogram">{name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2)}</div>
       <div>
         <p className="seo-eyebrow">Expert review</p>
         <h2>{name}</h2>
         <p className="seo-author-role">{role}</p>
         {children && <div className="seo-author-copy">{children}</div>}
-        <Link href="/about">About Iconik&apos;s methodology →</Link>
+        <div className="flex flex-wrap gap-4">
+          <a href={profileHref} rel="noopener noreferrer">View stylist profile →</a>
+          <Link href="/about">About Iconik&apos;s methodology →</Link>
+        </div>
       </div>
     </aside>
   );
@@ -231,7 +268,7 @@ export function SeoRelatedGuides({ links }: { links: SeoRelatedLink[] }) {
 export function SeoBlueprintCta({
   title = "Turn the guidance into your personal style system.",
   description = "Your Iconik Style Blueprint maps silhouette, colour, face architecture, and real outfit formulas to you.",
-  href = "/checkout",
+  href = BLUEPRINT_OFFER.offerPath,
   label = "Get My Style Blueprint",
 }: {
   title?: string;
@@ -254,7 +291,7 @@ export function SeoEditorialFooter() {
     <footer className="seo-editorial-footer">
       <div className="seo-editorial-shell flex flex-col justify-between gap-4 py-8 md:flex-row md:items-center">
         <Link href="/" className="seo-wordmark">ICONIK</Link>
-        <p>Scientific personal styling for Indian women.</p>
+        <p>Methodology-led personal styling for Indian women.</p>
         <div className="flex gap-5">
           <Link href="/about">About</Link>
           <Link href="/contact">Contact</Link>

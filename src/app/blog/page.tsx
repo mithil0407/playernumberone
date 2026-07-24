@@ -10,28 +10,19 @@ export const metadata: Metadata = {
     title: "Iconik Style Blog — Body Type, Colour Analysis & Personal Styling",
     description: "Science-backed styling guides for Indian women.",
     url: "https://www.iconik.pro/blog",
+    type: "website",
+    siteName: "Iconik",
+    locale: "en_IN",
+    images: [{
+      url: "/og-image.webp",
+      width: 1200,
+      height: 630,
+      alt: "Iconik styling guides for Indian women",
+    }],
   },
 };
 
 const posts = [
-  {
-    slug: "what-is-geometric-silhouette-profiling",
-    title: "What is Geometric Silhouette Profiling™?",
-    description: "The complete definition of Iconik's proprietary body analysis methodology — what it is, how it works, and how it differs from standard body shape quizzes.",
-    date: "2025-01-01",
-  },
-  {
-    slug: "what-is-chromatic-harmony-mapping",
-    title: "What is Chromatic Harmony Mapping™?",
-    description: "Iconik's colour analysis protocol for Indian skin tones — how undertone identification produces a personalised colour palette.",
-    date: "2025-01-08",
-  },
-  {
-    slug: "what-is-facial-architecture-analysis",
-    title: "What is Facial Architecture Analysis™?",
-    description: "How Iconik's face shape profiling method produces neckline, earring, and hairstyle recommendations from facial geometry.",
-    date: "2025-01-15",
-  },
   {
     slug: "is-personal-stylist-worth-it-india",
     title: "Is a Personal Stylist Worth It in India?",

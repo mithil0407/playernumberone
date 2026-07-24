@@ -1,209 +1,265 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  SeoArticleLayout,
+  SeoAuthorReview,
+  SeoBlueprintCta,
+  SeoFaqSection,
+  SeoInsightCard,
+  SeoQuickAnswer,
+  SeoRelatedGuides,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "Pear Body Shape Styling: The Indian Women's Playbook — Iconik",
-  description: "Complete pear body shape guide for Indian women. How to balance a wider hip with Indian ethnic wear — salwar suits, sarees, kurtas, and western wear — using Geometric Silhouette Profiling™.",
-  keywords: "pear body shape India, pear body type Indian women, pear silhouette Indian women, how to dress pear body shape India, pear shaped Indian women styling",
-  alternates: { canonical: "https://www.iconik.pro/body-type-styling/pear-body-shape-india" },
-  openGraph: {
-    title: "Pear Body Shape Styling: The Indian Women's Playbook — Iconik",
-    description: "Exact Indian garment formulas for the pear body shape — how to create upper body balance using kurtas, Anarkalis, and sarees.",
-    url: "https://www.iconik.pro/body-type-styling/pear-body-shape-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Pear body shape styling guide for Indian women — Iconik" }],
-  },
-};
+const path = "/body-type-styling/pear-body-shape-india";
+const title = "Pear Body Shape Styling for Indian Women";
+const description =
+  "A practical pear-shape guide for kurtas, sarees, salwar suits, trousers and dresses—focused on fit, proportion and personal preference rather than hiding the hips.";
+const published = "2025-01-01";
+const modified = "2026-07-24";
+
+export const metadata: Metadata = buildArticleMetadata({
+  title,
+  description,
+  path,
+  datePublished: published,
+  dateModified: modified,
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "pear body shape India",
+    "pear body type Indian women",
+    "how to dress pear body shape India",
+    "pear shape kurta saree",
+  ],
+});
 
 const faqs = [
   {
-    q: "Should a pear body shape avoid wearing bright colours on the bottom?",
-    a: "As a general principle, yes — brighter colours on the lower body increase visual emphasis on the hip zone. However, this is not absolute. A well-chosen wide-leg palazzo in a vibrant undertone-matched colour can work if the top has equal or greater visual weight. The principle is balance, not elimination.",
-  },
-  {
-    q: "What is the best Anarkali style for a pear shape?",
-    a: "An Anarkali with a boat-neck or wide-neck yoke, embellishment concentrated on the bodice (not the skirt), and a full flare from the hip. The embellishment at the yoke draws the eye upward and creates visual width at the shoulders, balancing the hip-dominant silhouette.",
+    q: "Should a pear body shape avoid bright bottoms?",
+    a: "No. Bright colour increases emphasis, but that may be exactly what you want. If you prefer a more distributed visual line, repeat the colour near the face or add comparable detail at the neckline.",
   },
   {
     q: "Do palazzo pants suit a pear body shape?",
-    a: "Yes. Palazzo pants are one of the best lower-body options for pear shapes. The volume of the wide leg balances the hip width rather than contrast-emphasising it, and creates an elongated leg line from hip to hem.",
+    a: "They can. Look for a waistband that lies smoothly, enough ease through the hip and a leg that falls cleanly rather than collapsing into excess gathers. The top length and fabric matter as much as the trouser label.",
+  },
+  {
+    q: "What kurta length works for a pear shape?",
+    a: "Test hems above or below the fullest hip point rather than ending exactly on it. The best position also depends on torso length, height, bottom width and whether you want to show or soften the hip line.",
   },
   {
     q: "How is pear different from hourglass?",
-    a: "An hourglass has shoulders and hips roughly equal in width with a defined waist. A pear has hips noticeably wider than shoulders. The styling logic is different: hourglass styling emphasises the waist, while pear styling focuses on visual upper body broadening to create proportion.",
+    a: "Pear usually describes hips that appear wider than the shoulder line. Hourglass describes a more similar shoulder-to-hip width with a visibly narrower waist. Many people sit between descriptions, so use the label only if it improves fit decisions.",
+  },
+  {
+    q: "Can a pear shape wear fitted clothing?",
+    a: "Yes. Fitted garments can follow the body beautifully when seams, stretch, closures and hem placement work. The aim is not to disguise the lower body; it is to control the overall line according to your preference.",
   },
 ];
 
 export default function PearBodyShapeIndiaPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "headline": "Pear Body Shape Styling: The Indian Women's Playbook",
-        "description": "Complete pear body shape styling guide for Indian women using Geometric Silhouette Profiling™.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/pear-body-shape-india" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Body Type Styling", "item": "https://www.iconik.pro/body-type-styling" },
-          { "@type": "ListItem", "position": 3, "name": "Pear Body Shape India", "item": "https://www.iconik.pro/body-type-styling/pear-body-shape-india" },
-        ],
-      },
-    ],
-  };
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title,
+      description,
+      path,
+      datePublished: published,
+      dateModified: modified,
+      images: ["/body-type-diagram.webp"],
+      about: ["Pear body shape", "Indian fashion", "Proportion styling"],
+    }),
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Body Type Styling", path: "/body-type-styling" },
+      { name: "Pear Body Shape India", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoArticleLayout
+        hero={{
+          eyebrow: "Silhouette intelligence · Pear",
+          title,
+          summary:
+            "A pear silhouette is a descriptive starting point for proportions with more visible width through the hip than the shoulder line. You can balance that relationship, celebrate it, or ignore the category—the useful part is knowing which garment variable creates each effect.",
+          breadcrumbs: [
+            { label: "Home", href: "/" },
+            { label: "Body Type Styling", href: "/body-type-styling" },
+            { label: "Pear Body Shape India" },
+          ],
+          published: "1 January 2025",
+          updated: "24 July 2026",
+          reviewer: "Jasmine Rana",
+          readingTime: "9 min read",
+        }}
+        quickAnswer={
+          <SeoQuickAnswer
+            answer="Start with the shoulder-to-hip relationship, then test neckline width, top hem, waistband fit and lower-body fall one variable at a time."
+            detail="You do not need dark bottoms or oversized tops. The aim is a deliberate line, not making the hips disappear."
+          />
+        }
+        tableOfContents={[
+          { href: "#definition", label: "What pear shape means" },
+          { href: "#indian-wear", label: "Kurtas and salwar suits" },
+          { href: "#sarees", label: "Saree and blouse choices" },
+          { href: "#western-wear", label: "Trousers, jeans and dresses" },
+          { href: "#shopping-check", label: "The fitting-room check" },
+        ]}
+        afterArticle={
+          <>
+            <SeoFaqSection faqs={faqs} />
+            <SeoAuthorReview>
+              <p>
+                Jasmine reviews ICONIK&apos;s proportion guidance for Indian, western and fusion
+                wardrobes. Body-shape language on ICONIK is descriptive styling shorthand, never a
+                health assessment or beauty score.
+              </p>
+            </SeoAuthorReview>
+            <SeoRelatedGuides
+              links={[
+                {
+                  href: "/body-type-styling",
+                  title: "Body Type Styling Hub",
+                  description: "Understand the complete proportion framework and its limitations.",
+                },
+                {
+                  href: "/style-guides/salwar-kameez-body-type",
+                  title: "Salwar Kameez by Body Type",
+                  description: "Compare kurta, bottom and dupatta relationships.",
+                },
+                {
+                  href: "/methodology/geometric-silhouette-profiling",
+                  title: "Geometric Silhouette Profiling™",
+                  description: "Read the canonical explanation of ICONIK's proportion method.",
+                },
+              ]}
+            />
+            <SeoBlueprintCta
+              title="Turn broad proportion advice into outfit formulas for your wardrobe."
+              description="The ICONIK Blueprint combines proportion, colour and face-framing guidance with 20 outfit formulas after a 30-minute consultation."
+            />
+          </>
+        }
+      >
+        <SeoTeachingVisual
+          src="/body-type-diagram.webp"
+          alt="Five broad body-proportion patterns including pear, apple, rectangle, hourglass and inverted triangle."
+          caption="Shape families are broad visual descriptions. Real bodies often sit between them, and clothing size is a separate variable."
+          width={1200}
+          height={500}
+          priority
+        />
 
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/body-type-styling" className="hover:underline">Body Type Styling</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Pear Body Shape India</li>
-            </ol>
-          </nav>
+        <section id="definition">
+          <h2>What a pear body-shape label actually tells you</h2>
+          <p>
+            The label usually means the hip line appears wider than the shoulder line, often with a
+            visible waist. It does not predict height, clothing size, bust, tummy, thigh shape or how
+            you prefer clothes to fit.
+          </p>
+          <p>
+            Do not diagnose the category from one circumference or assume that it is unusually common
+            in one ethnicity. Compare the whole outfit from the front and side, and pay attention to
+            where garments pull, collapse or stop.
+          </p>
+          <p>
+            If you want visual balance, you can add direction near the shoulder, simplify the hip area
+            or continue the lower-body line. If you want to emphasise the hip, use fit, colour or detail
+            there. Both are valid styling outcomes.
+          </p>
+        </section>
 
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Pear Body Shape Styling: The Indian Women&apos;s Playbook
-            </h1>
-            <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              A pear body shape has hips and thighs noticeably wider than the shoulders and bust. The styling goal is visual balance — broadening the upper body optically to create proportion. Not covering the lower body. Not hiding the hips. Balancing them. Here are the exact Indian garment formulas that achieve it.
-            </p>
-          </header>
+        <SeoInsightCard eyebrow="One-variable test" title="Balance does not always mean adding shoulder volume">
+          <p>
+            A clean neckline, a visible collar, earrings, an open layer or a dupatta can create enough
+            upper-body presence. Puff sleeves and padded shoulders are options—not requirements.
+          </p>
+        </SeoInsightCard>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is a Pear Body Shape?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The pear silhouette is defined by shoulders narrower than hips, with a relatively defined waist. The hip and thigh zone carries the most width. In Geometric Silhouette Profiling™, this is classified as a hip-dominant silhouette.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              It is very common in Indian women — Indian women tend to carry weight and structural width in the hip and thigh zone. This is not a problem or a flaw. It is a specific proportional geometry with a clear styling solution: add visual weight to the upper body to match what exists naturally at the lower body.
-            </p>
-          </section>
+        <section id="indian-wear">
+          <h2>Kurtas, salwar suits and Anarkalis</h2>
+          <h3>Choose the top hem deliberately</h3>
+          <p>
+            A hem that stops exactly at the fullest hip can create a strong horizontal marker. If you
+            prefer continuity, test a slightly shorter hem or one that falls clearly below that point.
+            Pair the length with the bottom width before judging it.
+          </p>
+          <h3>Control ease through the hip</h3>
+          <p>
+            A straight kurta needs enough room to fall without pulling or riding up. An A-line kurta
+            can follow the shoulder and release through the hip. Neither shape is automatically better;
+            the side seam and fabric weight decide whether it hangs cleanly.
+          </p>
+          <h3>Use the dupatta as a directional layer</h3>
+          <p>
+            A dupatta across both shoulders creates horizontal presence; a long one-sided drape creates
+            vertical direction. Choose the effect that supports the outfit rather than using one drape
+            for every pear-shaped body.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the Core Styling Principle for a Pear Body Shape?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The goal is to visually widen the upper body. This is achieved through: structural details at the shoulder zone (boat necks, embellishment, padded shoulders), bright or bold colours at the upper body, volume at the upper body (structured yokes, puffed sleeves in moderation), and dark or plain fabrics at the lower body.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              The inverse — adding volume or brightness to the lower body — increases the visual width of the hips and deepens the top-to-bottom proportion disparity. The principle is balance, not concealment.
-            </p>
-          </section>
+        <section id="sarees">
+          <h2>Saree and blouse choices</h2>
+          <ul>
+            <li><strong>Blouse neckline:</strong> boat, square, V and soft round necklines can all work; evaluate neckline-to-shoulder scale and comfort.</li>
+            <li><strong>Sleeve:</strong> use sleeve shape to create or reduce shoulder presence, but do not sacrifice arm movement.</li>
+            <li><strong>Pleats:</strong> distribute them evenly and choose fabric that does not create unwanted stiffness at the hip.</li>
+            <li><strong>Pallu:</strong> a wider open pallu adds upper-body presence; a narrow vertical pallu creates length.</li>
+            <li><strong>Border:</strong> judge border width in relation to your height, drape and blouse—not body-shape label alone.</li>
+          </ul>
+          <p>
+            See the <Link href="/style-guides/saree-draping-body-type" className="underline">saree draping guide</Link> for complete fabric and pleat considerations.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Indian Ethnic Wear Works Best for a Pear Body Shape?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Boat-neck and wide-neck kurtas</strong> are the strongest upper-body choice — they create visual width at the shoulder zone, optically balancing the hip width below.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              A <strong>printed or embroidered dupatta draped over both shoulders</strong> adds significant upper body visual weight. This is one of the most effective and underused pear-shape tools in Indian dressing.
-            </p>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
-              <li>Boat-neck or wide-neck kurtas with embellishment at the yoke</li>
-              <li>Dupatta draped across both shoulders (adds upper body volume)</li>
-              <li>A-line Anarkali suits (flow from hip, no emphasis on width)</li>
-              <li>Palazzo pants with a fitted, embellished or printed top</li>
-              <li>Salwar kameez with a structured boat-neck yoke</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              <strong>What to avoid:</strong> Gathered or lehenga-style skirts with heavy embellishment at the hip zone. Tight churidars without a long kurti. Horizontal border details at the hip line of the kurta. Anything that adds visual weight to the lower body rather than the upper.
-            </p>
-          </section>
+        <section id="western-wear">
+          <h2>Trousers, jeans, skirts and dresses</h2>
+          <p>
+            Start at the waistband. It should sit without digging, gaping or creating folds that the
+            garment was not designed to make. Then compare the leg line:
+          </p>
+          <ul>
+            <li><strong>Straight leg:</strong> gives a clean fall when it has enough room through the hip and thigh.</li>
+            <li><strong>Wide leg or palazzo:</strong> continues width into a long line; avoid excessive front gathers if they feel bulky.</li>
+            <li><strong>Bootcut or flare:</strong> repeats some width near the hem and can distribute lower-body emphasis.</li>
+            <li><strong>Tapered leg:</strong> highlights the difference between hip and ankle; wear it when that is the effect you want.</li>
+            <li><strong>A-line skirt:</strong> works when the waistband fits and the fabric releases instead of clinging.</li>
+          </ul>
+          <p>
+            Fitted dresses are not off-limits. Check seam placement, stretch recovery and whether the
+            garment follows the body without twisting or pulling.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Western Wear Works Best for a Pear Body Shape?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Wide-leg trousers</strong> are excellent — the volume of the wide leg visually balances the hip width rather than contrast-emphasising it. Paired with a structured fitted top or blazer with shoulder detail, this creates a fully balanced silhouette.
-            </p>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
-              <li>Wide-leg trousers with a structured or embellished top</li>
-              <li>Boat-neck and off-shoulder tops (broaden shoulders visually)</li>
-              <li>A-line midi skirts in dark solid colours</li>
-              <li>Flared jeans with a bright or structured top</li>
-              <li>Wrap dresses (define waist, fall from hip)</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              <strong>What to avoid:</strong> Skinny jeans with a fitted top (maximises the visual hip-to-shoulder ratio). Pencil skirts. Tops that end at the hip or create a horizontal line at the hip level.
-            </p>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Should a Pear Shape Wear a Saree?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The pallu is the pear shape&apos;s most powerful tool. Draping the pallu broadly over the left shoulder — with volume and spread — adds significant visual width to the upper body. Choose sarees with heavier embellishment, a bolder border, or a more prominent design in the body fabric at the pallu zone.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              <strong>Blouse:</strong> Boat neck or bateau neck in structured fabric, with slightly padded or structured shoulders. The blouse should draw the eye outward at the shoulder. Petticoat tied at the natural waist (not at the hip) — this allows the saree to fall cleanly from the waist, not add fabric at the hip.
-            </p>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Colours and Prints for the Pear Body Shape</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              From your Chromatic Harmony Mapping™ palette: apply brighter, bolder colours from your palette to the upper body. Use darker, solid colours from the same palette for the lower body. The colour contrast between top and bottom creates the visual weight shift you need.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              <strong>Avoid:</strong> Bold prints or metallic fabrics concentrated at the hip and thigh zone. Horizontal stripes or borders at the hip line. Light-coloured palazzos or lehengas with a dark top — this reverses the balance principle entirely.
-            </p>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed faq-answer">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
-              <li>→ <Link href="/body-type-styling/pear" className="underline hover:opacity-70">Pear Body Type: Styling Guide</Link></li>
-              <li>→ <Link href="/body-type-styling/apple-body-shape-india" className="underline hover:opacity-70">Apple Body Shape India Guide</Link></li>
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint — body analysis, colour palette, and 16+ outfit recommendations specific to your pear silhouette.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Pear Body Shape Styling: The Indian Women&apos;s Playbook.&quot; Iconik LLP, 2025. https://www.iconik.pro/body-type-styling/pear-body-shape-india</p>
-          </div>
-
-        </div>
-      </main>
+        <section id="shopping-check">
+          <h2>The pear-shape fitting-room check</h2>
+          <ol>
+            <li>Does the shoulder seam sit correctly?</li>
+            <li>Can you sit and walk without the garment riding up?</li>
+            <li>Does the top hem stop intentionally rather than at an accidental widest point?</li>
+            <li>Does the waistband lie flat from front and side?</li>
+            <li>Does the lower fabric fall, cling or gather—and is that the effect you want?</li>
+            <li>Does the whole outfit have one clear focal point?</li>
+          </ol>
+          <p>
+            Photograph the full outfit from a consistent distance. Fit and line are easier to judge
+            than when looking down at yourself in a fitting-room mirror.
+          </p>
+        </section>
+      </SeoArticleLayout>
     </>
   );
 }

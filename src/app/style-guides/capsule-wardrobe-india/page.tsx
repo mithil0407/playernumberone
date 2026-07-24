@@ -1,226 +1,296 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  SeoArticleLayout,
+  SeoAuthorReview,
+  SeoBlueprintCta,
+  SeoFaqSection,
+  SeoInsightCard,
+  SeoQuickAnswer,
+  SeoRelatedGuides,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "Capsule Wardrobe for Indian Women: The Complete Build Guide — Iconik",
-  description: "How to build a capsule wardrobe that works for Indian women. Body-type-specific pieces, undertone-matched colours, ethnic and western mix, and the exact 15-piece formula.",
-  keywords: "capsule wardrobe India, capsule wardrobe Indian women, minimalist wardrobe India, how to build capsule wardrobe India, Indian women capsule wardrobe 2025",
-  alternates: { canonical: "https://www.iconik.pro/style-guides/capsule-wardrobe-india" },
-  openGraph: {
-    title: "Capsule Wardrobe for Indian Women: The Complete Build Guide — Iconik",
-    description: "The exact 15-piece capsule wardrobe formula for Indian women — ethnic and western, body-specific, undertone-matched.",
-    url: "https://www.iconik.pro/style-guides/capsule-wardrobe-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Capsule wardrobe for Indian women — Iconik" }],
+const path = "/style-guides/capsule-wardrobe-india";
+const title = "Capsule Wardrobe for Indian Women: A Practical System";
+const description =
+  "Build an Indian capsule wardrobe around your actual calendar, climate and laundry cycle, with ethnic and western pieces that mix across work, everyday and occasion dressing.";
+const published = "2025-01-01";
+const modified = "2026-07-24";
+
+export const metadata: Metadata = buildArticleMetadata({
+  title,
+  description,
+  path,
+  datePublished: published,
+  dateModified: modified,
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "capsule wardrobe India",
+    "capsule wardrobe Indian women",
+    "Indian western capsule wardrobe",
+    "minimal wardrobe India",
+  ],
+  image: {
+    path: "/images/seo/capsule-wardrobe-logic-iconik.webp",
+    width: 1003,
+    height: 1568,
+    alt: "Indian capsule wardrobe combining kurtas, a saree, shirts, trousers, shoes and accessories.",
   },
-};
+});
 
 const faqs = [
   {
-    q: "How many pieces do you need in a capsule wardrobe for India?",
-    a: "15–20 pieces covers most Indian lifestyles comfortably: 5–6 tops or kurtas, 3–4 bottoms, 2 dresses or full sets, 1–2 jackets or blazers, 2–3 occasion pieces. The number matters less than the interoperability — every piece should work with at least 3 others in the wardrobe.",
+    q: "How many pieces should an Indian capsule wardrobe contain?",
+    a: "There is no universal number. A useful small capsule often begins around 12–18 clothing pieces, excluding underwear, exercise wear and highly specialised occasion garments. Your work pattern, climate, laundry cycle and ethnic-wear needs should decide the final count.",
   },
   {
-    q: "Should an Indian capsule wardrobe include ethnic wear?",
-    a: "Yes. An Indian capsule wardrobe that excludes ethnic wear is incomplete for the lifestyle it needs to serve: festivals, weddings, family events, and most formal occasions in India require or strongly favour ethnic or fusion wear. A practical Indian capsule includes 30–40% ethnic pieces (salwar suits, kurtas, one Anarkali) alongside western basics.",
+    q: "Should sarees and occasion wear be inside the capsule?",
+    a: "Include any saree or occasion garment you wear often enough to coordinate with the rest. Rare bridal or ceremonial pieces can sit in a separate occasion archive without making the everyday capsule less valid.",
   },
   {
-    q: "What is the best colour palette for an Indian capsule wardrobe?",
-    a: "A capsule colour palette works in two layers: 3–4 neutrals (your undertone-specific navy, camel, charcoal, or cream) as the foundation, and 2–3 accent colours from your Chromatic Harmony Mapping™ palette for statement pieces. This ensures every item coordinates without making the wardrobe feel monotonous.",
+    q: "Does every piece have to match every other piece?",
+    a: "No. Aim for useful connection, not mathematical perfection. Each core garment should ideally work in at least three complete outfits, while accent and occasion pieces can have a narrower role.",
   },
   {
-    q: "How do I choose capsule pieces that flatter my body type?",
-    a: "Each piece in the capsule should conform to your body-type silhouette formula. For example, a pear-shaped woman's capsule emphasises statement tops and plain bottoms; an apple-shaped woman's capsule prioritises A-line kurtas and wide-leg trousers. Generic capsule wardrobe lists fail because they are silhouette-blind — your list must match your proportions.",
+    q: "Can a capsule wardrobe include prints and bright colours?",
+    a: "Yes. Use one or two lead prints and repeat colours from them across solids, bags, footwear or dupattas. A capsule becomes difficult when several unrelated prints and accents each require their own supporting wardrobe.",
+  },
+  {
+    q: "Should I buy a new wardrobe to build a capsule?",
+    a: "No. Start with an audit of what already fits, functions and gets worn. Build ten complete outfits before buying anything; the missing links will become much clearer.",
   },
 ];
 
+const calendarQuestions = [
+  "How many days each week require office, uniform or client-facing clothing?",
+  "How often do you wear kurtas, sarees or fusion outfits in ordinary life?",
+  "How much heat, humidity, rain or air-conditioning must the clothes handle?",
+  "How often can you realistically wash, steam, iron or dry-clean garments?",
+  "Which social, religious or family occasions recur often enough to plan for?",
+];
+
 export default function CapsuleWardrobeIndiaPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "headline": "Capsule Wardrobe for Indian Women: The Complete Build Guide",
-        "description": "How to build a capsule wardrobe for Indian women — body-type-specific, undertone-matched, ethnic and western mix.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/capsule-wardrobe-india" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Style Guides", "item": "https://www.iconik.pro/style-guides" },
-          { "@type": "ListItem", "position": 3, "name": "Capsule Wardrobe India", "item": "https://www.iconik.pro/style-guides/capsule-wardrobe-india" },
-        ],
-      },
-    ],
-  };
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title,
+      description,
+      path,
+      datePublished: published,
+      dateModified: modified,
+      images: ["/images/seo/capsule-wardrobe-logic-iconik.webp"],
+      about: ["Capsule wardrobe", "Indian fashion", "Wardrobe planning"],
+    }),
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Style Guides", path: "/style-guides" },
+      { name: "Capsule Wardrobe India", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoArticleLayout
+        hero={{
+          eyebrow: "Wardrobe systems · India",
+          title,
+          summary:
+            "A capsule wardrobe is not a beige uniform or a fixed list copied from someone else's climate. It is a small, connected set of clothes that covers your real calendar with fewer dead-end purchases.",
+          breadcrumbs: [
+            { label: "Home", href: "/" },
+            { label: "Style Guides", href: "/style-guides" },
+            { label: "Capsule Wardrobe India" },
+          ],
+          published: "1 January 2025",
+          updated: "24 July 2026",
+          reviewer: "Jasmine Rana",
+          readingTime: "11 min read",
+        }}
+        quickAnswer={
+          <SeoQuickAnswer
+            answer="Audit your calendar first, keep the pieces that already work, then build a core of repeatable shapes and colours around the gaps."
+            detail="Indian and western clothing belong in the same system when you wear both. A separate ceremonial archive can hold rare wedding or traditional pieces."
+          />
+        }
+        tableOfContents={[
+          { href: "#definition", label: "What a capsule is" },
+          { href: "#calendar", label: "Start with your calendar" },
+          { href: "#three-layers", label: "Core, accent and occasion" },
+          { href: "#build", label: "Build the first capsule" },
+          { href: "#outfit-test", label: "Run the outfit test" },
+          { href: "#shopping-rules", label: "Shop only the gaps" },
+        ]}
+        afterArticle={
+          <>
+            <SeoFaqSection faqs={faqs} />
+            <SeoAuthorReview>
+              <p>
+                Jasmine reviews ICONIK&apos;s wardrobe systems for Indian, western and fusion dressing.
+                The goal is not owning the fewest clothes; it is reducing pieces that do not serve the
+                client&apos;s real life.
+              </p>
+            </SeoAuthorReview>
+            <SeoRelatedGuides
+              links={[
+                {
+                  href: "/style-guides/office-wear-indian-women",
+                  title: "Office Wear for Indian Women",
+                  description: "Build repeatable professional outfit formulas.",
+                },
+                {
+                  href: "/faq/capsule-wardrobe-how-many-outfits",
+                  title: "How Many Outfits Can a Capsule Make?",
+                  description: "Use outfit coverage rather than an arbitrary garment count.",
+                },
+                {
+                  href: "/colour-analysis",
+                  title: "Colour Analysis for Indian Skin",
+                  description: "Choose useful neutrals and accents without banning colours.",
+                },
+              ]}
+            />
+            <SeoBlueprintCta
+              title="Want a wardrobe system translated into complete outfits?"
+              description="The ICONIK Blueprint combines your lifestyle with proportion, colour and face-framing guidance to create 20 outfit formulas."
+            />
+          </>
+        }
+      >
+        <SeoTeachingVisual
+          src="/images/seo/capsule-wardrobe-logic-iconik.webp"
+          alt="Indian capsule wardrobe combining kurtas, a saree, dupatta, shirts, trousers, shoes and accessories into core, accent and occasion outfits."
+          caption="A useful capsule connects Indian and western pieces across real contexts instead of forcing every garment into one aesthetic."
+          width={1003}
+          height={1568}
+          priority
+        />
 
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/style-guides" className="hover:underline">Style Guides</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Capsule Wardrobe India</li>
-            </ol>
-          </nav>
+        <section id="definition">
+          <h2>What an Indian capsule wardrobe should do</h2>
+          <p>
+            A capsule is a deliberately limited set of garments that produces enough complete outfits
+            for a defined period or context. The important words are <em>complete outfits</em>. Fifteen
+            attractive pieces are not a capsule if five require different shoes, bras, tailoring or
+            layers that you do not own.
+          </p>
+          <p>
+            Your capsule can include kurtas, sarees, trousers, shirts, dresses, dupattas and fusion
+            layers. It does not need to look minimalist. It only needs a clear internal logic.
+          </p>
+        </section>
 
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Capsule Wardrobe for Indian Women: The Complete Build Guide
-            </h1>
-            <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              A capsule wardrobe is not a minimalist exercise — it is a precision one. Every piece must work with every other piece, every piece must flatter your specific silhouette, and every piece must suit the range of occasions your life actually includes: daily work, weekends, festivals, weddings, and formal events. Generic capsule guides fail Indian women because they ignore silhouette, undertone, and the ethnic-western duality of Indian life.
-            </p>
-          </header>
+        <section id="calendar">
+          <h2>Start with the calendar—not the shopping list</h2>
+          <p>Answer these questions using the last four ordinary weeks:</p>
+          <ul>
+            {calendarQuestions.map((question) => <li key={question}>{question}</li>)}
+          </ul>
+          <p>
+            Convert the answers into outfit demand. Someone in a five-day corporate role may need eight
+            to ten work formulas in rotation. Someone working from home with frequent family events may
+            need fewer work pieces and more polished Indian separates.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Makes a Capsule Wardrobe Different from a Minimal Wardrobe?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              A minimal wardrobe simply has fewer items. A capsule wardrobe has fewer items that work harder — every piece creates multiple outfits through interoperability. The difference is intentionality: a capsule is designed around a specific body, a specific colour palette, and a specific lifestyle.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              The Indian capsule wardrobe challenge is that Indian lifestyles span more dress codes than most: conservative family events require ethnic wear; international client meetings may require western formal; weekends span casual and festive. A well-designed Indian capsule handles all of these without needing a separate wardrobe for each context.
-            </p>
-          </section>
+        <SeoInsightCard eyebrow="A better count" title="Count outfit coverage before garment quantity">
+          <p>
+            Choose a two-week period. If your small wardrobe can cover every recurring situation in
+            that period with realistic laundry, it is large enough. Add pieces only when a repeated
+            context is genuinely uncovered.
+          </p>
+        </SeoInsightCard>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the 15-Piece Indian Capsule Wardrobe Formula?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              This formula creates 40+ outfits across work, casual, and occasion contexts:
-            </p>
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-3">Tops and Kurtas (5 pieces)</h3>
-              <ol className="space-y-2 text-gray-600 list-decimal list-inside">
-                <li>Straight-cut kurta in your best neutral (daily ethnic wear)</li>
-                <li>Straight-cut kurta in your best accent colour (elevated daily)</li>
-                <li>Structured work blouse — wrap or V-neck in a neutral</li>
-                <li>Casual cotton top or T-shirt in a neutral</li>
-                <li>Statement blouse or printed kurta in your best accent colour</li>
-              </ol>
-            </div>
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-3">Bottoms (4 pieces)</h3>
-              <ol className="space-y-2 text-gray-600 list-decimal list-inside">
-                <li>Straight-leg trousers in your best neutral (work + occasion)</li>
-                <li>Wide-leg trousers or palazzo in a neutral</li>
-                <li>Churidar or straight salwar (pairs with kurtas)</li>
-                <li>A-line or straight midi skirt in a neutral</li>
-              </ol>
-            </div>
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-3">Full Outfits and Sets (3 pieces)</h3>
-              <ol className="space-y-2 text-gray-600 list-decimal list-inside">
-                <li>Wrap dress or structured dress in your best accent colour</li>
-                <li>Salwar kameez set or Anarkali suit for formal/festive occasions</li>
-                <li>Blazer + trouser matching set for corporate/meetings</li>
-              </ol>
-            </div>
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-800 mb-3">Layering (2 pieces)</h3>
-              <ol className="space-y-2 text-gray-600 list-decimal list-inside">
-                <li>Structured blazer in your best neutral (works over everything)</li>
-                <li>Dupatta or stole in an accent colour (converts casual to occasion)</li>
-              </ol>
-            </div>
-            <p className="text-gray-600 leading-relaxed">
-              Add 1 statement piece — a formal saree or lehenga — for your once-a-year wedding/major event requirement. This sits outside the daily capsule as a dedicated occasion piece.
-            </p>
-          </section>
+        <section id="three-layers">
+          <h2>Build three layers: core, accent and occasion</h2>
+          <h3>Core</h3>
+          <p>
+            These are the repeatable shapes and neutrals that support several outfits: trousers,
+            everyday kurtas, shirts, a useful layer, and practical footwear. Core does not have to mean
+            black or beige; navy, olive, chocolate, charcoal or deep teal can function as neutrals.
+          </p>
+          <h3>Accent</h3>
+          <p>
+            Accent pieces create identity: a printed dupatta, bright blouse, textured layer, jewellery
+            or a lead colour. Repeat part of the accent elsewhere so it connects instead of becoming a
+            one-outfit purchase.
+          </p>
+          <h3>Occasion</h3>
+          <p>
+            Include frequently worn sarees, festive sets or formal pieces if they share blouses,
+            jewellery, bags or footwear with the rest of the wardrobe. Store rare ceremonial garments
+            separately and document what each one still needs.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Do You Choose the Colours for an Indian Capsule Wardrobe?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Your capsule colour palette is derived from your Chromatic Harmony Mapping™ undertone type. The structure is:
-            </p>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Warm undertone capsule:</strong> Neutrals — camel, warm cream, chocolate brown. Accents — rust, terracotta, mustard, olive green.</li>
-              <li><strong>Cool undertone capsule:</strong> Neutrals — navy, charcoal, cool grey. Accents — cobalt blue, burgundy, dusty rose, emerald green.</li>
-              <li><strong>Neutral undertone capsule:</strong> Neutrals — taupe, soft white, warm grey. Accents — soft teal, muted coral, dusty lavender.</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              Every piece must sit within one of these two categories (neutral or accent). If it does not, it will not coordinate with the rest of the capsule — and an item that does not coordinate creates decision paralysis rather than solving it.
-            </p>
-          </section>
+        <section id="build">
+          <h2>Build your first 12–18 piece capsule</h2>
+          <p>
+            Use the range as a starting point, not a target. Exclude underwear, sleepwear, workout
+            clothing and highly specialised ceremonial garments.
+          </p>
+          <ol>
+            <li><strong>Keep two to four lower garments</strong> that fit now and cover your main contexts.</li>
+            <li><strong>Add five to seven tops or kurtas</strong> that work with at least two of those bottoms.</li>
+            <li><strong>Add one or two layers</strong> for office air-conditioning, weather and outfit polish.</li>
+            <li><strong>Add one Indian occasion route</strong> such as a saree plus reusable blouse or a coordinated kurta set.</li>
+            <li><strong>Add two footwear routes</strong> that cover the majority of hemlines and walking needs.</li>
+            <li><strong>Add accessories last</strong> to connect colour and change formality.</li>
+          </ol>
+          <p>
+            The exact distribution should follow the calendar. Do not add a blazer because capsule
+            lists always include one if your work and climate never require it.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Do You Adapt the Capsule to Your Body Type?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The 15-piece formula above is a structure. The specific pieces within it vary by silhouette:
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside">
-              <li><strong>Apple:</strong> Replace straight-cut kurtas with A-line kurtas. Replace A-line skirt with wide-leg trousers. Prioritise V-neck blouses.</li>
-              <li><strong>Pear:</strong> Prioritise printed or embellished tops. Replace plain bottoms with wider-cut palazzo. Add structured blazer as a key layering piece.</li>
-              <li><strong>Rectangle:</strong> Add wrap blouse and belted dress to create waist definition. Include one colour-blocked outfit for structure.</li>
-              <li><strong>Hourglass:</strong> Replace straight-cut kurtas with fitted-waist kurtas. All dresses and kurtas should have defined waist seams.</li>
-              <li><strong>Inverted Triangle:</strong> Replace all structured blazers with unstructured cardigans. Prioritise wide-leg and A-line bottoms. Replace boat-neck blouses with V-neck.</li>
-            </ul>
-          </section>
+        <section id="outfit-test">
+          <h2>Run the ten-outfit test</h2>
+          <p>
+            Before buying anything, create ten complete outfits from the proposed capsule. Include
+            underwear requirements, shoes, bag, jewellery, layer and weather needs.
+          </p>
+          <ul>
+            <li>Photograph each outfit from the same distance.</li>
+            <li>Record the context it covers.</li>
+            <li>Mark pieces that appear in at least three successful outfits.</li>
+            <li>Mark pieces that create repeated fit or care problems.</li>
+            <li>Identify the smallest number of missing links.</li>
+          </ul>
+          <p>
+            A garment that works once may still deserve a place if that one context matters. The goal
+            is not maximum combinations at the expense of identity.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Are the Most Common Capsule Wardrobe Mistakes Indian Women Make?</h2>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside">
-              <li>Building without a colour palette — individual pieces look fine but nothing works together</li>
-              <li>Excluding ethnic wear — the capsule does not cover actual life occasions</li>
-              <li>Buying aspirational sizes — the capsule does not function because half of it does not fit</li>
-              <li>Ignoring silhouette — choosing trendy pieces that do not flatter the specific body type</li>
-              <li>Not investing in tailoring — an almost-right piece altered to perfect fit is worth three cheaply-made pieces</li>
-            </ul>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed faq-answer">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones</Link></li>
-              <li>→ <Link href="/style-guides/office-wear-indian-women" className="underline hover:opacity-70">Office Wear for Indian Women</Link></li>
-              <li>→ <Link href="/faq/capsule-wardrobe-how-many-outfits" className="underline hover:opacity-70">How Many Outfits Can a Capsule Wardrobe Make?</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your capsule built for you in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint delivers a body-type-specific, undertone-matched capsule wardrobe list — exact pieces, exact colours, ready to shop.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Capsule Wardrobe for Indian Women: The Complete Build Guide.&quot; Iconik LLP, 2025. https://www.iconik.pro/style-guides/capsule-wardrobe-india</p>
-          </div>
-
-        </div>
-      </main>
+        <section id="shopping-rules">
+          <h2>Shop only the gaps</h2>
+          <p>For every proposed purchase, complete this sentence:</p>
+          <blockquote>
+            This piece completes these three outfits for these two real contexts, and I already own the
+            required shoes, layer and care routine.
+          </blockquote>
+          <p>
+            If you cannot complete it, save the item instead of buying it immediately. Check fit,
+            alterations, fabric care, climate, sheerness, underwear requirements and return policy.
+          </p>
+          <p>
+            Use the <Link href="/colour-analysis" className="underline">colour-analysis hub</Link> to
+            choose a connected palette and the <Link href="/body-type-styling" className="underline">proportion hub</Link> to test garment shapes without turning them into rigid body rules.
+          </p>
+        </section>
+      </SeoArticleLayout>
     </>
   );
 }

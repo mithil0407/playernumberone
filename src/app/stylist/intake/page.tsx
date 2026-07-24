@@ -607,7 +607,7 @@ function StylistIntakeInner() {
                     </div>
                     <div className="iconik-micro text-luxury-charcoal/35 mb-4">Style Direction Confirmed</div>
                     <h1 className="iconik-display text-luxury-charcoal mb-4" style={{ fontSize: 'clamp(28px, 5vw, 48px)' }}>{board?.label || 'Your ICONIK Direction'}</h1>
-                    <p className="luxury-body text-luxury-charcoal/55 leading-relaxed" style={{ fontWeight: 300 }}>This, combined with your body geometry analysis, colour profile, and facial architecture, is the foundation of your Blueprint. We will have it with you within 24 hours.</p>
+                    <p className="luxury-body text-luxury-charcoal/55 leading-relaxed" style={{ fontWeight: 300 }}>This, combined with your body geometry analysis, colour profile, and facial architecture, is the foundation of your Blueprint. After your 30-minute consultation, we will deliver it within 5 working days.</p>
                 </div>
             </div>
         );

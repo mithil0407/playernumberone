@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "How to Dress for a Job Interview in India — Complete Guide",
@@ -10,13 +11,18 @@ export const metadata: Metadata = {
     title: "How to Dress for a Job Interview in India — Complete Guide",
     description: "What to wear to a job interview in India by industry — corporate, startup, government, creative. Indian and Western wear options for women.",
     url: "https://www.iconik.pro/faq/how-to-dress-for-job-interview-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Job interview outfit guide for Indian women — Iconik" }],
+    type: "article",
+    siteName: "Iconik",
+    locale: "en_IN",
+    publishedTime: "2025-01-01",
+    modifiedTime: "2026-07-24",
+    images: [{ url: "/images/seo/job-interview-dress-code-india-iconik-og.webp", width: 1200, height: 630, alt: "Job interview outfit formulas for corporate, government, startup and creative roles in India — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "How to Dress for a Job Interview in India — Complete Guide",
     description: "What to wear to a job interview in India by industry. Indian and Western wear options.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/job-interview-dress-code-india-iconik-og.webp"],
   },
 };
 
@@ -35,7 +41,8 @@ const jsonLd = {
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
       "datePublished": "2025-01-01",
-      "dateModified": "2025-06-01",
+      "dateModified": "2026-07-24",
+      "image": "https://www.iconik.pro/images/seo/job-interview-dress-code-india-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/faq/how-to-dress-for-job-interview-india",
     },
     {
@@ -109,6 +116,15 @@ export default function JobInterviewDressGuidePage() {
         <p className="text-lg text-gray-600 mb-8">
           What you wear to an interview is your first professional communication. In India, interview dress codes vary significantly by industry and company culture — what works for a banking interview in Mumbai may be inappropriate for a Bangalore startup. This guide covers every major interview context with specific outfit guidance for Indian and Western wear.
         </p>
+
+        <SeoTeachingVisual
+          src="/images/seo/job-interview-dress-code-india-iconik.webp"
+          alt="Indian professional beside interview outfit formulas for corporate, government, startup and creative workplaces."
+          caption="Interview dressing is contextual: research the everyday dress code, then add one level of intention."
+          width={897}
+          height={1752}
+          priority
+        />
 
         {/* The universal rule */}
         <section className="mb-10">
@@ -312,13 +328,13 @@ export default function JobInterviewDressGuidePage() {
         <section className="bg-stone-50 border border-stone-200 rounded-xl p-6 mb-10">
           <h2 className="text-xl font-semibold mb-2">Build a Professional Wardrobe That Works Every Time</h2>
           <p className="mb-4">
-            Iconik&rsquo;s Style Blueprint gives you your exact colour palette, your best silhouettes, and 16+ outfit recommendations calibrated to your body and colouring — including your professional context. Stop guessing before every important occasion. Know exactly what to wear. Delivered in 48 hours.
+            Iconik&rsquo;s Style Blueprint gives you your exact colour palette, your best silhouettes, and 20 outfit formulas calibrated to your body and colouring — including your professional context. Stop guessing before every important occasion. Know exactly what to wear. Delivered within 5 working days after the consultation.
           </p>
           <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
-            Get Your Style Blueprint — ₹3,299
+            Get Your Style Blueprint — ₹2,699
           </Link>
         </section>
 

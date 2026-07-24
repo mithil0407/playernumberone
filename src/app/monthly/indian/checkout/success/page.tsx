@@ -163,7 +163,7 @@ function SuccessContent() {
                             </div>
                             <div>
                                 <h3 className="font-semibold text-lg">Join Members Group</h3>
-                                <p className="text-white/80 text-sm">Connect with 247+ ICONIK members</p>
+                                <p className="text-white/80 text-sm">Connect with the ICONIK styling community</p>
                             </div>
                             <ArrowRight className="w-5 h-5 ml-auto group-hover:translate-x-1 transition-transform" />
                         </div>

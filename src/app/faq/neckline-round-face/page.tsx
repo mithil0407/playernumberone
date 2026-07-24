@@ -139,7 +139,7 @@ export default function NecklineRoundFacePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your complete face shape + neckline guide</h2>
             <p className="text-gray-600 mb-6">Iconik&apos;s Facial Architecture Analysis™ identifies your face shape and maps it to specific neckline recommendations across all Indian and western garment categories.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

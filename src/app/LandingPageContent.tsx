@@ -7,6 +7,14 @@ import ExploreLinksSection from '@/components/ExploreLinksSection';
 import { footerExploreGroups } from '@/lib/seoContent';
 import { SUPPORT_EMAIL } from '@/lib/seo';
 import {
+  BLUEPRINT_OFFER,
+  BUSINESS_HOURS,
+  CLIENT_PROOF,
+  LEGAL_ENTITY_NAME,
+  SUPPORT_WHATSAPP_DISPLAY,
+  SUPPORT_WHATSAPP_URL,
+} from '@/lib/siteFacts';
+import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
@@ -35,9 +43,9 @@ export default function LandingPageContent({
   headline,
   subheadline,
   variant = 'default',
-  checkoutHref = '/checkout',
-  basePrice = 3299,
-  originalPrice = 5999,
+  checkoutHref = BLUEPRINT_OFFER.checkoutPath,
+  basePrice = BLUEPRINT_OFFER.currentPriceInr,
+  originalPrice = BLUEPRINT_OFFER.referencePriceInr,
   displayBasePrice,
   displayOriginalPrice,
 }: LandingPageContentProps) {
@@ -51,7 +59,7 @@ export default function LandingPageContent({
 
   useEffect(() => {
     trackPageView('India');
-    trackViewContent('ICONIK Style Consultation', basePrice, ['iconik_style_consultation'], 'INR', 'India');
+    trackViewContent(BLUEPRINT_OFFER.name, basePrice, ['iconik_blueprint'], 'INR', 'India');
   }, [basePrice]);
 
   const transformationImages = useMemo(() => [
@@ -82,21 +90,22 @@ export default function LandingPageContent({
   }, []);
 
   const faqs = [
-    { question: 'Will this really help me look more elegant and confident?', answer: "Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We've helped 200+ women discover their signature style." },
+    { question: 'Will this really help me look more elegant and confident?', answer: `Your Blueprint turns your proportions, colouring, facial architecture, lifestyle and preferences into specific styling decisions. ICONIK has worked with ${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ women and men across ${CLIENT_PROOF.countriesServed}+ countries.` },
     { question: "What if the style suggestions don't feel like me?", answer: "We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level." },
     {
       question: isOffer2699 ? 'What will I receive?' : 'How quickly will I see results?',
       answer: isOffer2699
-        ? 'You receive 20 personalised outfits, your personal colour palette, body-shape and concern-zone guidance, plus hair and makeup recommendations.'
-        : 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.',
+        ? 'You receive 20 personalised outfit formulas, colour analysis, hairstyle and eyewear guidance, body-shape and concern-zone guidance, plus a 30-minute video consultation.'
+        : `Your ICONIK Blueprint is delivered within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after your 30-minute consultation.`,
     },
+    { question: 'What if I want changes after delivery?', answer: `${BLUEPRINT_OFFER.revisionPromise} ${BLUEPRINT_OFFER.refundSummary}` },
   ];
 
   const blueprintItems = [
     { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Geometric Silhouette Profile™', desc: 'Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame.' },
     { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Facial Architecture Analysis™', desc: 'Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance.' },
     { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Chromatic Harmony Map™', desc: '10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio.' },
-    { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: isOffer2699 ? '20 Personalised Outfits' : '16 Outfit Formulas', desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
+    { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: `${BLUEPRINT_OFFER.outfitFormulas} Personalised Outfit Formulas`, desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
     { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Concern Zone Solutions', desc: 'Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it.' },
     { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '30-Minute Stylist Consultation', desc: 'A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first.' },
   ];
@@ -115,14 +124,8 @@ export default function LandingPageContent({
       <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="max-w-5xl mx-auto text-center">
 
-          {/* Featured in */}
-          <div className="mb-6">
-            <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Featured in</div>
-            <div className="flex items-center justify-center gap-8">
-              <Image src="/times-of-india-logo.png" alt="Times of India" width={100} height={30} className="opacity-35 hover:opacity-60 transition-opacity h-[30px] w-auto" />
-              <Image src="/femina-logo.png" alt="Femina" width={80} height={25} className="opacity-35 hover:opacity-60 transition-opacity h-[25px] w-auto" />
-              <Image src="/vogue-india-logo.png" alt="Vogue India" width={60} height={20} className="opacity-35 hover:opacity-60 transition-opacity h-[20px] w-auto md:h-[25px]" />
-            </div>
+          <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
+            {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ CLIENTS · {CLIENT_PROOF.countriesServed}+ COUNTRIES · {BLUEPRINT_OFFER.weeklyClientCapacity} PLACES EACH WEEK
           </div>
 
           {/* Headline */}
@@ -180,20 +183,12 @@ export default function LandingPageContent({
 
           {/* Trust strip */}
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: '#9a7d4a' }} />)}
-            </div>
-            {isOffer2699 ? (
-              <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>200+ women styled · Rated 4.9/5</span>
-            ) : (
-              <>
-                <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 200+ women across India</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>7-Day Guarantee</span>
-              </>
-            )}
+            <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
+            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>
+              {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery after consultation
+            </span>
+            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
+            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>In-scope revisions included</span>
           </div>
         </div>
       </section>
@@ -203,15 +198,14 @@ export default function LandingPageContent({
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { num: '200+', label: 'Transformations' },
-              { num: '95%', label: 'Confidence Elevation' },
-              { num: '4.9', label: 'Client Satisfaction', star: true },
-              isOffer2699 ? { num: '20', label: 'Personalised Outfits' } : { num: '2-3', label: 'Weeks to Elegance' },
+              { num: `${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+`, label: 'Clients Styled' },
+              { num: `${CLIENT_PROOF.countriesServed}+`, label: 'Countries Served' },
+              { num: `${BLUEPRINT_OFFER.outfitFormulas}`, label: 'Outfit Formulas' },
+              { num: `${BLUEPRINT_OFFER.weeklyClientCapacity}`, label: 'Clients Per Week' },
             ].map((s) => (
               <div key={s.label}>
                 <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
                   {s.num}
-                  {s.star && <Star className="h-5 w-5 fill-current" style={{ color: '#9a7d4a' }} />}
                 </div>
                 <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
               </div>
@@ -266,7 +260,7 @@ export default function LandingPageContent({
                 <div className="flex flex-wrap gap-3 mt-4">
                   <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass Profile</span>
                   <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
-                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{isOffer2699 ? '20 Outfits' : '14 Ensembles'}</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{BLUEPRINT_OFFER.outfitFormulas} Outfits</span>
                 </div>
               </div>
 
@@ -395,7 +389,7 @@ export default function LandingPageContent({
               {/* Section 04: Outfit teaser */}
               <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#faf9f6' }}>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {isOffer2699 ? '20 PERSONALISED OUTFITS' : '14 OUTFIT FORMULAS'}</span>
+                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {BLUEPRINT_OFFER.outfitFormulas} PERSONALISED OUTFIT FORMULAS</span>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
               </div>
               {[
@@ -459,7 +453,7 @@ export default function LandingPageContent({
               ))}
 
               <div className="px-6 md:px-10 py-10 text-center" style={{ background: '#fff' }}>
-                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {isOffer2699 ? '18 More Outfits' : '12 More Ensembles'} in Your Blueprint</span>
+                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {BLUEPRINT_OFFER.outfitFormulas - 2} More Outfits in Your Blueprint</span>
               </div>
             </div>
 
@@ -580,7 +574,7 @@ export default function LandingPageContent({
       <section className="py-24 px-4 md:px-6 me-slate">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
-            A personal styling session in India costs ₹15,000–50,000+. They give you one day. You forget half of it. You still don&apos;t know your colours or your frame.
+            A styling session can end when the call does. Your ICONIK Blueprint remains as a practical reference for getting dressed, shopping, hair, eyewear and colour decisions.
           </p>
           <div className="rounded-2xl p-10 mb-10 me-glass-light">
             <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>ICONIK Style Consultation</div>
@@ -688,7 +682,7 @@ export default function LandingPageContent({
             )}
           </div>
           <p style={{ fontSize: '17px', color: '#F4EFE5', opacity: 0.75, marginTop: '16px', marginBottom: '40px', lineHeight: 1.85 }}>
-            {isOffer2699 ? 'Get 20 personalised outfits, your colour palette and a 30-minute video consultation.' : 'Join 200+ women who have already transformed their confidence and discovered their elegant style.'}
+            Get {BLUEPRINT_OFFER.outfitFormulas} personalised outfit formulas, your colour palette, hairstyle and eyewear guidance, plus a {BLUEPRINT_OFFER.consultationMinutes}-minute video consultation.
           </p>
           <Link
             href={checkoutHref}
@@ -700,17 +694,9 @@ export default function LandingPageContent({
             <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>{isOffer2699 ? 'Get My Style Blueprint →' : 'Start Your Transformation →'}</span>
           </Link>
           <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
-            {isOffer2699 ? (
-              <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ 200+ women styled · Rated 4.9/5</span>
-            ) : (
-              <>
-                <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ Trusted by 200+ women across India</span>
-                <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-                <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>24-Hour Delivery</span>
-                <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-                <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>7-Day Money-Back Guarantee</span>
-              </>
-            )}
+            <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>
+              {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients · {CLIENT_PROOF.countriesServed}+ countries · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery
+            </span>
           </div>
         </div>
       </section>
@@ -734,6 +720,8 @@ export default function LandingPageContent({
                 Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
               </p>
               <a href={`mailto:${SUPPORT_EMAIL}`} className="block mt-3 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>{SUPPORT_EMAIL}</a>
+              <a href={SUPPORT_WHATSAPP_URL} className="block mt-1 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>WhatsApp {SUPPORT_WHATSAPP_DISPLAY}</a>
+              <p className="mt-2" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.45 }}>{BUSINESS_HOURS.display}</p>
             </div>
             {/* Links */}
             <div className="flex flex-wrap gap-x-12 gap-y-6">
@@ -757,7 +745,7 @@ export default function LandingPageContent({
           </div>
           <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
             <p className="iconik-micro opacity-35" style={{ color: '#2C2622' }}>© {new Date().getFullYear()} ICONIK. All rights reserved. Scientific personal styling for Indian women.</p>
-            <p className="iconik-micro opacity-25 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: MITHIL NILESH NAVALAKHA · Results may vary.</p>
+            <p className="iconik-micro opacity-25 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: {LEGAL_ENTITY_NAME} · Results may vary.</p>
           </div>
         </div>
       </footer>
@@ -777,7 +765,7 @@ export default function LandingPageContent({
               <div className="text-right ml-2 iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.55 }}>30-minute video consultation</div>
             ) : (
               <div className="text-right ml-2">
-                <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Expires:</div>
+                <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Reservation window:</div>
                 <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>
                   {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
                 </div>

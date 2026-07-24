@@ -1,3 +1,4 @@
+import Link from "next/link";
 import RegisteredSeoArticle from "@/components/seo/RegisteredSeoArticle";
 import { buildSeoArticleMetadata } from "@/lib/seoArticle";
 import { getSeoArticle } from "@/lib/seoArticleRegistry";
@@ -39,30 +40,30 @@ export default function AppleBodyShapeIndiaPage() {
           <section id="define-apple-shape" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Defines an Apple Body Shape?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              The apple silhouette is characterised by a midsection that is as wide as or wider than both the shoulders and the hips. The waist measurement is similar to or larger than the hip measurement. Legs are typically slimmer in proportion. The chest may be full.
+              An apple silhouette is a broad styling description for a body that carries more visible emphasis through the middle relative to the hip line, often with proportionally slimmer legs. Bust, shoulder width, torso length, and where the waist sits can still vary substantially.
             </p>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              In Geometric Silhouette Profiling™, the apple category is defined by a waist-to-hip ratio above 0.85, combined with visual midsection dominance when the body is viewed as a whole. GSP also maps soft tissue distribution — where volume actually sits — rather than relying solely on circumference measurements.
+              ICONIK does not assign the category from one waist-to-hip threshold. The stylist compares shoulder, bust, waist, and hip relationships, torso length, limb proportion, photographs, and the way current garments fit.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Indian women frequently have this distribution due to hormonal and genetic factors that concentrate fat storage in the abdominal zone. This shape has a clear, precise styling logic — it is not a problem to solve but a geometry to dress.
+              The label is not a diagnosis and does not explain why the body has this distribution. Use it only when it helps you test garment shape, drape, and hem placement; discard any rule that conflicts with comfort or preference.
             </p>
           </section>
 
           <section id="identify-apple-shape" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How Is Apple Body Shape Identified in Indian Women?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Standard body type quizzes use waist-to-hip ratio alone. GSP™ goes further — it maps the proportional relationship between the shoulder span, the midsection width, and the hip span as a three-point geometry. This matters because Indian women often have a hybrid profile: narrower shoulders relative to hip width (a pear characteristic) combined with midsection weight (an apple characteristic).
+              A single measurement can miss the relationship between shoulder line, bust, waist, hip, and torso length. Many people also sit between broad shape descriptions—for example, with midsection emphasis and a narrower shoulder line.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              This hybrid apple-pear distribution is extremely common in Indian women and completely unaddressed by Western body type systems. GSP™ identifies it as a primary type and produces a styling prescription for the specific combination rather than forcing a binary category.
+              GSP™ records a primary and secondary pattern when that is useful, then translates the observation into options rather than forcing a binary category. Read the <Link href="/methodology/geometric-silhouette-profiling" className="underline">canonical methodology page</Link> for the framework&apos;s scope and limitations.
             </p>
           </section>
 
           <section id="apple-ethnic-wear" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the Best Indian Ethnic Wear for an Apple Body Shape?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Anarkali suits</strong> are the strongest choice. The fitted yoke defines and frames the upper body, while the full flare falls from the hip — bypassing the midsection entirely. The floor-length cut creates maximum vertical elongation. For work, an Anarkali in crepe or georgette in a solid undertone-matched colour is both professional and flattering.
+              <strong>Anarkali suits</strong> can work when the yoke sits comfortably and the flare begins from a deliberate point rather than adding tight gathering at the stomach. For work, test a restrained flare in breathable fabric and a length that suits your dress code.
             </p>
             <p className="text-gray-600 mb-4 leading-relaxed">
               <strong>Straight-cut kurtas</strong> at hip length worn over cigarette trousers or straight-leg salwars create a clean vertical line from shoulder to hem. The kurta must end at or just below the hip — not at the midsection.
@@ -75,7 +76,7 @@ export default function AppleBodyShapeIndiaPage() {
               <li>Sarees with side-pleat draping and structured blouse</li>
             </ul>
             <p className="text-gray-600 leading-relaxed">
-              <strong>What to avoid:</strong> Short kurtis ending at the midsection. Salwar kameez with horizontal embellishment at the waist. Churidar sets with a cropped kurti. Heavy saree borders along the front pleating zone.
+              <strong>Test carefully:</strong> short kurtis ending at the fullest point, tight horizontal embellishment at the waist, cropped layers that stop where you do not want emphasis, and bulky front pleating. These are adjustment prompts, not prohibited garments.
             </p>
           </section>
 
@@ -92,14 +93,14 @@ export default function AppleBodyShapeIndiaPage() {
               <li>Shift dresses in structured fabric (not jersey)</li>
             </ul>
             <p className="text-gray-600 leading-relaxed">
-              <strong>What to avoid:</strong> Cropped jackets (cut across the midsection). Bodycon dresses (outline the midsection circumference). High-waisted pencil skirts that sit at the waist. Horizontal colour-blocking with the contrast at the waistline.
+              <strong>Test carefully:</strong> cropped jackets that stop at the fullest point, very tight tucks, rigid waistbands, and high-contrast horizontal breaks. Any of these can still work when the fit, fabric, and rest of the outfit create enough direction.
             </p>
           </section>
 
           <section id="apple-saree" className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How Should an Apple Body Shape Wear a Saree?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              The standard Nivi drape — with tight, neatly pleated fabric tucked into the waist — adds a shelf of fabric directly at the midsection. For apple silhouettes, this is the least flattering draping style.
+              A tightly packed Nivi pleat can add fabric at the front waist. If that placement feels bulky, reduce the number or thickness of pleats, shift them slightly, or choose a more fluid saree. There is no need to abandon the Nivi drape.
             </p>
             <p className="text-gray-600 mb-4 leading-relaxed">
               <strong>Better draping options:</strong> Side-pleat style (pleats to the side rather than straight front). Box-pleat Gujarati drape. Seedha pallu with minimal front pleating. The goal is to reduce the volume of fabric sitting at the front of the waist.
@@ -112,10 +113,10 @@ export default function AppleBodyShapeIndiaPage() {
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Colours and Prints Work for an Apple Body Shape?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Use your Chromatic Harmony Mapping™ palette as the foundation. Within that palette, apply darker or more muted shades to garments covering the midsection. Brighter or lighter shades from the same palette work well at the upper chest and lower body — drawing attention away from the centre.
+              Use colour to create hierarchy rather than assuming the midsection must be dark. Tonal dressing can extend the line; a brighter neckline can draw the eye upward; and a deliberate lower-body colour can distribute emphasis across the outfit.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              <strong>Avoid:</strong> Large horizontal prints at the waist. Loud prints concentrated at the midsection. Metallic fabrics across the belly zone. Bold colour-blocking with a contrast line at the natural waist.
+              <strong>Test carefully:</strong> large horizontal motifs at the waist, high-shine fabric across a tight area, or a sharp contrast line at the fullest point. If you enjoy them, adjust scale, placement, or the surrounding silhouette instead of treating them as forbidden.
             </p>
           </section>
 

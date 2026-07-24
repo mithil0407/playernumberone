@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Rectangle Body Shape Styling for Indian Women — Iconik",
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     title: "Rectangle Body Shape Styling for Indian Women — Iconik",
     description: "Complete styling guide for rectangle body shape in Indian and Western wear. Create curves, define the waist, build a wardrobe that works.",
     url: "https://www.iconik.pro/body-type-styling/rectangle-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Rectangle body shape styling for Indian women — Iconik" }],
+    images: [{ url: "/images/seo/rectangle-body-shape-placement-iconik-og.webp", width: 1200, height: 630, alt: "Rectangle body-shape styling through waist, shoulder and hem placement — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Rectangle Body Shape Styling for Indian Women — Iconik",
     description: "Complete styling guide for rectangle body shape in Indian and Western wear.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/rectangle-body-shape-placement-iconik-og.webp"],
   },
 };
 
@@ -35,7 +36,8 @@ const jsonLd = {
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
       "datePublished": "2025-01-01",
-      "dateModified": "2025-06-01",
+      "dateModified": "2026-07-24",
+      "image": "https://www.iconik.pro/images/seo/rectangle-body-shape-placement-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/body-type-styling/rectangle-india",
     },
     {
@@ -109,6 +111,15 @@ export default function RectangleIndiaPage() {
         <p className="text-lg text-gray-600 mb-8">
           A rectangle body type means your shoulders, waist, and hips are roughly the same width — minimal natural waist definition. The styling strategy is clear: create curves by adding volume strategically and defining the waist. This guide covers exactly how to do that across your full Indian and Western wardrobe.
         </p>
+
+        <SeoTeachingVisual
+          src="/images/seo/rectangle-body-shape-placement-iconik.webp"
+          alt="Indian woman with rectangle proportions showing wrap seam, waist shaping, clean shoulder and flared hem placement."
+          caption="Garment architecture creates selected points of shape while the underlying body remains unchanged."
+          width={1024}
+          height={1536}
+          priority
+        />
 
         {/* What is rectangle */}
         <section className="mb-10">
@@ -283,7 +294,7 @@ export default function RectangleIndiaPage() {
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
-            Get Your Style Blueprint — ₹3,299
+            Get Your Style Blueprint — ₹2,699
           </Link>
         </section>
 

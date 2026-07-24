@@ -11,6 +11,15 @@ export const metadata: Metadata = {
     title: "FAQ — Iconik Style Blueprint",
     description: "Every question answered: how the Blueprint works, what's included, pricing, and how Iconik's methodology differs from generic styling advice.",
     url: "https://www.iconik.pro/faq",
+    type: "website",
+    siteName: "Iconik",
+    locale: "en_IN",
+    images: [{
+      url: "/og-image.webp",
+      width: 1200,
+      height: 630,
+      alt: "Iconik Style Blueprint frequently asked questions",
+    }],
   },
 };
 
@@ -23,7 +32,7 @@ const faqs = [
   {
     question: "What is a Style Blueprint?",
     answer:
-      "An Iconik Style Blueprint is a personalised styling report covering three analyses: Geometric Silhouette Profiling™ (body shape), Chromatic Harmony Mapping™ (your ideal colour palette based on skin undertone), and Facial Architecture Analysis™ (face shape and the necklines, accessories, and hairstyles that complement it). The report includes 16+ outfit recommendations specific to your lifestyle.",
+      "An Iconik Style Blueprint is a personalised styling report covering three analyses: Geometric Silhouette Profiling™ (body shape), Chromatic Harmony Mapping™ (your ideal colour palette based on skin undertone), and Facial Architecture Analysis™ (face shape and the necklines, accessories, and hairstyles that complement it). The report includes 20 outfit formulas specific to your lifestyle.",
   },
   {
     question: "What is Geometric Silhouette Profiling™?",
@@ -43,7 +52,7 @@ const faqs = [
   {
     question: "How much does an Iconik Style Blueprint cost in India?",
     answer:
-      "The Iconik Style Blueprint is priced at ₹3,299 in India. This includes a 20-minute consultation with a stylist, a full personalised report covering all three analyses, and 16+ lifestyle-specific outfit recommendations.",
+      "The Iconik Style Blueprint is priced at ₹2,699 in India. This includes a 30-minute consultation with a stylist, a full personalised report covering all three analyses, and 20 lifestyle-specific outfit formulas.",
   },
   {
     question: "How is Iconik different from other styling apps or services?",
@@ -53,12 +62,12 @@ const faqs = [
   {
     question: "How long does it take to receive my Style Blueprint?",
     answer:
-      "Your personalised Style Blueprint is delivered within 48 hours of completing your intake form and stylist consultation.",
+      "Your personalised Style Blueprint is delivered within 5 working days after the consultation of completing your intake form and stylist consultation.",
   },
   {
     question: "Is Iconik's styling service available outside India?",
     answer:
-      "Yes. Iconik currently serves clients in India (₹3,299), the UAE (AED 349), and Australia. The service is fully online, so it is accessible from anywhere in the world.",
+      "Yes. Iconik currently serves clients in India (₹2,699), the UAE (AED 349), and Australia. The service is fully online, so it is accessible from anywhere in the world.",
   },
   {
     question: "How do I find my skin undertone at home?",
@@ -73,7 +82,7 @@ const faqs = [
   {
     question: "What does the Blueprint include exactly?",
     answer:
-      "Your Style Blueprint includes: your primary silhouette profile with styling principles; your undertone-specific colour palette (10 exact colours); 16+ complete outfit formulas for your lifestyle (work, casual, ethnic, occasion); face shape analysis with neckline, collar, and earring recommendations; a 'what to avoid' guide; and a hair direction guide with 4 recommendations.",
+      "Your Style Blueprint includes: your primary silhouette profile with styling principles; your undertone-specific colour palette (10 exact colours); 20 complete outfit formulas for your lifestyle (work, casual, ethnic, occasion); face shape analysis with neckline, collar, eyewear, and earring recommendations; a 'what to avoid' guide; and hairstyle direction.",
   },
   {
     question: "Is Iconik's methodology scientifically validated?",
@@ -83,7 +92,7 @@ const faqs = [
   {
     question: "How does the online consultation work?",
     answer:
-      "After purchase, you complete a detailed intake form covering your measurements, lifestyle, wardrobe goals, and a set of reference photos. This is followed by a 20-minute video consultation with your assigned Iconik stylist. Your personalised Blueprint is then prepared and delivered within 48 hours.",
+      "After purchase, you complete a detailed intake form covering your measurements, lifestyle, wardrobe goals, and a set of reference photos. This is followed by a 30-minute video consultation with your assigned Iconik stylist. Your personalised Blueprint is then prepared and delivered within 5 working days after the consultation.",
   },
   {
     question: "What if I am not satisfied with my Blueprint?",
@@ -138,9 +147,10 @@ export default function FAQPage() {
           <div className="mb-12">
             <Image
               src="/blueprint-process.webp"
-              alt="How the Iconik Style Blueprint works — 3 steps: intake form, stylist call, Blueprint in 48 hours"
+              alt="How the Iconik Style Blueprint works — 3 steps: intake form, stylist call, Blueprint within 5 working days after the consultation"
               width={1000}
               height={400}
+              priority
               className="w-full rounded-xl"
             />
           </div>
@@ -181,13 +191,13 @@ export default function FAQPage() {
               Ready to get your personalised Blueprint?
             </h2>
             <p className="text-gray-600 mb-6">
-              Science-backed styling for Indian women. Delivered in 48 hours.
+              Science-backed styling for Indian women. Delivered within 5 working days after the consultation.
             </p>
             <Link
               href="/"
               className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors"
             >
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

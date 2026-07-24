@@ -130,7 +130,7 @@ export default function BodyShapeVsBodyTypePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your precise silhouette profile</h2>
             <p className="text-gray-600 mb-6">GSP™ uses 7 measurements to build a complete proportional profile — including hybrid classifications that standard body type quizzes miss.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

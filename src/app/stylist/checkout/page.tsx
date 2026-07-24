@@ -507,7 +507,7 @@ export default function StylistCheckoutPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-wrap justify-center gap-2 mb-10"
                 >
-                    {['500+ Happy Clients', '4.9/5 Rating', '30-Day Guarantee', '72h Delivery'].map((t) => (
+                    {['5,000+ Clients', '10+ Countries', '20 Outfit Formulas', '5 Working-Day Delivery'].map((t) => (
                         <div key={t} className="flex items-center gap-2 px-4 py-1.5 rounded-full border iconik-micro text-luxury-charcoal/45" style={{ borderColor: 'var(--luxury-cream)', background: 'var(--luxury-cream)' }}>
                             {t}
                         </div>
@@ -558,7 +558,7 @@ export default function StylistCheckoutPage() {
                             'Detailed colour palette — your exact hex codes and seasonal direction',
                             'Body geometry analysis — every cut that works for your specific proportions',
                             'Face architecture — necklines, earrings, eyewear for your face shape',
-                            'Complete outfit formulas (top, bottom, footwear, bag, jewellery)',
+                            '20 complete outfit formulas (top, bottom, footwear, bag, jewellery)',
                             'Hair direction — 4 styles matched to your face geometry',
                             'What to avoid — and the exact reason why',
                             'Shopping rules specific to your frame and palette',
@@ -682,7 +682,8 @@ export default function StylistCheckoutPage() {
                     className="text-center"
                 >
                     <p className="luxury-body text-luxury-charcoal/35 text-xs leading-relaxed" style={{ fontWeight: 300 }}>
-                        30-day money-back guarantee. If you&apos;re not happy with your Blueprint, email us and we&apos;ll refund you in full — no questions asked.
+                        In-scope revisions continue until you are satisfied. Refunds are considered only in the specific cancellation cases described in our{' '}
+                        <Link href="/refund-policy" className="underline hover:text-luxury-charcoal">refund policy</Link>.
                     </p>
                 </motion.div>
 

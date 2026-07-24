@@ -5,7 +5,13 @@ import {
   TrackedArticleCtaView,
   TrackedArticleLink,
 } from "@/components/ArticleGrowthTracker";
+import {
+  SeoEditorialFooter,
+  SeoEditorialHeader,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
 import { buildMetadata } from "@/lib/seo";
+import { FOUNDERS } from "@/lib/siteFacts";
 
 const path = "/style-guides/modest-professional-fashion-india";
 const growthTracking = {
@@ -35,19 +41,85 @@ export const metadata: Metadata = buildMetadata({
 const faqs = [
   {
     q: "Can modest dressing still look authoritative in a corporate environment?",
-    a: "Yes — and often more so. Modesty in Indian corporate culture is associated with seniority and self-possession. A well-fitted straight kurta with a structured dupatta, or a full-sleeve blouse with tailored trousers, reads as deliberate and controlled rather than understated. The key variable is fit: a modest outfit that fits well commands more authority than a revealing outfit that fits badly.",
+    a: "Yes. Authority comes from deliberate construction: a clean shoulder, controlled ease, opaque fabric, a finished trouser or hem line, and accessories that support one visual hierarchy. Coverage and polish are compatible; the garment should allow movement without losing its structure.",
   },
   {
     q: "What is the most modest Indian professional outfit for a formal meeting?",
-    a: "A straight-cut Anarkali in a jewel tone (deep teal, burgundy, navy) with a matching churidar. The full coverage, structured silhouette, and jewel-tone palette create an impression of authority and seniority. In western wear, a full-sleeve structured blouse with wide-leg trousers and a blazer achieves the same effect.",
+    a: "A reliable formal formula is a solid or low-contrast straight kurta with tonal straight trousers, a controlled dupatta or no dupatta, closed-toe shoes and one structured bag. A securely draped saree with an opaque blouse can be equally formal. Choose according to your workplace and movement needs.",
   },
   {
     q: "How do I add full sleeve coverage without overheating in Indian summers?",
-    a: "Fabric choice solves this. Lightweight cotton-linen blends, crepe, and cotton voile provide full sleeve coverage without trapping heat. A three-quarter sleeve in a structured fabric with a contrasting dupatta is a practical alternative to a full sleeve for transitional weather. Avoid polyester or thick ponte — they do not breathe.",
+    a: "Choose a loose-woven but opaque cotton, linen blend or lightweight viscose; allow ease through the armhole and upper arm; and use a three-quarter sleeve when your coverage preference allows it. Fibre labels do not guarantee comfort, so test opacity, airflow and movement in the actual garment.",
   },
   {
     q: "How should I style a dupatta professionally?",
-    a: "The most professional dupatta draping styles: over one shoulder with the tail pinned or tucked at the back (no dangling fabric that can catch on things); draped symmetrically over both shoulders and pinned at the centre; worn as a stole over a structured top. Avoid the traditional free-flowing dupatta for active work environments — it creates a trip hazard and requires constant adjustment.",
+    a: "Fold the dupatta to a controlled width, create one clear vertical or diagonal line, and secure one point at the shoulder or neckline when your work requires free hands. Keep the tail above the floor and test sitting, walking and reaching before leaving home.",
+  },
+];
+
+const ethnicFormulas = [
+  {
+    name: "Tonal straight kurta set",
+    formula: "Straight kurta + tonal straight trousers + structured tote",
+    why: "A continuous colour line looks controlled, while the straight cut provides coverage without excess fabric.",
+  },
+  {
+    name: "Controlled A-line set",
+    formula: "Low-flare A-line kurta + narrow or straight trousers + watch",
+    why: "A small amount of flare creates movement without turning the outfit festive or visually wide.",
+  },
+  {
+    name: "Short kurta with wide-straight trousers",
+    formula: "Mid-thigh kurta + high-rise wide-straight trousers + closed shoes",
+    why: "The shorter top reveals the trouser line while the rise and full length maintain coverage.",
+  },
+  {
+    name: "Secure saree formula",
+    formula: "Opaque saree + practical blouse + pinned pallu + closed-toe shoes",
+    why: "A secure diagonal pallu and clean blouse shoulder make the saree workable for meetings and movement.",
+  },
+  {
+    name: "Kurta with controlled dupatta",
+    formula: "Solid kurta set + medium-width dupatta + one secure shoulder point",
+    why: "The dupatta becomes one vertical or diagonal line instead of a layer that needs constant adjustment.",
+  },
+  {
+    name: "Long jacket set",
+    formula: "Tonal inner column + open long jacket + straight trousers",
+    why: "The open centre creates a vertical frame; keep the jacket fabric light enough for the climate.",
+  },
+];
+
+const westernFormulas = [
+  {
+    name: "Shirt and straight trousers",
+    formula: "Opaque collared shirt + high-rise straight trousers + loafers",
+    why: "A defined shoulder and finished trouser break create polish without relying on a tight fit.",
+  },
+  {
+    name: "Blouse and wide-straight trousers",
+    formula: "Full or three-quarter sleeve blouse + wide-straight trousers + structured bag",
+    why: "The trouser falls vertically from the hip while the blouse keeps the upper body visually precise.",
+  },
+  {
+    name: "Controlled shirt dress",
+    formula: "Midi shirt dress + adjustable waist + closed shoe",
+    why: "Buttons and a collar provide structure; the waist should skim rather than grip.",
+  },
+  {
+    name: "Longline tailoring",
+    formula: "High-neck shell + longline blazer + matching trousers",
+    why: "A single tailored outer line creates coverage and formality; remove the blazer when the climate requires it.",
+  },
+  {
+    name: "Fine-knit column",
+    formula: "Fine-gauge knit + midi skirt + low boot or loafer",
+    why: "Fine fabric reduces bulk while the uninterrupted column keeps the outfit visually calm.",
+  },
+  {
+    name: "Overshirt layer",
+    formula: "Opaque base top + structured overshirt + full-length trousers",
+    why: "The open overshirt adds coverage and a vertical frame without the heat or stiffness of a blazer.",
   },
 ];
 
@@ -57,12 +129,12 @@ export default function ModestProfessionalFashionPage() {
     "@graph": [
       {
         "@type": "Article",
-        "headline": "Modest Fashion That Doesn't Look Boring: The Indian Professional",
-        "description": "Coverage-first professional style guide for Indian women — modest dressing that maintains authority.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
+        "headline": "Modest Office Wear for Indian Women: 12 Polished Formulas",
+        "description": "A construction-first guide to modest Indian office wear with twelve ethnic and western formulas, fabric checks, dupatta direction and shopping advice.",
+        "author": { "@type": "Person", "name": FOUNDERS[0].name, "jobTitle": FOUNDERS[0].title, "sameAs": FOUNDERS[0].linkedIn },
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" } },
         "datePublished": "2026-03-21",
-        "dateModified": "2026-07-11",
+        "dateModified": "2026-07-23",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/modest-professional-fashion-india" },
       },
       {
@@ -88,8 +160,11 @@ export default function ModestProfessionalFashionPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ArticleGrowthTracker {...growthTracking} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <div className="seo-editorial min-h-screen">
+        <SeoEditorialHeader />
+        <main>
+          <div className="seo-editorial-shell">
+            <div className="seo-classic-article mx-auto max-w-3xl py-16 md:py-24">
 
           <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
             <ol className="flex items-center gap-2 flex-wrap">
@@ -110,8 +185,8 @@ export default function ModestProfessionalFashionPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-600">
               <span className="rounded-full border border-gray-200 px-3 py-1">Published 21 March 2026</span>
-              <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 11 July 2026</span>
-              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
+              <span className="rounded-full border border-gray-200 px-3 py-1">Updated 23 July 2026</span>
+              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by {FOUNDERS[0].name}, {FOUNDERS[0].title}</Link>
             </div>
           </header>
 
@@ -127,59 +202,150 @@ export default function ModestProfessionalFashionPage() {
             </div>
           </aside>
 
+          <SeoTeachingVisual
+            src="/images/seo/modest-office-wear-india-hero-iconik.webp"
+            alt="Indian professional in a structured teal kurta beside clean shoulder, opaque fabric, controlled hem and tonal-line details."
+            caption="Coverage looks intentional when it comes from garment construction: shoulder, opacity, hem and one clear line."
+            width={1672}
+            height={941}
+            priority
+          />
+
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Does Modest Dressing Often Look Frumpy — And How Do You Fix It?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              The frumpy problem in modest dressing comes from one source: oversizing. When women add coverage by going up in size — a larger kurta to cover the arms, a longer tunic to hide the hips — the garment loses its shape. A garment without shape looks careless, not modest.
+              Modest dressing does not become frumpy because it covers the body. It loses clarity when several variables become uncontrolled at once: a dropped shoulder, excess fabric through the torso, an unfinished trouser line, a soft bag, a busy print and a dupatta that spreads horizontally across the outfit.
+            </p>
+            <p className="text-gray-600 mb-4 leading-relaxed">
+              The solution is coverage through design. Fit the shoulder first, then choose enough ease to sit and move without pulling. Use an opaque fabric, an intentional sleeve length and a finished hem. The garment can be relaxed without becoming shapeless.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              The solution is coverage through design, not through size. A well-fitted full-sleeve blouse provides the same arm coverage as an oversized tunic — but projects completely different levels of authority. Your size stays the same; the design feature (full sleeve, high neckline, longer hem) provides the coverage.
+              Run a movement test before judging the mirror: raise both arms, sit, reach forward and walk ten steps. A modest office outfit must function for the workday, not only look composed while standing still.
             </p>
           </section>
 
+          <SeoTeachingVisual
+            src="/images/seo/modest-office-structure-comparison-iconik.webp"
+            alt="Same Indian woman in equally modest outfits comparing excess fabric with controlled ease and clean construction."
+            caption="The coverage and body stay the same; shoulder placement, fabric volume, trouser finish and bag structure change the result."
+            width={1003}
+            height={1568}
+          />
+
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Are the Best Modest Indian Ethnic Professional Outfits?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Six Modest Indian Office-Wear Formulas</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Indian ethnic wear provides the most naturally modest professional wardrobe of any garment category. The strongest coverage-first formulas:
+              Choose the formula that fits your office, commute, climate and coverage preference. Each one has a clear lead line and can be made more formal through fabric, colour and accessories.
             </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Straight-cut churidar kameez:</strong> The churidar provides full leg coverage; the kameez covers the torso. In crepe or cotton-linen, this is the single most versatile modest professional outfit.</li>
-              <li><strong>Controlled A-line or Anarkali suits:</strong> Full coverage with movement; choose restrained flare, practical length, and low-volume embellishment for formal offices.</li>
-              <li><strong>Palazzo kameez sets:</strong> Wide palazzo provides full leg coverage; pairs well with a straight or A-line kameez. Cooler than churidars in summer.</li>
-              <li><strong>Sarees with full-sleeve blouse:</strong> A saree with a full-sleeve blouse in the same or tonal colour is the most formal modest professional outfit available.</li>
-              <li><strong>Patiala salwar with structured kameez:</strong> Traditional full coverage with volume in the salwar — visually interesting without compromising coverage.</li>
-            </ul>
+            <div className="grid gap-4 md:grid-cols-2">
+              {ethnicFormulas.map((item, index) => (
+                <article key={item.name} className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Formula {index + 1}</p>
+                  <h3 className="mb-2 font-semibold text-gray-900">{item.name}</h3>
+                  <p className="mb-2 text-sm font-medium text-gray-700">{item.formula}</p>
+                  <p className="text-sm leading-relaxed text-gray-600">{item.why}</p>
+                </article>
+              ))}
+            </div>
           </section>
 
+          <SeoTeachingVisual
+            src="/images/seo/modest-ethnic-office-formulas-iconik.webp"
+            alt="Three modest Indian office formulas showing a tonal straight set, controlled A-line and secure saree drape."
+            caption="Ethnic office wear becomes easier to repeat when each formula has one clear vertical or diagonal lead line."
+            width={1003}
+            height={1568}
+          />
+
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Are the Best Modest Western Professional Outfits for Indian Women?</h2>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Full-sleeve structured blouse + wide-leg trousers:</strong> Classic modest western professional. The sleeve and trouser provide full arm and leg coverage; a blazer adds an additional layer.</li>
-              <li><strong>Midi dress (full-sleeve or 3/4 sleeve):</strong> A full-coverage dress in ponte or structured crepe is both modest and completely professional. Knee-to-ankle length is appropriate for any Indian corporate context.</li>
-              <li><strong>Shirt dress:</strong> A button-through shirt dress in cotton-linen or structured viscose — full arm and leg coverage, professional silhouette.</li>
-              <li><strong>Blazer + matching straight-leg trousers + turtleneck:</strong> Maximum coverage, maximum authority. Turtleneck replaces the need for a neckline decision entirely.</li>
-              <li><strong>3/4 sleeve blouse + A-line midi skirt:</strong> A soft modest option — the midi length provides full leg coverage, the 3/4 sleeve provides partial arm coverage.</li>
-            </ul>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Six Modest Western Office-Wear Formulas</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {westernFormulas.map((item, index) => (
+                <article key={item.name} className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Formula {index + 7}</p>
+                  <h3 className="mb-2 font-semibold text-gray-900">{item.name}</h3>
+                  <p className="mb-2 text-sm font-medium text-gray-700">{item.formula}</p>
+                  <p className="text-sm leading-relaxed text-gray-600">{item.why}</p>
+                </article>
+              ))}
+            </div>
           </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/modest-western-office-formulas-iconik.webp"
+            alt="Three modest western office formulas with shirt and trousers, controlled shirt dress and longline tailoring."
+            caption="Western modest workwear keeps structure visible through the shoulder, waist treatment and finished trouser line."
+            width={1003}
+            height={1568}
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How Do Colours Affect Modest Dressing?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Modest dressing is most effective when the colour palette comes from your Chromatic Harmony Mapping™ undertone palette. The right colour for your undertone makes a modest outfit look intentional and polished — not washed out or severe.
+              A covered outfit contains more uninterrupted fabric, so colour can occupy a larger visual area. Use one dominant colour, one supporting neutral and one controlled accent. This creates hierarchy without requiring the outfit to become dark or monochromatic.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Monochromatic colour-blocking (same colour top to bottom) is particularly effective for modest dressing: it creates a clean vertical line that reads as deliberate and elegant, while providing complete coverage. A single jewel tone worn head to toe — deep teal churidar set, navy palazzo set — projects more authority than a mixed-colour modest outfit.
+              Tonal dressing—related shades rather than one exact colour—can create a long visual line while preserving depth. For example, deep teal with soft navy, berry with cocoa, or warm ivory with camel. If you use print, let either the print or the accessory lead, not both.
             </p>
           </section>
 
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Modest Styling Techniques Work Across Both Ethnic and Western Wear?</h2>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside">
-              <li><strong>Layer strategically:</strong> A structured blazer or shrug adds coverage to a sleeveless or short-sleeve base without changing the outfit structure.</li>
-              <li><strong>Use dupattas as stoles:</strong> A dupatta worn as a stole over western wear adds a cultural layer of coverage and interest to a blouse-trouser combination.</li>
-              <li><strong>Prioritise opaque fabrics:</strong> Sheer fabrics require layering — which adds bulk and heat. Start with opaque fabrics (crepe, cotton-linen, ponte) and coverage is built in from the first layer.</li>
-              <li><strong>Ensure correct fit across the shoulders:</strong> A garment that fits well at the shoulders creates a clean vertical line — modest outfits look most authoritative when the shoulder seam sits exactly at the shoulder point.</li>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Should You Drape a Dupatta for Work?</h2>
+            <p className="mb-4 text-gray-600 leading-relaxed">
+              Decide what the dupatta must do: provide neckline coverage, add a vertical line, or complete the colour palette. Fold it to a controlled width, secure one point when you need free hands, and keep the tail clear of the floor and chair wheels.
+            </p>
+            <ul className="space-y-3 text-gray-600 list-disc pl-6">
+              <li><strong>One-shoulder vertical:</strong> best for an active workday; pin discreetly at the shoulder.</li>
+              <li><strong>Centred stole:</strong> useful when both sides need coverage; keep the width narrow enough to preserve the kurta shape.</li>
+              <li><strong>Diagonal pallu:</strong> formal and visually strong; secure at the shoulder and check the length while seated.</li>
             </ul>
+          </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/professional-dupatta-drape-comparison-iconik.webp"
+            alt="Same Indian woman comparing a wide horizontal dupatta spread with a secure controlled vertical drape."
+            caption="A professional dupatta stays modest and practical when its width, direction, secure point and tail length are controlled."
+            width={1003}
+            height={1568}
+          />
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Which Fabrics Work in Indian Office Weather?</h2>
+            <p className="mb-4 text-gray-600 leading-relaxed">
+              Fibre names are only a starting point. Cotton can be heavy; viscose can be breathable or clingy; linen blends can be cool but transparent. Test the actual fabric for opacity, airflow, recovery and movement.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[
+                ["Opacity", "Hold the fabric against daylight and check seams as well as the centre panel."],
+                ["Airflow", "Wear it for ten minutes; check the back, underarm and elbow rather than touching it briefly."],
+                ["Recovery", "Sit for five minutes and see whether the fabric crushes, bags or clings."],
+                ["Movement", "Raise your arms and reach forward; the hem should not rise beyond your comfort level."],
+              ].map(([title, copy]) => (
+                <article key={title} className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                  <h3 className="mb-2 font-semibold text-gray-900">{title}</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">{copy}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/modest-office-wear-shopping-checklist-iconik.webp"
+            alt="Modest office-wear shopping checklist showing shoulder, opacity, sleeve, hem and movement checks."
+            caption="Test modest workwear in motion: raise your arms, sit, check opacity in daylight and walk before buying."
+            width={1003}
+            height={1568}
+          />
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">The Five-Minute Fitting-Room Test</h2>
+            <ol className="space-y-3 text-gray-600 list-decimal pl-6">
+              <li><strong>Shoulder:</strong> confirm the seam sits where the garment design intends and the neckline stays flat.</li>
+              <li><strong>Opacity:</strong> inspect the front, back and seam allowances in bright light.</li>
+              <li><strong>Sitting:</strong> sit fully; check pulling at the bust, stomach, hip, buttons and side slits.</li>
+              <li><strong>Movement:</strong> raise both arms, reach forward and walk ten normal steps.</li>
+              <li><strong>Workday finish:</strong> add your usual bag, footwear and dupatta; confirm the outfit still has one visual lead.</li>
+            </ol>
           </section>
 
           <section className="mb-12">
@@ -218,11 +384,14 @@ export default function ModestProfessionalFashionPage() {
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Navalakha, Mithil. &quot;Modest Office Wear for Indian Women: 12 Polished Formulas.&quot; Iconik, reviewed 11 July 2026. https://www.iconik.pro/style-guides/modest-professional-fashion-india</p>
+            <p>Rana, Jasmine. &quot;Modest Office Wear for Indian Women: 12 Polished Formulas.&quot; Iconik, updated 23 July 2026. https://www.iconik.pro/style-guides/modest-professional-fashion-india</p>
           </div>
 
-        </div>
-      </main>
+            </div>
+          </div>
+        </main>
+        <SeoEditorialFooter />
+      </div>
     </>
   );
 }

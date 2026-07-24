@@ -3,10 +3,11 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Clock, CheckCircle, RefreshCcw } from 'lucide-react';
+import { BUSINESS_HOURS, SUPPORT_EMAIL } from '@/lib/siteFacts';
 
 export default function RefundPolicyPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="seo-policy-page min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -22,7 +23,7 @@ export default function RefundPolicyPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
+          className="seo-policy-card bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
         >
           {/* Header */}
           <div className="text-center mb-12">
@@ -80,24 +81,44 @@ export default function RefundPolicyPage() {
                   </ul>
                 </div>
               </div>
+
+              <div className="mt-6 bg-amber-50/80 rounded-2xl p-6 border border-amber-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Cancellation and Refund Eligibility</h3>
+                <div className="space-y-3 text-gray-700 leading-relaxed">
+                  <p>
+                    A refund may be considered when you decide not to avail the service and contact us before
+                    the consultation has taken place and before our styling team has begun reviewing your intake
+                    or preparing your Blueprint.
+                  </p>
+                  <p>
+                    Once the consultation is completed or personalised work has begun, the purchase is generally
+                    not refundable. We will instead use the revision process to bring the delivered Blueprint into
+                    alignment with the original consultation scope.
+                  </p>
+                  <p>
+                    Refund eligibility is confirmed case by case after we review the service status and payment.
+                    This policy does not limit any rights that cannot legally be excluded.
+                  </p>
+                </div>
+              </div>
             </section>
 
             {/* Subscription Services */}
             <section className="border-t pt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Subscription Services (Style Club & Iconik Closet)</h2>
 
-              {/* 30-Day Guarantee for Subscriptions */}
+              {/* Subscription refund terms */}
               <div className="bg-purple-50/70 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 mb-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <RefreshCcw className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">30-Day Satisfaction Guarantee</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">Subscription Refund Terms</h3>
                     <p className="text-gray-700 leading-relaxed">
-                      For new subscription members, we offer a <strong>30-day money-back guarantee</strong> on your first payment.
-                      If you don&apos;t save at least 3 hours of shopping time or find at least 2 outfits you love in your first month,
-                      we&apos;ll refund your first month&apos;s payment—no questions asked.
+                      Subscription refunds are not an automatic money-back guarantee. If you decide not to avail
+                      the service, contact support before onboarding or personalised work begins so the team can
+                      review whether your payment is eligible for cancellation and refund.
                     </p>
                   </div>
                 </div>
@@ -108,17 +129,13 @@ export default function RefundPolicyPage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Subscription Cancellation</h3>
                 <div className="space-y-3 text-gray-700">
                   <p className="leading-relaxed">
-                    <strong>Monthly Subscriptions:</strong> Cancel anytime. You&apos;ll continue to have access until the end of your current billing period.
-                    No refunds for partial months.
+                    <strong>Monthly Subscriptions:</strong> You may cancel future renewal. Access continues until
+                    the end of the paid billing period, and partial periods are generally not refunded.
                   </p>
                   <p className="leading-relaxed">
-                    <strong>Annual Subscriptions:</strong> Cancel anytime, but refunds are prorated based on usage:
+                    <strong>Annual Subscriptions:</strong> Contact support for a case-by-case review based on
+                    onboarding status, personalised work already completed, and the terms shown at purchase.
                   </p>
-                  <ul className="list-disc pl-6 space-y-1 text-sm">
-                    <li>Within 30 days: Full refund available</li>
-                    <li>After 30 days: Prorated refund for unused months (minus processing fee of ₹500)</li>
-                    <li>After 6 months: No refunds available</li>
-                  </ul>
                 </div>
               </div>
 
@@ -128,7 +145,7 @@ export default function RefundPolicyPage() {
                 <ol className="space-y-3">
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
-                    <p className="text-gray-700">Email us at <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a> with subject &quot;Cancel Subscription&quot;</p>
+                    <p className="text-gray-700">Email us at <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a> with subject &quot;Cancel Subscription&quot;</p>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
@@ -136,7 +153,7 @@ export default function RefundPolicyPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
-                    <p className="text-gray-700">We&apos;ll confirm cancellation within 24 hours</p>
+                    <p className="text-gray-700">We&apos;ll review the request during {BUSINESS_HOURS.display}</p>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
@@ -155,7 +172,7 @@ export default function RefundPolicyPage() {
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Contact Our Support Team</h4>
-                      <p className="text-gray-700">Reply to your delivery email or write to <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a> with your order details.</p>
+                      <p className="text-gray-700">Reply to your delivery email or write to <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a> with your order details.</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
@@ -232,10 +249,10 @@ export default function RefundPolicyPage() {
               </p>
               <div className="space-y-2">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a>
+                  <strong>Email:</strong> <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a>
                 </p>
                 <p className="text-gray-700">
-                  <strong>Response Time:</strong> Within 24 hours
+                  <strong>Business Hours:</strong> {BUSINESS_HOURS.display}
                 </p>
               </div>
               <Link
@@ -249,7 +266,7 @@ export default function RefundPolicyPage() {
 
           {/* Last Updated */}
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
-            <p>Last updated: February 2026</p>
+            <p>Last updated: 23 July 2026</p>
           </div>
         </motion.div>
       </div>

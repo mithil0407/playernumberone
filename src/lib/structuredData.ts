@@ -1,11 +1,30 @@
 import { absoluteUrl, OG_IMAGE_URL, SITE_NAME, SITE_URL } from "@/lib/seo";
+import {
+  ACTIVE_PUBLIC_MARKETS,
+  BLUEPRINT_OFFER,
+  FOUNDERS,
+  GOOGLE_BUSINESS_PROFILE_URL,
+  INSTAGRAM_URL,
+  LEGAL_ENTITY_NAME,
+} from "@/lib/siteFacts";
 
 export const founderPerson = {
   "@type": "Person",
-  "@id": `${SITE_URL}/about#founder`,
-  name: "Mithil Navalakha",
+  "@id": `${SITE_URL}/about#jasmine-rana`,
+  name: FOUNDERS[0].name,
   url: `${SITE_URL}/about`,
-  jobTitle: "Founder, Iconik",
+  sameAs: FOUNDERS[0].linkedIn,
+  jobTitle: FOUNDERS[0].title,
+  worksFor: { "@id": `${SITE_URL}/#organization` },
+};
+
+export const coFounderPerson = {
+  "@type": "Person",
+  "@id": `${SITE_URL}/about#mithil-navalakha`,
+  name: FOUNDERS[1].name,
+  url: `${SITE_URL}/about`,
+  sameAs: FOUNDERS[1].linkedIn,
+  jobTitle: FOUNDERS[1].title,
   worksFor: { "@id": `${SITE_URL}/#organization` },
 };
 
@@ -13,19 +32,24 @@ export const organizationNode = {
   "@type": "Organization",
   "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
-  legalName: "Iconik",
+  legalName: LEGAL_ENTITY_NAME,
   url: SITE_URL,
   logo: {
     "@type": "ImageObject",
     url: OG_IMAGE_URL,
   },
-  founder: { "@id": `${SITE_URL}/about#founder` },
-  areaServed: ["IN", "AE", "AU"],
+  founder: [
+    { "@id": founderPerson["@id"] },
+    { "@id": coFounderPerson["@id"] },
+  ],
+  areaServed: ACTIVE_PUBLIC_MARKETS,
   serviceType: "Personal Styling",
   sameAs: [
-    "https://www.instagram.com/iconik.style/",
+    INSTAGRAM_URL,
     "https://www.instagram.com/iconik.men/",
     "https://www.linkedin.com/company/iconik-llp",
+    GOOGLE_BUSINESS_PROFILE_URL,
+    ...FOUNDERS.map((founder) => founder.linkedIn),
   ],
 };
 
@@ -72,7 +96,7 @@ export function articleNode({
     "@id": `${absoluteUrl(path)}#article`,
     headline: title,
     description,
-    author: { "@id": `${SITE_URL}/about#founder` },
+    author: { "@id": founderPerson["@id"] },
     reviewedBy: reviewedBy["@id"]
       ? { "@id": reviewedBy["@id"] }
       : reviewedBy,
@@ -106,7 +130,7 @@ export function serviceNode({
   description,
   path,
   areaServed,
-  price = "3299",
+  price = String(BLUEPRINT_OFFER.currentPriceInr),
   currency = "INR",
 }: {
   name: string;

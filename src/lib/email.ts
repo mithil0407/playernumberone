@@ -143,6 +143,60 @@ function htmlEscape(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+export interface ContactMessageData {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  orderNumber?: string;
+}
+
+export async function sendContactMessage(
+  data: ContactMessageData,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const safeName = htmlEscape(data.name);
+    const safeEmail = htmlEscape(data.email);
+    const safeSubject = htmlEscape(data.subject);
+    const safeMessage = htmlEscape(data.message).replace(/\n/g, "<br />");
+    const safeOrderNumber = htmlEscape(data.orderNumber || "Not provided");
+
+    const info = await transporter.sendMail({
+      from: `"ICONIK Website" <${process.env.GMAIL_USER}>`,
+      to: "help.iconikfashion@gmail.com",
+      replyTo: data.email,
+      subject: `Website enquiry: ${data.subject} — ${data.name}`,
+      text: [
+        `Name: ${data.name}`,
+        `Email: ${data.email}`,
+        `Subject: ${data.subject}`,
+        `Order number: ${data.orderNumber || "Not provided"}`,
+        "",
+        data.message,
+      ].join("\n"),
+      html: `
+        <h2>New ICONIK website enquiry</h2>
+        <p><strong>Name:</strong> ${safeName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <p><strong>Subject:</strong> ${safeSubject}</p>
+        <p><strong>Order number:</strong> ${safeOrderNumber}</p>
+        <hr />
+        <p>${safeMessage}</p>
+      `,
+    });
+
+    console.log(`Contact message sent. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending contact message:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
 function buildEmailHtml(data: ConfirmationEmailData): string {
   const { customer_name, customer_email, customer_phone, order_amount, add_ons, payment_id } = data;
 
@@ -459,7 +513,7 @@ function buildManEmailHtml(data: ConfirmationEmailData): string {
                 <strong style="color:#1a1a2e;">One thing stands between you and your Blueprint:</strong> completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.
               </p>
               <p style="margin:0 0 20px; color:#333; font-size:16px; line-height:1.7;">
-                Complete your intake form now and your Blueprint will be ready within 72 hours:
+                Complete your intake form now. After your 30-minute consultation, your Blueprint will be delivered within 5 working days:
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -519,7 +573,7 @@ export async function sendManConfirmationEmail(data: ConfirmationEmailData): Pro
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your Iconik Man Blueprint is Confirmed ✅`,
-      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now and your Blueprint will be ready within 72 hours:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now. After your 30-minute consultation, your Blueprint will be delivered within 5 working days:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
       html: buildManEmailHtml(data),
     });
 
@@ -832,10 +886,8 @@ export async function sendGlobeOrderConfirmationEmail(
     const transporter = getTransporter();
     const firstName = data.customer_name.split(' ')[0] || 'there';
     const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
-    const deliveryHours = data.delivery_hours ?? 24;
-
     const subject = `✅ Your ICONIK Blueprint is confirmed — complete your intake to unlock it`;
-    const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (USD $${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nOnce submitted, your Blueprint arrives within ${deliveryHours} hours.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
+    const text = `Hi ${firstName},\n\nThank you for purchasing your ICONIK Blueprint (USD $${data.order_amount}).\n\nYour Blueprint cannot be prepared until you complete your 4-minute intake form:\n${intakeLink}\n\nAfter your 30-minute consultation, your Blueprint will be delivered within 5 working days.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -864,11 +916,11 @@ ${data.has_edit_addon ? `<tr><td style="padding:6px 0;border-bottom:1px solid #f
 ${data.payment_id ? `<p style="margin:10px 0 0;color:#bbb;font-size:11px;">Payment Ref: ${data.payment_id}</p>` : ''}
 </div></td></tr>
 <tr><td style="padding:28px 40px 0;">
-<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Complete your intake form now and your Blueprint will be ready within ${deliveryHours} hours:</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Complete your intake form now. After your 30-minute consultation, your Blueprint will be delivered within 5 working days:</p>
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <a href="${intakeLink}" style="display:inline-block;background:#c2185b;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 36px;border-radius:50px;letter-spacing:0.3px;">Complete My Intake Form →</a>
 </td></tr></table>
-<p style="margin:12px 0 0;color:#999;font-size:12px;text-align:center;">Takes 4 minutes · Blueprint delivered within ${deliveryHours} hours of completion</p>
+<p style="margin:12px 0 0;color:#999;font-size:12px;text-align:center;">Takes 4 minutes · 30-minute consultation · Delivery within 5 working days after consultation</p>
 </td></tr>
 <tr><td style="padding:24px 40px 0;">
 <p style="margin:0 0 8px;color:#333;font-size:15px;line-height:1.7;">If you have any questions, reply to this email — we're here.</p>
@@ -909,11 +961,10 @@ export async function sendStylistOrderConfirmationEmail(
     const email = htmlEscape(data.customer_email);
     const phone = htmlEscape(data.customer_phone || '');
     const intakeLink = `https://www.iconik.pro/stylist/intake?email=${encodeURIComponent(data.customer_email)}&phone=${encodeURIComponent(data.customer_phone)}`;
-    const deliveryHours = data.delivery_hours ?? 72;
     const amount = Number(data.order_amount || 0).toFixed(0);
 
     const subject = `Your ICONIK Style Blueprint is confirmed`;
-    const text = `Hi ${data.customer_name.split(' ')[0] || 'there'},\n\nThank you for purchasing your ICONIK Style Blueprint (USD $${amount}).\n\nYour Blueprint cannot be prepared until you complete your intake form:\n${intakeLink}\n\nOnce submitted, your Blueprint arrives within ${deliveryHours} hours.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
+    const text = `Hi ${data.customer_name.split(' ')[0] || 'there'},\n\nThank you for purchasing your ICONIK Style Blueprint (USD $${amount}).\n\nYour Blueprint cannot be prepared until you complete your intake form:\n${intakeLink}\n\nAfter your 30-minute consultation, your Blueprint will be delivered within 5 working days.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -943,11 +994,11 @@ ${phone ? `<tr><td style="padding:6px 0;border-bottom:1px solid #eee6d8;color:#5
 ${data.payment_id ? `<p style="margin:10px 0 0;color:#bbb;font-size:11px;">Payment Ref: ${htmlEscape(data.payment_id)}</p>` : ''}
 </div></td></tr>
 <tr><td style="padding:28px 40px 0;">
-<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Complete your intake form now and your Blueprint will be ready within ${deliveryHours} hours:</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Complete your intake form now. After your 30-minute consultation, your Blueprint will be delivered within 5 working days:</p>
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
 <a href="${intakeLink}" style="display:inline-block;background:#b58e4d;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 36px;border-radius:50px;letter-spacing:0.3px;">Complete My Intake Form</a>
 </td></tr></table>
-<p style="margin:12px 0 0;color:#999;font-size:12px;text-align:center;">Blueprint delivered within ${deliveryHours} hours of intake completion</p>
+<p style="margin:12px 0 0;color:#999;font-size:12px;text-align:center;">30-minute consultation · Delivery within 5 working days after consultation</p>
 </td></tr>
 <tr><td style="padding:24px 40px 0;">
 <p style="margin:0 0 8px;color:#333;font-size:15px;line-height:1.7;">If you have any questions, reply to this email.</p>
@@ -1005,8 +1056,6 @@ export async function sendAUQuizReminderEmail(
 function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
   const { customer_name, intake_link } = data;
   const firstName = customer_name.split(' ')[0] || 'there';
-  const deliveryHours = data.delivery_hours ?? 24;
-
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -1052,10 +1101,10 @@ function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
                 <li>Your body geometry analysis</li>
                 <li>Your chromatic harmony map (your exact 10 colours)</li>
                 <li>Your facial architecture profile</li>
-                <li>Your 6 personalised outfit formulas</li>
+                <li>Your 20 personalised outfit formulas</li>
               </ul>
               <p style="margin:0 0 16px; color:#555; font-size:15px; line-height:1.7;">
-                It only takes <strong>4 minutes</strong>. Complete it now and your Blueprint will be ready within ${deliveryHours} hours.
+                It only takes <strong>4 minutes</strong>. Complete it now so we can arrange your 30-minute consultation. Your Blueprint will be delivered within 5 working days after the consultation.
               </p>
             </td>
           </tr>
@@ -1073,7 +1122,7 @@ function buildGlobeQuizReminderHtml(data: GlobeQuizReminderEmailData): string {
                   </td>
                 </tr>
               </table>
-              <p style="margin:12px 0 0; color:#999; font-size:12px; text-align:center;">Takes 4 minutes · Blueprint delivered within ${deliveryHours} hours of completion</p>
+              <p style="margin:12px 0 0; color:#999; font-size:12px; text-align:center;">Takes 4 minutes · 30-minute consultation · Delivery within 5 working days after consultation</p>
             </td>
           </tr>
 
@@ -1114,13 +1163,11 @@ export async function sendGlobeQuizReminderEmail(
   try {
     const transporter = getTransporter();
     const firstName = data.customer_name.split(' ')[0] || 'there';
-    const deliveryHours = data.delivery_hours ?? 24;
-
     const info = await transporter.sendMail({
       from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `⏳ Your Blueprint is waiting — we need your intake answers to begin`,
-      text: `Hi ${firstName},\n\nWe received your payment but haven't received your intake form answers yet.\n\nWithout them, we cannot prepare your personal Blueprint. It takes 4 minutes:\n${data.intake_link}\n\nOnce submitted, your Blueprint arrives within ${deliveryHours} hours.\n\nIf you've already submitted, please ignore this email.\n\nBest,\nThe ICONIK Team`,
+      text: `Hi ${firstName},\n\nWe received your payment but haven't received your intake form answers yet.\n\nWithout them, we cannot prepare your personal Blueprint. It takes 4 minutes:\n${data.intake_link}\n\nAfter your 30-minute consultation, your Blueprint will be delivered within 5 working days.\n\nIf you've already submitted, please ignore this email.\n\nBest,\nThe ICONIK Team`,
       html: buildGlobeQuizReminderHtml(data),
     });
 
@@ -1163,7 +1210,7 @@ function buildIntakeReceivedHtml({
 <tr><td style="padding:28px 40px 0;">
 <p style="margin:0 0 12px;color:#333;font-size:16px;line-height:1.7;">Hi there,</p>
 <p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">${body}</p>
-<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">Your report will be delivered to your inbox within <strong>72 hours</strong>.</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">After your 30-minute consultation, your report will be delivered to your inbox within <strong>5 working days</strong>.</p>
 <p style="margin:0;color:#555;font-size:14px;line-height:1.7;">Please check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.</p>
 </td></tr>
 <tr><td style="padding:28px 40px 40px;text-align:center;border-top:1px solid #f0e8e8;">
@@ -1190,7 +1237,7 @@ export async function sendManIntakeReceivedEmail(
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your ICONIK Man intake was received`,
-      text: `Hi there,\n\nWe have received your ICONIK Man intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nYour report will be delivered to your inbox within 72 hours.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      text: `Hi there,\n\nWe have received your ICONIK Man intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nAfter your 30-minute consultation, your report will be delivered to your inbox within 5 working days.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
       html,
     });
 
@@ -1218,7 +1265,7 @@ export async function sendGlobeIntakeReceivedEmail(
       from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your ICONIK intake was received`,
-      text: `Hi there,\n\nWe have received your ICONIK intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nYour report will be delivered to your inbox within 72 hours.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      text: `Hi there,\n\nWe have received your ICONIK intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nAfter your 30-minute consultation, your report will be delivered to your inbox within 5 working days.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
       html,
     });
 
@@ -1246,7 +1293,7 @@ export async function sendStylistIntakeReceivedEmail(
       from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your ICONIK Style Blueprint intake was received`,
-      text: `Hi there,\n\nWe have received your ICONIK Style Blueprint intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nYour report will be delivered to your inbox within 72 hours.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      text: `Hi there,\n\nWe have received your ICONIK Style Blueprint intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nAfter your 30-minute consultation, your report will be delivered to your inbox within 5 working days.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
       html,
     });
 

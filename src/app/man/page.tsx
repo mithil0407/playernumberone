@@ -8,6 +8,7 @@ import { MAN_BLUEPRINT_PRODUCT_ID, MAN_FUNNEL_CATEGORY, trackPageView, trackView
 import { captureAttribution } from '@/lib/attribution';
 import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing, type ManPricing } from '@/lib/manPricing';
+import { BLUEPRINT_OFFER, CLIENT_PROOF } from '@/lib/siteFacts';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ const testimonials = [
 const faqs = [
     { question: "Is this actually useful for men or just a women's service repackaged?", answer: "ICONIK for men was built specifically around how men's bodies, wardrobes, and style goals work. The Blueprint covers your frame geometry, face shape, undertone, grooming, and real outfit formulas for office, casual, and Indian occasions — all through a male lens." },
     { question: 'What photos do I need to submit?', answer: "Two photos: a full-length photo (standing, natural light, fitted clothes so we can see your frame) and a clear headshot. We'll guide you after purchase." },
-    { question: 'How long does it take to receive my Blueprint?', answer: 'Within 72 hours of submitting your intake form and photos.' },
+    { question: 'How long does it take to receive my Blueprint?', answer: `Within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after your consultation.` },
     { question: "What if I just want to look sharp, not stylish?", answer: "That's exactly the goal. The Blueprint isn't about trends — it's about identifying what fits your body well, what colours make you look healthy, and what silhouettes project authority. Sharp and unfussy is the outcome." },
     { question: "What if I'm not happy?", answer: "100% satisfaction guarantee. If your Blueprint needs adjustments, email us and we'll revise the report until it reflects your needs clearly." },
     { question: "Can I do this if I don't know anything about my body type or colours?", answer: "Yes. That's exactly who this is for. You don't need to know anything. That's what we figure out." },
@@ -133,13 +134,8 @@ export default function ManLandingPage() {
             <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto text-center">
 
-                    {/* Featured in */}
-                    <div className="mb-6">
-                        <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Featured in</div>
-                        <div className="flex items-center justify-center gap-8">
-                            <Image src="/times-of-india-logo.png" alt="Times of India" width={100} height={30} className="opacity-35 hover:opacity-60 transition-opacity h-[30px] w-auto" />
-                            <Image src="/vogue-india-logo.png" alt="Vogue India" width={60} height={20} className="opacity-35 hover:opacity-60 transition-opacity h-[20px] w-auto md:h-[25px]" />
-                        </div>
+                    <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
+                        {CLIENT_PROOF.menStyled.toLocaleString('en-IN')}+ MEN STYLED · {CLIENT_PROOF.countriesServed}+ COUNTRIES
                     </div>
 
                     {/* Headline */}
@@ -148,7 +144,7 @@ export default function ManLandingPage() {
                         <span className="iconik-display-it" style={{ color: '#6B7F87' }}>Signature Style</span>
                     </h1>
                     <div className="iconik-display-it mb-8" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622', opacity: 0.75 }}>
-                        in 72 hours.
+                        built for you.
                     </div>
 
                     {/* Subheadline */}
@@ -188,14 +184,12 @@ export default function ManLandingPage() {
 
                     {/* Trust strip */}
                     <div className="flex items-center justify-center gap-3 flex-wrap">
-                        <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: '#9a7d4a' }} />)}
-                        </div>
-                        <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 200+ men across India</span>
+                        <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
+                        <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by {CLIENT_PROOF.menStyled.toLocaleString('en-IN')}+ men</span>
                         <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                        <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>72-Hour Delivery</span>
+                        <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>{BLUEPRINT_OFFER.deliveryWorkingDays} Working-Day Delivery</span>
                         <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                        <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>7-Day Guarantee</span>
+                        <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>In-Scope Revisions Included</span>
                     </div>
                 </div>
             </section>
@@ -205,15 +199,14 @@ export default function ManLandingPage() {
                 <div className="max-w-5xl mx-auto">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                         {[
-                            { num: '200+', label: 'Blueprints Delivered' },
-                            { num: '4.9', label: 'Average Rating', star: true },
-                            { num: '72h', label: 'Delivery Time' },
-                            { num: '100%', label: 'Satisfaction Guarantee' },
+                            { num: `${CLIENT_PROOF.menStyled.toLocaleString('en-IN')}+`, label: 'Men Styled' },
+                            { num: `${CLIENT_PROOF.countriesServed}+`, label: 'Countries Served' },
+                            { num: `${BLUEPRINT_OFFER.outfitFormulas}`, label: 'Outfit Formulas' },
+                            { num: `${BLUEPRINT_OFFER.deliveryWorkingDays}`, label: 'Working-Day Delivery' },
                         ].map((s) => (
                             <div key={s.label}>
                                 <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
                                     {s.num}
-                                    {s.star && <Star className="h-5 w-5 fill-current" style={{ color: '#9a7d4a' }} />}
                                 </div>
                                 <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
                             </div>
@@ -563,7 +556,7 @@ export default function ManLandingPage() {
             <section className="py-24 px-4 md:px-6 me-slate">
                 <div className="max-w-3xl mx-auto text-center relative z-10">
                     <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
-                        A personal styling session in India costs ₹15,000–50,000+. They give you one day. You forget half of it. You still don&apos;t know your colours or your frame.
+                        A styling session can end when the call does. Your ICONIK Blueprint remains as a practical reference for outfits, shopping, grooming, eyewear and colour decisions.
                     </p>
                     <div className="rounded-2xl p-10 mb-10 me-glass-light">
                         <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>Your ICONIK Man Blueprint</div>
@@ -706,7 +699,7 @@ export default function ManLandingPage() {
                         {[
                             { step: '01', title: 'Purchase & Fill In', desc: 'Complete your purchase. Upload two photos — one full body, one headshot. Fill in 8 questions about your lifestyle and goals. Takes 4 minutes.' },
                             { step: '02', title: 'We Analyse', desc: "Our proprietary ICONIK methodology analyses your frame, colour profile, and facial architecture — built specifically for how men dress." },
-                            { step: '03', title: 'You Receive', desc: 'Your personalised Blueprint arrives within 72 hours. 20 outfits, your colour palette, your face architecture guide. Yours to keep forever.' },
+                            { step: '03', title: 'You Receive', desc: `Your personalised Blueprint arrives within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after consultation. ${BLUEPRINT_OFFER.outfitFormulas} outfits, your colour palette and face architecture guide. Yours to keep.` },
                         ].map((s) => (
                             <div key={s.step} className="p-8 rounded-2xl text-center hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
                                 <div className="iconik-display mb-4" style={{ fontSize: '48px', color: 'rgba(44,38,34,0.1)' }}>{s.step}</div>
@@ -761,11 +754,11 @@ export default function ManLandingPage() {
                         <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>Get My Blueprint →</span>
                     </Link>
                     <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
-                        <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ Trusted by 200+ men {isIndia ? 'across India' : 'worldwide'}</span>
+                        <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>Trusted by {CLIENT_PROOF.menStyled.toLocaleString('en-IN')}+ men {isIndia ? 'across India' : 'worldwide'}</span>
                         <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-                        <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>72-Hour Delivery</span>
+                        <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>{BLUEPRINT_OFFER.deliveryWorkingDays} Working-Day Delivery</span>
                         <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-                        <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>7-Day Money-Back Guarantee</span>
+                        <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>In-Scope Revisions Included</span>
                     </div>
                 </div>
             </section>

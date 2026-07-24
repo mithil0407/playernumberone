@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "What to Wear to Hide Heavy Arms: Indian Women's Complete Guide — Iconik",
@@ -10,7 +11,18 @@ export const metadata: Metadata = {
     title: "What to Wear to Hide Heavy Arms: Indian Women's Complete Guide — Iconik",
     description: "Sleeve cuts, fabrics, and Indian garment formulas for arm-flattering dressing.",
     url: "https://www.iconik.pro/body-type-styling/heavy-arms-styling",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Heavy arms styling guide for Indian women — Iconik" }],
+    type: "article",
+    siteName: "Iconik",
+    locale: "en_IN",
+    publishedTime: "2025-01-01",
+    modifiedTime: "2026-07-24",
+    images: [{ url: "/images/seo/heavy-arms-sleeve-balance-iconik-og.webp", width: 1200, height: 630, alt: "Sleeve-shape comparison for fuller arms on the same Indian woman — Iconik" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "What to Wear to Hide Heavy Arms: Indian Women's Complete Guide — Iconik",
+    description: "Sleeve cuts, fabrics, and Indian garment formulas for arm-flattering dressing.",
+    images: ["/images/seo/heavy-arms-sleeve-balance-iconik-og.webp"],
   },
 };
 
@@ -43,7 +55,9 @@ export default function HeavyArmsStylingPage() {
         "description": "Science-backed arm styling guide for Indian women using Geometric Silhouette Profiling™.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
         "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
+        "image": "https://www.iconik.pro/images/seo/heavy-arms-sleeve-balance-iconik.webp",
         "datePublished": "2025-01-01",
+        "dateModified": "2026-07-24",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/heavy-arms-styling" },
       },
       {
@@ -89,6 +103,15 @@ export default function HeavyArmsStylingPage() {
               Arm styling is one of the most common fit concerns among Indian women — and one of the most misunderstood. The goal is not to hide your arms. It is to create proportional balance through sleeve cut, fabric choice, and visual line — so your arms look sculpted rather than constrained.
             </p>
           </header>
+
+          <SeoTeachingVisual
+            src="/images/seo/heavy-arms-sleeve-balance-iconik.webp"
+            alt="Same Indian woman showing a tight cap sleeve ending at the widest upper arm versus an eased elbow-length sleeve."
+            caption="The arm stays the same. Sleeve ease, endpoint and neckline direction determine whether the garment grips or creates balance."
+            width={1024}
+            height={1536}
+            priority
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Do Arms Look Heavy? The Geometry</h2>
@@ -188,10 +211,10 @@ export default function HeavyArmsStylingPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint includes arm and sleeve recommendations specific to your silhouette profile — plus 16+ complete outfit formulas.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want this done for you within 5 working days after the consultation?</h2>
+            <p className="text-gray-600 mb-6">Your personalised Iconik Style Blueprint includes arm and sleeve recommendations specific to your silhouette profile — plus 20 complete outfit formulas.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

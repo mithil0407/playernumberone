@@ -1,261 +1,332 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  SeoArticleLayout,
+  SeoAuthorReview,
+  SeoBlueprintCta,
+  SeoFaqSection,
+  SeoInsightCard,
+  SeoQuickAnswer,
+  SeoRelatedGuides,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "Seasonal Colour Analysis for Indian Skin Tones — Iconik",
-  description: "Does seasonal colour analysis work for Indian women? Why the Spring/Summer/Autumn/Winter system was calibrated for European skin, and what Chromatic Harmony Mapping™ does instead.",
-  keywords: "seasonal colour analysis Indian women, seasonal colour analysis India, does seasonal colour analysis work Indian skin, spring summer autumn winter colour India, 12 season colour analysis India, colour analysis Indian skin",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/seasonal-colour-analysis-india" },
-  openGraph: {
-    title: "Seasonal Colour Analysis for Indian Skin Tones — Iconik",
-    description: "Does the Spring/Summer/Autumn/Winter system work for Indian women? The honest answer, and what CHM™ does differently.",
-    url: "https://www.iconik.pro/colour-analysis/seasonal-colour-analysis-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Seasonal colour analysis for Indian skin — Iconik" }],
+const path = "/colour-analysis/seasonal-colour-analysis-india";
+const title = "Seasonal Colour Analysis for Indian Skin: Does It Work?";
+const description =
+  "A balanced guide to Spring, Summer, Autumn and Winter colour analysis for Indian skin—what remains useful, where simplified quizzes fail, and how to test your result.";
+const published = "2025-04-01";
+const modified = "2026-07-24";
+
+export const metadata: Metadata = buildArticleMetadata({
+  title,
+  description,
+  path,
+  datePublished: published,
+  dateModified: modified,
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "seasonal colour analysis India",
+    "seasonal colour analysis Indian skin",
+    "Spring Summer Autumn Winter colour analysis",
+    "12 season colour analysis India",
+  ],
+  image: {
+    path: "/images/seo/neutral-olive-wheatish-palette-iconik.webp",
+    width: 1003,
+    height: 1568,
+    alt: "Indian skin shown with a balanced, non-seasonal colour palette.",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Seasonal Colour Analysis for Indian Skin Tones — Iconik",
-    description: "Does the Spring/Summer/Autumn/Winter system work for Indian women? The honest answer, and what CHM™ does differently.",
-    images: ["/og-image.webp"],
-  },
-};
+});
 
 const faqs = [
   {
-    q: "Am I an Autumn or Winter in seasonal colour analysis if I am Indian?",
-    a: "Most Indian women get classified as Autumn or Winter under the standard four-season system — but this is partly a limitation of the system, not a precise analysis. The system was calibrated on Northern European colouring and its 'Winter' and 'Autumn' categories cover an extremely broad range of Indian skin types without distinguishing between them meaningfully. Two Indian women with opposite undertones can both receive the same 'Winter' classification and be given incompatible colour advice as a result.",
+    q: "Am I automatically Autumn or Winter if I have dark hair and eyes?",
+    a: "No. Dark features may increase apparent depth or contrast, but they do not establish undertone or clarity. Compare warm versus cool and muted versus clear drapes before choosing a season.",
   },
   {
     q: "Is seasonal colour analysis accurate for Indian women?",
-    a: "Partially. The core warm/cool undertone distinction that underlies seasonal colour analysis is accurate and relevant for Indian women. However, the four seasonal archetypes (Spring, Summer, Autumn, Winter) were built around Northern European skin characteristics — specific hair, eye, and skin combinations that do not map cleanly onto Indian colouring. The result is that Indian women often get forced into a seasonal category that doesn't reflect their true palette. The undertone principle is sound; the seasonal system that was built on top of it is not well-calibrated for Indian skin.",
+    a: "It can be useful when the practitioner uses representative drapes, observes depth and clarity carefully, and does not use Eurocentric hair or eye stereotypes as shortcuts. A quiz based mainly on dark hair and brown eyes is much less informative.",
   },
   {
-    q: "What is the difference between seasonal colour analysis and Chromatic Harmony Mapping™?",
-    a: "Seasonal colour analysis uses four archetypes (Spring, Summer, Autumn, Winter) built around Northern European skin colouring to assign a palette. Chromatic Harmony Mapping™ uses undertone (warm, cool, neutral) as the primary variable and melanin depth as a secondary variable, calibrated specifically for the full range of Indian skin tones — from fair to deep, including olive and wheatish skin. CHM™ also includes specific guidance for Indian ethnic wear (sarees, kurtas, lehengas) that seasonal colour analysis, a Western system, does not address.",
+    q: "Are 12-season and 16-season systems better?",
+    a: "More categories can describe nuance, but extra labels do not fix poor lighting, weak drapes or demographic assumptions. The test process matters more than the number of seasons.",
   },
   {
-    q: "Does the 12-season or 16-season colour analysis system work better for Indian women?",
-    a: "The expanded seasonal systems (12-season, 16-season) refine the original four-season framework with subcategories like 'True Autumn' or 'Soft Summer.' These are more precise than the basic four-season system, but they are still built on the same Western skin-tone calibration. Indian women may find the subcategories somewhat useful for narrowing their palette, but the fundamental limitation — that the archetypes were not built for South Asian skin — remains. A system built from scratch for Indian skin tones, like CHM™, will be more accurate.",
+    q: "What if my best colours come from two seasons?",
+    a: "That is normal. Seasonal categories are organising tools, not natural boundaries. Keep the shared qualities—such as cool, deep and clear—and build a practical palette from the fabrics that repeatedly work.",
   },
   {
-    q: "Can I do seasonal colour analysis at home?",
-    a: "You can attempt a self-assessment using the vein test, white paper test, and gold vs silver test — these will reliably identify your warm or cool undertone, which is the core insight. What is harder to do at home is identify the nuances of seasonal subcategories (light/deep, muted/clear) and translate them into a precise palette. For Indian skin specifically, the translation from seasonal category to practical colour recommendations requires additional calibration that generic online tools do not provide.",
+    q: "Can I test seasonal colour at home?",
+    a: "Yes, as a starting point. Compare temperature, depth and clarity one variable at a time under stable daylight. Avoid typing yourself from one selfie because cameras automatically change exposure, white balance and contrast.",
   },
 ];
 
-const seasons = [
+const seasonCards = [
   {
     name: "Spring",
-    description: "Warm + light. Calibrated for golden blonde hair, peachy skin, and light eyes. Palette: warm pastels, peach, coral, warm ivory.",
-    indianFit: "Very few Indian women fit the Spring archetype. The light, delicate quality of Spring colours can wash out the higher melanin density of most Indian skin tones.",
+    shorthand: "Usually warm, lighter and clearer",
+    usefulQuestion: "Do fresh warm colours work better than earthy or heavily muted ones?",
   },
   {
     name: "Summer",
-    description: "Cool + light/muted. Calibrated for ash blonde or light brown hair, pink-toned skin, light eyes. Palette: dusty rose, lavender, soft blue, muted cool tones.",
-    indianFit: "Rare for Indian women. The muted, low-contrast Summer palette assumes a lighter skin-hair-eye combination than most Indian women have.",
+    shorthand: "Usually cool, lighter and softer",
+    usefulQuestion: "Do blue-based colours work best when they are softened rather than highly saturated?",
   },
   {
     name: "Autumn",
-    description: "Warm + deep/muted. Calibrated for auburn or brown hair, warm skin, hazel or brown eyes. Palette: terracotta, olive, warm browns, mustard.",
-    indianFit: "The most common classification for Indian women — but it covers an enormous range, from light olive-skinned women to deep-toned women, often giving similar advice to people with very different actual palettes.",
+    shorthand: "Usually warm, deeper and softer",
+    usefulQuestion: "Do earthy warm colours integrate better than bright warm colours?",
   },
   {
     name: "Winter",
-    description: "Cool + deep/clear. Calibrated for dark hair, high contrast between skin and features. Palette: jewel tones, black, white, icy pastels.",
-    indianFit: "The second most common classification for Indian women. Also covers an enormous range. A Winter Indian woman with cool undertone may have very different optimal colours from a Winter European woman — but the system gives them the same advice.",
+    shorthand: "Usually cool, deeper and clearer",
+    usefulQuestion: "Does the face remain defined beside cool saturation and stronger contrast?",
   },
 ];
 
 export default function SeasonalColourAnalysisIndiaPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/seasonal-colour-analysis-india#article",
-        "headline": "Seasonal Colour Analysis for Indian Skin Tones",
-        "description": "An honest assessment of whether the Spring/Summer/Autumn/Winter seasonal colour analysis system works for Indian women, and how Chromatic Harmony Mapping™ was built specifically for Indian skin tones.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
-        },
-        "datePublished": "2025-04-01",
-        "dateModified": new Date().toISOString().split("T")[0],
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/seasonal-colour-analysis-india" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Colour Analysis", "item": "https://www.iconik.pro/colour-analysis" },
-          { "@type": "ListItem", "position": 3, "name": "Seasonal Colour Analysis India", "item": "https://www.iconik.pro/colour-analysis/seasonal-colour-analysis-india" },
-        ],
-      },
-    ],
-  };
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title,
+      description,
+      path,
+      datePublished: published,
+      dateModified: modified,
+      images: ["/images/seo/neutral-olive-wheatish-palette-iconik.webp"],
+      about: ["Seasonal colour analysis", "Indian skin tones", "Personal colour analysis"],
+    }),
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Colour Analysis", path: "/colour-analysis" },
+      { name: "Seasonal Colour Analysis India", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoArticleLayout
+        hero={{
+          eyebrow: "Colour-system comparison",
+          title,
+          summary:
+            "Yes—seasonal colour language can be useful for Indian skin. It becomes unreliable when dark hair and brown eyes automatically produce an Autumn or Winter label, when examples exclude South Asian skin, or when a quiz replaces controlled draping.",
+          breadcrumbs: [
+            { label: "Home", href: "/" },
+            { label: "Colour Analysis", href: "/colour-analysis" },
+            { label: "Seasonal Colour Analysis India" },
+          ],
+          published: "1 April 2025",
+          updated: "24 July 2026",
+          reviewer: "Jasmine Rana",
+          readingTime: "10 min read",
+        }}
+        quickAnswer={
+          <SeoQuickAnswer
+            answer="Use the seasons as descriptive shorthand, not as four rigid boxes. Test temperature, depth and clarity directly on your face."
+            detail="A well-conducted seasonal analysis can work across Indian skin tones. A dark-feature quiz that skips representative draping cannot."
+          />
+        }
+        tableOfContents={[
+          { href: "#what-it-is", label: "What seasonal analysis is" },
+          { href: "#four-seasons", label: "The four seasons" },
+          { href: "#where-it-breaks", label: "Where it breaks down" },
+          { href: "#test-result", label: "How to test your result" },
+          { href: "#chm-comparison", label: "Seasonal analysis vs CHM" },
+        ]}
+        afterArticle={
+          <>
+            <SeoFaqSection faqs={faqs} />
+            <SeoAuthorReview>
+              <p>
+                Jasmine reviews ICONIK&apos;s colour guidance and its use across Indian, western and
+                fusion wardrobes. This comparison explains practical differences without claiming that
+                one colour system is universally correct.
+              </p>
+            </SeoAuthorReview>
+            <SeoRelatedGuides
+              links={[
+                {
+                  href: "/colour-analysis/indian-skin-tones",
+                  title: "Colour Analysis for Indian Skin",
+                  description: "Separate skin depth, undertone, clarity and contrast.",
+                },
+                {
+                  href: "/colour-analysis/how-to-find-undertone",
+                  title: "How to Find Your Undertone",
+                  description: "Run a controlled fabric comparison at home.",
+                },
+                {
+                  href: "/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis",
+                  title: "CHM vs Seasonal Colour Analysis",
+                  description: "Compare the two systems feature by feature.",
+                },
+              ]}
+            />
+            <SeoBlueprintCta
+              title="Prefer a practical palette over another quiz label?"
+              description="The ICONIK Blueprint applies colour, proportion and face-framing observations to 20 outfit formulas for your real wardrobe."
+            />
+          </>
+        }
+      >
+        <section id="what-it-is">
+          <h2>What seasonal colour analysis actually describes</h2>
+          <p>
+            Seasonal colour analysis groups colour characteristics into memorable families. The basic
+            four-season model uses three useful observations:
+          </p>
+          <ul>
+            <li><strong>Temperature:</strong> warm, cool or balanced.</li>
+            <li><strong>Depth:</strong> lighter, medium or deeper colour relationships.</li>
+            <li><strong>Clarity:</strong> clear, bright colour versus softened or muted colour.</li>
+          </ul>
+          <p>
+            The seasons are names for combinations of those qualities. They are not biological types,
+            and the edges between them are not fixed. Expanded 12- and 16-season systems add
+            subcategories, but the quality of the observation still matters more than the label count.
+          </p>
+        </section>
 
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Seasonal Colour Analysis India</li>
-            </ol>
-          </nav>
-
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Seasonal Colour Analysis for Indian Women: Does It Work?
-            </h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Seasonal colour analysis — the Spring, Summer, Autumn, Winter system — is the most widely known colour analysis framework in the world. The honest answer to whether it works for Indian women is: partially. The underlying principle (undertone) is correct. The seasonal archetypes built on top of it were not calibrated for Indian skin, and routinely misclassify Indian women or give them palettes that do not fit their specific colouring.
-            </p>
-          </header>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is Seasonal Colour Analysis?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Seasonal colour analysis was popularised in the 1980s by Carole Jackson&apos;s book <em>Color Me Beautiful</em>. It divides people into four seasonal types — Spring, Summer, Autumn, Winter — based on the warmth or coolness of their colouring and the contrast between their hair, eyes, and skin.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Each seasonal type is assigned a characteristic palette. Springs get warm, fresh colours. Summers get cool, muted colours. Autumns get warm, earthy colours. Winters get cool, high-contrast colours.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              The core logic is sound: warm undertones harmonise with warm colours, cool undertones harmonise with cool colours. Where the system runs into difficulty for Indian women is in the <em>specific archetypes</em> — the detailed seasonal palettes and colour recommendations — which were built around Northern European skin, hair, and eye characteristics.
-            </p>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">The Four Seasons — and Where They Fall Short for Indian Skin</h2>
-            <div className="space-y-5">
-              {seasons.map((s) => (
-                <div key={s.name} className="border border-gray-200 rounded-xl p-5">
-                  <p className="font-semibold text-gray-900 mb-1">{s.name}</p>
-                  <p className="text-sm text-gray-600 mb-3">{s.description}</p>
-                  <p className="text-sm text-gray-500 italic border-t border-gray-100 pt-3"><strong className="text-gray-700 not-italic">For Indian skin:</strong> {s.indianFit}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Was Seasonal Colour Analysis Built for European Skin?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The seasonal system was developed in the United States and Europe in the 1970s–80s, drawing on earlier colour theory work by Johannes Itten and Suzanne Caygill. Its archetypes — the hair colours, eye colours, and skin tones assigned to each season — reflect the range of colouring common in Northern and Western Europe.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              This means the system has inherent gaps when applied to South Asian, East Asian, or African skin tones. For Indian women specifically, three issues arise:
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Melanin density is not accounted for.</strong> Indian skin generally has higher melanin concentration than the skin tones the seasonal archetypes were built around. This affects which shade intensities are most flattering — something the seasonal system&apos;s palettes don&apos;t adjust for.</li>
-              <li><strong>The warm/cool distinction gets compressed.</strong> Because most Indian women&apos;s colouring falls outside the expected Spring or Summer range, they get pushed into Autumn or Winter — categories that are broad enough to cover very different actual palettes.</li>
-              <li><strong>No guidance for Indian ethnic wear.</strong> The seasonal system was built around Western clothing. It has no framework for saree colours, zari selection, lehenga palettes, or kurta styling — a significant practical gap for Indian women.</li>
-            </ul>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Chromatic Harmony Mapping™ Does Differently</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Chromatic Harmony Mapping™ is Iconik&apos;s colour analysis protocol, built specifically for Indian skin tones. Rather than forcing Indian colouring into a seasonal archetype designed for European skin, CHM™ uses two variables calibrated for Indian skin:
-            </p>
-            <div className="space-y-4 mb-6">
-              <div className="border-l-4 border-gray-900 pl-5">
-                <p className="font-semibold text-gray-900 mb-1">Undertone (primary variable)</p>
-                <p className="text-gray-600 text-sm">Warm, cool, or neutral — the base pigment of your skin. The same core principle as seasonal colour analysis, but classified without the seasonal archetype overlay.</p>
-              </div>
-              <div className="border-l-4 border-gray-900 pl-5">
-                <p className="font-semibold text-gray-900 mb-1">Melanin depth (secondary variable)</p>
-                <p className="text-gray-600 text-sm">Fair, light-medium, medium (wheatish), medium-deep, or deep. Determines the shade intensity of colours that are most flattering — which the seasonal system handles poorly for Indian skin.</p>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The combination of these two variables produces a 10-colour palette specific to your actual colouring — not an archetype. CHM™ also includes specific colour recommendations for Indian ethnic wear, including saree colours, zari guidance, and blouse fabric suggestions.
-            </p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left p-4 font-semibold text-gray-900">Feature</th>
-                    <th className="text-left p-4 font-semibold text-gray-900">Seasonal Analysis</th>
-                    <th className="text-left p-4 font-semibold text-gray-900">CHM™</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {[
-                    ["Calibrated for Indian skin", "No", "Yes"],
-                    ["Undertone analysis", "Yes", "Yes"],
-                    ["Melanin depth analysis", "Limited", "Yes"],
-                    ["Ethnic wear guidance", "No", "Yes (sarees, kurtas, lehengas)"],
-                    ["Zari and jewellery guidance", "No", "Yes"],
-                    ["Archetypes or individual palette", "Archetype-based", "Individual"],
-                  ].map(([feature, seasonal, chm]) => (
-                    <tr key={feature} className="hover:bg-gray-50">
-                      <td className="p-4 text-gray-700 font-medium">{feature}</td>
-                      <td className="p-4 text-gray-500">{seasonal}</td>
-                      <td className="p-4 text-gray-900 font-medium">{chm}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones — Full Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/indian-skin-tones" className="underline hover:opacity-70">Why Standard Colour Analysis Fails Indian Women</Link></li>
-              <li>→ <Link href="/colour-analysis/warm-cool-neutral-undertone-india" className="underline hover:opacity-70">Warm vs Cool vs Neutral Undertone: Complete Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">How to Find Your Undertone at Home</Link></li>
-              <li>→ <Link href="/methodology/chromatic-harmony-mapping" className="underline hover:opacity-70">How Chromatic Harmony Mapping™ Works</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get colour analysis built for Indian skin</h2>
-            <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ gives you a 10-colour palette calibrated to your actual undertone and melanin depth — not a seasonal archetype designed for European skin.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
+        <section id="four-seasons">
+          <h2>The four seasons as useful questions</h2>
+          <div className="not-prose grid gap-4 md:grid-cols-2">
+            {seasonCards.map((season) => (
+              <article key={season.name} className="rounded-2xl border border-[rgba(44,38,34,0.12)] bg-white/35 p-6">
+                <p className="seo-eyebrow">{season.name}</p>
+                <h3 className="mt-3 font-[family-name:var(--font-fraunces)] text-2xl font-normal text-[var(--seo-ink)]">
+                  {season.shorthand}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-[rgba(44,38,34,0.66)]">{season.usefulQuestion}</p>
+              </article>
+            ))}
           </div>
+          <p>
+            These are comparison prompts, not demographic descriptions. An Indian woman can show any
+            of these colour relationships, and many people sit between two families.
+          </p>
+        </section>
 
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Seasonal Colour Analysis for Indian Women: Does It Work?&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/seasonal-colour-analysis-india</p>
+        <SeoTeachingVisual
+          src="/images/seo/neutral-olive-wheatish-palette-iconik.webp"
+          alt="Neutral olive Indian skin with navy, cocoa, aubergine, dusty rose, muted teal and stone."
+          caption="A useful palette can cross seasonal boundaries while preserving shared qualities such as depth, softness and balanced temperature."
+          width={1003}
+          height={1568}
+          priority
+        />
+
+        <section id="where-it-breaks">
+          <h2>Where simplified seasonal analysis breaks down</h2>
+          <h3>Dark-feature shortcuts</h3>
+          <p>
+            If a quiz treats dark hair and brown eyes as decisive, many South Asian users are pushed
+            toward Autumn or Winter before undertone and clarity have been tested.
+          </p>
+          <h3>Unrepresentative examples</h3>
+          <p>
+            A system is harder to use when its teaching images and drapes do not show olive undertones,
+            deeper skin or the range of contrast found across Indian faces.
+          </p>
+          <h3>Selfie-only typing</h3>
+          <p>
+            Phone cameras alter exposure, white balance, contrast and skin rendering. One processed
+            selfie cannot substitute for repeated comparisons in stable light.
+          </p>
+          <h3>No wardrobe translation</h3>
+          <p>
+            A label is incomplete if it does not help choose a saree blouse, dupatta, work neutral,
+            jewellery finish or the amount of contrast in an Indian occasion outfit.
+          </p>
+        </section>
+
+        <SeoInsightCard eyebrow="A fair conclusion" title="The system is not the same as the shortcut">
+          <p>
+            It is inaccurate to say seasonal colour analysis simply “fails Indian women.” A careful
+            practitioner with representative drapes can use it well. The problem is rigid typing,
+            weak examples and conclusions based on hair and eye colour rather than controlled
+            comparison.
+          </p>
+        </SeoInsightCard>
+
+        <section id="test-result">
+          <h2>How to test a seasonal result before changing your wardrobe</h2>
+          <ol>
+            <li>Write down the three claimed qualities—for example cool, deep and clear.</li>
+            <li>Test each quality separately with two similarly deep fabrics.</li>
+            <li>Use indirect daylight and keep makeup, camera and position unchanged.</li>
+            <li>Check whether the face remains defined and whether unwanted casts increase.</li>
+            <li>Repeat the strongest comparison before buying a palette or replacing clothing.</li>
+          </ol>
+          <p>
+            If the season is partly right, keep the useful qualities. A person typed as Winter may
+            retain “cool” and “deep” but discover that slightly softer colour is easier than maximum
+            clarity. That is a refinement, not a failed result.
+          </p>
+          <p>
+            Follow the full <Link href="/colour-analysis/how-to-find-undertone" className="underline">controlled undertone test</Link> for setup and observation cues.
+          </p>
+        </section>
+
+        <section id="chm-comparison">
+          <h2>How Chromatic Harmony Mapping™ differs</h2>
+          <p>
+            ICONIK&apos;s CHM framework does not assign a season. It records temperature, skin depth,
+            clarity, contrast and wardrobe context, then selects a focused set of reference colours
+            and practical applications.
+          </p>
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Seasonal analysis</th>
+                  <th>ICONIK CHM™</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Primary output</td>
+                  <td>Season or sub-season palette</td>
+                  <td>Focused reference colours and outfit applications</td>
+                </tr>
+                <tr>
+                  <td>Indian garment context</td>
+                  <td>Depends on the practitioner</td>
+                  <td>Included in the framework</td>
+                </tr>
+                <tr>
+                  <td>Human review</td>
+                  <td>Depends on service</td>
+                  <td>Included in the ICONIK Blueprint</td>
+                </tr>
+                <tr>
+                  <td>Scientific status</td>
+                  <td>Styling framework</td>
+                  <td>Proprietary styling framework</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-
-        </div>
-      </main>
+          <p>
+            Neither framework should override comfort, culture or a colour you enjoy wearing. Read
+            the <Link href="/methodology/chromatic-harmony-mapping" className="underline">canonical CHM methodology page</Link> for its full scope and limitations.
+          </p>
+        </section>
+      </SeoArticleLayout>
     </>
   );
 }

@@ -131,7 +131,7 @@ export default function ColourAnalysisAtHomePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get the complete palette, not just the direction</h2>
             <p className="text-gray-600 mb-6">CHM™ builds your exact 10-colour palette from undertone, contrast level, and intensity — the precision that at-home testing cannot produce.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

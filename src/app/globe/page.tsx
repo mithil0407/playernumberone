@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
 import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
 import { captureAttribution } from '@/lib/attribution';
+import { BLUEPRINT_OFFER, CLIENT_PROOF } from '@/lib/siteFacts';
 
 // ── Data ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ const blueprintItems = [
     { icon: <Gem className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Outfit Formulas', desc: '20 complete outfits (top, bottom, footwear, bag, jewellery) built specifically for your Blueprint.' },
     { icon: <Heart className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Hair Direction', desc: '4 hairstyle recommendations with technical explanation of why each works for your face shape.' },
     { icon: <Shield className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'Eyewear Guide', desc: '4 frame styles matched to your face geometry and undertone.' },
+    { icon: <CheckCircle className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: '30-Minute Stylist Consultation', desc: 'A personal video consultation so your stylist understands your lifestyle, preferences, priorities and comfort before building the Blueprint.' },
     { icon: <CheckCircle className="w-5 h-5 text-[#94A6AD] flex-shrink-0 mt-0.5" />, title: 'What to Avoid', desc: 'Cuts, colours, and silhouettes that will never serve you — and exactly why.' },
 ];
 
@@ -65,7 +67,7 @@ const faqs = [
     },
     {
         question: 'How long does it take to receive my Blueprint?',
-        answer: 'Within 72 hours of submitting your intake form and photos.',
+        answer: `Within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after your stylist consultation.`,
     },
     {
         question: 'Is this personalised or a generic quiz result?',
@@ -73,7 +75,7 @@ const faqs = [
     },
     {
         question: 'What if I\'m not happy?',
-        answer: '30-day money-back guarantee. Email us. No questions. Full refund within 48 hours.',
+        answer: `${BLUEPRINT_OFFER.revisionPromise} ${BLUEPRINT_OFFER.refundSummary}`,
     },
     {
         question: 'Can I do this if I don\'t know anything about my body shape or colours?',
@@ -142,30 +144,20 @@ export default function GlobeLandingPage() {
             <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
                 <div className="max-w-5xl mx-auto text-center">
                     <div>
-                        {/* Featured in */}
-                        <div className="mb-6">
-                            <p className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Featured in</p>
-                            <div className="flex items-center justify-center">
-                                <Image
-                                    src="/vogue-india-logo.png"
-                                    alt="Vogue India"
-                                    width={60}
-                                    height={20}
-                                    className="opacity-40 hover:opacity-70 transition-opacity h-[20px] w-auto md:h-[25px]"
-                                />
-                            </div>
+                        <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
+                            {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ CLIENTS · {CLIENT_PROOF.countriesServed}+ COUNTRIES
                         </div>
 
                         {/* Headline */}
                         <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(36px, 8vw, 80px)', color: '#2C2622' }}>
                             Discover Your Signature Style{' '}
-                            <span className="iconik-display-it" style={{ color: '#6B7F87' }}>in 24 Hours.</span>
+                            <span className="iconik-display-it" style={{ color: '#6B7F87' }}>with a Personal Blueprint.</span>
                         </h1>
 
                         {/* Subheadline */}
                         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, maxWidth: '680px', margin: '0 auto 32px' }}>
                             ICONIK analyses your facial architecture, body geometry, and colour harmony using a proprietary methodology used by professional stylists.{' '}
-                            <strong style={{ fontWeight: 500, color: '#2C2622' }}>Personalised Blueprint. 24-hour delivery. $97.</strong>
+                            <strong style={{ fontWeight: 500, color: '#2C2622' }}>20 outfit formulas. 30-minute consultation. $97.</strong>
                         </p>
 
                         {/* ── Hero Carousel (3:4) ────────────────────── */}
@@ -224,16 +216,12 @@ export default function GlobeLandingPage() {
                         <CTAButton className="text-base px-12 py-5 mb-8" />
 
                         <div className="flex items-center justify-center gap-3 flex-wrap">
-                            <div className="flex gap-0.5">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className="h-4 w-4 text-[#9a7d4a] fill-current" />
-                                ))}
-                            </div>
-                            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 500+ women worldwide</span>
+                            <CheckCircle className="h-4 w-4 text-[#9a7d4a]" />
+                            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients</span>
                             <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
+                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>{BLUEPRINT_OFFER.deliveryWorkingDays} Working-Day Delivery</span>
                             <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>30-Day Guarantee</span>
+                            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>In-Scope Revisions Included</span>
                         </div>
 
                     </div>
@@ -245,15 +233,14 @@ export default function GlobeLandingPage() {
                 <div className="max-w-5xl mx-auto px-4 md:px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
                         {[
-                            { num: '500+', label: 'Blueprints Delivered' },
-                            { num: '4.9', label: 'Average Rating', star: true },
-                            { num: '24h', label: 'Delivery Time' },
-                            { num: '30-day', label: 'Money-Back Guarantee' },
+                            { num: `${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+`, label: 'Clients Styled' },
+                            { num: `${CLIENT_PROOF.countriesServed}+`, label: 'Countries Served' },
+                            { num: `${BLUEPRINT_OFFER.outfitFormulas}`, label: 'Outfit Formulas' },
+                            { num: `${BLUEPRINT_OFFER.deliveryWorkingDays}`, label: 'Working-Day Delivery' },
                         ].map((s, i) => (
                             <div key={i} className="group">
                                 <div className="text-2xl md:text-5xl iconik-display text-[#6B7F87] mb-2 group-hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-1">
                                     {s.num}
-                                    {s.star && <Star className="h-6 w-6 text-[#9a7d4a] fill-current" />}
                                 </div>
                                 <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
                             </div>
@@ -310,7 +297,7 @@ export default function GlobeLandingPage() {
                                 <div className="mt-4 flex flex-wrap gap-3">
                                     <span className="px-4 py-2 bg-black text-[#b58e4d] text-[9px] font-black uppercase tracking-widest">Hourglass Profile</span>
                                     <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">Oval Face</span>
-                                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">14 Ensembles</span>
+                                    <span className="px-4 py-2 bg-[#faf9f6] border border-[#f0ede8] text-gray-400 text-[9px] font-black uppercase tracking-widest">{BLUEPRINT_OFFER.outfitFormulas} Outfits</span>
                                 </div>
                             </div>
 
@@ -696,7 +683,7 @@ export default function GlobeLandingPage() {
             <section className="py-24 px-4 md:px-6 me-slate">
                 <div className="max-w-3xl mx-auto text-center text-luxury-warm-white">
                     <p className="iconik-mono text-luxury-warm-white/70 text-lg leading-relaxed mb-8">
-                        An in-person personal styling session with a professional stylist costs $500–1,500+. They give you one day. You forget half of it. You still don&apos;t know your colours.
+                        A styling session can end when the call does. Your ICONIK Blueprint remains as a practical reference for outfits, shopping, hair, eyewear and colour decisions.
                     </p>
                     <div className="bg-luxury-warm-white/10 backdrop-blur-sm border border-luxury-warm-white/20 rounded-2xl p-10 mb-10">
                         <div className="iconik-mono text-luxury-warm-white/60 text-xs tracking-widest uppercase mb-3">Your ICONIK Blueprint</div>
@@ -890,7 +877,7 @@ export default function GlobeLandingPage() {
                         {[
                             { step: '01', title: 'Purchase & Upload', desc: 'Complete your purchase. Upload two photos — one full body, one headshot. Fill in 9 questions. Takes 4 minutes.' },
                             { step: '02', title: 'We Analyse', desc: 'Our proprietary ICONIK methodology analyses your geometry, colour profile, and facial architecture.' },
-                            { step: '03', title: 'You Receive', desc: 'Your personalised 12–18 page Blueprint arrives in your inbox within 72 hours. Yours to keep forever.' },
+                            { step: '03', title: 'You Receive', desc: `Your personalised Blueprint arrives within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation. Yours to keep.` },
                         ].map((s, i) => (
                             <div
                                 key={i}
@@ -951,11 +938,11 @@ export default function GlobeLandingPage() {
                         </p>
                         <CTAButton className="text-base px-12 py-5 mb-6" />
                         <div className="flex items-center justify-center gap-3 text-sm iconik-mono text-luxury-charcoal/50 mt-4 flex-wrap">
-                            <span>★★★★★ Trusted by 500+ women worldwide</span>
+                            <span>{CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients across {CLIENT_PROOF.countriesServed}+ countries</span>
                             <span>·</span>
-                            <span>24-Hour Delivery</span>
+                            <span>{BLUEPRINT_OFFER.deliveryWorkingDays} Working-Day Delivery</span>
                             <span>·</span>
-                            <span>30-Day Guarantee</span>
+                            <span>In-Scope Revisions Included</span>
                         </div>
                     </div>
                 </div>

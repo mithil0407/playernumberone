@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle, Star, Sparkles, Shield, Clock } from 'lucide-react';
+import { CheckCircle, Sparkles, Shield, Clock } from 'lucide-react';
 import { trackPageView, trackCompleteRegistration, trackPurchase, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
@@ -193,8 +193,8 @@ function GlobeThankyouInner() {
                     <div className="space-y-3 mb-6">
                         {[
                             { num: '1', text: 'Complete your intake form (4 minutes, 9 questions + 2 photos)' },
-                            { num: '2', text: 'Our stylists analyse your geometry, colour, and facial profile' },
-                            { num: '3', text: 'Your 12–18 page personalised Blueprint lands in your inbox within 72 hours' },
+                            { num: '2', text: 'Complete your 30-minute consultation with an ICONIK stylist' },
+                            { num: '3', text: 'Your personalised Blueprint lands in your inbox within 5 working days after the consultation' },
                         ].map((s) => (
                             <div key={s.num} className="flex items-start gap-3">
                                 <div className="w-7 h-7 rounded-full bg-luxury-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -211,7 +211,7 @@ function GlobeThankyouInner() {
                         Complete My Intake Form →
                     </Link>
                     <p className="luxury-body text-luxury-charcoal/40 text-xs text-center mt-3">
-                        Takes 4 minutes · Blueprint delivered within 72 hours of completion
+                        Takes 4 minutes · 30-minute consultation · Delivery within 5 working days after consultation
                     </p>
                 </div>
 
@@ -316,10 +316,10 @@ function GlobeThankyouInner() {
                         })}
                     </div>
 
-                    {/* Star reviews */}
+                    {/* Verified client proof */}
                     <div className="flex items-center justify-center gap-2 mb-6">
-                        {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 text-luxury-gold fill-current" />)}
-                        <span className="luxury-body text-luxury-charcoal/60 text-sm">4.9/5 across 200+ subscribers</span>
+                        <CheckCircle className="h-4 w-4 text-luxury-gold" />
+                        <span className="luxury-body text-luxury-charcoal/60 text-sm">Serving 5,000+ clients across 10+ countries</span>
                     </div>
 
                     {subscribeError && (

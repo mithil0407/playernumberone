@@ -149,9 +149,9 @@ export default function WarmOrCoolUndertonePage() {
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your undertone confirmed and your palette built</h2>
-            <p className="text-gray-600 mb-6">Iconik&apos;s Chromatic Harmony Mapping™ identifies your exact undertone and contrast level, then delivers your personal 10-colour palette in 48 hours.</p>
+            <p className="text-gray-600 mb-6">Iconik&apos;s Chromatic Harmony Mapping™ identifies your exact undertone and contrast level, then delivers your personal 10-colour palette within 5 working days after the consultation.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

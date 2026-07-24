@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, Users, CheckCircle, Lock } from 'lucide-react';
 import {
   MAN_BLUEPRINT_PRODUCT_ID,
   MAN_FUNNEL_CATEGORY,
@@ -390,9 +390,9 @@ export default function ManCheckoutPage() {
           className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8"
         >
           {[
-            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '200+ Men Transformed' },
+            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '1,000+ Men Served' },
             { icon: <Lock className="w-3.5 h-3.5" />, text: '100% Secure' },
-            { icon: <Star className="w-3.5 h-3.5" />, text: '4.9 / 5 Rating' },
+            { icon: <CheckCircle className="w-3.5 h-3.5" />, text: '10+ Countries' },
           ].map(({ icon, text }) => (
             <div key={text} className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(148,166,173,0.12)', border: '1px solid rgba(148,166,173,0.2)', color: INK }}>
               <span style={{ color: '#94A6AD' }}>{icon}</span>
@@ -595,8 +595,8 @@ export default function ManCheckoutPage() {
               <div className="space-y-3">
                 {[
                   { icon: <Shield className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Secure payment with Razorpay' },
-                  { icon: <Clock className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Blueprint delivered within 72 hours of your intake form' },
-                  { icon: <Users className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: '200+ men who dress with intention' },
+                  { icon: <Clock className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: 'Blueprint delivered within 5 working days after your 30-minute consultation' },
+                  { icon: <Users className="w-4 h-4" style={{ color: '#94A6AD' }} />, text: '1,000+ men served' },
                 ].map(({ icon, text }) => (
                   <div key={text} className="flex items-center gap-3">
                     {icon}

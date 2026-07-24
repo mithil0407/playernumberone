@@ -3,7 +3,7 @@ import { noIndexMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = {
     title: 'Get Your ICONIK Blueprint — $149',
-    description: 'Complete your ICONIK Style Blueprint purchase. Personalised to your body, face, and colour profile. 72-hour delivery. 30-day guarantee.',
+    description: 'Complete your ICONIK Style Blueprint purchase. Includes 20 outfit formulas, a 30-minute consultation, and delivery within 5 working days after consultation.',
     robots: noIndexMetadata.robots,
 };
 

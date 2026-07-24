@@ -20,12 +20,12 @@ export const methodologyLinks: SeoLink[] = [
   {
     href: "/methodology/geometric-silhouette-profiling",
     title: "Geometric Silhouette Profiling™",
-    description: "Measurement-first body analysis built for Indian proportions and wardrobe decisions.",
+    description: "A proportion-led styling framework for garment shape, length, fit and Indian wardrobe decisions.",
   },
   {
     href: "/methodology/chromatic-harmony-mapping",
     title: "Chromatic Harmony Mapping™",
-    description: "Undertone-led colour analysis designed for Indian skin tones rather than imported seasonal systems.",
+    description: "A colour framework that combines undertone, depth, contrast and Indian wardrobe context.",
   },
   {
     href: "/methodology/facial-architecture-analysis",
@@ -38,7 +38,7 @@ export const styleGuideLinks: SeoLink[] = [
   {
     href: "/style-guides/capsule-wardrobe-india",
     title: "Capsule Wardrobe India",
-    description: "A practical starting point for building a smaller, harder-working wardrobe.",
+    description: "Build a connected Indian and western wardrobe around your calendar, climate, and laundry cycle.",
   },
   {
     href: "/style-guides/office-wear-indian-women",
@@ -68,7 +68,7 @@ export const styleGuideLinks: SeoLink[] = [
   {
     href: "/style-guides/kurti-length-guide",
     title: "Kurti Length Guide",
-    description: "A practical guide to kurti length, proportion, and visual balance.",
+    description: "Choose the hem by body landmark, bottom width, and the proportion you want to create.",
   },
   {
     href: "/style-guides/diwali-outfit-body-type",
@@ -101,7 +101,7 @@ export const comparisonLinks: SeoLink[] = [
   {
     href: "/vs/iconik-vs-styling-apps",
     title: "Iconik vs Styling Apps",
-    description: "Why generic algorithmic recommendations miss the variables that matter for Indian women.",
+    description: "Compare automated recommendations with a human-reviewed, consultation-led styling service.",
   },
   {
     href: "/vs/style-blueprint-vs-quiz",
@@ -133,7 +133,7 @@ export const colourAnalysisLinks: SeoLink[] = [
   {
     href: "/colour-analysis/how-to-find-undertone",
     title: "How to Find Your Undertone",
-    description: "The at-home tests that help distinguish warm, cool, and neutral undertones.",
+    description: "How to run controlled at-home colour comparisons and avoid relying on a single clue.",
   },
   {
     href: "/colour-analysis/warm-cool-neutral-undertone-india",
@@ -158,7 +158,7 @@ export const colourAnalysisLinks: SeoLink[] = [
   {
     href: "/colour-analysis/indian-skin-tones",
     title: "Indian Skin Tone Colour Guide",
-    description: "Why imported colour systems often fail Indian skin tone diversity.",
+    description: "How to adapt colour systems to Indian skin-depth, undertone and wardrobe diversity.",
   },
   {
     href: "/colour-analysis/best-colours-dusky-skin",
@@ -183,7 +183,7 @@ export const colourAnalysisLinks: SeoLink[] = [
   {
     href: "/colour-analysis/seasonal-colour-analysis-india",
     title: "Seasonal Colour Analysis India",
-    description: "Where seasonal colour analysis works, and where it breaks for Indian skin.",
+    description: "A balanced guide to where seasonal language helps and where simplified typing becomes limiting.",
   },
   {
     href: "/colour-analysis/olive-skin-india",
@@ -211,12 +211,12 @@ export const bodyTypeLinks: SeoLink[] = [
   {
     href: "/body-type-styling/apple-body-shape-india",
     title: "Apple Body Shape Styling",
-    description: "Cut, balance, and outfit guidance for apple body profiles.",
+    description: "Use shoulder direction, drape, hem placement, and vertical line without hiding the body.",
   },
   {
     href: "/body-type-styling/pear-body-shape-india",
     title: "Pear Body Shape Styling",
-    description: "How to work with lower-body emphasis and build visual balance.",
+    description: "Test neckline, top hem, waistband fit, and lower-body fall one variable at a time.",
   },
   {
     href: "/body-type-styling/rectangle-body-shape-india",
@@ -461,9 +461,6 @@ export const coreCommercialPaths = [
   "/what-is-iconik",
   "/who-is-iconik-for",
   "/globe",
-  "/uae",
-  "/au",
-  "/us",
   "/man",
   "/iconik-club/join",
   "/monthly",
@@ -495,21 +492,6 @@ export const hubPaths = [
 ];
 
 export const blogLinks: SeoLink[] = [
-  {
-    href: "/blog/what-is-geometric-silhouette-profiling",
-    title: "What Is Geometric Silhouette Profiling?",
-    description: "Iconik's body-analysis method and how it differs from a body-shape quiz.",
-  },
-  {
-    href: "/blog/what-is-chromatic-harmony-mapping",
-    title: "What Is Chromatic Harmony Mapping?",
-    description: "Iconik's colour-analysis method for Indian skin tones.",
-  },
-  {
-    href: "/blog/what-is-facial-architecture-analysis",
-    title: "What Is Facial Architecture Analysis?",
-    description: "Iconik's face-shape method for necklines, accessories, and hair direction.",
-  },
   {
     href: "/blog/is-personal-stylist-worth-it-india",
     title: "Is a Personal Stylist Worth It in India?",
@@ -550,10 +532,29 @@ export const redirectSeoPages: SeoPageInventoryEntry[] = [
   { path: "/plus-size", status: "redirect", redirectTo: "/body-type-styling/plus-size" },
   { path: "/modest", status: "redirect", redirectTo: "/style-guides/modest-professional-fashion-india" },
   { path: "/iconik-methodology", status: "redirect", redirectTo: "/methodology" },
+  {
+    path: "/blog/what-is-geometric-silhouette-profiling",
+    status: "redirect",
+    redirectTo: "/methodology/geometric-silhouette-profiling",
+  },
+  {
+    path: "/blog/what-is-chromatic-harmony-mapping",
+    status: "redirect",
+    redirectTo: "/methodology/chromatic-harmony-mapping",
+  },
+  {
+    path: "/blog/what-is-facial-architecture-analysis",
+    status: "redirect",
+    redirectTo: "/methodology/facial-architecture-analysis",
+  },
+  { path: "/uae", status: "redirect", redirectTo: "/globe" },
+  { path: "/au", status: "redirect", redirectTo: "/globe" },
+  { path: "/us", status: "redirect", redirectTo: "/globe" },
+  { path: "/global", status: "redirect", redirectTo: "/globe" },
+  { path: "/checkout", status: "redirect", redirectTo: "/offer-2699/checkout" },
 ];
 
 export const noindexSeoPages: SeoPageInventoryEntry[] = [
-  { path: "/checkout", status: "noindex" },
   { path: "/checkout/basic-success", status: "noindex" },
   { path: "/checkout/success", status: "noindex" },
   { path: "/checkout-monthly", status: "noindex" },

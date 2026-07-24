@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Chromatic Harmony Mapping vs Seasonal Colour Analysis — Iconik",
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     title: "Chromatic Harmony Mapping™ vs Seasonal Colour Analysis — Iconik",
     description: "How CHM™ compares to seasonal colour analysis — methodology, accuracy for Indian skin, and key differences.",
     url: "https://www.iconik.pro/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "CHM vs seasonal colour analysis — Iconik" }],
+    images: [{ url: "/images/seo/chromatic-harmony-vs-seasonal-levers-iconik-og.webp", width: 1200, height: 630, alt: "Four seasonal palettes compared with temperature, depth, clarity and contrast analysis — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Chromatic Harmony Mapping™ vs Seasonal Colour Analysis — Iconik",
     description: "How CHM™ compares to seasonal colour analysis — methodology, accuracy for Indian skin, and key differences.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/chromatic-harmony-vs-seasonal-levers-iconik-og.webp"],
   },
 };
 
@@ -39,7 +40,7 @@ const faqs = [
   },
   {
     q: "How does Iconik's CHM™ analysis work in practice?",
-    a: "You submit photos (face in natural daylight, inner wrist) and a short intake form as part of the Iconik Style Blueprint. An Iconik stylist identifies your undertone (warm, cool, or neutral) and melanin depth (fair to deep), then builds a personalised 10-colour palette specific to your combination. The palette includes Western wear colours, Indian ethnic wear colours, saree colour guidance, and jewellery metal recommendations. It is delivered as part of your Style Blueprint within 48 hours.",
+    a: "You submit photos (face in natural daylight, inner wrist) and a short intake form as part of the Iconik Style Blueprint. An Iconik stylist identifies your undertone (warm, cool, or neutral) and melanin depth (fair to deep), then builds a personalised 10-colour palette specific to your combination. The palette includes Western wear colours, Indian ethnic wear colours, saree colour guidance, and jewellery metal recommendations. It is delivered as part of your Style Blueprint within 5 working days after the consultation.",
   },
 ];
 
@@ -71,7 +72,8 @@ export default function CHMvsSeasonalPage() {
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
         "datePublished": "2025-04-01",
-        "dateModified": new Date().toISOString().split("T")[0],
+        "dateModified": "2026-07-24",
+        "image": "https://www.iconik.pro/images/seo/chromatic-harmony-vs-seasonal-levers-iconik.webp",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis" },
       },
       {
@@ -114,6 +116,15 @@ export default function CHMvsSeasonalPage() {
               Both Chromatic Harmony Mapping™ (CHM™) and Seasonal Colour Analysis identify how colour interacts with your skin. They share the same foundational insight — undertone determines your best colours. Where they differ is in the framework built on top of that insight. Seasonal colour analysis uses four archetypes calibrated for Northern European skin. CHM™ uses undertone and melanin depth calibrated specifically for Indian skin tones.
             </p>
           </header>
+
+          <SeoTeachingVisual
+            src="/images/seo/chromatic-harmony-vs-seasonal-levers-iconik.webp"
+            alt="Indian woman beside four seasonal palettes and four colour-analysis levers: temperature, depth, clarity and contrast."
+            caption="Seasonal labels can be useful shorthand; testing separate colour properties makes the reasoning more explicit and adaptable."
+            width={1003}
+            height={1568}
+            priority
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Side-by-Side Comparison</h2>
@@ -234,9 +245,9 @@ export default function CHMvsSeasonalPage() {
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get CHM™ analysis built for your skin</h2>
-            <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ is part of the Iconik Style Blueprint — a 10-colour palette calibrated to your undertone and melanin depth, with specific Indian ethnic wear guidance. Delivered in 48 hours.</p>
+            <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ is part of the Iconik Style Blueprint — a 10-colour palette calibrated to your undertone and melanin depth, with specific Indian ethnic wear guidance. Delivered within 5 working days after the consultation.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

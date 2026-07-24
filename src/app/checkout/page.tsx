@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, Users, CheckCircle, Lock } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
@@ -301,9 +301,9 @@ export default function CheckoutPage() {
         {/* ── Trust Badges ───────────────────────────────────────────────── */}
         <div className="rounded-2xl p-3 md:p-4 mb-6 flex flex-wrap justify-center gap-3" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.06)' }}>
           {[
-            { icon: <CheckCircle className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '2,847+ Happy Clients' },
+            { icon: <CheckCircle className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '5,000+ Clients' },
             { icon: <Lock className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '100% Secure' },
-            { icon: <Star className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '4.9/5 Rating' },
+            { icon: <CheckCircle className="w-3.5 h-3.5" style={{ color: '#94A6AD' }} />, label: '10+ Countries' },
           ].map((badge) => (
             <div key={badge.label} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
               {badge.icon}
@@ -433,7 +433,7 @@ export default function CheckoutPage() {
                     'Personalized Color Palette',
                     'Body-Flattering Silhouette Mapping',
                     'Hair & Makeup Blueprint',
-                    '20-min Private Consultation Call',
+                    '30-minute Private Consultation Call',
                     'Lifetime Style Profile Access',
                   ].map((item) => (
                     <div key={item} className="flex items-start gap-3">

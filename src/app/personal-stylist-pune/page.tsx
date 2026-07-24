@@ -3,19 +3,19 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Pune — Iconik Style Blueprint",
-  description: "Online personal styling for Pune women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 16+ outfit recommendations tailored to Pune's tech-professional and social lifestyle. Delivered in 48 hours.",
+  description: "Online personal styling for Pune women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 20 outfit formulas tailored to Pune's tech-professional and social lifestyle. Delivered within 5 working days after consultation.",
   keywords: "personal stylist Pune, online personal styling Pune, style consultation Pune, body type analysis Pune, wardrobe consultation Pune, personal stylist Baner Pune, personal stylist Koregaon Park",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-pune" },
   openGraph: {
     title: "Personal Stylist in Pune — Iconik Style Blueprint",
-    description: "Science-backed personal styling for Pune women. Blueprint delivered in 48 hours.",
+    description: "Science-backed personal styling for Pune women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-pune",
     images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Pune — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Personal Stylist in Pune — Iconik Style Blueprint",
-    description: "Science-backed personal styling for Pune women. Blueprint delivered in 48 hours.",
+    description: "Science-backed personal styling for Pune women. Blueprint delivered within 5 working days after consultation.",
     images: ["/og-image.webp"],
   },
 };
@@ -29,7 +29,7 @@ const jsonLd = {
       "provider": { "@type": "Organization", "name": "Iconik" },
       "areaServed": { "@type": "City", "name": "Pune" },
       "description": "Online personal styling service for women in Pune. Geometric Silhouette Profiling™, Chromatic Harmony Mapping™, and Facial Architecture Analysis™.",
-      "offers": { "@type": "Offer", "price": "3299", "priceCurrency": "INR" },
+      "offers": { "@type": "Offer", "price": "2699", "priceCurrency": "INR" },
     },
     {
       "@type": "BreadcrumbList",

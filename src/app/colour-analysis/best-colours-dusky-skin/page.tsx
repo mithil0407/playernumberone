@@ -14,6 +14,9 @@ import {
   graph,
   organizationNode,
 } from "@/lib/structuredData";
+import { BLUEPRINT_OFFER, FOUNDERS } from "@/lib/siteFacts";
+import { SeoEditorialFooter, SeoEditorialHeader, SeoTeachingVisual } from "@/components/seo/SeoEditorial";
+import InstagramReelsForArticle from "@/components/seo/InstagramReelsForArticle";
 
 const path = "/colour-analysis/best-colours-dusky-skin";
 const growthTracking = {
@@ -86,8 +89,11 @@ export default function BestColoursDuskySkinPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ArticleGrowthTracker {...growthTracking} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <div className="seo-editorial min-h-screen">
+        <SeoEditorialHeader />
+        <main>
+          <div className="seo-editorial-shell">
+            <div className="seo-classic-article mx-auto max-w-3xl py-16 md:py-24">
 
           <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
             <ol className="flex items-center gap-2 flex-wrap">
@@ -110,7 +116,7 @@ export default function BestColoursDuskySkinPage() {
               <span className="rounded-full border border-gray-200 px-3 py-1">Published 21 March 2026</span>
               <span className="rounded-full border border-gray-200 px-3 py-1">Updated 11 July 2026</span>
               <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">
-                Reviewed by Mithil Navalakha, Iconik founder
+                Reviewed by {FOUNDERS[0].name}, {FOUNDERS[0].title}
               </Link>
             </div>
           </header>
@@ -127,6 +133,15 @@ export default function BestColoursDuskySkinPage() {
             </div>
           </aside>
 
+          <SeoTeachingVisual
+            src="/images/seo/dusky-skin-undertone-palette-iconik.webp"
+            alt="Dusky Indian skin beside warm, neutral and cool fabric swatches explaining that depth is not undertone."
+            caption="Dusky skin is not one palette: depth shapes contrast, while undertone guides colour temperature."
+            width={1659}
+            height={948}
+            priority
+          />
+
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Does Dusky Skin Tone Mean?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
@@ -136,6 +151,14 @@ export default function BestColoursDuskySkinPage() {
               Two people can both be described as dusky while one has a golden undertone, another has a cooler red-blue undertone, and a third has an olive or neutral cast. Treating them as one palette is why generic dusky-skin colour lists often contradict one another.
             </p>
           </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/skin-depth-undertone-difference-iconik.webp"
+            alt="Indian portrait with depth and undertone axes plus warm, cool, neutral and olive fabric swatches."
+            caption="Skin depth and undertone answer different styling questions: depth affects contrast, while undertone guides colour temperature."
+            width={1122}
+            height={1402}
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Is Most &quot;Best Colours for Dusky Skin&quot; Advice Wrong?</h2>
@@ -157,6 +180,14 @@ export default function BestColoursDuskySkinPage() {
             </p>
           </section>
 
+          <SeoTeachingVisual
+            src="/images/seo/dusky-skin-drape-test-iconik.webp"
+            alt="Indian woman holding terracotta fabric beside four labelled swatches and controlled drape-test rules."
+            caption="A useful drape test keeps the face, light, camera and exposure fixed, then changes one fabric at a time."
+            width={1122}
+            height={1402}
+          />
+
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Are the Best Colours for Dusky Skin with Warm Undertone?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
@@ -177,6 +208,14 @@ export default function BestColoursDuskySkinPage() {
             </p>
           </section>
 
+          <SeoTeachingVisual
+            src="/images/seo/warm-dusky-skin-colour-palette-iconik.webp"
+            alt="Warm dusky Indian skin palette with cream, terracotta, olive, chocolate, coral and muted gold swatches."
+            caption="A warm dusky palette becomes wearable when an earthy colour is balanced by cream or chocolate."
+            width={1003}
+            height={1568}
+          />
+
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Are the Best Colours for Dusky Skin with Cool Undertone?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
@@ -195,6 +234,30 @@ export default function BestColoursDuskySkinPage() {
             <p className="text-gray-600 leading-relaxed">
               <strong>Avoid:</strong> Mustard, warm orange, camel, earthy brown, warm red. These introduce yellow warmth that clashes with the pink or blue base of a cool undertone.
             </p>
+          </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/cool-dusky-skin-colour-palette-iconik.webp"
+            alt="Cool dusky Indian skin palette with navy, white, berry, charcoal, emerald and silver swatches."
+            caption="Cool jewel tones feel intentional when grounded by navy, crisp white, or charcoal."
+            width={1024}
+            height={1536}
+          />
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Should Dusky Skin Choose White or Ivory, Gold or Silver?</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Skin depth alone cannot answer either question. Compare crisp white with warm ivory and gold with silver
+              under the same daylight. Keep the combination that makes the eyes, lips, and overall face appear clearer
+              without adding grey, yellow, or red shadows.
+            </p>
+            <SeoTeachingVisual
+              src="/images/seo/dusky-skin-white-ivory-metals-iconik.webp"
+              alt="Dusky Indian skin with crisp white, warm ivory, yellow gold and cool silver material swatches."
+              caption="Compare whites and metals by facial clarity rather than applying a universal skin-depth rule."
+              width={1122}
+              height={1402}
+            />
           </section>
 
           <section className="mb-12">
@@ -232,6 +295,14 @@ export default function BestColoursDuskySkinPage() {
               CHM maps two variables simultaneously: undertone (warm, cool, or neutral) and melanin depth. For deeper Indian skin tones, it specifically recommends colours with sufficient chromatic intensity to create visual harmony — very pale icy tints can look washed out against deeper melanin regardless of undertone temperature. The output is a 10-colour palette calibrated for both your undertone type and your melanin depth.
             </p>
           </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/dusky-skin-glow-test-iconik.webp"
+            alt="Indian woman comparing warm and cool fabrics beside a four-step wardrobe glow-test checklist."
+            caption="Use indirect daylight, compare two fabrics, observe facial clarity, and record the result before deciding."
+            width={1003}
+            height={1568}
+          />
 
           <section className="mb-12 overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
             <TrackedArticleCtaView tracking={growthTracking} />
@@ -275,20 +346,25 @@ export default function BestColoursDuskySkinPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your exact colour palette in 48 hours?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your exact colour palette inside a personal Blueprint?</h2>
             <p className="text-gray-600 mb-6">Iconik&apos;s Chromatic Harmony Mapping™ identifies your precise undertone and melanin depth, then builds your exact 10-colour palette.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+            <Link href={BLUEPRINT_OFFER.offerPath} className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
+              Get My Style Blueprint — ₹{BLUEPRINT_OFFER.currentPriceInr.toLocaleString('en-IN')}
             </Link>
           </div>
 
+          <InstagramReelsForArticle articlePath={path} />
+
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Navalakha, Mithil. &quot;Dusky Skin Tone: Meaning, Undertones &amp; 16 Best Colours.&quot; Iconik, updated 11 July 2026. https://www.iconik.pro/colour-analysis/best-colours-dusky-skin</p>
+            <p>Rana, Jasmine. &quot;Dusky Skin Tone: Meaning, Undertones &amp; 16 Best Colours.&quot; Iconik, updated 11 July 2026. https://www.iconik.pro/colour-analysis/best-colours-dusky-skin</p>
           </div>
 
-        </div>
-      </main>
+            </div>
+          </div>
+        </main>
+        <SeoEditorialFooter />
+      </div>
     </>
   );
 }

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { ArticleGrowthTracker } from "@/components/ArticleGrowthTracker";
 import IconikArticleVisual from "@/components/IconikArticleVisual";
+import InstagramReelsForArticle from "@/components/seo/InstagramReelsForArticle";
 import type { SeoArticleRecord } from "@/lib/seoArticleRegistry";
 import {
   buildSeoArticleGraph,
@@ -105,6 +106,7 @@ export default function RegisteredSeoArticle({
     article.visual?.fallbackIsComposed &&
     visualSrc === article.visual.fallbackSrc,
   );
+  const usesComposedVisual = Boolean(article.visual?.isComposed || usesComposedFallback);
 
   return (
     <>
@@ -124,7 +126,7 @@ export default function RegisteredSeoArticle({
         quickAnswer={
           <>
             <SeoQuickAnswer answer={quickAnswer} detail={quickAnswerDetail} />
-            {article.visual && visualSrc && usesComposedFallback ? (
+            {article.visual && visualSrc && usesComposedVisual ? (
               <ComposedFallbackVisual article={article} src={visualSrc} />
             ) : article.visual && visualSrc ? (
               <IconikArticleVisual
@@ -141,6 +143,7 @@ export default function RegisteredSeoArticle({
         tableOfContents={article.tableOfContents}
         afterArticle={
           <>
+            <InstagramReelsForArticle articlePath={article.path} />
             <SeoFaqSection faqs={faqs} />
             <SeoAuthorReview>
               Iconik guidance combines proportion, colour relationships, garment construction, and the practical realities of Indian wardrobes. Recommendations are reviewed before publication and updated when the underlying guidance changes.

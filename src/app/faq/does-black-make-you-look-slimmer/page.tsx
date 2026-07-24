@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Does Black Make You Look Slimmer? The Honest Answer — Iconik",
@@ -10,7 +11,18 @@ export const metadata: Metadata = {
     title: "Does Black Make You Look Slimmer? The Honest Answer — Iconik",
     description: "What black actually does optically, when it works, and what works better for looking slimmer.",
     url: "https://www.iconik.pro/faq/does-black-make-you-look-slimmer",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Does black make you look slimmer India — Iconik" }],
+    type: "article",
+    siteName: "Iconik",
+    locale: "en_IN",
+    publishedTime: "2025-01-01",
+    modifiedTime: "2026-07-24",
+    images: [{ url: "/images/seo/black-slimming-vertical-line-iconik-og.webp", width: 1200, height: 630, alt: "Same Indian woman comparing a broken black outfit line with a continuous deep-tone outfit — Iconik" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Does Black Make You Look Slimmer? The Honest Answer — Iconik",
+    description: "Black reduces contrast, but silhouette continuity and vertical fall create the stronger elongating effect.",
+    images: ["/images/seo/black-slimming-vertical-line-iconik-og.webp"],
   },
 };
 
@@ -83,6 +95,15 @@ export default function DoesBlackMakeYouLookSlimmerPage() {
             </p>
           </header>
 
+          <SeoTeachingVisual
+            src="/images/seo/black-slimming-vertical-line-iconik.webp"
+            alt="Same fuller-bodied Indian woman showing a black outfit with horizontal breaks and a deep navy outfit with continuous vertical fall."
+            caption="Black is not the mechanism. Lower contrast, fewer horizontal stops and a clean vertical fall create the stronger elongating effect."
+            width={1024}
+            height={1535}
+            priority
+          />
+
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">What Does Black Actually Do Optically?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
@@ -126,7 +147,7 @@ export default function DoesBlackMakeYouLookSlimmerPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Find your most slimming colour — it may not be black</h2>
             <p className="text-gray-600 mb-6">CHM™ identifies your best undertone colours for a head-to-toe look that elongates and flatters better than any default black outfit.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

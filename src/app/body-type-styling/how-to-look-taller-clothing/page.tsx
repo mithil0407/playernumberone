@@ -3,6 +3,10 @@ import {
   TrackedArticleLink,
 } from "@/components/ArticleGrowthTracker";
 import RegisteredSeoArticle from "@/components/seo/RegisteredSeoArticle";
+import {
+  SeoInsightCard,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
 import { buildSeoArticleMetadata, growthTrackingForArticle } from "@/lib/seoArticle";
 import { getSeoArticle } from "@/lib/seoArticleRegistry";
 
@@ -10,159 +14,324 @@ const path = "/body-type-styling/how-to-look-taller-clothing";
 const article = getSeoArticle(path);
 const growthTracking = growthTrackingForArticle(article);
 const proportionQuizHref =
-  "/tools/proportion-code?source=seo_look_taller_article&article_id=how_to_look_taller_clothing&content_cluster=silhouette_proportions&audience=women&hook_type=oversized_vs_intentional&visual_id=oversized_intentional_silhouette&visual_variant=article_4x5";
+  "/tools/proportion-code?source=seo_look_taller_article&article_id=how_to_look_taller_clothing&content_cluster=silhouette_proportions&audience=women&hook_type=vertical_continuity&visual_id=height_line_system&visual_variant=article";
 
 export const metadata = buildSeoArticleMetadata(article);
 
 const faqs = [
   {
-    q: "Does wearing vertical stripes actually work?",
-    a: "Vertical stripes can reinforce length, but they are not a guarantee. Placement, stripe width, garment fit, and whether the line continues through the outfit matter more than the stripe alone. A clean open layer or trouser crease can create the same directional effect.",
+    q: "Do vertical stripes actually make you look taller?",
+    a: "They can reinforce an upward-downward direction, but they are only one tool. A clean trouser crease, open jacket, tonal column, uninterrupted kurta line, or well-placed seam can do the same job. Fit, line placement, and the number of colour breaks matter more than stripes alone.",
   },
   {
-    q: "What heel height is best for petite Indian women?",
-    a: "A 2–3 inch block heel is practical and effective. The heel colour should match the salwar or trouser, not contrast — this extends the visual leg line rather than cutting it at the ankle. Nude or skin-tone heels elongate the leg by not creating a colour break at the ankle.",
+    q: "Can petite women wear wide-leg jeans or palazzos?",
+    a: "Yes. Choose a rise that relates well to your torso, a waistband that sits cleanly, and a leg that falls from the hip without excessive gathering. Keep the hem long enough to complete the line but short enough to avoid pooling. Width is not the problem; uncontrolled volume and an unfinished hem are.",
   },
   {
-    q: "Can a saree make you look taller?",
-    a: "Yes, when draped strategically. A saree in a solid colour with a matching or tonal blouse, worn with the pallu in a vertical fall rather than draped across horizontally, creates excellent height illusion. The petticoat tied at the natural waist (not high) allows the full length of the saree to fall vertically.",
+    q: "Do I need heels to look taller in clothes?",
+    a: "No. Heels add physical height, but the clothing effect comes from proportion and continuity. Flat shoes can preserve the line when their colour relates to the trouser, salwar, or visible skin and the upper does not create a heavy ankle break.",
   },
   {
-    q: "What is the best kurta length for looking taller?",
-    a: "The best kurta length depends on where it ends relative to your legs. A clean knee-length or longer straight kurta can work when it remains tonal with the bottom, but a hem that lands at the widest part of the calf may shorten the line. Test the full outfit rather than choosing length in isolation.",
+    q: "What kurta length helps a shorter woman look taller?",
+    a: "There is no universal centimetre. Compare where the hem lands against your leg and the width of the bottom. A straight knee-length or longer kurta often works well with a tonal straight bottom, while a hem at the widest calf can interrupt the line. Photograph the complete outfit, not the kurta alone.",
+  },
+  {
+    q: "Can skinny jeans make the upper body look heavier?",
+    a: "They can when the upper body carries more visual volume and the very narrow leg makes the lower half recede. A straight, soft bootcut, or wide-straight shape can restore balance. The point is not to hide the upper body; it is to keep enough visual weight below it.",
+  },
+  {
+    q: "Can a saree create a taller impression?",
+    a: "Yes. Tonal blouse-and-saree combinations, a clean vertical pallu fall, controlled pleat bulk, and a border scaled to the wearer can create continuity. Strong contrast at the blouse, waist, or broad horizontal border creates more visible divisions, but that may still be a deliberate aesthetic choice.",
   },
 ];
+
+const rules = [
+  ["Fit the shoulder", "A clear shoulder seam gives the eye a reliable starting point."],
+  ["Locate the waist", "Use the rise, tuck, seam, or crop to show where the legs visually begin."],
+  ["Reduce random breaks", "Repeat or relate colours across the waistband, ankle, and footwear."],
+  ["Finish the hem", "Remove stacking and puddling that compress the lower line."],
+  ["Choose one lead shape", "Let either the top or bottom carry volume instead of making every layer equally wide."],
+  ["Use open verticals", "An unbuttoned shirt, jacket, long shrug, or controlled dupatta creates a central channel."],
+  ["Scale the print", "Narrower repeats usually preserve continuity better than large horizontal motifs."],
+  ["Keep detail intentional", "Place contrast, borders, belts, and embellishment where you want the eye to pause."],
+  ["Connect the shoe", "Relate footwear to the trouser, salwar, saree hem, or visible skin."],
+  ["Control garment length", "Judge hems against your own knee, calf, hip, and waist—not generic petite labels."],
+  ["Protect the vertical fall", "Choose fabric that hangs cleanly instead of clinging, ballooning, or collapsing."],
+  ["Photograph the full outfit", "A mirror crop hides the exact proportion decisions you need to evaluate."],
+] as const;
 
 export default function HowToLookTallerPage() {
   return (
     <RegisteredSeoArticle
       article={article}
       faqs={faqs}
-      quickAnswer={<>Fit the shoulder, define the intended waist, reduce unnecessary colour breaks, and let the lower half fall in one clean line.</>}
-      quickAnswerDetail={<>You do not need tight clothes or heels. The strongest improvements often come from removing pooled fabric, dropped seams, low visual waists, and contrasting blocks that divide a shorter frame.</>}
+      quickAnswer={
+        <>
+          To create a taller impression, make the body easier for the eye to read vertically:
+          fit the shoulder, place the waist deliberately, let the lower half fall cleanly, and
+          reduce colour or fabric breaks that divide the frame.
+        </>
+      }
+      quickAnswerDetail={
+        <>
+          This is visual proportion, not body correction. You can use relaxed clothing, flats,
+          Indian wear, and wide-leg trousers. The useful question is not “Does this item make me
+          taller?” but “Where does this complete outfit start, stop, widen, and change direction?”
+        </>
+      }
       cta={{
-        title: "Build outfit formulas around your actual proportions.",
-        description: "Your Iconik Style Blueprint maps rise, garment length, silhouette, colour, and Indian outfit categories to your body.",
+        title: "Turn proportion guidance into outfits made for your measurements.",
+        description:
+          "Your ICONIK Blueprint maps rise, garment length, silhouette, colour, hair, eyewear, and 20 outfit formulas to your real wardrobe and lifestyle.",
       }}
     >
-          <section id="vertical-line-method" className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Is the Vertical Line Method?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The human eye follows lines. A vertical line — unbroken from shoulder to hem — makes the body appear taller because the eye travels the full length in one movement. A horizontal line (a contrasting waistband, a colour break, a horizontal print) interrupts that movement and makes the body appear wider and shorter.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              The goal of height-creating dressing is to maximise vertical visual movement and minimise horizontal breaks. This does not require heels. It can be achieved entirely through garment choice and colour strategy.
-            </p>
-          </section>
+      <section id="start-with-proportions">
+        <p className="seo-eyebrow">Start here</p>
+        <h2>Looking Taller Is About Ratios, Not Rules for “Petite” Bodies</h2>
+        <p>
+          Two women can be the same height and need different clothing adjustments. One may have
+          relatively longer legs and a shorter torso; the other may have a longer torso and a lower
+          visual waist. Shoulder width, bust, hip width, and where garments naturally break also
+          change what the eye notices.
+        </p>
+        <p>
+          Before buying anything, take one straight, full-length photograph in a fitted top and
+          simple trousers. Mark the shoulder, natural waist, crotch level, knee, and floor. You are
+          not measuring whether your body is “correct.” You are locating the divisions that
+          clothing can repeat, raise, lower, or blur.
+        </p>
+        <SeoInsightCard
+          eyebrow="A better objective"
+          title="Create a clear visual route"
+          tone="bone"
+        >
+          <p>
+            The eye should find a starting point, a dominant direction, and a clean finish. When
+            every seam, layer, colour, and hem creates a new stop, the outfit feels compressed even
+            when each item is individually flattering.
+          </p>
+        </SeoInsightCard>
+      </section>
 
-          <section id="fit-direction" className="mb-12">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">Iconik visual diagnosis</p>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Oversized vs Intentional: Why Fit Direction Matters More Than Size</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Oversized clothing does not automatically make someone look shorter. The problem begins when every construction point becomes ambiguous: the shoulder seam drops, the sleeve pools, the top ends at the widest point, the waist disappears, and the trouser stacks over the shoe. The eye reads width because it cannot find a clear direction.
-            </p>
-            <p className="text-gray-600 mb-5 leading-relaxed">
-              An intentional relaxed outfit can remain comfortable and generous. It simply restores structure in a few places: a clean shoulder, a visible or implied waist, an open neckline, and a trouser or skirt that falls to the floor without excess pooling.
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
-                <h3 className="mb-3 font-serif text-2xl text-gray-900">Oversized without direction</h3>
-                <ul className="space-y-2 text-sm leading-relaxed text-gray-600">
-                  <li>• Dropped seam broadens the shoulder line.</li>
-                  <li>• Long sleeve and hem hide the body&apos;s division points.</li>
-                  <li>• Fabric pooling shortens the visible leg line.</li>
-                  <li>• Equal volume above and below creates no hierarchy.</li>
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-[#879aa2] bg-[#81949c] p-6 text-white shadow-[0_14px_40px_rgba(38,52,58,0.14)]">
-                <h3 className="mb-3 font-serif text-2xl text-[#fffaf1]">Relaxed but intentional</h3>
-                <ul className="space-y-2 text-sm leading-relaxed text-white/75">
-                  <li>• Shoulder seam aligns or is deliberately structured.</li>
-                  <li>• Tuck, seam, or tonal contrast locates the waist.</li>
-                  <li>• Full-length hem creates vertical fall.</li>
-                  <li>• One dominant silhouette controls the visual line.</li>
-                </ul>
-              </div>
-            </div>
-          </section>
+      <section id="vertical-continuity">
+        <p className="seo-eyebrow">Mechanism 01</p>
+        <h2>Build Vertical Continuity Without Dressing Head-to-Toe in One Colour</h2>
+        <p>
+          Monochrome works because it removes colour breaks, but it is not the only solution.
+          Vertical continuity can come from a central opening, a trouser crease, a long lapel, a
+          matching blouse and saree, a narrow print repeat, or colours that are close enough in
+          value that the eye moves through them.
+        </p>
+        <p>
+          Start with a column: top and bottom in the same or neighbouring colours. Then add one
+          layer that remains open, one accessory near the face, or one contrast shoe. If you want
+          colour blocking, place the strongest break at the visual waist you intend to create
+          instead of letting an untucked hem choose it accidentally.
+        </p>
+        <ul>
+          <li><strong>Strong continuity:</strong> navy top, navy straight trouser, open ivory jacket.</li>
+          <li><strong>Soft continuity:</strong> cocoa kurta, mushroom trouser, bronze footwear.</li>
+          <li><strong>Deliberate contrast:</strong> cropped shirt ending at a true high-rise waistband.</li>
+          <li><strong>Unplanned interruption:</strong> long contrast top ending low over a low-rise bottom.</li>
+        </ul>
+      </section>
 
-          <section id="twelve-rules" className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Which Cuts Create the Strongest Vertical Lines?</h2>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Monochromatic outfits:</strong> Same colour top and bottom — eliminates the horizontal break at the waist entirely.</li>
-              <li><strong>Long straight kurtas over matching salwars:</strong> The unbroken vertical from shoulder to ankle creates maximum elongation.</li>
-              <li><strong>Vertical-print fabrics:</strong> Pinstripes, narrow vertical paisleys, elongated geometric prints.</li>
-              <li><strong>Deep V-necks:</strong> The V draws the eye downward through the chest centre — extending the perceived torso length.</li>
-              <li><strong>Bootcut or wide-leg trousers:</strong> Balance the hip width optically, making the legs appear longer.</li>
+      <section id="waist-and-rise">
+        <p className="seo-eyebrow">Mechanism 02</p>
+        <h2>Use Waist Placement to Change Where the Legs Visually Begin</h2>
+        <p>
+          Rise is powerful because the waistband becomes a map line. A higher rise can lengthen the
+          visible leg, but only if the waistband sits smoothly and the top allows it to be read. A
+          bulky tuck can add width and shorten the torso so abruptly that the outfit loses balance.
+        </p>
+        <p>
+          If you have a short torso, do not automatically choose the highest rise available. Test a
+          clean mid-high rise, partial tuck, or tonal top so the waist is present without climbing
+          into the ribcage. If you have a longer torso, a clearer high rise and shorter top can
+          create a more useful leg-to-torso ratio.
+        </p>
+        <SeoTeachingVisual
+          src="/images/seo/look-taller-waist-rise-placement-iconik.webp"
+          alt="Indian woman with low, balanced, and high visual waist markers showing how trouser rise changes the apparent leg-to-torso ratio."
+          caption="The best rise is the one that creates a balanced division on your body while keeping the waistband and tuck clean."
+          width={1024}
+          height={1536}
+        />
+        <h3>Run the three-rise test</h3>
+        <ol>
+          <li>Photograph the same top with low, mid-high, and high-rise bottoms.</li>
+          <li>Keep the camera, posture, footwear, and hem length unchanged.</li>
+          <li>Compare the leg-to-torso ratio and whether the waistband adds bunching.</li>
+          <li>Choose the cleanest proportion—not simply the highest waistband.</li>
+        </ol>
+      </section>
+
+      <section id="jeans-and-trousers">
+        <p className="seo-eyebrow">Mechanism 03</p>
+        <h2>Choose Jeans by Vertical Fall and Upper-to-Lower Balance</h2>
+        <p>
+          Skinny jeans are not automatically slimming. When the bust, shoulders, arms, or stomach
+          carry more visual volume, an extremely narrow leg can make the lower body recede. The
+          upper body then appears heavier by comparison. The fix is not simply “wear loose jeans”;
+          it is to restore proportion.
+        </p>
+        <p>
+          Start with a high-rise straight leg, soft bootcut, or wide-straight jean in a clean medium
+          or dark wash. Look for a leg line that leaves the hip without excessive whiskering, holds
+          its direction through the knee, and finishes without stacks. A centre crease or pressed
+          front amplifies the same effect in tailored trousers.
+        </p>
+        <SeoTeachingVisual
+          src="/images/seo/look-taller-jeans-vertical-fall-iconik.webp"
+          alt="Same Indian woman in very narrow jeans and straight-fall jeans demonstrating how lower-body width changes overall visual balance."
+          caption="Same body, different line: a controlled straight fall can balance the torso and preserve length without adding shapeless volume."
+          width={1672}
+          height={941}
+        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <SeoInsightCard title="Check in the fitting room" tone="ivory">
+            <ul>
+              <li>Waistband lies flat without folding.</li>
+              <li>Hip and thigh have no forced horizontal pull lines.</li>
+              <li>Leg shape remains readable below the knee.</li>
+              <li>Hem finishes at the shoe without a fabric pile.</li>
             </ul>
-          </section>
-
-          <section id="indian-outfits" className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Indian Ethnic Wear Creates the Most Height?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Floor-length Anarkali suits in one colour family</strong> can create a strong vertical impression when the shoulder fits cleanly, the flare begins at a useful point, and the hem does not overwhelm the wearer. The length alone is not enough; scale and construction still matter.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Matching kurta and salwar sets</strong> in the same fabric and colour achieve the same effect in a more versatile, everyday format.
-            </p>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
-              <li>Floor-length Anarkali in solid colour</li>
-              <li>Matching kurta-salwar sets (same colour)</li>
-              <li>Palazzo sets in solid matching colour</li>
-              <li>Sarees with solid-colour body and matching tonal blouse</li>
-              <li>Churidar sets with a long straight kurti (same colour)</li>
+          </SeoInsightCard>
+          <SeoInsightCard title="Search terms that help" tone="slate">
+            <ul>
+              <li>High-rise straight leg</li>
+              <li>Full-length wide straight</li>
+              <li>Soft bootcut, clean wash</li>
+              <li>Flat-front tailored trouser</li>
             </ul>
-            <p className="text-gray-600 leading-relaxed">
-              <strong>What to avoid:</strong> Lehenga-choli with a contrasting waistband at the natural waist — this creates a strong horizontal break. Embellished waistbands. Kurtas with contrasting yoke or horizontal design details across the upper body.
-            </p>
-          </section>
+          </SeoInsightCard>
+        </div>
+      </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Do Heels Affect Height Perception?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Even 2–3 inches of heel lifts posture, elongates the calf visually, and raises the body&apos;s overall line. The heel colour matters as much as the heel height: a heel in the same colour as the salwar or trouser extends the visual leg line rather than creating a colour break at the ankle.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              <strong>Skin-adjacent or tonal footwear</strong> can reduce the visual break at the ankle. The useful colour depends on whether the shoe is seen against bare skin, a trouser, a salwar, or a saree hem; matching the adjacent area is more reliable than choosing one universal nude.
-            </p>
-          </section>
+      <section id="tops-and-layers">
+        <p className="seo-eyebrow">Mechanism 04</p>
+        <h2>Make Top Length, Shoulder Fit, and Layer Direction Work Together</h2>
+        <p>
+          Oversized clothing does not automatically make a shorter woman look shorter. The problem
+          appears when all construction points become ambiguous: the shoulder drops, the sleeve
+          pools, the top ends at the widest hip, the waist disappears, and the trouser stacks. The
+          eye reads width because it cannot find direction.
+        </p>
+        <p>
+          A relaxed outfit can remain generous while restoring three anchors: an intentional
+          shoulder, a readable waist or vertical opening, and a finished hem. If the top is long and
+          wide, keep the lower line cleaner. If the trouser is wide, use a top that ends or tucks at
+          a deliberate point.
+        </p>
+        <SeoTeachingVisual
+          src="/images/seo/look-taller-top-layer-hem-guide-iconik.webp"
+          alt="Editorial guide comparing top hems at the waist, widest hip, and upper thigh with an open vertical layer."
+          caption="Top length controls where the torso ends; an open layer can restore a vertical route without making the outfit tight."
+          width={1122}
+          height={1402}
+        />
+        <h3>Use the palm test for hems</h3>
+        <p>
+          Move the same top up and down in a mirror by one palm-width. Notice when the leg suddenly
+          appears longer or the hip appears wider. That change tells you more than a generic “petite
+          length” label because it is tied to your actual division points.
+        </p>
+      </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Should You Avoid When You Want to Look Taller?</h2>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside">
-              <li>Colour blocking with a strong horizontal contrast line at the waist</li>
-              <li>Cropped tops that end low while the bottom also has a low rise; a shorter top with a true high rise can lengthen the visible leg line</li>
-              <li>Ankle strap shoes (create a horizontal line at the narrowest part of the leg)</li>
-              <li>Oversized, shapeless garments (the eye cannot follow a vertical line through shapeless volume)</li>
-              <li>Heavy horizontal embellishment or borders at the waist or hem</li>
-            </ul>
-          </section>
+      <section id="indian-wear">
+        <p className="seo-eyebrow">Indian wardrobe application</p>
+        <h2>Use the Same Logic for Kurtas, Sarees, Palazzos, and Dupattas</h2>
+        <p>
+          Indian wear contains more line-making elements than most western outfits: kurta hems,
+          side slits, dupattas, borders, pleats, blouse contrast, and jewellery. That gives you more
+          tools, not more restrictions.
+        </p>
+        <SeoTeachingVisual
+          src="/images/seo/look-taller-indian-wear-line-guide-iconik.webp"
+          alt="Indian wear styling guide showing a tonal kurta set, vertical dupatta, controlled saree pallu, and full-length palazzo line."
+          caption="Tonal columns, vertical drape, controlled borders, and a clean floorward fall translate proportion logic into Indian wear."
+          width={1672}
+          height={941}
+        />
+        <ul>
+          <li>
+            <strong>Kurta sets:</strong> compare the kurta hem with the side-slit start. A tonal
+            bottom keeps the lower line visible through the slit.
+          </li>
+          <li>
+            <strong>Palazzos:</strong> choose a clean waistband and a leg that falls from the hip;
+            avoid excess gathering concentrated at the stomach.
+          </li>
+          <li>
+            <strong>Sarees:</strong> use pleat control and pallu direction. A broad contrast border
+            creates a horizontal stop; a quieter border continues the line.
+          </li>
+          <li>
+            <strong>Dupattas:</strong> one long vertical fall usually creates more length than an
+            evenly spread horizontal chest drape.
+          </li>
+          <li>
+            <strong>Anarkalis:</strong> check where the flare begins and whether the scale of the
+            skirt overwhelms the shoulder; floor length alone does not guarantee elongation.
+          </li>
+        </ul>
+      </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Does Monochromatic Dressing Work Best for Height?</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Wearing one colour head to toe eliminates every horizontal break. A cobalt blue kurta with cobalt salwar and cobalt heels is an unbroken vertical line from shoulder to floor. The eye travels the full length without interruption. Combined with your Chromatic Harmony Mapping™ palette, this creates outfits that are simultaneously height-creating and flattering to your complexion.
-            </p>
-          </section>
-
-          <section className="mb-12 overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
-            <TrackedArticleCtaView tracking={growthTracking} />
-            <div className="rounded-[1.8rem] border border-white/15 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))] p-7 text-white backdrop-blur-xl md:p-9">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#f0cb80]">Free proportion test</p>
-              <h2 className="mb-3 font-serif text-3xl text-[#fffaf1]">Find where your height actually sits</h2>
-              <p className="mb-6 max-w-2xl leading-relaxed text-white/70">
-                The Proportion Code uses your height, waist-to-floor measurement, and inseam to show whether your visual length sits in your torso, legs, or a balanced split—then explains rise, tuck, and crop placement.
+      <section id="shopping-checklist">
+        <p className="seo-eyebrow">Save this resource</p>
+        <h2>The 60-Second Shopping-Room Checklist</h2>
+        <SeoTeachingVisual
+          src="/images/seo/look-taller-shopping-checklist-iconik.webp"
+          alt="Saveable checklist for shoulder fit, waist placement, colour breaks, vertical fall, hem finish, and footwear continuity."
+          caption="Evaluate the complete line from shoulder to floor before deciding whether one garment earns a place in your wardrobe."
+          width={1024}
+          height={1536}
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {rules.map(([title, description], index) => (
+            <div key={title} className="rounded-2xl border border-[#2c2622]/10 bg-[#f7f3ed] p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9a7d4a]">
+                Rule {String(index + 1).padStart(2, "0")}
               </p>
-              <TrackedArticleLink
-                href={proportionQuizHref}
-                tracking={growthTracking}
-                className="inline-flex rounded-full bg-[#f0cb80] px-7 py-3 font-semibold text-[#27353b] transition hover:bg-[#f6d99e]"
-              >
-                Take the Free Proportion Code →
-              </TrackedArticleLink>
+              <h3 className="!m-0 !text-xl">{title}</h3>
+              <p className="!mt-2 !text-sm">{description}</p>
             </div>
-          </section>
+          ))}
+        </div>
+      </section>
 
+      <section>
+        <p className="seo-eyebrow">A note on language</p>
+        <h2>Your Body Is Not the Before Picture</h2>
+        <p>
+          “Look taller” is an aesthetic choice, not an obligation. Shortness, width, curves, and
+          softness are not styling errors. The same horizontal border or oversized silhouette that
+          reduces vertical continuity may be exactly right when you want drama, width, or visual
+          ease. Use these mechanisms to control the result—not to make every outfit chase one ideal.
+        </p>
+      </section>
+
+      <section className="overflow-hidden rounded-[2rem] bg-[#27353b] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.16)]">
+        <TrackedArticleCtaView tracking={growthTracking} />
+        <div className="rounded-[1.8rem] border border-white/15 bg-white/10 p-7 text-white backdrop-blur-xl md:p-9">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#f0cb80]">
+            Free proportion test
+          </p>
+          <h2 className="mb-3 !text-[#fffaf1]">Find where your height actually sits</h2>
+          <p className="mb-6 max-w-2xl !text-white/70">
+            The Proportion Code uses your height, waist-to-floor measurement, and inseam to show
+            whether your visual length sits in your torso, legs, or a balanced split—then explains
+            rise, tuck, and crop placement.
+          </p>
+          <TrackedArticleLink
+            href={proportionQuizHref}
+            tracking={growthTracking}
+            className="inline-flex rounded-full bg-[#f0cb80] px-7 py-3 font-semibold text-[#27353b] no-underline transition hover:bg-[#f6d99e]"
+          >
+            Take the Free Proportion Code →
+          </TrackedArticleLink>
+        </div>
+      </section>
     </RegisteredSeoArticle>
   );
 }

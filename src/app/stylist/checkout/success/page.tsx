@@ -372,14 +372,15 @@ function StylistSuccessInner() {
                         {email ? <strong className="text-luxury-charcoal font-medium">{email}</strong> : 'your email'} shortly.
                     </p>
                     <p className="luxury-body text-luxury-charcoal/45 leading-relaxed mb-8" style={{ fontWeight: 300 }}>
-                        Your Blueprint arrives within <span className="text-luxury-charcoal">72 hours</span> of completing the intake form.
+                        After your 30-minute consultation, your Blueprint arrives within <span className="text-luxury-charcoal">5 working days</span>.
                     </p>
                     <div className="mb-5"><IntakeButton href={intakeHref} /></div>
                     <div className="rounded-2xl p-5 mb-8 text-left space-y-3 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
                         <div className="iconik-micro text-luxury-charcoal/40 mb-3">Next Steps</div>
                         {[
                             'Complete the intake form here now, or use the email link later',
-                            'Receive your personalised Blueprint within 72 hours',
+                            'Complete your 30-minute stylist consultation',
+                            'Receive your personalised Blueprint within 5 working days after the consultation',
                             'Your ICONIK Edit is active — your first drop arrives within 72 hours',
                         ].map((step, i) => (
                             <div key={i} className="flex items-start gap-3">
@@ -505,7 +506,7 @@ function StylistSuccessInner() {
                         confirmed.
                     </h1>
                     <p className="luxury-body text-luxury-warm-white/60 leading-relaxed" style={{ fontWeight: 300 }}>
-                        It arrives within <span className="text-luxury-warm-white">72 hours</span> of completing your intake form.
+                        After your 30-minute consultation, it arrives within <span className="text-luxury-warm-white">5 working days</span>.
                     </p>
                 </motion.div>
             </div>
@@ -598,7 +599,8 @@ function StylistSuccessInner() {
                                 <div className="iconik-micro text-luxury-charcoal/40 mb-3">Next Steps</div>
                                 {[
                                     'Complete the intake form here now, or use the email link later',
-                                    'Receive your personalised Blueprint within 72 hours',
+                                    'Complete your 30-minute stylist consultation',
+                                    'Receive your personalised Blueprint within 5 working days after the consultation',
                                 ].map((step, i) => (
                                     <div key={i} className="flex items-start gap-3">
                                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--luxury-charcoal)' }}>

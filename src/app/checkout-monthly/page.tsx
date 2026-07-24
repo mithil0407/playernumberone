@@ -304,7 +304,7 @@ function MonthlyCheckoutPageContent() {
         >
           <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm luxury-body">1,200+ Happy Subscribers</span>
+            <span className="text-xs md:text-sm luxury-body">5,000+ Clients Served</span>
           </div>
           <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
             <Lock className="w-3 h-3 md:w-4 md:h-4" />

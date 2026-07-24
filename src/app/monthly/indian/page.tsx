@@ -185,7 +185,7 @@ export default function MonthlyIndianPage() {
     const faqs = [
         {
             question: 'Is this a subscription? Will I be charged monthly?',
-            answer: 'Yes, this is a monthly subscription. You can choose to pay monthly or save 10% with quarterly billing. Cancel anytime with no questions asked.'
+            answer: 'Yes, this is a subscription. You can choose monthly or quarterly billing and cancel future renewals at any time.'
         },
         {
             question: 'What\'s the difference between the tiers?',
@@ -197,7 +197,7 @@ export default function MonthlyIndianPage() {
         },
         {
             question: 'What if I\'m not satisfied?',
-            answer: 'We offer a 7-day money-back guarantee. If you\'re not completely satisfied with your first month, we\'ll refund your payment in full.'
+            answer: 'Tell us what is not working and we will first correct the personalised work within the agreed scope. Refunds are not automatic; if you decide not to avail the service, contact support before onboarding or personalised work begins so eligibility can be reviewed under our refund policy.'
         },
         {
             question: 'Do you style for Indian occasions like weddings and festivals?',
@@ -546,28 +546,27 @@ export default function MonthlyIndianPage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
                             <div className="text-center group">
                                 <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                                    247+
+                                    5,000+
                                 </div>
-                                <div className="luxury-body text-luxury-charcoal/70">Active Members</div>
+                                <div className="luxury-body text-luxury-charcoal/70">Clients Served</div>
                             </div>
                             <div className="text-center group">
                                 <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                                    95%
+                                    10+
                                 </div>
-                                <div className="luxury-body text-luxury-charcoal/70">Member Retention</div>
-                            </div>
-                            <div className="text-center group">
-                                <div className="flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                                    <span className="text-4xl md:text-6xl luxury-heading text-luxury-green">4.9</span>
-                                    <Star className="h-6 w-6 md:h-8 md:w-8 text-luxury-gold fill-current ml-2" />
-                                </div>
-                                <div className="luxury-body text-luxury-charcoal/70">Member Rating</div>
+                                <div className="luxury-body text-luxury-charcoal/70">Countries Served</div>
                             </div>
                             <div className="text-center group">
                                 <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                                    7
+                                    70K+
                                 </div>
-                                <div className="luxury-body text-luxury-charcoal/70">Days Money-Back</div>
+                                <div className="luxury-body text-luxury-charcoal/70">Instagram Community</div>
+                            </div>
+                            <div className="text-center group">
+                                <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
+                                    Mon–Fri
+                                </div>
+                                <div className="luxury-body text-luxury-charcoal/70">Support Hours</div>
                             </div>
                         </div>
                     </div>
@@ -717,7 +716,7 @@ export default function MonthlyIndianPage() {
                     <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center mb-16 md:mb-24">
                         <h2 className="text-4xl md:text-6xl luxury-heading mb-6 text-luxury-charcoal">Choose Your Plan</h2>
                         <p className="luxury-body text-luxury-charcoal/70 max-w-3xl mx-auto text-lg md:text-xl">
-                            Cancel anytime. 7-day money-back guarantee on all plans.
+                            Cancel future renewals anytime. Refund eligibility is governed by our published refund policy.
                         </p>
                     </div>
 
@@ -749,7 +748,7 @@ export default function MonthlyIndianPage() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Crown className="w-5 h-5" />
-                                <span>247+ Active Members</span>
+                                <span>ICONIK Styling Community</span>
                             </div>
                         </div>
                     </div>
@@ -890,7 +889,7 @@ export default function MonthlyIndianPage() {
                             Ready to Transform Your Style?
                         </h2>
                         <p className="luxury-body text-luxury-charcoal/70 text-lg mb-8 max-w-2xl mx-auto">
-                            Join 247+ members who never stress about &quot;what to wear&quot; anymore.
+                            Join the ICONIK community and replace outfit stress with a repeatable styling system.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
