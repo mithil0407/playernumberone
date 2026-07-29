@@ -14,6 +14,10 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { FaceImageKind } from '@/lib/manImageGenerator';
 import type { ManReportQaIssue } from '@/lib/manReportQa';
 import {
+  extractFullManIdentityStatement,
+  resolveManFormulaColour,
+} from '@/lib/manReportPresentation';
+import {
   comboGridGroupTitle,
   getComboGridGroupRawText,
   getComboGridGroupText,
@@ -2704,7 +2708,7 @@ function V2DatingSlide({ data, imageUrls, avatarUrl, pageNumber, totalSlides, on
 
 function V2ShoppingIdentitySlide({ data, pageNumber, totalSlides }: { data: ReportData; pageNumber?: number; totalSlides: number }) {
   const shopping = data.sections.s5_shopping ?? data.sections.s5_rules ?? '';
-  const identity = extractIdentityExcerpt(data.sections.s6_identity);
+  const identity = extractFullManIdentityStatement(data.sections.s6_identity);
   return (
     <section className="iconik-page man-page slate" data-blueprint-page-number={pageNumber}>
       <div className="grain" />
@@ -2720,7 +2724,12 @@ function V2ShoppingIdentitySlide({ data, pageNumber, totalSlides }: { data: Repo
           </div>
           <div className="glass-dark rounded-3xl p-7">
             <DataLabel>Identity close</DataLabel>
-            <p className="display-it text-[28px] leading-snug">{identity}</p>
+            <p
+              className="display-it"
+              style={{ fontSize: 'clamp(18px, 2.3vw, 24px)', lineHeight: 1.45 }}
+            >
+              {identity}
+            </p>
           </div>
         </div>
       </div>
@@ -3325,13 +3334,23 @@ function OutfitsSection({
       ...(cls.colour.neutral_base_colours ?? []),
       ...(cls.colour.accent_colours ?? []),
     ].slice(0, 5);
+    const formulaPalette = [
+      ...(cls.colour.primary_palette ?? []),
+      ...(cls.colour.neutral_base_colours ?? []),
+      ...(cls.colour.accent_colours ?? []),
+    ];
     const formulaItems = [
       { label: 'Top',         value: outfit.top },
       { label: 'Bottom',      value: outfit.bottom },
       { label: 'Layer',       value: outfit.layer },
       { label: 'Footwear',    value: outfit.footwear },
       { label: 'Accessories', value: outfit.accessories },
-    ].filter(item => item.value && item.value !== '—');
+    ]
+      .filter(item => item.value && item.value !== '—')
+      .map(item => ({
+        ...item,
+        colour: resolveManFormulaColour(item.value, formulaPalette),
+      }));
 
     return (
       <div
@@ -3503,14 +3522,20 @@ function OutfitsSection({
         <div>
           <div className="mono faded formula-label">The Formula - {formulaItems.length} pieces</div>
           <div className="formula-grid man-formula-grid">
-            {formulaItems.map(({ label, value }, index) => {
+            {formulaItems.map(({ label, value, colour }, index) => {
               const shoppingSlotName = SHOPPING_SLOT_BY_LABEL[label];
               const shoppingSlot = shoppingSlotName && shopping
                 ? shopping.slots?.[buildShoppingSlotKey(outfit.number, shoppingSlotName)]
                 : undefined;
               return (
                 <div key={label} className="formula-card">
-                  <span className="swatch-dot" style={{ background: palette[index % Math.max(palette.length, 1)]?.hex ?? ACCENT }} />
+                  <span
+                    className={`swatch-dot${colour ? '' : ' swatch-dot-unspecified'}`}
+                    style={colour ? { background: colour.hex } : undefined}
+                    title={colour?.name ?? 'Colour unspecified'}
+                    role="img"
+                    aria-label={colour?.name ?? 'Colour unspecified'}
+                  />
                   <span className="mono dossier-label">
                     {String(index + 1).padStart(2, '0')} - {label}
                   </span>
@@ -4822,22 +4847,6 @@ function DeferredSection({
   );
 }
 
-// Pull the first sentence (or two) of the identity statement to use as a hero pull-quote.
-function extractIdentityExcerpt(text: string): string {
-  const stripped = text
-    .split('\n')
-    .filter(l => !l.startsWith('#'))
-    .join(' ')
-    .replace(/\*\*/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!stripped) return '';
-  // First two sentences, or 220 chars — whichever is shorter.
-  const sentenceMatch = stripped.match(/^(?:[^.!?]+[.!?]){1,2}/);
-  const candidate = sentenceMatch ? sentenceMatch[0].trim() : stripped;
-  return candidate.length > 240 ? candidate.slice(0, 238).trimEnd() + '…' : candidate;
-}
-
 // Format today's date the way an editorial spread would: "May 2026".
 function formatReportDate(iso?: string): string {
   const d = iso ? new Date(iso) : new Date();
@@ -5029,7 +5038,6 @@ function ManReport({
   const isV2 = data.report_version === MAN_BLUEPRINT_V2_VERSION;
   const isAdminViewer = viewerMode === 'admin' || adminMode === true;
   const reportDate    = formatReportDate(data.generated_at);
-  const identityExcerpt = useMemo(() => extractIdentityExcerpt(sections.s6_identity), [sections.s6_identity]);
   const slideMeta = useMemo(() => getManReportSlideMeta(data), [data]);
   const totalSlides = slideMeta.length;
   const pageNumberFor = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) =>
@@ -5517,9 +5525,6 @@ function ManReport({
             <span className="man-display">The</span>
             <span className="man-display-it">Blueprint</span>
           </h1>
-          {identityExcerpt && (
-            <p className="man-display-it man-cover-excerpt">&ldquo;{identityExcerpt}&rdquo;</p>
-          )}
           <div className="man-mono man-cover-number">bp.iconik.pro</div>
         </div>
         <div className="corner-bl">
@@ -5765,13 +5770,6 @@ function ManBlueprintStyles() {
       .man-cover-heading .man-display-it {
         display: block;
         font-size: clamp(72px, 12vw, 108px);
-      }
-      .man-cover-excerpt {
-        font-size: 17px;
-        opacity: 0.72;
-        max-width: 520px;
-        margin: 28px auto 0;
-        line-height: 1.55;
       }
       .man-cover-number {
         text-align: center;
@@ -6313,6 +6311,11 @@ function ManBlueprintStyles() {
         height: 32px;
         margin: 0 0 14px;
       }
+      .formula-card .swatch-dot.swatch-dot-unspecified {
+        background: transparent;
+        border: 1px dashed rgba(44,38,34,0.38);
+        box-shadow: none;
+      }
 
       /* ── Shopping links (per garment slot) ─ */
       .shop-links {
@@ -6538,10 +6541,6 @@ function ManBlueprintStyles() {
         .man-cover-heading .man-display,
         .man-cover-heading .man-display-it {
           font-size: clamp(58px, 18vw, 82px);
-        }
-        .man-cover-excerpt {
-          font-size: 14px;
-          margin-top: 22px;
         }
         .man-summary-grid {
           grid-template-columns: 1fr;

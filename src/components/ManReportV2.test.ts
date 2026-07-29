@@ -6,6 +6,7 @@ import {
   mergeManReportImagePaths,
   type ManReportImagePaths,
 } from '@/lib/manImageGenerator';
+import { extractFullManIdentityStatement } from '@/lib/manReportPresentation';
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -142,6 +143,11 @@ export function runManReportV2Assertions() {
   invariant(slides.filter(slide => slide.slideType === 'outfit').length === 20, 'v2 keeps 20 outfit slides');
   invariant(slides.some(slide => slide.title === 'Social Media Inspiration'), 'customer-facing social slide does not use dating language');
   invariant(slides.at(-1)?.slideType === 'shopping_identity', 'final v2 slide combines shopping and identity close');
+  invariant(
+    extractFullManIdentityStatement('## Identity\nFirst sentence. Final confidence sentence.') ===
+      'First sentence. Final confidence sentence.',
+    'v2 identity close keeps the complete identity statement without its markdown heading',
+  );
 
   const outfitPrompt = buildOutfitImagePromptForReport(report().sections, report().classification, 2);
   invariant(outfitPrompt.includes('adjusting one cuff or the watch'), 'outfit prompt rotates to a stylish editorial pose');
