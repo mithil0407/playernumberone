@@ -6,7 +6,7 @@ export default function Offer2699Page() {
       variant="offer2699"
       headline={
         <>
-          Stop Guessing What Flatters You.
+          Stop Guessing What to Wear.
         </>
       }
       subheadline={
