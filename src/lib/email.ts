@@ -451,7 +451,7 @@ function buildManEmailHtml(data: ConfirmationEmailData): string {
           <tr>
             <td style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 40px 32px; text-align:center;">
               <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:700; letter-spacing:-0.5px;">ICONIK</h1>
-              <p style="margin:8px 0 0; color:rgba(255,255,255,0.75); font-size:14px; letter-spacing:2px; text-transform:uppercase;">Man Style &amp; Image Consulting</p>
+              <p style="margin:8px 0 0; color:rgba(255,255,255,0.75); font-size:14px; letter-spacing:2px; text-transform:uppercase;">Man Style Blueprint</p>
             </td>
           </tr>
 
@@ -510,10 +510,10 @@ function buildManEmailHtml(data: ConfirmationEmailData): string {
           <tr>
             <td style="padding: 28px 40px 0;">
               <p style="margin:0 0 8px; color:#333; font-size:16px; line-height:1.7;">
-                <strong style="color:#1a1a2e;">One thing stands between you and your Blueprint:</strong> completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.
+                <strong style="color:#1a1a2e;">One thing stands between you and your Blueprint:</strong> completing the intake questions. They take 4 minutes and give our system the information it needs to personalise your report before a human stylist reviews it.
               </p>
               <p style="margin:0 0 20px; color:#333; font-size:16px; line-height:1.7;">
-                Complete your intake form now. After your 30-minute consultation, your Blueprint will be delivered within 5 working days:
+                Complete your intake form now. Once you submit it, your Blueprint will be delivered within 5 working days:
               </p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
@@ -544,7 +544,7 @@ function buildManEmailHtml(data: ConfirmationEmailData): string {
           <!-- Footer -->
           <tr>
             <td style="padding: 32px 40px 40px; text-align:center; border-top:1px solid #f0e8e8; margin-top:28px;">
-              <p style="margin:0 0 4px; color:#1a1a2e; font-weight:700; font-size:15px;">ICONIK Man Style &amp; Image Consulting</p>
+              <p style="margin:0 0 4px; color:#1a1a2e; font-weight:700; font-size:15px;">ICONIK Man Style Blueprint</p>
               <p style="margin:0; color:#999; font-size:13px;">help.iconikfashion@gmail.com</p>
               <p style="margin:16px 0 0; color:#bbb; font-size:12px;">© 2025 ICONIK. All rights reserved.</p>
             </td>
@@ -573,7 +573,7 @@ export async function sendManConfirmationEmail(data: ConfirmationEmailData): Pro
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your Iconik Man Blueprint is Confirmed ✅`,
-      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our stylists the information they need to personalise every section of your report.\n\nComplete your intake form now. After your 30-minute consultation, your Blueprint will be delivered within 5 working days:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
+      text: `Hi there,\n\nThank you for purchasing your Iconik Man Style Blueprint${addOnsSuffix}. Your order is confirmed — and your Blueprint is now in the queue.\n\nOne thing stands between you and your Blueprint: completing the intake questions. They take 4 minutes and give our system the information it needs to personalise your report before a human stylist reviews it.\n\nComplete your intake form now. Once you submit it, your Blueprint will be delivered within 5 working days:\n👉 ${intakeLink}\n\nIf you have any questions, just reply to this email — we're here to help you build a style that actually works for you.\n\nBest regards,\nTeam Iconik`,
       html: buildManEmailHtml(data),
     });
 
@@ -1185,11 +1185,13 @@ function buildIntakeReceivedHtml({
   title,
   subtitle,
   body,
+  deliveryMessage,
   accent,
 }: {
   title: string;
   subtitle: string;
   body: string;
+  deliveryMessage: string;
   accent: string;
 }): string {
   return `<!DOCTYPE html>
@@ -1210,7 +1212,7 @@ function buildIntakeReceivedHtml({
 <tr><td style="padding:28px 40px 0;">
 <p style="margin:0 0 12px;color:#333;font-size:16px;line-height:1.7;">Hi there,</p>
 <p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">${body}</p>
-<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">After your 30-minute consultation, your report will be delivered to your inbox within <strong>5 working days</strong>.</p>
+<p style="margin:0 0 16px;color:#333;font-size:16px;line-height:1.7;">${deliveryMessage}</p>
 <p style="margin:0;color:#555;font-size:14px;line-height:1.7;">Please check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.</p>
 </td></tr>
 <tr><td style="padding:28px 40px 40px;text-align:center;border-top:1px solid #f0e8e8;">
@@ -1229,7 +1231,8 @@ export async function sendManIntakeReceivedEmail(
     const html = buildIntakeReceivedHtml({
       title: 'Your ICONIK Man Intake Was Received',
       subtitle: 'Man Style Blueprint',
-      body: 'We have received your ICONIK Man intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.',
+      body: 'We have received your ICONIK Man intake form. Our system now has the photos and answers it needs to prepare your personalised Blueprint, which a human stylist will review before delivery.',
+      deliveryMessage: 'Your report will be delivered to your inbox within <strong>5 working days</strong> of submitting your intake.',
       accent: 'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)',
     });
 
@@ -1237,7 +1240,7 @@ export async function sendManIntakeReceivedEmail(
       from: `"Team Iconik" <${process.env.GMAIL_USER}>`,
       to: data.customer_email,
       subject: `Your ICONIK Man intake was received`,
-      text: `Hi there,\n\nWe have received your ICONIK Man intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.\n\nAfter your 30-minute consultation, your report will be delivered to your inbox within 5 working days.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
+      text: `Hi there,\n\nWe have received your ICONIK Man intake form. Our system now has the photos and answers it needs to prepare your personalised Blueprint, which a human stylist will review before delivery.\n\nYour report will be delivered to your inbox within 5 working days of submitting your intake.\n\nPlease check your spam or promotions folder just in case. If you have any questions, reply to this email and our team will help.\n\nBest regards,\nThe ICONIK Team\nhelp.iconikfashion@gmail.com`,
       html,
     });
 
@@ -1258,6 +1261,7 @@ export async function sendGlobeIntakeReceivedEmail(
       title: 'Your ICONIK Intake Was Received',
       subtitle: 'Style Intelligence System · Worldwide',
       body: 'We have received your ICONIK intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.',
+      deliveryMessage: 'After your 30-minute consultation, your report will be delivered to your inbox within <strong>5 working days</strong>.',
       accent: 'linear-gradient(135deg,#c2185b 0%,#880e4f 100%)',
     });
 
@@ -1286,6 +1290,7 @@ export async function sendStylistIntakeReceivedEmail(
       title: 'Your ICONIK Style Blueprint Intake Was Received',
       subtitle: 'Style Blueprint',
       body: 'We have received your ICONIK Style Blueprint intake form. Our stylists now have the photos and answers they need to prepare your personalised Blueprint.',
+      deliveryMessage: 'After your 30-minute consultation, your report will be delivered to your inbox within <strong>5 working days</strong>.',
       accent: 'linear-gradient(135deg,#111111 0%,#4b3a22 100%)',
     });
 

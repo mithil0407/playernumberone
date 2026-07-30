@@ -7,6 +7,7 @@
     "build": "next build",
     "check:man-intake-schema": "node scripts/check-man-intake-schema.mjs",
     "test:man-intake": "node --experimental-strip-types --test src/lib/manIntakeSubmission.test.ts",
+    "test:man-copy": "node --experimental-strip-types --test src/lib/manCustomerJourneyCopy.test.ts",
     "test:stylist-workspace": "node --experimental-strip-types --test src/lib/stylistWorkspacePilot.test.ts",
     "seo:images": "node scripts/build-seo-images.mjs",
     "indexnow": "node scripts/submit-indexnow.mjs",

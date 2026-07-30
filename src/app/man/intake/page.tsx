@@ -800,7 +800,7 @@ function ManIntakePageInner() {
                                     </div>
                                     <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Let&apos;s build your Blueprint.</div>
                                     <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, marginBottom: '24px', maxWidth: '420px', margin: '0 auto 24px' }}>
-                                        Two photos and a few key details so our stylists can personalise your report. Takes exactly <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>7 minutes</strong>.
+                                        Two photos and a few key details so our system can personalise your report before a human stylist reviews it. Takes exactly <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>7 minutes</strong>.
                                     </p>
                                     {contactPrefilled && form.email && (
                                         <div className="rounded-xl px-5 py-3 mb-8 inline-block" style={{ background: 'rgba(44,38,34,0.04)', border: '1px solid rgba(44,38,34,0.08)' }}>
@@ -1416,7 +1416,7 @@ function ManIntakePageInner() {
                                     </motion.div>
                                     <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Your intake is complete.</div>
                                     <p style={{ fontSize: '16px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, maxWidth: '420px', margin: '0 auto 20px' }}>
-                                        After your 30-minute consultation, your ICONIK Man Blueprint will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>5 working days</strong>.
+                                        Your ICONIK Man Blueprint will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>5 working days</strong> of submitting your intake.
                                     </p>
                                     <p className="iconik-micro" style={{ color: '#2C2622', opacity: 0.4 }}>Check your spam folder just in case.</p>
                                 </div>
