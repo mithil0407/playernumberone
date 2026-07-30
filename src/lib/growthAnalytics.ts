@@ -159,5 +159,9 @@ export function trackGrowthEvent(eventName: GrowthEventName, input: GrowthEventP
   );
 
   window.gtag?.("event", eventName, parameters);
-  window.fbq?.("trackCustom", eventName, parameters);
+  // Meta conversions use the standard capitalized Purchase event through
+  // trackPurchase(). Keep the lowercase analytics event in Google only.
+  if (eventName !== "purchase") {
+    window.fbq?.("trackCustom", eventName, parameters);
+  }
 }

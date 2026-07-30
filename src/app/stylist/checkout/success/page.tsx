@@ -5,9 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { trackPageView } from '@/lib/metaPixel';
+import { trackPurchase } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
-import { trackGrowthEvent } from '@/lib/growthAnalytics';
 
 // ── Razorpay types ────────────────────────────────────────────────────────────
 
@@ -155,19 +154,23 @@ function StylistSuccessInner() {
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
     useEffect(() => {
-        trackPageView('Stylist Checkout Success');
         const paymentId = sessionStorage.getItem('stylist_purchaseTracked') || '';
         const purchaseAmount = Number(localStorage.getItem('stylist_purchaseAmount') || 149);
         const trackedAmount = Number.isFinite(purchaseAmount) ? purchaseAmount : 149;
-        window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: trackedAmount, currency: 'USD', payment_id: paymentId });
-        window.fbq?.('track', 'Purchase', { value: trackedAmount, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
-        trackGrowthEvent('purchase', {
-            value: trackedAmount,
-            currency: 'USD',
-            transaction_id: paymentId || undefined,
-            content_source: 'style_scan',
-        });
-        sessionStorage.removeItem('stylist_purchaseTracked');
+        if (paymentId) {
+            window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: trackedAmount, currency: 'USD', payment_id: paymentId });
+            trackPurchase(
+                trackedAmount,
+                'ICONIK Style Blueprint',
+                ['iconik_style_blueprint'],
+                1,
+                'USD',
+                'style_scan',
+                paymentId,
+                paymentId,
+            );
+            sessionStorage.removeItem('stylist_purchaseTracked');
+        }
 
         // Read Edit state from localStorage
         const purchased = localStorage.getItem('stylist_editPurchased') === 'true';

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
-import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { trackViewContent, trackCTAClick } from '@/lib/metaPixel';
 import { captureAttribution } from '@/lib/attribution';
 import { BLUEPRINT_OFFER, CLIENT_PROOF } from '@/lib/siteFacts';
 
@@ -119,7 +119,6 @@ export default function GlobeLandingPage() {
 
     useEffect(() => {
         captureAttribution();
-        trackPageView('Globe Landing');
         trackViewContent('ICONIK Blueprint Globe', 97, ['iconik_blueprint_globe'], 'USD', 'Globe Funnel');
     }, []);
 

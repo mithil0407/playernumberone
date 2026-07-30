@@ -5,7 +5,7 @@ import { CheckCircle, Clock, Mail, Shield, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView } from '@/lib/metaPixel';
+import { trackCompleteRegistration } from '@/lib/metaPixel';
 
 function SuccessPageContent() {
   const searchParams = useSearchParams();
@@ -13,8 +13,6 @@ function SuccessPageContent() {
   const [orderId, setOrderId] = useState('');
 
   useEffect(() => {
-    trackPageView('Checkout Success');
-
     const urlCustomerId = searchParams.get('customer_id');
     const urlOrderId = searchParams.get('order_id');
     const dbOrderId = searchParams.get('db_order_id');

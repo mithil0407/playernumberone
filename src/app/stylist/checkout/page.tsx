@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Lock, Clock, ArrowLeft, Loader2 } from 'lucide-react';
-import { trackPageView, trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
+import { trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
@@ -200,7 +200,6 @@ export default function StylistCheckoutPage() {
     const [formError, setFormError] = useState('');
 
     useEffect(() => {
-        trackPageView('Stylist Checkout');
         trackInitiateCheckout(BLUEPRINT_PRICE, 1, 'ICONIK Style Blueprint', 'USD', 'Style Scan Funnel');
         const savedEmail = localStorage.getItem('stylist_customerEmail') || '';
         const savedPhone = localStorage.getItem('stylist_customerPhone') || '';

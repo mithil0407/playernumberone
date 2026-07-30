@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowRight, LockKeyhole } from 'lucide-react';
 import { getAttributionPayload } from '@/lib/attribution';
-import { trackPageView } from '@/lib/metaPixel';
 import { NamedColour } from '@/lib/supabaseStyleScan';
 
 interface ColorMirrorPayload {
@@ -81,7 +80,6 @@ export default function ColorMirrorResultPage() {
     const [leadSaving, setLeadSaving] = useState(true);
 
     useEffect(() => {
-        trackPageView('Color Mirror Result');
         if (typeof window !== 'undefined') {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (window as any).fbq?.('trackCustom', 'result_viewed', { funnel: 'color_mirror' });

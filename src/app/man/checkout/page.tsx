@@ -14,8 +14,7 @@ import {
   updateUserData,
   trackCTAClick,
   trackRemoveFromCart,
-  trackViewContent,
-  trackPageView
+  trackViewContent
 } from '@/lib/metaPixel';
 import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing } from '@/lib/manPricing';
@@ -69,10 +68,6 @@ export default function ManCheckoutPage() {
   const originalPrice = pricing.originalPrice;
   const discountedPrice = pricing.basePrice;
   const outfitPreviewPrice = pricing.addonPrice;
-  useEffect(() => {
-    trackPageView('Man Checkout');
-  }, []);
-
   useEffect(() => {
     if (regionLoading) return;
     trackViewContent('ICONIK Man Style Blueprint - Checkout', discountedPrice, [MAN_BLUEPRINT_PRODUCT_ID], pricing.currency, MAN_FUNNEL_CATEGORY);

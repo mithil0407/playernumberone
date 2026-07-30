@@ -9,7 +9,6 @@ import {
   trackAddToCart,
   trackCTAClick,
   trackInitiateCheckout,
-  trackPageView,
   trackPurchase,
   trackRemoveFromCart,
   trackViewContent,
@@ -108,7 +107,6 @@ export default function Offer2699CheckoutPage() {
   );
 
   useEffect(() => {
-    trackPageView('Offer 2699 Checkout');
     trackViewContent('ICONIK Style Blueprint - Checkout', BASE_PRICE, ['iconik_style_consultation'], 'INR', 'India');
 
     try {

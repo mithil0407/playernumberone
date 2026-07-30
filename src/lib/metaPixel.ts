@@ -1,6 +1,7 @@
 // Clean Meta Pixel Implementation for ICONIK
 // Pixel ID: 1373360484073939
 import { trackGrowthEvent } from '@/lib/growthAnalytics';
+import { trackMetaPageView } from '@/lib/metaPageView';
 
 export const META_PIXEL_ID = '1373360484073939';
 export const MAN_BLUEPRINT_PRODUCT_ID = 'iconik_man_style_blueprint';
@@ -21,11 +22,34 @@ interface MetaPixelOptions {
   eventID?: string;
 }
 
+type AdvancedMatchingData = {
+  em?: string;
+  ph?: string;
+};
+
+const validatedAdvancedMatching = (
+  email?: string,
+  phone?: string,
+): AdvancedMatchingData => {
+  const userData: AdvancedMatchingData = {};
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedPhone = phone?.replace(/\D/g, '');
+
+  if (normalizedEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    userData.em = normalizedEmail;
+  }
+  if (normalizedPhone && normalizedPhone.length >= 7 && normalizedPhone.length <= 15) {
+    userData.ph = normalizedPhone;
+  }
+
+  return userData;
+};
+
 // Meta Pixel function type
 declare global {
   interface Window {
     fbq: {
-      (command: 'init', pixelId: string, userData?: { em?: string; ph?: string;[key: string]: string | undefined }): void;
+      (command: 'init', pixelId: string, userData?: AdvancedMatchingData): void;
       (command: 'track', eventName: string, parameters?: MetaPixelData, options?: MetaPixelOptions): void;
       (command: 'trackCustom', eventName: string, parameters?: MetaPixelData, options?: MetaPixelOptions): void;
       callMethod?: (...args: unknown[]) => void;
@@ -33,6 +57,7 @@ declare global {
       loaded?: boolean;
       version?: string;
     };
+    __iconikLastMetaPageViewRoute?: string;
   }
 }
 
@@ -42,11 +67,15 @@ const isPixelLoaded = (): boolean => {
 };
 
 // Initialize Meta Pixel with advanced matching
-export const initMetaPixel = (userData?: { em?: string; ph?: string;[key: string]: string | undefined }) => {
+export const initMetaPixel = (userData?: AdvancedMatchingData) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('init', META_PIXEL_ID, userData || {});
+    const validatedUserData = validatedAdvancedMatching(userData?.em, userData?.ph);
+    window.fbq('init', META_PIXEL_ID, validatedUserData);
     window.fbq.loaded = true;
-    console.log('Meta Pixel initialized with advanced matching:', userData ? 'with user data' : 'without user data');
+    console.log(
+      'Meta Pixel initialized with advanced matching:',
+      Object.keys(validatedUserData).length ? 'with user data' : 'without user data',
+    );
   } else {
     console.error('Meta Pixel not available for initialization');
   }
@@ -55,14 +84,11 @@ export const initMetaPixel = (userData?: { em?: string; ph?: string;[key: string
 // Update user data for advanced matching
 export const updateUserData = (email?: string, phone?: string) => {
   if (isPixelLoaded()) {
-    const userData: { em?: string; ph?: string;[key: string]: string | undefined } = {};
-
-    if (email) userData.em = email;
-    if (phone) userData.ph = phone;
-
-    // Re-initialize with user data
-    window.fbq('init', META_PIXEL_ID, userData);
-    console.log('Meta Pixel updated with user data for advanced matching');
+    const userData = validatedAdvancedMatching(email, phone);
+    if (Object.keys(userData).length) {
+      window.fbq('init', META_PIXEL_ID, userData);
+      console.log('Meta Pixel updated with validated advanced matching data');
+    }
   }
 };
 
@@ -81,9 +107,16 @@ const trackEvent = (eventName: string, data?: MetaPixelData, options?: MetaPixel
   }
 };
 
-// Page View
-export const trackPageView = (contentCategory?: string) => {
-  trackEvent('PageView', contentCategory ? { content_category: contentCategory } : undefined);
+// Global route tracking owns PageView. This legacy entry point shares the same
+// window-level deduplication as a safety net while old bundles are still cached.
+export const trackPageViewRoute = (pathname: string, search = '') => {
+  if (typeof window === 'undefined') return;
+  return trackMetaPageView(window, pathname, search);
+};
+
+export const trackPageView = () => {
+  if (typeof window === 'undefined') return;
+  return trackPageViewRoute(window.location.pathname, window.location.search);
 };
 
 // View Content

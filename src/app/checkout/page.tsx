@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Lock } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent, trackPageView } from '@/lib/metaPixel';
+import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // Razorpay types
@@ -82,7 +82,6 @@ export default function CheckoutPage() {
   const savings = originalPrice - discountedPrice;
 
   useEffect(() => {
-    trackPageView('Checkout');
     trackViewContent('ICONIK Style Consultation - Checkout', discountedPrice, ['iconik_style_consultation'], 'INR', 'India');
   }, [discountedPrice]);
 

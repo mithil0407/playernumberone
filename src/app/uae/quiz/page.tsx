@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ArrowLeft, CheckCircle, Upload, Info } from 'lucide-react';
-import { trackCTAClick, trackPageView } from '@/lib/metaPixel';
+import { trackCTAClick } from '@/lib/metaPixel';
 import { getQuizPhoto, saveQuizPhoto } from '@/lib/uaeQuizStorage';
 
 interface QuizData {
@@ -125,10 +125,6 @@ export default function UaeQuizPage() {
       }
     }
     return options;
-  }, []);
-
-  useEffect(() => {
-    trackPageView('UAE Quiz');
   }, []);
 
   useEffect(() => {

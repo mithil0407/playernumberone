@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
-import { trackPageView, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
@@ -71,7 +71,6 @@ export default function GlobalCheckoutPage() {
     );
 
     useEffect(() => {
-        trackPageView('Global Checkout');
         trackInitiateCheckout(119, 1, 'ICONIK Blueprint Global', 'USD', 'Global Funnel');
     }, []);
 

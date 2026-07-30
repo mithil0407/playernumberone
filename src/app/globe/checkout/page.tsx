@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, Clock, Loader2, Lock, Shield, Sparkles } from 'lucide-react';
 import { getAttributionPayload } from '@/lib/attribution';
-import { trackInitiateCheckout, trackPageView, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -68,7 +68,6 @@ export default function GlobeCheckoutPage() {
   );
 
   useEffect(() => {
-    trackPageView('Globe Checkout');
     trackInitiateCheckout(BASE_PRICE, 1, 'ICONIK Blueprint Globe', 'USD', 'Globe Funnel', ['iconik_blueprint_globe']);
   }, []);
 

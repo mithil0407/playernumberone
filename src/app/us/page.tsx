@@ -1,6 +1,6 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -38,7 +38,6 @@ export default function Home() {
 
   // Track page view and product view on mount
   useEffect(() => {
-    trackPageView();
     trackViewContent('ICONIK Style Consultation', 119, ['iconik_style_consultation']);
   }, []);
 

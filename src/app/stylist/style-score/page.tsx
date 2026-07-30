@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Droplets, Eye, LockKeyhole, Palette } from 'lucide-react';
-import { trackCTAClick, trackPageView } from '@/lib/metaPixel';
+import { trackCTAClick } from '@/lib/metaPixel';
 
 function ColorMirrorCTA({ source, className = '' }: { source: string; className?: string }) {
     return (
@@ -55,10 +54,6 @@ function MirrorPreview() {
 }
 
 export default function StyleScoreLandingPage() {
-    useEffect(() => {
-        trackPageView('Color Mirror Landing');
-    }, []);
-
     const valueLines = [
         { icon: Eye, text: 'The colors draining your face — revealed free' },
         { icon: Palette, text: 'Your color season, diagnosed in 6 questions' },

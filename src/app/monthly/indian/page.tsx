@@ -1,6 +1,6 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -120,7 +120,6 @@ export default function MonthlyIndianPage() {
 
     // Track page view and product view on mount
     useEffect(() => {
-        trackPageView('India_Monthly');
         trackViewContent('ICONIK Monthly Subscription India', 1499, ['iconik_monthly_india'], 'INR', 'India_Monthly');
     }, []);
 

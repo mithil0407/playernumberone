@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
-import { trackPageView, updateUserData } from '@/lib/metaPixel';
+import { updateUserData } from '@/lib/metaPixel';
 import {
     ClaritySwatch,
     computeColorMirrorResult,
@@ -121,7 +121,6 @@ export default function ColorMirrorScanPage() {
     const [claritySwatch, setClaritySwatch] = useState<ClaritySwatch | ''>('');
     const [styleGoal, setStyleGoal] = useState<StyleGoal | ''>('');
 
-    useEffect(() => { trackPageView('Color Mirror Quiz'); }, []);
     useEffect(() => { if (step === FINAL_STEP && email) updateUserData(email); }, [step, email]);
 
     const goBack = useCallback(() => {

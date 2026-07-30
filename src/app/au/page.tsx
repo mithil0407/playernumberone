@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
-import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { trackViewContent, trackCTAClick } from '@/lib/metaPixel';
 
 // ── Data ────────────────────────────────────────────────────────────────────
 
@@ -123,7 +123,6 @@ export default function AULandingPage() {
 
     // Track page view on mount
     useEffect(() => {
-        trackPageView('AU Landing');
         trackViewContent('ICONIK Blueprint AU', 97, ['iconik_blueprint_au'], 'AUD', 'AU Funnel');
     }, []);
 
@@ -519,4 +518,3 @@ export default function AULandingPage() {
         </div>
     );
 }
-

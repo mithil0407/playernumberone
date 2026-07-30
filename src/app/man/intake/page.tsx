@@ -12,7 +12,7 @@ import {
     saveManIntakeSubmission,
     uploadManIntakePhoto,
 } from '@/lib/supabaseMan';
-import { trackPageView, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
+import { trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
 import { MAN_PRICING } from '@/lib/manPricing';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -540,7 +540,6 @@ function ManIntakePageInner() {
     });
 
     useEffect(() => {
-        trackPageView('Man Intake');
         const urlEmail = searchParams.get('email') || '';
         const urlPhone = searchParams.get('phone') || '';
         const lsEmail = typeof window !== 'undefined' ? localStorage.getItem('man_customerEmail') || '' : '';

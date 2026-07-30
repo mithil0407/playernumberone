@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Mail, MessageCircle, Clock, CheckCircle, Send } from 'lucide-react';
 import { SeoEditorialFooter, SeoEditorialHeader } from '@/components/seo/SeoEditorial';
-import { trackPageView, trackLead } from '@/lib/metaPixel';
+import { trackLead } from '@/lib/metaPixel';
 import {
   BUSINESS_HOURS,
   SUPPORT_EMAIL,
@@ -14,10 +14,6 @@ import {
 } from '@/lib/siteFacts';
 
 export default function ContactPage() {
-  // Track page view on mount
-  useEffect(() => {
-    trackPageView();
-  }, []);
   const [formData, setFormData] = useState({
     name: '',
     email: '',

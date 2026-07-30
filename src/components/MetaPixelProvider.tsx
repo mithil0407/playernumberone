@@ -1,11 +1,32 @@
 'use client';
 
+import { Suspense, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { trackPageViewRoute } from '@/lib/metaPixel';
+
 interface MetaPixelProviderProps {
   children: React.ReactNode;
 }
 
-// Pixel is initialised once in layout.tsx via the <Script> tag.
-// This provider exists purely as a wrapper so layout can stay a server component.
+function MetaPageViewTracker() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+
+  useEffect(() => {
+    trackPageViewRoute(pathname, search);
+  }, [pathname, search]);
+
+  return null;
+}
+
 export default function MetaPixelProvider({ children }: MetaPixelProviderProps) {
-  return <>{children}</>;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <MetaPageViewTracker />
+      </Suspense>
+      {children}
+    </>
+  );
 }

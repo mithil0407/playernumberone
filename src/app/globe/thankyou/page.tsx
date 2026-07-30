@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Sparkles, Shield, Clock } from 'lucide-react';
-import { trackPageView, trackCompleteRegistration, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackPurchase, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
@@ -67,7 +67,6 @@ function GlobeThankyouInner() {
     const [subscribeError, setSubscribeError] = useState('');
 
     useEffect(() => {
-        trackPageView('Globe Thankyou');
         if (email && phone) updateUserData(email, phone);
         const paymentId = sessionStorage.getItem('globe_purchaseTracked');
         if (paymentId) {

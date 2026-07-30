@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
-import { MAN_BLUEPRINT_PRODUCT_ID, MAN_FUNNEL_CATEGORY, trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { MAN_BLUEPRINT_PRODUCT_ID, MAN_FUNNEL_CATEGORY, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
 import { captureAttribution } from '@/lib/attribution';
 import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing, type ManPricing } from '@/lib/manPricing';
@@ -107,7 +107,6 @@ export default function ManLandingPage() {
 
     useEffect(() => {
         captureAttribution();
-        trackPageView('Man Landing');
     }, []);
 
     useEffect(() => {

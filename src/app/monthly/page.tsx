@@ -1,6 +1,6 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -122,7 +122,6 @@ export default function MonthlyPage() {
 
   // Track page view and product view on mount
   useEffect(() => {
-    trackPageView('USA_Monthly_Tiered');
     trackViewContent('ICONIK Monthly Tiered Pricing', 237, ['iconik_monthly_tiered'], 'USD', 'USA_Monthly_Tiered');
   }, []);
 

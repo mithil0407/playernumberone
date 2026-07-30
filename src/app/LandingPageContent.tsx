@@ -1,6 +1,6 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 import Link from 'next/link';
 import Image from 'next/image';
 import ExploreLinksSection from '@/components/ExploreLinksSection';
@@ -58,7 +58,6 @@ export default function LandingPageContent({
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
 
   useEffect(() => {
-    trackPageView('India');
     trackViewContent(BLUEPRINT_OFFER.name, basePrice, ['iconik_blueprint'], 'INR', 'India');
   }, [basePrice]);
 

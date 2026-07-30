@@ -129,6 +129,110 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
+        {/* Meta Pixel + Signals Gateway. PageView is owned by MetaPixelProvider. */}
+        <Script id="meta-signals-gateway" strategy="beforeInteractive">
+          {`
+            (function () {
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              window.fbq('set', 'autoConfig', false, '${META_PIXEL_ID}');
+              window.fbq('init', '${META_PIXEL_ID}', {});
+
+              function assign(target) {
+                for (var i = 1; i < arguments.length; i++) {
+                  var source = arguments[i];
+                  if (source) {
+                    for (var key in source) {
+                      if (Object.prototype.hasOwnProperty.call(source, key)) target[key] = source[key];
+                    }
+                  }
+                }
+                return target;
+              }
+
+              !(function(f,b,e,v,n,nn,tt,ss){
+                if (!f.cbq) {
+                  nn = f.cbq = function(){
+                    nn.initialized ? nn.apply(f.cbq, arguments) : nn.queue.push(arguments);
+                  };
+                  if (!f._cbq) f._cbq = nn;
+                  nn.push = nn;
+                  nn.loaded = !0;
+                  nn.version = '2.0';
+                  nn.queue = [];
+                  tt = b.createElement(e);
+                  tt.async = !0;
+                  tt.src = v;
+                  ss = b.getElementsByTagName(e)[0];
+                  ss.parentNode.insertBefore(tt, ss);
+                }
+                if (f.xbq) return;
+                if (f.fbq) f.xbq = f.fbq;
+                n = f.fbq = function(){
+                  var args = Array.prototype.slice.call(arguments);
+                  var method = args[0];
+                  var isTrack = method === 'track' || method === 'trackCustom';
+                  var isSingle = method === 'trackSingle' || method === 'trackSingleCustom';
+                  var eventId = args[isTrack ? 1 : 2] + '.' + Date.now() + Math.random().toString(36);
+                  if (isTrack && args.length < 4) {
+                    arguments = args.concat(args.length < 3 ? [{}, { eventID: eventId }] : [{ eventID: eventId }]);
+                  } else if (isSingle && arguments.length < 5) {
+                    arguments = args.concat(args.length < 4 ? [{}, { eventID: eventId }] : [{ eventID: eventId }]);
+                  }
+                  if (isTrack && (!arguments[3] || !arguments[3].eventID)) {
+                    arguments[3] = assign({}, arguments[3] || {}, { eventID: eventId });
+                  }
+                  if (isSingle && (!arguments[4] || !arguments[4].eventID)) {
+                    arguments[4] = assign({}, arguments[4] || {}, { eventID: eventId });
+                  }
+                  var metaContext = method === 'track' && arguments[1] === 'PageView'
+                    ? { allowDuplicatePageViews: true }
+                    : n;
+                  if (n.callMethod) {
+                    n.callMethod.apply(metaContext, arguments);
+                  } else if (f.xbq && f.xbq.callMethod) {
+                    // The Meta SDK can attach callMethod to the original fbq
+                    // captured before the Signals bridge replaced window.fbq.
+                    // Dispatch there so client-navigation event IDs are not
+                    // rewritten while waiting in the bridge queue.
+                    f.xbq.callMethod.apply(metaContext, arguments);
+                  } else {
+                    n.queue.push(arguments);
+                  }
+                  if (typeof method === 'string' && method.indexOf('track') === 0) {
+                    if (isSingle) {
+                      var newArgs = [arguments[0] === 'trackSingle' ? 'track' : 'trackCustom'];
+                      for (var i = 2; i < arguments.length; i++) newArgs.push(arguments[i]);
+                      arguments = newArgs;
+                    }
+                    if (arguments[1]) {
+                      f.cbq.initialized ? f.cbq.apply(f.cbq, arguments) : f.cbq.queue.push(arguments);
+                    }
+                  }
+                };
+                if (!f._fbq) f._fbq = n;
+                n.push = n;
+                n.loaded = !0;
+                n.version = '2.0';
+                n.queue = f.xbq ? f.xbq.queue : [];
+              })(window, document, 'script', 'https://connect.iconik.pro/sdk/5610545609651043442/events.js');
+
+              window.fbq.disablePushState = true;
+              if (window.xbq) {
+                window.xbq.disablePushState = true;
+              }
+              window.cbq('setHost', 'https://connect.iconik.pro/');
+              window.cbq('init', '5610545609651043442');
+              window.cbq('set', 'integrationMethod', 'forkFromSnippetCode@1.0');
+            })();
+          `}
+        </Script>
       </head>
       <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${inter.className}`}>
         {/* Google Analytics — single gtag init shared across both properties */}
@@ -145,32 +249,6 @@ export default function RootLayout({
             ${GA_MEASUREMENT_IDS.map((id) => `gtag('config', '${id}');`).join("\n            ")}
           `}
         </Script>
-
-        {/* Meta Pixel */}
-        <Script id="meta-pixel-base" strategy="afterInteractive">
-          {`
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${META_PIXEL_ID}');
-          `}
-        </Script>
-
-        <noscript>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
-            alt=""
-          />
-        </noscript>
 
         {/* Organization + WebSite JSON-LD — AEO entity signal */}
         <script

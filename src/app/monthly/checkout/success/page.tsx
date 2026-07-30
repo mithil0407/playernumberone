@@ -5,7 +5,7 @@ import { CheckCircle, ArrowRight, Calendar, Users, Sparkles, Crown } from 'lucid
 import Link from 'next/link';
 import { useEffect, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView, trackPurchase } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackPurchase } from '@/lib/metaPixel';
 
 // Tier types
 type TierKey = 'starter' | 'seasonal' | 'vip';
@@ -103,7 +103,6 @@ function SuccessPageContent() {
 
     useEffect(() => {
         // Track page view
-        trackPageView('USA_Monthly_Tiered');
 
         // Get tier from URL or localStorage
         const tierParam = searchParams.get('tier') as TierKey | null;
