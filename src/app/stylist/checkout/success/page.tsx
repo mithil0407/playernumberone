@@ -64,6 +64,7 @@ interface StylistEditRetryContext {
 const EDIT_STATE_KEY = 'stylist_editState';
 const EDIT_RETRY_CONTEXT_KEY = 'stylist_editRetryContext';
 const EDIT_SETUP_ERROR_KEY = 'stylist_editSetupError';
+const EDIT_PRICE = 39;
 
 function isEditState(value: string | null): value is StylistEditCheckoutState {
     return value === 'not_selected' ||
@@ -158,7 +159,6 @@ function StylistSuccessInner() {
         const purchaseAmount = Number(localStorage.getItem('stylist_purchaseAmount') || 149);
         const trackedAmount = Number.isFinite(purchaseAmount) ? purchaseAmount : 149;
         if (paymentId) {
-            window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: trackedAmount, currency: 'USD', payment_id: paymentId });
             trackPurchase(
                 trackedAmount,
                 'ICONIK Style Blueprint',
@@ -227,7 +227,17 @@ function StylistSuccessInner() {
                 persistEditState('authorized');
                 setEditPurchased(true);
                 setEditState('authorized');
-                window.fbq?.('trackCustom', 'edit_purchased', { funnel: 'style_scan', source: editSelected ? 'checkout_pending' : 'success_page' });
+                if (response.razorpay_payment_id) {
+                    trackPurchase(
+                        EDIT_PRICE,
+                        'THE ICONIK EDIT',
+                        ['iconik_edit_subscription'],
+                        1,
+                        'USD',
+                        'style_scan_edit',
+                        response.razorpay_payment_id,
+                    );
+                }
                 setEditLoading(false);
             },
             prefill: { name: email.split('@')[0], email, contact: phone },
@@ -258,7 +268,7 @@ function StylistSuccessInner() {
                 }
             }, 10000);
         }
-    }, [email, phone, razorpayLoaded, editSelected]);
+    }, [email, phone, razorpayLoaded]);
 
     useEffect(() => {
         if (!editSelected || editPurchased || editState !== 'selected_ready_to_authorize' || !pendingSubId || !pendingSubKey) {

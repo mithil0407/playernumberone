@@ -1,4 +1,5 @@
 import { getAttributionPayload } from "@/lib/attribution";
+import { isGoogleOnlyGrowthEvent } from "@/lib/metaTrackingContract";
 
 export type GrowthEventName =
   | "article_view"
@@ -159,9 +160,9 @@ export function trackGrowthEvent(eventName: GrowthEventName, input: GrowthEventP
   );
 
   window.gtag?.("event", eventName, parameters);
-  // Meta conversions use the standard capitalized Purchase event through
-  // trackPurchase(). Keep the lowercase analytics event in Google only.
-  if (eventName !== "purchase") {
+  // Standard Meta conversions are emitted by the dedicated helpers. Keep
+  // their lower-case growth events in Google only to avoid duplicate signals.
+  if (!isGoogleOnlyGrowthEvent(eventName)) {
     window.fbq?.("trackCustom", eventName, parameters);
   }
 }

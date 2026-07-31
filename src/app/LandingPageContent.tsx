@@ -1,6 +1,13 @@
 'use client';
 
-import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
+import {
+  INDIA_BLUEPRINT_PRODUCT_ID,
+  INDIA_OFFER_2699_FUNNEL_CATEGORY,
+  INDIA_ROOT_FUNNEL_CATEGORY,
+  trackCTAClick,
+  trackViewContent,
+} from '@/lib/metaPixel';
+import { INDIA_FUNNEL_ENTRY_STORAGE_KEY, type IndiaFunnelEntry } from '@/lib/metaTrackingContract';
 import Link from 'next/link';
 import Image from 'next/image';
 import ExploreLinksSection from '@/components/ExploreLinksSection';
@@ -57,9 +64,22 @@ export default function LandingPageContent({
   const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
 
+  // `/` and `/offer-2699` render this same component at the same price into the
+  // same checkout, so without a distinct category their events are identical in
+  // Events Manager and neither entry point can be measured.
+  const funnelEntry: IndiaFunnelEntry = isOffer2699 ? 'offer2699' : 'root';
+  const contentCategory = isOffer2699 ? INDIA_OFFER_2699_FUNNEL_CATEGORY : INDIA_ROOT_FUNNEL_CATEGORY;
+
   useEffect(() => {
-    trackViewContent(BLUEPRINT_OFFER.name, basePrice, ['iconik_blueprint'], 'INR', 'India');
-  }, [basePrice]);
+    // Carried to the shared checkout so InitiateCheckout and Purchase are
+    // attributed back to the entry point the visitor actually arrived through.
+    try {
+      window.sessionStorage.setItem(INDIA_FUNNEL_ENTRY_STORAGE_KEY, funnelEntry);
+    } catch {
+      // Analytics must never block the user journey.
+    }
+    trackViewContent(BLUEPRINT_OFFER.name, basePrice, [INDIA_BLUEPRINT_PRODUCT_ID], 'INR', contentCategory);
+  }, [basePrice, contentCategory, funnelEntry]);
 
   const transformationImages = useMemo(() => [
     { src: '/transformation-1.webp', testimonial: 'Finally found my signature style! I feel confident every day.', name: 'Shreya, Mumbai' },
@@ -173,7 +193,7 @@ export default function LandingPageContent({
           {/* CTA */}
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India')}
+            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', contentCategory)}
             className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-10 py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform mb-8"
           >
             <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
@@ -487,7 +507,7 @@ export default function LandingPageContent({
           <div className="text-center mt-12">
             <Link
               href={checkoutHref}
-              onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', 'India')}
+              onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', contentCategory)}
               className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
             >
               <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Get Your Style Consultation'}</span>
@@ -582,7 +602,7 @@ export default function LandingPageContent({
           </div>
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', 'India')}
+            onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', contentCategory)}
             className="inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
           >
             <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : `Get Your Style Consultation — ${formattedBasePrice}`}</span>
@@ -685,7 +705,7 @@ export default function LandingPageContent({
           </p>
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', 'India')}
+            onClick={() => trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', contentCategory)}
             className="inline-flex items-center gap-5 px-10 py-5 rounded-full mb-6 hover:opacity-75 transition-opacity me-glass-light"
           >
             <span className="iconik-display" style={{ fontSize: '28px', color: '#F4EFE5' }}>{formattedBasePrice}</span>
@@ -773,7 +793,7 @@ export default function LandingPageContent({
           </div>
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', 'India')}
+            onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', contentCategory)}
             className="w-full inline-flex items-center justify-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-6 py-4 rounded-full transition-all duration-300 block"
           >
             <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>

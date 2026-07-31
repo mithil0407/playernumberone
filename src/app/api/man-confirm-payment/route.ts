@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(has_outfit_preview ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
       await sendMetaPurchaseEvent({
         eventId: razorpay_payment_id,
-        eventSourceUrl: orderAttribution.landing_page || 'https://www.iconik.pro/man/checkout',
+        eventSourceUrl: 'https://www.iconik.pro/man/checkout',
         customerEmail: emailForTracking,
         customerPhone: phoneForTracking,
         amount: Number(amount ?? updatedOrder.amount ?? 0),
@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
         contentName: 'ICONIK Man Complete Package',
         contentIds,
         numItems: contentIds.length,
+        contentCategory: 'Man Funnel',
         attribution: orderAttribution,
         userAgent: request.headers.get('user-agent'),
         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip'),

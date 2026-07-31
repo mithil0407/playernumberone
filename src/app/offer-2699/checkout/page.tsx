@@ -6,6 +6,11 @@ import Image from 'next/image';
 import { ArrowLeft, Check, ChevronRight, Lock, ShieldCheck } from 'lucide-react';
 import { getAttributionPayload } from '@/lib/attribution';
 import {
+  INDIA_BLUEPRINT_CONTENT_NAME,
+  INDIA_BLUEPRINT_PRODUCT_ID,
+  INDIA_PHONE_COUNTRY_CODE,
+  buildIndiaBlueprintContentIds,
+  storeMetaPurchaseHandoff,
   trackAddToCart,
   trackCTAClick,
   trackInitiateCheckout,
@@ -14,6 +19,14 @@ import {
   trackViewContent,
   updateUserData,
 } from '@/lib/metaPixel';
+import {
+  INDIA_FUNNEL_CATEGORY,
+  INDIA_FUNNEL_ENTRY_STORAGE_KEY,
+  INDIA_OUTFIT_PREVIEW_PRODUCT_ID,
+  INDIA_SMART_SHOPPER_PRODUCT_ID,
+  INDIA_WARDROBE_DETOX_PRODUCT_ID,
+  indiaFunnelCategoryFromEntry,
+} from '@/lib/metaTrackingContract';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -97,6 +110,10 @@ export default function Offer2699CheckoutPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  // Which landing page the visitor entered through. `/` and `/offer-2699` share
+  // this checkout, so without carrying the entry point forward neither can be
+  // credited for the conversions it drove.
+  const [contentCategory, setContentCategory] = useState<string>(INDIA_FUNNEL_CATEGORY);
 
   const totalAmount = useMemo(
     () => BASE_PRICE
@@ -107,7 +124,16 @@ export default function Offer2699CheckoutPage() {
   );
 
   useEffect(() => {
-    trackViewContent('ICONIK Style Blueprint - Checkout', BASE_PRICE, ['iconik_style_consultation'], 'INR', 'India');
+    let entryCategory = INDIA_FUNNEL_CATEGORY;
+    try {
+      entryCategory = indiaFunnelCategoryFromEntry(
+        window.sessionStorage.getItem(INDIA_FUNNEL_ENTRY_STORAGE_KEY),
+      );
+    } catch {
+      // Analytics must never block the user journey.
+    }
+    setContentCategory(entryCategory);
+    trackViewContent('ICONIK Style Blueprint - Checkout', BASE_PRICE, [INDIA_BLUEPRINT_PRODUCT_ID], 'INR', entryCategory);
 
     try {
       const storedDraft = window.sessionStorage.getItem(STORAGE_KEY);
@@ -173,12 +199,12 @@ export default function Offer2699CheckoutPage() {
   const continueToCustomise = useCallback((event: React.FormEvent) => {
     event.preventDefault();
     if (!validateDetails()) return;
-    updateUserData(email, phone);
-    trackCTAClick('Continue to Customise Your Package', 'Offer Checkout Details', BASE_PRICE, 'INR', 'India');
+    updateUserData(email, phone, INDIA_PHONE_COUNTRY_CODE);
+    trackCTAClick('Continue to Customise Your Package', 'Offer Checkout Details', BASE_PRICE, 'INR', contentCategory);
     window.history.pushState({ ...window.history.state, iconikOfferStep: 'customise' }, '', window.location.href);
     setStep('customise');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [email, phone, validateDetails]);
+  }, [email, phone, validateDetails, contentCategory]);
 
   const returnToDetails = useCallback(() => {
     if (window.history.state?.iconikOfferStep === 'customise') {
@@ -190,18 +216,18 @@ export default function Offer2699CheckoutPage() {
 
   const handleAddonChange = useCallback((addon: AddonKey, checked: boolean) => {
     const details = {
-      outfitpreview: { name: 'AI Outfit Preview', price: OUTFIT_PREVIEW_PRICE, id: 'outfit_preview' },
-      wardrobedetox: { name: 'Wardrobe Detox', price: WARDROBE_DETOX_PRICE, id: 'wardrobe_detox' },
-      smartshopper: { name: "Smart Shopper's Guide", price: SMART_SHOPPER_PRICE, id: 'smart_shoppers_guide' },
+      outfitpreview: { name: 'AI Outfit Preview', price: OUTFIT_PREVIEW_PRICE, id: INDIA_OUTFIT_PREVIEW_PRODUCT_ID },
+      wardrobedetox: { name: 'Wardrobe Detox', price: WARDROBE_DETOX_PRICE, id: INDIA_WARDROBE_DETOX_PRODUCT_ID },
+      smartshopper: { name: "Smart Shopper's Guide", price: SMART_SHOPPER_PRICE, id: INDIA_SMART_SHOPPER_PRODUCT_ID },
     }[addon];
 
-    if (checked) trackAddToCart(details.name, details.price, details.id, 'INR', 'India');
-    else trackRemoveFromCart(details.name, details.price, details.id, 'INR', 'India');
+    if (checked) trackAddToCart(details.name, details.price, details.id, 'INR', contentCategory);
+    else trackRemoveFromCart(details.name, details.price, details.id, 'INR', contentCategory);
 
     if (addon === 'outfitpreview') setOutfitPreview(checked);
     if (addon === 'wardrobedetox') setWardrobeDetox(checked);
     if (addon === 'smartshopper') setSmartShopper(checked);
-  }, []);
+  }, [contentCategory]);
 
   const processPayment = useCallback(async (skipAddons = false) => {
     if (!validateDetails()) {
@@ -218,10 +244,11 @@ export default function Offer2699CheckoutPage() {
       + (selected.outfitPreview ? OUTFIT_PREVIEW_PRICE : 0)
       + (selected.wardrobeDetox ? WARDROBE_DETOX_PRICE : 0)
       + (selected.smartShopper ? SMART_SHOPPER_PRICE : 0);
-    const itemCount = 1 + Number(selected.outfitPreview) + Number(selected.wardrobeDetox) + Number(selected.smartShopper);
+    const contentIds = buildIndiaBlueprintContentIds(selected);
+    const itemCount = contentIds.length;
 
     setIsProcessing(true);
-    trackInitiateCheckout(paymentAmount, itemCount, 'ICONIK Style Blueprint', 'INR', 'India');
+    trackInitiateCheckout(paymentAmount, itemCount, 'ICONIK Style Blueprint', 'INR', contentCategory, contentIds);
 
     try {
       const response = await fetch('/api/payment', {
@@ -233,6 +260,9 @@ export default function Offer2699CheckoutPage() {
           customer_phone: phone,
           amount: paymentAmount,
           checkout_source: 'offer_2699_checkout',
+          // Recorded in the Razorpay order notes so the webhook can send the
+          // server-side Purchase with the same content_category as the browser.
+          funnel_entry: contentCategory,
           base_product: 'Iconik Style Consultation',
           add_ons: {
             wardrobe_detox: selected.wardrobeDetox,
@@ -263,15 +293,33 @@ export default function Offer2699CheckoutPage() {
           image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
           handler: (razorpayResponse) => {
-            const purchasedItems = ['iconik_style_consultation'];
-            if (selected.outfitPreview) purchasedItems.push('outfit_preview');
-            if (selected.wardrobeDetox) purchasedItems.push('wardrobe_detox');
-            if (selected.smartShopper) purchasedItems.push('smart_shoppers_guide');
-            trackPurchase(paymentAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'INR', 'India', razorpayResponse.razorpay_payment_id);
+            const paymentId = razorpayResponse.razorpay_payment_id;
+            // Passing the payment ID as the event ID makes this the same event
+            // as the Conversions API Purchase the order.paid webhook will send.
+            trackPurchase(
+              paymentAmount,
+              INDIA_BLUEPRINT_CONTENT_NAME,
+              contentIds,
+              contentIds.length,
+              'INR',
+              contentCategory,
+              paymentId,
+              paymentId,
+            );
+
+            storeMetaPurchaseHandoff({
+              paymentId,
+              amount: paymentAmount,
+              currency: 'INR',
+              contentIds,
+              contentName: INDIA_BLUEPRINT_CONTENT_NAME,
+              contentCategory,
+              email,
+              phone,
+              phoneCountryCode: INDIA_PHONE_COUNTRY_CODE,
+            });
 
             window.sessionStorage.removeItem(STORAGE_KEY);
-            window.localStorage.setItem('purchaseAmount', paymentAmount.toString());
-            window.localStorage.setItem('purchaseCurrency', 'INR');
             window.localStorage.setItem('customerEmail', email);
             window.localStorage.setItem('customerPhone', phone);
             if (responseData.customer_id) {
@@ -283,7 +331,10 @@ export default function Offer2699CheckoutPage() {
               window.sessionStorage.setItem('orderId', responseData.db_order_id);
             }
 
-            window.location.href = `/checkout/success?payment_id=${razorpayResponse.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${paymentAmount}`;
+            // Only the payment ID travels in the URL — it is the success page's
+            // deduplication key. The customer and order IDs are handed over in
+            // storage above rather than leaking into Meta's event_source_url.
+            window.location.href = `/checkout/success?payment_id=${encodeURIComponent(paymentId)}`;
           },
           prefill: { name: email.split('@')[0], email, contact: phone },
           theme: { color: '#2C2622' },
@@ -316,7 +367,7 @@ export default function Offer2699CheckoutPage() {
       setIsProcessing(false);
       window.alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [email, phone, outfitPreview, wardrobeDetox, smartShopper, razorpayLoaded, validateDetails]);
+  }, [email, phone, outfitPreview, wardrobeDetox, smartShopper, razorpayLoaded, validateDetails, contentCategory]);
 
   const addonCards = [
     {
@@ -507,7 +558,7 @@ export default function Offer2699CheckoutPage() {
             <button
               type="button"
               disabled={isProcessing}
-              onClick={() => { trackCTAClick('Skip Add-ons', 'Offer Checkout Payment Bar', BASE_PRICE, 'INR', 'India'); void processPayment(true); }}
+              onClick={() => { trackCTAClick('Skip Add-ons', 'Offer Checkout Payment Bar', BASE_PRICE, 'INR', contentCategory); void processPayment(true); }}
               className="mt-2 text-xs font-medium text-[#2C2622]/65 underline decoration-[#2C2622]/25 underline-offset-4 hover:text-[#2C2622] disabled:opacity-50"
             >
               Skip add-ons and continue with ₹2,699
@@ -520,7 +571,7 @@ export default function Offer2699CheckoutPage() {
               <button
                 type="button"
                 disabled={isProcessing}
-                onClick={() => { trackCTAClick('Pay Securely', 'Offer Checkout Payment Bar', totalAmount, 'INR', 'India'); void processPayment(false); }}
+                onClick={() => { trackCTAClick('Pay Securely', 'Offer Checkout Payment Bar', totalAmount, 'INR', contentCategory); void processPayment(false); }}
                 className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-full bg-[#2C2622] px-4 py-3 text-center text-sm font-semibold text-[#F4EFE5] transition hover:bg-[#3d3430] focus:outline-none focus:ring-2 focus:ring-[#2C2622] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
               >
                 <Lock className="h-4 w-4 shrink-0" />

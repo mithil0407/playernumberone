@@ -66,14 +66,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Iconik Styling Team", url: "https://www.iconik.pro" }],
   creator: LEGAL_ENTITY_NAME,
   publisher: LEGAL_ENTITY_NAME,
-  alternates: {
-    canonical: "https://www.iconik.pro",
-  },
   openGraph: {
     title: "Iconik — Scientific Personal Styling for Indian Women",
     description: `India's scientific personal styling service. Get 20 personalised outfit formulas and a 30-minute stylist consultation, delivered within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation.`,
     type: "website",
-    url: "https://www.iconik.pro",
     siteName: "Iconik",
     locale: "en_IN",
     images: [

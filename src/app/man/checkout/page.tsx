@@ -5,7 +5,11 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Lock } from 'lucide-react';
 import {
+  INDIA_PHONE_COUNTRY_CODE,
   MAN_BLUEPRINT_PRODUCT_ID,
+  MAN_EDIT_CONTENT_NAME,
+  MAN_EDIT_FUNNEL_CATEGORY,
+  MAN_EDIT_PRODUCT_ID,
   MAN_FUNNEL_CATEGORY,
   MAN_OUTFIT_PREVIEW_PRODUCT_ID,
   trackAddToCart,
@@ -20,7 +24,6 @@ import { useManRegion } from '@/hooks/useManRegion';
 import { getManPricing } from '@/lib/manPricing';
 import { getAttributionPayload } from '@/lib/attribution';
 
-const MAN_EDIT_PRODUCT_ID = 'iconik_man_edit_monthly';
 const MAN_EDIT_MONTHLY_PRICE = 699;
 
 interface RazorpayResponse {
@@ -121,8 +124,11 @@ export default function ManCheckoutPage() {
       }
     }
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (name === 'email' && value.includes('@') && formData.phone.length >= 7) updateUserData(value, formData.phone);
-    else if (name === 'phone' && value.length >= 7 && formData.email.includes('@')) updateUserData(formData.email, value);
+    // India collects a 10-digit national number, which Meta cannot match
+    // without its country code. International numbers already carry theirs.
+    const phoneCountryCode = isIndia ? INDIA_PHONE_COUNTRY_CODE : undefined;
+    if (name === 'email' && value.includes('@') && formData.phone.length >= 7) updateUserData(value, formData.phone, phoneCountryCode);
+    else if (name === 'phone' && value.length >= 7 && formData.email.includes('@')) updateUserData(formData.email, value, phoneCountryCode);
   }, [formData.phone, formData.email, isIndia]);
 
   const handleAddonChange = useCallback((checked: boolean) => {
@@ -132,8 +138,11 @@ export default function ManCheckoutPage() {
   }, [outfitPreviewPrice, pricing.currency]);
 
   const handleEditSubscriptionChange = useCallback((checked: boolean) => {
-    if (checked) trackAddToCart('Iconik Edit Monthly', MAN_EDIT_MONTHLY_PRICE, MAN_EDIT_PRODUCT_ID, 'INR', MAN_FUNNEL_CATEGORY);
-    else trackRemoveFromCart('Iconik Edit Monthly', MAN_EDIT_MONTHLY_PRICE, MAN_EDIT_PRODUCT_ID, 'INR', MAN_FUNNEL_CATEGORY);
+    // Categorised as the Edit funnel, not the Blueprint funnel, so this add-on's
+    // AddToCart and its own Purchase form one traceable funnel. India-only, so
+    // INR is correct regardless of the visitor's region.
+    if (checked) trackAddToCart(MAN_EDIT_CONTENT_NAME, MAN_EDIT_MONTHLY_PRICE, MAN_EDIT_PRODUCT_ID, 'INR', MAN_EDIT_FUNNEL_CATEGORY);
+    else trackRemoveFromCart(MAN_EDIT_CONTENT_NAME, MAN_EDIT_MONTHLY_PRICE, MAN_EDIT_PRODUCT_ID, 'INR', MAN_EDIT_FUNNEL_CATEGORY);
     setIconikEditSubscription(checked);
   }, []);
 
@@ -170,7 +179,23 @@ export default function ManCheckoutPage() {
         description: 'Iconik Edit Monthly',
         subscription_id: data.subscription_id,
         image: `${window.location.origin}/logopayment.webp`,
-        handler: function () {
+        handler: function (subscriptionResponse: RazorpayResponse) {
+          // The Edit subscription is a separate Razorpay order, so it needs its
+          // own Purchase — its price is not part of the Blueprint order value.
+          // The payment ID is the event ID, matching the subscription.charged
+          // webhook so Meta collapses the pair into one sale.
+          if (subscriptionResponse?.razorpay_payment_id) {
+            trackPurchase(
+              MAN_EDIT_MONTHLY_PRICE,
+              MAN_EDIT_CONTENT_NAME,
+              [MAN_EDIT_PRODUCT_ID],
+              1,
+              'INR',
+              MAN_EDIT_FUNNEL_CATEGORY,
+              subscriptionResponse.razorpay_payment_id,
+              subscriptionResponse.razorpay_payment_id,
+            );
+          }
           resolve();
         },
         prefill: {
@@ -200,9 +225,11 @@ export default function ManCheckoutPage() {
     if (!emailRegex.test(formData.email)) { alert('Please enter a valid email address'); return; }
 
     setIsProcessing(true);
-    const itemCount = 1 + (outfitPreviewAddon ? 1 : 0) + (iconikEditSubscription ? 1 : 0);
-    const checkoutItems = [MAN_BLUEPRINT_PRODUCT_ID, ...(outfitPreviewAddon ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : []), ...(iconikEditSubscription ? [MAN_EDIT_PRODUCT_ID] : [])];
-    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Man Style Blueprint', pricing.currency, MAN_FUNNEL_CATEGORY, checkoutItems);
+    // Scoped to what this Razorpay order charges. The Edit subscription is a
+    // separate order with its own InitiateCheckout/Purchase, so counting it here
+    // would report more items than `totalAmount` covers.
+    const checkoutItems = [MAN_BLUEPRINT_PRODUCT_ID, ...(outfitPreviewAddon ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+    trackInitiateCheckout(totalAmount, checkoutItems.length, 'ICONIK Man Style Blueprint', pricing.currency, MAN_FUNNEL_CATEGORY, checkoutItems);
 
     try {
       let responseData: {
@@ -274,10 +301,12 @@ export default function ManCheckoutPage() {
           image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
           handler: async function (response: RazorpayResponse) {
+            // Only what this Razorpay order actually charged for. The Edit
+            // subscription is billed separately and fires its own Purchase, so
+            // including it here would report 3 items against a 2-item value and
+            // disagree with the Conversions API event of the same ID.
             const purchasedItems = [MAN_BLUEPRINT_PRODUCT_ID];
             if (outfitPreviewAddon) purchasedItems.push(MAN_OUTFIT_PREVIEW_PRODUCT_ID);
-
-            if (iconikEditSubscription) purchasedItems.push(MAN_EDIT_PRODUCT_ID);
 
             trackPurchase(totalAmount, 'ICONIK Man Complete Package', purchasedItems, purchasedItems.length, pricing.currency, MAN_FUNNEL_CATEGORY, response.razorpay_payment_id, response.razorpay_payment_id);
 

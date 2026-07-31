@@ -291,7 +291,15 @@ export default function CheckoutPage() {
             if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
 
             // Track SINGLE purchase event with all items (no duplicates)
-            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length);
+            trackPurchase(
+              totalAmount,
+              'ICONIK Complete Package',
+              purchasedItems,
+              purchasedItems.length,
+              'USD',
+              'USA',
+              response.razorpay_payment_id,
+            );
 
             // Store purchase amount and currency for success page tracking
             localStorage.setItem('purchaseAmount', totalAmount.toString());

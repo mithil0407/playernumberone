@@ -5,7 +5,26 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, Shield, Clock, Users, CheckCircle, Lock } from 'lucide-react';
-import { trackAddToCart, trackInitiateCheckout, trackPurchase, updateUserData, trackCTAClick, trackRemoveFromCart, trackViewContent } from '@/lib/metaPixel';
+import {
+  INDIA_BLUEPRINT_CONTENT_NAME,
+  INDIA_BLUEPRINT_PRODUCT_ID,
+  INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY,
+  INDIA_PHONE_COUNTRY_CODE,
+  buildIndiaBlueprintContentIds,
+  storeMetaPurchaseHandoff,
+  trackAddToCart,
+  trackInitiateCheckout,
+  trackPurchase,
+  updateUserData,
+  trackCTAClick,
+  trackRemoveFromCart,
+  trackViewContent,
+} from '@/lib/metaPixel';
+import {
+  INDIA_OUTFIT_PREVIEW_PRODUCT_ID,
+  INDIA_SMART_SHOPPER_PRODUCT_ID,
+  INDIA_WARDROBE_DETOX_PRODUCT_ID,
+} from '@/lib/metaTrackingContract';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // Razorpay types
@@ -82,7 +101,7 @@ export default function CheckoutPage() {
   const savings = originalPrice - discountedPrice;
 
   useEffect(() => {
-    trackViewContent('ICONIK Style Consultation - Checkout', discountedPrice, ['iconik_style_consultation'], 'INR', 'India');
+    trackViewContent('ICONIK Style Consultation - Checkout', discountedPrice, [INDIA_BLUEPRINT_PRODUCT_ID], 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY);
   }, [discountedPrice]);
 
   const [wardrobeDetoxAddon, setWardrobeDetoxAddon] = useState(false);
@@ -144,22 +163,22 @@ export default function CheckoutPage() {
     }
     setFormData(prev => ({ ...prev, [name]: value }));
     if (name === 'email' && value.includes('@') && formData.phone.length === 10) {
-      updateUserData(value, formData.phone);
+      updateUserData(value, formData.phone, INDIA_PHONE_COUNTRY_CODE);
     } else if (name === 'phone' && value.length === 10 && formData.email.includes('@')) {
-      updateUserData(formData.email, value);
+      updateUserData(formData.email, value, INDIA_PHONE_COUNTRY_CODE);
     }
   }, [formData.phone, formData.email]);
 
   const addonDetails = useMemo(() => ({
-    wardrobedetox: { name: 'Wardrobe Detox', price: 1499, id: 'wardrobe_detox' },
-    smartshopper: { name: "Smart Shopper's Guide", price: 499, id: 'smart_shoppers_guide' },
-    outfitpreview: { name: 'Outfit Preview on You', price: 999, id: 'outfit_preview' },
+    wardrobedetox: { name: 'Wardrobe Detox', price: 1499, id: INDIA_WARDROBE_DETOX_PRODUCT_ID },
+    smartshopper: { name: "Smart Shopper's Guide", price: 499, id: INDIA_SMART_SHOPPER_PRODUCT_ID },
+    outfitpreview: { name: 'Outfit Preview on You', price: 999, id: INDIA_OUTFIT_PREVIEW_PRODUCT_ID },
   }), []);
 
   const handleAddonChange = useCallback((addonType: 'wardrobedetox' | 'smartshopper' | 'outfitpreview', checked: boolean) => {
     const addon = addonDetails[addonType];
-    if (checked) trackAddToCart(addon.name, addon.price, addon.id, 'INR', 'India');
-    else trackRemoveFromCart(addon.name, addon.price, addon.id, 'INR', 'India');
+    if (checked) trackAddToCart(addon.name, addon.price, addon.id, 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY);
+    else trackRemoveFromCart(addon.name, addon.price, addon.id, 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY);
     if (addonType === 'wardrobedetox') setWardrobeDetoxAddon(checked);
     else if (addonType === 'smartshopper') setSmartShoppersGuideAddon(checked);
     else if (addonType === 'outfitpreview') setOutfitPreviewAddon(checked);
@@ -177,7 +196,7 @@ export default function CheckoutPage() {
     }
     setIsProcessing(true);
     const itemCount = 1 + (wardrobeDetoxAddon ? 1 : 0) + (smartShoppersGuideAddon ? 1 : 0) + (outfitPreviewAddon ? 1 : 0);
-    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'INR', 'India');
+    trackInitiateCheckout(totalAmount, itemCount, 'ICONIK Style Consultation', 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY);
     try {
       const orderData = {
         customer_name: formData.email.split('@')[0],
@@ -218,13 +237,33 @@ export default function CheckoutPage() {
           image: `${window.location.origin}/logopayment.webp`,
           order_id: responseData.razorpay_order_id,
           handler: async function (response: RazorpayResponse) {
-            const purchasedItems = ['iconik_style_consultation'];
-            if (wardrobeDetoxAddon) purchasedItems.push('wardrobe_detox');
-            if (smartShoppersGuideAddon) purchasedItems.push('smart_shoppers_guide');
-            if (outfitPreviewAddon) purchasedItems.push('outfit_preview');
-            trackPurchase(totalAmount, 'ICONIK Complete Package', purchasedItems, purchasedItems.length, 'INR', 'India', response.razorpay_payment_id);
-            localStorage.setItem('purchaseAmount', totalAmount.toString());
-            localStorage.setItem('purchaseCurrency', 'INR');
+            const paymentId = response.razorpay_payment_id;
+            const purchasedItems = buildIndiaBlueprintContentIds({
+              wardrobeDetox: wardrobeDetoxAddon,
+              smartShopper: smartShoppersGuideAddon,
+              outfitPreview: outfitPreviewAddon,
+            });
+            trackPurchase(
+              totalAmount,
+              INDIA_BLUEPRINT_CONTENT_NAME,
+              purchasedItems,
+              purchasedItems.length,
+              'INR',
+              INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY,
+              paymentId,
+              paymentId,
+            );
+            storeMetaPurchaseHandoff({
+              paymentId,
+              amount: totalAmount,
+              currency: 'INR',
+              contentIds: purchasedItems,
+              contentName: INDIA_BLUEPRINT_CONTENT_NAME,
+              contentCategory: INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY,
+              email: formData.email,
+              phone: formData.phone,
+              phoneCountryCode: INDIA_PHONE_COUNTRY_CODE,
+            });
             localStorage.setItem('customerEmail', formData.email);
             localStorage.setItem('customerPhone', formData.phone);
             if (responseData.customer_id) {
@@ -235,8 +274,7 @@ export default function CheckoutPage() {
               localStorage.setItem('orderId', responseData.db_order_id);
               sessionStorage.setItem('orderId', responseData.db_order_id);
             }
-            const successUrl = `/checkout/success?payment_id=${response.razorpay_payment_id}&order_id=${responseData.razorpay_order_id}&customer_id=${responseData.customer_id}&db_order_id=${responseData.db_order_id}&amount=${totalAmount}`;
-            window.location.href = successUrl;
+            window.location.href = `/checkout/success?payment_id=${encodeURIComponent(paymentId)}`;
           },
           prefill: { name: formData.email.split('@')[0], email: formData.email, contact: formData.phone },
           theme: { color: '#2C2622' },
@@ -589,7 +627,7 @@ export default function CheckoutPage() {
                   const hasAddons = wardrobeDetoxAddon || smartShoppersGuideAddon || outfitPreviewAddon;
                   if (!hasAddons && !popupDismissed) {
                     setShowAddonPopup(true);
-                    trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'INR', 'India');
+                    trackCTAClick('Add-on Popup Shown', 'Checkout Main Button', totalAmount, 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY);
                   } else {
                     await processPayment();
                   }
@@ -638,7 +676,7 @@ export default function CheckoutPage() {
                   <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55 }}>Add these to get the complete package</p>
                 </div>
                 <button
-                  onClick={() => { setShowAddonPopup(false); setPopupDismissed(true); trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button', undefined, 'INR', 'India'); }}
+                  onClick={() => { setShowAddonPopup(false); setPopupDismissed(true); trackCTAClick('Add-on Popup Dismissed', 'Popup Close Button', undefined, 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY); }}
                   className="hover:opacity-60 transition-opacity p-1 flex-shrink-0"
                   style={{ color: '#2C2622', opacity: 0.4 }}
                   aria-label="Close"
@@ -718,7 +756,7 @@ export default function CheckoutPage() {
             {/* Popup Footer */}
             <div className="sticky bottom-0 p-3 md:p-4 space-y-2" style={{ background: 'rgba(248,243,233,0.95)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(44,38,34,0.08)' }}>
               <button
-                onClick={async () => { setShowAddonPopup(false); trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount, 'INR', 'India'); await processPayment(); }}
+                onClick={async () => { setShowAddonPopup(false); trackCTAClick('Proceed with Add-ons', 'Popup Continue Button', totalAmount, 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY); await processPayment(); }}
                 disabled={isProcessing}
                 className="w-full py-3 md:py-3.5 rounded-full transition-all duration-300 disabled:opacity-50 hover:-translate-y-0.5 transform"
                 style={{ background: '#2C2622', color: '#F4EFE5' }}
@@ -728,7 +766,7 @@ export default function CheckoutPage() {
                 </span>
               </button>
               <button
-                onClick={() => { trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount, 'INR', 'India'); continueWithoutAddons(); }}
+                onClick={() => { trackCTAClick('Continue without Add-ons', 'Popup Skip Button', totalAmount, 'INR', INDIA_LEGACY_CHECKOUT_FUNNEL_CATEGORY); continueWithoutAddons(); }}
                 disabled={isProcessing}
                 className="w-full py-2.5 rounded-full transition-all duration-300 disabled:opacity-50"
                 style={{ background: 'transparent', color: '#2C2622' }}

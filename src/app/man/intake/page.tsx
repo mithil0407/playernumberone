@@ -12,8 +12,9 @@ import {
     saveManIntakeSubmission,
     uploadManIntakePhoto,
 } from '@/lib/supabaseMan';
-import { trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
-import { MAN_PRICING } from '@/lib/manPricing';
+import { INDIA_PHONE_COUNTRY_CODE, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
+import { getManPricing } from '@/lib/manPricing';
+import { useManRegion } from '@/hooks/useManRegion';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -495,6 +496,8 @@ function PhotoUploadField({ label, instruction, file, onChange, error, onError, 
 
 function ManIntakePageInner() {
     const searchParams = useSearchParams();
+    const { isIndia } = useManRegion();
+    const pricing = getManPricing(isIndia ? 'IN' : 'INTL');
     const [step, setStep] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
@@ -554,9 +557,9 @@ function ManIntakePageInner() {
 
     useEffect(() => {
         if (step >= 2 && form.email && form.phone) {
-            updateUserData(form.email, form.phone);
+            updateUserData(form.email, form.phone, isIndia ? INDIA_PHONE_COUNTRY_CODE : undefined);
         }
-    }, [step, form.email, form.phone]);
+    }, [step, form.email, form.phone, isIndia]);
 
     // Step 21 = Q18 anchor, step 22 = branch sub-question (skipped if no branch applies)
     const hasBranch = !!BRANCH_OPTIONS[form.primaryStyleGoal];
@@ -681,7 +684,8 @@ function ManIntakePageInner() {
             submissionStage = 'save';
             await saveManIntakeSubmission(submissionPayload);
 
-            trackCompleteRegistration(MAN_PRICING.IN.basePrice, 'ICONIK Blueprint Man — Intake Submitted', MAN_PRICING.IN.currency);
+            // Region-aware: an international buyer paid $97, not Rs 2,699.
+            trackCompleteRegistration(pricing.basePrice, 'ICONIK Blueprint Man — Intake Submitted', pricing.currency);
             setDirection(1);
             setStep(CONFIRMATION_STEP);
 

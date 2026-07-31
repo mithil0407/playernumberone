@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { recordRevenueEvent } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
+import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
 
 interface RazorpayPayment {
     id: string;
@@ -81,6 +82,23 @@ async function handleStyleEditSubscriptionEvent(event: string, subscription: Raz
         attribution: attributionFromRow(dbSub),
         metadata: { source: 'stylist-webhook', webhook_event: event, paid_count: subscription.paid_count },
     });
+
+    if (payment?.id && Number.isFinite(payment.amount)) {
+        await sendMetaPurchaseEvent({
+            eventId: payment.id,
+            eventSourceUrl: 'https://www.iconik.pro/stylist/checkout/success',
+            customerEmail: dbSub.customer_email,
+            customerName: dbSub.customer_name,
+            customerPhone: dbSub.customer_phone,
+            amount: payment.amount / 100,
+            currency: 'USD',
+            contentName: 'THE ICONIK EDIT',
+            contentIds: ['iconik_edit_subscription'],
+            numItems: 1,
+            contentCategory: 'style_scan_edit',
+            attribution: attributionFromRow(dbSub),
+        });
+    }
 }
 
 export async function POST(request: NextRequest) {

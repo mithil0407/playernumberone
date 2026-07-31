@@ -135,11 +135,38 @@ export function getAttributionPayload(): Required<AttributionFields> {
   if (typeof window === 'undefined') return attributionToColumns(null);
 
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) return attributionToColumns(JSON.parse(stored));
-
     const params = new URLSearchParams(window.location.search);
-    const fbclid = params.get('fbclid');
+    const urlFbclid = params.get('fbclid');
+
+    // `_fbp` is written by fbevents.js asynchronously after it loads, so the
+    // very first call on a visit usually runs before the cookie exists. These
+    // are therefore re-read every time and merged over the stored snapshot —
+    // freezing them would leave `fbp` null for the whole customer lifetime and
+    // strip the Conversions API of its strongest browser-to-server link.
+    const liveFbp = readCookie('_fbp');
+    const liveFbc = readCookie('_fbc') || buildFbc(urlFbclid);
+
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const existing = attributionToColumns(JSON.parse(stored));
+      const existingPayload: AttributionPayload = existing.attribution_payload ?? {};
+      const mergedPayload: AttributionPayload = {
+        ...existingPayload,
+        fbclid: existingPayload.fbclid ?? urlFbclid ?? null,
+        fbp: liveFbp ?? existingPayload.fbp ?? null,
+        fbc: liveFbc ?? existingPayload.fbc ?? null,
+      };
+      // First-touch campaign data stays immutable.
+      const merged: Required<AttributionFields> = { ...existing, attribution_payload: mergedPayload };
+
+      const changed = existingPayload.fbp !== mergedPayload.fbp
+        || existingPayload.fbc !== mergedPayload.fbc
+        || existingPayload.fbclid !== mergedPayload.fbclid;
+      if (changed) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+
+      return merged;
+    }
+
     const payload = attributionToColumns({
       utm_source: params.get('utm_source'),
       utm_medium: params.get('utm_medium'),
@@ -149,9 +176,9 @@ export function getAttributionPayload(): Required<AttributionFields> {
       referrer: document.referrer || null,
       landing_page: window.location.href,
       first_touch_at: new Date().toISOString(),
-      fbclid,
-      fbp: readCookie('_fbp'),
-      fbc: readCookie('_fbc') || buildFbc(fbclid),
+      fbclid: urlFbclid,
+      fbp: liveFbp,
+      fbc: liveFbc,
     });
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));

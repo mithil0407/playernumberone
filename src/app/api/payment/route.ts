@@ -6,7 +6,7 @@ import Razorpay from 'razorpay';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price, checkout_source } = body;
+    const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price, checkout_source, funnel_entry } = body;
     const incomingAttribution = attributionToColumns(body.attribution);
 
     // Validate required fields
@@ -84,6 +84,10 @@ export async function POST(request: NextRequest) {
           customer_phone: customer_phone,
           base_product: base_product,
           checkout_source: checkout_source || '',
+          // Meta content_category for the browser events on this order. The
+          // order.paid webhook reads it back so the server-side Purchase it
+          // deduplicates against carries an identical payload.
+          funnel_entry: funnel_entry || '',
           wardrobe_detox_addon: add_ons.wardrobe_detox ? 'true' : 'false',
           diva_diet_plan_addon: add_ons.diva_diet_plan ? 'true' : 'false',
           smart_shoppers_guide_addon: add_ons.smart_shoppers_guide ? 'true' : 'false',

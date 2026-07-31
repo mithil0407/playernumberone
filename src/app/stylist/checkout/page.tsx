@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Lock, Clock, ArrowLeft, Loader2 } from 'lucide-react';
-import { trackInitiateCheckout, updateUserData } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
@@ -381,7 +381,17 @@ export default function StylistCheckoutPage() {
                                             localStorage.removeItem(EDIT_SETUP_ERROR_KEY);
                                             localStorage.setItem('stylist_editSelected', 'false');
                                             setStoredEditState('authorized');
-                                            window.fbq?.('trackCustom', 'edit_purchased', { funnel: 'style_scan', source: 'checkout_immediate' });
+                                            if (subResponse.razorpay_payment_id) {
+                                                trackPurchase(
+                                                    EDIT_PRICE,
+                                                    'THE ICONIK EDIT',
+                                                    ['iconik_edit_subscription'],
+                                                    1,
+                                                    'USD',
+                                                    'style_scan_edit',
+                                                    subResponse.razorpay_payment_id,
+                                                );
+                                            }
                                             setPaymentStage('redirecting');
                                             window.location.href = successHref;
                                         },

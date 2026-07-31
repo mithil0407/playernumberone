@@ -217,7 +217,15 @@ function MonthlyCheckoutPageContent() {
               purchasedItems.push('iconik_consultation');
             }
             
-            trackPurchase(totalAmount, 'ICONIK Monthly Subscription', purchasedItems, purchasedItems.length);
+            trackPurchase(
+              totalAmount,
+              'ICONIK Monthly Subscription',
+              purchasedItems,
+              purchasedItems.length,
+              'INR',
+              'India Monthly',
+              response.razorpay_payment_id,
+            );
             
             // Store purchase amount
             localStorage.setItem('purchaseAmount', totalAmount.toString());

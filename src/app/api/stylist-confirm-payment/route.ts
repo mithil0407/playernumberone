@@ -3,6 +3,7 @@ import { supabaseStyleScan } from '@/lib/supabaseStyleScan';
 import { sendStylistOrderConfirmationEmail } from '@/lib/email';
 import { recordRevenueEvent, toMinorUnits } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
+import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
 
 export async function POST(request: NextRequest) {
     try {
@@ -70,6 +71,11 @@ export async function POST(request: NextRequest) {
 
         // Revenue event
         if (updatedOrder) {
+            const orderAttribution = attributionFromRow(updatedOrder);
+            const orderAmount = Number(amount ?? updatedOrder.amount ?? 0);
+            const emailForTracking = customer_email || String(updatedOrder.customer_email ?? '');
+            const phoneForTracking = customer_phone || String(updatedOrder.customer_phone ?? '');
+
             await recordRevenueEvent({
                 eventKey: `stylist_orders:${db_order_id !== 'mock-order-id' ? db_order_id : razorpay_order_id}:payment:${razorpay_payment_id}`,
                 sourceMarket: 'stylist',
@@ -86,8 +92,25 @@ export async function POST(request: NextRequest) {
                 status: 'paid',
                 paymentId: razorpay_payment_id,
                 razorpayOrderId: razorpay_order_id,
-                attribution: attributionFromRow(updatedOrder),
+                attribution: orderAttribution,
                 metadata: { source: 'stylist-confirm-payment', lead_id, edit_selected: Boolean(edit_selected) },
+            });
+
+            await sendMetaPurchaseEvent({
+                eventId: razorpay_payment_id,
+                eventSourceUrl: 'https://www.iconik.pro/stylist/checkout',
+                customerEmail: emailForTracking,
+                customerName: customer_name || String(updatedOrder.customer_name ?? ''),
+                customerPhone: phoneForTracking,
+                amount: orderAmount,
+                currency: 'USD',
+                contentName: 'ICONIK Style Blueprint',
+                contentIds: ['iconik_style_blueprint'],
+                numItems: 1,
+                contentCategory: 'style_scan',
+                attribution: orderAttribution,
+                userAgent: request.headers.get('user-agent'),
+                ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip'),
             });
         }
 
