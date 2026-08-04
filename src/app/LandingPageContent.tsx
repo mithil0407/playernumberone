@@ -32,7 +32,7 @@ import {
   Trophy,
   Award
 } from 'lucide-react';
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 
 interface LandingPageContentProps {
   headline: ReactNode;
@@ -59,7 +59,8 @@ export default function LandingPageContent({
   const isOffer2699 = variant === 'offer2699';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState({ minutes: 5, seconds: 0 });
+  const [showMobileCta, setShowMobileCta] = useState(false);
+  const heroCtaRef = useRef<HTMLAnchorElement>(null);
 
   const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
@@ -91,21 +92,21 @@ export default function LandingPageContent({
   const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
 
   useEffect(() => {
-    if (isOffer2699) return;
-    const timer = setInterval(() => {
-      setTimeLeft(prevTime => {
-        if (prevTime.minutes === 0 && prevTime.seconds === 0) return { minutes: 5, seconds: 0 };
-        if (prevTime.seconds === 0) return { minutes: prevTime.minutes - 1, seconds: 59 };
-        return { minutes: prevTime.minutes, seconds: prevTime.seconds - 1 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isOffer2699]);
-
-  useEffect(() => {
     const timer = setInterval(nextImage, 4000);
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const heroCta = heroCtaRef.current;
+    if (!heroCta) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowMobileCta(!entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    observer.observe(heroCta);
+    return () => observer.disconnect();
   }, []);
 
   const faqs = [
@@ -162,19 +163,37 @@ export default function LandingPageContent({
             {subheadline}
           </p>
 
-          {/* Carousel */}
-          <div className="max-w-sm mx-auto mb-8">
+          {/* Primary CTA */}
+          <Link
+            ref={heroCtaRef}
+            href={checkoutHref}
+            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', contentCategory)}
+            className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 sm:px-10 py-4 sm:py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
+          >
+            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
+            <ArrowRight className="h-4 w-4 opacity-60" />
+          </Link>
+
+          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+            <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
+            <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
+              Secure checkout · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included
+            </span>
+          </div>
+
+          {/* Client transformation preview */}
+          <div className="max-w-sm mx-auto mt-9 mb-2">
             <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
               <div className="flex items-center justify-center gap-3 md:gap-4">
-                <button onClick={prevImage} className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:-translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Previous image">
+                <button onClick={prevImage} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:-translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Previous image">
                   <ArrowLeft className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
                 <div className="relative w-52 md:w-64" style={{ aspectRatio: '1/1' }}>
-                  <div className="w-full h-full rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
-                    <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill className="object-cover" priority={currentImageIndex === 0} />
+                  <div className="relative w-full h-full rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
+                    <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill sizes="(max-width: 640px) 208px, 256px" className="object-cover" priority={currentImageIndex === 0} />
                   </div>
                 </div>
-                <button onClick={nextImage} className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Next image">
+                <button onClick={nextImage} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Next image">
                   <ArrowRight className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
               </div>
@@ -182,33 +201,16 @@ export default function LandingPageContent({
                 <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.65, lineHeight: 1.6 }}>&ldquo;{transformationImages[currentImageIndex].testimonial}&rdquo;</p>
                 <p className="iconik-mono mt-1" style={{ fontSize: '10px', color: '#94A6AD' }}>— {transformationImages[currentImageIndex].name}</p>
               </div>
-              <div className="flex justify-center gap-2 mt-3">
+              <div className="flex justify-center mt-1">
                 {transformationImages.map((_, idx) => (
-                  <button key={idx} onClick={() => setCurrentImageIndex(idx)} className="h-1.5 rounded-full transition-all duration-300" style={{ width: idx === currentImageIndex ? '16px' : '6px', background: idx === currentImageIndex ? '#2C2622' : 'rgba(44,38,34,0.2)' }} aria-label={`Go to slide ${idx + 1}`} />
+                  <button key={idx} onClick={() => setCurrentImageIndex(idx)} className="flex h-11 w-11 items-center justify-center" aria-label={`Go to slide ${idx + 1}`}>
+                    <span className="h-1.5 rounded-full transition-all duration-300" style={{ width: idx === currentImageIndex ? '16px' : '6px', background: idx === currentImageIndex ? '#2C2622' : 'rgba(44,38,34,0.2)' }} />
+                  </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* CTA */}
-          <Link
-            href={checkoutHref}
-            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', contentCategory)}
-            className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-10 py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform mb-8"
-          >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
-            <ArrowRight className="h-4 w-4 opacity-60" />
-          </Link>
-
-          {/* Trust strip */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
-            <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>
-              {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery after consultation
-            </span>
-            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-            <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>In-scope revisions included</span>
-          </div>
         </div>
       </section>
 
@@ -256,7 +258,7 @@ export default function LandingPageContent({
               </div>
             </div>
 
-            <div className="h-[640px] overflow-y-auto overflow-x-hidden" style={{ background: '#faf9f6', scrollbarWidth: 'thin' }}>
+            <div className="relative h-[520px] overflow-hidden md:h-[640px]" style={{ background: '#faf9f6' }}>
 
               {/* Report nav */}
               <div className="sticky top-0 z-10 px-6 md:px-10 h-14 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
@@ -479,8 +481,7 @@ export default function LandingPageContent({
             {/* Bottom fade */}
             <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none rounded-b-2xl" style={{ background: 'linear-gradient(to top, #faf9f6, transparent)' }} />
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
-              <span className="iconik-mono opacity-30" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Scroll to explore</span>
-              <ArrowRight size={10} className="rotate-90 opacity-30" style={{ color: '#2C2622' }} />
+              <span className="iconik-mono opacity-45" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Sample Blueprint Preview</span>
             </div>
           </div>
         </div>
@@ -517,34 +518,19 @@ export default function LandingPageContent({
         </div>
       </section>
 
-      {/* ── SECTION 5: Personal Style Guide ─────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
-        <div className="max-w-4xl mx-auto">
-          <div className="rounded-3xl p-8 md:p-12" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
-            <div className="text-center">
-              <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
-                <Image src="/book.png" alt="ICONIK Style Guide Preview" width={400} height={400} className="object-contain drop-shadow-2xl" loading="lazy" />
-              </div>
-              <div className="iconik-display mb-3" style={{ fontSize: 'clamp(24px, 4vw, 40px)', color: '#2C2622' }}>Your Personal Style Guide</div>
-              <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.6, lineHeight: 1.8 }}>Comprehensive style transformation roadmap</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 6: Case Studies ──────────────────────────────────────── */}
+      {/* ── Client Results ───────────────────────────────────────────────── */}
       <section id="testimonials" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Real Findings</div>
-            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>What the Blueprint actually found</div>
-            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Three women. Three different geometries. Three specific solutions.</p>
+            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Client Stories</div>
+            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>What changed for three ICONIK clients</div>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Their concerns were different. The advice had to fit their bodies, comfort and real lives.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { name: 'Priya', age: '28', city: 'Mumbai', image: '/testimonial-priya.webp', concern: ['Post-partum tummy, avoided', 'fitted anything for 2 years'], finding: ['Rectangle frame', 'Deep warm autumn undertone'], changed: ['Straight kurtas replaced flowy tops', 'Dark autumn palette introduced', 'Peplum added for occasions'], quote: 'I stopped hiding. I started showing up.', stars: 5 },
-              { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['Heavy arms, wore full', 'sleeves in 35° heat'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap sleeves + flutter sleeves introduced', 'Raglan cuts for shoulder balance', 'Eliminated black-only dressing'], quote: 'Everyone keeps asking if I lost weight', stars: 5 },
-              { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['Petite frame, felt', 'overwhelmed by fabric'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Monochromatic dressing introduced', 'Hem lengths calibrated precisely', 'Accessories scaled to frame'], quote: 'Shopping is no longer overwhelming.', stars: 4 },
+              { name: 'Priya', age: '28', city: 'Mumbai', image: '/testimonial-priya.webp', concern: ['After my delivery, I felt conscious about my tummy and kept choosing loose tops.'], finding: ['Rectangle frame', 'Deep warm autumn undertone'], changed: ['Straight-cut kurtas instead of shapeless tops', 'Warmer, deeper colours near the face', 'Peplum and structured layers for occasions'], quote: 'Earlier I would change three or four times before going out. Now I know what to pick, and I still feel comfortable in it.', stars: 5 },
+              { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['I felt conscious about my arms and wore full sleeves even in Delhi summer.'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap and flutter sleeves that still felt comfortable', 'Raglan cuts to soften the shoulder line', 'More colour instead of wearing only black'], quote: 'I always thought covering my arms was the only option. The sleeve suggestions were practical, and the outfits still felt like me.', stars: 5 },
+              { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['On my petite frame, too much fabric made most outfits feel overwhelming.'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Cleaner monochromatic combinations', 'Hem lengths that suited her height', 'Smaller accessories scaled to her frame'], quote: 'I used to save so many outfits and then buy nothing because I was confused. Now shopping feels much more straightforward.', stars: 4 },
             ].map((c) => (
               <div key={c.name} className="rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
                 <div className="aspect-square overflow-hidden" style={{ background: 'rgba(237,229,210,0.5)' }}>
@@ -589,7 +575,7 @@ export default function LandingPageContent({
         </div>
       </section>
 
-      {/* ── SECTION 7: Price Anchor ───────────────────────────────────────── */}
+      {/* ── Price ─────────────────────────────────────────────────────────── */}
       <section className="py-24 px-4 md:px-6 me-slate">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
@@ -611,63 +597,7 @@ export default function LandingPageContent({
         </div>
       </section>
 
-      {/* ── SECTION 8: Before / After ─────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>The Blueprint in Practice</div>
-            <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>Real clients. Specific findings. Measurable change.</div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-              { before: '/style-before.webp', after: '/style-after.webp', beforeLabel: 'Before — avoiding structure entirely', afterLabel: 'After — Geometric Silhouette Profile™ applied', caption: 'Rekha, 34, Bangalore · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, cap sleeves, dark palette' },
-              { before: '/wardrobe-before.webp', after: '/wardrobe-after.webp', beforeLabel: 'Before — dressing to hide', afterLabel: 'After — Concern Zone Solutions applied', caption: 'Ananya, 29, Mumbai · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line kurtas, deep cool palette' },
-            ].map((comparison) => (
-              <div key={comparison.caption} className="rounded-3xl p-6 md:p-8 hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
-                <div className="grid grid-cols-2 gap-4 mb-5">
-                  <div>
-                    <p className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>{comparison.beforeLabel}</p>
-                    <div className="relative w-full aspect-square rounded-xl overflow-hidden"><Image src={comparison.before} alt={comparison.beforeLabel} fill className="object-cover" /></div>
-                  </div>
-                  <div>
-                    <p className="iconik-micro mb-3" style={{ color: '#94A6AD' }}>{comparison.afterLabel}</p>
-                    <div className="relative w-full aspect-square rounded-xl overflow-hidden"><Image src={comparison.after} alt={comparison.afterLabel} fill className="object-cover" /></div>
-                  </div>
-                </div>
-                <div className="me-rule-thin mb-4" />
-                <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, lineHeight: 1.8 }}>{comparison.caption}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 9: Sound Familiar ─────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>Sound Familiar?</div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-            {[
-              { num: '01', text: 'You get dressed every morning and something still feels off. Not wrong exactly. Just never quite right.', image: '/feeling-overlooked1.webp', imageAlt: 'Woman at mirror' },
-              { num: '02', text: "You've tried the body type guides. The Pinterest boards. The 'flattering for pears' articles. Nothing has stuck.", image: '/style-confusion1.webp', imageAlt: 'Woman with clothes' },
-              { num: '03', text: "The weight hasn't changed. The budget hasn't changed. But every outfit still feels like a compromise.", image: '/confidence-issues1.webp', imageAlt: 'Woman looking at mirror side-on' },
-            ].map((item) => (
-              <div key={item.num} className="rounded-3xl p-6 md:p-8 hover:-translate-y-1 transition-all duration-300" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
-                <div className="relative w-full aspect-square mb-6 rounded-xl overflow-hidden">
-                  <Image src={item.image} alt={item.imageAlt} fill className="object-cover" />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(44,38,34,0.3), transparent)' }} />
-                </div>
-                <div className="iconik-display mb-4" style={{ fontSize: '24px', color: '#94A6AD' }}>{item.num}</div>
-                <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.75, lineHeight: 1.75 }}>{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 10: FAQ ───────────────────────────────────────────────── */}
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
       <section id="faq" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
@@ -769,34 +699,22 @@ export default function LandingPageContent({
         </div>
       </footer>
 
-      {/* ── Sticky Mobile CTA ───────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t p-3 md:hidden z-50" style={{ background: 'rgba(248,243,233,0.98)', borderColor: 'rgba(44,38,34,0.08)' }}>
-        <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex-1">
-              <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Complete Package</div>
-              <div className="flex items-baseline gap-1">
-                <span className="iconik-display" style={{ fontSize: '16px', color: '#2C2622' }}>{formattedBasePrice}</span>
-                <span className="line-through" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</span>
-              </div>
-            </div>
-            {isOffer2699 ? (
-              <div className="text-right ml-2 iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.55 }}>30-minute video consultation</div>
-            ) : (
-              <div className="text-right ml-2">
-                <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Reservation window:</div>
-                <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>
-                  {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-                </div>
-              </div>
-            )}
+      {/* ── Compact mobile CTA, shown only after the hero CTA leaves view ──── */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 border-t px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-xl transition-all duration-300 md:hidden ${showMobileCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-full opacity-0'}`}
+        style={{ background: 'rgba(248,243,233,0.98)', borderColor: 'rgba(44,38,34,0.08)' }}
+      >
+        <div className="mx-auto flex max-w-sm items-center gap-3">
+          <div className="shrink-0">
+            <div className="iconik-display" style={{ fontSize: '17px', color: '#2C2622' }}>{formattedBasePrice}</div>
+            <div className="line-through" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</div>
           </div>
           <Link
             href={checkoutHref}
             onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', contentCategory)}
-            className="w-full inline-flex items-center justify-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-6 py-4 rounded-full transition-all duration-300 block"
+            className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#2C2622] px-4 py-3 text-[#F4EFE5] transition-colors duration-300 hover:bg-[#3d3430]"
           >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
+            <span className="iconik-display text-center" style={{ fontSize: '14px' }}>{isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation'}</span>
           </Link>
         </div>
       </div>
