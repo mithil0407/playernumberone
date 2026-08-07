@@ -139,11 +139,11 @@ export default function ManLandingPage() {
 
                     {/* Headline */}
                     <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(36px, 8vw, 80px)', color: '#2C2622' }}>
-                        Build Your{' '}
-                        <span className="iconik-display-it" style={{ color: '#6B7F87' }}>Signature Style</span>
+                        The Blueprint for{' '}
+                        <span className="iconik-display-it" style={{ color: '#6B7F87' }}>Looking Sharp.</span>
                     </h1>
                     <div className="iconik-display-it mb-8" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622', opacity: 0.75 }}>
-                        built for you.
+                        Personalised entirely to you.
                     </div>
 
                     {/* Subheadline */}
