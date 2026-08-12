@@ -6,6 +6,8 @@ import {
   validateManIntakeSubmission,
 } from './manIntakeSubmission.ts';
 import {
+  getManIntakePhotoContentType,
+  getManIntakePhotoExtension,
   getManIntakePhotoValidationError,
   MAN_INTAKE_MAX_PHOTO_BYTES,
 } from './manIntakePhoto.ts';
@@ -47,6 +49,9 @@ test('accepts supported photos and rejects empty, oversized, or unsupported file
     /larger than 20 MB/i,
   );
   assert.match(getManIntakePhotoValidationError({ name: 'photo.gif', size: 10, type: 'image/gif' }) || '', /JPG, PNG/i);
+  assert.equal(getManIntakePhotoExtension({ name: 'portrait.HEIC', type: 'image/heic' }), 'heic');
+  assert.equal(getManIntakePhotoExtension({ name: 'portrait.jpeg', type: 'image/jpeg' }), 'jpg');
+  assert.equal(getManIntakePhotoContentType({ name: 'portrait.png', type: '' }), 'image/png');
 });
 
 test('rejects unexpected fields, missing photos, and external photo URLs', () => {
