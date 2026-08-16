@@ -31,8 +31,9 @@ test('routes each landing page to its matching checkout and tracking entry', asy
 
   assert.match(rootLanding, /checkoutHref="\/checkout"/);
   assert.match(rootLanding, /INDIA_ROOT_BLUEPRINT_PRICE/);
-  assert.match(rootCheckout, /funnelEntry="root"/);
-  assert.match(rootCheckout, /checkoutSource="root_checkout"/);
+  assert.match(rootCheckout, /INDIA_ROOT_FUNNEL_CATEGORY/);
+  assert.match(rootCheckout, /checkout_source: 'root_checkout'/);
+  assert.match(rootCheckout, /INDIA_ROOT_BLUEPRINT_PRICE/);
   assert.match(offerCheckout, /funnelEntry="offer2699"/);
   assert.match(offerCheckout, /checkoutSource="offer_2699_checkout"/);
 });

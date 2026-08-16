@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import LandingPageContent from './LandingPageContent';
+import MarchLandingPageContent from './MarchLandingPageContent';
 import { buildMetadata } from '@/lib/seo';
-import { BLUEPRINT_OFFER } from '@/lib/siteFacts';
 import { INDIA_ROOT_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
 
 export const metadata: Metadata = buildMetadata({
@@ -21,17 +20,17 @@ export const metadata: Metadata = buildMetadata({
 
 export default function Home() {
   return (
-    <LandingPageContent
+    <MarchLandingPageContent
       checkoutHref="/checkout"
       basePrice={INDIA_ROOT_BLUEPRINT_PRICE}
       headline={
         <>
-          Discover Your <span className="text-luxury-green">Signature Style</span>
+          Discover Your <span className="text-luxury-green">Signature Style</span> in <span className="text-luxury-charcoal">24 hours</span>
         </>
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">{BLUEPRINT_OFFER.outfitFormulas} personalised outfit formulas</span>, colour, hairstyle and eyewear guidance, and a <span className="font-semibold text-luxury-accent">{BLUEPRINT_OFFER.consultationMinutes}-minute stylist consultation</span>.
+          Get <span className="font-semibold text-luxury-accent">20 personalized outfits</span>, your <span className="font-semibold text-luxury-green">color palette</span>, and a <span className="font-semibold text-luxury-accent">30-minute 1-on-1 stylist consultation</span>
         </>
       }
     />
