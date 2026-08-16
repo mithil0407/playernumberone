@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveCustomer, saveOrder, supabaseAdmin, getCustomerByEmail } from '@/lib/supabase';
 import { attributionToColumns, firstTouchAttribution } from '@/lib/attribution';
+import {
+  INDIA_BLUEPRINT_ADDON_PRICES,
+  calculateIndiaBlueprintTotal,
+  indiaBlueprintBasePriceForCheckout,
+  type IndiaBlueprintCheckoutSource,
+} from '@/lib/indiaBlueprintPricing';
+import { indiaFunnelCategoryFromEntry } from '@/lib/metaTrackingContract';
 import Razorpay from 'razorpay';
 
 export async function POST(request: NextRequest) {
@@ -8,6 +15,46 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { customer_name, customer_email, customer_phone, amount, currency = 'INR', base_product, add_ons, total_base_price, diva_diet_plan_price, smart_shoppers_guide_price, outfit_preview_price, checkout_source, funnel_entry } = body;
     const incomingAttribution = attributionToColumns(body.attribution);
+    const indiaCheckoutSource: IndiaBlueprintCheckoutSource | null =
+      checkout_source === 'root_checkout' || checkout_source === 'offer_2699_checkout'
+        ? checkout_source
+        : null;
+    let resolvedFunnelCategory = funnel_entry;
+    let resolvedBasePrice = total_base_price;
+    let resolvedSmartShopperPrice = smart_shoppers_guide_price;
+    let resolvedOutfitPreviewPrice = outfit_preview_price;
+
+    if (indiaCheckoutSource) {
+      const expectedBasePrice = indiaBlueprintBasePriceForCheckout(indiaCheckoutSource);
+      const selectedAddons = {
+        outfitPreview: Boolean(add_ons?.outfit_preview),
+        wardrobeDetox: Boolean(add_ons?.wardrobe_detox),
+        smartShopper: Boolean(add_ons?.smart_shoppers_guide),
+      };
+      const expectedAmount = calculateIndiaBlueprintTotal(expectedBasePrice, selectedAddons);
+
+      if (
+        currency !== 'INR'
+        || Number(total_base_price) !== expectedBasePrice
+        || Number(amount) !== expectedAmount
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'The checkout price changed. Please refresh and try again.' },
+          { status: 400 },
+        );
+      }
+
+      resolvedFunnelCategory = indiaFunnelCategoryFromEntry(
+        indiaCheckoutSource === 'root_checkout' ? 'root' : 'offer2699',
+      );
+      resolvedBasePrice = expectedBasePrice;
+      resolvedSmartShopperPrice = selectedAddons.smartShopper
+        ? INDIA_BLUEPRINT_ADDON_PRICES.smartShopper
+        : 0;
+      resolvedOutfitPreviewPrice = selectedAddons.outfitPreview
+        ? INDIA_BLUEPRINT_ADDON_PRICES.outfitPreview
+        : 0;
+    }
 
     // Validate required fields
     if (!customer_name || !customer_email || !customer_phone || !amount) {
@@ -87,16 +134,16 @@ export async function POST(request: NextRequest) {
           // Meta content_category for the browser events on this order. The
           // order.paid webhook reads it back so the server-side Purchase it
           // deduplicates against carries an identical payload.
-          funnel_entry: funnel_entry || '',
+          funnel_entry: resolvedFunnelCategory || '',
           wardrobe_detox_addon: add_ons.wardrobe_detox ? 'true' : 'false',
           diva_diet_plan_addon: add_ons.diva_diet_plan ? 'true' : 'false',
           smart_shoppers_guide_addon: add_ons.smart_shoppers_guide ? 'true' : 'false',
           outfit_preview_addon: add_ons.outfit_preview ? 'true' : 'false',
           iconik_edit_subscription: add_ons.iconik_edit_subscription ? 'true' : 'false',
-          total_base_price: total_base_price,
+          total_base_price: resolvedBasePrice,
           diva_diet_plan_price: diva_diet_plan_price,
-          smart_shoppers_guide_price: smart_shoppers_guide_price,
-          outfit_preview_price: outfit_preview_price,
+          smart_shoppers_guide_price: resolvedSmartShopperPrice,
+          outfit_preview_price: resolvedOutfitPreviewPrice,
           service: 'ICONIK Style Guide',
           db_order_id: dbOrderId,
           customer_id: customerId,

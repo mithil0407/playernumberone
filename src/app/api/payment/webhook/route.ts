@@ -11,6 +11,7 @@ import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
 import {
   INDIA_BLUEPRINT_CONTENT_NAME,
   INDIA_BLUEPRINT_CHECKOUT_URL,
+  INDIA_ROOT_BLUEPRINT_CHECKOUT_URL,
   MAN_EDIT_CHECKOUT_URL,
   MAN_EDIT_CONTENT_NAME,
   MAN_EDIT_FUNNEL_CATEGORY,
@@ -158,7 +159,7 @@ function buildMetaPurchasePayloadForOrder(input: {
       contentCategory: notes.funnel_entry || indiaFunnelCategoryFromEntry(null),
       currency: 'INR' as const,
       eventSourceUrl: notes.checkout_source === 'root_checkout'
-        ? 'https://www.iconik.pro/checkout'
+        ? INDIA_ROOT_BLUEPRINT_CHECKOUT_URL
         : INDIA_BLUEPRINT_CHECKOUT_URL,
     };
   }

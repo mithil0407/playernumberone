@@ -1,6 +1,7 @@
 /**
  * Meta tracking verification harness for the India Blueprint funnel
- * (`/` + `/offer-2699` → /offer-2699/checkout → /checkout/success).
+ * (`/` → `/checkout` and `/offer-2699` → `/offer-2699/checkout`, followed by
+ * `/checkout/success`).
  *
  *   npm run verify:meta-tracking
  *
@@ -19,6 +20,8 @@ import {
   INDIA_BLUEPRINT_CONTENT_NAME,
   INDIA_BLUEPRINT_CHECKOUT_URL,
   INDIA_OFFER_2699_FUNNEL_CATEGORY,
+  INDIA_ROOT_BLUEPRINT_CHECKOUT_URL,
+  INDIA_ROOT_FUNNEL_CATEGORY,
   buildIndiaBlueprintContentIds,
   normalizeMetaEmail,
   normalizeMetaPhone,
@@ -26,16 +29,32 @@ import {
   resolveMetaPurchaseEventId,
   splitMetaName,
 } from '../src/lib/metaTrackingContract.ts';
-
-// ── Synthetic order: offer-2699 base + two add-ons ──────────────────────────
-const BASE_PRICE = 2699;
-const WARDROBE_DETOX_PRICE = 1499;
-const SMART_SHOPPER_PRICE = 499;
+import {
+  INDIA_OFFER_2699_BLUEPRINT_PRICE,
+  INDIA_ROOT_BLUEPRINT_PRICE,
+  calculateIndiaBlueprintTotal,
+} from '../src/lib/indiaBlueprintPricing.ts';
 
 const paymentId = `pay_verify_${Date.now()}`;
 const orderId = `order_verify_${Date.now()}`;
 const selected = { outfitPreview: false, wardrobeDetox: true, smartShopper: true };
-const amount = BASE_PRICE + WARDROBE_DETOX_PRICE + SMART_SHOPPER_PRICE;
+
+const variants = [
+  {
+    label: 'root-2499',
+    basePrice: INDIA_ROOT_BLUEPRINT_PRICE,
+    contentCategory: INDIA_ROOT_FUNNEL_CATEGORY,
+    checkoutUrl: INDIA_ROOT_BLUEPRINT_CHECKOUT_URL,
+    landingPage: 'https://www.iconik.pro/',
+  },
+  {
+    label: 'offer-2699',
+    basePrice: INDIA_OFFER_2699_BLUEPRINT_PRICE,
+    contentCategory: INDIA_OFFER_2699_FUNNEL_CATEGORY,
+    checkoutUrl: INDIA_BLUEPRINT_CHECKOUT_URL,
+    landingPage: 'https://www.iconik.pro/offer-2699',
+  },
+] as const;
 
 const customer = {
   name: 'Verification Tester',
@@ -55,64 +74,68 @@ interface PurchasePayload {
   numItems: number;
 }
 
-// What src/app/offer-2699/checkout/page.tsx sends.
-const browserContentIds = buildIndiaBlueprintContentIds(selected);
-const browserPayload: PurchasePayload = {
-  eventId: resolveMetaPurchaseEventId(paymentId, paymentId),
-  value: amount,
-  currency: 'INR',
-  contentName: INDIA_BLUEPRINT_CONTENT_NAME,
-  contentIds: browserContentIds,
-  contentCategory: INDIA_OFFER_2699_FUNNEL_CATEGORY,
-  numItems: browserContentIds.length,
-};
-
-// What src/app/api/payment/webhook/route.ts reconstructs from the Razorpay
-// order notes, via the same helpers.
 const addOnsString = [
   selected.wardrobeDetox ? 'Wardrobe Detox' : '',
   selected.smartShopper ? "Smart Shopper's Guide" : '',
   selected.outfitPreview ? 'Outfit Preview on You' : '',
 ].filter(Boolean).join(', ');
 
-const razorpayAmountMinor = amount * 100;
 const serverContentIds = buildIndiaBlueprintContentIds({
   wardrobeDetox: addOnsString.includes('Wardrobe Detox'),
   smartShopper: addOnsString.includes("Smart Shopper's Guide"),
   outfitPreview: addOnsString.includes('Outfit Preview on You'),
 });
-const serverPayload: PurchasePayload = {
-  eventId: paymentId,
-  value: razorpayAmountMinor / 100,
-  currency: 'INR',
-  contentName: INDIA_BLUEPRINT_CONTENT_NAME,
-  contentIds: serverContentIds,
-  contentCategory: INDIA_OFFER_2699_FUNNEL_CATEGORY, // read back from notes.funnel_entry
-  numItems: serverContentIds.length,
-};
 
-const checks: Array<{ field: string; browser: unknown; server: unknown; ok: boolean }> = [];
-for (const field of ['eventId', 'value', 'currency', 'contentName', 'contentCategory', 'numItems'] as const) {
-  const b = browserPayload[field];
-  const s = serverPayload[field];
-  checks.push({ field, browser: b, server: s, ok: b === s });
+function buildPurchasePair(variant: typeof variants[number]) {
+  const amount = calculateIndiaBlueprintTotal(variant.basePrice, selected);
+  const browserContentIds = buildIndiaBlueprintContentIds(selected);
+  const browser: PurchasePayload = {
+    eventId: resolveMetaPurchaseEventId(paymentId, paymentId),
+    value: amount,
+    currency: 'INR',
+    contentName: INDIA_BLUEPRINT_CONTENT_NAME,
+    contentIds: browserContentIds,
+    contentCategory: variant.contentCategory,
+    numItems: browserContentIds.length,
+  };
+  const server: PurchasePayload = {
+    eventId: paymentId,
+    value: (amount * 100) / 100,
+    currency: 'INR',
+    contentName: INDIA_BLUEPRINT_CONTENT_NAME,
+    contentIds: serverContentIds,
+    contentCategory: variant.contentCategory,
+    numItems: serverContentIds.length,
+  };
+  return { browser, server };
 }
-checks.push({
-  field: 'contentIds',
-  browser: browserPayload.contentIds.join(','),
-  server: serverPayload.contentIds.join(','),
-  ok: browserPayload.contentIds.join(',') === serverPayload.contentIds.join(','),
-});
 
-console.log('\n── Stage 1: deduplicated pair must agree ───────────────────────');
-console.table(checks);
-
-const parityFailures = checks.filter((check) => !check.ok);
-if (parityFailures.length) {
-  console.error(`✗ ${parityFailures.length} field(s) disagree between browser and server.`);
-  process.exit(1);
+console.log('\n── Stage 1: deduplicated pairs must agree ──────────────────────');
+for (const variant of variants) {
+  const { browser, server } = buildPurchasePair(variant);
+  const checks: Array<{ field: string; browser: unknown; server: unknown; ok: boolean }> = [];
+  for (const field of ['eventId', 'value', 'currency', 'contentName', 'contentCategory', 'numItems'] as const) {
+    checks.push({ field, browser: browser[field], server: server[field], ok: browser[field] === server[field] });
+  }
+  checks.push({
+    field: 'contentIds',
+    browser: browser.contentIds.join(','),
+    server: server.contentIds.join(','),
+    ok: browser.contentIds.join(',') === server.contentIds.join(','),
+  });
+  console.log(`\n${variant.label}`);
+  console.table(checks);
+  const parityFailures = checks.filter((check) => !check.ok);
+  if (parityFailures.length) {
+    console.error(`✗ ${parityFailures.length} field(s) disagree for ${variant.label}.`);
+    process.exit(1);
+  }
 }
-console.log('✓ Browser and server Purchase payloads are identical.');
+console.log('✓ Browser and server Purchase payloads agree for both price variants.');
+
+// A live test send exercises the new root-price variant by default.
+const liveVariant = variants[0];
+const serverPayload = buildPurchasePair(liveVariant).server;
 
 // Matching fields, so a test run shows what Meta will actually receive.
 const { firstName, lastName } = splitMetaName(customer.name);
@@ -154,7 +177,7 @@ const { sendMetaPurchaseEvent } = await import('../src/lib/metaConversionsApi.ts
 
 await sendMetaPurchaseEvent({
   eventId: paymentId,
-  eventSourceUrl: INDIA_BLUEPRINT_CHECKOUT_URL,
+  eventSourceUrl: liveVariant.checkoutUrl,
   externalId: orderId,
   customerEmail: customer.email,
   customerName: customer.name,
@@ -168,7 +191,7 @@ await sendMetaPurchaseEvent({
   numItems: serverPayload.numItems,
   contentCategory: serverPayload.contentCategory,
   attribution: {
-    landing_page: 'https://www.iconik.pro/offer-2699',
+    landing_page: liveVariant.landingPage,
     attribution_payload: { fbp: 'fb.1.1700000000000.1234567890', fbc: null },
   },
 });

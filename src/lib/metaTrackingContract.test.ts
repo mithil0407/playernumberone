@@ -3,8 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
   INDIA_BLUEPRINT_PRODUCT_ID,
+  INDIA_BLUEPRINT_CHECKOUT_URL,
   INDIA_FUNNEL_CATEGORY,
   INDIA_OFFER_2699_FUNNEL_CATEGORY,
+  INDIA_ROOT_BLUEPRINT_CHECKOUT_URL,
   INDIA_ROOT_FUNNEL_CATEGORY,
   META_PURCHASE_EVENT_NAME,
   buildIndiaBlueprintContentIds,
@@ -63,11 +65,13 @@ test('keeps the India Blueprint content_ids identical on browser and server', ()
   );
 });
 
-test('separates the two entry points that share the Blueprint checkout', () => {
+test('separates the two Blueprint price funnels', () => {
   assert.equal(indiaFunnelCategoryFromEntry('root'), INDIA_ROOT_FUNNEL_CATEGORY);
   assert.equal(indiaFunnelCategoryFromEntry('offer2699'), INDIA_OFFER_2699_FUNNEL_CATEGORY);
   assert.notEqual(INDIA_ROOT_FUNNEL_CATEGORY, INDIA_OFFER_2699_FUNNEL_CATEGORY);
-  // Direct navigation to the checkout is recorded as the funnel, not as a guess.
+  assert.equal(INDIA_ROOT_BLUEPRINT_CHECKOUT_URL, 'https://www.iconik.pro/checkout');
+  assert.equal(INDIA_BLUEPRINT_CHECKOUT_URL, 'https://www.iconik.pro/offer-2699/checkout');
+  // Unknown legacy entries are recorded as the general funnel, not as a guess.
   assert.equal(indiaFunnelCategoryFromEntry(null), INDIA_FUNNEL_CATEGORY);
   assert.equal(indiaFunnelCategoryFromEntry('something-else'), INDIA_FUNNEL_CATEGORY);
 
@@ -116,6 +120,8 @@ test('sends a server-side Purchase for the India Blueprint funnel, not only for 
   assert.doesNotMatch(webhook, /isMenOrderForCapi/);
   assert.match(webhook, /Iconik Style Consultation/);
   assert.match(webhook, /buildIndiaBlueprintContentIds/);
+  assert.match(webhook, /INDIA_ROOT_BLUEPRINT_CHECKOUT_URL/);
+  assert.match(webhook, /notes\.checkout_source === 'root_checkout'/);
 
   // Razorpay reports the minor unit. The orders table stores a rounded integer,
   // but the Meta payload must not — rounding drops USD cents, and the browser

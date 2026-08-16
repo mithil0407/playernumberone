@@ -37,9 +37,9 @@ export function resolveMetaCompleteRegistrationEventId(paymentId?: string | null
 }
 
 // ── India (women) Blueprint funnel product catalogue ────────────────────────
-// `/` and `/offer-2699` are two entry points into one funnel. Both sell the
-// same product through `/offer-2699/checkout`, so every step must use these IDs
-// or content-ID based reporting silently drops part of the funnel.
+// `/` and `/offer-2699` sell the same Blueprint through price-specific checkout
+// routes. Both variants must keep the same product catalogue IDs so content-ID
+// reporting remains comparable while content_category identifies the offer.
 
 export const INDIA_BLUEPRINT_PRODUCT_ID = 'iconik_style_consultation';
 export const INDIA_OUTFIT_PREVIEW_PRODUCT_ID = 'outfit_preview';
@@ -47,6 +47,7 @@ export const INDIA_WARDROBE_DETOX_PRODUCT_ID = 'wardrobe_detox';
 export const INDIA_SMART_SHOPPER_PRODUCT_ID = 'smart_shoppers_guide';
 export const INDIA_BLUEPRINT_CONTENT_NAME = 'ICONIK Complete Package';
 export const INDIA_BLUEPRINT_CHECKOUT_URL = 'https://www.iconik.pro/offer-2699/checkout';
+export const INDIA_ROOT_BLUEPRINT_CHECKOUT_URL = 'https://www.iconik.pro/checkout';
 
 export interface IndiaBlueprintAddons {
   outfitPreview?: boolean;
@@ -79,9 +80,8 @@ export const MAN_EDIT_FUNNEL_CATEGORY = 'Man Edit Subscription';
 export const MAN_EDIT_CHECKOUT_URL = 'https://www.iconik.pro/man/checkout';
 
 // ── Funnel entry attribution ────────────────────────────────────────────────
-// `/` and `/offer-2699` render the same component at the same price into the
-// same checkout. Without a distinct content_category their events are
-// indistinguishable in Events Manager and neither can be measured.
+// `/` and `/offer-2699` render the same landing/checkout experience at distinct
+// price points. content_category keeps their events separately measurable.
 
 // ASCII only: these values travel through Razorpay order notes so the webhook
 // can reproduce the browser's content_category on the server-side Purchase.

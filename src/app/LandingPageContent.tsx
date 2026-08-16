@@ -65,15 +65,15 @@ export default function LandingPageContent({
   const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
 
-  // `/` and `/offer-2699` render this same component at the same price into the
-  // same checkout, so without a distinct category their events are identical in
-  // Events Manager and neither entry point can be measured.
+  // The root price test and the established /offer-2699 funnel share the visual
+  // component but have separate prices, checkout routes, and Meta categories.
   const funnelEntry: IndiaFunnelEntry = isOffer2699 ? 'offer2699' : 'root';
   const contentCategory = isOffer2699 ? INDIA_OFFER_2699_FUNNEL_CATEGORY : INDIA_ROOT_FUNNEL_CATEGORY;
 
   useEffect(() => {
-    // Carried to the shared checkout so InitiateCheckout and Purchase are
-    // attributed back to the entry point the visitor actually arrived through.
+    // Retained for attribution continuity in the wider funnel. Each checkout
+    // route also declares its entry explicitly, so direct checkout visits cannot
+    // inherit a stale category from another offer.
     try {
       window.sessionStorage.setItem(INDIA_FUNNEL_ENTRY_STORAGE_KEY, funnelEntry);
     } catch {

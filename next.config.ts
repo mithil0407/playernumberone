@@ -100,11 +100,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       })),
       {
-        source: "/checkout",
-        destination: "/offer-2699/checkout",
-        permanent: true,
-      },
-      {
         source: "/body-type-styling/apple",
         destination: "/body-type-styling/apple-body-shape-india",
         permanent: true,

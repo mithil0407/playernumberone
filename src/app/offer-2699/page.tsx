@@ -1,4 +1,5 @@
 import LandingPageContent from '../LandingPageContent';
+import { INDIA_OFFER_2699_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
 
 export default function Offer2699Page() {
   return (
@@ -15,7 +16,7 @@ export default function Offer2699Page() {
         </>
       }
       checkoutHref="/offer-2699/checkout"
-      basePrice={2699}
+      basePrice={INDIA_OFFER_2699_BLUEPRINT_PRICE}
     />
   );
 }

@@ -551,10 +551,10 @@ export const redirectSeoPages: SeoPageInventoryEntry[] = [
   { path: "/au", status: "redirect", redirectTo: "/globe" },
   { path: "/us", status: "redirect", redirectTo: "/globe" },
   { path: "/global", status: "redirect", redirectTo: "/globe" },
-  { path: "/checkout", status: "redirect", redirectTo: "/offer-2699/checkout" },
 ];
 
 export const noindexSeoPages: SeoPageInventoryEntry[] = [
+  { path: "/checkout", status: "noindex" },
   { path: "/checkout/basic-success", status: "noindex" },
   { path: "/checkout/success", status: "noindex" },
   { path: "/checkout-monthly", status: "noindex" },

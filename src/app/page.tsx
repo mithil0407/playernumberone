@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import LandingPageContent from './LandingPageContent';
 import { buildMetadata } from '@/lib/seo';
 import { BLUEPRINT_OFFER } from '@/lib/siteFacts';
+import { INDIA_ROOT_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
 
 export const metadata: Metadata = buildMetadata({
   title: "Scientific Personal Styling for Indian Women",
@@ -21,9 +22,11 @@ export const metadata: Metadata = buildMetadata({
 export default function Home() {
   return (
     <LandingPageContent
+      checkoutHref="/checkout"
+      basePrice={INDIA_ROOT_BLUEPRINT_PRICE}
       headline={
         <>
-          Discover Your <span className="text-luxury-green">Signature Style</span> with a <span className="text-luxury-charcoal">Blueprint Built for You</span>
+          Discover Your <span className="text-luxury-green">Signature Style</span>
         </>
       }
       subheadline={
