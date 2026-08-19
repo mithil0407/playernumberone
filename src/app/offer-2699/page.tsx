@@ -8,10 +8,10 @@ export default async function Offer2699Page({ searchParams }: { searchParams: Pr
       variant="offer2699"
       headline={
         <>
-          <span className="block whitespace-nowrap">
+          <span className="block sm:whitespace-nowrap">
             <span className="text-luxury-accent">Stop Guessing</span> What Suits You.
           </span>
-          <span className="mt-2 block whitespace-nowrap">
+          <span className="mt-1 block sm:mt-2 sm:whitespace-nowrap">
             <span className="text-luxury-accent">Talk to a Stylist</span> Who&apos;ll Tell You.
           </span>
         </>

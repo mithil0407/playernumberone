@@ -27,12 +27,24 @@ export default function StyleScanResultClient({ token }: { token: string }) {
   const [error, setError] = useState('');
   const processing = useRef(false);
 
-  const load = useCallback(async () => {
-    const response = await fetch(`/api/style-scan/${encodeURIComponent(token)}/status`, { cache: 'no-store' });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Unable to load your scan.');
-    setPayload(data);
-    return data as StatusPayload;
+  const load = useCallback(async (): Promise<StatusPayload | null> => {
+    try {
+      const response = await fetch(`/api/style-scan/${encodeURIComponent(token)}/status`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to load your scan.');
+      setPayload(data);
+      setError('');
+      return data as StatusPayload;
+    } catch (issue) {
+      // A local restart or a short network interruption should not create an
+      // unhandled polling error. Keep the private result page in place and let
+      // the next poll reconnect automatically.
+      if (issue instanceof TypeError) {
+        setError('Connection paused. Keep this page open — we’ll reconnect automatically.');
+        return null;
+      }
+      throw issue;
+    }
   }, [token]);
 
   const process = useCallback(async () => {
@@ -45,12 +57,15 @@ export default function StyleScanResultClient({ token }: { token: string }) {
     finally { processing.current = false; }
   }, [load, token]);
 
+  const resultComplete = payload?.status === 'ready' || payload?.status === 'retake_required';
+
   useEffect(() => {
+    if (resultComplete) return;
     let active = true;
-    void load().then(data => { if (active && ['submitted', 'failed'].includes(data.status)) void process(); }).catch(issue => setError(issue.message));
-    const timer = window.setInterval(() => void load().catch(() => undefined), 5000);
+    void load().then(data => { if (active && data && ['submitted', 'failed'].includes(data.status)) void process(); }).catch(issue => setError(issue.message));
+    const timer = window.setInterval(() => void load().catch(issue => setError(issue.message)), 5000);
     return () => { active = false; window.clearInterval(timer); };
-  }, [load, process]);
+  }, [load, process, resultComplete]);
 
   useEffect(() => {
     if (payload?.status === 'submitted' || payload?.status === 'failed') void process();

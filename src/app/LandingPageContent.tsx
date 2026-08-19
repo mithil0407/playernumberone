@@ -57,9 +57,15 @@ interface TestimonialVideoCardProps {
   name: string;
   rating: number;
   number: number;
+  faceBlur?: {
+    left: string;
+    top: string;
+    width: string;
+    height: string;
+  };
 }
 
-function TestimonialVideoCard({ src, poster, quote, name, rating, number }: TestimonialVideoCardProps) {
+function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBlur }: TestimonialVideoCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -104,6 +110,19 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number }: Test
           <source src={src} type="video/mp4" />
           Your browser does not support embedded video.
         </video>
+        {faceBlur && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 rounded-[50%]"
+            style={{
+              ...faceBlur,
+              backdropFilter: 'blur(1.5px)',
+              WebkitBackdropFilter: 'blur(1.5px)',
+              maskImage: 'radial-gradient(ellipse, black 50%, rgba(0,0,0,0.82) 68%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(ellipse, black 50%, rgba(0,0,0,0.82) 68%, transparent 100%)',
+            }}
+          />
+        )}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-10"
@@ -193,9 +212,9 @@ export default function LandingPageContent({
   }, [basePrice, contentCategory, funnelEntry]);
 
   const transformationImages = useMemo(() => [
-    { src: '/transformation-1.webp', testimonial: 'Finally found my signature style! I feel confident every day.', name: 'Shreya, Mumbai' },
-    { src: '/transformation-2.webp', testimonial: 'The color palette changed everything. I get compliments daily!', name: 'Kavya, Delhi' },
-    { src: '/transformation-3.webp', testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.', name: 'Priya, Bangalore' },
+    { src: '/transformation-1.webp' },
+    { src: '/transformation-2.webp' },
+    { src: '/transformation-3.webp' },
   ], []);
 
   const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
@@ -304,12 +323,12 @@ export default function LandingPageContent({
               SCIENTIFIC PERSONAL STYLING FOR INDIAN WOMEN
             </div>
           )}
-          <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: isOffer2699 ? 'clamp(19px, 6.4vw, 64px)' : 'clamp(32px, 7vw, 72px)', color: '#2C2622', letterSpacing: isOffer2699 ? '-0.02em' : undefined }}>
+          <h1 className="iconik-display mb-5" style={{ fontSize: isOffer2699 ? 'clamp(30px, 8.2vw, 64px)' : 'clamp(32px, 7vw, 72px)', lineHeight: isOffer2699 ? 1.06 : 1, color: '#2C2622', letterSpacing: isOffer2699 ? '-0.025em' : undefined }}>
             {headline}
           </h1>
 
           {/* Subheadline */}
-          <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, maxWidth: '600px', margin: '0 auto 32px' }}>
+          <p style={{ fontSize: isOffer2699 ? 'clamp(15px, 4.1vw, 18px)' : '15px', lineHeight: isOffer2699 ? 1.62 : 1.8, color: '#2C2622', opacity: 0.65, maxWidth: isOffer2699 ? '560px' : '600px', margin: '0 auto 32px' }}>
             {subheadline}
           </p>
 
@@ -318,9 +337,16 @@ export default function LandingPageContent({
             ref={heroCtaRef}
             href={checkoutHref}
             onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', contentCategory)}
-            className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 sm:px-10 py-4 sm:py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
+            className="inline-flex items-center gap-2 bg-[#2C2622] px-5 py-4 text-[#F4EFE5] transition-all duration-300 transform rounded-full hover:-translate-y-0.5 hover:bg-[#3d3430] hover:shadow-xl sm:gap-3 sm:px-10 sm:py-5"
           >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Personal Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
+            <span className="iconik-display whitespace-nowrap" style={{ fontSize: '15px' }}>
+              {isOffer2699 ? (
+                <>
+                  <span className="sm:hidden">Get My Style Blueprint — {formattedBasePrice}</span>
+                  <span className="hidden sm:inline">Get My Personal Style Blueprint — {formattedBasePrice}</span>
+                </>
+              ) : 'Begin Your Transformation'}
+            </span>
             <ArrowRight className="h-4 w-4 opacity-60" />
           </Link>
 
@@ -334,24 +360,18 @@ export default function LandingPageContent({
           {/* Client transformation preview */}
           <div className="max-w-sm mx-auto mt-9 mb-2">
             <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
-              <div className="flex items-center justify-center gap-3 md:gap-4">
-                <button onClick={prevImage} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:-translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Previous image">
+              <div className="relative mx-auto w-full max-w-[320px]">
+                <div className="relative aspect-square w-full overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
+                  <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill sizes="(max-width: 640px) 320px, 320px" className="object-cover" priority={currentImageIndex === 0} />
+                </div>
+                <button onClick={prevImage} className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-300 hover:-translate-x-0.5" style={{ background: 'rgba(248,243,233,0.92)', border: '1px solid rgba(44,38,34,0.1)', boxShadow: '0 8px 24px rgba(44,38,34,0.12)' }} aria-label="Previous image">
                   <ArrowLeft className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
-                <div className="relative w-52 md:w-64" style={{ aspectRatio: '1/1' }}>
-                  <div className="relative w-full h-full rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
-                    <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill sizes="(max-width: 640px) 208px, 256px" className="object-cover" priority={currentImageIndex === 0} />
-                  </div>
-                </div>
-                <button onClick={nextImage} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Next image">
+                <button onClick={nextImage} className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-300 hover:translate-x-0.5" style={{ background: 'rgba(248,243,233,0.92)', border: '1px solid rgba(44,38,34,0.1)', boxShadow: '0 8px 24px rgba(44,38,34,0.12)' }} aria-label="Next image">
                   <ArrowRight className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
               </div>
-              <div className="mt-4 text-center">
-                <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.65, lineHeight: 1.6 }}>&ldquo;{transformationImages[currentImageIndex].testimonial}&rdquo;</p>
-                <p className="iconik-mono mt-1" style={{ fontSize: '10px', color: '#94A6AD' }}>— {transformationImages[currentImageIndex].name}</p>
-              </div>
-              <div className="flex justify-center mt-1">
+              <div className="mt-2 flex justify-center">
                 {transformationImages.map((_, idx) => (
                   <button key={idx} onClick={() => setCurrentImageIndex(idx)} className="flex h-11 w-11 items-center justify-center" aria-label={`Go to slide ${idx + 1}`}>
                     <span className="h-1.5 rounded-full transition-all duration-300" style={{ width: idx === currentImageIndex ? '16px' : '6px', background: idx === currentImageIndex ? '#2C2622' : 'rgba(44,38,34,0.2)' }} />
@@ -426,20 +446,21 @@ export default function LandingPageContent({
 
             <div className="grid items-start gap-8 md:grid-cols-2 md:gap-10 lg:grid-cols-3 lg:gap-8">
               <TestimonialVideoCard
-                src="/testimonialvideo1.mp4"
-                poster="/testimonialvideo1-poster.jpg"
-                name="Priya"
-                rating={5}
-                number={1}
-                quote="I was very insecure about my tummy. Thanks to ICONIK for actually suggesting outfits that helped me get my confidence back."
-              />
-              <TestimonialVideoCard
                 src="/testimonialvideo2.mp4"
                 poster="/testimonialvideo2-poster.jpg"
                 name="Tina"
                 rating={5}
-                number={2}
+                number={1}
                 quote="Thanks to ICONIK’s stylists. They helped me get styled for my events. It was absolutely worth it."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo1.mp4"
+                poster="/testimonialvideo1-poster.jpg"
+                name="Priya"
+                rating={5}
+                number={2}
+                faceBlur={{ left: '40.5%', top: '32.3%', width: '22.5%', height: '20.3%' }}
+                quote="I was very insecure about my tummy. Thanks to ICONIK for actually suggesting outfits that helped me get my confidence back."
               />
               <TestimonialVideoCard
                 src="/testimonialvideo3.mp4"
@@ -447,6 +468,7 @@ export default function LandingPageContent({
                 name="Gayathri"
                 rating={4}
                 number={3}
+                faceBlur={{ left: '28.5%', top: '34.3%', width: '23%', height: '18.5%' }}
                 quote="I found ICONIK on Instagram, and Jazz was very helpful in finding what actually suited me. It was a very good experience."
               />
             </div>
