@@ -7,12 +7,12 @@ export default function Offer2699Page() {
       variant="offer2699"
       headline={
         <>
-          Discover Your Signature Style
+          Stop Guessing What Suits You. Talk to a Stylist Who&apos;ll Tell You.
         </>
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">20 personalised outfits</span>, your ideal <span className="font-semibold text-luxury-green">colour palette</span>, and expert guidance designed around your body, lifestyle and preferences.
+          30 minutes with your ICONIK stylist, then a personal Style Blueprint — <span className="font-semibold text-luxury-accent">20 complete outfits</span>, your <span className="font-semibold text-luxury-green">colour palette</span>, and exactly what to avoid. Built for your body, not a body type.
         </>
       }
       checkoutHref="/offer-2699/checkout"

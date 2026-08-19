@@ -371,7 +371,7 @@ export default function IndiaBlueprintCheckout({
       <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
         <div className="mx-auto mb-8 max-w-2xl text-center">
           <div className="iconik-micro mb-3 text-[#2C2622]/45">Secure One-Page Checkout</div>
-          <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Complete Your Style Blueprint</h1>
+          <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Complete Your Personal Style Blueprint</h1>
           <p className="mt-3 text-sm leading-6 text-[#2C2622]/60 sm:text-base">Enter your details, choose any optional add-ons, and pay securely—all on this page.</p>
         </div>
 
@@ -423,7 +423,7 @@ export default function IndiaBlueprintCheckout({
               <div className="flex items-start justify-between gap-4 border-b border-[#2C2622]/10 pb-5">
                 <div>
                   <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
-                  <h2 className="iconik-display text-2xl leading-tight text-[#2C2622]">ICONIK Style Blueprint</h2>
+                  <h2 className="iconik-display text-2xl leading-tight text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
                 </div>
                 <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
               </div>
@@ -494,7 +494,7 @@ export default function IndiaBlueprintCheckout({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
-                    <h2 className="iconik-display text-xl text-[#2C2622]">ICONIK Style Blueprint</h2>
+                    <h2 className="iconik-display text-xl text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
                   </div>
                   <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
                 </div>
