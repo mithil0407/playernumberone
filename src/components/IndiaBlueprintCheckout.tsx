@@ -104,6 +104,7 @@ interface IndiaBlueprintCheckoutProps {
   funnelEntry: IndiaFunnelEntry;
   checkoutSource: IndiaBlueprintCheckoutSource;
   backHref: '/' | '/offer-2699';
+  scanToken?: string;
 }
 
 export default function IndiaBlueprintCheckout({
@@ -111,6 +112,7 @@ export default function IndiaBlueprintCheckout({
   funnelEntry,
   checkoutSource,
   backHref,
+  scanToken = '',
 }: IndiaBlueprintCheckoutProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -152,6 +154,17 @@ export default function IndiaBlueprintCheckout({
     }
 
   }, [basePrice, contentCategory, storageKey]);
+
+  useEffect(() => {
+    if (!scanToken) return;
+    fetch(`/api/style-scan/${encodeURIComponent(scanToken)}/status`, { cache: 'no-store' })
+      .then(response => response.json())
+      .then(data => {
+        const scanPhone = String(data.contact?.phone || '').replace(/^\+91/, '');
+        if (scanPhone && !phone) setPhone(scanPhone);
+      })
+      .catch(() => undefined);
+  }, [phone, scanToken]);
 
   useEffect(() => {
     if (!hasRestoredDraft) return;
@@ -236,6 +249,7 @@ export default function IndiaBlueprintCheckout({
           smart_shoppers_guide_price: selected.smartShopper ? SMART_SHOPPER_PRICE : 0,
           outfit_preview_price: selected.outfitPreview ? OUTFIT_PREVIEW_PRICE : 0,
           attribution: getAttributionPayload(),
+          scan_token: scanToken || undefined,
         }),
       });
 
@@ -329,7 +343,7 @@ export default function IndiaBlueprintCheckout({
       setIsProcessing(false);
       window.alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, email, outfitPreview, phone, razorpayLoaded, smartShopper, storageKey, validateDetails, wardrobeDetox]);
+  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, validateDetails, wardrobeDetox]);
 
   const addonCards = [
     {

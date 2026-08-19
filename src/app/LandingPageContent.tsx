@@ -30,7 +30,11 @@ import {
   Gem,
   Shield,
   Trophy,
-  Award
+  Award,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 
@@ -44,6 +48,112 @@ interface LandingPageContentProps {
   originalPrice?: number;
   displayBasePrice?: string;
   displayOriginalPrice?: string;
+}
+
+interface TestimonialVideoCardProps {
+  src: string;
+  poster: string;
+  quote: string;
+  name: string;
+  rating: number;
+  number: number;
+}
+
+function TestimonialVideoCard({ src, poster, quote, name, rating, number }: TestimonialVideoCardProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      void video.play();
+    } else {
+      video.pause();
+    }
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  return (
+    <figure className="mx-auto w-full max-w-[360px] overflow-hidden rounded-3xl md:last:col-span-2 lg:last:col-span-1" style={{ border: '1px solid rgba(244,239,229,0.18)', background: '#171411', boxShadow: '0 28px 70px rgba(0,0,0,0.28)' }}>
+      <div className="relative">
+        <video
+          ref={videoRef}
+          className="block aspect-[720/1276] w-full cursor-pointer object-cover"
+          disablePictureInPicture
+          disableRemotePlayback
+          playsInline
+          preload="metadata"
+          poster={poster}
+          aria-label={`ICONIK client testimonial video ${number}`}
+          onClick={togglePlayback}
+          onDoubleClick={(event) => event.preventDefault()}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        >
+          <source src={src} type="video/mp4" />
+          Your browser does not support embedded video.
+        </video>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(244,239,229,0.62) 1px, transparent 0)',
+            backgroundSize: '3px 3px',
+            mixBlendMode: 'soft-light',
+            opacity: 0.08,
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between p-4" style={{ background: 'linear-gradient(transparent, rgba(23,20,17,0.82))' }}>
+          <button
+            type="button"
+            onClick={togglePlayback}
+            className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
+            style={{ background: '#F4EFE5', color: '#2C2622' }}
+            aria-label={`${isPlaying ? 'Pause' : 'Play'} testimonial video ${number}`}
+          >
+            {isPlaying ? <Pause className="h-5 w-5" fill="currentColor" /> : <Play className="ml-0.5 h-5 w-5" fill="currentColor" />}
+          </button>
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
+            style={{ background: 'rgba(23,20,17,0.72)', border: '1px solid rgba(244,239,229,0.28)', color: '#F4EFE5' }}
+            aria-label={`${isMuted ? 'Unmute' : 'Mute'} testimonial video ${number}`}
+          >
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+      <figcaption className="p-6 md:p-7">
+        <div className="mb-4 flex gap-1" aria-label={`${rating} out of 5 stars`}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className="h-4 w-4"
+              fill={star <= rating ? '#D7B57A' : 'transparent'}
+              color="#D7B57A"
+              strokeWidth={star <= rating ? 0 : 1.5}
+            />
+          ))}
+        </div>
+        <div className="iconik-micro mb-3" style={{ color: '#D7B57A', opacity: 0.9 }}>{name} · ICONIK Client</div>
+        <blockquote className="iconik-display-it" style={{ color: '#F4EFE5', fontSize: '19px', lineHeight: 1.55 }}>
+          “{quote}”
+        </blockquote>
+      </figcaption>
+    </figure>
+  );
 }
 
 export default function LandingPageContent({
@@ -182,9 +292,11 @@ export default function LandingPageContent({
       <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="max-w-5xl mx-auto text-center">
 
-          <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
-            {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ CLIENTS · {CLIENT_PROOF.countriesServed}+ COUNTRIES · {BLUEPRINT_OFFER.weeklyClientCapacity} PLACES EACH WEEK
-          </div>
+          {!isOffer2699 && (
+            <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
+              {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ CLIENTS · {CLIENT_PROOF.countriesServed}+ COUNTRIES · {BLUEPRINT_OFFER.weeklyClientCapacity} PLACES EACH WEEK
+            </div>
+          )}
 
           {/* Headline */}
           {isOffer2699 && (
@@ -192,7 +304,7 @@ export default function LandingPageContent({
               SCIENTIFIC PERSONAL STYLING FOR INDIAN WOMEN
             </div>
           )}
-          <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(32px, 7vw, 72px)', color: '#2C2622' }}>
+          <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: isOffer2699 ? 'clamp(19px, 6.4vw, 64px)' : 'clamp(32px, 7vw, 72px)', color: '#2C2622', letterSpacing: isOffer2699 ? '-0.02em' : undefined }}>
             {headline}
           </h1>
 
@@ -298,6 +410,49 @@ export default function LandingPageContent({
           </div>
         </div>
       </section>
+
+      {isOffer2699 && (
+        <section className="px-4 py-20 md:px-6 md:py-24" style={{ background: '#2C2622' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
+              <div className="iconik-micro mb-5" style={{ color: '#D7B57A', opacity: 0.85 }}>Real Clients · Real Experiences</div>
+              <h2 className="iconik-display" style={{ color: '#F4EFE5', fontSize: 'clamp(36px, 6vw, 64px)', lineHeight: 1.05 }}>
+                Hear it in their own words.
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl" style={{ color: '#F4EFE5', fontSize: '16px', lineHeight: 1.8, opacity: 0.72 }}>
+                Three quick notes from ICONIK clients about what personal styling changed for them.
+              </p>
+            </div>
+
+            <div className="grid items-start gap-8 md:grid-cols-2 md:gap-10 lg:grid-cols-3 lg:gap-8">
+              <TestimonialVideoCard
+                src="/testimonialvideo1.mp4"
+                poster="/testimonialvideo1-poster.jpg"
+                name="Priya"
+                rating={5}
+                number={1}
+                quote="I was very insecure about my tummy. Thanks to ICONIK for actually suggesting outfits that helped me get my confidence back."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo2.mp4"
+                poster="/testimonialvideo2-poster.jpg"
+                name="Tina"
+                rating={5}
+                number={2}
+                quote="Thanks to ICONIK’s stylists. They helped me get styled for my events. It was absolutely worth it."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo3.mp4"
+                poster="/testimonialvideo3-poster.jpg"
+                name="Gayathri"
+                rating={4}
+                number={3}
+                quote="I found ICONIK on Instagram, and Jazz was very helpful in finding what actually suited me. It was a very good experience."
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── SECTION 3: Report Preview ────────────────────────────────────── */}
       <section id="features" className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>

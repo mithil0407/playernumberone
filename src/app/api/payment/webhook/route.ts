@@ -422,6 +422,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
               customer_phone: existingOrder.customers.phone,
               add_ons: addOnsString,
               order_amount: existingOrder.amount,
+              scan_lead_id: existingOrder.scan_lead_id,
             });
             if (crmResult.success) {
               console.log('Customer synced to CRM:', crmResult.consultation_id);
@@ -583,6 +584,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
               customer_phone: existingOrder.customers.phone,
               add_ons: addOnsString,
               order_amount: existingOrder.amount,
+              scan_lead_id: existingOrder.scan_lead_id,
             });
             if (crmResult.success) {
               console.log('Test customer synced to CRM:', crmResult.consultation_id);
@@ -770,6 +772,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
             customer_phone: existingOrder.customers.phone,
             add_ons: addOnsString,
             order_amount: existingOrder.amount,
+            scan_lead_id: existingOrder.scan_lead_id,
           });
           if (crmResult.success) {
             console.log('Customer synced to CRM:', crmResult.consultation_id);

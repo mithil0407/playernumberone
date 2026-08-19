@@ -2256,3 +2256,36 @@ export async function sendStyleEditIssueEmail(data: {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+export async function sendInstantReportPaymentEmail(data: {
+  customer_name: string;
+  customer_email: string;
+  refinement_url: string;
+  payment_id?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const firstName = htmlEscape(data.customer_name.split(' ')[0] || 'there');
+    const url = htmlEscape(data.refinement_url);
+    const html = `<!doctype html><html><body style="margin:0;background:#f8f3e9;font-family:Arial,sans-serif;color:#2c2622"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:36px 16px"><table width="600" style="max-width:600px;background:#fff;border-radius:18px"><tr><td style="background:#2c2622;color:#fff;padding:32px;text-align:center;letter-spacing:.3em">I C O N I K</td></tr><tr><td style="padding:36px"><p>Hi ${firstName},</p><h1 style="font-family:Georgia,serif;font-weight:400">Your ₹999 Instant Report is confirmed.</h1><p style="line-height:1.7;color:#665f58">Complete the two-minute refinement below. Your 24-hour delivery clock begins when you submit it.</p><p style="padding:18px 0;text-align:center"><a href="${url}" style="display:inline-block;background:#2c2622;color:#fff;text-decoration:none;border-radius:28px;padding:15px 28px">Complete My Refinement</a></p><p style="font-size:12px;color:#948b82">10 visual outfits · stylist-reviewed · signed by ICONIK Styling Team${data.payment_id ? `<br/>Payment reference: ${htmlEscape(data.payment_id)}` : ''}</p></td></tr></table></td></tr></table></body></html>`;
+    await transporter.sendMail({
+      from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`, to: data.customer_email,
+      subject: 'Complete your two-minute ICONIK refinement',
+      text: `Hi ${data.customer_name.split(' ')[0] || 'there'},\n\nYour ₹999 Instant Report is confirmed. Complete your refinement here:\n${data.refinement_url}\n\nYour 24-hour clock starts after submission.\n\nThe ICONIK Team`, html,
+    });
+    return { success: true };
+  } catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }; }
+}
+
+export async function sendInstantReportReadyEmail(data: {
+  customer_name: string;
+  customer_email: string;
+  report_url: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter(); const firstName = htmlEscape(data.customer_name.split(' ')[0] || 'there'); const url = htmlEscape(data.report_url);
+    const html = `<!doctype html><html><body style="margin:0;background:#f8f3e9;font-family:Arial,sans-serif;color:#2c2622"><table width="100%"><tr><td align="center" style="padding:36px 16px"><table width="600" style="max-width:600px;background:#fff;border-radius:18px"><tr><td style="background:#2c2622;color:#fff;padding:32px;text-align:center;letter-spacing:.3em">I C O N I K</td></tr><tr><td style="padding:36px"><p>Hi ${firstName},</p><h1 style="font-family:Georgia,serif;font-weight:400">Your ten-outfit report is ready.</h1><p style="line-height:1.7;color:#665f58">The ICONIK Styling Team has reviewed and signed your report. Open your private report below; you can also save it as a PDF.</p><p style="padding:18px 0;text-align:center"><a href="${url}" style="display:inline-block;background:#2c2622;color:#fff;text-decoration:none;border-radius:28px;padding:15px 28px">Open My Private Report</a></p></td></tr></table></td></tr></table></body></html>`;
+    await transporter.sendMail({ from: `"ICONIK Style Intelligence" <${process.env.GMAIL_USER}>`, to: data.customer_email, subject: 'Your ICONIK Instant Report is ready', text: `Hi ${data.customer_name.split(' ')[0] || 'there'},\n\nYour report is ready:\n${data.report_url}\n\nThe ICONIK Styling Team`, html });
+    return { success: true };
+  } catch (error) { return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }; }
+}

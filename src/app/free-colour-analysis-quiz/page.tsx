@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import StyleScoreLandingPage from "@/app/stylist/style-score/page";
 import { buildMetadata } from "@/lib/seo";
 import {
   articleNode,
@@ -71,7 +70,14 @@ export default function FreeColourAnalysisQuizPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <StyleScoreLandingPage />
+      <section className="bg-[#F8F3E9] px-4 pb-16 pt-28 text-center md:px-6 md:pb-24">
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.22em] text-[#B68C52]">The ICONIK Style Scan · Free</p>
+          <h1 className="iconik-display text-5xl leading-none text-[#2C2622] md:text-7xl">Your colour analysis now starts with your actual photos.</h1>
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[#2C2622]/65">Upload a natural-light headshot and full-body photo, answer five questions, and see your undertone, geometry and the wardrobe choices working against you.</p>
+          <Link href="/style-scan" className="mt-8 inline-flex rounded-full bg-[#2C2622] px-8 py-4 text-sm font-semibold text-white">Start the Free Style Scan</Link>
+        </div>
+      </section>
       <section className="bg-white px-4 py-16 md:px-6">
         <div className="mx-auto max-w-3xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.22em] text-gray-400">

@@ -80,6 +80,8 @@ export interface Consultation {
         order_amount?: number;
         order_date?: string;
         source?: string;
+        scan_lead_id?: string;
+        style_scan?: Record<string, unknown>;
     };
     notes?: string;
     status?: 'waiting_images' | 'in_progress' | 'review' | 'delivered' | 'stalled';
@@ -94,6 +96,7 @@ export async function syncToCrm(data: {
     add_ons: string;
     order_amount?: number;
     notes?: string;
+    scan_lead_id?: string | null;
 }): Promise<{ success: boolean; error?: string; consultation_id?: string }> {
     try {
         if (!isCrmSupabaseConfigured) {
@@ -144,9 +147,39 @@ export async function syncToCrm(data: {
             console.log('CRM consultation updated with addons:', existingConsultation.id);
             return { success: true, consultation_id: existingConsultation.id };
         } else {
-            // No matching phone found - skip (don't create new records)
-            console.log('No matching consultation found for phone:', data.customer_phone);
-            return { success: false, error: 'No matching consultation found' };
+            let styleScan: Record<string, unknown> | null = null;
+            if (data.scan_lead_id) {
+                const { data: scan } = await crmSupabase
+                    .from('style_scan_leads')
+                    .select('id, scan_answers, photo_paths, scan_analysis, phone_e164')
+                    .eq('id', data.scan_lead_id)
+                    .maybeSingle();
+                styleScan = scan as Record<string, unknown> | null;
+            }
+            const { data: created, error: createError } = await crmSupabase
+                .from('consultations')
+                .insert({
+                    client_name: data.customer_name,
+                    client_phone: data.customer_phone,
+                    client_data: {
+                        addons: addonsArray,
+                        order_amount: data.order_amount,
+                        order_date: new Date().toISOString(),
+                        source: 'iconik_checkout',
+                        scan_lead_id: data.scan_lead_id || undefined,
+                        style_scan: styleScan || undefined,
+                    },
+                    notes: data.notes || (data.scan_lead_id ? 'Created from ₹2,699 checkout with linked ICONIK Style Scan.' : 'Created from ICONIK checkout.'),
+                    status: 'waiting_images',
+                })
+                .select('id')
+                .single();
+            if (createError || !created?.id) {
+                console.error('Error creating CRM consultation:', createError);
+                return { success: false, error: createError?.message || 'Consultation creation failed' };
+            }
+            console.log('CRM consultation created:', created.id);
+            return { success: true, consultation_id: created.id };
         }
     } catch (error) {
         console.error('CRM sync error:', error);

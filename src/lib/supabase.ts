@@ -82,6 +82,8 @@ export interface Order {
   add_on?: boolean;
   add_ons?: string; // Comma-separated list of purchased add-ons
   product_type?: string; // Type of order: consultation, subscription, etc.
+  scan_lead_id?: string | null;
+  report_variant?: 'personal_20' | 'instant_10';
   status?: 'pending' | 'completed' | 'failed' | 'paid';
   payment_id?: string;
   razorpay_order_id?: string;
