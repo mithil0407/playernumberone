@@ -8,6 +8,7 @@ import { recordRevenueEvent } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
 import { MAN_BLUEPRINT_PRODUCT_ID, MAN_OUTFIT_PREVIEW_PRODUCT_ID } from '@/lib/metaPixel';
 import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
+import { sendWomenConsultationConfirmationWhatsApp } from '@/lib/whatsapp';
 import {
   INDIA_BLUEPRINT_CONTENT_NAME,
   INDIA_BLUEPRINT_CHECKOUT_URL,
@@ -765,7 +766,64 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           }
         }
 
-        // 3. Sync to CRM database (independent)
+        // 3. Send the opt-in WhatsApp confirmation (independent)
+        if (baseProduct !== 'Iconik Style Consultation') {
+          console.log('Women consultation WhatsApp confirmation not applicable for:', baseProduct);
+        } else if (!existingOrder.whatsapp_opt_in) {
+          console.log('WhatsApp confirmation skipped because the customer did not opt in:', order.id);
+        } else if (existingOrder.whatsapp_confirmation_sent) {
+          console.log('WhatsApp confirmation already sent for order:', order.id, '— skipping duplicate');
+        } else {
+          const whatsAppResult = await sendWomenConsultationConfirmationWhatsApp({
+            customerPhone: existingOrder.customers.phone,
+            orderId: existingOrder.id,
+            orderAmount: order.amount / 100,
+            paymentId: payment.id,
+          });
+
+          if (whatsAppResult.success && whatsAppResult.messageId && whatsAppResult.recipient) {
+            const sentAt = new Date().toISOString();
+            const { error: whatsappUpdateError } = await supabaseAdmin
+              .from('orders')
+              .update({
+                whatsapp_confirmation_sent: true,
+                whatsapp_confirmation_sent_at: sentAt,
+                whatsapp_message_id: whatsAppResult.messageId,
+                whatsapp_last_error: null,
+              })
+              .eq('razorpay_order_id', order.id);
+
+            if (whatsappUpdateError) {
+              console.error('WhatsApp confirmation sent but order tracking update failed:', whatsappUpdateError);
+            }
+
+            const { error: deliveryInsertError } = await supabaseAdmin
+              .from('whatsapp_message_deliveries')
+              .upsert({
+                order_id: existingOrder.id,
+                whatsapp_message_id: whatsAppResult.messageId,
+                message_type: 'women_consultation_confirmation',
+                recipient: whatsAppResult.recipient,
+                status: 'accepted',
+                sent_at: sentAt,
+                updated_at: sentAt,
+              }, { onConflict: 'whatsapp_message_id' });
+
+            if (deliveryInsertError) {
+              console.error('WhatsApp confirmation delivery tracking insert failed:', deliveryInsertError);
+            }
+            console.log('WhatsApp confirmation accepted by Meta for order:', order.id);
+          } else {
+            const whatsappError = whatsAppResult.error || 'Unknown WhatsApp send error';
+            await supabaseAdmin
+              .from('orders')
+              .update({ whatsapp_last_error: whatsappError })
+              .eq('razorpay_order_id', order.id);
+            console.error('WhatsApp confirmation failed for order:', order.id, whatsappError);
+          }
+        }
+
+        // 4. Sync to CRM database (independent)
         try {
           const crmResult = await syncToCrm({
             customer_name: existingOrder.customers.name,

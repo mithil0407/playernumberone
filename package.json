@@ -9,6 +9,7 @@
     "test:man-intake": "node --experimental-strip-types --test src/lib/manIntakeSubmission.test.ts src/lib/manIntakeUploadSession.test.ts",
     "test:man-copy": "node --experimental-strip-types --test src/lib/manCustomerJourneyCopy.test.ts",
     "test:meta-pixel": "node --experimental-strip-types --test src/lib/metaPageView.test.ts src/lib/metaTrackingContract.test.ts src/lib/indiaBlueprintPricing.test.ts",
+    "test:whatsapp": "node --experimental-strip-types --test src/lib/whatsapp.test.ts",
     "verify:meta-tracking": "node --experimental-strip-types --conditions=react-server --env-file=.env.local scripts/verify-meta-tracking.ts",
     "test:stylist-workspace": "node --experimental-strip-types --test src/lib/stylistWorkspacePilot.test.ts",
     "seo:images": "node scripts/build-seo-images.mjs",

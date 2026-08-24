@@ -92,6 +92,12 @@ export interface Order {
   error_code?: string;
   error_description?: string;
   email_sent?: boolean; // Prevents duplicate confirmation emails on webhook retries
+  whatsapp_opt_in?: boolean;
+  whatsapp_consent_at?: string | null;
+  whatsapp_confirmation_sent?: boolean;
+  whatsapp_confirmation_sent_at?: string | null;
+  whatsapp_message_id?: string | null;
+  whatsapp_last_error?: string | null;
   utm_source?: string | null;
   utm_medium?: string | null;
   utm_campaign?: string | null;

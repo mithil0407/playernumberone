@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       checkout_source === 'root_checkout' || checkout_source === 'offer_2699_checkout'
         ? checkout_source
         : null;
+    const whatsappOptIn = indiaCheckoutSource && body.whatsapp_opt_in === true;
     let resolvedFunnelCategory = funnel_entry;
     let resolvedBasePrice = total_base_price;
     let resolvedSmartShopperPrice = smart_shoppers_guide_price;
@@ -110,6 +111,8 @@ export async function POST(request: NextRequest) {
         product_type: 'consultation',
         scan_lead_id: scanLeadId,
         report_variant: 'personal_20',
+        whatsapp_opt_in: Boolean(whatsappOptIn),
+        whatsapp_consent_at: whatsappOptIn ? new Date().toISOString() : null,
         status: 'pending',
         razorpay_order_id: orderId,
         ...orderAttribution,
@@ -137,6 +140,7 @@ export async function POST(request: NextRequest) {
           customer_name: customer_name,
           customer_email: customer_email,
           customer_phone: customer_phone,
+          whatsapp_opt_in: whatsappOptIn ? 'true' : 'false',
           base_product: base_product,
           checkout_source: checkout_source || '',
           // Meta content_category for the browser events on this order. The

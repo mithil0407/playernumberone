@@ -66,6 +66,7 @@ type AddonKey = 'outfitpreview' | 'wardrobedetox' | 'smartshopper';
 interface CheckoutDraft {
   email: string;
   phone: string;
+  whatsappOptIn: boolean;
   outfitPreview: boolean;
   wardrobeDetox: boolean;
   smartShopper: boolean;
@@ -116,6 +117,7 @@ export default function IndiaBlueprintCheckout({
 }: IndiaBlueprintCheckoutProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [outfitPreview, setOutfitPreview] = useState(false);
@@ -143,6 +145,7 @@ export default function IndiaBlueprintCheckout({
         const draft = JSON.parse(storedDraft) as Partial<CheckoutDraft>;
         setEmail(typeof draft.email === 'string' ? draft.email : '');
         setPhone(typeof draft.phone === 'string' ? draft.phone : '');
+        setWhatsappOptIn(Boolean(draft.whatsappOptIn));
         setOutfitPreview(Boolean(draft.outfitPreview));
         setWardrobeDetox(Boolean(draft.wardrobeDetox));
         setSmartShopper(Boolean(draft.smartShopper));
@@ -168,9 +171,9 @@ export default function IndiaBlueprintCheckout({
 
   useEffect(() => {
     if (!hasRestoredDraft) return;
-    const draft: CheckoutDraft = { email, phone, outfitPreview, wardrobeDetox, smartShopper };
+    const draft: CheckoutDraft = { email, phone, whatsappOptIn, outfitPreview, wardrobeDetox, smartShopper };
     window.sessionStorage.setItem(storageKey, JSON.stringify(draft));
-  }, [email, phone, outfitPreview, wardrobeDetox, smartShopper, hasRestoredDraft, storageKey]);
+  }, [email, phone, whatsappOptIn, outfitPreview, wardrobeDetox, smartShopper, hasRestoredDraft, storageKey]);
 
   useEffect(() => {
     if (document.querySelector('script[src*="razorpay.com"]')) {
@@ -233,6 +236,7 @@ export default function IndiaBlueprintCheckout({
           customer_name: email.split('@')[0],
           customer_email: email,
           customer_phone: phone,
+          whatsapp_opt_in: whatsappOptIn,
           amount: paymentAmount,
           checkout_source: checkoutSource,
           // Recorded in the Razorpay order notes so the webhook can send the
@@ -343,7 +347,7 @@ export default function IndiaBlueprintCheckout({
       setIsProcessing(false);
       window.alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, validateDetails, wardrobeDetox]);
+  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, validateDetails, wardrobeDetox, whatsappOptIn]);
 
   const addonCards = [
     {
@@ -501,7 +505,18 @@ export default function IndiaBlueprintCheckout({
                     {phoneError && <p id="offer-phone-error" className="mt-1.5 text-sm text-red-700">{phoneError}</p>}
                   </div>
                 </div>
-                <p className="mt-4 text-xs leading-5 text-[#2C2622]/50">Your details are private and used only for payment and consultation coordination.</p>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[#2C2622]/10 bg-[#F8F3E9]/60 p-3.5">
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(event) => setWhatsappOptIn(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#2C2622]"
+                  />
+                  <span className="text-xs leading-5 text-[#2C2622]/65">
+                    Send my order confirmation, consultation booking link, and service updates on WhatsApp. I can opt out at any time.
+                  </span>
+                </label>
+                <p className="mt-3 text-xs leading-5 text-[#2C2622]/50">Your details are private and used only for payment and consultation coordination. Email confirmation is always sent.</p>
               </section>
 
               <section className="rounded-2xl border border-[#2C2622]/10 bg-white p-5 shadow-sm lg:hidden">
