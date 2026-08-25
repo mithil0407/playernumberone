@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {
+  ICONIK_MAN_WHATSAPP_TEXT_MODEL,
   extractManStyleMemoryCandidates,
   generateManEditChatReply,
   generateManEditOutfitImage,
@@ -109,7 +110,7 @@ async function saveMemories(input: {
       customer_email: customerEmail,
       role: 'system',
       content,
-      model: 'gemini-3-flash-preview',
+      model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
       metadata: {
         type: MEMORY_METADATA_TYPE,
         category: candidate.category,
@@ -285,7 +286,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
       customer_email: customerEmail,
       role: 'assistant',
       content: reply,
-      model: 'gemini-3-flash-preview',
+      model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
       metadata: {
         channel: PILOT_CHANNEL,
         in_reply_to_whatsapp_message_id: message.id,

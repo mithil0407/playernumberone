@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const TEXT_MODEL = 'gemini-3-flash-preview';
+export const ICONIK_MAN_WHATSAPP_TEXT_MODEL = process.env.ICONIK_MAN_WHATSAPP_TEXT_MODEL?.trim() || 'gpt-5.6-luna';
 const OUTFIT_IMAGE_MODEL = process.env.ICONIK_MAN_WHATSAPP_IMAGE_MODEL || 'gpt-image-2';
 const CHAT_IMAGE_BUCKET = 'man-edit-chat-images';
 
@@ -415,6 +416,32 @@ ${input.message}`;
   }
   parts.push({ text: prompt });
 
+  if (input.channel === 'whatsapp') {
+    if (!openai) throw new Error('OPENAI_API_KEY is not configured');
+    const content: Array<
+      | { type: 'input_text'; text: string }
+      | { type: 'input_image'; image_url: string; detail: 'auto' }
+    > = [{ type: 'input_text', text: prompt }];
+    if (input.image) {
+      content.push({
+        type: 'input_image',
+        image_url: `data:${input.image.mimeType};base64,${input.image.bytes.toString('base64')}`,
+        detail: 'auto',
+      });
+    }
+
+    const response = await openai.responses.create({
+      model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
+      input: [{ role: 'user', content }],
+      reasoning: { effort: 'low' },
+      max_output_tokens: 1_200,
+      store: false,
+      metadata: { workload: 'iconik_man_whatsapp_reply' },
+    });
+    return response.output_text.trim()
+      || 'I could not generate a useful styling answer for that. Please try rephrasing it.';
+  }
+
   const response = await ai.models.generateContent({
     model: TEXT_MODEL,
     contents: [{ parts }],
@@ -487,11 +514,16 @@ CUSTOMER MESSAGE:
 ${message}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ parts: [{ text: prompt }] }],
+    if (!openai) throw new Error('OPENAI_API_KEY is not configured');
+    const response = await openai.responses.create({
+      model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
+      input: prompt,
+      reasoning: { effort: 'none' },
+      max_output_tokens: 500,
+      store: false,
+      metadata: { workload: 'iconik_man_whatsapp_memory' },
     });
-    const parsed = JSON.parse(extractJson(response.text ?? '')) as { memories?: unknown[] };
+    const parsed = JSON.parse(extractJson(response.output_text)) as { memories?: unknown[] };
     if (!Array.isArray(parsed.memories)) return [];
 
     const allowed = new Set<ManStyleMemoryCandidate['category']>([
