@@ -15,6 +15,8 @@ export interface ManEditReportContext {
     id: string;
     share_token: string;
     report_data: AnyRecord | null;
+    image_urls: AnyRecord | null;
+    shopping_data: AnyRecord | null;
     status: string;
   };
   submission: AnyRecord;
@@ -54,7 +56,7 @@ export async function loadManEditReportContext(
 ): Promise<ManEditReportContext | null> {
   const { data: report, error } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, share_token, report_data, man_intake_submissions(*)')
+    .select('id, status, share_token, report_data, image_urls, shopping_data, man_intake_submissions(*)')
     .eq('share_token', shareToken)
     .in('status', ['sent', 'draft_ready', 'in_review', 'approved'])
     .maybeSingle();
@@ -84,6 +86,8 @@ export async function loadManEditReportContext(
         id: report.id,
         share_token: report.share_token,
         report_data: asRecord(report.report_data),
+        image_urls: asRecord(report.image_urls),
+        shopping_data: asRecord(report.shopping_data),
         status: report.status,
       },
       submission,
@@ -119,6 +123,8 @@ export async function loadManEditReportContext(
       id: report.id,
       share_token: report.share_token,
       report_data: asRecord(report.report_data),
+      image_urls: asRecord(report.image_urls),
+      shopping_data: asRecord(report.shopping_data),
       status: report.status,
     },
     submission,
@@ -177,6 +183,45 @@ function summarizeRecommendations(recommendations: AnyRecord[]) {
   }).join('\n');
 }
 
+function summarizeAvailableImages(imageUrls: AnyRecord) {
+  const countArray = (key: string) => Array.isArray(imageUrls[key])
+    ? (imageUrls[key] as unknown[]).filter(Boolean).length
+    : 0;
+  const diagnostic = asRecord(imageUrls.diagnostic);
+  const deliverables = asRecord(imageUrls.deliverables);
+  const comboGrids = asRecord(imageUrls.comboGridCards);
+  const namedCount = (record: AnyRecord) => Object.values(record).filter(Boolean).length;
+
+  return [
+    `${countArray('outfitCards')} personalised outfit visual(s)`,
+    `${countArray('hairstyleCards')} hairstyle visual(s)`,
+    `${countArray('beardCards')} beard visual(s)`,
+    `${countArray('eyewearCards')} eyewear visual(s)`,
+    `${namedCount(diagnostic)} diagnostic visual(s)`,
+    `${namedCount(deliverables)} deliverable image(s)`,
+    `${namedCount(comboGrids)} outfit combination grid(s)`,
+  ].join(', ');
+}
+
+function summarizeShoppingData(shoppingData: AnyRecord) {
+  const slots = asRecord(shoppingData.slots);
+  const selected = Object.entries(slots).flatMap(([slotKey, rawSlot]) => {
+    const slot = asRecord(rawSlot);
+    const products = Array.isArray(slot.selected) ? slot.selected : [];
+    return products.slice(0, 3).map(rawProduct => {
+      const product = asRecord(rawProduct);
+      const title = firstString(product.title, slot.descriptor, slotKey);
+      const merchant = firstString(product.merchant);
+      const url = firstString(product.url);
+      return [title, merchant && `from ${merchant}`, url].filter(Boolean).join(' ');
+    });
+  }).filter(Boolean);
+
+  return selected.length
+    ? selected.slice(0, 24).join('\n')
+    : 'No verified shopping links are currently attached to the report.';
+}
+
 export function buildManEditProfile(context: ManEditReportContext) {
   const profile = {
     client: {
@@ -188,6 +233,8 @@ export function buildManEditProfile(context: ManEditReportContext) {
     intakeSummary: summarizeSubmission(context.submission),
     outfitFeedback: summarizeFeedback(context.feedback),
     monthlyHistory: summarizeRecommendations(context.recommendations),
+    availableReportVisuals: summarizeAvailableImages(context.report.image_urls ?? {}),
+    verifiedShoppingLinks: summarizeShoppingData(context.report.shopping_data ?? {}),
   };
 
   const profileSummary = [
@@ -269,9 +316,17 @@ export async function getManEditSubscriptionByRazorpayId(subscriptionId: string)
 
 export async function uploadManEditChatImage(reportId: string, file: File) {
   const bytes = Buffer.from(await file.arrayBuffer());
-  const extension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'jpg';
+  return uploadManEditChatImageBytes(reportId, bytes, file.type || 'image/jpeg', file.name);
+}
+
+export async function uploadManEditChatImageBytes(
+  reportId: string,
+  bytes: Buffer,
+  contentType: string,
+  originalName = 'whatsapp-image.jpg',
+) {
+  const extension = originalName.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'jpg';
   const path = `${reportId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
-  const contentType = file.type || 'image/jpeg';
 
   const { data, error } = await supabaseAdmin.storage
     .from(CHAT_IMAGE_BUCKET)
@@ -294,6 +349,9 @@ export async function generateManEditChatReply(input: {
   context: ManEditReportContext;
   message: string;
   image?: { bytes: Buffer; mimeType: string } | null;
+  memories?: string[];
+  channel?: 'web' | 'whatsapp';
+  firstName?: string;
 }) {
   const { profile } = buildManEditProfile(input.context);
   const { data: recentMessages } = await supabaseAdmin
@@ -307,17 +365,35 @@ export async function generateManEditChatReply(input: {
     .map(item => `${item.role}: ${item.content}`)
     .join('\n');
 
-  const prompt = `You are the ICONIK Man AI stylist. Give precise, practical, premium styling advice.
+  const whatsappRules = input.channel === 'whatsapp' ? `
+WHATSAPP VOICE:
+- Sound like an experienced personal stylist messaging one established client, not a chatbot or a report writer.
+- Write in warm, natural conversational English. Contractions are welcome.
+- Keep most replies between 60 and 170 words with short, readable paragraphs.
+- Do not use headings, tables, canned greetings, or phrases like "Certainly", "Based on the information provided", or "As an AI".
+- Use bullets only when they genuinely make an outfit formula easier to follow. Use no more than one emoji, and usually none.
+- Do not repeat the client's name in every reply. Ask at most one focused follow-up question when essential.
+- Never invent a shopping link. Only share URLs present in VERIFIED SHOPPING LINKS.
+` : '';
+
+  const prompt = `You are the ICONIK Man personal stylist. Give precise, practical, premium styling advice.
 
 Rules:
 - Use the client's profile, report, likes, and dislikes as source-of-truth.
 - Be direct and specific: name colours, fits, fabric weights, styling fixes, and what to avoid.
-- If the user asks about an uploaded outfit image, evaluate fit, colour harmony, occasion appropriateness, and 2-4 concrete improvements.
+- If the user shares an outfit image, first say what works, then evaluate fit, colour harmony, proportions, coordination, and occasion appropriateness. Give 2-4 concrete improvements. Rate the outfit only when requested; never rate the person's body or attractiveness.
 - Do not mention internal JSON, database fields, or that you are an AI model.
 - Keep the answer under 220 words unless the user asks for a deeper breakdown.
+${whatsappRules}
 
 CLIENT PROFILE:
 ${JSON.stringify(profile, null, 2)}
+
+CLIENT NAME:
+${input.firstName || 'Client'}
+
+LONG-TERM STYLE MEMORIES:
+${input.memories?.length ? input.memories.join('\n') : 'No additional WhatsApp preferences have been saved yet.'}
 
 RECENT CHAT:
 ${history || 'No previous chat.'}
@@ -342,6 +418,54 @@ ${input.message}`;
   });
 
   return (response.text ?? '').trim() || 'I could not generate a useful styling answer for that. Please try rephrasing it.';
+}
+
+export interface ManStyleMemoryCandidate {
+  category: 'like' | 'dislike' | 'fit' | 'colour' | 'brand' | 'budget' | 'owned_item' | 'lifestyle' | 'other';
+  detail: string;
+  confidence: number;
+}
+
+export async function extractManStyleMemoryCandidates(message: string): Promise<ManStyleMemoryCandidate[]> {
+  if (!message.trim() || /^\[Unsupported WhatsApp message:/i.test(message)) return [];
+
+  const prompt = `Extract only durable, explicitly stated men's style preferences or wardrobe facts from this customer message.
+
+Return ONLY valid JSON:
+{"memories":[{"category":"like|dislike|fit|colour|brand|budget|owned_item|lifestyle|other","detail":"short first-person-independent fact","confidence":0.0}]}
+
+Save stable facts such as likes, dislikes, fit preferences, budget, brands, owned items, or recurring lifestyle needs.
+Do not save one-off occasions, questions, guesses, body judgments, sensitive personal data, or facts inferred only from an image.
+If there is no durable fact, return {"memories":[]}.
+
+CUSTOMER MESSAGE:
+${message}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: [{ parts: [{ text: prompt }] }],
+    });
+    const parsed = JSON.parse(extractJson(response.text ?? '')) as { memories?: unknown[] };
+    if (!Array.isArray(parsed.memories)) return [];
+
+    const allowed = new Set<ManStyleMemoryCandidate['category']>([
+      'like', 'dislike', 'fit', 'colour', 'brand', 'budget', 'owned_item', 'lifestyle', 'other',
+    ]);
+    return parsed.memories.flatMap(raw => {
+      const memory = asRecord(raw);
+      const category = firstString(memory.category) as ManStyleMemoryCandidate['category'];
+      const detail = firstString(memory.detail).slice(0, 240);
+      const confidence = typeof memory.confidence === 'number'
+        ? Math.max(0, Math.min(1, memory.confidence))
+        : 0;
+      if (!allowed.has(category) || !detail || confidence < 0.75) return [];
+      return [{ category, detail, confidence }];
+    }).slice(0, 4);
+  } catch (error) {
+    console.warn('[man whatsapp pilot] preference extraction skipped:', error instanceof Error ? error.message : error);
+    return [];
+  }
 }
 
 function extractJson(text: string) {

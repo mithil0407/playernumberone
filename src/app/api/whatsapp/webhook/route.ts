@@ -1,15 +1,13 @@
 import crypto from 'crypto';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { processIconikManWhatsappPilotMessage } from '@/lib/manWhatsappPilotAgent';
 import { supabaseAdmin } from '@/lib/supabase';
+import {
+  extractWhatsappWebhookEvents,
+  getIconikManWhatsappPilotConfig,
+} from '@/lib/whatsappPilot';
 
-interface WhatsAppStatus {
-  id?: string;
-  status?: 'sent' | 'delivered' | 'read' | 'failed' | 'deleted';
-  timestamp?: string;
-  recipient_id?: string;
-  errors?: Array<{ code?: number; title?: string; message?: string; error_data?: { details?: string } }>;
-  biz_opaque_callback_data?: string;
-}
+export const maxDuration = 120;
 
 function safeTokenMatch(received: string, expected: string) {
   const receivedBuffer = Buffer.from(received);
@@ -33,6 +31,7 @@ export async function GET(request: NextRequest) {
       graph_api_version_configured: Boolean(process.env.WHATSAPP_GRAPH_API_VERSION),
       app_secret_configured: Boolean(process.env.WHATSAPP_APP_SECRET),
       verify_token_configured: Boolean(expectedToken),
+      iconik_man_pilot_configured: Boolean(getIconikManWhatsappPilotConfig()),
     });
   }
 
@@ -63,23 +62,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
   }
 
-  let payload: {
-    object?: string;
-    entry?: Array<{ changes?: Array<{ value?: { statuses?: WhatsAppStatus[] } }> }>;
-  };
+  let payload: unknown;
   try {
     payload = JSON.parse(body);
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  if (payload.object !== 'whatsapp_business_account') {
+  if (!payload || typeof payload !== 'object' || (payload as { object?: string }).object !== 'whatsapp_business_account') {
     return NextResponse.json({ status: 'ignored' });
   }
 
-  const statuses = (payload.entry || []).flatMap(entry =>
-    (entry.changes || []).flatMap(change => change.value?.statuses || []),
-  );
+  const { messages, statuses } = extractWhatsappWebhookEvents(payload);
 
   await Promise.all(statuses.map(async status => {
     if (!status.id || !status.status) return;
@@ -105,5 +99,17 @@ export async function POST(request: NextRequest) {
     }
   }));
 
-  return NextResponse.json({ status: 'success' });
+  if (messages.length > 0) {
+    after(async () => {
+      for (const message of messages) {
+        try {
+          await processIconikManWhatsappPilotMessage(message);
+        } catch (error) {
+          console.error('[man whatsapp pilot] inbound message failed:', message.id, error);
+        }
+      }
+    });
+  }
+
+  return NextResponse.json({ status: 'success', received_messages: messages.length });
 }
