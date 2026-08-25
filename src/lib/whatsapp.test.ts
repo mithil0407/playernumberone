@@ -3,10 +3,12 @@ import test from 'node:test';
 import { normalizeIndianWhatsappNumber } from './indiaPhone.ts';
 import { buildWomenConsultationTemplatePayload } from './whatsapp.ts';
 import {
+  buildWhatsappPilotImagePayload,
   buildWhatsappPilotTextPayload,
   extractWhatsappWebhookEvents,
   getIconikManWhatsappPilotConfig,
   isIconikManWhatsappPilotSender,
+  wantsGeneratedOutfitImage,
 } from './whatsappPilot.ts';
 
 test('normalises Indian WhatsApp numbers for Cloud API', () => {
@@ -92,4 +94,29 @@ test('builds a natural text reply payload with URL previews', () => {
     preview_url: true,
     body: 'This shirt works well. https://example.com/shirt',
   });
+});
+
+test('builds an outbound WhatsApp image payload', () => {
+  const payload = buildWhatsappPilotImagePayload(
+    '+91 85540 45500',
+    'https://images.example.com/outfit.png',
+    'Your dinner look',
+  );
+  assert.deepEqual(payload, {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: '918554045500',
+    type: 'image',
+    image: {
+      link: 'https://images.example.com/outfit.png',
+      caption: 'Your dinner look',
+    },
+  });
+});
+
+test('only requests paid outfit generation for explicit visual intent', () => {
+  assert.equal(wantsGeneratedOutfitImage('What should I wear for a dinner date?'), false);
+  assert.equal(wantsGeneratedOutfitImage('Show me an outfit for a dinner date'), true);
+  assert.equal(wantsGeneratedOutfitImage('Generate a visual of that look'), true);
+  assert.equal(wantsGeneratedOutfitImage('Can you rate this outfit image?'), false);
 });

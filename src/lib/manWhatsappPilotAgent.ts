@@ -3,6 +3,7 @@ import 'server-only';
 import {
   extractManStyleMemoryCandidates,
   generateManEditChatReply,
+  generateManEditOutfitImage,
   loadManEditReportContext,
   uploadManEditChatImageBytes,
   type ManEditReportContext,
@@ -12,11 +13,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 import {
   downloadWhatsAppImage,
   markWhatsAppMessageRead,
+  sendWhatsAppImageMessage,
   sendWhatsAppTextMessage,
 } from '@/lib/whatsapp';
 import {
   getIconikManWhatsappPilotConfig,
   isIconikManWhatsappPilotSender,
+  wantsGeneratedOutfitImage,
   type IconikManWhatsappPilotConfig,
   type WhatsappInboundMessage,
 } from '@/lib/whatsappPilot';
@@ -126,6 +129,50 @@ async function sendPilotText(to: string, body: string) {
   const result = await sendWhatsAppTextMessage(to, body);
   if (!result.success) throw new Error(result.error || 'WhatsApp send failed');
   return result;
+}
+
+async function sendRequestedOutfitImage(input: {
+  context: ManEditReportContext;
+  to: string;
+  request: string;
+  memories: string[];
+  sourceWhatsappMessageId: string;
+}) {
+  const generated = await generateManEditOutfitImage({
+    context: input.context,
+    request: input.request,
+    memories: input.memories,
+  });
+  const uploaded = await uploadManEditChatImageBytes(
+    input.context.report.id,
+    generated.bytes,
+    generated.mimeType,
+    'generated-outfit.png',
+  );
+  if (!uploaded.signedUrl) throw new Error('Could not create a link for the generated outfit image');
+
+  const caption = 'Here’s the outfit direction I’d put together for you. Treat the visual as inspiration—the exact colour and fit notes in my message are the part to follow when shopping.';
+  const sent = await sendWhatsAppImageMessage(input.to, uploaded.signedUrl, caption);
+  if (!sent.success) throw new Error(sent.error || 'WhatsApp image send failed');
+
+  const customerEmail = String(input.context.subscription?.customer_email ?? input.context.submission.customer_email);
+  const { error } = await supabaseAdmin.from('man_edit_chat_messages').insert({
+    report_id: input.context.report.id,
+    subscription_id: input.context.subscription?.id ?? null,
+    customer_email: customerEmail,
+    role: 'assistant',
+    content: caption,
+    image_url: uploaded.signedUrl,
+    model: generated.model,
+    metadata: {
+      channel: PILOT_CHANNEL,
+      type: 'iconik_man_generated_outfit_v1',
+      storage_path: uploaded.path,
+      in_reply_to_whatsapp_message_id: input.sourceWhatsappMessageId,
+      whatsapp_message_id: sent.messageId ?? null,
+    },
+  });
+  if (error) console.warn('[man whatsapp pilot] generated image message save failed:', error.message);
 }
 
 async function loadPilotContext(config: IconikManWhatsappPilotConfig) {
@@ -261,6 +308,24 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
       },
     })
     .eq('id', assistantMessage.id);
+
+  if (wantsGeneratedOutfitImage(message.text)) {
+    try {
+      await sendRequestedOutfitImage({
+        context,
+        to: config.phone,
+        request: message.text,
+        memories,
+        sourceWhatsappMessageId: message.id,
+      });
+    } catch (error) {
+      console.error('[man whatsapp pilot] outfit image generation failed:', error);
+      await sendPilotText(
+        config.phone,
+        'My image studio hit a temporary issue, but the outfit direction above is still the one I recommend. Ask me to generate the visual again in a moment.',
+      );
+    }
+  }
 
   const candidates = await extractManStyleMemoryCandidates(message.text);
   await saveMemories({

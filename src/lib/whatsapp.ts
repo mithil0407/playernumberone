@@ -1,5 +1,6 @@
 import { normalizeIndianWhatsappNumber } from './indiaPhone.ts';
 import {
+  buildWhatsappPilotImagePayload,
   buildWhatsappPilotTextPayload,
   buildWhatsappReadReceiptPayload,
 } from './whatsappPilot.ts';
@@ -138,6 +139,10 @@ async function sendWhatsappPayload(payload: Record<string, unknown>): Promise<Wh
 
 export async function sendWhatsAppTextMessage(to: string, body: string) {
   return sendWhatsappPayload(buildWhatsappPilotTextPayload(to, body));
+}
+
+export async function sendWhatsAppImageMessage(to: string, imageUrl: string, caption?: string) {
+  return sendWhatsappPayload(buildWhatsappPilotImagePayload(to, imageUrl, caption));
 }
 
 export async function markWhatsAppMessageRead(messageId: string) {

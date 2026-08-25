@@ -1,12 +1,15 @@
 import 'server-only';
 
 import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const TEXT_MODEL = 'gemini-3-flash-preview';
+const OUTFIT_IMAGE_MODEL = process.env.ICONIK_MAN_WHATSAPP_IMAGE_MODEL || 'gpt-image-2';
 const CHAT_IMAGE_BUCKET = 'man-edit-chat-images';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 type AnyRecord = Record<string, unknown>;
 
@@ -418,6 +421,48 @@ ${input.message}`;
   });
 
   return (response.text ?? '').trim() || 'I could not generate a useful styling answer for that. Please try rephrasing it.';
+}
+
+export async function generateManEditOutfitImage(input: {
+  context: ManEditReportContext;
+  request: string;
+  memories?: string[];
+}) {
+  if (!openai) throw new Error('OPENAI_API_KEY is not configured');
+  const { profile } = buildManEditProfile(input.context);
+  const prompt = `Create one premium, photorealistic men's outfit inspiration image for an ICONIK Man styling client.
+
+The image must:
+- Show one complete head-to-toe outfit on a tasteful, generic adult male fashion model in a clean editorial studio.
+- Translate the client's styling profile and request into visible choices of colour, silhouette, layering, footwear, and accessories.
+- Look attainable and commercially wearable in India, not costume-like or runway-extreme.
+- Use a natural relaxed pose, realistic fabric texture, balanced proportions, and soft premium lighting.
+- Contain no written text, logos, price tags, watermarks, collages, or before/after panels.
+- Be outfit inspiration only. Do not imply that the generic model is the client or reproduce the client's identity.
+
+CLIENT STYLE PROFILE:
+${JSON.stringify(profile, null, 2).slice(0, 12_000)}
+
+SAVED PREFERENCES:
+${input.memories?.length ? input.memories.join('\n') : 'No additional preferences saved.'}
+
+CLIENT REQUEST:
+${input.request}`;
+
+  const result = await openai.images.generate({
+    model: OUTFIT_IMAGE_MODEL,
+    prompt,
+    size: '1024x1536',
+    quality: 'medium',
+  } as Parameters<typeof openai.images.generate>[0]);
+  const imageBase64 = (result as { data?: Array<{ b64_json?: string }> }).data?.[0]?.b64_json;
+  if (!imageBase64) throw new Error('The image model returned no image data');
+
+  return {
+    bytes: Buffer.from(imageBase64, 'base64'),
+    mimeType: 'image/png',
+    model: OUTFIT_IMAGE_MODEL,
+  };
 }
 
 export interface ManStyleMemoryCandidate {

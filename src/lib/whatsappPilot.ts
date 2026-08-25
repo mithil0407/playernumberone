@@ -160,6 +160,39 @@ export function buildWhatsappPilotTextPayload(to: string, body: string) {
   };
 }
 
+export function buildWhatsappPilotImagePayload(to: string, imageUrl: string, caption?: string) {
+  const recipient = normalizeIndianWhatsappNumber(to);
+  if (!recipient) throw new Error('A valid Indian WhatsApp number is required');
+  const normalizedUrl = imageUrl.trim();
+  if (!/^https:\/\//i.test(normalizedUrl)) throw new Error('A secure WhatsApp image URL is required');
+  const normalizedCaption = caption?.trim().slice(0, 1_024);
+
+  return {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: recipient,
+    type: 'image',
+    image: {
+      link: normalizedUrl,
+      ...(normalizedCaption ? { caption: normalizedCaption } : {}),
+    },
+  };
+}
+
+export function wantsGeneratedOutfitImage(message: string) {
+  const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!normalized) return false;
+
+  const visualNoun = /\b(image|picture|visual|render|mockup|moodboard|lookbook)\b/;
+  const fashionNoun = /\b(outfit|look|clothes|clothing|wear|style|styling)\b/;
+  const creationVerb = /\b(generate|create|make|design|visuali[sz]e|render)\b/;
+  const showMe = /\b(show|send)\s+me\b/;
+
+  return (creationVerb.test(normalized) && (visualNoun.test(normalized) || fashionNoun.test(normalized)))
+    || (showMe.test(normalized) && (visualNoun.test(normalized) || fashionNoun.test(normalized)))
+    || (/\bwhat (?:would|will) .+ look like\b/.test(normalized) && fashionNoun.test(normalized));
+}
+
 export function buildWhatsappReadReceiptPayload(messageId: string) {
   if (!messageId.trim()) throw new Error('WhatsApp message ID is required');
   return {

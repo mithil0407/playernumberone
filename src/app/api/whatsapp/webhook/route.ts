@@ -7,7 +7,7 @@ import {
   getIconikManWhatsappPilotConfig,
 } from '@/lib/whatsappPilot';
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 function safeTokenMatch(received: string, expected: string) {
   const receivedBuffer = Buffer.from(received);
