@@ -160,6 +160,23 @@ export function buildWhatsappPilotTextPayload(to: string, body: string) {
   };
 }
 
+export function formatWhatsappStylistReply(body: string) {
+  return body
+    .replace(/\r\n/g, '\n')
+    .replace(/```(?:\w+)?\n?([\s\S]*?)```/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/^[ \t]*[-*][ \t]+/gm, '• ')
+    .replace(/^[ \t]*>[ \t]?/gm, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function buildWhatsappPilotImagePayload(to: string, imageUrl: string, caption?: string) {
   const recipient = normalizeIndianWhatsappNumber(to);
   if (!recipient) throw new Error('A valid Indian WhatsApp number is required');

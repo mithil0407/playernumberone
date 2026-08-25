@@ -6,6 +6,7 @@ import {
   buildWhatsappPilotImagePayload,
   buildWhatsappPilotTextPayload,
   extractWhatsappWebhookEvents,
+  formatWhatsappStylistReply,
   getIconikManWhatsappPilotConfig,
   isIconikManWhatsappPilotSender,
   wantsGeneratedOutfitImage,
@@ -94,6 +95,23 @@ test('builds a natural text reply payload with URL previews', () => {
     preview_url: true,
     body: 'This shirt works well. https://example.com/shirt',
   });
+});
+
+test('formats stylist copy as clean WhatsApp plain text', () => {
+  const formatted = formatWhatsappStylistReply(`## Date-night look
+
+- **Top:** Burgundy merino polo
+- *Shoes:* Chocolate loafers
+
+Keep it relaxed.`);
+
+  assert.equal(formatted, `Date-night look
+
+• Top: Burgundy merino polo
+• Shoes: Chocolate loafers
+
+Keep it relaxed.`);
+  assert.doesNotMatch(formatted, /[*#`]/);
 });
 
 test('builds an outbound WhatsApp image payload', () => {

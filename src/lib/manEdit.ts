@@ -1,13 +1,14 @@
 import 'server-only';
 
 import { GoogleGenAI } from '@google/genai';
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const TEXT_MODEL = 'gemini-3-flash-preview';
 export const ICONIK_MAN_WHATSAPP_TEXT_MODEL = process.env.ICONIK_MAN_WHATSAPP_TEXT_MODEL?.trim() || 'gpt-5.6-luna';
 const OUTFIT_IMAGE_MODEL = process.env.ICONIK_MAN_WHATSAPP_IMAGE_MODEL || 'gpt-image-2';
 const CHAT_IMAGE_BUCKET = 'man-edit-chat-images';
+const OUTFIT_REFERENCE_MAX_BYTES = 20 * 1024 * 1024;
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
@@ -373,11 +374,13 @@ export async function generateManEditChatReply(input: {
 WHATSAPP VOICE:
 - Sound like an experienced personal stylist messaging one established client, not a chatbot or a report writer.
 - Write in warm, natural conversational English. Contractions are welcome.
-- Keep most replies between 60 and 170 words with short, readable paragraphs.
-- Do not use headings, tables, canned greetings, or phrases like "Certainly", "Based on the information provided", or "As an AI".
-- Use bullets only when they genuinely make an outfit formula easier to follow. Use no more than one emoji, and usually none.
+- Keep most replies between 50 and 140 words. Lead with the useful answer, then use 2-4 short, readable paragraphs.
+- Do not use Markdown, asterisks, headings, tables, canned greetings, or phrases like "Certainly", "Based on the information provided", or "As an AI".
+- If an outfit formula genuinely needs a list, use a plain bullet character (•), keep each bullet conversational, and avoid report-like labels such as "Top:", "Bottom:", or "Accessories:".
+- Prefer one clear recommendation with a short reason over a long catalogue of rules or things to avoid.
 - Do not repeat the client's name in every reply. Ask at most one focused follow-up question when essential.
 - Never invent a shopping link. Only share URLs present in VERIFIED SHOPPING LINKS.
+- Never say that you cannot create or send an image. The surrounding WhatsApp service handles explicit visual requests.
 ` : '';
 
   const prompt = `You are the ICONIK Man personal stylist. Give precise, practical, premium styling advice.
@@ -433,7 +436,7 @@ ${input.message}`;
     const response = await openai.responses.create({
       model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
       input: [{ role: 'user', content }],
-      reasoning: { effort: 'low' },
+      reasoning: { effort: 'medium' },
       max_output_tokens: 1_200,
       store: false,
       metadata: { workload: 'iconik_man_whatsapp_reply' },
@@ -453,19 +456,55 @@ ${input.message}`;
 export async function generateManEditOutfitImage(input: {
   context: ManEditReportContext;
   request: string;
+  outfitDirection?: string | null;
   memories?: string[];
 }) {
   if (!openai) throw new Error('OPENAI_API_KEY is not configured');
   const { profile } = buildManEditProfile(input.context);
-  const prompt = `Create one premium, photorealistic men's outfit inspiration image for an ICONIK Man styling client.
+  const headshotUrl = firstString(input.context.submission.photo_headshot_url);
+  const fullBodyUrl = firstString(input.context.submission.photo_fullbody_url);
+  const referenceCandidates = [
+    { label: 'headshot', url: headshotUrl },
+    { label: 'full-body', url: fullBodyUrl },
+  ].filter(candidate => candidate.url);
+
+  const referenceImages = [];
+  for (const candidate of referenceCandidates) {
+    const response = await fetch(candidate.url);
+    if (!response.ok) {
+      console.warn(`[man whatsapp pilot] ${candidate.label} reference fetch failed: HTTP ${response.status}`);
+      continue;
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (!bytes.length || bytes.length > OUTFIT_REFERENCE_MAX_BYTES) {
+      console.warn(`[man whatsapp pilot] ${candidate.label} reference has invalid size: ${bytes.length}`);
+      continue;
+    }
+    const mimeType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() || 'image/jpeg';
+    if (!/^image\/(?:jpeg|png|webp)$/i.test(mimeType)) {
+      console.warn(`[man whatsapp pilot] ${candidate.label} reference has unsupported type: ${mimeType}`);
+      continue;
+    }
+    const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+    referenceImages.push(await toFile(bytes, `${candidate.label}.${extension}`, { type: mimeType }));
+  }
+
+  if (!referenceImages.length) {
+    throw new Error('No usable client reference image is available for a personalised outfit visual');
+  }
+
+  const prompt = `Create one premium, photorealistic men's outfit image depicting the same adult client shown in the supplied reference image(s).
 
 The image must:
-- Show one complete head-to-toe outfit on a tasteful, generic adult male fashion model in a clean editorial studio.
-- Translate the client's styling profile and request into visible choices of colour, silhouette, layering, footwear, and accessories.
+- Preserve the client's recognisable identity, facial features, skin tone, apparent age, hairstyle, facial hair, body proportions, and natural build. Do not substitute a generic model, beautify the face, reshape the body, or make him look like a different person.
+- Treat the headshot as the authority for face and grooming. Treat the full-body photo as the authority for frame, scale, and proportions.
+- Show the client head-to-toe in the exact outfit direction below. Match every specified garment, colour, fit, layer, shoe, and accessory; do not swap in a different look.
 - Look attainable and commercially wearable in India, not costume-like or runway-extreme.
 - Use a natural relaxed pose, realistic fabric texture, balanced proportions, and soft premium lighting.
 - Contain no written text, logos, price tags, watermarks, collages, or before/after panels.
-- Be outfit inspiration only. Do not imply that the generic model is the client or reproduce the client's identity.
+
+OUTFIT DIRECTION — SOURCE OF TRUTH:
+${input.outfitDirection?.trim() || 'Create the most suitable outfit for the client request using the profile and saved preferences below.'}
 
 CLIENT STYLE PROFILE:
 ${JSON.stringify(profile, null, 2).slice(0, 12_000)}
@@ -476,12 +515,14 @@ ${input.memories?.length ? input.memories.join('\n') : 'No additional preference
 CLIENT REQUEST:
 ${input.request}`;
 
-  const result = await openai.images.generate({
+  const result = await openai.images.edit({
     model: OUTFIT_IMAGE_MODEL,
+    image: referenceImages,
     prompt,
     size: '1024x1536',
     quality: 'medium',
-  } as Parameters<typeof openai.images.generate>[0]);
+    output_format: 'png',
+  });
   const imageBase64 = (result as { data?: Array<{ b64_json?: string }> }).data?.[0]?.b64_json;
   if (!imageBase64) throw new Error('The image model returned no image data');
 

@@ -19,6 +19,7 @@ import {
 } from '@/lib/whatsapp';
 import {
   getIconikManWhatsappPilotConfig,
+  formatWhatsappStylistReply,
   isIconikManWhatsappPilotSender,
   wantsGeneratedOutfitImage,
   type IconikManWhatsappPilotConfig,
@@ -136,12 +137,14 @@ async function sendRequestedOutfitImage(input: {
   context: ManEditReportContext;
   to: string;
   request: string;
+  outfitDirection: string | null;
   memories: string[];
   sourceWhatsappMessageId: string;
 }) {
   const generated = await generateManEditOutfitImage({
     context: input.context,
     request: input.request,
+    outfitDirection: input.outfitDirection,
     memories: input.memories,
   });
   const uploaded = await uploadManEditChatImageBytes(
@@ -152,7 +155,7 @@ async function sendRequestedOutfitImage(input: {
   );
   if (!uploaded.signedUrl) throw new Error('Could not create a link for the generated outfit image');
 
-  const caption = 'Here’s the outfit direction I’d put together for you. Treat the visual as inspiration—the exact colour and fit notes in my message are the part to follow when shopping.';
+  const caption = 'Here’s that look on you. I’ve kept it aligned with the colours, fit and layers we just discussed.';
   const sent = await sendWhatsAppImageMessage(input.to, uploaded.signedUrl, caption);
   if (!sent.success) throw new Error(sent.error || 'WhatsApp image send failed');
 
@@ -174,6 +177,39 @@ async function sendRequestedOutfitImage(input: {
     },
   });
   if (error) console.warn('[man whatsapp pilot] generated image message save failed:', error.message);
+}
+
+async function loadLatestOutfitDirection(reportId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('man_edit_chat_messages')
+    .select('content, metadata, image_url')
+    .eq('report_id', reportId)
+    .eq('role', 'assistant')
+    .order('created_at', { ascending: false })
+    .limit(12);
+
+  if (error) {
+    console.warn('[man whatsapp pilot] latest outfit direction unavailable:', error.message);
+    return null;
+  }
+
+  const fashionTerms = /\b(wear|outfit|look|shirt|polo|tee|t-shirt|trouser|jeans|chino|jacket|blazer|overshirt|shoe|loafer|sneaker|kurta|suit)\b/i;
+  const imageFailure = /\b(?:can(?:not|'t) (?:render|generate|create|send)|image studio|generate the visual again)\b/i;
+
+  for (const item of data ?? []) {
+    const content = typeof item.content === 'string' ? item.content.trim() : '';
+    const metadata = asRecord(item.metadata);
+    if (
+      content.length >= 60
+      && fashionTerms.test(content)
+      && !imageFailure.test(content)
+      && !item.image_url
+      && metadata.type !== 'iconik_man_generated_outfit_v1'
+    ) {
+      return content;
+    }
+  }
+  return null;
 }
 
 async function loadPilotContext(config: IconikManWhatsappPilotConfig) {
@@ -259,24 +295,33 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
   if (userError || !userMessage) throw new Error(userError?.message || 'Could not save pilot message');
 
   const memories = await loadSavedMemories(context.report.id);
+  const imageRequested = wantsGeneratedOutfitImage(message.text);
+  const outfitDirection = imageRequested
+    ? await loadLatestOutfitDirection(context.report.id)
+    : null;
   let reply: string;
-  try {
-    reply = await generateManEditChatReply({
-      context,
-      message: message.text,
-      image: modelImage,
-      memories,
-      channel: 'whatsapp',
-      firstName: config.firstName,
-    });
-  } catch (error) {
-    console.error('[man whatsapp pilot] stylist reply failed:', error);
-    await sendPilotText(
-      config.phone,
-      'I hit a temporary issue while reading your style profile. Send that once more in a moment—I’ve kept your message.',
-    );
-    return { status: 'generation_failed' as const };
+  if (imageRequested && outfitDirection) {
+    reply = 'Absolutely — I’m turning that exact outfit into a visual for you now.';
+  } else {
+    try {
+      reply = await generateManEditChatReply({
+        context,
+        message: message.text,
+        image: modelImage,
+        memories,
+        channel: 'whatsapp',
+        firstName: config.firstName,
+      });
+    } catch (error) {
+      console.error('[man whatsapp pilot] stylist reply failed:', error);
+      await sendPilotText(
+        config.phone,
+        'I hit a temporary issue while reading your style profile. Send that once more in a moment—I’ve kept your message.',
+      );
+      return { status: 'generation_failed' as const };
+    }
   }
+  reply = formatWhatsappStylistReply(reply);
 
   const { data: assistantMessage, error: assistantError } = await supabaseAdmin
     .from('man_edit_chat_messages')
@@ -310,12 +355,13 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     })
     .eq('id', assistantMessage.id);
 
-  if (wantsGeneratedOutfitImage(message.text)) {
+  if (imageRequested) {
     try {
       await sendRequestedOutfitImage({
         context,
         to: config.phone,
         request: message.text,
+        outfitDirection: outfitDirection || reply,
         memories,
         sourceWhatsappMessageId: message.id,
       });
