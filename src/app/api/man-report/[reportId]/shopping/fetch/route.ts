@@ -19,6 +19,7 @@ import {
   type ManShoppingState,
 } from '@/lib/manShopping';
 import { runManShoppingPipeline } from '@/lib/manShoppingPipeline';
+import { getShoppingRunStatus } from '@/lib/apifyShoppingClient';
 
 export const maxDuration = 300;
 
@@ -56,7 +57,17 @@ export async function POST(
   const state = report.shopping_data as ManShoppingState | null;
 
   if (isShoppingFetchInFlight(state)) {
-    return NextResponse.json({ status: 'already_running', reportId }, { status: 202 });
+    // A serverless invocation may have stopped polling while Apify later
+    // completed or timed out with a usable dataset. Only block a retry while
+    // the actor itself is genuinely active; terminal runs should be resumed.
+    if (state?.status === 'fetching' && state.apifyRunId) {
+      const runStatus = await getShoppingRunStatus(state.apifyRunId).catch(() => null);
+      if (runStatus === 'READY' || runStatus === 'RUNNING') {
+        return NextResponse.json({ status: 'already_running', reportId }, { status: 202 });
+      }
+    } else {
+      return NextResponse.json({ status: 'already_running', reportId }, { status: 202 });
+    }
   }
 
   const staleKeys = onlySlotKeys ?? diffStaleSlotKeys(state, s4Text);

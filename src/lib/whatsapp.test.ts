@@ -11,6 +11,13 @@ import {
   isIconikManWhatsappPilotSender,
   wantsGeneratedOutfitImage,
 } from './whatsappPilot.ts';
+import {
+  buildRetailerFallbackUrl,
+  findRequestedRetailer,
+  resolveShoppingQuery,
+  routeManWhatsappRequest,
+} from './manWhatsappStylist.ts';
+import { buildManWhatsappOutfitImagePrompt } from './manWhatsappOutfitImagePrompt.ts';
 
 test('normalises Indian WhatsApp numbers for Cloud API', () => {
   assert.equal(normalizeIndianWhatsappNumber('98765 43210'), '919876543210');
@@ -137,4 +144,44 @@ test('only requests paid outfit generation for explicit visual intent', () => {
   assert.equal(wantsGeneratedOutfitImage('Show me an outfit for a dinner date'), true);
   assert.equal(wantsGeneratedOutfitImage('Generate a visual of that look'), true);
   assert.equal(wantsGeneratedOutfitImage('Can you rate this outfit image?'), false);
+});
+
+test('routes WhatsApp styling jobs before answer generation', () => {
+  assert.equal(routeManWhatsappRequest('What should I wear for a dinner date?').intent, 'outfit_recommendation');
+  assert.equal(routeManWhatsappRequest('How do I style this olive jacket?').intent, 'owned_item_styling');
+  assert.equal(routeManWhatsappRequest('Could you give me a link for this jacket from H and M?').intent, 'shopping');
+  assert.equal(routeManWhatsappRequest('What did my Blueprint say about my colour palette?').intent, 'report_question');
+  assert.equal(routeManWhatsappRequest('Rate this', { hasImage: true }).intent, 'outfit_review');
+});
+
+test('resolves anaphoric shopping requests against the latest outfit', () => {
+  const query = resolveShoppingQuery(
+    'Could you also give me a link for this jacket from h and m',
+    'Wear a cream fitted tee under an olive green matte cotton-twill bomber jacket with dark indigo jeans.',
+  );
+  assert.match(query, /olive green matte cotton-twill bomber jacket/i);
+
+  const retailer = findRequestedRetailer('from h and m');
+  assert.equal(retailer?.name, 'H&M');
+  const fallback = buildRetailerFallbackUrl(retailer, query);
+  assert.match(fallback, /^https:\/\/www2\.hm\.com\/en_in\/search-results\.html\?q=/);
+  assert.match(decodeURIComponent(fallback), /olive green matte cotton-twill bomber jacket/i);
+});
+
+test('outfit visuals use separate face and body authorities on a white cyclorama', () => {
+  const prompt = buildManWhatsappOutfitImagePrompt({
+    profile: { classification: { body: { silhouette_type: 'Rectangle' } } },
+    request: 'Show me the dinner outfit',
+    outfitDirection: 'Ecru knit polo with espresso pleated trousers and dark brown loafers.',
+    facialHairPresence: 'stubble',
+  });
+
+  assert.match(prompt, /headshot is the sole authority for identity, face/i);
+  assert.match(prompt, /full-body is the sole authority for height impression/i);
+  assert.match(prompt, /face and body unmistakably belong to the same real client/i);
+  assert.match(prompt, /Completely discard and replace both source backgrounds/i);
+  assert.match(prompt, /pure-white \(#FFFFFF\) seamless cyclorama studio/i);
+  assert.match(prompt, /No visible wall-to-floor seam, horizon line, corner/i);
+  assert.match(prompt, /faint, tight, natural contact shadow directly beneath the shoes/i);
+  assert.match(prompt, /Ecru knit polo with espresso pleated trousers/i);
 });

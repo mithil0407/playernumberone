@@ -40,7 +40,7 @@ export interface ShoppingRunOptions {
   language?: string;
 }
 
-const DEFAULT_ACTOR = 'automation-lab~google-shopping-scraper';
+const DEFAULT_ACTOR = 'crawlerbros~google-shopping-insights';
 const MOCK_PREFIX = 'mock:';
 
 export function getShoppingMaxResultsPerQuery(): number {
@@ -73,12 +73,25 @@ export async function startShoppingRun(
     return { runId: payload, datasetId: payload };
   }
 
-  const run = await getClient().actor(getActorId()).start({
-    queries,
-    maxResults: opts.maxResults ?? getShoppingMaxResultsPerQuery(),
-    country: opts.country ?? 'in',
-    language: opts.language ?? 'en',
-  });
+  const actorId = getActorId();
+  const maxResults = opts.maxResults ?? getShoppingMaxResultsPerQuery();
+  const country = opts.country ?? 'in';
+  const language = opts.language ?? 'en';
+  const input = actorId === 'crawlerbros~google-shopping-insights'
+    ? {
+        queries,
+        maxResultsPerQuery: maxResults,
+        countryCode: country,
+        languageCode: language,
+      }
+    : {
+        queries,
+        maxResults,
+        country,
+        language,
+      };
+
+  const run = await getClient().actor(actorId).start(input);
 
   return { runId: run.id, datasetId: run.defaultDatasetId };
 }
@@ -112,7 +125,7 @@ function normalizeItem(raw: Record<string, unknown>): ApifyShoppingItem | null {
 
   const priceNumeric = typeof raw.priceNumeric === 'number' && Number.isFinite(raw.priceNumeric)
     ? raw.priceNumeric
-    : undefined;
+    : parseNumeric(raw.price);
 
   return {
     title,
@@ -124,10 +137,28 @@ function normalizeItem(raw: Record<string, unknown>): ApifyShoppingItem | null {
     imageUrl: typeof raw.imageUrl === 'string' && raw.imageUrl ? raw.imageUrl : undefined,
     priceNumeric,
     currency: typeof raw.currency === 'string' && raw.currency ? raw.currency : undefined,
-    rating: typeof raw.rating === 'number' ? raw.rating : undefined,
-    reviewCount: typeof raw.reviewCount === 'number' ? raw.reviewCount : undefined,
+    rating: parseNumeric(raw.rating),
+    reviewCount: parseCompactCount(raw.reviewCount),
     position: typeof raw.position === 'number' ? raw.position : undefined,
   };
+}
+
+function parseNumeric(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== 'string') return undefined;
+  const parsed = Number(value.replace(/[^0-9.]+/g, ''));
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseCompactCount(value: unknown): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toUpperCase().replace(/,/g, '');
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) return undefined;
+  if (normalized.endsWith('K')) return Math.round(parsed * 1_000);
+  if (normalized.endsWith('M')) return Math.round(parsed * 1_000_000);
+  return Math.round(parsed);
 }
 
 function safeHostname(url: string): string {

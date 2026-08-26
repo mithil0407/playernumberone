@@ -24,6 +24,7 @@ function qualityError(role: string, width: number, height: number, brightness: n
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = performance.now();
   try {
     const form = await request.formData();
     const token = String(form.get('token') || '');
@@ -40,19 +41,22 @@ export async function POST(request: NextRequest) {
     }
 
     const source = Buffer.from(await file.arrayBuffer());
-    const pipeline = sharp(source, { failOn: 'warning' }).rotate();
+    const decodedAt = performance.now();
+    const pipeline = sharp(source, { failOn: 'warning', sequentialRead: true, limitInputPixels: 40_000_000 }).autoOrient();
     const metadata = await pipeline.metadata();
-    const stats = await pipeline.clone().resize(160, 160, { fit: 'inside' }).greyscale().stats();
+    const stats = await pipeline.clone().resize(96, 96, { fit: 'inside' }).greyscale().stats();
     const brightness = stats.channels[0]?.mean ?? 0;
-    const width = metadata.width || 0;
-    const height = metadata.height || 0;
+    const width = metadata.autoOrient?.width || metadata.width || 0;
+    const height = metadata.autoOrient?.height || metadata.height || 0;
     const issue = qualityError(role, width, height, brightness);
     if (issue) return NextResponse.json({ error: issue, retakeRequired: true }, { status: 422 });
 
     const cleaned = await pipeline
       .resize({ width: 1800, height: 2400, fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 90, mozjpeg: true })
+      // libjpeg-turbo is materially faster than mozjpeg here; 87 is ample for analysis.
+      .jpeg({ quality: 87, progressive: true, chromaSubsampling: '4:2:0' })
       .toBuffer();
+    const processedAt = performance.now();
     const path = `${scan.id}/${role}.jpg`;
     let upload = await supabaseAdmin.storage.from(STYLE_SCAN_PHOTO_BUCKET).upload(path, cleaned, {
       contentType: 'image/jpeg',
@@ -74,10 +78,19 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }).eq('id', scan.id);
     if (error) throw error;
-    return NextResponse.json({ success: true, role, quality: { width, height, brightness: Math.round(brightness) } });
+    const completedAt = performance.now();
+    return NextResponse.json({ success: true, role, quality: { width, height, brightness: Math.round(brightness) } }, {
+      headers: {
+        'Cache-Control': 'no-store',
+        'Server-Timing': [
+          `receive;dur=${Math.round(decodedAt - startedAt)}`,
+          `process;dur=${Math.round(processedAt - decodedAt)}`,
+          `storage;dur=${Math.round(completedAt - processedAt)}`,
+        ].join(', '),
+      },
+    });
   } catch (error) {
     console.error('[style-scan] upload failed:', error);
     return NextResponse.json({ error: 'We could not read that photo. Try a clear JPG, PNG or WEBP under 12MB.' }, { status: 500 });
   }
 }
-

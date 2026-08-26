@@ -28,6 +28,17 @@ export interface StyleScanAnswersV1 {
   dressPreference: 'modest' | 'balanced' | 'fitted';
   upcoming: 'office_events' | 'wedding' | 'festive' | 'travel' | 'nothing';
   lastFeltGreat: 'this_week' | 'cant_remember' | 'old_weight';
+  /** Optional — captured on the delivery step, stored inside scan_answers JSON. */
+  firstName?: string;
+}
+
+/** Plain-language consumer copy layered over the technical analysis. All optional for backward compatibility. */
+export interface StyleScanPlainCopyV1 {
+  geometry: { verdict: string; body: string; action: string };
+  undertone: { verdict: string; body: string };
+  doWhy?: string;
+  takeaways: string[];
+  callback?: string;
 }
 
 export interface StyleScanDontV1 {
@@ -50,6 +61,10 @@ export interface StyleScanAnalysisV1 {
   confidence: { body: 'low' | 'medium' | 'high'; colour: 'low' | 'medium' | 'high'; overall: number };
   generatedAt: string;
   model: string;
+  /** Optional additive fields (2026-08). Older stored scans omit them; the UI must render without them. */
+  firstName?: string;
+  palette?: { wear: Array<{ name: string; hex: string }>; avoid: string[] };
+  plain?: StyleScanPlainCopyV1;
 }
 
 export interface InstantReportRefinementV1 {
@@ -89,7 +104,7 @@ export interface InstantReportV1 {
   checklist: string[];
 }
 
-const allowedValues: Record<keyof StyleScanAnswersV1, readonly string[]> = {
+const allowedValues: Record<Exclude<keyof StyleScanAnswersV1, 'firstName'>, readonly string[]> = {
   concern: ['tummy', 'arms', 'hips', 'height', 'nothing_specific'],
   dressCode: ['western_office', 'ethnic_leaning', 'mixed', 'mostly_home'],
   dressPreference: ['modest', 'balanced', 'fitted'],
@@ -101,6 +116,13 @@ export function validateStyleScanAnswers(value: unknown): value is StyleScanAnsw
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const answers = value as Record<string, unknown>;
   return Object.entries(allowedValues).every(([key, values]) => values.includes(String(answers[key])));
+}
+
+export function sanitizeFirstName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.replace(/[^\p{L}\s'-]/gu, '').trim().slice(0, 30);
+  if (cleaned.length < 2) return null;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 export function normalizeScanPhone(value: unknown) {

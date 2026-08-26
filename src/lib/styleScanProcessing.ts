@@ -6,7 +6,7 @@ import {
   validateStyleScanAnswers, type StyleScanAnswersV1,
 } from '@/lib/styleScan';
 import {
-  generateEditorialOutfitVisual, generateStyleScanAnalysis, STYLE_SCAN_MODEL_METADATA,
+  generateStyleScanAnalysis, STYLE_SCAN_MODEL_METADATA,
 } from '@/lib/styleScanGeneration';
 
 export async function processStyleScanToken(token: string) {
@@ -43,16 +43,10 @@ export async function processStyleScanToken(token: string) {
       return { status: 'retake_required' as const };
     }
     await supabaseAdmin.from('style_scan_leads').update({
-      scan_status: 'generating_visual', scan_analysis: analysis, classification_payload: classification,
+      scan_status: 'ready', scan_analysis: analysis, classification_payload: classification,
       scan_confidence: analysis.confidence, body_shape: analysis.geometry.shape,
-      undertone: analysis.undertone.direction, updated_at: new Date().toISOString(),
-    }).eq('id', scan.id);
-    const visualPath = await generateEditorialOutfitVisual({
-      ownerId: scan.id, slot: 'free-do', outfit: analysis.do, palette: classification.colour.base_palette.slice(0, 4),
-    });
-    await supabaseAdmin.from('style_scan_leads').update({
-      scan_status: 'ready', outfit_visual_path: visualPath,
-      generation_model: `${STYLE_SCAN_MODEL_METADATA.text};${STYLE_SCAN_MODEL_METADATA.image}`,
+      undertone: analysis.undertone.direction, outfit_visual_path: null,
+      generation_model: STYLE_SCAN_MODEL_METADATA.text,
       generation_version: STYLE_SCAN_MODEL_METADATA.version, result_ready_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }).eq('id', scan.id);
     return { status: 'ready' as const };

@@ -5,11 +5,13 @@ import {
   extractManStyleMemoryCandidates,
   generateManEditChatReply,
   generateManEditOutfitImage,
+  generateManEditShoppingReply,
   loadManEditReportContext,
   uploadManEditChatImageBytes,
   type ManEditReportContext,
   type ManStyleMemoryCandidate,
 } from '@/lib/manEdit';
+import { routeManWhatsappRequest } from '@/lib/manWhatsappStylist';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
   downloadWhatsAppImage,
@@ -271,6 +273,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     }
   }
 
+  const route = routeManWhatsappRequest(message.text, { hasImage: message.type === 'image' });
   const customerEmail = String(context.subscription?.customer_email ?? context.submission.customer_email);
   const { data: userMessage, error: userError } = await supabaseAdmin
     .from('man_edit_chat_messages')
@@ -287,6 +290,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         whatsapp_timestamp: message.timestamp ?? null,
         whatsapp_media_id: message.mediaId ?? null,
         storage_path: uploaded?.path ?? null,
+        stylist_route: route.intent,
       },
     })
     .select('id')
@@ -296,12 +300,28 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
 
   const memories = await loadSavedMemories(context.report.id);
   const imageRequested = wantsGeneratedOutfitImage(message.text);
-  const outfitDirection = imageRequested
+  const conversationReference = route.needsConversationReference
     ? await loadLatestOutfitDirection(context.report.id)
     : null;
   let reply: string;
-  if (imageRequested && outfitDirection) {
+  if (imageRequested && conversationReference) {
     reply = 'Absolutely — I’m turning that exact outfit into a visual for you now.';
+  } else if (route.intent === 'shopping') {
+    try {
+      reply = await generateManEditShoppingReply({
+        context,
+        message: message.text,
+        conversationReference,
+        memories,
+      });
+    } catch (error) {
+      console.error('[man whatsapp pilot] shopping reply failed:', error);
+      await sendPilotText(
+        config.phone,
+        'I hit a temporary issue while checking current retailer pages. Send the retailer and item once more in a moment—I’ve kept the outfit we were discussing.',
+      );
+      return { status: 'shopping_failed' as const };
+    }
   } else {
     try {
       reply = await generateManEditChatReply({
@@ -311,6 +331,8 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         memories,
         channel: 'whatsapp',
         firstName: config.firstName,
+        route,
+        conversationReference,
       });
     } catch (error) {
       console.error('[man whatsapp pilot] stylist reply failed:', error);
@@ -336,6 +358,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         channel: PILOT_CHANNEL,
         in_reply_to_whatsapp_message_id: message.id,
         in_reply_to_chat_message_id: userMessage.id,
+        stylist_route: route.intent,
       },
     })
     .select('id, metadata')
@@ -361,7 +384,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         context,
         to: config.phone,
         request: message.text,
-        outfitDirection: outfitDirection || reply,
+        outfitDirection: conversationReference || reply,
         memories,
         sourceWhatsappMessageId: message.id,
       });

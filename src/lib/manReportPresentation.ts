@@ -99,6 +99,49 @@ export function extractFullManIdentityStatement(text: string): string {
     .trim();
 }
 
+export function isManReportStylistReviewed(status?: string | null, sentAt?: string | null): boolean {
+  return status === 'approved' || status === 'sent' || Boolean(sentAt);
+}
+
+export function formatManReportOpeningNeed(styleBlocker: string, silhouetteType: string): string {
+  const blocker = styleBlocker
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[-–—:\s]+|[-–—:\s.]+$/g, '')
+    .trim();
+  const frame = silhouetteType
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  if (!blocker || /^(?:none|nothing|not sure|unsure)$/i.test(blocker)) {
+    return 'You wanted a clearer, more reliable way to get dressed.';
+  }
+  if (/body\s*type|body\s*shape|fit\s*requirements?|what\s+(?:fits|suits).*body/i.test(blocker)) {
+    return frame
+      ? `You wanted to know which fits work best for your ${frame} frame.`
+      : 'You wanted to know which fits work best for your frame.';
+  }
+  if (/colou?r|skin\s*tone|undertone/i.test(blocker)) {
+    return 'You wanted to know which colours genuinely suit you.';
+  }
+  if (/wardrobe|outfit|combine|mix\s+and\s+match|put.*together/i.test(blocker)) {
+    return 'You wanted a wardrobe that is easier to combine and repeat.';
+  }
+  if (/professional|office|work|corporate/i.test(blocker)) {
+    return 'You wanted to look sharper and feel more confident at work.';
+  }
+
+  const topic = blocker
+    .replace(/^uncertainty\s+(?:regarding|about)\s+/i, '')
+    .replace(/^(?:difficulty|trouble|struggling)\s+(?:with|to)\s+/i, '')
+    .replace(/^(?:i\s+)?(?:am\s+)?(?:not\s+sure|unsure)\s+(?:about|how to)\s+/i, '')
+    .replace(/^(?:i\s+)?(?:want|need)\s+(?:help|clarity)\s+(?:with|on|about)\s+/i, '');
+  const naturalTopic = topic.charAt(0).toLowerCase() + topic.slice(1);
+  return `You wanted a clearer answer on ${naturalTopic}.`;
+}
+
 export function resolveManFormulaColour(
   text: string,
   palette: ReadonlyArray<ManReportPaletteColour>,

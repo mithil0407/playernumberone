@@ -2,7 +2,18 @@ import 'server-only';
 
 import { GoogleGenAI } from '@google/genai';
 import OpenAI, { toFile } from 'openai';
+import type { Response as OpenAIResponse } from 'openai/resources/responses/responses';
 import { supabaseAdmin } from '@/lib/supabase';
+import {
+  buildManWhatsappOutfitEngineContext,
+  buildRetailerFallbackUrl,
+  findRequestedRetailer,
+  MAN_WHATSAPP_RETAILERS,
+  resolveShoppingQuery,
+  type ManWhatsappRouteDecision,
+} from '@/lib/manWhatsappStylist';
+import type { ClassificationResult } from '@/lib/manReportGenerator';
+import { buildManWhatsappOutfitImagePrompt } from '@/lib/manWhatsappOutfitImagePrompt';
 
 const TEXT_MODEL = 'gemini-3-flash-preview';
 export const ICONIK_MAN_WHATSAPP_TEXT_MODEL = process.env.ICONIK_MAN_WHATSAPP_TEXT_MODEL?.trim() || 'gpt-5.6-luna';
@@ -172,6 +183,37 @@ function summarizeSubmission(submission: AnyRecord) {
   ].filter(line => !line.endsWith(': ')).join('\n');
 }
 
+function buildStructuredStyleProfile(context: ManEditReportContext) {
+  const reportData = asRecord(context.report.report_data);
+  const classification = asRecord(reportData.classification);
+  const submission = context.submission;
+
+  return {
+    classification,
+    intake: {
+      primaryGoal: firstString(submission.primary_goal, submission.primary_style_goal),
+      styleRelationship: firstString(submission.style_relationship),
+      dressingContext: firstString(submission.dressing_context),
+      location: firstString(submission.location_tier),
+      height: firstString(submission.height_category),
+      selfReportedBodyShape: firstString(submission.body_shape),
+      fatStorageZone: firstString(submission.fat_storage_zone),
+      highlightZone: firstString(submission.highlight_zone),
+      minimiseZone: firstString(submission.minimise_zone),
+      fitPreference: firstString(submission.fit_preference),
+      wardrobeComposition: firstString(submission.wardrobe_composition),
+      styleTribes: firstString(submission.style_tribes),
+      styleStructure: firstString(submission.style_pole_structure),
+      styleExpression: firstString(submission.style_pole_expression),
+      styleTone: firstString(submission.style_pole_tone),
+      styleRegister: firstString(submission.style_pole_register),
+      styleBlocker: firstString(submission.style_blocker),
+      antiPreferences: firstString(submission.style_anti_pref, submission.style_anti_pref_note),
+      freeNote: firstString(submission.free_text_note),
+    },
+  };
+}
+
 function summarizeFeedback(feedback: AnyRecord[]) {
   if (!feedback.length) return 'No outfit likes/dislikes have been recorded yet.';
   return feedback.map(item => {
@@ -240,6 +282,7 @@ export function buildManEditProfile(context: ManEditReportContext) {
     monthlyHistory: summarizeRecommendations(context.recommendations),
     availableReportVisuals: summarizeAvailableImages(context.report.image_urls ?? {}),
     verifiedShoppingLinks: summarizeShoppingData(context.report.shopping_data ?? {}),
+    structuredStyleProfile: buildStructuredStyleProfile(context),
   };
 
   const profileSummary = [
@@ -357,6 +400,8 @@ export async function generateManEditChatReply(input: {
   memories?: string[];
   channel?: 'web' | 'whatsapp';
   firstName?: string;
+  route?: ManWhatsappRouteDecision;
+  conversationReference?: string | null;
 }) {
   const { profile } = buildManEditProfile(input.context);
   const { data: recentMessages } = await supabaseAdmin
@@ -383,6 +428,16 @@ WHATSAPP VOICE:
 - Never say that you cannot create or send an image. The surrounding WhatsApp service handles explicit visual requests.
 ` : '';
 
+  const reportData = asRecord(input.context.report.report_data);
+  const classification = asRecord(reportData.classification) as unknown as ClassificationResult;
+  const outfitEngine = input.route?.useOutfitEngine && Object.keys(asRecord(reportData.classification)).length
+    ? buildManWhatsappOutfitEngineContext({
+        classification,
+        message: input.message,
+        intent: input.route.intent,
+      })
+    : '';
+
   const prompt = `You are the ICONIK Man personal stylist. Give precise, practical, premium styling advice.
 
 Rules:
@@ -391,7 +446,16 @@ Rules:
 - If the user shares an outfit image, first say what works, then evaluate fit, colour harmony, proportions, coordination, and occasion appropriateness. Give 2-4 concrete improvements. Rate the outfit only when requested; never rate the person's body or attractiveness.
 - Do not mention internal JSON, database fields, or that you are an AI model.
 - Keep the answer under 220 words unless the user asks for a deeper breakdown.
+- Follow REQUEST ROUTE as the controlling job for this turn. Do not answer a shopping request as general styling advice.
 ${whatsappRules}
+
+REQUEST ROUTE:
+${input.route?.intent ?? 'general_style'}
+
+CONVERSATION REFERENCE:
+${input.conversationReference?.trim() || 'No earlier outfit needs resolving for this turn.'}
+
+${outfitEngine}
 
 CLIENT PROFILE:
 ${JSON.stringify(profile, null, 2)}
@@ -453,6 +517,118 @@ ${input.message}`;
   return (response.text ?? '').trim() || 'I could not generate a useful styling answer for that. Please try rephrasing it.';
 }
 
+interface ShoppingCitation {
+  title: string;
+  url: string;
+}
+
+function canonicalRetailUrl(value: string) {
+  try {
+    const url = new URL(value);
+    for (const key of [...url.searchParams.keys()]) {
+      if (/^utm_/i.test(key)) url.searchParams.delete(key);
+    }
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+function shoppingCitations(response: OpenAIResponse) {
+  const citations: ShoppingCitation[] = [];
+  const seen = new Set<string>();
+  for (const output of response.output) {
+    if (output.type !== 'message') continue;
+    for (const content of output.content) {
+      if (content.type !== 'output_text') continue;
+      for (const annotation of content.annotations) {
+        if (annotation.type !== 'url_citation') continue;
+        const url = canonicalRetailUrl(annotation.url);
+        if (seen.has(url)) continue;
+        seen.add(url);
+        citations.push({ title: annotation.title || 'Product', url });
+      }
+    }
+  }
+  return citations;
+}
+
+function isAllowedRetailUrl(url: string, domains: string[]) {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return domains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+}
+
+export async function generateManEditShoppingReply(input: {
+  context: ManEditReportContext;
+  message: string;
+  conversationReference?: string | null;
+  memories?: string[];
+}) {
+  if (!openai) throw new Error('OPENAI_API_KEY is not configured');
+  const retailer = findRequestedRetailer(input.message);
+  const query = resolveShoppingQuery(input.message, input.conversationReference ?? '');
+  const fallbackUrl = buildRetailerFallbackUrl(retailer, query);
+  const allowedRetailers = retailer ? [retailer] : [...MAN_WHATSAPP_RETAILERS];
+  const allowedDomains = allowedRetailers.map(item => item.domain);
+  const { profile } = buildManEditProfile(input.context);
+
+  const prompt = `You are ICONIK's shopping assistant for an Indian male client. Search current products only on the allowed official retailer domains.
+
+SHOPPING REQUEST: ${input.message}
+RESOLVED GARMENT QUERY: ${query}
+REQUESTED RETAILER: ${retailer?.name ?? 'No single retailer specified'}
+EARLIER OUTFIT DIRECTION: ${input.conversationReference?.trim() || 'None'}
+CLIENT STYLE PROFILE: ${JSON.stringify(profile.structuredStyleProfile, null, 2)}
+SAVED PREFERENCES: ${input.memories?.length ? input.memories.join('\n') : 'None'}
+
+Find up to three currently listed products that are close to the resolved garment. Prioritise garment type, colour, material, fit, and suitability for the earlier outfit. Reject obviously wrong categories, womenswear, childrenswear, loud branding, and poor stylistic matches.
+
+Write a natural WhatsApp answer under 150 words. Lead with the strongest match. State the product title, retailer, visible price when available, and one short fit/style caveat. Do not claim stock, size availability, price certainty, or an exact match unless the retailer page establishes it. Do not invent a URL. Do not say you lack a verified link: either give the current official matches found or say that no close current match surfaced and direct the client to the retailer search fallback.`;
+
+  try {
+    const response = await openai.responses.create({
+      model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
+      input: prompt,
+      tools: [{
+        type: 'web_search',
+        filters: { allowed_domains: allowedDomains },
+        search_context_size: 'medium',
+        user_location: {
+          type: 'approximate',
+          country: 'IN',
+          timezone: 'Asia/Kolkata',
+        },
+      }],
+      tool_choice: 'required',
+      reasoning: { effort: 'low' },
+      max_output_tokens: 1_000,
+      store: false,
+      metadata: { workload: 'iconik_man_whatsapp_shopping' },
+    });
+    const citations = shoppingCitations(response)
+      .filter(citation => isAllowedRetailUrl(citation.url, allowedDomains))
+      .slice(0, 3);
+    const summary = response.output_text
+      .replace(/\s*\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/g, '')
+      .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+      .trim();
+
+    if (citations.length) {
+      const links = citations.map(citation => `• ${citation.title}: ${citation.url}`).join('\n');
+      return `${summary}\n\n${links}`.trim();
+    }
+  } catch (error) {
+    console.warn('[man whatsapp pilot] official retailer search failed, using retailer fallback:', error instanceof Error ? error.message : error);
+  }
+
+  const retailerLabel = retailer?.name ?? 'current Indian retailers';
+  return `I couldn’t verify a close current ${retailerLabel} product page for “${query}”, so I won’t guess at an exact item. This opens the live retailer search instead:\n\n${fallbackUrl}\n\nLook for the same garment type, colour and fit from the outfit direction; send me the two options you like and I’ll choose the stronger one.`;
+}
+
 export async function generateManEditOutfitImage(input: {
   context: ManEditReportContext;
   request: string;
@@ -463,57 +639,46 @@ export async function generateManEditOutfitImage(input: {
   const { profile } = buildManEditProfile(input.context);
   const headshotUrl = firstString(input.context.submission.photo_headshot_url);
   const fullBodyUrl = firstString(input.context.submission.photo_fullbody_url);
+  if (!headshotUrl || !fullBodyUrl) {
+    throw new Error('Both the original headshot and full-body reference are required for a personalised outfit visual');
+  }
   const referenceCandidates = [
     { label: 'headshot', url: headshotUrl },
     { label: 'full-body', url: fullBodyUrl },
-  ].filter(candidate => candidate.url);
+  ];
 
   const referenceImages = [];
   for (const candidate of referenceCandidates) {
     const response = await fetch(candidate.url);
     if (!response.ok) {
-      console.warn(`[man whatsapp pilot] ${candidate.label} reference fetch failed: HTTP ${response.status}`);
-      continue;
+      throw new Error(`${candidate.label} reference fetch failed: HTTP ${response.status}`);
     }
     const bytes = Buffer.from(await response.arrayBuffer());
     if (!bytes.length || bytes.length > OUTFIT_REFERENCE_MAX_BYTES) {
-      console.warn(`[man whatsapp pilot] ${candidate.label} reference has invalid size: ${bytes.length}`);
-      continue;
+      throw new Error(`${candidate.label} reference has invalid size: ${bytes.length}`);
     }
     const mimeType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() || 'image/jpeg';
     if (!/^image\/(?:jpeg|png|webp)$/i.test(mimeType)) {
-      console.warn(`[man whatsapp pilot] ${candidate.label} reference has unsupported type: ${mimeType}`);
-      continue;
+      throw new Error(`${candidate.label} reference has unsupported type: ${mimeType}`);
     }
     const extension = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
     referenceImages.push(await toFile(bytes, `${candidate.label}.${extension}`, { type: mimeType }));
   }
 
-  if (!referenceImages.length) {
-    throw new Error('No usable client reference image is available for a personalised outfit visual');
+  if (referenceImages.length !== 2) {
+    throw new Error('Both client reference images must be usable for a personalised outfit visual');
   }
 
-  const prompt = `Create one premium, photorealistic men's outfit image depicting the same adult client shown in the supplied reference image(s).
-
-The image must:
-- Preserve the client's recognisable identity, facial features, skin tone, apparent age, hairstyle, facial hair, body proportions, and natural build. Do not substitute a generic model, beautify the face, reshape the body, or make him look like a different person.
-- Treat the headshot as the authority for face and grooming. Treat the full-body photo as the authority for frame, scale, and proportions.
-- Show the client head-to-toe in the exact outfit direction below. Match every specified garment, colour, fit, layer, shoe, and accessory; do not swap in a different look.
-- Look attainable and commercially wearable in India, not costume-like or runway-extreme.
-- Use a natural relaxed pose, realistic fabric texture, balanced proportions, and soft premium lighting.
-- Contain no written text, logos, price tags, watermarks, collages, or before/after panels.
-
-OUTFIT DIRECTION — SOURCE OF TRUTH:
-${input.outfitDirection?.trim() || 'Create the most suitable outfit for the client request using the profile and saved preferences below.'}
-
-CLIENT STYLE PROFILE:
-${JSON.stringify(profile, null, 2).slice(0, 12_000)}
-
-SAVED PREFERENCES:
-${input.memories?.length ? input.memories.join('\n') : 'No additional preferences saved.'}
-
-CLIENT REQUEST:
-${input.request}`;
+  const reportData = asRecord(input.context.report.report_data);
+  const classification = asRecord(reportData.classification);
+  const face = asRecord(classification.face);
+  const prompt = buildManWhatsappOutfitImagePrompt({
+    profile,
+    request: input.request,
+    outfitDirection: input.outfitDirection,
+    memories: input.memories,
+    facialHairPresence: firstString(face.facial_hair_presence, face.facialHairPresence) || 'unclear',
+  });
 
   const result = await openai.images.edit({
     model: OUTFIT_IMAGE_MODEL,

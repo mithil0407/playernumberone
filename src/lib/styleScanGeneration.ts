@@ -17,6 +17,7 @@ import {
   type InstantReportV1,
   type StyleScanAnalysisV1,
   type StyleScanAnswersV1,
+  type StyleScanPlainCopyV1,
 } from '@/lib/styleScan';
 
 const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
@@ -80,7 +81,7 @@ function buildDonts(
     },
     {
       title: concern.dont[1],
-      why: `It works against your proportion directive: ${classification.body.proportion_directive.replace(/\.$/, '').toLowerCase()}.`,
+      why: `It fights the one thing every outfit should do for your frame — so instead of hiding what bothers you, it draws the eye straight to it.`,
     },
     {
       title: `${avoidColour} near your face`,
@@ -97,6 +98,123 @@ function buildOutfit(answers: StyleScanAnswersV1, classification: StylistBluepri
     formula: `${formula}. Build it in ${palette || 'your warmest wearable neutrals'}.`,
     why: `It respects your ${label(answers.dressPreference).toLowerCase()} fit preference while creating ${classification.body.proportion_directive.replace(/\.$/, '').toLowerCase()}.`,
   };
+}
+
+function buildScanPalette(classification: StylistBlueprintClassification): StyleScanAnalysisV1['palette'] {
+  const wear = classification.colour.base_palette
+    .filter(colour => colour?.name && colour?.hex)
+    .slice(0, 5)
+    .map(colour => ({ name: colour.name, hex: colour.hex }));
+  const avoid = classification.colour.avoid_colours.filter(Boolean).slice(0, 3);
+  if (!wear.length && !avoid.length) return undefined;
+  return { wear, avoid };
+}
+
+function emotionalCallback(answers: StyleScanAnswersV1): string | undefined {
+  if (answers.lastFeltGreat === 'cant_remember') {
+    return 'You told us you can’t remember the last time you felt great in an outfit. That is exactly what this fixes.';
+  }
+  if (answers.lastFeltGreat === 'old_weight') {
+    return 'You told us you last felt great at your old weight. You deserve to feel that in the body you have today — no waiting.';
+  }
+  return undefined;
+}
+
+/** Deterministic plain-language copy — always available even if the rewrite model fails. */
+function plainCopyFallback(
+  scan: StyleScanAnalysisV1,
+  classification: StylistBlueprintClassification,
+  answers: StyleScanAnswersV1,
+): StyleScanPlainCopyV1 {
+  const shape = scan.geometry.shape;
+  const warm = /warm/i.test(scan.undertone.direction);
+  const avoid = classification.colour.avoid_colours[0] || (warm ? 'icy pastels' : 'muddy earth tones');
+  const wear = classification.colour.base_palette.slice(0, 3).map(colour => colour.name).join(', ')
+    || (warm ? 'golds, olives and warm browns' : 'cool blues, berries and true neutrals');
+  return {
+    geometry: {
+      verdict: `Your shape: ${shape}.`,
+      body: scan.geometry.interpretation,
+      action: 'Dress for this shape first — everything else follows.',
+    },
+    undertone: {
+      verdict: warm ? 'Your skin glows in warm colours.' : `Your colouring runs ${scan.undertone.direction.toLowerCase()}.`,
+      body: `${wear} make you look fresh and awake. ${avoid} near your face is why some outfits make you look tired in photos.`,
+    },
+    doWhy: scan.do.why,
+    takeaways: [
+      `You’re a ${shape.toLowerCase()} — dress for that shape, not a trend.`,
+      `Keep ${wear.split(',')[0]?.trim().toLowerCase() || 'your best colours'} close to your face, and drop ${avoid.toLowerCase()}.`,
+      `Stop buying: ${scan.donts[0].title.toLowerCase()}.`,
+    ],
+    callback: emotionalCallback(answers),
+  };
+}
+
+/**
+ * One extra Flash pass that rewrites the technical analysis into plain, warm, second-person copy.
+ * Any failure (timeout, bad JSON, missing fields) falls back to plainCopyFallback — never blocks the scan.
+ */
+async function humanizeScanCopy(
+  scan: StyleScanAnalysisV1,
+  classification: StylistBlueprintClassification,
+  answers: StyleScanAnswersV1,
+): Promise<{ plain: StyleScanPlainCopyV1; donts: StyleScanAnalysisV1['donts'] } | null> {
+  try {
+    const prompt = `You are ICONIK's copy chief. Rewrite this style analysis so the client herself instantly understands it. Return ONLY JSON, no markdown.
+
+VOICE RULES:
+- Second person, warm, direct. Short sentences. Everyday English an 8th grader understands.
+- Consequences, not categories: say "makes you look wider, not slimmer", never "creates visual imbalance".
+- BANNED words: directive, vertical line, depth, silhouette, chromatic, colour break, third layer, proportion, palette, geometry (as a noun to the client), elongate, streamline.
+- Never mention weight loss, body measurements, or anything medical. Never shame — the tone is "your clothes were the problem, not your body".
+- Colour names must be plain (say "warm browns", not hex codes).
+
+Required JSON:
+{
+ "geometry": {"verdict":"Your shape: <shape>.", "body":"<max 2 sentences, what her shape means in plain words>", "action":"<one sentence: the single job every outfit must do for her>"},
+ "undertone": {"verdict":"<one short line about her colouring, e.g. 'Your skin glows in warm colours.'>", "body":"<max 2 sentences: which colours make her look fresh, which make her look tired, and why>"},
+ "donts": [{"title":"<plain, concrete item she'd recognise in her wardrobe>", "why":"<one sentence consequence in plain words>"} x3],
+ "doWhy": "<one sentence: why this outfit works for HER, plain words>",
+ "takeaways": ["<takeaway 1>", "<takeaway 2>", "<takeaway 3>"]
+}
+
+Technical analysis: ${JSON.stringify({ geometry: scan.geometry, undertone: scan.undertone, donts: scan.donts, do: scan.do })}
+Classification extract: ${JSON.stringify({ body: classification.body, colour: { undertone_direction: classification.colour.undertone_direction, depth: classification.colour.depth, avoid_colours: classification.colour.avoid_colours.slice(0, 4), base_palette: classification.colour.base_palette.slice(0, 5).map(colour => colour.name) } })}
+Her answers: ${JSON.stringify({ concern: answers.concern, dressCode: answers.dressCode, dressPreference: answers.dressPreference })}`;
+    const response = await google.models.generateContent({
+      model: TEXT_MODEL,
+      contents: prompt,
+      config: { httpOptions: { timeout: 30_000 } },
+    });
+    const parsed = JSON.parse(cleanJson(response.text || '{}')) as Partial<StyleScanPlainCopyV1> & {
+      donts?: Array<{ title?: string; why?: string }>;
+    };
+    const text = (value: unknown) => typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+    const geometryVerdict = text(parsed.geometry?.verdict);
+    const geometryBody = text(parsed.geometry?.body);
+    const geometryAction = text(parsed.geometry?.action);
+    const undertoneVerdict = text(parsed.undertone?.verdict);
+    const undertoneBody = text(parsed.undertone?.body);
+    const takeaways = Array.isArray(parsed.takeaways) ? parsed.takeaways.map(item => text(item)).filter((item): item is string => Boolean(item)).slice(0, 3) : [];
+    if (!geometryVerdict || !geometryBody || !geometryAction || !undertoneVerdict || !undertoneBody || takeaways.length !== 3) return null;
+    const rewrittenDonts = Array.isArray(parsed.donts)
+      ? parsed.donts.map(item => ({ title: text(item?.title), why: text(item?.why) })).filter((item): item is { title: string; why: string } => Boolean(item.title && item.why))
+      : [];
+    return {
+      plain: {
+        geometry: { verdict: geometryVerdict, body: geometryBody, action: geometryAction },
+        undertone: { verdict: undertoneVerdict, body: undertoneBody },
+        doWhy: text(parsed.doWhy) || undefined,
+        takeaways,
+        callback: emotionalCallback(answers),
+      },
+      donts: rewrittenDonts.length === 3 ? rewrittenDonts as StyleScanAnalysisV1['donts'] : scan.donts,
+    };
+  } catch (error) {
+    console.warn('[style-scan] plain-copy rewrite failed; using fallback:', error instanceof Error ? error.message : error);
+    return null;
+  }
 }
 
 export async function generateStyleScanAnalysis(input: {
@@ -159,6 +277,16 @@ export async function generateStyleScanAnalysis(input: {
     generatedAt: new Date().toISOString(),
     model: TEXT_MODEL,
   };
+  // Additive consumer-copy layer: humanized rewrite with a deterministic fallback. Never throws.
+  scan.firstName = typeof input.answers.firstName === 'string' && input.answers.firstName.trim() ? input.answers.firstName.trim() : undefined;
+  scan.palette = buildScanPalette(classification);
+  const humanized = await humanizeScanCopy(scan, classification, input.answers);
+  if (humanized) {
+    scan.plain = humanized.plain;
+    scan.donts = humanized.donts;
+  } else {
+    scan.plain = plainCopyFallback(scan, classification, input.answers);
+  }
   return { scan, classification };
 }
 

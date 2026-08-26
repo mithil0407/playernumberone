@@ -137,7 +137,12 @@ async function lookupCache(hashes: string[]): Promise<Map<string, CacheRow>> {
   const freshAfter = Date.now() - getCacheTtlMs();
   const rows = new Map<string, CacheRow>();
   for (const row of data as CacheRow[]) {
-    if (new Date(row.fetched_at).getTime() >= freshAfter) rows.set(row.query_hash, row);
+    // Empty results may reflect a blocked/broken actor rather than genuine
+    // product absence. Never let them suppress a later retry with a healthy
+    // actor for the full cache TTL.
+    if (new Date(row.fetched_at).getTime() >= freshAfter && row.results.length > 0) {
+      rows.set(row.query_hash, row);
+    }
   }
   return rows;
 }
@@ -177,11 +182,20 @@ function toProductLink(item: ApifyShoppingItem, source: 'apify' | 'cache', confi
   };
 }
 
-async function waitForRun(runId: string, deadlineMs: number): Promise<'succeeded' | 'running' | 'failed'> {
+async function waitForRun(runId: string, deadlineMs: number): Promise<'succeeded' | 'partial' | 'running' | 'failed'> {
   for (;;) {
     const status = await getShoppingRunStatus(runId);
     if (status === 'SUCCEEDED') return 'succeeded';
-    if (status === 'FAILED' || status === 'ABORTED' || status === 'ABORTING' || status === 'TIMED-OUT') return 'failed';
+    // Google Shopping actors can hit their time limit after already writing a
+    // useful partial dataset. Let the pipeline consume those rows instead of
+    // discarding paid results and launching the same searches again.
+    if (
+      status === 'TIMED-OUT'
+      || status === 'TIMING-OUT'
+      || status === 'ABORTED'
+      || status === 'ABORTING'
+    ) return 'partial';
+    if (status === 'FAILED') return 'failed';
     if (Date.now() >= deadlineMs) return 'running';
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
   }
@@ -231,12 +245,24 @@ export async function runManShoppingPipeline(
     // previous invocation died while the run was going, its dataset is free.
     if (state.status === 'fetching' && state.apifyRunId && state.apifyDatasetId && state.pendingQueries) {
       const runStatus = await getShoppingRunStatus(state.apifyRunId).catch(() => 'FAILED' as const);
-      if (runStatus === 'SUCCEEDED' || (runStatus === 'RUNNING' && isShoppingFetchInFlight(state))) {
+      if (
+        runStatus === 'SUCCEEDED'
+        || runStatus === 'TIMED-OUT'
+        || runStatus === 'TIMING-OUT'
+        || runStatus === 'ABORTED'
+        || runStatus === 'ABORTING'
+        || (runStatus === 'RUNNING' && isShoppingFetchInFlight(state))
+      ) {
         const outcome = runStatus === 'SUCCEEDED'
           ? 'succeeded'
-          : await waitForRun(state.apifyRunId, startedAt + POLL_BUDGET_MS);
+          : runStatus === 'TIMED-OUT'
+            || runStatus === 'TIMING-OUT'
+            || runStatus === 'ABORTED'
+            || runStatus === 'ABORTING'
+            ? 'partial'
+            : await waitForRun(state.apifyRunId, startedAt + POLL_BUDGET_MS);
         if (outcome === 'running') return; // still going; a later invocation resumes
-        if (outcome === 'succeeded') {
+        if (outcome === 'succeeded' || outcome === 'partial') {
           const items = await fetchShoppingItems(state.apifyDatasetId);
           const grouped = groupItemsByQuery(items);
           const cacheEntries: Array<{ hash: string; query: string; items: ApifyShoppingItem[] }> = [];

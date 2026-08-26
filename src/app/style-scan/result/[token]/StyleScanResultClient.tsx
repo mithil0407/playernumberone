@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Check, Clock3, RefreshCw, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, Clock3, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
 import type { StyleScanAnalysisV1, StyleScanStatus } from '@/lib/styleScan';
 
 interface StatusPayload {
@@ -14,12 +13,12 @@ interface StatusPayload {
 }
 type TrackingWindow = Window & { fbq?: (command: string, event: string, details: Record<string, string>) => void };
 
-function trackProductClick(product: 'instant_999' | 'personal_2699') {
-  if (typeof window !== 'undefined') (window as TrackingWindow).fbq?.('trackCustom', 'style_scan_cta_clicked', { product });
+function trackProductClick() {
+  if (typeof window !== 'undefined') (window as TrackingWindow).fbq?.('trackCustom', 'style_scan_cta_clicked', { product: 'personal_2699' });
 }
 
 const stageCopy: Partial<Record<StyleScanStatus, string>> = {
-  submitted: 'Securing your photos', analyzing: 'Reading your geometry and colouring', generating_visual: 'Building your first outfit formula', failed: 'Preparing a safe retry',
+  submitted: 'Saving your photos', analyzing: 'Finding your main style blocker', generating_visual: 'Finishing your result', failed: 'Getting ready to try again',
 };
 
 export default function StyleScanResultClient({ token }: { token: string }) {
@@ -80,7 +79,7 @@ export default function StyleScanResultClient({ token }: { token: string }) {
     return <div className="flex min-h-screen items-center justify-center bg-[#F8F3E9] px-5 text-[#2C2622]"><div className="w-full max-w-xl text-center">
       <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full bg-[#EEE5D5]"><Sparkles className="h-6 w-6 animate-pulse" /></div>
       <div className="iconik-micro mb-4 text-[#B68C52]">ICONIK STYLE SCAN</div>
-      <h1 className="iconik-display text-4xl sm:text-6xl">We’re reading the details that change everything.</h1>
+      <h1 className="iconik-display text-4xl sm:text-6xl">We’re finding the main problem.</h1>
       <p className="mt-5 text-sm leading-6 text-[#2C2622]/60">{stageCopy[payload?.status || 'submitted'] || 'Preparing your private result'}… This page saves your place and updates automatically.</p>
       <div className="mx-auto mt-8 h-1.5 max-w-sm overflow-hidden rounded-full bg-[#2C2622]/10"><div className="h-full w-2/3 animate-pulse rounded-full bg-[#B68C52]" /></div>
       {error && <div className="mt-6 text-sm text-red-700">{error} <button onClick={() => void process()} className="ml-2 underline">Retry</button></div>}
@@ -98,19 +97,28 @@ export default function StyleScanResultClient({ token }: { token: string }) {
 
   const analysis = payload.analysis!;
   const scanParam = encodeURIComponent(token);
+  const plain = analysis.plain;
+  const lowConfidence = analysis.confidence.overall < 0.65;
+  const reveal = (index: number) => ({ animation: 'iconikFadeUp .7s cubic-bezier(.22,1,.36,1) both', animationDelay: `${index * 140}ms` });
   return <div className="min-h-screen bg-[#F8F3E9] text-[#2C2622]">
+    <style>{`@keyframes iconikFadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}@media (prefers-reduced-motion: reduce){*{animation:none!important}}`}</style>
     <header className="border-b border-[#2C2622]/10"><div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5"><span className="iconik-display tracking-[.3em]">I C O N I K</span><span className="iconik-micro text-[#2C2622]/45">Private result</span></div></header>
-    <main className="mx-auto max-w-5xl px-4 pb-24 pt-12 sm:px-6">
-      <section className="mx-auto max-w-3xl text-center"><div className="iconik-micro mb-5 text-[#B68C52]">YOUR PRELIMINARY STYLE SCAN</div><h1 className="iconik-display text-5xl leading-none sm:text-7xl">Your starting point, revealed.</h1><p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-[#2C2622]/62">Preliminary Scan — your stylist confirms the analysis in your full report or consultation.</p></section>
-      <div className="mt-12 grid gap-5">
-        <section className="rounded-[28px] border border-[#2C2622]/10 bg-white p-7 sm:p-10"><div className="iconik-micro mb-5 text-[#B68C52]">01 · Your Geometry</div><h2 className="iconik-display text-3xl sm:text-5xl">{analysis.geometry.shape} · {analysis.geometry.verticalLine}</h2><p className="mt-5 max-w-3xl text-sm leading-7 text-[#2C2622]/65">{analysis.geometry.interpretation}</p></section>
-        <section className="rounded-[28px] bg-[#2C2622] p-7 text-white sm:p-10"><div className="iconik-micro mb-5 text-white/45">02 · Your Undertone</div><h2 className="iconik-display text-3xl sm:text-5xl">{analysis.undertone.direction} undertone · {analysis.undertone.depth} depth</h2><p className="mt-5 max-w-3xl text-sm leading-7 text-white/68">{analysis.undertone.wardrobeConflict}</p></section>
-        <section className="rounded-[28px] border border-[#2C2622]/10 bg-[#EFE7D8] p-7 sm:p-10"><div className="iconik-micro mb-6 text-[#B68C52]">03 · The 3 Don’ts</div><div className="grid gap-3 md:grid-cols-3">{analysis.donts.map(item => <article key={item.title} className="rounded-2xl bg-white p-6"><X className="mb-5 h-5 w-5 text-[#A34D3F]" /><h3 className="font-medium leading-6">{item.title}</h3><p className="mt-3 text-xs leading-6 text-[#2C2622]/60">{item.why}</p></article>)}</div></section>
-        <section className="overflow-hidden rounded-[28px] border border-[#2C2622]/10 bg-white"><div className="grid md:grid-cols-2">{payload.visualUrl && <div className="relative min-h-[430px] bg-[#EFE7D8]"><Image src={payload.visualUrl} alt={analysis.do.title} fill unoptimized className="object-cover" /></div>}<div className="flex flex-col justify-center p-7 sm:p-10"><div className="iconik-micro mb-5 text-[#B68C52]">04 · The 1 Do</div><h2 className="iconik-display text-4xl">{analysis.do.title}</h2><p className="mt-5 text-sm leading-7 text-[#2C2622]/70">{analysis.do.formula}</p><div className="mt-6 flex items-start gap-3 rounded-2xl bg-[#F8F3E9] p-4 text-xs leading-6 text-[#2C2622]/60"><Check className="mt-1 h-4 w-4 shrink-0 text-[#66806B]" />{analysis.do.why}</div></div></div></section>
+    <main className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-12">
+      <section className="mx-auto max-w-3xl text-center" style={reveal(0)}><div className="iconik-micro mb-4 text-[#B68C52] sm:mb-5">YOUR STYLE BLOCKER SCAN</div><h1 className="iconik-display text-[42px] leading-[.98] sm:text-7xl sm:leading-none">{analysis.firstName ? `${analysis.firstName}, we found the main problem.` : 'We found the main problem.'}</h1><p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[#2C2622]/62 sm:mt-5">This is your starting point. Your stylist confirms the details and builds the solution.</p></section>
+      <div className="mt-8 grid gap-4 sm:mt-12 sm:gap-5">
+        <section className="rounded-[22px] border border-[#2C2622]/10 bg-white p-5 sm:rounded-[28px] sm:p-10" style={reveal(1)}><div className="iconik-micro mb-4 text-[#B68C52] sm:mb-5">01 · YOUR MAIN STYLE BLOCKER</div><h2 className="iconik-display text-[32px] leading-tight sm:text-5xl">Your outfits need a clearer balance.</h2><p className="mt-4 max-w-3xl text-sm leading-6 text-[#2C2622]/65 sm:mt-5 sm:leading-7">{plain?.geometry?.body || 'The clothes may fit on their own, but the full outfit is not working as one clear look.'}</p><div className="mt-5 inline-flex items-start gap-3 rounded-2xl bg-[#F8F3E9] px-4 py-4 text-xs font-medium leading-5 sm:mt-6 sm:px-5 sm:text-sm sm:leading-6"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#66806B]" />Nothing is wrong with your body. The clothes need to work together more clearly.</div>{lowConfidence && <p className="mt-5 text-xs leading-6 text-[#2C2622]/45">Your result is close between two patterns. Your stylist will confirm this with you.</p>}</section>
+        <section className="rounded-[22px] bg-[#2C2622] p-5 text-white sm:rounded-[28px] sm:p-10" style={reveal(2)}><div className="iconik-micro mb-4 text-white/45 sm:mb-5">02 · WHAT WE ALSO NOTICED</div><h2 className="iconik-display text-[32px] leading-tight sm:text-5xl">Colour may be adding to the problem.</h2><p className="mt-4 max-w-3xl text-sm leading-6 text-white/68 sm:mt-5 sm:leading-7">Some colours close to your face may make an outfit feel dull, even when the clothes fit well. Your full colour plan needs a closer check from your stylist.</p></section>
+        <section className="rounded-[22px] border border-[#2C2622]/10 bg-[#EFE7D8] p-5 sm:rounded-[28px] sm:p-10" style={reveal(3)}><div className="iconik-micro mb-5 text-[#B68C52] sm:mb-6">03 · WHY IT KEEPS HAPPENING</div><div className="grid gap-3 md:grid-cols-3">{[
+          ['Good pieces do not always make a good outfit', 'Each item may look fine alone. The problem starts when the full outfit has no clear focus.'],
+          ['The eye is pulled in too many directions', 'Different lengths, shapes and details can fight for attention.'],
+          ['Colour and shape are being solved separately', 'A good colour cannot fix the wrong outfit balance, and the reverse is also true.'],
+        ].map(([title, copy], index) => <article key={title} className="rounded-2xl bg-white p-6"><span className="iconik-mono text-[9px] text-[#B68C52]">0{index + 1}</span><h3 className="mt-5 font-medium leading-6">{title}</h3><p className="mt-3 text-xs leading-6 text-[#2C2622]/60">{copy}</p></article>)}</div></section>
+        <section className="rounded-[22px] border border-[#B68C52]/25 bg-white p-5 sm:rounded-[28px] sm:p-10" style={reveal(4)}><div className="iconik-micro mb-5 text-[#B68C52] sm:mb-6">WHAT THIS FREE SCAN DOES NOT DO</div><h2 className="iconik-display text-[32px] leading-tight sm:text-5xl">The scan finds the problem. It does not build the wardrobe.</h2><div className="mt-5 grid gap-2.5 sm:mt-7 sm:gap-3 md:grid-cols-3">{['Your exact colours and fit rules', 'The right lengths, necklines and fabrics', 'Complete outfits for your real life'].map(item => <div key={item} className="flex items-start gap-3 rounded-2xl bg-[#F8F3E9] p-4 text-xs leading-5 sm:p-5 sm:text-sm sm:leading-6"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B68C52] sm:mt-1" />{item}</div>)}</div></section>
       </div>
-      <section className="mt-12 rounded-[32px] bg-[#2C2622] p-7 text-white sm:p-12"><div className="mx-auto max-w-3xl text-center"><div className="iconik-micro mb-5 text-white/45">This scan found your starting point</div><h2 className="iconik-display text-4xl sm:text-6xl">Now build the wardrobe around it.</h2><p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-white/65">Choose 10 ready-to-use outfit directions in a stylist-signed report, or build 20 consultation-led looks with revisions.</p></div><div className="mt-9 grid gap-4 md:grid-cols-2">
-        <Link onClick={() => trackProductClick('instant_999')} href={`/instant-report?scan=${scanParam}`} className="group rounded-2xl bg-[#F8F3E9] p-7 text-[#2C2622]"><div className="iconik-micro mb-4 text-[#B68C52]">INSTANT REPORT · ₹999</div><h3 className="iconik-display text-3xl">10 complete visual outfits.</h3><p className="mt-3 text-xs leading-6 text-[#2C2622]/60">Stylist-signed · ready within 24 hours after your refinement.</p><span className="mt-6 inline-flex items-center gap-2 text-sm font-medium">See the Instant Report <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span></Link>
-        <Link onClick={() => trackProductClick('personal_2699')} href={`/offer-2699?scan=${scanParam}`} className="group rounded-2xl border border-white/18 p-7"><div className="iconik-micro mb-4 text-white/45">PERSONAL STYLIST · ₹2,699</div><h3 className="iconik-display text-3xl">20 outfits built with you.</h3><p className="mt-3 text-xs leading-6 text-white/60">30-minute consultation · personal stylist · revisions included.</p><span className="mt-6 inline-flex items-center gap-2 text-sm font-medium">Meet Your Stylist <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></span></Link>
+      <section className="mt-8 rounded-[22px] bg-[#2C2622] p-5 text-white sm:mt-12 sm:rounded-[32px] sm:p-12" style={reveal(5)}><div className="mx-auto max-w-3xl text-center">
+        {plain?.callback && <p className="iconik-display mx-auto mb-7 max-w-2xl text-xl italic leading-snug text-[#D9B98A] sm:text-2xl">“{plain.callback}”</p>}
+        <div className="iconik-micro mb-4 text-white/45 sm:mb-5">THE SCAN FOUND THE PROBLEM</div><h2 className="iconik-display text-[36px] leading-tight sm:text-6xl">Now let your stylist build the fix.</h2><p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-white/65 sm:mt-5 sm:leading-7">Talk to your stylist for 30 minutes. Then get your personal colours, fit rules and 20 complete outfits. Revisions are included.</p>
+        <Link onClick={trackProductClick} href={`/offer-2699?scan=${scanParam}`} className="group mt-6 inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[#F8F3E9] px-4 text-center text-xs font-semibold text-[#2C2622] sm:mt-9 sm:min-h-16 sm:w-auto sm:gap-4 sm:px-8 sm:text-sm">Build My Style Blueprint · ₹2,699 <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-1" /></Link>
       </div></section>
       <div className="mt-8 flex items-center justify-center gap-2 text-xs text-[#2C2622]/42"><ShieldCheck className="h-4 w-4" /> For your eyes only · private result link</div>
     </main>

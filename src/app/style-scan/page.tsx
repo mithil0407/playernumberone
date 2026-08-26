@@ -3,11 +3,11 @@ import { Suspense } from 'react';
 import StyleScanClient from './StyleScanClient';
 
 export const metadata: Metadata = {
-  title: 'The ICONIK Style Scan — Free Personal Style Analysis',
-  description: 'Upload two photos and answer five questions to discover your body geometry, undertone, and the three wardrobe choices working against you.',
+  title: 'The ICONIK Style Scan — Find Your Style Blocker',
+  description: 'Upload two private photos and answer five quick questions. Find the main reason your outfits do not feel right.',
   openGraph: {
     title: 'The ICONIK Style Scan',
-    description: 'Two photos. Five questions. Your personal style starting point—in minutes.',
+    description: 'Two photos. Five questions. Find the main reason your outfits feel wrong.',
     type: 'website',
   },
 };
@@ -16,4 +16,3 @@ export default async function StyleScanPage({ searchParams }: { searchParams: Pr
   const params = await searchParams;
   return <Suspense><StyleScanClient resumeToken={params.resume || ''} /></Suspense>;
 }
-

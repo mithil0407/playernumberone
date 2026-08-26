@@ -4,6 +4,7 @@ import {
   clientIp,
   getStyleScanByToken,
   normalizeScanPhone,
+  sanitizeFirstName,
   STYLE_SCAN_CONSENT_VERSION,
   validateStyleScanAnswers,
 } from '@/lib/styleScan';
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'WhatsApp consent is required to complete the scan.' }, { status: 400 });
     }
     const now = new Date().toISOString();
+    // First name is optional; when present it rides inside the scan_answers JSON (no schema change).
+    const firstName = sanitizeFirstName(body.firstName);
+    const answers = firstName ? { ...body.answers, firstName } : body.answers;
     const { error } = await supabaseAdmin.from('style_scan_leads').update({
       phone_e164: phone,
       whatsapp_opt_in: true,
@@ -37,8 +41,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       consent_policy_version: STYLE_SCAN_CONSENT_VERSION,
       consent_ip: clientIp(request.headers),
       consent_user_agent: request.headers.get('user-agent'),
-      scan_answers: body.answers,
-      diagnosis_answers: body.answers,
+      scan_answers: answers,
+      diagnosis_answers: answers,
       style_struggle: body.answers.concern,
       dressing_context: body.answers.dressCode,
       scan_status: 'submitted',

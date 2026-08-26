@@ -29,6 +29,7 @@ import {
 import { hasPlaceholderOutfitValue } from '@/lib/manOutfitPlaceholders';
 import {
   buildFallbackSearchUrl,
+  buildTrustedBrandSearch,
   buildShoppingSlotKey,
   descriptorHash,
   normalizeDescriptor,
@@ -278,15 +279,15 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
     const slides: ManReportSlideDraft[] = [
       { title: 'Cover', group: 'Opening', sectionKey: 's0', slideType: 'cover' },
       { title: 'Your Scorecard', group: 'Opening', sectionKey: 's0', slideType: 'overview' },
-      { title: 'Face Geometry Analysis', group: 'Diagnosis', sectionKey: 's1', slideType: 'face_geometry' },
+      { title: 'Face Shape', group: 'Diagnosis', sectionKey: 's1', slideType: 'face_geometry' },
       { title: 'Hairstyle Grid', group: 'Diagnosis', sectionKey: 's1', slideType: 'hairstyle_grid' },
       { title: 'Beard Grid', group: 'Diagnosis', sectionKey: 's1', slideType: 'beard_grid' },
       { title: 'Eyewear Grid', group: 'Diagnosis', sectionKey: 's1', slideType: 'eyewear_direction' },
       { title: 'Skin & Grooming System', group: 'Prescription', sectionKey: 's5g', slideType: 'skin_grooming_system' },
-      { title: 'Frame Analysis', group: 'Diagnosis', sectionKey: 's2', slideType: 'frame_analysis' },
-      { title: 'Frame Training Direction', group: 'Prescription', sectionKey: 's2', slideType: 'frame_training' },
+      { title: 'Fit Analysis', group: 'Diagnosis', sectionKey: 's2', slideType: 'frame_analysis' },
+      { title: 'Posture & Movement', group: 'Prescription', sectionKey: 's2', slideType: 'frame_training' },
       { title: 'Fit Rules', group: 'Prescription', sectionKey: 's2', slideType: 'fit_rules' },
-      { title: 'Colour Drape Comparison', group: 'Diagnosis', sectionKey: 's3', slideType: 'colour_drape' },
+      { title: 'Colour Comparison', group: 'Diagnosis', sectionKey: 's3', slideType: 'colour_drape' },
       { title: 'Palette', group: 'Prescription', sectionKey: 's3', slideType: 'colour' },
     ];
 
@@ -964,10 +965,10 @@ function FaceSection({
   const pageCopy = {
     architecture: {
       className: 'slate',
-      corner: 'Facial Architecture',
+      corner: 'Face Shape',
       kicker: 'Diagnosis',
       h1: 'Face',
-      h2: 'architecture.',
+      h2: 'shape.',
       number: '04',
     },
     grooming: {
@@ -1337,7 +1338,7 @@ function FaceSection({
               <div className="glass-dark rounded-3xl p-5 md:p-7">
                 <DataLabel>What this means</DataLabel>
                 <p className="display-it text-[22px] md:text-[28px] leading-snug">
-                  {firstMarkdownParagraph(text, `${face.face_shape} face geometry needs grooming, collar lines, and eyewear that sharpen the frame without overpowering ${face.feature_type} features.`)}
+                  {firstMarkdownParagraph(text, `Your ${face.face_shape.toLowerCase()} face has a strong jaw. Use tidy grooming and frames with softer curves to keep it balanced.`)}
                 </p>
                 <div className="rule my-5 md:my-6" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1398,7 +1399,7 @@ function FaceSection({
           <>
             <div className="visual-man-intro">
               <GoldPill>{face.face_shape} face</GoldPill>
-              <p>Use frames to sharpen the face architecture, balance feature scale, and keep the overall look polished without changing your clothing style.</p>
+              <p>Choose frames around the same width as your cheekbones. Softer curves balance a strong jaw without hiding it.</p>
             </div>
             {(face.eyewear_shapes?.length ?? 0) >= 4 || ((eyewearUrls?.length ?? 0) === 1 && !!eyewearUrls?.[0])
               ? renderFaceGrid('eyewear', eyewearUrls, 'Eyewear options')
@@ -1619,7 +1620,7 @@ function FaceSection({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Section 02 — Body Geometry
+// Section 02 — Fit guide
 // ─────────────────────────────────────────────────────────────
 
 // Tiny SVG icons that anchor abstract fit instructions to something visual.
@@ -1670,21 +1671,21 @@ function BodySection({ cls }: { cls: ClassificationResult }) {
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
-        <div className="man-small-caps corner-title">Body Geometry</div>
+        <div className="man-small-caps corner-title">Fit Guide</div>
       </div>
       <div className="corner-tr">
         <div className="man-mono corner-kicker">02</div>
       </div>
-      <SectionHeader number="02" label="Body Geometry" />
+      <SectionHeader number="02" label="Fit Guide" />
       <div className="man-page-inner">
         <h2>
-          <span className="display">Body</span>
-          <span className="display-it">geometry.</span>
+          <span className="display">Your fit</span>
+          <span className="display-it">guide.</span>
         </h2>
         <div className="rule" style={{ marginBottom: 40 }} />
         <div className="flex flex-wrap items-center gap-3 mb-8">
           <GoldPill>{body.silhouette_type} build</GoldPill>
-          <span className="text-[12px] faded">Your dominant frame geometry</span>
+          <span className="text-[12px] faded">How your clothes should fit</span>
         </div>
 
         {/* Fit diagram strip — visual anchor for abstract fit copy */}
@@ -1813,16 +1814,16 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Section</div>
-        <div className="man-small-caps corner-title">Chromatic Harmony</div>
+        <div className="man-small-caps corner-title">Colour Guide</div>
       </div>
       <div className="corner-tr">
         <div className="man-mono corner-kicker">03</div>
       </div>
-      <SectionHeader number="03" label="Chromatic Harmony" />
+      <SectionHeader number="03" label="Colour Guide" />
       <div className="man-page-inner">
         <h2>
-          <span className="display">Chromatic</span>
-          <span className="display-it">harmony.</span>
+          <span className="display">Your best</span>
+          <span className="display-it">colours.</span>
         </h2>
         <div className="rule" style={{ marginBottom: 40 }} />
         <div className="flex flex-wrap items-center gap-3 mb-10">
@@ -1859,7 +1860,7 @@ function ColourSection({ cls }: { cls: ClassificationResult; text: string }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12 mb-10">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] mb-5" style={{ color: OXBLOOD }}>
-              Eliminate these
+              Use less of these
             </p>
             <div className="flex flex-wrap gap-x-5 gap-y-6">
               {colour.colours_to_avoid.map((c, i) => (
@@ -2417,10 +2418,10 @@ function V2FaceGridSlide({
   const title = kind === 'hairstyle' ? 'Hairstyle' : kind === 'beard' ? 'Beard' : 'Eyewear';
   const italic = kind === 'eyewear' ? 'grid.' : 'direction.';
   const verdict = kind === 'hairstyle'
-    ? `${cls.face.face_shape} face shape needs hair or scalp grooming that controls height and keeps the sides intentional.`
+    ? `For a ${cls.face.face_shape.toLowerCase()} face, keep some height on top and the sides shorter.`
     : kind === 'beard'
-      ? `${cls.face.facial_hair_presence?.replace(/_/g, ' ') || 'Facial hair'} should sharpen the lower face without looking accidental.`
-      : `Frame width should relate to cheekbone width and keep ${cls.face.feature_type} features balanced.`;
+      ? `Keep the ${cls.face.facial_hair_presence?.replace(/_/g, ' ') || 'facial hair'} neat at the cheeks and neck, with the chin slightly fuller.`
+      : 'Choose frames around the same width as your cheekbones; curved lines will balance your strong jaw.';
 
   return (
     <section className="iconik-page man-page bone" data-blueprint-page-number={pageNumber}>
@@ -2521,13 +2522,13 @@ function V2FrameTrainingSlide({ data, pageNumber, totalSlides }: { data: ReportD
       <div className="grain" />
       <div className="corner-tl">
         <div className="man-mono corner-kicker">Frame</div>
-        <div className="man-small-caps corner-title">Training Direction</div>
+        <div className="man-small-caps corner-title">Posture & Movement</div>
       </div>
       <div className="corner-tr">
         <div className="man-mono corner-kicker">{String(pageNumber ?? 1).padStart(2, '0')} / {totalSlides}</div>
       </div>
       <div className="man-page-inner">
-        <h2><span className="display">Frame</span><span className="display-it">training.</span></h2>
+        <h2><span className="display">Posture</span><span className="display-it">& movement.</span></h2>
         <div className="rule" style={{ marginBottom: 32 }} />
         <div className="glass-dark rounded-3xl p-8 mb-5">
           <DataLabel>{training?.title ?? '4-week silhouette direction'}</DataLabel>
@@ -2854,30 +2855,36 @@ function ShoppingLinksBlock({
   const [actionError, setActionError] = useState<string | null>(null);
 
   const currentHash = useMemo(() => descriptorHash(normalizeDescriptor(descriptor)), [descriptor]);
+  const trustedSearch = useMemo(() => buildTrustedBrandSearch(descriptor), [descriptor]);
   const isCurrent = !!slot && slot.descriptorHash === currentHash && slot.status !== 'stale';
 
-  // Client view: only ever show links the stylist-approved flow produced for
-  // the garment text as it stands now — a stale slot renders nothing.
+  // Client view: one dependable discovery action is clearer than presenting
+  // volatile retailer results as fixed recommendations. The search is built
+  // from the current garment descriptor, so it stays useful even when a saved
+  // product sells out or a shopping slot has no curated candidates yet.
   if (!adminMode) {
-    if (!slot || !isCurrent || slot.status === 'skipped') return null;
-    if (slot.status === 'no_results') {
-      return (
-        <div className="shop-links">
-          <a
-            className="shop-chip shop-chip-fallback"
-            href={buildFallbackSearchUrl(descriptor)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-          >
-            Search similar →
-          </a>
-        </div>
-      );
-    }
-    if (slot.selected.length === 0) return null;
     return (
       <div className="shop-links">
-        {slot.selected.map(link => <ShoppingLinkChip key={link.url} link={link} />)}
+        <a
+          className="shop-chip shop-chip-trusted"
+          href={trustedSearch.url}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+        >
+          Search trusted brands →
+        </a>
+        <span className="shop-trusted-brands">
+          <span>{trustedSearch.category}: {trustedSearch.categorySpecialists.join(' · ')}</span>
+          <span>Popular: {trustedSearch.popularBrands.join(' · ')}</span>
+        </span>
+        <a
+          className="shop-broaden-search"
+          href={buildFallbackSearchUrl(descriptor)}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+        >
+          See all brands
+        </a>
       </div>
     );
   }
@@ -3351,6 +3358,12 @@ function OutfitsSection({
         ...item,
         colour: resolveManFormulaColour(item.value, formulaPalette),
       }));
+    const anchorSentences = outfit.whyItWorks
+      .match(/[^.!?]+(?:[.!?]+|$)/g)
+      ?.map(sentence => sentence.trim())
+      .filter(Boolean) ?? [];
+    const occasionCopy = anchorSentences[0] ?? outfit.whyItWorks;
+    const logicCopy = anchorSentences.slice(1).join(' ');
 
     return (
       <div
@@ -3372,13 +3385,13 @@ function OutfitsSection({
                 {outfit.label}
               </h3>
               <div className="outfit-quote">
-                {showStylistField(outfit.whyItWorks) && (
-                  <span>&ldquo;{outfit.whyItWorks}&rdquo;</span>
+                {showStylistField(occasionCopy) && (
+                  <span>&ldquo;{occasionCopy}&rdquo;</span>
                 )}
               </div>
               <div className="rule" />
               <div className="outfit-meta">
-                <div className="mono faded">Occasion</div>
+                <div className="mono faded">Category</div>
                 <p>{cat.name}</p>
                 {palette.length > 0 && (
                   <>
@@ -3395,10 +3408,10 @@ function OutfitsSection({
                     </div>
                   </>
                 )}
-                {showStylistField(outfit.whyItWorks) && (
+                {showStylistField(logicCopy) && (
                   <>
-                    <div className="mono faded">Logic</div>
-                    <p>{outfit.whyItWorks}</p>
+                    <div className="mono faded">Why it works</div>
+                    <p>{logicCopy}</p>
                   </>
                 )}
               </div>
@@ -3487,9 +3500,9 @@ function OutfitsSection({
               <span
                 className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
                 style={{ background: 'rgba(255,255,255,0.92)', color: SAGE, fontSize: 10, fontWeight: 500, letterSpacing: '0.04em' }}
-                title="Stylist QA passed — no errors flagged"
+                title="Outfit checks passed — no errors flagged"
               >
-                <span style={{ fontSize: 11, lineHeight: 1 }}>✓</span> Stylist verified
+                <span style={{ fontSize: 11, lineHeight: 1 }}>✓</span> Formula checked
               </span>
             )}
 
@@ -3540,7 +3553,7 @@ function OutfitsSection({
                     {String(index + 1).padStart(2, '0')} - {label}
                   </span>
                   <h4 className="display">{value}</h4>
-                  {shoppingSlotName && shopping && !hasDuplicateNumber && (
+                  {shoppingSlotName && !hasDuplicateNumber && (
                     <ShoppingLinksBlock
                       outfitNumber={outfit.number}
                       slotName={shoppingSlotName}
@@ -3554,13 +3567,9 @@ function OutfitsSection({
               );
             })}
           </div>
-          {!adminMode && shopping && formulaItems.some(({ label, value }) => {
-            const slotName = SHOPPING_SLOT_BY_LABEL[label];
-            const slot = slotName ? shopping.slots?.[buildShoppingSlotKey(outfit.number, slotName)] : undefined;
-            return !!slot && slot.descriptorHash === descriptorHash(normalizeDescriptor(value)) && slot.status !== 'stale' && slot.selected.length > 0;
-          }) && (
+          {!adminMode && formulaItems.some(({ label }) => !!SHOPPING_SLOT_BY_LABEL[label]) && (
             <p className="mono faded shop-disclaimer">
-              Shop links are curated matches from Indian retailers. Prices and availability may change.
+              Trusted searches keep this piece&apos;s colour, fabric, garment and fit, then filter by category-relevant brands. Availability may change.
             </p>
           )}
         </div>
@@ -4801,7 +4810,9 @@ function DeferredSection({
 }) {
   const { elementRef, hasIntersected } = useIntersectionObserver({
     threshold: 0,
-    rootMargin: '600px 0px',
+    // Mount the next report section well before it reaches the reader so its
+    // imagery can decode off-screen instead of appearing after a fast scroll.
+    rootMargin: '1200px 0px',
   });
 
   const shouldRender = !defer || hasIntersected;
@@ -4857,19 +4868,23 @@ function formatReportDate(iso?: string): string {
 // Stylist-style summary spread for the men blueprint overview.
 function BlueprintSummary({ cls, totalSlides }: { cls: ClassificationResult; totalSlides: number }) {
   const heroColours = cls.colour.primary_palette.slice(0, 5);
+  const highlightZone = cls.body.highlight_zone?.trim();
+  const minimiseZone = cls.body.minimise_zone?.trim();
+  const comfortZone = /^(?:belly|stomach|midsection)$/i.test(minimiseZone ?? '') ? 'waist' : minimiseZone?.toLowerCase();
+  const hasHighlightZone = !!highlightZone && !/^(?:none|n\/a|not specified)$/i.test(highlightZone);
   const cards: Array<{ label: string; title: string; sub: string; body: string }> = [
     {
       label: '01 - BUILD',
       title: cls.body.silhouette_type,
       sub: cls.body.fit_directive || 'fit architecture',
-      body: cls.body.highlight_zone
-        ? `Build the silhouette around ${cls.body.highlight_zone.toLowerCase()} while controlling ${cls.body.minimise_zone || 'visual imbalance'}.`
-        : 'The report calibrates shoulder line, torso balance, trouser break, and vertical proportion.',
+      body: hasHighlightZone
+        ? `Add definition at the ${highlightZone.toLowerCase()}. Keep the fit clean and comfortable through the ${comfortZone || 'rest of the body'}.`
+        : 'Start with a clean shoulder line, a comfortable waist and trousers that fall straight to the shoe.',
     },
     {
       label: '02 - FACE',
       title: cls.face.face_shape,
-      sub: cls.face.feature_type || 'face architecture',
+      sub: /^mixed$/i.test(cls.face.feature_type) ? 'Strong jaw and broad forehead' : (cls.face.feature_type || 'Face shape'),
       body: [
         cls.face.hairstyle_recommendations?.[0],
         cls.face.beard_style_recommendations?.[0] ?? cls.face.facial_hair_recommendations,
@@ -4880,7 +4895,7 @@ function BlueprintSummary({ cls, totalSlides }: { cls: ClassificationResult; tot
       label: '03 - SEASON',
       title: cls.colour.season,
       sub: `${cls.colour.undertone} undertone`,
-      body: `${cls.colour.skin_tone_depth} depth with a palette built from controlled neutrals, useful accents, and repeatable wardrobe anchors.`,
+      body: `Start with ${heroColours.slice(0, 3).map(colour => colour.name).join(', ')}. Add lighter or brighter colours one piece at a time.`,
     },
     {
       label: '04 - DIRECTION',
@@ -4903,8 +4918,8 @@ function BlueprintSummary({ cls, totalSlides }: { cls: ClassificationResult; tot
       <div className="man-summary-main">
         <div className="man-micro faded">The Summary</div>
         <h2>
-          <span className="display">Four measurements</span>
-          <span className="display-it">define the wardrobe.</span>
+          <span className="display">Four decisions</span>
+          <span className="display-it">shape the wardrobe.</span>
         </h2>
         <div className="rule" />
         <div className="man-dossier-cards">
@@ -4954,7 +4969,7 @@ function ReadingGuideSection({ totalSlides }: { totalSlides: number }) {
     {
       label: '01',
       title: 'Read the diagnosis.',
-      body: 'Start with body geometry, chromatic harmony, and face architecture. These pages explain the rules behind every recommendation.',
+      body: 'Start with face shape, fit and colour. These pages explain the few rules used throughout the report.',
     },
     {
       label: '02',
@@ -5040,6 +5055,8 @@ function ManReport({
   const reportDate    = formatReportDate(data.generated_at);
   const slideMeta = useMemo(() => getManReportSlideMeta(data), [data]);
   const totalSlides = slideMeta.length;
+  const reportQaVerified = data.qa?.section4?.quality?.passed === true
+    && !(data.qa.section4.issues ?? []).some(issue => issue.severity === 'error');
   const pageNumberFor = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) =>
     slideMeta.find(item => item.slideType === slideType && (outfitNumber === undefined || item.outfitNumber === outfitNumber))?.pageNumber;
   const shouldRenderSlide = (slideType: ManReportSlideMeta['slideType'], outfitNumber?: number) => {
@@ -5048,11 +5065,11 @@ function ManReport({
     return !focusPageNumber || slide.pageNumber === focusPageNumber;
   };
 
-  // Outfit numbers that have NO QA errors — used to show "Stylist verified" ribbon.
-  // QA issues encode the outfit number inside the message (e.g. "Outfit 3 …"),
-  // so we extract it via regex rather than relying on a structured field.
+  // Outfit numbers that have no QA errors. Never show a verification ribbon
+  // when the portfolio-level quality gate itself has failed or has not run.
   const qaPassedOutfits = useMemo(() => {
     const total = cls.outfit_split.total;
+    if (!reportQaVerified) return new Set<number>();
     const errorOutfits = new Set<number>();
     for (const issue of data.qa?.section4?.issues ?? []) {
       if (issue.severity !== 'error') continue;
@@ -5062,7 +5079,7 @@ function ManReport({
     const passed = new Set<number>();
     for (let n = 1; n <= total; n++) if (!errorOutfits.has(n)) passed.add(n);
     return passed;
-  }, [cls.outfit_split.total, data.qa]);
+  }, [cls.outfit_split.total, data.qa, reportQaVerified]);
 
   const stickyHeader = (
     <div
@@ -5273,29 +5290,29 @@ function ManReport({
     {
       key: 'face_geometry',
       slideType: 'face_geometry',
-      label: 'Face Geometry Analysis',
+      label: 'Face Shape',
       estimatedHeight: 900,
       background: '#ffffff',
       node: (
         <V2DiagnosticSlide
           key="face_geometry"
           title="Face"
-          italic="geometry."
+          italic="shape."
           kicker="Pillar 1"
           pageNumber={pageNumberFor('face_geometry')}
           totalSlides={totalSlides}
           imageUrl={imageUrls?.diagnostic?.faceGeometry}
-          imageAlt="Face geometry diagnostic overlay"
-          fallback="Face geometry diagnostic pending. Retry image generation when Gemini capacity is available."
-          verdict={data.diagnostics?.faceGeometryVerdict ?? `${cls.face.face_shape} face architecture guides the grooming, beard, and eyewear system.`}
+          imageAlt="Face shape analysis"
+          fallback="Face shape image pending."
+          verdict={data.diagnostics?.faceGeometryVerdict ?? `Your ${cls.face.face_shape.toLowerCase()} face guides the grooming, beard and eyewear recommendations.`}
           dos={[
             cls.face.hairstyle_recommendations?.[0] ?? 'Keep hair/scalp grooming realistic and controlled.',
             cls.face.beard_style_recommendations?.[0] ?? cls.face.facial_hair_recommendations ?? 'Keep facial-hair edges intentional.',
             cls.face.eyewear_shapes?.[0] ?? 'Use frames that relate to cheekbone width.',
           ]}
           avoids={[
-            'Do not add height or width without geometric reason.',
-            'Do not let grooming lines look accidental or unfinished.',
+            'Do not add lots of height and width at the same time.',
+            'Do not let the cheek or neck lines grow out unevenly.',
           ]}
           onRedoImage={isAdminViewer && onRegenerateV2Image ? () => onRegenerateV2Image('faceGeometry') : undefined}
         />
@@ -5336,20 +5353,20 @@ function ManReport({
     {
       key: 'frame_analysis',
       slideType: 'frame_analysis',
-      label: 'Frame Analysis',
+      label: 'Fit Analysis',
       estimatedHeight: 900,
       background: '#ffffff',
       node: (
         <V2DiagnosticSlide
           key="frame_analysis"
-          title="Frame"
-          italic="analysis."
+          title="Your fit"
+          italic="direction."
           kicker="Pillar 2"
           pageNumber={pageNumberFor('frame_analysis')}
           totalSlides={totalSlides}
           imageUrl={imageUrls?.diagnostic?.frameFront}
-          imageAlt="Front frame diagnostic overlay"
-          fallback="Front frame diagnostic pending. Retry image generation when Gemini capacity is available."
+          imageAlt="Front fit analysis"
+          fallback="Front fit image pending."
           verdict={data.diagnostics?.frameFrontVerdict ?? `${cls.body.silhouette_type} frame: ${cls.body.fit_directive}`}
           dos={cls.body.silhouette_rules ?? []}
           avoids={cls.body.avoid_cuts ?? []}
@@ -5361,7 +5378,7 @@ function ManReport({
     {
       key: 'frame_training',
       slideType: 'frame_training',
-      label: 'Frame Training Direction',
+      label: 'Posture & Movement',
       estimatedHeight: 760,
       background: '#ffffff',
       node: <V2FrameTrainingSlide key="frame_training" data={data} pageNumber={pageNumberFor('frame_training')} totalSlides={totalSlides} />,
@@ -5377,23 +5394,23 @@ function ManReport({
     {
       key: 'colour_drape',
       slideType: 'colour_drape',
-      label: 'Colour Drape Comparison',
+      label: 'Colour Comparison',
       estimatedHeight: 900,
       background: '#ffffff',
       node: (
         <V2DiagnosticSlide
           key="colour_drape"
           title="Colour"
-          italic="drape."
+          italic="comparison."
           kicker="Pillar 3"
           pageNumber={pageNumberFor('colour_drape')}
           totalSlides={totalSlides}
           imageUrl={imageUrls?.diagnostic?.colourDrape}
-          imageAlt="Colour drape comparison"
-          fallback="Colour drape comparison pending. Retry image generation when Gemini capacity is available."
+          imageAlt="Colour comparison"
+          fallback="Colour comparison image pending."
           verdict={data.diagnostics?.colourDrapeVerdict ?? `${cls.colour.season} works when depth and undertone are controlled near the face.`}
           dos={[
-            `Anchor near-face colour in ${cls.colour.primary_palette?.[0]?.name ?? cls.colour.season}.`,
+            `Start with ${cls.colour.primary_palette?.[0]?.name ?? cls.colour.season} near the face.`,
             cls.colour.pattern_guidance,
             cls.colour.fabric_tone_guidance,
           ].filter(Boolean)}
@@ -5514,7 +5531,7 @@ function ManReport({
           <div className="man-micro muted">EST · MMXXIV</div>
         </div>
         <div className="corner-tr" style={{ textAlign: 'right' }}>
-          <div className="man-micro muted">Analysis Verified</div>
+          <div className="man-micro muted">{reportQaVerified ? 'Analysis Verified' : 'Blueprint Prepared'}</div>
           <div className="man-micro muted" style={{ marginTop: 8 }}>{reportDate}</div>
         </div>
         <div className="man-cover-center">
@@ -5528,8 +5545,8 @@ function ManReport({
           <div className="man-mono man-cover-number">bp.iconik.pro</div>
         </div>
         <div className="corner-bl">
-          <div className="man-display-it man-cover-tag">Same man.</div>
-          <div className="man-display-it man-cover-tag">Different science.</div>
+          <div className="man-display-it man-cover-tag">Built for you.</div>
+          <div className="man-display-it man-cover-tag">Easy to use.</div>
         </div>
         <div className="corner-br">
           <div className="man-mono corner-kicker">01 / {totalSlides}</div>
@@ -6345,6 +6362,33 @@ function ManBlueprintStyles() {
       .shop-chip-merchant { font-weight: 600; }
       .shop-chip-price { color: ${INK_SOFT}; }
       .shop-chip-fallback { color: ${INK_SOFT}; font-style: italic; }
+      .shop-chip-trusted {
+        border-color: rgba(164, 60, 97, 0.28) !important;
+        background: rgba(212, 83, 126, 0.08) !important;
+        color: ${ACCENT_INK} !important;
+        font-weight: 600;
+      }
+      .shop-trusted-brands {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        color: ${INK_SOFT};
+        font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+        font-size: 8.5px;
+        line-height: 1.45;
+        letter-spacing: 0.015em;
+      }
+      .shop-broaden-search {
+        width: fit-content;
+        color: ${INK_SOFT};
+        font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+        font-size: 8.5px;
+        line-height: 1.3;
+        text-decoration: underline;
+        text-decoration-color: rgba(90,82,74,0.32);
+        text-underline-offset: 2px;
+      }
+      .shop-broaden-search:hover { color: ${ACCENT_INK}; }
       .shop-disclaimer {
         margin-top: 14px;
         font-size: 10px;

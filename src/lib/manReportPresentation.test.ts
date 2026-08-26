@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   extractFullManIdentityStatement,
+  formatManReportOpeningNeed,
+  isManReportStylistReviewed,
   resolveManFormulaColour,
 } from './manReportPresentation.ts';
 
@@ -62,4 +64,27 @@ test('resolveManFormulaColour prefers compound names and the first colour mentio
 
 test('resolveManFormulaColour returns null when no colour is stated', () => {
   assert.equal(resolveManFormulaColour('Fine-knit crewneck top', []), null);
+});
+
+test('formatManReportOpeningNeed turns generated intake language into customer-facing copy', () => {
+  assert.equal(
+    formatManReportOpeningNeed('Uncertainty regarding body type and fit requirements for an oval shape.', 'Oval'),
+    'You wanted to know which fits work best for your oval frame.',
+  );
+  assert.equal(
+    formatManReportOpeningNeed('Unsure about which colours suit my skin tone', 'Rectangle'),
+    'You wanted to know which colours genuinely suit you.',
+  );
+  assert.equal(
+    formatManReportOpeningNeed('', 'Rectangle'),
+    'You wanted a clearer, more reliable way to get dressed.',
+  );
+});
+
+test('isManReportStylistReviewed only makes the claim after approval or delivery', () => {
+  assert.equal(isManReportStylistReviewed('draft_ready', null), false);
+  assert.equal(isManReportStylistReviewed('in_review', null), false);
+  assert.equal(isManReportStylistReviewed('approved', null), true);
+  assert.equal(isManReportStylistReviewed('sent', null), true);
+  assert.equal(isManReportStylistReviewed('draft_ready', '2026-08-20T00:00:00.000Z'), true);
 });

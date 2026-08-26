@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Fraunces, JetBrains_Mono } from "next/font/google";
+import { Inter, Playfair_Display, Fraunces, JetBrains_Mono, Newsreader } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
@@ -44,6 +44,16 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   display: 'swap',
   variable: '--font-fraunces',
+  fallback: ['Georgia', 'serif'],
+  axes: ['opsz'],
+});
+
+// Editorial serif for long-form report prose — reads as a printed manual
+// rather than a dashboard, which Inter at light weights cannot do.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-newsreader',
   fallback: ['Georgia', 'serif'],
   axes: ['opsz'],
 });
@@ -140,6 +150,15 @@ export default function RootLayout({
               window.fbq('set', 'autoConfig', false, '${META_PIXEL_ID}');
               window.fbq('init', '${META_PIXEL_ID}', {});
 
+              // The Signals Gateway bridge is optional and can fail when a
+              // browser extension or privacy layer wraps fetch. Keep the
+              // standard Meta Pixel active, but remove that dependency from
+              // the private photo-upload funnel.
+              if (window.location.pathname === '/style-scan' || window.location.pathname.indexOf('/style-scan/') === 0) {
+                window.fbq.disablePushState = true;
+                return;
+              }
+
               function assign(target) {
                 for (var i = 1; i < arguments.length; i++) {
                   var source = arguments[i];
@@ -230,7 +249,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${inter.className}`}>
+      <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${newsreader.variable} ${jetbrainsMono.variable} ${inter.className}`}>
         {/* Google Analytics — single gtag init shared across both properties */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`}
