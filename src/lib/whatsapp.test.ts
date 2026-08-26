@@ -18,6 +18,14 @@ import {
   routeManWhatsappRequest,
 } from './manWhatsappStylist.ts';
 import { buildManWhatsappOutfitImagePrompt } from './manWhatsappOutfitImagePrompt.ts';
+import {
+  buildRecommendationDiversityBrief,
+  enforceContextualMemoryKind,
+  legacyMemoriesToRecords,
+  selectMemoriesForTurn,
+  type ManRecommendationHistoryItem,
+  type ManStyleMemory,
+} from './manWhatsappMemoryPolicy.ts';
 
 test('normalises Indian WhatsApp numbers for Cloud API', () => {
   assert.equal(normalizeIndianWhatsappNumber('98765 43210'), '919876543210');
@@ -187,4 +195,140 @@ test('outfit visuals use separate face and body authorities on a white cyclorama
   assert.match(prompt, /70–85 mm full-frame lens perspective/i);
   assert.match(prompt, /camera positioned at mid-torso height/i);
   assert.match(prompt, /Ecru knit polo with espresso pleated trousers/i);
+});
+
+function styleMemory(input: Partial<ManStyleMemory> & Pick<ManStyleMemory, 'memoryKey' | 'kind' | 'value'>): ManStyleMemory {
+  return {
+    category: 'like',
+    contextScopes: [],
+    strength: 0.7,
+    confidence: 0.9,
+    evidenceCount: 1,
+    timesUsed: 0,
+    status: 'active',
+    ...input,
+  };
+}
+
+function recommendationHistory(memoryKeysUsed: string[]): ManRecommendationHistoryItem {
+  return {
+    route: 'outfit_recommendation',
+    memoryKeysUsed,
+    fingerprint: {
+      primaryColours: ['olive'],
+      primaryGarments: ['bomber jacket'],
+      layerType: 'bomber jacket',
+      bottomSilhouette: 'relaxed jeans',
+      footwear: 'sneakers',
+      archetype: 'smart casual',
+    },
+  };
+}
+
+test('legacy likes become optional preferences rather than permanent instructions', () => {
+  const [like, dislike, budget] = legacyMemoriesToRecords([
+    'like: olive jackets',
+    'dislike: skinny jeans',
+    'budget: under ₹8,000',
+  ]);
+
+  assert.equal(like.kind, 'soft_preference');
+  assert.equal(dislike.kind, 'hard_constraint');
+  assert.equal(budget.kind, 'wardrobe_fact');
+});
+
+test('specific reactions are deterministically kept local even if proposed as global', () => {
+  assert.equal(enforceContextualMemoryKind({
+    message: 'I really like this jacket',
+    category: 'like',
+    proposedKind: 'soft_preference',
+  }), 'local_feedback');
+  assert.equal(enforceContextualMemoryKind({
+    message: 'I usually like olive jackets',
+    category: 'like',
+    proposedKind: 'soft_preference',
+  }), 'soft_preference');
+  assert.equal(enforceContextualMemoryKind({
+    message: "I don't like that outfit",
+    category: 'dislike',
+    proposedKind: 'hard_constraint',
+  }), 'local_feedback');
+});
+
+test('memory selection keeps constraints, drops local feedback and cools recently used preferences', () => {
+  const memories = [
+    styleMemory({
+      memoryKey: 'dislike:skinny-jeans',
+      kind: 'hard_constraint',
+      category: 'dislike',
+      value: 'Never recommend skinny jeans',
+    }),
+    styleMemory({
+      memoryKey: 'like:olive-jackets',
+      kind: 'soft_preference',
+      value: 'Likes olive jackets',
+    }),
+    styleMemory({
+      memoryKey: 'like:this-jacket',
+      kind: 'local_feedback',
+      value: 'Liked the jacket in the previous look',
+    }),
+    styleMemory({
+      memoryKey: 'like:navy-knitwear',
+      kind: 'soft_preference',
+      value: 'Usually likes navy knitwear',
+    }),
+  ];
+
+  const selected = selectMemoriesForTurn({
+    memories,
+    history: [recommendationHistory(['like:olive-jackets'])],
+    message: 'What should I wear to dinner?',
+    route: 'outfit_recommendation',
+  });
+
+  assert.ok(selected.selectedKeys.includes('dislike:skinny-jeans'));
+  assert.ok(selected.selectedKeys.includes('like:navy-knitwear'));
+  assert.ok(!selected.selectedKeys.includes('like:olive-jackets'));
+  assert.ok(!selected.selectedKeys.includes('like:this-jacket'));
+});
+
+test('soft preferences are capped and retired after two uses in five recommendations', () => {
+  const overused = styleMemory({
+    memoryKey: 'like:olive',
+    kind: 'soft_preference',
+    value: 'Likes olive',
+  });
+  const alternatives = ['navy', 'burgundy', 'ecru'].map(colour => styleMemory({
+    memoryKey: `like:${colour}`,
+    kind: 'soft_preference',
+    value: `Likes ${colour}`,
+  }));
+  const history = [
+    recommendationHistory([]),
+    recommendationHistory(['like:olive']),
+    recommendationHistory([]),
+    recommendationHistory(['like:olive']),
+    recommendationHistory([]),
+  ];
+
+  const selected = selectMemoriesForTurn({
+    memories: [overused, ...alternatives],
+    history,
+    message: 'Give me a new outfit idea',
+    route: 'outfit_recommendation',
+  });
+
+  assert.ok(!selected.selectedKeys.includes('like:olive'));
+  assert.ok(selected.memories.filter(memory => memory.kind === 'soft_preference').length <= 2);
+});
+
+test('recommendation history produces a concise anti-repetition brief', () => {
+  const brief = buildRecommendationDiversityBrief([
+    recommendationHistory(['like:olive-jackets']),
+  ]);
+
+  assert.match(brief, /colours olive/i);
+  assert.match(brief, /garments bomber jacket/i);
+  assert.match(brief, /Avoid a near-duplicate/i);
 });

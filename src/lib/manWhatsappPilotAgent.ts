@@ -2,15 +2,24 @@ import 'server-only';
 
 import {
   ICONIK_MAN_WHATSAPP_TEXT_MODEL,
-  extractManStyleMemoryCandidates,
+  analyzeManWhatsappInteraction,
   generateManEditChatReply,
   generateManEditOutfitImage,
   generateManEditShoppingReply,
   loadManEditReportContext,
   uploadManEditChatImageBytes,
   type ManEditReportContext,
-  type ManStyleMemoryCandidate,
 } from '@/lib/manEdit';
+import {
+  buildRecommendationDiversityBrief,
+  selectMemoriesForTurn,
+} from '@/lib/manWhatsappMemoryPolicy';
+import {
+  applyManWhatsappMemoryUpdates,
+  ensureLegacyManWhatsappMemories,
+  loadManWhatsappMemoryContext,
+  saveManWhatsappRecommendationFingerprint,
+} from '@/lib/manWhatsappMemoryStore';
 import { routeManWhatsappRequest } from '@/lib/manWhatsappStylist';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -90,43 +99,6 @@ async function loadSavedMemories(reportId: string) {
   return [...(data ?? [])].reverse()
     .map(item => typeof item.content === 'string' ? item.content.trim() : '')
     .filter(Boolean);
-}
-
-async function saveMemories(input: {
-  context: ManEditReportContext;
-  candidates: ManStyleMemoryCandidate[];
-  sourceWhatsappMessageId: string;
-}) {
-  if (!input.candidates.length) return;
-  const existing = await loadSavedMemories(input.context.report.id);
-  const normalizedExisting = new Set(existing.map(item => item.toLowerCase().replace(/\s+/g, ' ').trim()));
-  const customerEmail = String(input.context.subscription?.customer_email ?? input.context.submission.customer_email);
-
-  const rows = input.candidates.flatMap(candidate => {
-    const content = `${candidate.category}: ${candidate.detail}`.trim();
-    const normalized = content.toLowerCase().replace(/\s+/g, ' ');
-    if (!content || normalizedExisting.has(normalized)) return [];
-    normalizedExisting.add(normalized);
-    return [{
-      report_id: input.context.report.id,
-      subscription_id: input.context.subscription?.id ?? null,
-      customer_email: customerEmail,
-      role: 'system',
-      content,
-      model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
-      metadata: {
-        type: MEMORY_METADATA_TYPE,
-        category: candidate.category,
-        confidence: candidate.confidence,
-        source_whatsapp_message_id: input.sourceWhatsappMessageId,
-        channel: PILOT_CHANNEL,
-      },
-    }];
-  });
-
-  if (!rows.length) return;
-  const { error } = await supabaseAdmin.from('man_edit_chat_messages').insert(rows);
-  if (error) console.warn('[man whatsapp pilot] memory save failed:', error.message);
 }
 
 async function sendPilotText(to: string, body: string) {
@@ -298,7 +270,23 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
 
   if (userError || !userMessage) throw new Error(userError?.message || 'Could not save pilot message');
 
-  const memories = await loadSavedMemories(context.report.id);
+  const [legacyMemories, memoryContext] = await Promise.all([
+    loadSavedMemories(context.report.id),
+    loadManWhatsappMemoryContext(context.report.id),
+  ]);
+  const legacyMemoryRecords = await ensureLegacyManWhatsappMemories({
+    context,
+    legacyMemories,
+  });
+  const memorySelection = selectMemoriesForTurn({
+    memories: memoryContext.memories,
+    legacyMemories,
+    history: memoryContext.history,
+    message: message.text,
+    route: route.intent,
+  });
+  const memories = memorySelection.promptLines;
+  const memoryDiversityBrief = buildRecommendationDiversityBrief(memoryContext.history);
   const imageRequested = wantsGeneratedOutfitImage(message.text);
   const conversationReference = route.needsConversationReference
     ? await loadLatestOutfitDirection(context.report.id)
@@ -313,6 +301,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         message: message.text,
         conversationReference,
         memories,
+        memoryDiversityBrief,
       });
     } catch (error) {
       console.error('[man whatsapp pilot] shopping reply failed:', error);
@@ -333,6 +322,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         firstName: config.firstName,
         route,
         conversationReference,
+        memoryDiversityBrief,
       });
     } catch (error) {
       console.error('[man whatsapp pilot] stylist reply failed:', error);
@@ -397,18 +387,39 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     }
   }
 
-  const candidates = await extractManStyleMemoryCandidates(message.text);
-  await saveMemories({
+  const interactionAnalysis = await analyzeManWhatsappInteraction({
+    userMessage: message.text,
+    assistantReply: reply,
+    route: route.intent,
+    activeMemories: [
+      ...memoryContext.memories.filter(memory => memory.status === 'active'),
+      ...legacyMemoryRecords.filter(legacy => (
+        !memoryContext.memories.some(memory => memory.memoryKey === legacy.memoryKey)
+      )),
+    ],
+    selectedMemoryKeys: memorySelection.selectedKeys,
+  });
+  const memoriesSaved = await applyManWhatsappMemoryUpdates({
     context,
-    candidates,
+    updates: interactionAnalysis.memoryUpdates,
     sourceWhatsappMessageId: message.id,
   });
+  if (interactionAnalysis.recommendationFingerprint) {
+    const { memoryKeysUsed, ...fingerprint } = interactionAnalysis.recommendationFingerprint;
+    await saveManWhatsappRecommendationFingerprint({
+      context,
+      assistantMessageId: assistantMessage.id,
+      route: route.intent,
+      fingerprint,
+      memoryKeysUsed,
+    });
+  }
 
   return {
     status: 'replied' as const,
     reportId: context.report.id,
     inboundMessageId: message.id,
     outboundMessageId: sent.messageId ?? null,
-    memoriesSaved: candidates.length,
+    memoriesSaved,
   };
 }

@@ -14,6 +14,16 @@ import {
 } from '@/lib/manWhatsappStylist';
 import type { ClassificationResult } from '@/lib/manReportGenerator';
 import { buildManWhatsappOutfitImagePrompt } from '@/lib/manWhatsappOutfitImagePrompt';
+import {
+  MAN_STYLE_MEMORY_CATEGORIES,
+  MAN_STYLE_MEMORY_KINDS,
+  enforceContextualMemoryKind,
+  normalizeMemoryKey,
+  type ManStyleMemory,
+  type ManStyleMemoryCategory,
+  type ManStyleMemoryKind,
+  type ManWhatsappInteractionAnalysis,
+} from '@/lib/manWhatsappMemoryPolicy';
 
 const TEXT_MODEL = 'gemini-3-flash-preview';
 export const ICONIK_MAN_WHATSAPP_TEXT_MODEL = process.env.ICONIK_MAN_WHATSAPP_TEXT_MODEL?.trim() || 'gpt-5.6-luna';
@@ -402,6 +412,7 @@ export async function generateManEditChatReply(input: {
   firstName?: string;
   route?: ManWhatsappRouteDecision;
   conversationReference?: string | null;
+  memoryDiversityBrief?: string;
 }) {
   const { profile } = buildManEditProfile(input.context);
   const { data: recentMessages } = await supabaseAdmin
@@ -441,7 +452,11 @@ WHATSAPP VOICE:
   const prompt = `You are the ICONIK Man personal stylist. Give precise, practical, premium styling advice.
 
 Rules:
-- Use the client's profile, report, likes, and dislikes as source-of-truth.
+- Use the client's profile and report as source-of-truth. Treat saved memories according to their labelled kind.
+- Always obey hard constraints and standing instructions. Soft preferences are optional priors, never requirements.
+- Use at most one positive soft preference in a recommendation, and only when it genuinely improves this answer. Never repeat an element merely to demonstrate that you remember it.
+- Treat historical outfit likes/dislikes as evidence about those specific looks, not an instruction to repeat their colours or garments.
+- Use RECENT CHAT for conversational continuity and resolving references only. Do not turn a reaction found there into a durable preference; only LONG-TERM STYLE MEMORIES may influence future turns as memory.
 - Be direct and specific: name colours, fits, fabric weights, styling fixes, and what to avoid.
 - If the user shares an outfit image, first say what works, then evaluate fit, colour harmony, proportions, coordination, and occasion appropriateness. Give 2-4 concrete improvements. Rate the outfit only when requested; never rate the person's body or attractiveness.
 - Do not mention internal JSON, database fields, or that you are an AI model.
@@ -465,6 +480,9 @@ ${input.firstName || 'Client'}
 
 LONG-TERM STYLE MEMORIES:
 ${input.memories?.length ? input.memories.join('\n') : 'No additional WhatsApp preferences have been saved yet.'}
+
+RECENT RECOMMENDATION DIVERSITY:
+${input.memoryDiversityBrief || 'No recent recommendation fingerprints are available.'}
 
 RECENT CHAT:
 ${history || 'No previous chat.'}
@@ -567,6 +585,7 @@ export async function generateManEditShoppingReply(input: {
   message: string;
   conversationReference?: string | null;
   memories?: string[];
+  memoryDiversityBrief?: string;
 }) {
   if (!openai) throw new Error('OPENAI_API_KEY is not configured');
   const retailer = findRequestedRetailer(input.message);
@@ -584,8 +603,11 @@ REQUESTED RETAILER: ${retailer?.name ?? 'No single retailer specified'}
 EARLIER OUTFIT DIRECTION: ${input.conversationReference?.trim() || 'None'}
 CLIENT STYLE PROFILE: ${JSON.stringify(profile.structuredStyleProfile, null, 2)}
 SAVED PREFERENCES: ${input.memories?.length ? input.memories.join('\n') : 'None'}
+RECENT RECOMMENDATIONS: ${input.memoryDiversityBrief || 'None'}
 
 Find up to three currently listed products that are close to the resolved garment. Prioritise garment type, colour, material, fit, and suitability for the earlier outfit. Reject obviously wrong categories, womenswear, childrenswear, loud branding, and poor stylistic matches.
+
+Treat hard constraints and standing instructions as binding. A soft preference is optional: use at most one and do not repeat it simply because it is remembered. When the request is open-ended, avoid near-duplicating the recent recommendations.
 
 Write a natural WhatsApp answer under 150 words. Lead with the strongest match. State the product title, retailer, visible price when available, and one short fit/style caveat. Do not claim stock, size availability, price certainty, or an exact match unless the retailer page establishes it. Do not invent a URL. Do not say you lack a verified link: either give the current official matches found or say that no close current match surfaced and direct the client to the retailer search fallback.`;
 
@@ -698,56 +720,161 @@ export async function generateManEditOutfitImage(input: {
   };
 }
 
-export interface ManStyleMemoryCandidate {
-  category: 'like' | 'dislike' | 'fit' | 'colour' | 'brand' | 'budget' | 'owned_item' | 'lifestyle' | 'other';
-  detail: string;
-  confidence: number;
+export async function analyzeManWhatsappInteraction(input: {
+  userMessage: string;
+  assistantReply: string;
+  route: string;
+  activeMemories: ManStyleMemory[];
+  selectedMemoryKeys: string[];
+}): Promise<ManWhatsappInteractionAnalysis> {
+  const empty: ManWhatsappInteractionAnalysis = {
+    memoryUpdates: [],
+    recommendationFingerprint: null,
+  };
+  if (!input.userMessage.trim() || /^\[Unsupported WhatsApp message:/i.test(input.userMessage)) {
+    return empty;
+  }
+
+  const activeMemorySummary = input.activeMemories.map(memory => ({
+    memory_key: memory.memoryKey,
+    kind: memory.kind,
+    category: memory.category,
+    value: memory.value,
+    context_scopes: memory.contextScopes,
+  }));
+  const prompt = `Analyse one completed ICONIK Man WhatsApp interaction. This is a memory write and recommendation audit, not a reply to the customer.
+
+Return ONLY valid JSON in this exact shape:
+{
+  "memory_updates": [{
+    "memory_key": "exact existing key when this reinforces the same semantic fact, otherwise null",
+    "kind": "hard_constraint|standing_instruction|soft_preference|wardrobe_fact|local_feedback",
+    "category": "like|dislike|fit|colour|brand|budget|owned_item|lifestyle|other",
+    "value": "short standalone fact",
+    "context_scopes": ["occasion, garment or situation where this applies"],
+    "strength": 0.0,
+    "confidence": 0.0,
+    "supersedes_keys": ["exact existing memory key"]
+  }],
+  "recommendation_fingerprint": {
+    "primary_colours": ["string"],
+    "primary_garments": ["string"],
+    "layer_type": "string or null",
+    "bottom_silhouette": "string or null",
+    "footwear": "string or null",
+    "archetype": "string or null",
+    "memory_keys_used": ["exact selected memory key"]
+  }
 }
 
-export async function extractManStyleMemoryCandidates(message: string): Promise<ManStyleMemoryCandidate[]> {
-  if (!message.trim() || /^\[Unsupported WhatsApp message:/i.test(message)) return [];
+MEMORY CLASSIFICATION:
+- "I like this jacket/look" or approval of the current answer is local_feedback. It describes this specific option and must not become a universal preference.
+- An explicit general pattern such as "I usually prefer...", "I love wearing...", or repeated evidence is soft_preference.
+- "Always do..." is standing_instruction. A clear global "never", "avoid", allergy, non-negotiable or firm dislike is hard_constraint.
+- Owned clothes, budget and recurring lifestyle facts are wardrobe_fact.
+- Do not save a one-off occasion, a question, sensitive personal data, inferred image traits, the assistant's suggestion, or anything the customer did not explicitly state.
+- Use context scopes whenever a preference is conditional. Keep an empty array only for genuinely general facts.
+- Set supersedes_keys only for a clear contradiction, using exact keys from ACTIVE MEMORIES. Never guess a key.
+- When the customer repeats or paraphrases an existing fact, set memory_key to that exact existing key so the evidence is reinforced instead of creating a duplicate.
+- Maximum four updates. Omit anything below 0.75 confidence.
 
-  const prompt = `Extract only durable, explicitly stated men's style preferences or wardrobe facts from this customer message.
+FINGERPRINT RULES:
+- Return null unless the assistant reply actually recommends an outfit, garment or purchasable option.
+- Describe only the recommendation that was actually given, not the customer message.
+- memory_keys_used must be a subset of SELECTED MEMORY KEYS and include only a memory visibly reflected in the recommendation. It may be empty.
 
-Return ONLY valid JSON:
-{"memories":[{"category":"like|dislike|fit|colour|brand|budget|owned_item|lifestyle|other","detail":"short first-person-independent fact","confidence":0.0}]}
-
-Save stable facts such as likes, dislikes, fit preferences, budget, brands, owned items, or recurring lifestyle needs.
-Do not save one-off occasions, questions, guesses, body judgments, sensitive personal data, or facts inferred only from an image.
-If there is no durable fact, return {"memories":[]}.
-
-CUSTOMER MESSAGE:
-${message}`;
+ROUTE: ${input.route}
+ACTIVE MEMORIES: ${JSON.stringify(activeMemorySummary)}
+SELECTED MEMORY KEYS: ${JSON.stringify(input.selectedMemoryKeys)}
+CUSTOMER: ${input.userMessage}
+ASSISTANT: ${input.assistantReply}`;
 
   try {
     if (!openai) throw new Error('OPENAI_API_KEY is not configured');
     const response = await openai.responses.create({
       model: ICONIK_MAN_WHATSAPP_TEXT_MODEL,
       input: prompt,
-      reasoning: { effort: 'none' },
-      max_output_tokens: 500,
+      reasoning: { effort: 'low' },
+      max_output_tokens: 1_000,
       store: false,
-      metadata: { workload: 'iconik_man_whatsapp_memory' },
+      metadata: { workload: 'iconik_man_whatsapp_memory_v2' },
     });
-    const parsed = JSON.parse(extractJson(response.output_text)) as { memories?: unknown[] };
-    if (!Array.isArray(parsed.memories)) return [];
+    const parsed = asRecord(JSON.parse(extractJson(response.output_text)));
+    const activeKeys = new Set(input.activeMemories.map(memory => memory.memoryKey));
+    const selectedKeys = new Set(input.selectedMemoryKeys);
+    const memoryUpdates = (Array.isArray(parsed.memory_updates) ? parsed.memory_updates : [])
+      .flatMap(raw => {
+        const memory = asRecord(raw);
+        const category = firstString(memory.category) as ManStyleMemoryCategory;
+        const proposedKind = firstString(memory.kind) as ManStyleMemoryKind;
+        const value = firstString(memory.value).slice(0, 240);
+        const confidence = typeof memory.confidence === 'number'
+          ? Math.max(0, Math.min(1, memory.confidence))
+          : 0;
+        const strength = typeof memory.strength === 'number'
+          ? Math.max(0, Math.min(1, memory.strength))
+          : 0.5;
+        if (
+          !MAN_STYLE_MEMORY_CATEGORIES.includes(category)
+          || !MAN_STYLE_MEMORY_KINDS.includes(proposedKind)
+          || !value
+          || confidence < 0.75
+        ) return [];
+        const kind = enforceContextualMemoryKind({
+          message: input.userMessage,
+          category,
+          proposedKind,
+        });
+        const contextScopes = (Array.isArray(memory.context_scopes) ? memory.context_scopes : [])
+          .filter((scope): scope is string => typeof scope === 'string' && Boolean(scope.trim()))
+          .map(scope => scope.trim().slice(0, 80))
+          .slice(0, 5);
+        const supersedesKeys = (Array.isArray(memory.supersedes_keys) ? memory.supersedes_keys : [])
+          .filter((key): key is string => typeof key === 'string' && activeKeys.has(key))
+          .slice(0, 5);
+        const proposedMemoryKey = firstString(memory.memory_key);
+        const matchingActiveMemory = input.activeMemories.find(active => active.memoryKey === proposedMemoryKey);
+        const memoryKey = matchingActiveMemory?.category === category
+          ? proposedMemoryKey
+          : normalizeMemoryKey(category, value);
+        return [{
+          memoryKey,
+          category,
+          kind,
+          value,
+          contextScopes,
+          strength,
+          confidence,
+          supersedesKeys,
+        }];
+      })
+      .slice(0, 4);
 
-    const allowed = new Set<ManStyleMemoryCandidate['category']>([
-      'like', 'dislike', 'fit', 'colour', 'brand', 'budget', 'owned_item', 'lifestyle', 'other',
-    ]);
-    return parsed.memories.flatMap(raw => {
-      const memory = asRecord(raw);
-      const category = firstString(memory.category) as ManStyleMemoryCandidate['category'];
-      const detail = firstString(memory.detail).slice(0, 240);
-      const confidence = typeof memory.confidence === 'number'
-        ? Math.max(0, Math.min(1, memory.confidence))
-        : 0;
-      if (!allowed.has(category) || !detail || confidence < 0.75) return [];
-      return [{ category, detail, confidence }];
-    }).slice(0, 4);
+    const rawFingerprint = asRecord(parsed.recommendation_fingerprint);
+    const hasFingerprint = Object.keys(rawFingerprint).length > 0;
+    const strings = (value: unknown, limit = 8) => (Array.isArray(value) ? value : [])
+      .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+      .map(item => item.trim().slice(0, 80))
+      .slice(0, limit);
+    const nullableString = (value: unknown) => typeof value === 'string' && value.trim()
+      ? value.trim().slice(0, 80)
+      : null;
+    const memoryKeysUsed = strings(rawFingerprint.memory_keys_used)
+      .filter(key => selectedKeys.has(key));
+    const recommendationFingerprint = hasFingerprint ? {
+      primaryColours: strings(rawFingerprint.primary_colours),
+      primaryGarments: strings(rawFingerprint.primary_garments),
+      layerType: nullableString(rawFingerprint.layer_type),
+      bottomSilhouette: nullableString(rawFingerprint.bottom_silhouette),
+      footwear: nullableString(rawFingerprint.footwear),
+      archetype: nullableString(rawFingerprint.archetype),
+      memoryKeysUsed,
+    } : null;
+
+    return { memoryUpdates, recommendationFingerprint };
   } catch (error) {
-    console.warn('[man whatsapp pilot] preference extraction skipped:', error instanceof Error ? error.message : error);
-    return [];
+    console.warn('[man whatsapp pilot] interaction analysis skipped:', error instanceof Error ? error.message : error);
+    return empty;
   }
 }
 
