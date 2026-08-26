@@ -11,7 +11,7 @@ export function buildManWhatsappOutfitImagePrompt(input: {
 }) {
   const identityRules = buildSourceLockedOutfitIdentityRules(input.facialHairPresence);
 
-  return `Create one premium, photorealistic men's outfit image depicting the same adult client shown in BOTH supplied reference images.
+  return `Create one genuinely photorealistic, high-end fashion photograph depicting the same adult client shown in BOTH supplied reference images. It must look like a real professional camera photograph, never a CGI image, digital render, illustration, or synthetic-looking composite.
 
 REFERENCE ROLE SEPARATION — NON-NEGOTIABLE:
 - The file named headshot is the sole authority for identity, face, complexion, apparent age, hairstyle, hairline, and facial hair.
@@ -31,7 +31,7 @@ WHITE SEAMLESS CYC STUDIO — REQUIRED:
 
 OUTFIT AND COMPOSITION:
 - Show the client head-to-toe in the exact outfit direction below. Match every specified garment, colour, fabric, fit, layer, shoe, accessory, and styling move; do not swap in a different look.
-- Use a natural relaxed front or subtle three-quarter pose with both feet visible, realistic fabric texture, anatomically correct hands, balanced proportions, and a straight full-length fashion-editorial camera perspective.
+- Use a natural relaxed front or subtle three-quarter pose with both feet visible, realistic fabric texture, anatomically correct hands, and balanced proportions. Photograph with an approximately 70–85 mm full-frame lens perspective, with the camera positioned at mid-torso height.
 - Make the look attainable and commercially wearable in India, not costume-like or runway-extreme.
 - Do not beautify, slim, broaden, heighten, age, de-age, reshape, or idealise the client.
 - Contain no written text, logos, price tags, watermarks, collages, borders, or before/after panels.

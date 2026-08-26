@@ -183,5 +183,8 @@ test('outfit visuals use separate face and body authorities on a white cyclorama
   assert.match(prompt, /pure-white \(#FFFFFF\) seamless cyclorama studio/i);
   assert.match(prompt, /No visible wall-to-floor seam, horizon line, corner/i);
   assert.match(prompt, /faint, tight, natural contact shadow directly beneath the shoes/i);
+  assert.match(prompt, /real professional camera photograph, never a CGI image, digital render/i);
+  assert.match(prompt, /70–85 mm full-frame lens perspective/i);
+  assert.match(prompt, /camera positioned at mid-torso height/i);
   assert.match(prompt, /Ecru knit polo with espresso pleated trousers/i);
 });
