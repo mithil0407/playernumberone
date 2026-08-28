@@ -356,7 +356,7 @@ export default function IndiaBlueprintCheckout({
       price: OUTFIT_PREVIEW_PRICE,
       description: 'See how your recommended outfits could look on your body before you shop.',
       selected: outfitPreview,
-      badge: 'Recommended',
+      badge: '87% also added this',
     },
     {
       key: 'wardrobedetox' as const,
