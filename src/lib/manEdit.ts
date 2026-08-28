@@ -6,10 +6,11 @@ import type { Response as OpenAIResponse } from 'openai/resources/responses/resp
 import { supabaseAdmin } from '@/lib/supabase';
 import {
   buildManWhatsappOutfitEngineContext,
-  buildRetailerFallbackUrl,
+  buildManWhatsappShoppingIntent,
   findRequestedRetailer,
-  MAN_WHATSAPP_RETAILERS,
-  resolveShoppingQuery,
+  formatShoppingProductLinks,
+  rankMatchingShoppingProducts,
+  retailersForShoppingIntent,
   type ManWhatsappRouteDecision,
 } from '@/lib/manWhatsappStylist';
 import type { ClassificationResult } from '@/lib/manReportGenerator';
@@ -457,6 +458,8 @@ Rules:
 - Use at most one positive soft preference in a recommendation, and only when it genuinely improves this answer. Never repeat an element merely to demonstrate that you remember it.
 - Treat historical outfit likes/dislikes as evidence about those specific looks, not an instruction to repeat their colours or garments.
 - Use RECENT CHAT for conversational continuity and resolving references only. Do not turn a reaction found there into a durable preference; only LONG-TERM STYLE MEMORIES may influence future turns as memory.
+- The latest explicit occasion or dress code overrides an older one. A football request can become casual later, and a casual request can become performance-focused later.
+- When the user explicitly switches context, follow the new context. When a short continuation genuinely supports multiple occasions, ask one focused clarification instead of guessing.
 - Be direct and specific: name colours, fits, fabric weights, styling fixes, and what to avoid.
 - If the user shares an outfit image, first say what works, then evaluate fit, colour harmony, proportions, coordination, and occasion appropriateness. Give 2-4 concrete improvements. Rate the outfit only when requested; never rate the person's body or attractiveness.
 - Do not mention internal JSON, database fields, or that you are an AI model.
@@ -538,6 +541,7 @@ ${input.message}`;
 interface ShoppingCitation {
   title: string;
   url: string;
+  evidence: string;
 }
 
 function canonicalRetailUrl(value: string) {
@@ -564,7 +568,13 @@ function shoppingCitations(response: OpenAIResponse) {
         const url = canonicalRetailUrl(annotation.url);
         if (seen.has(url)) continue;
         seen.add(url);
-        citations.push({ title: annotation.title || 'Product', url });
+        const lineStart = content.text.lastIndexOf('\n', Math.max(0, annotation.start_index - 1)) + 1;
+        const nextLine = content.text.indexOf('\n', annotation.end_index);
+        const lineEnd = nextLine < 0 ? content.text.length : nextLine;
+        const evidence = content.text.slice(lineStart, lineEnd)
+          .replace(/\s+/g, ' ')
+          .trim();
+        citations.push({ title: annotation.title || 'Product', url, evidence });
       }
     }
   }
@@ -589,27 +599,33 @@ export async function generateManEditShoppingReply(input: {
 }) {
   if (!openai) throw new Error('OPENAI_API_KEY is not configured');
   const retailer = findRequestedRetailer(input.message);
-  const query = resolveShoppingQuery(input.message, input.conversationReference ?? '');
-  const fallbackUrl = buildRetailerFallbackUrl(retailer, query);
-  const allowedRetailers = retailer ? [retailer] : [...MAN_WHATSAPP_RETAILERS];
+  const shoppingIntent = buildManWhatsappShoppingIntent(input.message, input.conversationReference ?? '');
+  if (shoppingIntent.clarification) return shoppingIntent.clarification;
+
+  const allowedRetailers = retailersForShoppingIntent(shoppingIntent, retailer);
   const allowedDomains = allowedRetailers.map(item => item.domain);
   const { profile } = buildManEditProfile(input.context);
 
-  const prompt = `You are ICONIK's shopping assistant for an Indian male client. Search current products only on the allowed official retailer domains.
+  const prompt = `You are ICONIK's high-precision shopping retriever for an Indian male client. Search current products only on the allowed retailer domains.
 
 SHOPPING REQUEST: ${input.message}
-RESOLVED GARMENT QUERY: ${query}
+RESOLVED PRODUCT QUERY: ${shoppingIntent.query}
+GARMENT: ${shoppingIntent.garment}
+CURRENT OCCASION: ${shoppingIntent.occasion ?? 'not specified'}
+HARD REQUIREMENTS: ${shoppingIntent.hardRequirements.join('; ') || 'correct menswear garment category'}
+AUTOMATIC REJECTIONS: ${shoppingIntent.exclusions.join('; ') || 'wrong category or department'}
 REQUESTED RETAILER: ${retailer?.name ?? 'No single retailer specified'}
 EARLIER OUTFIT DIRECTION: ${input.conversationReference?.trim() || 'None'}
 CLIENT STYLE PROFILE: ${JSON.stringify(profile.structuredStyleProfile, null, 2)}
 SAVED PREFERENCES: ${input.memories?.length ? input.memories.join('\n') : 'None'}
 RECENT RECOMMENDATIONS: ${input.memoryDiversityBrief || 'None'}
+SOURCE PRIORITY: ${allowedRetailers.map(item => item.name).join(' > ')}
 
-Find up to three currently listed products that are close to the resolved garment. Prioritise garment type, colour, material, fit, and suitability for the earlier outfit. Reject obviously wrong categories, womenswear, childrenswear, loud branding, and poor stylistic matches.
+Find up to three products that satisfy every HARD REQUIREMENT. The latest explicit occasion controls the search; use EARLIER OUTFIT DIRECTION only to resolve words such as this, these, it, or similar. Never let an older colour or occasion override the current request.
 
-Treat hard constraints and standing instructions as binding. A soft preference is optional: use at most one and do not repeat it simply because it is remembered. When the request is open-ended, avoid near-duplicating the recent recommendations.
+For football, training, or running products, require explicit performance/sports evidence and reject cotton-twill, chino, denim, cargo, or casual-only products. Reject wrong colours, wrong garment categories, womenswear, childrenswear, category pages, search-result pages, editorial pages, and weak "closest" matches. Prefer official brand stores and established sports retailers before broad fashion marketplaces.
 
-Write a natural WhatsApp answer under 150 words. Lead with the strongest match. State the product title, retailer, visible price when available, and one short fit/style caveat. Do not claim stock, size availability, price certainty, or an exact match unless the retailer page establishes it. Do not invent a URL. Do not say you lack a verified link: either give the current official matches found or say that no close current match surfaced and direct the client to the retailer search fallback.`;
+Return one short line per qualifying product containing its exact product name, retailer, verified colour, and performance/material evidence. Cite that same line with the exact product detail page. Do not cite a page unless the page itself establishes the required attributes. It is correct to return no products when nothing is strong enough.`;
 
   try {
     const response = await openai.responses.create({
@@ -633,22 +649,20 @@ Write a natural WhatsApp answer under 150 words. Lead with the strongest match. 
     });
     const citations = shoppingCitations(response)
       .filter(citation => isAllowedRetailUrl(citation.url, allowedDomains))
-      .slice(0, 3);
-    const summary = response.output_text
-      .replace(/\s*\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/g, '')
-      .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
-      .trim();
+    const products = rankMatchingShoppingProducts(shoppingIntent, citations);
 
-    if (citations.length) {
-      const links = citations.map(citation => `• ${citation.title}: ${citation.url}`).join('\n');
-      return `${summary}\n\n${links}`.trim();
+    if (products.length) {
+      return formatShoppingProductLinks(products);
     }
   } catch (error) {
-    console.warn('[man whatsapp pilot] official retailer search failed, using retailer fallback:', error instanceof Error ? error.message : error);
+    console.warn('[man whatsapp pilot] precision retailer search failed:', error instanceof Error ? error.message : error);
   }
 
-  const retailerLabel = retailer?.name ?? 'current Indian retailers';
-  return `I couldn’t verify a close current ${retailerLabel} product page for “${query}”, so I won’t guess at an exact item. This opens the live retailer search instead:\n\n${fallbackUrl}\n\nLook for the same garment type, colour and fit from the outfit direction; send me the two options you like and I’ll choose the stronger one.`;
+  const retailerLabel = retailer?.name ?? 'the trusted stores I checked';
+  const nextStep = retailer
+    ? 'Should I check other trusted stores instead?'
+    : 'Should I widen the colour or style slightly?';
+  return `I couldn’t find a strong enough ${shoppingIntent.query} match from ${retailerLabel}, so I won’t send you a loosely related product. ${nextStep}`;
 }
 
 export async function generateManEditOutfitImage(input: {

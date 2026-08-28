@@ -20,7 +20,10 @@ import {
   loadManWhatsappMemoryContext,
   saveManWhatsappRecommendationFingerprint,
 } from '@/lib/manWhatsappMemoryStore';
-import { routeManWhatsappRequest } from '@/lib/manWhatsappStylist';
+import {
+  contextClarificationForVagueOutfit,
+  routeManWhatsappRequest,
+} from '@/lib/manWhatsappStylist';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
   downloadWhatsAppImage,
@@ -145,6 +148,8 @@ async function sendRequestedOutfitImage(input: {
     metadata: {
       channel: PILOT_CHANNEL,
       type: 'iconik_man_generated_outfit_v1',
+      outfit_direction: input.outfitDirection,
+      client_request: input.request,
       storage_path: uploaded.path,
       in_reply_to_whatsapp_message_id: input.sourceWhatsappMessageId,
       whatsapp_message_id: sent.messageId ?? null,
@@ -173,6 +178,10 @@ async function loadLatestOutfitDirection(reportId: string) {
   for (const item of data ?? []) {
     const content = typeof item.content === 'string' ? item.content.trim() : '';
     const metadata = asRecord(item.metadata);
+    const savedOutfitDirection = typeof metadata.outfit_direction === 'string'
+      ? metadata.outfit_direction.trim()
+      : '';
+    if (savedOutfitDirection) return savedOutfitDirection;
     if (
       content.length >= 60
       && fashionTerms.test(content)
@@ -291,8 +300,15 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
   const conversationReference = route.needsConversationReference
     ? await loadLatestOutfitDirection(context.report.id)
     : null;
+  const contextClarification = contextClarificationForVagueOutfit(
+    message.text,
+    conversationReference ?? '',
+  );
+  const shouldGenerateImage = imageRequested && !contextClarification;
   let reply: string;
-  if (imageRequested && conversationReference) {
+  if (contextClarification) {
+    reply = contextClarification;
+  } else if (imageRequested && conversationReference) {
     reply = 'Absolutely — I’m turning that exact outfit into a visual for you now.';
   } else if (route.intent === 'shopping') {
     try {
@@ -368,7 +384,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     })
     .eq('id', assistantMessage.id);
 
-  if (imageRequested) {
+  if (shouldGenerateImage) {
     try {
       await sendRequestedOutfitImage({
         context,

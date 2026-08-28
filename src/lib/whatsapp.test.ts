@@ -12,9 +12,14 @@ import {
   wantsGeneratedOutfitImage,
 } from './whatsappPilot.ts';
 import {
+  buildManWhatsappShoppingIntent,
   buildRetailerFallbackUrl,
+  contextClarificationForVagueOutfit,
   findRequestedRetailer,
+  formatShoppingProductLinks,
+  rankMatchingShoppingProducts,
   resolveShoppingQuery,
+  retailersForShoppingIntent,
   routeManWhatsappRequest,
 } from './manWhatsappStylist.ts';
 import { buildManWhatsappOutfitImagePrompt } from './manWhatsappOutfitImagePrompt.ts';
@@ -160,6 +165,7 @@ test('routes WhatsApp styling jobs before answer generation', () => {
   assert.equal(routeManWhatsappRequest('Could you give me a link for this jacket from H and M?').intent, 'shopping');
   assert.equal(routeManWhatsappRequest('What did my Blueprint say about my colour palette?').intent, 'report_question');
   assert.equal(routeManWhatsappRequest('Rate this', { hasImage: true }).intent, 'outfit_review');
+  assert.equal(routeManWhatsappRequest('Make me another outfit').needsConversationReference, true);
 });
 
 test('resolves anaphoric shopping requests against the latest outfit', () => {
@@ -174,6 +180,92 @@ test('resolves anaphoric shopping requests against the latest outfit', () => {
   const fallback = buildRetailerFallbackUrl(retailer, query);
   assert.match(fallback, /^https:\/\/www2\.hm\.com\/en_in\/search-results\.html\?q=/);
   assert.match(decodeURIComponent(fallback), /olive green matte cotton-twill bomber jacket/i);
+});
+
+test('builds a strict football-shorts brief from the current item and recent outfit', () => {
+  const intent = buildManWhatsappShoppingIntent(
+    'Could you give me a link for these kind of shorts?',
+    'Wear an olive or teal jersey. Add black or deep-navy football shorts above the knee with long football socks and firm-ground boots.',
+  );
+
+  assert.equal(intent.garment, 'shorts');
+  assert.equal(intent.occasion, 'football');
+  assert.deepEqual(intent.colours, ['black', 'navy']);
+  assert.ok(!intent.colours.includes('olive'));
+  assert.match(intent.query, /black or navy football shorts/i);
+  assert.ok(intent.exclusions.includes('cotton twill'));
+  assert.equal(intent.clarification, null);
+});
+
+test('latest explicit context overrides an older football context', () => {
+  const intent = buildManWhatsappShoppingIntent(
+    'Now find me black casual shorts instead',
+    'Wear black football shorts with the Barcelona jersey.',
+  );
+
+  assert.equal(intent.occasion, 'casual');
+  assert.deepEqual(intent.colours, ['black']);
+  assert.match(intent.query, /black casual shorts/i);
+  assert.doesNotMatch(intent.query, /football/i);
+});
+
+test('performance shopping uses reputable sports sources and rejects casual near-matches', () => {
+  const intent = buildManWhatsappShoppingIntent(
+    'Send links for these shorts',
+    'Black football shorts in a lightweight performance fabric.',
+  );
+  const retailerNames = retailersForShoppingIntent(intent, null).map(retailer => retailer.name);
+  assert.deepEqual(retailerNames, ['Nike', 'Adidas', 'Puma', 'Decathlon', 'Myntra', 'AJIO']);
+
+  const matches = rankMatchingShoppingProducts(intent, [
+    {
+      title: 'Nike Dri-FIT Academy Men’s Black Football Shorts',
+      url: 'https://www.nike.com/in/t/dri-fit-academy-football-shorts-black/ABC123',
+      evidence: 'Black performance football shorts in sweat-wicking Dri-FIT fabric.',
+    },
+    {
+      title: 'Men Stretch Slim Fit Shorts – Olive',
+      url: 'https://www.uniqlo.com/in/en/products/E434851-000/00',
+      evidence: 'Olive cotton twill casual shorts.',
+    },
+    {
+      title: 'Black Pure Cotton Shorts',
+      url: 'https://www.myntra.com/shorts/brand/black-pure-cotton-shorts/24799470/buy',
+      evidence: 'Casual cotton drawstring shorts.',
+    },
+    {
+      title: 'Football Shorts',
+      url: 'https://www.decathlon.in/c/football-shorts',
+      evidence: 'Black football shorts category.',
+    },
+  ]);
+
+  assert.equal(matches.length, 1);
+  assert.match(matches[0].title, /Nike Dri-FIT Academy/i);
+});
+
+test('shopping links keep each product name and URL together without duplicate link blocks', () => {
+  const formatted = formatShoppingProductLinks([
+    { title: 'Nike Academy Football Shorts', url: 'https://www.nike.com/in/t/academy/ABC' },
+    { title: 'Adidas Entrada Shorts', url: 'https://www.adidas.co.in/entrada/ABC.html' },
+  ]);
+
+  assert.equal(formatted, [
+    '1. Nike Academy Football Shorts — https://www.nike.com/in/t/academy/ABC',
+    '2. Adidas Entrada Shorts — https://www.adidas.co.in/entrada/ABC.html',
+  ].join('\n'));
+  assert.doesNotMatch(formatted, /View product|\nhttps?:/i);
+});
+
+test('asks one focused question for a genuinely vague context continuation', () => {
+  assert.equal(
+    contextClarificationForVagueOutfit('Make me another outfit', 'Black football shorts with a Barcelona jersey.'),
+    'Do you want another football outfit, or are you switching to a different kind of look?',
+  );
+  assert.equal(
+    contextClarificationForVagueOutfit('Make me another casual outfit', 'Black football shorts with a Barcelona jersey.'),
+    null,
+  );
 });
 
 test('outfit visuals use separate face and body authorities on a white cyclorama', () => {
