@@ -51,6 +51,20 @@ async function uploadToBucket(path: string, buffer: Buffer, contentType: string)
     });
 }
 
+function uploadSuccess(url: string, path: string) {
+  return NextResponse.json(
+    { url, path },
+    {
+      headers: {
+        'Cache-Control': 'no-store',
+        // Safari can expose an empty body after a successful large upload. Keep a
+        // second confirmation channel so the client can continue without re-uploading.
+        'X-ICONIK-Upload-URL': url,
+      },
+    },
+  );
+}
+
 export async function POST(request: NextRequest) {
   const uploadContext: {
     fileName?: string;
@@ -85,7 +99,7 @@ export async function POST(request: NextRequest) {
       if (!firstAttempt.error) {
         bucketReady = true;
         const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(firstAttempt.data.path);
-        return NextResponse.json({ url: publicData.publicUrl, path: firstAttempt.data.path });
+        return uploadSuccess(publicData.publicUrl, firstAttempt.data.path);
       }
       if (!isMissingBucket(firstAttempt.error)) throw firstAttempt.error;
       await ensureBucket();
@@ -96,7 +110,7 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
 
     const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(data.path);
-    return NextResponse.json({ url: publicData.publicUrl, path: data.path });
+    return uploadSuccess(publicData.publicUrl, data.path);
   } catch (error) {
     console.error('[stylist-intake-photo] upload failed:', {
       ...uploadContext,

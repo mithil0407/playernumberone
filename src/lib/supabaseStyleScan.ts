@@ -1,4 +1,7 @@
 import { supabase as primarySupabase, supabaseAdmin } from '@/lib/supabase';
+import { readStyleScanPhotoUploadResponse } from '@/lib/styleScanPhotoUploadResponse';
+
+export { readStyleScanPhotoUploadResponse } from '@/lib/styleScanPhotoUploadResponse';
 
 const db = typeof window === 'undefined' ? supabaseAdmin : primarySupabase;
 const STYLIST_INTAKE_PHOTOS_BUCKET = 'stylist-intake-photos';
@@ -183,11 +186,7 @@ export const uploadStyleScanPhoto = async (file: File, fileName: string): Promis
       method: 'POST',
       body: formData,
     });
-    const data = await res.json();
-    if (!res.ok || !data.url) {
-      throw new Error(data.error || 'Photo upload failed');
-    }
-    return data.url;
+    return readStyleScanPhotoUploadResponse(res);
   }
 
   const storagePath = `public/${fileName}`;

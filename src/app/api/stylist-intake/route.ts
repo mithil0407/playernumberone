@@ -155,11 +155,32 @@ export async function POST(request: NextRequest) {
             updated_at: now,
         };
 
-        const { data, error } = await supabaseStyleScan
+        const { data: existingIntake, error: existingIntakeError } = await supabaseStyleScan
             .from('stylist_intake_responses')
-            .insert([payload])
-            .select()
-            .single();
+            .select('id, completed_at')
+            .eq('order_id', order.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (existingIntakeError) throw existingIntakeError;
+
+        // If a browser loses the HTTP response after the database commit, its retry must
+        // update the same order's intake instead of creating a duplicate submission.
+        const write = existingIntake
+            ? supabaseStyleScan
+                .from('stylist_intake_responses')
+                .update(payload)
+                .eq('id', existingIntake.id)
+                .select()
+                .single()
+            : supabaseStyleScan
+                .from('stylist_intake_responses')
+                .insert([payload])
+                .select()
+                .single();
+
+        const { data, error } = await write;
 
         if (error) throw error;
 
@@ -174,15 +195,20 @@ export async function POST(request: NextRequest) {
                 .update({ intake_completed: true, intake_completed_at: now })
                 .eq('id', order.id);
 
-            const [internalResult, clientResult] = await Promise.allSettled([
-                sendStylistIntakeNotificationEmail(payload),
-                sendStylistIntakeReceivedEmail({
-                    customer_email: email,
-                    customer_phone: payload.customer_phone || '',
-                }),
-            ]);
+            const shouldSendConfirmation = !order.intake_completed;
+            const [internalResult, clientResult] = shouldSendConfirmation
+                ? await Promise.allSettled([
+                    sendStylistIntakeNotificationEmail(payload),
+                    sendStylistIntakeReceivedEmail({
+                        customer_email: email,
+                        customer_phone: payload.customer_phone || '',
+                    }),
+                ])
+                : [null, null];
 
-            if (internalResult.status === 'rejected') {
+            if (!internalResult) {
+                emailStatus.internal = 'skipped';
+            } else if (internalResult.status === 'rejected') {
                 emailStatus.internal = 'failed';
                 console.error('Stylist internal intake notification threw:', internalResult.reason);
             } else if (!internalResult.value.success) {
@@ -192,7 +218,9 @@ export async function POST(request: NextRequest) {
                 emailStatus.internal = 'sent';
             }
 
-            if (clientResult.status === 'rejected') {
+            if (!clientResult) {
+                emailStatus.client = 'skipped';
+            } else if (clientResult.status === 'rejected') {
                 emailStatus.client = 'failed';
                 console.error('Stylist client intake confirmation threw:', clientResult.reason);
             } else if (!clientResult.value.success) {
