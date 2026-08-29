@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const BUCKET = 'stylist-intake-photos';
+const MAX_FILE_SIZE = 12 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 let bucketReady = false;
 
 function safeFileName(value: string) {
@@ -19,6 +21,51 @@ async function ensureBucket() {
     throw error;
   }
   bucketReady = true;
+}
+
+function extensionFor(fileName: string, contentType: string) {
+  const extension = fileName.includes('.') ? fileName.split('.').pop()?.toLowerCase() : '';
+  if (extension && /^[a-z0-9]{2,5}$/.test(extension)) return extension;
+  return contentType === 'image/png' ? 'png'
+    : contentType === 'image/webp' ? 'webp'
+      : contentType === 'image/heic' ? 'heic'
+        : contentType === 'image/heif' ? 'heif'
+          : 'jpg';
+}
+
+async function prepareDirectUpload(request: NextRequest) {
+  const body = await request.json() as { fileName?: unknown; contentType?: unknown; size?: unknown };
+  const fileName = safeFileName(String(body.fileName || 'stylist-upload.jpg'));
+  const contentType = String(body.contentType || 'image/jpeg').toLowerCase();
+  const size = Number(body.size || 0);
+
+  if (!ALLOWED_MIME_TYPES.has(contentType)) {
+    return NextResponse.json({ error: 'Only JPG, PNG, WEBP, HEIC, or HEIF images are supported.' }, { status: 400 });
+  }
+  if (!Number.isFinite(size) || size <= 0 || size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'Please choose an image under 12MB.' }, { status: 413 });
+  }
+
+  const extension = extensionFor(fileName, contentType);
+  const stem = safeFileName(fileName).replace(/\.[^.]+$/, '');
+  const path = `public/${Date.now()}_${stem}.${extension}`;
+  const { data, error } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .createSignedUploadUrl(path, { upsert: true });
+
+  if (error || !data?.token) {
+    throw error || new Error('Unable to prepare signed photo upload');
+  }
+
+  const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+  return NextResponse.json(
+    {
+      path,
+      token: data.token,
+      url: publicData.publicUrl,
+    },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 }
 
 function isMissingBucket(error: unknown) {
@@ -74,6 +121,10 @@ export async function POST(request: NextRequest) {
   } = {};
 
   try {
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      return await prepareDirectUpload(request);
+    }
+
     const formData = await request.formData();
     const file = formData.get('file');
     const fileName = safeFileName(String(formData.get('fileName') || 'stylist-upload.jpg'));
