@@ -213,6 +213,32 @@ function clearCachedPhotoUrls(email: string, orderId: unknown) {
     }
 }
 
+function recordValue(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+}
+
+function stringValue(value: unknown, fallback = '') {
+    return typeof value === 'string' ? value : fallback;
+}
+
+function stringArrayValue(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function photoUrlRecord(value: unknown): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(recordValue(value)).filter(([, item]) => typeof item === 'string' && item.trim()),
+    ) as Record<string, string>;
+}
+
+function resumeStepFromCompletion(value: unknown) {
+    const completion = Number(value);
+    if (!Number.isFinite(completion) || completion <= 0 || completion >= 90) return 0;
+    return Math.min(STEPS.length - 1, Math.max(0, Math.round(completion / (100 / STEPS.length))));
+}
+
 const moodBoards = [
     {
         id: 'structured-minimalist',
@@ -371,6 +397,7 @@ function StylistIntakeInner() {
     const [saving, setSaving] = useState(false);
     const [submitStage, setSubmitStage] = useState<'uploading' | 'saving' | 'complete' | null>(null);
     const [complete, setComplete] = useState(false);
+    const [resumeNotice, setResumeNotice] = useState('');
 
     const [profile, setProfile] = useState({ fullName: '', ageRange: '', country: '', language: 'English', phone: '' });
     const [measurements, setMeasurements] = useState({
@@ -423,16 +450,86 @@ function StylistIntakeInner() {
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.error || 'Unable to verify purchase');
             setOrder(data.order);
-            setUploadedUrls(readCachedPhotoUrls(email, data.order.id));
+            const existingIntake = recordValue(data.existingIntake);
+            const savedPhotoUrls = photoUrlRecord(existingIntake.photo_urls);
+            const cachedPhotoUrls = readCachedPhotoUrls(email, data.order.id);
+            const outfitUrl = stringValue(existingIntake.one_outfit_image_url);
+            const restoredPhotoUrls = {
+                ...savedPhotoUrls,
+                ...(outfitUrl ? { one_outfit: outfitUrl } : {}),
+                ...cachedPhotoUrls,
+            };
+            setUploadedUrls(restoredPhotoUrls);
             setProfile(prev => {
-                const phone = String(data.order.customer_phone || prev.phone || fallbackPhone || '');
+                const phone = stringValue(existingIntake.customer_phone)
+                    || String(data.order.customer_phone || prev.phone || fallbackPhone || '');
                 return {
                     ...prev,
-                    fullName: String(data.order.customer_name || prev.fullName || ''),
+                    fullName: stringValue(existingIntake.full_name)
+                        || String(data.order.customer_name || prev.fullName || ''),
                     phone,
-                    country: prev.country || deriveCountryFromPhone(phone),
+                    ageRange: stringValue(existingIntake.age_range, prev.ageRange),
+                    country: stringValue(existingIntake.country) || prev.country || deriveCountryFromPhone(phone),
+                    language: stringValue(existingIntake.primary_language, prev.language),
                 };
             });
+
+            const savedMeasurements = recordValue(existingIntake.body_measurements);
+            setMeasurements(prev => ({
+                ...prev,
+                length_unit: stringValue(savedMeasurements.length_unit, prev.length_unit),
+                weight_unit: stringValue(savedMeasurements.weight_unit, prev.weight_unit),
+                height: stringValue(savedMeasurements.height, prev.height),
+                weight: stringValue(savedMeasurements.weight, prev.weight),
+                bust: stringValue(savedMeasurements.bust, prev.bust),
+                waist: stringValue(savedMeasurements.waist, prev.waist),
+                hips: stringValue(savedMeasurements.hips, prev.hips),
+            }));
+
+            setSelectedFocus(stringArrayValue(existingIntake.focus_areas));
+            const savedCoverage = recordValue(existingIntake.coverage_requirements);
+            setCoverage(prev => ({
+                primary: stringValue(savedCoverage.primary, prev.primary),
+                specifics: stringArrayValue(savedCoverage.specifics),
+            }));
+
+            const savedLifestyle = recordValue(existingIntake.lifestyle_context);
+            const savedHair = recordValue(existingIntake.hair_context);
+            const savedPriorService = recordValue(existingIntake.prior_styling_experience);
+            setLifestyle(prev => ({
+                ...prev,
+                occupation: stringValue(savedLifestyle.occupation, prev.occupation),
+                occasions: stringArrayValue(savedLifestyle.occasions),
+                shopFrequency: stringValue(savedLifestyle.shop_frequency, prev.shopFrequency),
+                budget: stringValue(savedLifestyle.budget_per_outfit, prev.budget),
+                hairTexture: stringValue(savedHair.texture, prev.hairTexture),
+                hairColour: stringValue(savedHair.colour, prev.hairColour),
+                includeHair: typeof savedHair.include_hair_direction === 'boolean'
+                    ? savedHair.include_hair_direction
+                    : prev.includeHair,
+                shoppingRelationship: stringValue(existingIntake.shopping_relationship, prev.shoppingRelationship),
+                priorService: stringValue(savedPriorService.used_before, prev.priorService),
+                priorServiceResult: stringValue(savedPriorService.result, prev.priorServiceResult),
+            }));
+
+            const savedPreferences = recordValue(existingIntake.piece_preferences);
+            setPreferences(Object.fromEntries(pieceCategories.map(category => {
+                const group = recordValue(savedPreferences[category.key]);
+                return [category.key, {
+                    liked: stringArrayValue(group.liked),
+                    disliked: stringArrayValue(group.disliked),
+                    skipped: stringArrayValue(group.skipped),
+                }];
+            })));
+            setSelectedMoodboard(stringValue(existingIntake.selected_moodboard_id));
+            setSecondaryElements(stringArrayValue(existingIntake.secondary_moodboard_elements));
+
+            if (!existingIntake.completed_at) {
+                setStep(resumeStepFromCompletion(existingIntake.completion_percentage));
+            }
+            if (savedPhotoUrls.headshot && savedPhotoUrls.full_body_front && savedPhotoUrls.full_body_side) {
+                setResumeNotice('Your three body photos are already saved. You can continue without uploading them again.');
+            }
             setAccessState('allowed');
         } catch (err) {
             setAccessState('denied');
@@ -725,6 +822,11 @@ function StylistIntakeInner() {
 
             <main className="max-w-4xl mx-auto px-4 py-8">
                 <div className="rounded-2xl border p-5 md:p-8" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                    {resumeNotice && (
+                        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 luxury-body">
+                            {resumeNotice}
+                        </div>
+                    )}
                     {step === 0 && (
                         <section className="space-y-5">
                             <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Basic profile</h1>

@@ -75,7 +75,29 @@ export async function GET(request: NextRequest) {
 
         const { data: existingIntake } = await supabaseStyleScan
             .from('stylist_intake_responses')
-            .select('id, completed_at, completion_percentage')
+            .select([
+                'id',
+                'completed_at',
+                'completion_percentage',
+                'customer_phone',
+                'full_name',
+                'age_range',
+                'country',
+                'primary_language',
+                'body_measurements',
+                'photo_urls',
+                'focus_areas',
+                'coverage_requirements',
+                'lifestyle_context',
+                'piece_preferences',
+                'selected_moodboard_id',
+                'selected_moodboard_label',
+                'secondary_moodboard_elements',
+                'hair_context',
+                'shopping_relationship',
+                'prior_styling_experience',
+                'one_outfit_image_url',
+            ].join(', '))
             .eq('order_id', order.id)
             .order('created_at', { ascending: false })
             .limit(1)
