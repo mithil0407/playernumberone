@@ -10,6 +10,8 @@ import {
   getIconikManWhatsappPilotConfig,
   isIconikManWhatsappPilotSender,
   wantsGeneratedOutfitImage,
+  whatsappImageCaptionCopy,
+  whatsappImageProgressCopy,
 } from './whatsappPilot.ts';
 import {
   buildManWhatsappShoppingIntent,
@@ -21,6 +23,9 @@ import {
   resolveShoppingQuery,
   retailersForShoppingIntent,
   routeManWhatsappRequest,
+  limitManWhatsappReply,
+  manWhatsappVoiceRules,
+  quickManWhatsappReply,
 } from './manWhatsappStylist.ts';
 import { buildManWhatsappOutfitImagePrompt } from './manWhatsappOutfitImagePrompt.ts';
 import {
@@ -157,15 +162,64 @@ test('only requests paid outfit generation for explicit visual intent', () => {
   assert.equal(wantsGeneratedOutfitImage('Show me an outfit for a dinner date'), true);
   assert.equal(wantsGeneratedOutfitImage('Generate a visual of that look'), true);
   assert.equal(wantsGeneratedOutfitImage('Can you rate this outfit image?'), false);
+  assert.equal(wantsGeneratedOutfitImage('Please show me.'), true);
 });
 
 test('routes WhatsApp styling jobs before answer generation', () => {
   assert.equal(routeManWhatsappRequest('What should I wear for a dinner date?').intent, 'outfit_recommendation');
   assert.equal(routeManWhatsappRequest('How do I style this olive jacket?').intent, 'owned_item_styling');
   assert.equal(routeManWhatsappRequest('Could you give me a link for this jacket from H and M?').intent, 'shopping');
+  assert.equal(routeManWhatsappRequest('Send me links I love these shoes').intent, 'shopping');
+  assert.equal(routeManWhatsappRequest('Find me black Nike Air Force 1s').intent, 'shopping');
+  assert.equal(routeManWhatsappRequest('I am wearing black Nike Air Force 1s').intent, 'general_style');
+  assert.equal(routeManWhatsappRequest('I have grey Nike sneakers').intent, 'general_style');
+  assert.equal(routeManWhatsappRequest('The Zara jacket works with these jeans').intent, 'general_style');
+  assert.equal(routeManWhatsappRequest('Please show me.').intent, 'image_generation');
   assert.equal(routeManWhatsappRequest('What did my Blueprint say about my colour palette?').intent, 'report_question');
   assert.equal(routeManWhatsappRequest('Rate this', { hasImage: true }).intent, 'outfit_review');
   assert.equal(routeManWhatsappRequest('Make me another outfit').needsConversationReference, true);
+});
+
+test('handles lightweight social messages without running the full stylist voice', () => {
+  assert.equal(quickManWhatsappReply('Hi'), 'Hey! What’s up?');
+  assert.equal(quickManWhatsappReply('Hiiii'), 'Hiiii 😄 What’s up?');
+  assert.equal(quickManWhatsappReply('thanksss'), 'Anytime 😄');
+  assert.equal(quickManWhatsappReply('Okay, thanks!'), 'Anytime!');
+  assert.equal(quickManWhatsappReply('What should I wear tonight?'), null);
+});
+
+test('uses short route-specific WhatsApp voice rules and bans report language', () => {
+  const outfitRules = manWhatsappVoiceRules('outfit_recommendation');
+  const reviewRules = manWhatsappVoiceRules('outfit_review');
+  const generalRules = manWhatsappVoiceRules('general_style');
+
+  assert.match(outfitRules, /45-80 words/i);
+  assert.match(reviewRules, /50-90 words/i);
+  assert.match(generalRules, /20-55 words/i);
+  assert.match(outfitRules, /stylish friend/i);
+  assert.match(outfitRules, /architectural silhouette/i);
+  assert.match(outfitRules, /Do not give grooming/i);
+});
+
+test('hard-caps unexpectedly long model replies at a readable sentence boundary', () => {
+  const longReply = `${Array.from({ length: 70 }, () => 'word').join(' ')}. ${Array.from({ length: 70 }, () => 'extra').join(' ')}.`;
+  const limited = limitManWhatsappReply(longReply, 'outfit_recommendation');
+
+  assert.ok(limited.split(/\s+/).length <= 100);
+  assert.match(limited, /\.$/);
+  assert.doesNotMatch(limited, /extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra extra/i);
+});
+
+test('varies concise image progress and caption copy without technical language', () => {
+  const progress = new Set(['wamid.1', 'wamid.2', 'wamid.3', 'wamid.4'].map(whatsappImageProgressCopy));
+  const captions = new Set(['wamid.1', 'wamid.2', 'wamid.3', 'wamid.4'].map(whatsappImageCaptionCopy));
+
+  assert.ok(progress.size > 1);
+  assert.ok(captions.size > 1);
+  for (const copy of [...progress, ...captions]) {
+    assert.doesNotMatch(copy, /outfit direction|aligned|image studio|style profile/i);
+    assert.ok(copy.split(/\s+/).length <= 10);
+  }
 });
 
 test('resolves anaphoric shopping requests against the latest outfit', () => {

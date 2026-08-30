@@ -200,6 +200,10 @@ export function wantsGeneratedOutfitImage(message: string) {
   const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
   if (!normalized) return false;
 
+  if (/^(?:please\s+)?(?:show|send)(?:\s+it|\s+me)?(?:\s+please)?[.!?]*$/i.test(normalized)) {
+    return true;
+  }
+
   const visualNoun = /\b(image|picture|visual|render|mockup|moodboard|lookbook)\b/;
   const fashionNoun = /\b(outfit|look|clothes|clothing|wear|style|styling)\b/;
   const creationVerb = /\b(generate|create|make|design|visuali[sz]e|render)\b/;
@@ -208,6 +212,27 @@ export function wantsGeneratedOutfitImage(message: string) {
   return (creationVerb.test(normalized) && (visualNoun.test(normalized) || fashionNoun.test(normalized)))
     || (showMe.test(normalized) && (visualNoun.test(normalized) || fashionNoun.test(normalized)))
     || (/\bwhat (?:would|will) .+ look like\b/.test(normalized) && fashionNoun.test(normalized));
+}
+
+function seededWhatsappCopy(seed: string, options: readonly string[]) {
+  const index = [...seed].reduce((total, character) => total + character.charCodeAt(0), 0) % options.length;
+  return options[index];
+}
+
+export function whatsappImageProgressCopy(seed: string) {
+  return seededWhatsappCopy(seed, [
+    'On it — give me a sec.',
+    'Yep — making it now.',
+    'Got it. Putting the look together now.',
+  ]);
+}
+
+export function whatsappImageCaptionCopy(seed: string) {
+  return seededWhatsappCopy(seed, [
+    'This is the vibe I had in mind 👇',
+    'Here’s how I’d put it together 👇',
+    'This is how the look comes together 👇',
+  ]);
 }
 
 export function buildWhatsappReadReceiptPayload(messageId: string) {

@@ -22,6 +22,8 @@ import {
 } from '@/lib/manWhatsappMemoryStore';
 import {
   contextClarificationForVagueOutfit,
+  limitManWhatsappReply,
+  quickManWhatsappReply,
   routeManWhatsappRequest,
 } from '@/lib/manWhatsappStylist';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -36,6 +38,8 @@ import {
   formatWhatsappStylistReply,
   isIconikManWhatsappPilotSender,
   wantsGeneratedOutfitImage,
+  whatsappImageCaptionCopy,
+  whatsappImageProgressCopy,
   type IconikManWhatsappPilotConfig,
   type WhatsappInboundMessage,
 } from '@/lib/whatsappPilot';
@@ -44,6 +48,8 @@ type AnyRecord = Record<string, unknown>;
 
 const MEMORY_METADATA_TYPE = 'iconik_man_style_memory_v1';
 const PILOT_CHANNEL = 'iconik_man_whatsapp_pilot';
+const RAPID_MESSAGE_DEBOUNCE_MS = 2_000;
+const RAPID_MESSAGE_WINDOW_MS = 15_000;
 
 function asRecord(value: unknown): AnyRecord {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as AnyRecord : {};
@@ -82,6 +88,31 @@ async function hasProcessedMessage(reportId: string, whatsappMessageId: string) 
     .limit(1);
   if (error) throw new Error(`Could not check WhatsApp message deduplication: ${error.message}`);
   return Boolean(data?.length);
+}
+
+async function hasNewerPilotUserMessage(reportId: string, messageId: string, createdAt: string) {
+  const createdTime = Date.parse(createdAt);
+  if (!Number.isFinite(createdTime)) return false;
+  const windowEnd = new Date(createdTime + RAPID_MESSAGE_WINDOW_MS).toISOString();
+  const { data, error } = await supabaseAdmin
+    .from('man_edit_chat_messages')
+    .select('id')
+    .eq('report_id', reportId)
+    .eq('role', 'user')
+    .neq('id', messageId)
+    .gt('created_at', createdAt)
+    .lte('created_at', windowEnd)
+    .contains('metadata', { channel: PILOT_CHANNEL })
+    .limit(1);
+  if (error) {
+    console.warn('[man whatsapp pilot] rapid-message check failed:', error.message);
+    return false;
+  }
+  return Boolean(data?.length);
+}
+
+function waitForRapidWhatsappFollowup() {
+  return new Promise(resolve => setTimeout(resolve, RAPID_MESSAGE_DEBOUNCE_MS));
 }
 
 async function loadSavedMemories(reportId: string) {
@@ -132,7 +163,7 @@ async function sendRequestedOutfitImage(input: {
   );
   if (!uploaded.signedUrl) throw new Error('Could not create a link for the generated outfit image');
 
-  const caption = 'Here’s that look on you. I’ve kept it aligned with the colours, fit and layers we just discussed.';
+  const caption = whatsappImageCaptionCopy(input.sourceWhatsappMessageId);
   const sent = await sendWhatsAppImageMessage(input.to, uploaded.signedUrl, caption);
   if (!sent.success) throw new Error(sent.error || 'WhatsApp image send failed');
 
@@ -214,7 +245,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
   if (message.type === 'unsupported') {
     await sendPilotText(
       config.phone,
-      'For this first pilot, send me a text or a mirror selfie. I can help with an occasion, explain your report, or review what you’re wearing.',
+      'Send me a message or a clear outfit photo and tell me what you need help with.',
     );
     return { status: 'unsupported' as const };
   }
@@ -223,7 +254,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
   if (!context) {
     await sendPilotText(
       config.phone,
-      `I’m connected, ${config.firstName}, but I can’t see your completed ICONIK Man report yet. Once you’ve created it with ${config.email}, message me here again and I’ll pick it up automatically.`,
+      `I can’t see your ICONIK Man report yet. Finish it with ${config.email}, then message me again.`,
     );
     return { status: 'report_not_ready' as const };
   }
@@ -248,7 +279,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
       console.error('[man whatsapp pilot] image intake failed:', error);
       await sendPilotText(
         config.phone,
-        'I couldn’t read that image clearly. Please resend it as a regular WhatsApp photo—ideally full length, in natural light, with the outfit visible head to toe.',
+        'I can’t see that photo clearly. Send it again in good light with the full outfit visible.',
       );
       return { status: 'image_failed' as const };
     }
@@ -274,10 +305,17 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         stylist_route: route.intent,
       },
     })
-    .select('id')
+    .select('id, created_at')
     .single();
 
   if (userError || !userMessage) throw new Error(userError?.message || 'Could not save pilot message');
+
+  if (message.type === 'text') {
+    await waitForRapidWhatsappFollowup();
+    if (await hasNewerPilotUserMessage(context.report.id, userMessage.id, userMessage.created_at)) {
+      return { status: 'superseded_by_newer_message' as const };
+    }
+  }
 
   const [legacyMemories, memoryContext] = await Promise.all([
     loadSavedMemories(context.report.id),
@@ -305,11 +343,14 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     conversationReference ?? '',
   );
   const shouldGenerateImage = imageRequested && !contextClarification;
+  const quickReply = quickManWhatsappReply(message.text);
   let reply: string;
-  if (contextClarification) {
+  if (quickReply) {
+    reply = quickReply;
+  } else if (contextClarification) {
     reply = contextClarification;
   } else if (imageRequested && conversationReference) {
-    reply = 'Absolutely — I’m turning that exact outfit into a visual for you now.';
+    reply = whatsappImageProgressCopy(message.id);
   } else if (route.intent === 'shopping') {
     try {
       reply = await generateManEditShoppingReply({
@@ -323,7 +364,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
       console.error('[man whatsapp pilot] shopping reply failed:', error);
       await sendPilotText(
         config.phone,
-        'I hit a temporary issue while checking current retailer pages. Send the retailer and item once more in a moment—I’ve kept the outfit we were discussing.',
+        'I couldn’t check the shops just now. Try that again in a moment?',
       );
       return { status: 'shopping_failed' as const };
     }
@@ -344,12 +385,17 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
       console.error('[man whatsapp pilot] stylist reply failed:', error);
       await sendPilotText(
         config.phone,
-        'I hit a temporary issue while reading your style profile. Send that once more in a moment—I’ve kept your message.',
+        'Something went wrong on my side. Send that again in a moment?',
       );
       return { status: 'generation_failed' as const };
     }
   }
   reply = formatWhatsappStylistReply(reply);
+  reply = limitManWhatsappReply(reply, route.intent);
+
+  if (await hasNewerPilotUserMessage(context.report.id, userMessage.id, userMessage.created_at)) {
+    return { status: 'superseded_by_newer_message' as const };
+  }
 
   const { data: assistantMessage, error: assistantError } = await supabaseAdmin
     .from('man_edit_chat_messages')
@@ -398,9 +444,19 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
       console.error('[man whatsapp pilot] outfit image generation failed:', error);
       await sendPilotText(
         config.phone,
-        'My image studio hit a temporary issue, but the outfit direction above is still the one I recommend. Ask me to generate the visual again in a moment.',
+        'That image didn’t work just now. Ask me once more in a moment?',
       );
     }
+  }
+
+  if (quickReply) {
+    return {
+      status: 'replied' as const,
+      reportId: context.report.id,
+      inboundMessageId: message.id,
+      outboundMessageId: sent.messageId ?? null,
+      memoriesSaved: 0,
+    };
   }
 
   const interactionAnalysis = await analyzeManWhatsappInteraction({

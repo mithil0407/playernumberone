@@ -22,6 +22,90 @@ export interface ManWhatsappRouteDecision {
   needsConversationReference: boolean;
 }
 
+export function quickManWhatsappReply(message: string) {
+  const normalized = message.trim();
+  if (!normalized) return null;
+
+  if (/^(?:hi+|hey+|hello+|yo+)[!.?\s]*$/i.test(normalized)) {
+    if (/^hi{3,}/i.test(normalized)) return 'Hiiii 😄 What’s up?';
+    if (/^hey{3,}/i.test(normalized)) return 'Heyyy 😄 What’s up?';
+    return 'Hey! What’s up?';
+  }
+
+  if (/^(?:what(?:'|’)s up|whatsup|wassup|sup)[!.?\s]*$/i.test(normalized)) {
+    return 'All good 😄 What’s up with you?';
+  }
+
+  if (/^(?:(?:ok(?:ay)?|cool|great)[,!.\s]+)?(?:thanks+|thank you+|thx|ty)(?:\s+(?:so much|a lot))?[!?.\s🙏😊😄]*$/i.test(normalized)) {
+    return /thanks{3,}|!{2,}/i.test(normalized) ? 'Anytime 😄' : 'Anytime!';
+  }
+
+  if (/^(?:ok(?:ay)?|cool|got it|sounds good|perfect)[!?.\s👍🙏]*$/i.test(normalized)) {
+    return 'Perfect 👍';
+  }
+
+  return null;
+}
+
+export function manWhatsappVoiceRules(route: ManWhatsappStylistIntent) {
+  const lengthRule: Record<ManWhatsappStylistIntent, string> = {
+    shopping: 'Use one short intro followed by up to three product links. Do not add a shopping lecture.',
+    outfit_recommendation: 'Aim for 45-80 words. Give one outfit and only the most useful fit note.',
+    owned_item_styling: 'Aim for 35-65 words. Say what to pair with the item and why it works.',
+    outfit_review: 'Aim for 50-90 words. Say what works, then give only one or two changes.',
+    report_question: 'Aim for 25-60 words. Translate the report into plain, useful advice.',
+    image_generation: 'Use one short sentence. The image service handles the visual.',
+    general_style: 'Aim for 20-55 words. Simple questions deserve simple answers.',
+  };
+
+  return `WHATSAPP VOICE:
+- Sound like a stylish friend who already knows the client, not a report, customer-support bot, or fashion lecturer.
+- ${lengthRule[route]}
+- Answer first. Use short sentences and everyday English. Match the client's casual energy without forcing slang.
+- Use the client's name rarely, not as the default opening for a reply.
+- Do not restate the client's profile, palette, body type, saved preferences, or the full reasoning behind the answer.
+- Mention a saved preference only when it changes the recommendation. Never repeat it just to prove you remember it.
+- Avoid technical styling language. Say "clean shape" instead of "architectural silhouette", "don't let the jeans bunch" instead of "controlled hem" or "full clean break", "layer" instead of "third element", and "warm, earthy colours" instead of naming a seasonal palette.
+- Do not use the phrases "premium", "outfit direction", "architectural", "colour harmony", "elevation move", "controlled hem", "full clean fall", or "no ankle pooling" unless the client explicitly asks for a technical explanation.
+- Do not give grooming, fragrance, body, or accessory advice unless the client asks or it is essential to the request.
+- Use no more than three bullets, and only when a list is genuinely easier to read. Never use headings, tables, Markdown emphasis, or report-style labels such as "Top:" and "Bottom:".
+- Do not end every reply with a question. Ask one short question only when the answer genuinely depends on it.
+- If the client dislikes a look without explaining why, acknowledge it briefly and ask what felt wrong before replacing the whole outfit.
+- If the client questions a surprising or wrong reply, acknowledge the mistake once and correct it briefly. Do not send another full recommendation or repeat the apology.
+- Never invent a shopping link. Only share URLs present in VERIFIED SHOPPING LINKS.
+- Never say you cannot create or send an image. The surrounding WhatsApp service handles explicit visual requests.`;
+}
+
+export function limitManWhatsappReply(body: string, route: ManWhatsappStylistIntent) {
+  const hardLimits: Record<ManWhatsappStylistIntent, number> = {
+    shopping: 180,
+    outfit_recommendation: 100,
+    owned_item_styling: 85,
+    outfit_review: 110,
+    report_question: 75,
+    image_generation: 25,
+    general_style: 75,
+  };
+  const limit = hardLimits[route];
+  const matches = Array.from(body.matchAll(/\S+/g));
+  if (matches.length <= limit) return body;
+
+  const lastWord = matches[limit - 1];
+  const end = (lastWord.index ?? 0) + lastWord[0].length;
+  const candidate = body.slice(0, end).trimEnd();
+  const minimumUsefulLength = Math.floor(candidate.length * 0.6);
+  const sentenceEnd = Math.max(
+    candidate.lastIndexOf('. '),
+    candidate.lastIndexOf('! '),
+    candidate.lastIndexOf('? '),
+    candidate.lastIndexOf('.\n'),
+    candidate.lastIndexOf('!\n'),
+    candidate.lastIndexOf('?\n'),
+  );
+  if (sentenceEnd >= minimumUsefulLength) return candidate.slice(0, sentenceEnd + 1).trim();
+  return `${candidate.replace(/[,:;—-]+$/, '')}…`;
+}
+
 export interface ManWhatsappRetailer {
   name: string;
   domain: string;
@@ -149,13 +233,14 @@ export function routeManWhatsappRequest(
     return { intent: 'outfit_review', useOutfitEngine: true, needsConversationReference: false };
   }
 
-  const visualRequest = /\b(?:generate|create|make|render|visuali[sz]e|show me|send me)\b.{0,48}\b(?:image|picture|visual|render|outfit|look)\b/i.test(normalized);
+  const bareVisualFollowup = /^(?:please\s+)?(?:show|send)(?:\s+it|\s+me)?(?:\s+please)?[.!?]*$/i.test(normalized);
+  const visualRequest = bareVisualFollowup
+    || /\b(?:generate|create|make|render|visuali[sz]e|show me|send me)\b.{0,48}\b(?:image|picture|visual|render|outfit|look)\b/i.test(normalized);
   if (visualRequest) {
     return { intent: 'image_generation', useOutfitEngine: true, needsConversationReference: true };
   }
 
-  const shoppingRequest = /\b(?:link|buy|shop|shopping|purchase|order|price|cost|available|availability|in stock|where (?:can|do) i (?:find|get|buy)|find me)\b/i.test(normalized)
-    || MAN_WHATSAPP_RETAILERS.some(retailer => retailer.aliases.test(normalized));
+  const shoppingRequest = /\b(?:links?|buy|shop|shopping|purchase|order|price|cost|available|availability|in stock|where (?:can|do) i (?:find|get|buy)|find me)\b/i.test(normalized);
   if (shoppingRequest) {
     return { intent: 'shopping', useOutfitEngine: false, needsConversationReference: true };
   }
@@ -499,7 +584,7 @@ Likely wardrobe context: ${context}
 Current climate: ${climate.label} (${climate.mode.toUpperCase()})
 Climate requirements: ${climate.promptGuidance}
 
-Use the private references as construction skeletons, not text to copy. Internally create at least three candidate outfits, reject any candidate that violates a hard rule or the client profile, and answer with only the strongest candidate. The final outfit must be realistic to buy in India, personally justified, and contain 2-4 visible elevation moves with at least one colour, third-element, or proportion move. Never expose references, scores, candidates, rule names, or internal reasoning.
+Use the private references as construction skeletons, not text to copy. Internally create at least three candidate outfits, reject any candidate that violates a hard rule or the client profile, and answer with only the strongest candidate. The final outfit must be realistic to buy in India and personally justified. Keep that reasoning private: express the result in everyday language with only the one or two details the client needs. Never expose references, scores, candidates, rule names, or internal reasoning.
 
 ${getConversationalOutfitRules()}
 
