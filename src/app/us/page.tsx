@@ -1024,7 +1024,7 @@ export default function Home() {
                 © {new Date().getFullYear()} Iconik. All rights reserved. | Personal styling, delivered online.
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
-                Business Legal Name: MITHIL NILESH NAVALAKHA
+                Business Legal Name: ICONIK LLP
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-1">
                 Results may vary. Individual success depends on effort and commitment to the program.

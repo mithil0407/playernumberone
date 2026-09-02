@@ -1,5 +1,6 @@
 const fs = require('fs');
-const file = '/Users/navalakhaarts/playernumberone/playernumberone-app/src/app/au/page.tsx';
+const path = require('path');
+const file = path.join(__dirname, 'src', 'app', 'au', 'page.tsx');
 let content = fs.readFileSync(file, 'utf8');
 
 // Remove import

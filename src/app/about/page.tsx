@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   breadcrumbList,
-  coFounderPerson,
   founderPerson,
   graph,
   organizationNode,
@@ -56,7 +55,6 @@ export default function AboutPage() {
   const jsonLd = graph([
     organizationNode,
     founderPerson,
-    coFounderPerson,
     {
       "@type": "AboutPage",
       "@id": "https://www.iconik.pro/about#webpage",
@@ -109,7 +107,7 @@ export default function AboutPage() {
               <div className="mt-10 grid gap-5 md:grid-cols-2">
                 {FOUNDERS.map((founder) => (
                   <article
-                    id={founder.name === FOUNDERS[0].name ? "jasmine-rana" : "mithil-navalakha"}
+                    id="jasmine-rana"
                     key={founder.name}
                     className="rounded-[1.6rem] border border-[#2C2622]/10 bg-white/35 p-7"
                   >
@@ -119,9 +117,7 @@ export default function AboutPage() {
                     <h3 className="mt-7 font-[family-name:var(--font-fraunces)] text-3xl font-light">{founder.name}</h3>
                     <p className="mt-2 text-sm text-[#9A7D4A]">{founder.title}</p>
                     <p className="mt-5 leading-7 text-[#2C2622]/65">
-                      {founder.name === FOUNDERS[0].name
-                        ? "Jasmine leads the styling perspective behind ICONIK's client recommendations and editorial review."
-                        : "Mithil leads ICONIK's product, operations, and the systems that turn consultation inputs into a usable client experience."}
+                      Jasmine leads the styling perspective behind ICONIK&apos;s client recommendations and editorial review.
                     </p>
                     <a
                       href={founder.linkedIn}

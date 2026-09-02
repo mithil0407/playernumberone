@@ -18,16 +18,6 @@ export const founderPerson = {
   worksFor: { "@id": `${SITE_URL}/#organization` },
 };
 
-export const coFounderPerson = {
-  "@type": "Person",
-  "@id": `${SITE_URL}/about#mithil-navalakha`,
-  name: FOUNDERS[1].name,
-  url: `${SITE_URL}/about`,
-  sameAs: FOUNDERS[1].linkedIn,
-  jobTitle: FOUNDERS[1].title,
-  worksFor: { "@id": `${SITE_URL}/#organization` },
-};
-
 export const organizationNode = {
   "@type": "Organization",
   "@id": `${SITE_URL}/#organization`,
@@ -38,10 +28,7 @@ export const organizationNode = {
     "@type": "ImageObject",
     url: OG_IMAGE_URL,
   },
-  founder: [
-    { "@id": founderPerson["@id"] },
-    { "@id": coFounderPerson["@id"] },
-  ],
+  founder: [{ "@id": founderPerson["@id"] }],
   areaServed: ACTIVE_PUBLIC_MARKETS,
   serviceType: "Personal Styling",
   sameAs: [

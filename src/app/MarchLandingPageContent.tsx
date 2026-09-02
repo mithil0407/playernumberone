@@ -1315,7 +1315,7 @@ export default function LandingPageContent({
                 © 2024 PlayerNumberOne ICONIK. All rights reserved. | Transform with elegance.
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
-                Business Legal Name: MITHIL NILESH NAVALAKHA
+                Business Legal Name: ICONIK LLP
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-1">
                 Results may vary. Individual success depends on effort and commitment to the program.

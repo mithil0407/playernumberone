@@ -17,11 +17,6 @@ export const FOUNDERS = [
     title: "Co-Founder and Head Stylist",
     linkedIn: "https://www.linkedin.com/in/jasmine-rana-b7b435239/",
   },
-  {
-    name: "Mithil Navalakha",
-    title: "Co-Founder",
-    linkedIn: "https://www.linkedin.com/in/mithil-navalakha/",
-  },
 ] as const;
 
 export const BLUEPRINT_OFFER = {

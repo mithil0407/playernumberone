@@ -102,7 +102,7 @@ Your recent coverage of [specific relevant article or theme] made me think this 
 
 Iconik surveyed its Indian fashion audience separately across women’s and men’s communities to understand [one-sentence research purpose]. The full methodology, limitations, chart, and source data for this finding are available here: [report URL].
 
-If useful, we can provide the chart for publication and a short comment from Iconik founder Mithil Navalakha on [precise editorial angle]. No payment or reciprocal link is requested.
+If useful, we can provide the chart for publication and a short comment from an authorised Iconik spokesperson on [precise editorial angle]. No payment or reciprocal link is requested.
 
 Regards,
 Iconik
