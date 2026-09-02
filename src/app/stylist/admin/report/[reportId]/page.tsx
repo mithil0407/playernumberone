@@ -121,7 +121,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePageNumber, setActivePageNumber] = useState(1);
-  const [viewMode, setViewMode] = useState<'page' | 'full'>('full');
+  const [viewMode, setViewMode] = useState<'page' | 'full'>('page');
   const [draftData, setDraftData] = useState<StylistBlueprintReportData | null>(null);
   const [dirtyPages, setDirtyPages] = useState<Set<number>>(() => new Set());
   const [reportDataDirty, setReportDataDirty] = useState(false);
@@ -148,18 +148,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
   const unsavedEditsRef = useRef(false);
+  const progressRequestRef = useRef(false);
+  const lastReportUpdateRef = useRef<string | null>(null);
   const saveChangedPagesRef = useRef<() => Promise<boolean>>(async () => true);
   const reportCanvasRef = useRef<HTMLDivElement | null>(null);
   const visiblePageNumberRef = useRef(1);
   const pendingFullReportPageRef = useRef<number | null>(null);
 
   const load = useCallback(async (fresh = false) => {
+    const statusPromise = fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' }).catch(() => null);
     const res = await fetch(`/api/stylist-blueprint/${reportId}${fresh ? '?fresh=1' : ''}`, { cache: 'no-store' });
     const data = await readJsonBody<{ report?: Report; error?: string }>(res);
     if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to load report'));
-    if (data?.report) setReport(data.report);
-    const statusRes = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
-    if (statusRes.ok) {
+    if (data?.report) { setReport(data.report); lastReportUpdateRef.current = data.report.updated_at; }
+    setLoading(false);
+    const statusRes = await statusPromise;
+    if (statusRes?.ok) {
       const statusData = await readJsonBody<{ imageCounts?: Record<string, { done: number; total: number }> }>(statusRes);
       setImageCounts(statusData?.imageCounts ?? null);
     }
@@ -172,6 +176,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     const data = await readJsonBody<{ report?: Report }>(res);
     if (!data?.report) return;
     const loadedReport = data.report;
+    lastReportUpdateRef.current = loadedReport.updated_at;
     setReport(prev => prev ? {
       ...prev,
       status: loadedReport.status,
@@ -182,7 +187,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     } : loadedReport);
   }, [reportId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load().catch(caught => { setError(caught instanceof Error ? caught.message : 'Could not load report'); setLoading(false); }); }, [load]);
 
   useEffect(() => {
     unsavedEditsRef.current = dirtyPages.size > 0 || reportDataDirty;
@@ -191,19 +196,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   useEffect(() => {
     if (!generatingImages && report?.status !== 'generating' && !report?.progress_stage) return;
     const interval = setInterval(async () => {
-      const res = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
-      if (!res.ok) return;
-      const status = await res.json();
-      setImageCounts(status.imageCounts ?? null);
-      setReport(prev => prev ? {
-        ...prev,
-        status: status.status,
-        progress_stage: status.progressStage,
-        error_message: status.errorMessage,
-      } : prev);
-      await refreshGeneratedImages();
-      if (!unsavedEditsRef.current && status.status !== 'generating' && !status.progressStage) void load(true);
-    }, 3000);
+      if (document.visibilityState !== 'visible' || progressRequestRef.current) return;
+      progressRequestRef.current = true;
+      try {
+        const res = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const status = await res.json();
+        setImageCounts(status.imageCounts ?? null);
+        setReport(prev => prev ? { ...prev, status: status.status, progress_stage: status.progressStage, error_message: status.errorMessage } : prev);
+        const finished = status.status !== 'generating' && !status.progressStage;
+        if (finished && !unsavedEditsRef.current) await load(true);
+        else if (status.updatedAt !== lastReportUpdateRef.current) await refreshGeneratedImages();
+      } catch {
+        // A transient polling failure must not interrupt editing. The next poll retries.
+      } finally {
+        progressRequestRef.current = false;
+      }
+    }, 10000);
     return () => clearInterval(interval);
   }, [generatingImages, report?.status, report?.progress_stage, reportId, load, refreshGeneratedImages]);
 
@@ -1175,10 +1184,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
         <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
           <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
-          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>{isWorkspace ? 'Jazz · Report Review' : 'Stylist - Review'}</div>
+          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>{isWorkspace ? 'Stylist · Report Review' : 'Admin · Report Review'}</div>
         </div>
         <div className="px-4 py-3 border-b space-y-1" style={{ borderColor: S.border }}>
-          <Link href={isWorkspace && workspaceSlug ? `/stylist/${workspaceSlug}/dashboard` : '/stylist/admin/dashboard'} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
+          <Link href={isWorkspace && workspaceSlug ? `/stylist/${workspaceSlug}/dashboard` : '/stylist/admin/workspace'} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
             <LayoutDashboard size={15} /> Blueprints
           </Link>
           {!isWorkspace && <Link href="/stylist/admin/manual" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
@@ -1191,7 +1200,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         <div className="px-5 py-4 border-b" style={{ borderColor: S.border }}>
           <Link href={isWorkspace && workspaceSlug && report.stylist_intake_responses?.consultation_id
             ? `/stylist/${workspaceSlug}/consultations/${report.stylist_intake_responses.consultation_id}`
-            : `/stylist/admin/dashboard/${report.submission_id}`} className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
+            : report.stylist_intake_responses?.consultation_id ? `/stylist/admin/workspace/consultations/${report.stylist_intake_responses.consultation_id}` : `/stylist/admin/dashboard/${report.submission_id}`} className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
             <ArrowLeft size={14} /> Back to intake
           </Link>
           <h1 className="iconik-display truncate" style={{ fontSize: '22px', color: S.ink }}>
@@ -1265,7 +1274,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         <header className="sticky top-0 z-20 border-b px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div>
-              <div className="iconik-micro mb-1" style={{ color: S.muted }}>{isWorkspace ? 'Jazz · Women Blueprint Report' : 'Women Blueprint Report'}</div>
+              <div className="iconik-micro mb-1" style={{ color: S.muted }}>Women Blueprint Report</div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>
                   {viewMode === 'full' ? 'Full report' : activePage ? `Page ${activePage.page_number}: ${activePage.title || 'Untitled'}` : 'Report'}

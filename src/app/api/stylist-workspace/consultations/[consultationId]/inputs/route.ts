@@ -2,7 +2,8 @@ import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canAccessConsultation, getStylistWorkspaceIdentity, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
+import { clearWorkspaceQueueCache } from '@/lib/stylistWorkspaceQueue';
+import { getConsultationWorkspaceAccess, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import {
   CONSULTATION_UPLOAD_BUCKET,
   consultationReadiness,
@@ -65,11 +66,13 @@ export async function POST(
   { params }: { params: Promise<{ consultationId: string }> },
 ) {
   const { consultationId } = await params;
-  const identity = await getStylistWorkspaceIdentity();
-  if (!identity || !(await canAccessConsultation(consultationId))) {
+  const identity = await getConsultationWorkspaceAccess(consultationId);
+  if (!identity) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!identity.stylistId) return NextResponse.json({ error: 'Assign this client to a stylist before creating or editing a report.' }, { status: 409 });
+  clearWorkspaceQueueCache(identity.stylistId);
   try {
     const form = await request.formData();
     const { data: existing, error: existingError } = await supabaseAdmin
@@ -139,7 +142,7 @@ export async function POST(
       .from('consultations')
       .update(readiness.ready
         ? { images_received_at: now, updated_at: now }
-        : { status: 'waiting_images', updated_at: now })
+        : { ...(source.consultation.status !== 'delivered' ? { status: 'waiting_images' } : {}), updated_at: now })
       .eq('id', consultationId)
       .eq('stylist_id', identity.stylistId);
 
@@ -155,6 +158,7 @@ export async function POST(
       },
     });
 
+    clearWorkspaceQueueCache(identity.stylistId);
     return NextResponse.json({
       success: true,
       readiness,

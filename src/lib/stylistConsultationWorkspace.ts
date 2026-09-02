@@ -3,7 +3,6 @@ import 'server-only';
 import { supabaseAdmin } from './supabase';
 import type { StylistIntakeSubmission } from './stylistBlueprintGenerator';
 import { consultationReadiness } from './stylistConsultationReadiness';
-import type { ConsultationReadiness } from './stylistConsultationReadiness';
 export { consultationReadiness } from './stylistConsultationReadiness';
 export type { ConsultationReadiness } from './stylistConsultationReadiness';
 
@@ -97,7 +96,8 @@ export async function loadConsultationSource(consultationId: string): Promise<Co
       .maybeSingle(),
   ]);
 
-  if (consultationResult.error || !consultationResult.data) return null;
+  if (consultationResult.error || uploadResult.error) throw new Error('Could not load consultation inputs. Please retry.');
+  if (!consultationResult.data) return null;
   const row = consultationResult.data;
   const upload = uploadResult.data;
   return {
@@ -299,13 +299,14 @@ function cleanStoragePath(path: string) {
 }
 
 export async function signedConsultationPhotoUrls(paths: Record<string, string>, expiresIn = 60 * 60) {
-  const entries = await Promise.all(Object.entries(paths).map(async ([key, rawPath]) => {
-    const { data, error } = await supabaseAdmin.storage
-      .from(CONSULTATION_UPLOAD_BUCKET)
-      .createSignedUrl(cleanStoragePath(rawPath), expiresIn);
-    return [key, error ? null : data?.signedUrl ?? null] as const;
-  }));
-  return Object.fromEntries(entries) as Record<string, string | null>;
+  const entries = Object.entries(paths).filter(([, path]) => typeof path === 'string' && path.trim());
+  if (!entries.length) return {} as Record<string, string | null>;
+  const normalized = entries.map(([, path]) => cleanStoragePath(path));
+  const { data, error } = await supabaseAdmin.storage.from(CONSULTATION_UPLOAD_BUCKET).createSignedUrls(normalized, expiresIn);
+  if (error) throw new Error('Could not load client photos. Please retry.');
+  const signedByPath = new Map((data ?? []).map(item => [item.path, item.signedUrl]));
+  return Object.fromEntries(entries.map(([key], index) => [key, signedByPath.get(normalized[index]) || null])) as Record<string, string | null>;
+
 }
 
 export async function resolveConsultationIntakePhotos<T extends StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null }>(submission: T): Promise<T> {
@@ -325,18 +326,4 @@ export async function resolveConsultationIntakePhotos<T extends StylistIntakeSub
   };
 }
 
-export function workspaceBucket(input: {
-  consultationStatus: string;
-  readiness: ConsultationReadiness;
-  reportStatus?: string | null;
-  reportProgress?: string | null;
-}) {
-  if (input.reportStatus === 'error' || input.consultationStatus === 'stalled') return 'needs_attention';
-  if (input.reportStatus === 'delivered' || input.reportStatus === 'sent') return 'delivered';
-  if (input.reportStatus === 'approved') return 'ready_to_deliver';
-  if (input.reportStatus === 'draft_ready' || input.reportStatus === 'in_review') return 'needs_review';
-  if (input.reportStatus === 'generating' || input.reportProgress) return 'generating';
-  if (input.consultationStatus === 'delivered') return 'delivered';
-  if (!input.readiness.ready) return 'needs_inputs';
-  return 'ready';
-}
+export { workspaceBucket } from './stylistWorkspaceQueueModel';

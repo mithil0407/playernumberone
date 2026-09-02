@@ -1,6 +1,7 @@
 import 'server-only';
 
 import crypto from 'crypto';
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import type { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from './supabase';
@@ -125,14 +126,14 @@ export function clearWorkspaceSessionCookie(response: NextResponse) {
   response.cookies.set(STYLIST_WORKSPACE_COOKIE, '', { maxAge: 0, path: '/' });
 }
 
-export async function getStylistWorkspaceIdentity(): Promise<StylistWorkspaceIdentity | null> {
+export const getStylistWorkspaceIdentity = cache(async (): Promise<StylistWorkspaceIdentity | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(STYLIST_WORKSPACE_COOKIE)?.value;
   if (!token) return null;
 
   const { data: session, error } = await supabaseAdmin
     .from('stylist_sessions')
-    .select('id, stylist_id, last_seen_at, expires_at, revoked_at')
+    .select('id, stylist_id, last_seen_at, expires_at, revoked_at, stylists(id, name, slug, workspace_enabled, is_active)')
     .eq('token_hash', sessionHash(token))
     .maybeSingle();
 
@@ -147,15 +148,8 @@ export async function getStylistWorkspaceIdentity(): Promise<StylistWorkspaceIde
     return null;
   }
 
-  const { data: stylist } = await supabaseAdmin
-    .from('stylists')
-    .select('id, name, slug, workspace_enabled, is_active')
-    .eq('id', session.stylist_id)
-    .eq('workspace_enabled', true)
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (!stylist?.slug) return null;
+  const stylist = Array.isArray(session.stylists) ? session.stylists[0] : session.stylists;
+  if (!stylist?.slug || !stylist.workspace_enabled || !stylist.is_active) return null;
   if (now - new Date(session.last_seen_at).getTime() > 5 * 60 * 1000) {
     await supabaseAdmin
       .from('stylist_sessions')
@@ -170,7 +164,7 @@ export async function getStylistWorkspaceIdentity(): Promise<StylistWorkspaceIde
     slug: stylist.slug as string,
     expiresAt: session.expires_at as string,
   };
-}
+});
 
 export async function revokeCurrentWorkspaceSession() {
   const identity = await getStylistWorkspaceIdentity();
@@ -186,17 +180,19 @@ export async function isAdminCookieAuthenticated() {
   return isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value);
 }
 
+export async function getConsultationWorkspaceAccess(consultationId: string) {
+  const admin = await isAdminCookieAuthenticated();
+  const identity = admin ? null : await getStylistWorkspaceIdentity();
+  if (!admin && !identity) return null;
+  let query = supabaseAdmin.from('consultations').select('id, stylist_id').eq('id', consultationId);
+  if (!admin) query = query.eq('stylist_id', identity!.stylistId);
+  const { data, error } = await query.maybeSingle();
+  if (error || !data) return null;
+  return { stylistId: data.stylist_id as string | null, isAdmin: admin };
+}
+
 export async function canAccessConsultation(consultationId: string) {
-  if (await isAdminCookieAuthenticated()) return true;
-  const identity = await getStylistWorkspaceIdentity();
-  if (!identity) return false;
-  const { data } = await supabaseAdmin
-    .from('consultations')
-    .select('id')
-    .eq('id', consultationId)
-    .eq('stylist_id', identity.stylistId)
-    .maybeSingle();
-  return Boolean(data);
+  return Boolean(await getConsultationWorkspaceAccess(consultationId));
 }
 
 export async function canAccessBlueprintSubmission(submissionId: string) {

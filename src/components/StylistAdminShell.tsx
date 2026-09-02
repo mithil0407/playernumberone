@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ClipboardCheck, FilePlus2, LayoutDashboard, LogOut, Mail, Menu, X } from 'lucide-react';
+import { ClipboardCheck, FilePlus2, LayoutDashboard, LogOut, Mail, Menu, UsersRound, X } from 'lucide-react';
 
 const NAV = [
+  { href: '/stylist/admin/workspace', label: 'Stylist Workspaces', icon: UsersRound },
   { href: '/stylist/admin/dashboard', label: 'Blueprints', icon: LayoutDashboard },
   { href: '/stylist/admin/instant', label: 'Instant Reports', icon: ClipboardCheck },
   { href: '/stylist/admin/manual', label: 'Manual Reports', icon: FilePlus2 },

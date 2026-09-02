@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canAccessConsultation, getStylistWorkspaceIdentity, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
+import { clearWorkspaceQueueCache } from '@/lib/stylistWorkspaceQueue';
+import { getConsultationWorkspaceAccess, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import {
   consultationReadiness,
   consultationIntakeDiff,
@@ -15,39 +16,37 @@ export async function GET(
   { params }: { params: Promise<{ consultationId: string }> },
 ) {
   const { consultationId } = await params;
-  const identity = await getStylistWorkspaceIdentity();
-  if (!identity || !(await canAccessConsultation(consultationId))) {
+  const identity = await getConsultationWorkspaceAccess(consultationId);
+  if (!identity) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const source = await loadConsultationSource(consultationId);
   if (!source) return NextResponse.json({ error: 'Consultation not found' }, { status: 404 });
   const readiness = consultationReadiness(source);
-  const photoUrls = source.upload?.photo_paths
-    ? await signedConsultationPhotoUrls(source.upload.photo_paths)
-    : {};
-  const { data: intake } = await supabaseAdmin
-    .from('stylist_intake_responses')
-    .select('*')
-    .eq('consultation_id', consultationId)
-    .maybeSingle();
-  const { data: uploadLinkRow } = await supabaseAdmin
-    .from('consultation_upload_links')
-    .select('token, expires_at')
-    .eq('consultation_id', consultationId)
-    .maybeSingle();
+  const [photoUrls, intakeResult, uploadLinkResult] = await Promise.all([
+    signedConsultationPhotoUrls(source.upload?.photo_paths ?? {}),
+    supabaseAdmin.from('stylist_intake_responses').select('id, raw_consultation_notes')
+      .eq('consultation_id', consultationId).maybeSingle(),
+    supabaseAdmin.from('consultation_upload_links').select('token, expires_at')
+      .eq('consultation_id', consultationId).maybeSingle(),
+  ]);
+  if (intakeResult.error || uploadLinkResult.error) return NextResponse.json({ error: 'Could not load client inputs. Please retry.' }, { status: 500 });
+  const intake = intakeResult.data;
+  const uploadLinkRow = uploadLinkResult.data;
   const uploadTemplate = process.env.CONSULTATION_UPLOAD_URL_TEMPLATE?.trim();
   const uploadUrl = uploadTemplate && uploadLinkRow?.token
     ? (uploadTemplate.includes('{token}')
       ? uploadTemplate.replace('{token}', encodeURIComponent(uploadLinkRow.token))
       : `${uploadTemplate.replace(/\/$/, '')}/${encodeURIComponent(uploadLinkRow.token)}`)
     : null;
-  const { data: reports } = intake?.id
+  const { data: reports, error: reportError } = intake?.id
     ? await supabaseAdmin
       .from('stylist_blueprint_reports')
       .select('id, status, progress_stage, error_message, section_approvals, published_at, delivered_at, created_at, updated_at')
       .eq('submission_id', intake.id)
       .order('created_at', { ascending: false })
-    : { data: [] };
+    : { data: [], error: null };
+  if (reportError) return NextResponse.json({ error: 'Could not load report history. Please retry.' }, { status: 500 });
   return NextResponse.json({
     source,
     readiness,
@@ -63,10 +62,12 @@ export async function PATCH(
   { params }: { params: Promise<{ consultationId: string }> },
 ) {
   const { consultationId } = await params;
-  const identity = await getStylistWorkspaceIdentity();
-  if (!identity || !(await canAccessConsultation(consultationId))) {
+  const identity = await getConsultationWorkspaceAccess(consultationId);
+  if (!identity) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  if (!identity.stylistId) return NextResponse.json({ error: 'Assign this client to a stylist before editing report inputs.' }, { status: 409 });
+  clearWorkspaceQueueCache(identity.stylistId);
   const body = await request.json().catch(() => null) as { action?: string; overrides?: Record<string, unknown>; confirmed?: boolean } | null;
   if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
 

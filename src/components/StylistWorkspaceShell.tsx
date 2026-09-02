@@ -24,7 +24,7 @@ export default function StylistWorkspaceShell({
   const base = `/stylist/${stylist.slug}`;
   if (pathname.startsWith(`${base}/reports/`)) return <>{children}</>;
   const nav = [
-    { href: `${base}/dashboard`, label: 'Today & Queue', icon: LayoutDashboard },
+    { href: `${base}/dashboard`, label: 'Client workspace', icon: LayoutDashboard },
     { href: `${base}/dashboard?bucket=needs_review`, label: 'Reports to Review', icon: ClipboardList },
     { href: `${base}/dashboard?bucket=needs_attention`, label: 'Needs Attention', icon: AlertTriangle },
   ];
@@ -62,8 +62,8 @@ export default function StylistWorkspaceShell({
         </div>
         <nav className="px-3 space-y-1 flex-1">
           {nav.map(({ href, label, icon: Icon }) => {
-            const hrefBucket = new URLSearchParams(href.split('?')[1] ?? '').get('bucket') ?? 'today';
-            const currentBucket = searchParams.get('bucket') ?? 'today';
+            const hrefBucket = new URLSearchParams(href.split('?')[1] ?? '').get('bucket') ?? 'recent';
+            const currentBucket = searchParams.get('bucket') ?? 'recent';
             const active = pathname === href.split('?')[0] && currentBucket === hrefBucket;
             return (
               <Link key={href} href={href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body transition"

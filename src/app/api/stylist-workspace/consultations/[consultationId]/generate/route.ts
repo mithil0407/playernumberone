@@ -1,7 +1,8 @@
 import { after, NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { clearWorkspaceQueueCache } from '@/lib/stylistWorkspaceQueue';
 import { STYLIST_BLUEPRINT_PAGE_COUNT } from '@/lib/stylistBlueprintGenerator';
-import { canAccessConsultation, getStylistWorkspaceIdentity, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
+import { getConsultationWorkspaceAccess, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import { ensureConsultationIntake } from '@/lib/stylistConsultationWorkspace';
 import { runClaimedStylistWorkspaceJobs } from '@/lib/stylistWorkspaceJobs';
 
@@ -12,10 +13,12 @@ export async function POST(
   { params }: { params: Promise<{ consultationId: string }> },
 ) {
   const { consultationId } = await params;
-  const identity = await getStylistWorkspaceIdentity();
-  if (!identity || !(await canAccessConsultation(consultationId))) {
+  const identity = await getConsultationWorkspaceAccess(consultationId);
+  if (!identity) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  if (!identity.stylistId) return NextResponse.json({ error: 'Assign this client to a stylist before creating or editing a report.' }, { status: 409 });
+  clearWorkspaceQueueCache(identity.stylistId);
   const body = await request.json().catch(() => ({})) as { newVersion?: boolean };
   try {
     const intake = await ensureConsultationIntake({ consultationId, stylistId: identity.stylistId, refresh: true });
@@ -91,6 +94,7 @@ export async function POST(
     after(async () => {
       try { await runClaimedStylistWorkspaceJobs(1); } catch (workerError) { console.error('[stylist-workspace] immediate worker failed', workerError); }
     });
+    clearWorkspaceQueueCache(identity.stylistId);
     return NextResponse.json({ reportId: report.id, status: 'generating' });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Generation failed' }, { status: 400 });

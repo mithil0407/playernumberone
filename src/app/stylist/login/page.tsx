@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
 
@@ -57,6 +58,7 @@ function LoginForm() {
             {loading && <Loader2 size={16} className="animate-spin" />} {loading ? 'Opening workspace…' : 'Open workspace'}
           </button>
         </form>
+        <div className="text-center mt-5"><Link href="/stylist/admin/workspace" className="luxury-body text-sm underline" style={{ color: '#746D65' }}>Admin: all stylists & clients</Link></div>
         <p className="text-center iconik-micro mt-6" style={{ color: 'rgba(44,38,34,.32)' }}>Private stylist access · Session expires daily</p>
       </div>
     </div>
