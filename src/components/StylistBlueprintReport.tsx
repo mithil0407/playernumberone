@@ -33,6 +33,8 @@ import {
   getStylistBlueprintReadingGuidePage,
   getStylistBlueprintRulesStartPage,
   getStylistBlueprintSummaryPage,
+  getStylistBlueprintShoppingPlanPage,
+  getStylistBlueprintStudioGuidePages,
   getStylistBlueprintTransformationPage,
   isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
 } from '@/lib/stylistBlueprintSchema';
@@ -71,6 +73,7 @@ type EditableReportContextValue = {
   imageRegenerationDisabled?: boolean;
   reportData?: StylistBlueprintReportData;
   visibleTotalPages?: number;
+  visiblePageNumbers?: number[];
 };
 
 const EditableReportContext = createContext<EditableReportContextValue>({ editable: false });
@@ -366,10 +369,12 @@ function getCanonicalTypeForData(page: BlueprintPage, data: StylistBlueprintRepo
   if (pageNumber === getStylistBlueprintMakeupPage(data)) return 'makeup';
   if ([getStylistBlueprintRulesStartPage(data), getStylistBlueprintHairFaceAccessoriesPage(data)].includes(pageNumber)) return 'rules';
   if (pageNumber === getStylistBlueprintFabricPage(data)) return 'fabric';
+  if (getStylistBlueprintStudioGuidePages(data).some(guide => guide.page === pageNumber)) return 'wardrobe_guide';
   if (pageNumber === getStylistBlueprintOutfitSystemPage(data)) return 'outfit_system';
   if (pageNumber >= getStylistBlueprintOutfitStartPage(data) && pageNumber <= getStylistBlueprintOutfitEndPage(data)) return 'outfit';
   if (pageNumber === getStylistBlueprintMatrixPage(data)) return 'matrix';
   if (pageNumber === getStylistBlueprintAuditPage(data)) return 'audit';
+  if (pageNumber === getStylistBlueprintShoppingPlanPage(data)) return 'shopping_plan';
   if (pageNumber === getStylistBlueprintContinuationPage(data)) return 'continuation';
   return page.page_type;
 }
@@ -379,7 +384,7 @@ function pageKicker(page: BlueprintPage, data?: StylistBlueprintReportData) {
   if (page.page_number === getStylistBlueprintTransformationPage(data)) return 'Transformation';
   if (page.page_number <= getStylistBlueprintReadingGuidePage(data)) return 'Opening';
   if (page.page_number <= getStylistBlueprintAvoidancePage(data)) return `Pillar ${String(page.page_number - getStylistBlueprintReadingGuidePage(data)).padStart(2, '0')}`;
-  if (page.page_number <= getStylistBlueprintFabricPage(data)) return 'Act II - Prescription';
+  if (page.page_number <= (getStylistBlueprintStudioGuidePages(data).at(-1)?.page ?? getStylistBlueprintFabricPage(data))) return 'Act II - Prescription';
   if (page.page_number <= outfitEndPage) return 'Act III - Application';
   return 'Closing';
 }
@@ -451,8 +456,9 @@ function PageFrame({
 }) {
   const { reportData } = useContext(EditableReportContext);
   const pageType = canonicalPageType(page, reportData);
-  const { visibleTotalPages } = useContext(EditableReportContext);
+  const { visibleTotalPages, visiblePageNumbers } = useContext(EditableReportContext);
   const totalPages = visibleTotalPages ?? getStylistBlueprintPageCount(reportData);
+  const displayPageNumber = Math.max(1, (visiblePageNumbers?.indexOf(page.page_number) ?? page.page_number - 1) + 1);
   return (
     <section
       className={`iconik-page ${pageClass(page.page_number, pageType)} ${className}`}
@@ -469,7 +475,7 @@ function PageFrame({
         />
       </div>
       <div className="corner-tr">
-        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / {totalPages}</div>
+        <div className="mono corner-kicker">{String(displayPageNumber).padStart(2, '0')} / {totalPages}</div>
       </div>
       {children}
     </section>
@@ -1537,7 +1543,7 @@ function GenericPage({ page, data, imageUrls }: { page: BlueprintPage; data: Sty
   if (pageType === 'matrix') return <MatrixPage page={page} data={data} />;
   if (pageType === 'continuation') return <ContinuationPage page={page} data={data} imageUrls={imageUrls} />;
   if (page.page_number === getStylistBlueprintHairFaceAccessoriesPage(data)) return <HairFaceAccessoriesPage page={page} data={data} imageUrls={imageUrls} />;
-  if (pageType === 'rules' || pageType === 'fabric' || pageType === 'avoidance' || pageType === 'audit') {
+  if (pageType === 'rules' || pageType === 'fabric' || pageType === 'wardrobe_guide' || pageType === 'avoidance' || pageType === 'audit' || pageType === 'shopping_plan') {
     return <RuleLikePage page={page} data={data} imageUrls={imageUrls} />;
   }
   if (pageType === 'diagnosis') return <DiagnosisPage page={page} data={data} imageUrls={imageUrls} />;
@@ -1601,12 +1607,14 @@ function DeferredBlueprintPage({
   data,
   defer,
   totalPages,
+  displayPageNumber,
   children,
 }: {
   page: BlueprintPage;
   data: StylistBlueprintReportData;
   defer: boolean;
   totalPages?: number;
+  displayPageNumber?: number;
   children: ReactNode;
 }) {
   const { elementRef, hasIntersected } = useIntersectionObserver({
@@ -1629,7 +1637,7 @@ function DeferredBlueprintPage({
         <div className="small-caps corner-title">{page.title}</div>
       </div>
       <div className="corner-tr">
-        <div className="mono corner-kicker">{String(page.page_number).padStart(2, '0')} / {totalPages ?? getStylistBlueprintPageCount(data)}</div>
+        <div className="mono corner-kicker">{String(displayPageNumber ?? page.page_number).padStart(2, '0')} / {totalPages ?? getStylistBlueprintPageCount(data)}</div>
       </div>
       <div className="deferred-skeleton" aria-hidden="true">
         <div className="deferred-kicker" />
@@ -1672,15 +1680,17 @@ function PremiumReport({
   imageRegenerationDisabled?: boolean;
 }) {
   const continuationPage = getStylistBlueprintContinuationPage(data);
-  const pages = [...data.pages]
+  const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);
+  const order = data.studio?.page_order ?? [];
+  const orderIndex = new Map(order.map((pageNumber, index) => [pageNumber, index]));
+  const visiblePages = [...data.pages]
     .filter(page => !hideContinuationPage || page.page_number !== continuationPage)
-    .filter(page => !focusPageNumber || page.page_number === focusPageNumber)
-    .sort((a, b) => a.page_number - b.page_number);
-  const visibleTotalPages = hideContinuationPage
-    ? getStylistBlueprintPageCount(data) - 1
-    : getStylistBlueprintPageCount(data);
+    .filter(page => editable || !hiddenPages.has(page.page_number))
+    .sort((a, b) => (orderIndex.get(a.page_number) ?? a.page_number) - (orderIndex.get(b.page_number) ?? b.page_number));
+  const pages = visiblePages.filter(page => !focusPageNumber || page.page_number === focusPageNumber);
+  const visibleTotalPages = visiblePages.length;
   return (
-    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data, visibleTotalPages }}>
+    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data, visibleTotalPages, visiblePageNumbers: visiblePages.map(page => page.page_number) }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
         <BlueprintStyles />
         {pages.map(page => {
@@ -1699,6 +1709,7 @@ function PremiumReport({
               data={data}
               defer={deferPages && !focusPageNumber && !editable && page.page_number > 2}
               totalPages={visibleTotalPages}
+              displayPageNumber={visiblePages.findIndex(item => item.page_number === page.page_number) + 1}
             >
               {node}
             </DeferredBlueprintPage>
@@ -3099,6 +3110,20 @@ function BlueprintStyles() {
           grid-template-columns: 1fr;
           gap: 8px;
         }
+      }
+      @media print {
+        @page { size: A4 portrait; margin: 0; }
+        .iconik-report { padding: 0 !important; background: white !important; }
+        .iconik-page {
+          width: 210mm !important;
+          min-height: 297mm !important;
+          margin: 0 !important;
+          border-radius: 0 !important;
+          break-after: page;
+          page-break-after: always;
+          box-shadow: none !important;
+        }
+        .image-regenerate-button { display: none !important; }
       }
     `}</style>
   );

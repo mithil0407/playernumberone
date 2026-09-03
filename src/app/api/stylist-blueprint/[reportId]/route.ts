@@ -198,6 +198,9 @@ export async function POST(
     }
 
     const reportData = existingReport.report_data as StylistBlueprintReportData | null;
+    if (isVersionedStylistBlueprintReportData(reportData) && reportData.studio && !reportData.studio.analysis_confirmed) {
+      return NextResponse.json({ error: 'Confirm the body, colour and face analysis before sending' }, { status: 400 });
+    }
     const reportUrl = `${(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in').replace(/\/$/, '')}/stylist/report/${existingReport.share_token}`;
     const emailResult = await sendStylistBlueprintReportEmail({
       email: recipientEmail,

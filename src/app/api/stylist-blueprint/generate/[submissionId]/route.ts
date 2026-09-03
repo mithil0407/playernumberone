@@ -2,7 +2,6 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintSubmission } from '@/lib/stylistWorkspaceAuth';
 import { runStylistBlueprintTextPipeline } from '@/lib/stylistBlueprintTextPipeline';
-import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
 import { STYLIST_BLUEPRINT_PAGE_COUNT, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
@@ -63,28 +62,7 @@ export async function POST(
   }
 
   after(async () => {
-    const intake = resolvedSubmission;
-    const reportData = await runStylistBlueprintTextPipeline(report.id, intake, report.share_token ?? null, null);
-    if (reportData) {
-      try {
-        await generateStylistBlueprintImages(report.id, reportData, report.share_token ?? null, {
-          group: 'all',
-          force: false,
-          submission: intake,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Image generation failed';
-        await supabaseAdmin
-          .from('stylist_blueprint_reports')
-          .update({
-            status: 'draft_ready',
-            progress_stage: null,
-            error_message: message,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', report.id);
-      }
-    }
+    await runStylistBlueprintTextPipeline(report.id, resolvedSubmission, report.share_token ?? null, null);
   });
 
   return NextResponse.json({ reportId: report.id, status: 'generating' });

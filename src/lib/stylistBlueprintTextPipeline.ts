@@ -29,6 +29,8 @@ import {
   getStylistBlueprintReadingGuidePage,
   getStylistBlueprintRulesStartPage,
   getStylistBlueprintSummaryPage,
+  getStylistBlueprintShoppingPlanPage,
+  getStylistBlueprintStudioGuidePages,
   getStylistBlueprintTransformationPage,
   mergeBlueprintPages,
   validateStylistBlueprintReport,
@@ -101,6 +103,7 @@ function expectedPagesForAct(reportData: StylistBlueprintReportData, act: Stylis
       getStylistBlueprintEyeframePage(reportData),
       getStylistBlueprintMakeupPage(reportData),
       getStylistBlueprintFabricPage(reportData),
+      ...getStylistBlueprintStudioGuidePages(reportData).map(guide => guide.page),
     ],
     application: [
       transformationPage,
@@ -110,6 +113,7 @@ function expectedPagesForAct(reportData: StylistBlueprintReportData, act: Stylis
     closing: [
       getStylistBlueprintMatrixPage(reportData),
       getStylistBlueprintAuditPage(reportData),
+      getStylistBlueprintShoppingPlanPage(reportData),
       getStylistBlueprintContinuationPage(reportData),
     ],
   };
@@ -251,6 +255,7 @@ export async function runStylistBlueprintRepairPipeline(
       generated_at: existingReportData.generated_at,
       client: existingReportData.client,
       analysis: existingReportData.analysis,
+      studio: existingReportData.studio ?? reportData.studio,
     };
 
     for (const item of REPAIR_ACT_STAGES) {

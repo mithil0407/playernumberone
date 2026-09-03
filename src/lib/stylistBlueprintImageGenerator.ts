@@ -1060,6 +1060,39 @@ export function buildStylistBlueprintImageSlotPlanSummaryForTest(
   };
 }
 
+export function buildStylistBlueprintManualImagePrompt(
+  slotKey: StylistBlueprintImageSlotKey,
+  reportData: StylistBlueprintReportData,
+) {
+  const plan = buildSingleSlotPlan(slotKey, reportData, {
+    front: 'manual-source-photo',
+    side: 'manual-source-photo',
+    headshot: 'manual-source-photo',
+    outfit: 'manual-source-photo',
+  });
+  return { prompt: plan.prompt, size: plan.size ?? '1024x1536' };
+}
+
+export async function uploadStylistBlueprintManualImage(input: {
+  reportId: string;
+  reportData: StylistBlueprintReportData;
+  slotKey: StylistBlueprintImageSlotKey;
+  buffer: Buffer;
+  shareToken?: string | null;
+}) {
+  const paths = await getStoredPaths(input.reportId);
+  const plan = buildSingleSlotPlan(input.slotKey, input.reportData, {
+    front: 'manual-source-photo',
+    side: 'manual-source-photo',
+    headshot: 'manual-source-photo',
+    outfit: 'manual-source-photo',
+  });
+  const path = await uploadBuffer(input.reportId, `${input.slotKey.replace(/\./g, '-')}-manual-${Date.now()}`, input.buffer);
+  plan.setCurrent(paths, path);
+  await persistPaths(input.reportId, paths, input.shareToken, null);
+  return { imagePaths: paths, imageUrls: await resolveStylistBlueprintImageUrls(paths), path };
+}
+
 async function setSlot(input: {
   reportId: string;
   paths: MutablePaths;

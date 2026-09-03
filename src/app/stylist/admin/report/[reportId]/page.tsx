@@ -8,23 +8,34 @@ import {
   Check,
   CheckCheck,
   Copy,
+  Eye,
+  EyeOff,
   FilePlus2,
   ImageIcon,
   LayoutDashboard,
   Loader2,
   LogOut,
   Mail,
+  MoveDown,
+  MoveUp,
+  PanelRight,
+  Printer,
   RefreshCw,
   Save,
   Send,
   ThumbsDown,
   ThumbsUp,
+  Undo2,
+  Upload,
+  WandSparkles,
+  X,
 } from 'lucide-react';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
 import StylistBlueprintReport from '@/components/StylistBlueprintReport';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
 import {
   STYLIST_BLUEPRINT_LEGACY_VERSION,
+  STYLIST_BLUEPRINT_VERSION,
   getStylistBlueprintContinuationPage,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
@@ -34,6 +45,7 @@ import {
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
+import { checkStudioReportQuality, formatOutfitDraft, moveStudioPage, outfitPageToDraft } from '@/lib/stylistReportStudio';
 
 interface Report {
   id: string;
@@ -100,12 +112,16 @@ function responseErrorMessage(data: unknown, fallback: string) {
 }
 
 function pageGroup(pageNumber: number, data?: StylistBlueprintReportData | null) {
-  if (pageNumber <= 3) return 'Opening';
-  if (pageNumber <= 8) return 'Diagnosis';
-  if (pageNumber <= 12) return 'Prescription';
+  if (!data) return 'Opening';
+  if (pageNumber <= 4) return 'Opening';
+  if (pageNumber <= 9) return 'Diagnosis';
+  if (pageNumber < getStylistBlueprintOutfitStartPage(data)) return 'Style Guide';
   if (pageNumber <= getStylistBlueprintOutfitEndPage(data)) return 'Outfits';
   return 'Closing';
 }
+
+type StudioPanel = 'analysis' | 'outfit' | 'visuals' | 'quality' | 'pages';
+type ManualImagePrompt = { slotKey: StylistBlueprintImageSlotKey; label: string; prompt: string; size: string; currentUrl: string | null };
 
 function stageLabel(stage: string | null) {
   return stage ? stage.replace(/_/g, ' ') : 'Ready';
@@ -147,6 +163,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
+  const [studioPanel, setStudioPanel] = useState<StudioPanel | null>(null);
+  const [outfitDraft, setOutfitDraft] = useState('');
+  const [manualPrompts, setManualPrompts] = useState<ManualImagePrompt[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+  const [uploadingSlot, setUploadingSlot] = useState<StylistBlueprintImageSlotKey | null>(null);
+  const [copiedPrompt, setCopiedPrompt] = useState<StylistBlueprintImageSlotKey | null>(null);
+  const [undoStack, setUndoStack] = useState<StylistBlueprintReportData[]>([]);
+  const [printing, setPrinting] = useState(false);
   const unsavedEditsRef = useRef(false);
   const progressRequestRef = useRef(false);
   const lastReportUpdateRef = useRef<string | null>(null);
@@ -244,9 +268,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const hideContinuationPage = isManualReportIntake(report?.stylist_intake_responses ?? null);
   const visiblePages = useMemo(() => {
     const rawPages = reviewData?.pages ?? [];
-    if (!hideContinuationPage || !reviewData) return rawPages;
+    if (!reviewData) return rawPages;
     const continuationPage = getStylistBlueprintContinuationPage(reviewData);
-    return rawPages.filter(page => page.page_number !== continuationPage);
+    const orderIndex = new Map((reviewData.studio?.page_order ?? []).map((pageNumber, index) => [pageNumber, index]));
+    return rawPages
+      .filter(page => !hideContinuationPage || page.page_number !== continuationPage)
+      .sort((a, b) => (orderIndex.get(a.page_number) ?? a.page_number) - (orderIndex.get(b.page_number) ?? b.page_number));
   }, [hideContinuationPage, reviewData]);
   const pages = visiblePages;
   const activePage = pages.find(page => page.page_number === activePageNumber) ?? pages[0] ?? null;
@@ -261,11 +288,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   );
   const activePageIsPalette = Boolean(versioned && activePageNumber === getStylistBlueprintPalettePage(versioned));
   const activeReportUsesScienceHarness = Boolean(versioned?.outfit_engine);
+  const isStudioReport = versioned?.version === STYLIST_BLUEPRINT_VERSION;
+  const qualityIssues = useMemo(() => {
+    const issues = reviewData ? checkStudioReportQuality(reviewData) : [];
+    for (const [group, count] of Object.entries(imageCounts ?? {})) {
+      if (count.done < count.total) issues.push({ level: 'error', message: `Upload ${count.total - count.done} missing ${group.replace(/_/g, ' ')} image${count.total - count.done === 1 ? '' : 's'}.` });
+    }
+    return issues;
+  }, [imageCounts, reviewData]);
   const hasUnsavedEdits = dirtyPages.size > 0 || reportDataDirty;
   const currentOutfitFeedback = outfitFeedbackByPage[activePageNumber] ?? null;
   const imageGroups = hideContinuationPage
     ? IMAGE_GROUPS.filter(group => group.value !== 'closing')
     : IMAGE_GROUPS;
+
+  useEffect(() => {
+    if (activePageIsOutfit && activePage) setOutfitDraft(outfitPageToDraft(activePage));
+  }, [activePage, activePageIsOutfit]);
 
   useEffect(() => {
     if (!hideContinuationPage || !reviewData || pages.some(page => page.page_number === activePageNumber)) return;
@@ -357,7 +396,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     return () => { cancelled = true; };
   }, [activePageIsOutfit, activePageNumber, reportId]);
 
+  const rememberForUndo = () => {
+    if (!draftData) return;
+    setUndoStack(previous => [...previous.slice(-19), JSON.parse(JSON.stringify(draftData)) as StylistBlueprintReportData]);
+  };
+
   const handlePageChange = (page: StylistBlueprintReportData['pages'][number]) => {
+    rememberForUndo();
     setSaveConflict(false);
     setDraftData(prev => {
       if (!prev) return prev;
@@ -370,10 +415,125 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   };
 
   const handleReportDataChange = (data: StylistBlueprintReportData) => {
+    rememberForUndo();
     setSaveConflict(false);
     setDraftData(data);
     setReportDataDirty(true);
     setDirtyPages(prev => new Set(prev).add(activePageNumber));
+  };
+
+  const undoLastChange = () => {
+    const previous = undoStack.at(-1);
+    if (!previous) return;
+    setDraftData(previous);
+    setUndoStack(stack => stack.slice(0, -1));
+    setReportDataDirty(true);
+    setDirtyPages(new Set(previous.pages.map(page => page.page_number)));
+    setSaveConflict(false);
+  };
+
+  const updateStudioData = (updater: (data: StylistBlueprintReportData) => StylistBlueprintReportData) => {
+    if (!draftData) return;
+    handleReportDataChange(updater(draftData));
+  };
+
+  const confirmAnalysis = () => updateStudioData(data => ({
+    ...data,
+    studio: {
+      hidden_page_numbers: [],
+      page_order: Array.from({ length: getStylistBlueprintPageCount(data) }, (_, index) => index + 1),
+      ...data.studio,
+      analysis_confirmed: true,
+      confirmed_at: new Date().toISOString(),
+    },
+  }));
+
+  const updateAnalysisField = (field: keyof StylistBlueprintReportData['analysis'], value: string) => updateStudioData(data => {
+    const classification = { ...data.classification };
+    if (field === 'silhouette_profile') classification.body = { ...classification.body, geometry: value };
+    if (field === 'chromatic_family') classification.colour = { ...classification.colour, palette_name: value };
+    if (field === 'style_direction') classification.taste = { ...classification.taste, style_archetype: value };
+    if (field === 'facial_architecture') {
+      const [shape, ...direction] = value.split(/\s[-–—]\s/);
+      classification.face_hair_accessories = {
+        ...classification.face_hair_accessories,
+        face_shape: shape.trim() || value,
+        face_direction: direction.join(' - ').trim() || classification.face_hair_accessories.face_direction,
+      };
+    }
+    return {
+      ...data,
+      classification,
+      analysis: { ...data.analysis, [field]: value },
+      studio: {
+        hidden_page_numbers: [],
+        page_order: Array.from({ length: getStylistBlueprintPageCount(data) }, (_, index) => index + 1),
+        ...data.studio,
+        analysis_confirmed: false,
+        confirmed_at: undefined,
+      },
+    };
+  });
+
+  const toggleActivePageVisibility = () => updateStudioData(data => {
+    const hidden = new Set(data.studio?.hidden_page_numbers ?? []);
+    if (hidden.has(activePageNumber)) hidden.delete(activePageNumber);
+    else hidden.add(activePageNumber);
+    return {
+      ...data,
+      studio: {
+        analysis_confirmed: false,
+        page_order: Array.from({ length: getStylistBlueprintPageCount(data) }, (_, index) => index + 1),
+        ...data.studio,
+        hidden_page_numbers: [...hidden].sort((a, b) => a - b),
+      },
+    };
+  });
+
+  const applyFormattedOutfit = () => {
+    if (!activePage || !activePageIsOutfit) return;
+    handlePageChange(formatOutfitDraft(outfitDraft, activePage));
+  };
+
+  const loadManualPrompts = async () => {
+    setLoadingPrompts(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/stylist-blueprint/${reportId}/assets`, { cache: 'no-store' });
+      const data = await readJsonBody<{ prompts?: ManualImagePrompt[]; error?: string }>(response);
+      if (!response.ok) throw new Error(responseErrorMessage(data, 'Could not load image prompts'));
+      setManualPrompts(data?.prompts ?? []);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not load image prompts');
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
+  const openStudioPanel = (panel: StudioPanel) => {
+    setStudioPanel(panel);
+    if (panel === 'visuals' && !manualPrompts.length) void loadManualPrompts();
+  };
+
+  const uploadManualImage = async (slotKey: StylistBlueprintImageSlotKey, file: File | null) => {
+    if (!file) return;
+    setUploadingSlot(slotKey);
+    setError('');
+    try {
+      const form = new FormData();
+      form.set('slotKey', slotKey);
+      form.set('file', file);
+      const response = await fetch(`/api/stylist-blueprint/${reportId}/assets`, { method: 'POST', body: form });
+      const data = await readJsonBody<{ error?: string }>(response);
+      if (!response.ok) throw new Error(responseErrorMessage(data, 'Image upload failed'));
+      await Promise.all([refreshGeneratedImages(), loadManualPrompts()]);
+      const statusResponse = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
+      if (statusResponse.ok) setImageCounts((await statusResponse.json()).imageCounts ?? null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Image upload failed');
+    } finally {
+      setUploadingSlot(null);
+    }
   };
 
   const saveChangedPages = async () => {
@@ -545,8 +705,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     const saved = await saveChangedPages();
     if (!saved) return;
     await setApproval(activePage.page_number, true);
-    const next = pages.find(page => page.page_number > activePage.page_number && !report?.section_approvals?.[`p${page.page_number}`])
-      ?? pages.find(page => page.page_number > activePage.page_number);
+    const activeIndex = pages.findIndex(page => page.page_number === activePage.page_number);
+    const followingPages = pages.slice(activeIndex + 1);
+    const next = followingPages.find(page => !report?.section_approvals?.[`p${page.page_number}`]) ?? followingPages[0];
     if (next) {
       setActivePageNumber(next.page_number);
       setViewMode('page');
@@ -562,7 +723,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     }
     const saved = await saveChangedPages();
     if (!saved) return;
-    const next = Object.fromEntries(Array.from({ length: totalPageCount }, (_, index) => [`p${index + 1}`, true]));
+    const next = { ...(report.section_approvals ?? {}) };
+    for (const page of pages) next[`p${page.page_number}`] = true;
     await persistApprovals(next);
   };
 
@@ -731,7 +893,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       return;
     }
     const confirmed = window.confirm(
-      'Create a new 36-page report from this intake using the latest outfit library? The current report will remain available.',
+      'Create a new 55-page Studio report from this intake? The current report will remain available.',
     );
     if (!confirmed) return;
     setRebuildingReport(true);
@@ -1035,6 +1197,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   };
 
   const sendToClient = async () => {
+    const blockingQualityIssue = qualityIssues.find(issue => issue.level === 'error');
+    if (isStudioReport && blockingQualityIssue) {
+      setBlockedError('Send report', blockingQualityIssue.message);
+      setStudioPanel('quality');
+      return;
+    }
     if (!allApproved) {
       setBlockedError('Send report', 'Approve every page before sending.');
       return;
@@ -1111,6 +1279,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setViewMode('full');
   };
 
+  const printReport = () => {
+    setPrinting(true);
+    setViewMode('full');
+    window.setTimeout(() => window.print(), 250);
+  };
+
+  useEffect(() => {
+    const finishPrinting = () => setPrinting(false);
+    window.addEventListener('afterprint', finishPrinting);
+    return () => window.removeEventListener('afterprint', finishPrinting);
+  }, []);
+
   const logout = async () => {
     await fetch(isWorkspace ? '/api/stylist-workspace/auth/logout' : '/api/iconik-club/admin/logout', { method: 'POST' });
     window.location.href = isWorkspace ? '/stylist/login' : '/stylist/admin/login';
@@ -1164,6 +1344,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     || 'Client';
   const sendDisabledReason = !isWorkspace && !recipientEmail
     ? 'No client email is attached to this intake. Use Copy Link instead.'
+    : isStudioReport && qualityIssues.some(issue => issue.level === 'error')
+      ? qualityIssues.find(issue => issue.level === 'error')?.message ?? 'Resolve report quality checks before delivery.'
     : !allApproved
     ? 'Approve every page before sending.'
     : !requiredImagesDone
@@ -1218,13 +1400,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="iconik-micro mb-3" style={{ color: S.muted }}>Review Queue</div>
             <div className="space-y-4">
-              {['Opening', 'Diagnosis', 'Prescription', 'Outfits', 'Closing'].map(group => (
+              {['Opening', 'Diagnosis', 'Style Guide', 'Outfits', 'Closing'].map(group => (
                 <div key={group}>
                   <p className="iconik-mono mb-1.5" style={{ fontSize: '10px', color: S.muted }}>{group}</p>
                   <div className="space-y-1">
                     {pages.filter(page => pageGroup(page.page_number, reviewData) === group).map(page => {
                       const approved = Boolean(report.section_approvals?.[`p${page.page_number}`]);
                       const active = activePageNumber === page.page_number;
+                      const hidden = Boolean(reviewData?.studio?.hidden_page_numbers?.includes(page.page_number));
                       return (
                         <button
                           key={page.page_number}
@@ -1241,7 +1424,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                         >
                           <span className="iconik-mono truncate" style={{ fontSize: '11px' }}>{String(page.page_number).padStart(2, '0')} - {page.title}</span>
                           <span className="rounded-full px-2 py-0.5 iconik-micro" style={{ background: approved ? `${S.success}18` : S.bg, color: approved ? S.success : S.muted }}>
-                            {approved ? 'OK' : 'Open'}
+                            {hidden ? 'Hidden' : approved ? 'OK' : 'Open'}
                           </span>
                         </button>
                       );
@@ -1298,7 +1481,31 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 <ActionButton onClick={copyLink} title="Copy the public report link.">
                   {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}
                 </ActionButton>
+                <ActionButton onClick={printReport} title="Open the browser print dialog to save the full report as a PDF.">
+                  <Printer size={14} /> Print / PDF
+                </ActionButton>
               </div>
+
+              {isStudioReport && (
+                <div className="admin-toolbar-group">
+                  <span className="admin-toolbar-label">Studio</span>
+                  <ActionButton onClick={() => openStudioPanel('analysis')} tone={reviewData?.studio?.analysis_confirmed ? 'success' : 'neutral'} title="Review and confirm the automated analysis.">
+                    <CheckCheck size={14} /> Analysis
+                  </ActionButton>
+                  <ActionButton onClick={() => openStudioPanel(activePageIsOutfit ? 'outfit' : 'pages')} title="Edit the current module or outfit in a structured workspace.">
+                    <PanelRight size={14} /> {activePageIsOutfit ? 'Outfit Editor' : 'Page Tools'}
+                  </ActionButton>
+                  <ActionButton onClick={() => openStudioPanel('visuals')} title="Copy image prompts and upload images created in any external tool.">
+                    <ImageIcon size={14} /> Image Prompts
+                  </ActionButton>
+                  <ActionButton onClick={() => openStudioPanel('quality')} tone={qualityIssues.some(issue => issue.level === 'error') ? 'danger' : 'success'} title="Run the report quality checks.">
+                    <WandSparkles size={14} /> Quality {qualityIssues.length}
+                  </ActionButton>
+                  <ActionButton onClick={undoLastChange} disabled={!undoStack.length} title={undoStack.length ? 'Undo the last Studio edit.' : 'No Studio edit to undo.'}>
+                    <Undo2 size={14} /> Undo
+                  </ActionButton>
+                </div>
+              )}
 
               <div className="admin-toolbar-group">
                 <span className="admin-toolbar-label">Report</span>
@@ -1331,7 +1538,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   tone="primary"
                 >
                   {rebuildingReport ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                  {rebuildingReport ? 'Rebuilding...' : 'Rebuild 36-page'}
+                  {rebuildingReport ? 'Rebuilding...' : 'Rebuild Studio Report'}
                 </ActionButton>
                 {versioned && (
                   <ActionButton
@@ -1357,7 +1564,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 )}
               </div>
 
-              <div className="admin-toolbar-group">
+              {!isWorkspace && !isStudioReport && <div className="admin-toolbar-group">
                 <span className="admin-toolbar-label">Images</span>
                 <select
                   value={imageGroup}
@@ -1392,7 +1599,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   {refreshingSilhouetteProofs ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   {refreshingSilhouetteProofs ? 'Refreshing...' : 'Refresh Silhouette Proofs'}
                 </ActionButton>
-              </div>
+              </div>}
 
               {activePageIsOutfit && (
                 <div className="admin-toolbar-group admin-toolbar-group-wide">
@@ -1529,10 +1736,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 imageUrls={report.image_urls}
                 focusPageNumber={viewMode === 'page' ? activePageNumber : undefined}
                 hideContinuationPage={hideContinuationPage}
-                editable
+                editable={!printing}
                 onPageChange={handlePageChange}
                 onReportDataChange={handleReportDataChange}
-                onImageRegenerate={regenerateImageSlot}
+                onImageRegenerate={isStudioReport ? undefined : regenerateImageSlot}
                 regeneratingImageSlot={regeneratingSlotKey}
                 imageRegenerationDisabled={generatingImages || replacingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || Boolean(report.progress_stage)}
               />
@@ -1594,6 +1801,129 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             </div>
           </div>
         </footer>
+      )}
+
+      {studioPanel && reviewData && (
+        <div className="studio-drawer fixed right-0 top-0 bottom-0 z-[70] w-full max-w-[470px] overflow-y-auto border-l" style={{ background: S.bg, borderColor: S.border, boxShadow: '-24px 0 70px rgba(44,38,34,.18)' }}>
+          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-6 py-5" style={{ background: 'rgba(244,239,229,.97)', borderColor: S.border }}>
+            <div>
+              <div className="iconik-micro" style={{ color: S.gold }}>REPORT STUDIO</div>
+              <h3 className="iconik-display text-2xl mt-1" style={{ color: S.ink }}>
+                {studioPanel === 'analysis' ? 'Analysis Review' : studioPanel === 'outfit' ? 'Outfit Editor' : studioPanel === 'visuals' ? 'Images & Prompts' : studioPanel === 'quality' ? 'Quality Check' : 'Page Tools'}
+              </h3>
+            </div>
+            <button onClick={() => setStudioPanel(null)} className="rounded-full p-2" aria-label="Close Studio panel" style={{ background: S.card, color: S.muted }}><X size={18} /></button>
+          </div>
+
+          <div className="p-6 space-y-5">
+            {studioPanel === 'analysis' && (
+              <>
+                <p className="luxury-body text-sm leading-6" style={{ color: S.muted }}>Check the automated findings against the client images and intake. These values drive the report language.</p>
+                {([
+                  ['silhouette_profile', 'Body shape / silhouette'],
+                  ['chromatic_family', 'Colour family'],
+                  ['facial_architecture', 'Face shape / architecture'],
+                  ['style_direction', 'Style direction'],
+                ] as const).map(([field, label]) => (
+                  <label key={field} className="block">
+                    <span className="iconik-micro block mb-2" style={{ color: S.muted }}>{label}</span>
+                    <textarea value={String(reviewData.analysis[field] ?? '')} onChange={event => updateAnalysisField(field, event.target.value)} rows={field === 'facial_architecture' ? 3 : 2} className="studio-field w-full rounded-xl border p-3 luxury-body text-sm" style={{ background: S.card, color: S.ink, borderColor: S.border }} />
+                  </label>
+                ))}
+                <div className="rounded-2xl border p-4" style={{ background: S.card, borderColor: S.border }}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="luxury-body text-sm" style={{ color: S.ink }}>Stylist confirmation</div>
+                      <div className="luxury-body text-xs mt-1" style={{ color: S.muted }}>{reviewData.studio?.analysis_confirmed ? 'Confirmed. Any later analysis edit should be reviewed again.' : 'Required before this report can be delivered.'}</div>
+                    </div>
+                    <Pill tone={reviewData.studio?.analysis_confirmed ? 'success' : 'gold'}>{reviewData.studio?.analysis_confirmed ? 'Confirmed' : 'Pending'}</Pill>
+                  </div>
+                </div>
+                <ActionButton onClick={confirmAnalysis} tone="success" title="Confirm the automated analysis after checking it."><CheckCheck size={14} /> Confirm Analysis</ActionButton>
+              </>
+            )}
+
+            {studioPanel === 'outfit' && activePage && (
+              <>
+                <p className="luxury-body text-sm leading-6" style={{ color: S.muted }}>Write freely inside the labelled structure. Each formula line uses: slot | piece | colour | hex | role | fit or styling note.</p>
+                <textarea value={outfitDraft} onChange={event => setOutfitDraft(event.target.value)} rows={22} spellCheck className="studio-field studio-code w-full rounded-2xl border p-4 text-xs leading-6" style={{ background: S.card, color: S.ink, borderColor: S.border }} />
+                <div className="flex flex-wrap gap-2">
+                  <ActionButton onClick={applyFormattedOutfit} tone="primary" title="Turn this draft into the report's designed outfit layout."><WandSparkles size={14} /> Auto Format</ActionButton>
+                  <ActionButton onClick={() => { setOutfitInstruction('Polish the wording while preserving every garment, colour, coverage requirement and styling decision.'); setStudioPanel(null); }} title="Prepare a precise instruction for the existing AI outfit editor."><RefreshCw size={14} /> Prepare AI Polish</ActionButton>
+                </div>
+                <p className="luxury-body text-xs leading-5" style={{ color: S.muted }}>Auto Format is deterministic and adds no AI cost. “Prepare AI Polish” places a safe instruction in the outfit toolbar for an optional rewrite.</p>
+              </>
+            )}
+
+            {studioPanel === 'pages' && activePage && (
+              <>
+                <div className="rounded-2xl border p-5" style={{ background: S.card, borderColor: S.border }}>
+                  <div className="iconik-micro" style={{ color: S.muted }}>CURRENT MODULE</div>
+                  <div className="luxury-body mt-2" style={{ color: S.ink }}>Page {activePage.page_number}: {activePage.title}</div>
+                  <div className="luxury-body text-xs mt-2" style={{ color: S.muted }}>Hidden pages stay editable here but are removed from the client link and PDF.</div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <ActionButton onClick={toggleActivePageVisibility} disabled={activePage.page_number === 1} title={activePage.page_number === 1 ? 'The cover must remain visible.' : 'Show or hide this page in the delivered report.'}>
+                    {reviewData.studio?.hidden_page_numbers?.includes(activePage.page_number) ? <Eye size={14} /> : <EyeOff size={14} />}
+                    {reviewData.studio?.hidden_page_numbers?.includes(activePage.page_number) ? 'Show' : 'Hide'}
+                  </ActionButton>
+                  <ActionButton onClick={() => updateStudioData(data => moveStudioPage(data, activePage.page_number, -1))} title="Move this page earlier in the report."><MoveUp size={14} /> Earlier</ActionButton>
+                  <ActionButton onClick={() => updateStudioData(data => moveStudioPage(data, activePage.page_number, 1))} title="Move this page later in the report."><MoveDown size={14} /> Later</ActionButton>
+                </div>
+              </>
+            )}
+
+            {studioPanel === 'visuals' && (
+              <>
+                <p className="luxury-body text-sm leading-6" style={{ color: S.muted }}>Copy a production-ready prompt into your preferred image tool, then upload the finished image into the same slot. ICONIK does not call an image API in this workflow.</p>
+                {loadingPrompts && <div className="flex items-center gap-2 luxury-body text-sm" style={{ color: S.muted }}><Loader2 size={15} className="animate-spin" /> Loading prompts…</div>}
+                <div className="space-y-4">
+                  {manualPrompts.map(item => (
+                    <div key={item.slotKey} className="rounded-2xl border p-4" style={{ background: S.card, borderColor: S.border }}>
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <div className="luxury-body text-sm" style={{ color: S.ink }}>{item.label}</div>
+                          <div className="iconik-mono text-[10px] mt-1" style={{ color: S.muted }}>{item.size}{item.currentUrl ? ' · image uploaded' : ' · image needed'}</div>
+                        </div>
+                        <Pill tone={item.currentUrl ? 'success' : 'gold'}>{item.currentUrl ? 'Ready' : 'Empty'}</Pill>
+                      </div>
+                      {item.currentUrl && <img src={item.currentUrl} alt="" className="h-32 w-full rounded-xl object-cover mb-3" />}
+                      <textarea readOnly value={item.prompt} rows={6} className="studio-field w-full rounded-xl border p-3 luxury-body text-xs leading-5" style={{ background: S.bg, color: S.muted, borderColor: S.border }} />
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <ActionButton onClick={() => { void navigator.clipboard.writeText(item.prompt); setCopiedPrompt(item.slotKey); window.setTimeout(() => setCopiedPrompt(null), 1400); }} title="Copy this image prompt.">
+                          {copiedPrompt === item.slotKey ? <Check size={14} /> : <Copy size={14} />} {copiedPrompt === item.slotKey ? 'Copied' : 'Copy Prompt'}
+                        </ActionButton>
+                        <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 luxury-body text-sm" style={{ borderColor: S.border, color: S.ink }}>
+                          {uploadingSlot === item.slotKey ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {uploadingSlot === item.slotKey ? 'Uploading…' : item.currentUrl ? 'Replace Image' : 'Upload Image'}
+                          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={Boolean(uploadingSlot)} onChange={event => { void uploadManualImage(item.slotKey, event.target.files?.[0] ?? null); event.currentTarget.value = ''; }} />
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {studioPanel === 'quality' && (
+              <>
+                <div className="rounded-2xl border p-5" style={{ background: qualityIssues.some(issue => issue.level === 'error') ? `${S.error}0D` : `${S.success}0D`, borderColor: qualityIssues.some(issue => issue.level === 'error') ? `${S.error}55` : `${S.success}55` }}>
+                  <div className="iconik-display text-xl" style={{ color: S.ink }}>{qualityIssues.length ? `${qualityIssues.length} item${qualityIssues.length === 1 ? '' : 's'} to review` : 'Report checks passed'}</div>
+                  <p className="luxury-body text-xs mt-2" style={{ color: S.muted }}>Checks cover analysis confirmation, missing pages, empty content, placeholders, outfit structure and duplicate formulas.</p>
+                </div>
+                <div className="space-y-2">
+                  {qualityIssues.map((issue, index) => (
+                    <button key={`${issue.page ?? 'report'}-${index}`} onClick={() => { if (issue.page) { setActivePageNumber(issue.page); setViewMode('page'); } }} className="w-full rounded-xl border p-4 text-left" style={{ background: S.card, borderColor: S.border }}>
+                      <div className="flex gap-3">
+                        <Pill tone={issue.level === 'error' ? 'error' : 'gold'}>{issue.level}</Pill>
+                        <div className="luxury-body text-sm" style={{ color: S.ink }}>{issue.page ? `Page ${issue.page}: ` : ''}{issue.message}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {deliveryPrepared && (
@@ -1712,6 +2042,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             width: 100%;
             justify-content: center;
           }
+        }
+        @media print {
+          aside.fixed, header.sticky, footer.fixed, .studio-drawer { display: none !important; }
+          main.min-h-screen { padding-left: 0 !important; }
+          main .px-8.py-8 { padding: 0 !important; }
+          main .max-w-\[1120px\] { max-width: none !important; border-radius: 0 !important; }
         }
       `}</style>
     </div>

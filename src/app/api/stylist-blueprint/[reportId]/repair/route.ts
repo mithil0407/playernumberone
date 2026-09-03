@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { runStylistBlueprintRepairPipeline } from '@/lib/stylistBlueprintTextPipeline';
-import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
 import { isVersionedStylistBlueprintReportData, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
@@ -65,33 +64,5 @@ export async function POST(
     return NextResponse.json({ error: 'Blueprint repair failed' }, { status: 500 });
   }
 
-  const imageGroups = ['capsule_1', 'capsule_2', 'capsule_3', 'capsule_4'] as const;
-  try {
-    for (const group of imageGroups) {
-      await generateStylistBlueprintImages(reportId, repaired, report.share_token ?? null, {
-        group,
-        force: true,
-        submission: resolvedSubmission,
-      });
-    }
-    return NextResponse.json({ success: true, reportData: repaired, imagesRegenerated: true });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Outfit image regeneration failed';
-    await supabaseAdmin
-      .from('stylist_blueprint_reports')
-      .update({
-        status: 'draft_ready',
-        progress_stage: null,
-        error_message: message,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', reportId);
-
-    return NextResponse.json({
-      success: true,
-      reportData: repaired,
-      imagesRegenerated: false,
-      imageError: message,
-    });
-  }
+  return NextResponse.json({ success: true, reportData: repaired, imageWorkflow: 'manual_prompt_and_upload' });
 }

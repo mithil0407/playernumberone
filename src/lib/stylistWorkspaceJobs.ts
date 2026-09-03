@@ -2,7 +2,6 @@ import 'server-only';
 
 import { supabaseAdmin } from './supabase';
 import { runStylistBlueprintTextPipeline } from './stylistBlueprintTextPipeline';
-import { generateStylistBlueprintImages } from './stylistBlueprintImageGenerator';
 import type { StylistBlueprintReportData, StylistIntakeSubmission } from './stylistBlueprintGenerator';
 import { resolveConsultationIntakePhotos } from './stylistConsultationWorkspace';
 import { logStylistReportActivity } from './stylistWorkspaceAuth';
@@ -71,11 +70,6 @@ async function processJob(job: StylistWorkspaceJob) {
     );
     if (!reportData) throw new Error('Blueprint text generation did not complete');
 
-    await generateStylistBlueprintImages(report.id, reportData, report.share_token ?? null, {
-      group: 'all',
-      force: false,
-      submission,
-    });
     await supabaseAdmin
       .from('stylist_blueprint_reports')
       .update({ status: 'draft_ready', progress_stage: null, error_message: null, updated_at: new Date().toISOString() })
@@ -96,6 +90,7 @@ async function processJob(job: StylistWorkspaceJob) {
       reportId: report.id,
       consultationId: job.consultation_id,
       stylistId: job.stylist_id,
+      metadata: { image_workflow: 'manual_prompt_and_upload' },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Generation failed';

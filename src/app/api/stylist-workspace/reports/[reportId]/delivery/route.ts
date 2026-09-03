@@ -75,8 +75,12 @@ export async function POST(
     if (!isVersionedStylistBlueprintReportData(reportData)) {
       return NextResponse.json({ error: 'The report is not ready to publish' }, { status: 400 });
     }
+    if (reportData.studio && !reportData.studio.analysis_confirmed) {
+      return NextResponse.json({ error: 'Confirm the body, colour and face analysis before publishing' }, { status: 400 });
+    }
     const continuationPage = getStylistBlueprintContinuationPage(reportData);
-    const visiblePages = reportData.pages.filter(page => page.page_number !== continuationPage);
+    const hiddenPages = new Set(reportData.studio?.hidden_page_numbers ?? []);
+    const visiblePages = reportData.pages.filter(page => page.page_number !== continuationPage && !hiddenPages.has(page.page_number));
     const approvals = report.section_approvals as Record<string, boolean> | null;
     if (!visiblePages.every(page => Boolean(approvals?.[`p${page.page_number}`]))) {
       return NextResponse.json({ error: 'Approve every report page before publishing' }, { status: 400 });
@@ -93,7 +97,7 @@ export async function POST(
       includeBeautyPages: Boolean(getStylistBlueprintHairColourPage(reportData)),
     });
     if (!Object.values(imageCounts).every(group => group.done >= group.total)) {
-      return NextResponse.json({ error: 'Generate every required image before publishing', imageCounts }, { status: 400 });
+      return NextResponse.json({ error: 'Upload every required image before publishing', imageCounts }, { status: 400 });
     }
     const publishedAt = new Date().toISOString();
     await supabaseAdmin

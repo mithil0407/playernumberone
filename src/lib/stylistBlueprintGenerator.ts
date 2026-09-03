@@ -16,7 +16,9 @@ import {
   STYLIST_BLUEPRINT_36_VERSION,
   STYLIST_BLUEPRINT_37_VERSION,
   STYLIST_BLUEPRINT_39_VERSION,
+  STYLIST_BLUEPRINT_41_VERSION,
   STYLIST_BLUEPRINT_LEGACY_VERSION,
+  STYLIST_BLUEPRINT_PAGE_COUNT,
   STYLIST_BLUEPRINT_VERSION,
   getStylistBlueprintAuditPage,
   getStylistBlueprintAvoidancePage,
@@ -42,6 +44,8 @@ import {
   getStylistBlueprintProportionPage,
   getStylistBlueprintReadingGuidePage,
   getStylistBlueprintRulesStartPage,
+  getStylistBlueprintShoppingPlanPage,
+  getStylistBlueprintStudioGuidePages,
   getStylistBlueprintSummaryPage,
   getStylistBlueprintTransformationPage,
   isLatestStylistBlueprintVersion,
@@ -61,6 +65,8 @@ export {
   STYLIST_BLUEPRINT_37_VERSION,
   STYLIST_BLUEPRINT_39_PAGE_COUNT,
   STYLIST_BLUEPRINT_39_VERSION,
+  STYLIST_BLUEPRINT_41_PAGE_COUNT,
+  STYLIST_BLUEPRINT_41_VERSION,
   STYLIST_BLUEPRINT_LEGACY_OUTFIT_COUNT,
   STYLIST_BLUEPRINT_LEGACY_PAGE_COUNT,
   STYLIST_BLUEPRINT_LEGACY_VERSION,
@@ -91,6 +97,8 @@ export {
   getStylistBlueprintProportionPage,
   getStylistBlueprintReadingGuidePage,
   getStylistBlueprintRulesStartPage,
+  getStylistBlueprintShoppingPlanPage,
+  getStylistBlueprintStudioGuidePages,
   getStylistBlueprintSummaryPage,
   getStylistBlueprintTransformationPage,
   isLatestStylistBlueprintVersion,
@@ -348,6 +356,8 @@ export type BlueprintPageType =
   | 'eyewear'
   | 'makeup'
   | 'fabric'
+  | 'wardrobe_guide'
+  | 'shopping_plan'
   | 'outfit_system'
   | 'outfit'
   | 'matrix'
@@ -399,6 +409,13 @@ export interface BlueprintPage {
   library_refs?: BlueprintLibraryRef[];
 }
 
+export interface StylistReportStudioMetadata {
+  analysis_confirmed: boolean;
+  confirmed_at?: string;
+  hidden_page_numbers: number[];
+  page_order: number[];
+}
+
 export interface StylistBlueprintAnalysis {
   silhouette_profile: string;
   chromatic_family: string;
@@ -414,7 +431,7 @@ export interface StylistBlueprintAnalysis {
 }
 
 export interface StylistBlueprintReportData {
-  version: typeof STYLIST_BLUEPRINT_VERSION | typeof STYLIST_BLUEPRINT_39_VERSION | typeof STYLIST_BLUEPRINT_37_VERSION | typeof STYLIST_BLUEPRINT_36_VERSION | typeof STYLIST_BLUEPRINT_LEGACY_VERSION;
+  version: typeof STYLIST_BLUEPRINT_VERSION | typeof STYLIST_BLUEPRINT_41_VERSION | typeof STYLIST_BLUEPRINT_39_VERSION | typeof STYLIST_BLUEPRINT_37_VERSION | typeof STYLIST_BLUEPRINT_36_VERSION | typeof STYLIST_BLUEPRINT_LEGACY_VERSION;
   generated_at: string;
   client: {
     display_name: string;
@@ -425,6 +442,7 @@ export interface StylistBlueprintReportData {
   classification: StylistBlueprintClassification;
   pages: BlueprintPage[];
   outfit_engine?: OutfitScienceEngineMetadata;
+  studio?: StylistReportStudioMetadata;
 }
 
 type AnyRecord = Record<string, unknown>;
@@ -529,10 +547,12 @@ export function canonicalStylistBlueprintPageType(
   if (pageNumber === getStylistBlueprintMakeupPage(dataOrVersion)) return 'makeup';
   if ([getStylistBlueprintRulesStartPage(dataOrVersion), getStylistBlueprintHairFaceAccessoriesPage(dataOrVersion)].includes(pageNumber)) return 'rules';
   if (pageNumber === getStylistBlueprintFabricPage(dataOrVersion)) return 'fabric';
+  if (getStylistBlueprintStudioGuidePages(dataOrVersion).some(guide => guide.page === pageNumber)) return 'wardrobe_guide';
   if (pageNumber === getStylistBlueprintOutfitSystemPage(dataOrVersion)) return 'outfit_system';
   if (pageNumber >= getStylistBlueprintOutfitStartPage(dataOrVersion) && pageNumber <= getStylistBlueprintOutfitEndPage(dataOrVersion)) return 'outfit';
   if (pageNumber === getStylistBlueprintMatrixPage(dataOrVersion)) return 'matrix';
   if (pageNumber === getStylistBlueprintAuditPage(dataOrVersion)) return 'audit';
+  if (pageNumber === getStylistBlueprintShoppingPlanPage(dataOrVersion)) return 'shopping_plan';
   if (pageNumber === getStylistBlueprintContinuationPage(dataOrVersion)) return 'continuation';
   return 'diagnosis';
 }
@@ -1549,6 +1569,11 @@ export function createBlueprintShell(
     },
     classification,
     pages: existingPages,
+    studio: {
+      analysis_confirmed: false,
+      hidden_page_numbers: [],
+      page_order: Array.from({ length: STYLIST_BLUEPRINT_PAGE_COUNT }, (_, index) => index + 1),
+    },
   };
 }
 
@@ -5758,12 +5783,14 @@ export async function generateStylistBlueprintPages(
   const makeupPage = getStylistBlueprintMakeupPage(reportData);
   const hairFaceAccessoriesPage = getStylistBlueprintHairFaceAccessoriesPage(reportData);
   const fabricPage = getStylistBlueprintFabricPage(reportData);
+  const studioGuidePages = getStylistBlueprintStudioGuidePages(reportData);
+  const prescriptionEndPage = studioGuidePages.at(-1)?.page ?? fabricPage;
   const outfitSystemPage = getStylistBlueprintOutfitSystemPage(reportData);
   const outfitStartPage = getStylistBlueprintOutfitStartPage(reportData);
   const ranges = {
     opening: transformationPage ? `pages 1, ${summaryPage}-${readingGuidePage}` : 'pages 1-3',
     diagnosis: `pages ${bodyPage}-${avoidancePage}`,
-    prescription: `pages ${palettePage}-${fabricPage}`,
+    prescription: `pages ${palettePage}-${prescriptionEndPage}`,
     application: transformationPage ? `page ${transformationPage} and pages ${outfitSystemPage}-${outfitEndPage}` : `pages ${outfitSystemPage}-${outfitEndPage}`,
     closing: `pages ${matrixPage}-${continuationPage}`,
   };
@@ -5807,6 +5834,7 @@ ${avoidancePage} What to Avoid And Why
 ${palettePage} Colour Palette
 ${colourDrapePage ? `${colourDrapePage} Professional Colour Drape\n` : ''}${rulesStartPage} Silhouette Rules
 ${hairstylePage ? `${hairstylePage} Hairstyle Direction\n` : ''}${hairColourPage ? `${hairColourPage} Hair Colour Direction\n` : ''}${eyeframePage ? `${eyeframePage} Eyeframe Direction\n` : ''}${makeupPage ? `${makeupPage} Makeup for Everyday Looks\n` : ''}${!hairstylePage ? `${hairFaceAccessoriesPage} Hair, Face, Accessories\n` : ''}${fabricPage} Fabric and Texture Direction
+${getStylistBlueprintStudioGuidePages(reportData).map(guide => `${guide.page} ${guide.title}`).join('\n')}${getStylistBlueprintStudioGuidePages(reportData).length ? '\n' : ''}
 ${outfitSystemPage} Outfit System
 ${capsuleRanges[0].firstPage}-${capsuleRanges[0].lastPage} Professional Capsule outfits
 ${capsuleRanges[1].firstPage}-${capsuleRanges[1].lastPage} Social Capsule outfits
@@ -5814,7 +5842,7 @@ ${capsuleRanges[2].firstPage}-${capsuleRanges[2].lastPage} Everyday Capsule outf
 ${capsuleRanges[3].firstPage}-${capsuleRanges[3].lastPage} Occasion Capsule outfits
 ${matrixPage} Combination Matrix
 ${auditPage} Wardrobe Audit Filter
-${continuationPage} Continuation / Edit
+${getStylistBlueprintShoppingPlanPage(reportData) ? `${getStylistBlueprintShoppingPlanPage(reportData)} Shopping Priorities & 90-Day Action Plan\n` : ''}${continuationPage} Continuation / Edit
 
 Required page object:
 {"page_number":1,"page_type":"cover","title":"","subtitle":"","blocks":[{"label":"","heading":"","body":"","reason":"","items":[]}],"image_refs":[""]}
@@ -5837,6 +5865,13 @@ ${hairstylePage ? `- Page ${hairstylePage} should provide exactly four hairstyle
 ${hairColourPage ? `- Page ${hairColourPage} (Hair Colour Direction) should provide exactly four hair-colour/highlight directions from face_hair_accessories.hair_colour_options that correspond to the 2x2 generated hair-colour image, plus a short intro from hair_colour_direction. Keep colours realistic, classy, feminine, salon-achievable, and compatible with the client's existing hairstyle/cut.` : ''}
 ${eyeframePage ? `- Page ${eyeframePage} should provide exactly four eyeframe/sunglass directions that correspond to the 2x2 generated eyewear image.` : ''}
 ${makeupPage ? `- Page ${makeupPage} (Makeup for Everyday Looks) should present a subtle natural everyday makeup look that matches the generated makeup image: a short intro from makeup.everyday_direction, exactly five ordered steps from makeup.steps, and the flattering everyday shades from makeup.colours. Keep it product-type only — no brands, no medical or clinical claims. Avoid glam, bridal, party makeup, heavy base, dramatic contour, smoky eyes, false lashes, glitter, and bold lipstick.` : ''}
+${getStylistBlueprintStudioGuidePages(reportData).length ? `- Pages ${getStylistBlueprintStudioGuidePages(reportData)[0].page}-${getStylistBlueprintStudioGuidePages(reportData).at(-1)?.page} are the detailed Wardrobe Manual. Each page needs a concise personalised introduction and 5-7 structured recommendations. Every item must say what to choose, what fit/detail to check, and why it works for this client's geometry, comfort, coverage, lifestyle, and taste.
+- Jeans and skirts must name flattering rises, leg/hem shapes, lengths, fabrics, washes, styling combinations, fitting-room checks, and clear avoid/alter guidance.
+- Lingerie must cover bra band/cup/strap checks, neckline compatibility, smooth everyday foundations, support and comfort without guessing a size or making medical claims.
+- Shapewear must be optional and body-respectful. Cover garment-specific styles, compression level, rise/leg line, seams, movement, breathability and when it is unnecessary. Never promise weight loss or body change.
+- Indian & Fusion Wear should respect outfit cultural mode. When ethnic wear is not requested, make this a concise optional fusion reference rather than overriding the client's Western preference.
+- Jewellery, footwear, bags, belts and scarves need scale, shape, colour/metal, placement and occasion guidance. Avoid vague lists.
+- Shopping & Fit Checklist must be a practical fitting-room decision tool with alteration triggers and comfort checks.` : ''}
 
 ${STYLIST_STYLING_PRINCIPLES}
 
@@ -5847,6 +5882,7 @@ ${PRACTICAL_COLOUR_APPLICATION_RULES}
 Closing:
 - Page ${matrixPage} must include core pieces and which outfits they appear in.
 - Page ${auditPage} must include 6 wardrobe audit questions.
+- ${getStylistBlueprintShoppingPlanPage(reportData) ? `Page ${getStylistBlueprintShoppingPlanPage(reportData)} must give an ordered 90-day shopping plan: foundation fixes, high-impact additions, optional upgrades, budget logic, and what not to buy yet.` : 'Keep the closing plan concise.'}
 - Page ${continuationPage} must adapt to whether the client selected/subscribed to ICONIK Edit if known.
 
 ${promptContext}`;
@@ -6124,6 +6160,7 @@ function normalisePages(
     ...(getStylistBlueprintEyeframePage(reportData) ? [getStylistBlueprintEyeframePage(reportData) as number] : []),
     ...(getStylistBlueprintMakeupPage(reportData) ? [getStylistBlueprintMakeupPage(reportData) as number] : []),
     getStylistBlueprintFabricPage(reportData),
+    ...getStylistBlueprintStudioGuidePages(reportData).map(guide => guide.page),
   ].filter((pageNumber): pageNumber is number => typeof pageNumber === 'number');
   const applicationPages = [
     ...(transformationPage ? [transformationPage] : []),
@@ -6138,12 +6175,14 @@ function normalisePages(
     closing: [
       getStylistBlueprintMatrixPage(reportData),
       getStylistBlueprintAuditPage(reportData),
+      ...(getStylistBlueprintShoppingPlanPage(reportData) ? [getStylistBlueprintShoppingPlanPage(reportData) as number] : []),
       getStylistBlueprintContinuationPage(reportData),
     ],
   };
   const allowedTypes: BlueprintPageType[] = [
     'cover', 'transformation', 'summary', 'reading_guide', 'diagnosis', 'avoidance', 'palette', 'colour_drape', 'rules',
-    'hair', 'eyewear', 'fabric', 'outfit_system', 'outfit', 'matrix', 'audit', 'continuation',
+    'hair', 'hair_colour', 'eyewear', 'makeup', 'fabric', 'wardrobe_guide', 'outfit_system', 'outfit',
+    'matrix', 'audit', 'shopping_plan', 'continuation',
   ];
   const arr = Array.isArray(value) ? value : [];
   const pages = arr.map(item => {
@@ -6217,7 +6256,7 @@ export function validateStylistBlueprintReport(
   options: { culturalMode?: StylistOutfitCulturalMode; validateStaticPageDensity?: boolean } = {},
 ) {
   void options;
-  if (![STYLIST_BLUEPRINT_VERSION, STYLIST_BLUEPRINT_39_VERSION, STYLIST_BLUEPRINT_37_VERSION, STYLIST_BLUEPRINT_36_VERSION, STYLIST_BLUEPRINT_LEGACY_VERSION].includes(data.version)) throw new Error('Invalid Blueprint version');
+  if (![STYLIST_BLUEPRINT_VERSION, STYLIST_BLUEPRINT_41_VERSION, STYLIST_BLUEPRINT_39_VERSION, STYLIST_BLUEPRINT_37_VERSION, STYLIST_BLUEPRINT_36_VERSION, STYLIST_BLUEPRINT_LEGACY_VERSION].includes(data.version)) throw new Error('Invalid Blueprint version');
   const expectedPageCount = getStylistBlueprintPageCount(data);
   const expectedOutfitCount = getStylistBlueprintOutfitCount(data);
   if (data.pages.length !== expectedPageCount) throw new Error(`Expected ${expectedPageCount} pages, found ${data.pages.length}`);

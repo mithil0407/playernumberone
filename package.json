@@ -13,7 +13,7 @@
     "test:meta-pixel": "node --experimental-strip-types --test src/lib/metaPageView.test.ts src/lib/metaTrackingContract.test.ts src/lib/indiaBlueprintPricing.test.ts",
     "test:whatsapp": "node --experimental-strip-types --test src/lib/whatsapp.test.ts",
     "verify:meta-tracking": "node --experimental-strip-types --conditions=react-server --env-file=.env.local scripts/verify-meta-tracking.ts",
-    "test:stylist-workspace": "node --experimental-strip-types --test src/lib/stylistWorkspacePilot.test.ts",
+    "test:stylist-workspace": "node --experimental-strip-types --test src/lib/stylistWorkspacePilot.test.ts src/lib/stylistReportStudio.test.ts",
     "seo:images": "node scripts/build-seo-images.mjs",
     "indexnow": "node scripts/submit-indexnow.mjs",
     "migrate:au-globe": "node scripts/migrate-au-globe-to-primary.mjs",
