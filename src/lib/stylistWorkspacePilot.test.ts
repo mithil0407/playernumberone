@@ -48,7 +48,7 @@ test('WhatsApp message is safely URL encoded', () => {
   assert.equal(url, 'https://wa.me/919876543210?text=Hi%20Jazz%20%26%20client%3A%20report%20ready');
 });
 
-import { indiaDayEnd, matchesWorkspaceView, positiveInteger, queryWorkspaceItems, workspaceQueueItem } from './stylistWorkspaceQueueModel.ts';
+import { indiaDayEnd, matchesWorkspaceView, positiveInteger, queryWorkspaceItems, workspaceCounts, workspaceQueueItem } from './stylistWorkspaceQueueModel.ts';
 
 function queueRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -85,4 +85,19 @@ test('queue search and paging inputs are deterministic and bounded', () => {
   assert.equal(positiveInteger('999', 24, 50), 50);
   assert.equal(positiveInteger('oops', 24, 50), 24);
   assert.equal(indiaDayEnd(Date.parse('2026-09-02T01:00:00Z')), Date.parse('2026-09-02T18:29:59.999Z'));
+});
+
+test('reports to do includes ready and blocked work while excluding waiting and delivered clients', () => {
+  const completeUpload = { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } };
+  const items = [
+    workspaceQueueItem(queueRow({ id: 'ready', consultation_upload_links: completeUpload })),
+    workspaceQueueItem(queueRow({ id: 'blocked', status: 'stalled' })),
+    workspaceQueueItem(queueRow({ id: 'waiting' })),
+    workspaceQueueItem(queueRow({ id: 'delivered', status: 'delivered', consultation_upload_links: completeUpload })),
+  ];
+  assert.deepEqual(queryWorkspaceItems(items, { view: 'reports' }).map(item => item.id), ['blocked', 'ready']);
+  const counts = workspaceCounts(items);
+  assert.equal(counts.reports, 2);
+  assert.equal(counts.needs_inputs, 1);
+  assert.equal(counts.delivered, 1);
 });

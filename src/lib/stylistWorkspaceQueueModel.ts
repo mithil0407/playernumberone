@@ -1,13 +1,21 @@
 import { consultationReadiness, type ConsultationReadiness } from './stylistConsultationReadiness.ts';
 
-export type WorkspaceView = 'recent' | 'all' | 'forms' | 'photos' | 'ready' | 'today' | 'needs_inputs' | 'generating' | 'needs_review' | 'ready_to_deliver' | 'delivered' | 'needs_attention';
+export type WorkspaceView = 'recent' | 'all' | 'forms' | 'photos' | 'reports' | 'ready' | 'today' | 'needs_inputs' | 'generating' | 'needs_review' | 'ready_to_deliver' | 'delivered' | 'needs_attention';
 export const WORKSPACE_VIEWS: Array<{ key: WorkspaceView; label: string }> = [
+  { key: 'reports', label: 'All report stages' },
   { key: 'recent', label: 'Recent consultations' }, { key: 'photos', label: 'Photos received' },
   { key: 'forms', label: 'Forms filled' }, { key: 'ready', label: 'Ready to generate' },
   { key: 'all', label: 'All clients' }, { key: 'today', label: 'Due today' },
-  { key: 'needs_inputs', label: 'Needs inputs' }, { key: 'generating', label: 'Generating' },
+  { key: 'needs_inputs', label: 'Awaiting inputs' }, { key: 'generating', label: 'Generating' },
   { key: 'needs_review', label: 'Needs review' }, { key: 'ready_to_deliver', label: 'Ready to deliver' },
   { key: 'delivered', label: 'Delivered' }, { key: 'needs_attention', label: 'Needs attention' },
+];
+
+export const WORKSPACE_CATEGORIES: Array<{ key: WorkspaceView; label: string; description: string; views: WorkspaceView[] }> = [
+  { key: 'all', label: 'All clients', description: 'Browse your clients, or narrow the list by consultations, forms, photos or due date.', views: ['all', 'recent', 'forms', 'photos', 'today'] },
+  { key: 'needs_inputs', label: 'Awaiting inputs', description: 'Clients who still need to provide photos or measurements before their report can begin.', views: ['needs_inputs'] },
+  { key: 'reports', label: 'Reports to do', description: 'Reports ready to start, being generated, awaiting review or delivery, and any needing attention.', views: ['reports', 'ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'] },
+  { key: 'delivered', label: 'Delivered', description: 'Completed reports, including those delivered outside the studio.', views: ['delivered'] },
 ];
 
 export interface QueueReport {
@@ -64,6 +72,7 @@ export function matchesWorkspaceView(item: WorkspaceQueueItem, view: string, now
   if (!view || view === 'all') return true;
   if (view === 'forms') return item.formCompleted;
   if (view === 'photos') return item.photosSubmitted;
+  if (view === 'reports') return ['ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'].includes(item.bucket);
   if (view !== 'today') return item.bucket === view;
   return item.bucket !== 'delivered' && Boolean(item.reportDueAt) && Date.parse(item.reportDueAt!) <= indiaDayEnd(now);
 }

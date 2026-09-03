@@ -62,9 +62,9 @@ export default function StylistWorkspaceShell({
         </div>
         <nav className="px-3 space-y-1 flex-1">
           {nav.map(({ href, label, icon: Icon }) => {
-            const hrefBucket = new URLSearchParams(href.split('?')[1] ?? '').get('bucket') ?? 'recent';
-            const currentBucket = searchParams.get('bucket') ?? 'recent';
-            const active = pathname === href.split('?')[0] && currentBucket === hrefBucket;
+            const hrefBucket = new URLSearchParams(href.split('?')[1] ?? '').get('bucket');
+            const currentBucket = searchParams.get('bucket') ?? 'all';
+            const active = pathname === href.split('?')[0] && (hrefBucket ? currentBucket === hrefBucket : !['needs_review', 'needs_attention'].includes(currentBucket));
             return (
               <Link key={href} href={href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body transition"
                 style={{ background: active ? COLORS.ink : 'transparent', color: active ? COLORS.bg : COLORS.muted }}>

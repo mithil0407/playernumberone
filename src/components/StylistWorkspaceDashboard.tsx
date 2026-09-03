@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, FileText, ImageIcon, RefreshCw, Search, Users } from 'lucide-react';
-import { WORKSPACE_VIEWS, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
+import { WORKSPACE_CATEGORIES, WORKSPACE_VIEWS, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
 
 const C = { ink: '#2C2622', muted: '#746D65', card: '#EDE5D2', bg: '#F4EFE5', border: 'rgba(44,38,34,.12)', gold: '#9A7538', success: '#426B4E' };
 type Stylist = { id: string; name: string; slug: string | null; is_active: boolean; workspace_enabled: boolean; clients: number; forms: number; photos: number };
@@ -22,8 +22,9 @@ function statusLabel(item: WorkspaceQueueItem) {
 export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }: { admin?: boolean; stylistSlug?: string }) {
   const pathname = usePathname();
   const params = useSearchParams();
-  const requestedView = params.get('bucket') || (admin ? 'photos' : 'recent');
-  const view = WORKSPACE_VIEWS.some(item => item.key === requestedView) ? requestedView : 'recent';
+  const requestedView = params.get('bucket') || 'all';
+  const view = WORKSPACE_VIEWS.find(item => item.key === requestedView)?.key || 'all';
+  const category = WORKSPACE_CATEGORIES.find(item => item.views.includes(view))!;
   const selectedStylist = admin ? params.get('stylist') || '' : '';
   const parsedPage = Number(params.get('page') || 1);
   const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
@@ -129,12 +130,21 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }
     </section>}
 
     <div className="rounded-3xl p-4 md:p-5 mb-5" style={{ background: C.card, border: `1px solid ${C.border}` }}>
-      <div className="flex gap-2 flex-wrap" aria-label="Client filters">
-        {WORKSPACE_VIEWS.map(({ key, label }) => <button key={key} onClick={() => updateParams({ bucket: key, page: '' })} aria-pressed={view === key} className="rounded-full px-3.5 py-2 text-xs luxury-body transition-colors" style={{ background: view === key ? C.ink : C.bg, color: view === key ? C.bg : C.muted }}>{label} <span className="ml-1.5 font-semibold">{result?.counts[key] ?? '—'}</span></button>)}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2" aria-label="Client categories">
+        {WORKSPACE_CATEGORIES.map(({ key, label }) => <button key={key} onClick={() => updateParams({ bucket: key, page: '' })} aria-pressed={category.key === key} className="flex items-center justify-between gap-2 rounded-xl px-4 py-3.5 text-sm luxury-body transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9A7538]" style={{ background: category.key === key ? C.ink : C.bg, color: category.key === key ? C.bg : C.muted }}><span>{label}</span><span className="text-xs font-semibold tabular-nums">{result?.counts[key] ?? '—'}</span></button>)}
       </div>
-      <div className="relative mt-4 max-w-lg">
-        <Search size={16} className="absolute top-1/2 left-4 -translate-y-1/2" style={{ color: C.muted }} />
-        <input aria-label="Search client or phone" value={search} onChange={event => { setSearch(event.target.value); updateParams({ search: event.target.value, page: '' }, true); }} placeholder="Search client name or phone…" className="w-full rounded-xl py-3 pl-11 pr-4 text-sm luxury-body outline-none focus:ring-2 focus:ring-[#9A7538]" style={{ background: C.bg, border: `1px solid ${C.border}` }} />
+      <p className="luxury-body text-xs mt-4" style={{ color: C.muted }}>{category.description}</p>
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3 mt-4">
+        {category.views.length > 1 && <label className="block sm:w-60 shrink-0 luxury-body text-xs" style={{ color: C.muted }}>
+          {category.key === 'reports' ? 'Report stage' : 'Client view'}
+          <select value={view} onChange={event => updateParams({ bucket: event.target.value, page: '' })} className="block w-full mt-1.5 rounded-xl py-3 pl-3 pr-8 text-sm outline-none focus:ring-2 focus:ring-[#9A7538]" style={{ color: C.ink, background: C.bg, border: `1px solid ${C.border}` }}>
+            {category.views.map(key => <option key={key} value={key}>{WORKSPACE_VIEWS.find(item => item.key === key)?.label} ({result?.counts[key] ?? '—'})</option>)}
+          </select>
+        </label>}
+        <div className="relative flex-1 max-w-lg">
+          <Search size={16} className="absolute top-1/2 left-4 -translate-y-1/2" style={{ color: C.muted }} />
+          <input aria-label="Search client or phone" value={search} onChange={event => { setSearch(event.target.value); updateParams({ search: event.target.value, page: '' }, true); }} placeholder="Search client name or phone…" className="w-full rounded-xl py-3 pl-11 pr-4 text-sm luxury-body outline-none focus:ring-2 focus:ring-[#9A7538]" style={{ background: C.bg, border: `1px solid ${C.border}` }} />
+        </div>
       </div>
     </div>
 
