@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
       durationMs: body.duration_ms,
       attempt: body.attempt,
       errorCode: body.error_code,
+      stage: body.stage,
+      endpoint: body.endpoint,
+      httpStatus: body.http_status,
+      requestId: body.request_id,
+      browser: body.browser,
+      online: body.online,
     });
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -46,7 +46,10 @@ export interface ManIntakeUploadSessionRow {
 }
 
 const PHOTO_KIND_SET = new Set<string>(MAN_INTAKE_PHOTO_KINDS);
-const EVENT_SET = new Set(['prepared', 'started', 'resumed', 'succeeded', 'failed', 'submitted']);
+const EVENT_SET = new Set(['prepared', 'started', 'resumed', 'fallback', 'succeeded', 'failed', 'submitted']);
+const STAGE_SET = new Set(['prepare', 'create', 'resume', 'patch', 'signed', 'verify', 'submit']);
+const ENDPOINT_SET = new Set(['direct', 'project', 'signed']);
+const BROWSER_SET = new Set(['chrome', 'safari', 'firefox', 'edge', 'other', 'server']);
 
 export function isManIntakePhotoKind(value: unknown): value is ManIntakePhotoKind {
   return typeof value === 'string' && PHOTO_KIND_SET.has(value);
@@ -259,13 +262,13 @@ export async function prepareManIntakeUploads(input: {
   const uploads = await Promise.all(files.map(async (file) => {
     const entry = manifest[file.kind]!;
     const status = await getManifestEntryStatus(entry);
-    if (status.completed) return { ...entry, completed: true, signed_token: null };
+    if (status.completed) return { ...entry, completed: true, signed_token: null, signed_url: null };
 
     const { data, error } = await supabaseAdmin.storage
       .from(MAN_INTAKE_PHOTO_BUCKET)
       .createSignedUploadUrl(entry.path, { upsert: false });
     if (error || !data?.token) throw new Error(`Could not prepare ${file.kind} upload: ${error?.message || 'No token returned'}`);
-    return { ...entry, completed: false, signed_token: data.token };
+    return { ...entry, completed: false, signed_token: data.token, signed_url: data.signedUrl };
   }));
 
   return {
@@ -305,6 +308,12 @@ export async function recordManIntakeUploadEvent(input: {
   durationMs?: unknown;
   attempt?: unknown;
   errorCode?: unknown;
+  stage?: unknown;
+  endpoint?: unknown;
+  httpStatus?: unknown;
+  requestId?: unknown;
+  browser?: unknown;
+  online?: unknown;
 }) {
   if (typeof input.event !== 'string' || !EVENT_SET.has(input.event)) throw new Error('Invalid upload event.');
   const kind = isManIntakePhotoKind(input.kind) ? input.kind : 'session';
@@ -314,6 +323,15 @@ export async function recordManIntakeUploadEvent(input: {
     duration_ms: Math.max(0, Math.min(Number(input.durationMs) || 0, 60 * 60 * 1_000)),
     attempt: Math.max(0, Math.min(Number(input.attempt) || 0, 20)),
     error_code: typeof input.errorCode === 'string' ? input.errorCode.slice(0, 40) : null,
+    stage: typeof input.stage === 'string' && STAGE_SET.has(input.stage) ? input.stage : null,
+    endpoint: typeof input.endpoint === 'string' && ENDPOINT_SET.has(input.endpoint) ? input.endpoint : null,
+    http_status: Number.isInteger(Number(input.httpStatus))
+      ? Math.max(0, Math.min(Number(input.httpStatus), 599))
+      : null,
+    request_id: typeof input.requestId === 'string' ? input.requestId.slice(0, 80) : null,
+    browser: typeof input.browser === 'string' && BROWSER_SET.has(input.browser) ? input.browser : 'other',
+    online: typeof input.online === 'boolean' ? input.online : null,
+    release_id: (process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || '').slice(0, 80) || null,
     at: new Date().toISOString(),
   };
   const diagnostics = { ...(input.session.diagnostics || {}), [kind]: diagnostic };
@@ -322,5 +340,22 @@ export async function recordManIntakeUploadEvent(input: {
     updated_at: diagnostic.at,
   }).eq('id', input.session.id);
   if (error) throw new Error(`Could not record upload event: ${error.message}`);
+
+  const { at, ...eventDiagnostic } = diagnostic;
+  const appended = await supabaseAdmin.from('man_intake_upload_events').insert([{
+    session_id: input.session.id,
+    occurred_at: at,
+    kind: kind === 'session' ? null : kind,
+    ...eventDiagnostic,
+  }]);
+  // This remains compatible while the migration and application deploy roll
+  // out in either order. Snapshot diagnostics above continue to work.
+  if (appended.error && appended.error.code !== '42P01' && appended.error.code !== 'PGRST205') {
+    console.warn('Could not append man intake upload event', {
+      sessionId: input.session.id,
+      code: appended.error.code,
+      message: appended.error.message,
+    });
+  }
   console.info('man_intake_upload_event', { sessionId: input.session.id, kind, ...diagnostic });
 }

@@ -65,12 +65,21 @@ async function cleanupExpiredSessions(request: NextRequest) {
     expired++;
   }
 
+  const eventCleanup = await supabaseAdmin.rpc('cleanup_man_intake_upload_events');
+  if (eventCleanup.error && eventCleanup.error.code !== 'PGRST202') {
+    console.warn('Man intake upload event cleanup failed', {
+      code: eventCleanup.error.code,
+      message: eventCleanup.error.message,
+    });
+  }
+
   return NextResponse.json({
     success: failures.length === 0,
     processed: sessions?.length || 0,
     expired,
     removed,
     failed: failures.length,
+    deleted_events: typeof eventCleanup.data === 'number' ? eventCleanup.data : 0,
   });
 }
 
