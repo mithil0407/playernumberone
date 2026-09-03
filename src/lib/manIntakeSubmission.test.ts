@@ -9,11 +9,20 @@ import {
   getManIntakePhotoContentType,
   getManIntakePhotoExtension,
   getManIntakePhotoValidationError,
+  withManIntakePhotoContentType,
   MAN_INTAKE_MAX_PHOTO_BYTES,
 } from './manIntakePhoto.ts';
 
 const SUPABASE_URL = 'https://example-project.supabase.co';
 const NOW = Date.now();
+
+test('signed-upload bodies preserve bytes and the prepared MIME when mobile metadata is blank', async () => {
+  const original = new File([new Uint8Array([0, 1, 2, 3])], 'photo.HEIC', { type: '' });
+  const body = withManIntakePhotoContentType(original, 'image/heic');
+  assert.equal(body.type, 'image/heic');
+  assert.deepEqual(await body.arrayBuffer(), await original.arrayBuffer());
+  assert.equal(withManIntakePhotoContentType(body, 'image/heic'), body);
+});
 
 function photoUrl(type: 'fullbody' | 'headshot' | 'side_profile', name = 'photo') {
   return `${SUPABASE_URL}/storage/v1/object/public/man-intake-photos/public/${NOW}_${type}_${name}.jpg`;

@@ -1,7 +1,7 @@
 'use client';
 
 import { Upload } from 'tus-js-client';
-import { getManIntakePhotoFingerprintSource } from '@/lib/manIntakePhoto';
+import { getManIntakePhotoFingerprintSource, withManIntakePhotoContentType } from '@/lib/manIntakePhoto';
 import type { ManIntakePhotoKind } from '@/lib/manIntakeUploadSession';
 import {
   customerUploadErrorMessage,
@@ -190,10 +190,15 @@ function uploadThroughTus(input: {
 
     armWatchdog();
     upload.findPreviousUploads().then(previous => {
+      if (settled) return;
       const candidate = selectFreshPreviousUpload(previous as PreviousManIntakeUpload[], { size: input.file.size, path: input.prepared.path });
       if (candidate) { resumed = true; currentStage = 'resume'; upload.resumeFromPreviousUpload(candidate); input.onResume?.(); }
       upload.start();
-    }).catch(error => finish(() => reject(new ManIntakeTusUploadError(error, attempts, input.endpoint, 'resume'))));
+    }).catch(() => {
+      // URL persistence is an optimization. Private browsing or disabled local
+      // storage must not prevent a fresh upload from starting.
+      if (!settled) upload.start();
+    });
   });
 }
 
@@ -228,7 +233,8 @@ async function uploadThroughSignedUrl(input: { prepared: PreparedManIntakeUpload
     };
     const body = new FormData();
     body.append('cacheControl', '3600');
-    body.append('', input.file);
+    const photo = withManIntakePhotoContentType(input.file, input.prepared.content_type);
+    body.append('', photo, input.file.name);
     xhr.send(body);
   });
   return { resumed: false as const, attempts: 1, endpoint: 'signed' as const };

@@ -69,6 +69,10 @@ export function getManIntakePhotoContentType(file: Pick<ManIntakePhotoLike, 'nam
   }
 }
 
+export function withManIntakePhotoContentType(file: Blob, contentType: string): Blob {
+  return file.type === contentType ? file : new Blob([file], { type: contentType });
+}
+
 export function getManIntakePhotoFingerprintSource(file: {
   kind: string;
   name: string;

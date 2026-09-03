@@ -21,7 +21,7 @@ The immediate reliability work and telemetry foundation are implemented in this 
 - structured append-only telemetry and a 30-day cleanup migration are ready;
 - a production smoke command verifies all three transport routes with generated test data and deletes it immediately.
 
-Verification completed: TypeScript, the production Next.js build, 23 upload/submission unit tests, and live smoke uploads through direct TUS, project-host TUS, and signed PUT.
+Verification completed: TypeScript, the production Next.js build, 24 upload/submission unit tests, and live smoke uploads through direct TUS, project-host TUS, and signed PUT.
 
 Run `supabase/migrations/add_man_intake_upload_events.sql` once in the Supabase SQL Editor to enable append-only history. The application records backward-compatible snapshot diagnostics until that table exists.
 

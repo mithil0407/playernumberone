@@ -629,6 +629,14 @@ function ManIntakePageInner() {
                 setPhotoFingerprints(restoredFingerprints);
                 uploadReceiptsRef.current = draft.receipts || {};
                 setUploadReceipts(draft.receipts || {});
+                setUploadProgress(current => {
+                    const next = { ...current };
+                    for (const kind of ['fullbody', 'headshot', 'side_profile'] as const) {
+                        const receipt = draft.receipts?.[kind];
+                        if (receipt) next[kind] = { phase: 'complete', uploaded: receipt.size, total: receipt.size };
+                    }
+                    return next;
+                });
                 if (draft.session) {
                     // Keep the credentials and last verified receipts available
                     // even when this first status check is temporarily offline.
@@ -687,6 +695,7 @@ function ManIntakePageInner() {
                     setUploadSession(null);
                     setUploadReceipts({});
                     setPhotoFingerprints({});
+                    setUploadProgress(EMPTY_PHOTO_PROGRESS());
                 }
             } finally {
                 if (!cancelled) setDraftReady(true);
