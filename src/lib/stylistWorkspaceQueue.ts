@@ -1,6 +1,6 @@
 import 'server-only';
 import { supabaseAdmin } from './supabase';
-import { workspaceQueueItem, type QueueRow, type WorkspaceQueueItem } from './stylistWorkspaceQueueModel';
+import { dedupeWorkspaceQueueItems, workspaceQueueItem, type QueueRow, type WorkspaceQueueItem } from './stylistWorkspaceQueueModel';
 
 export const WORKSPACE_QUEUE_SELECT = `
   id, stylist_id, client_name, client_phone, consultation_date, images_received_at,
@@ -30,7 +30,7 @@ export async function loadWorkspaceQueue(stylistId?: string, fresh = false) {
       items.push(...((data ?? []) as unknown as QueueRow[]).map(workspaceQueueItem));
       if ((data?.length ?? 0) < 500) break;
     }
-    return items;
+    return dedupeWorkspaceQueueItems(items);
   })();
   for (const [cachedKey, entry] of cache) if (entry.expiresAt <= Date.now()) cache.delete(cachedKey);
   if (cache.size >= 50) cache.delete(cache.keys().next().value!);

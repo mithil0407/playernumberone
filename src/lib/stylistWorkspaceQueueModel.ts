@@ -62,6 +62,57 @@ export function workspaceQueueItem(row: QueueRow) {
 }
 export type WorkspaceQueueItem = ReturnType<typeof workspaceQueueItem>;
 
+function normalizedClientPhone(value: string) {
+  const digits = value.replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+function consultationMoment(value: string | null, fallback: string) {
+  const timestamp = value || fallback;
+  const parsed = Date.parse(timestamp);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(0, value ? 16 : 10) : timestamp.slice(0, value ? 16 : 10);
+}
+
+export function workspaceClientCardKey(item: WorkspaceQueueItem) {
+  const phone = normalizedClientPhone(item.clientPhone);
+  const client = phone || item.clientName.trim().toLowerCase().replace(/\s+/g, ' ');
+  return `${client}|${consultationMoment(item.consultationDate, item.createdAt)}`;
+}
+
+function queueItemCompleteness(item: WorkspaceQueueItem) {
+  const reportWeight: Record<string, number> = {
+    delivered: 90, sent: 85, approved: 80, in_review: 75, draft_ready: 70, generating: 60, pending: 50, error: 40,
+  };
+  return (item.report ? 500 + (reportWeight[item.report.status] ?? 0) : 0)
+    + (item.formCompleted ? 200 : 0)
+    + item.photoCount * 25
+    + (item.uploadSubmittedAt ? 30 : 0)
+    + (item.stylistId ? 20 : 0);
+}
+
+/**
+ * One booking can be written more than once by retried checkout webhooks. Keep
+ * the richest row for the same client and consultation time while preserving
+ * legitimate repeat bookings on different dates.
+ */
+export function dedupeWorkspaceQueueItems(items: WorkspaceQueueItem[]) {
+  const unique = new Map<string, WorkspaceQueueItem>();
+  for (const item of items) {
+    const key = workspaceClientCardKey(item);
+    const current = unique.get(key);
+    if (!current) {
+      unique.set(key, item);
+      continue;
+    }
+    const itemScore = queueItemCompleteness(item);
+    const currentScore = queueItemCompleteness(current);
+    if (itemScore > currentScore || (itemScore === currentScore && item.createdAt.localeCompare(current.createdAt) < 0)) {
+      unique.set(key, item);
+    }
+  }
+  return [...unique.values()];
+}
+
 export function indiaDayEnd(now: number) {
   const offset = 330 * 60_000;
   return Math.floor((now + offset) / 86_400_000) * 86_400_000 + 86_400_000 - offset - 1;

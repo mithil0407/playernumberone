@@ -48,7 +48,7 @@ test('WhatsApp message is safely URL encoded', () => {
   assert.equal(url, 'https://wa.me/919876543210?text=Hi%20Jazz%20%26%20client%3A%20report%20ready');
 });
 
-import { indiaDayEnd, matchesWorkspaceView, positiveInteger, queryWorkspaceItems, workspaceCounts, workspaceQueueItem } from './stylistWorkspaceQueueModel.ts';
+import { dedupeWorkspaceQueueItems, indiaDayEnd, matchesWorkspaceView, positiveInteger, queryWorkspaceItems, workspaceCounts, workspaceQueueItem } from './stylistWorkspaceQueueModel.ts';
 
 function queueRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -85,6 +85,24 @@ test('queue search and paging inputs are deterministic and bounded', () => {
   assert.equal(positiveInteger('999', 24, 50), 50);
   assert.equal(positiveInteger('oops', 24, 50), 24);
   assert.equal(indiaDayEnd(Date.parse('2026-09-02T01:00:00Z')), Date.parse('2026-09-02T18:29:59.999Z'));
+});
+
+test('workspace shows one card for retried copies of the same consultation', () => {
+  const emptyDuplicate = workspaceQueueItem(queueRow({ id: 'duplicate-empty', client_phone: '+91 74997 28976' }));
+  const completeDuplicate = workspaceQueueItem(queueRow({
+    id: 'duplicate-complete',
+    client_phone: '7499728976',
+    form_occupation: 'Founder',
+    consultation_upload_links: { submitted_at: '2026-09-01T11:00:00Z', photo_paths: { headshot: 'a.jpg' }, measurements: {} },
+  }));
+  const laterBooking = workspaceQueueItem(queueRow({
+    id: 'later-booking',
+    client_phone: '917499728976',
+    consultation_date: '2026-10-01T10:00:00.000Z',
+    created_at: '2026-09-20T10:00:00.000Z',
+  }));
+  const result = dedupeWorkspaceQueueItems([emptyDuplicate, completeDuplicate, laterBooking]);
+  assert.deepEqual(result.map(item => item.id), ['duplicate-complete', 'later-booking']);
 });
 
 test('reports to do includes ready and blocked work while excluding waiting and delivered clients', () => {
