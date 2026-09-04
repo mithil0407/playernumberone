@@ -67,16 +67,19 @@ function normalizedClientPhone(value: string) {
   return digits.length >= 10 ? digits.slice(-10) : digits;
 }
 
-function consultationMoment(value: string | null, fallback: string) {
+function consultationDay(value: string | null, fallback: string) {
   const timestamp = value || fallback;
   const parsed = Date.parse(timestamp);
-  return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(0, value ? 16 : 10) : timestamp.slice(0, value ? 16 : 10);
+  // Match the calendar day shown in the India-based admin workspace. Retried
+  // syncs can stamp the same booking a few minutes apart, but they still
+  // represent one client card for that consultation day.
+  return Number.isFinite(parsed) ? new Date(parsed + 330 * 60_000).toISOString().slice(0, 10) : timestamp.slice(0, 10);
 }
 
 export function workspaceClientCardKey(item: WorkspaceQueueItem) {
   const phone = normalizedClientPhone(item.clientPhone);
   const client = phone || item.clientName.trim().toLowerCase().replace(/\s+/g, ' ');
-  return `${client}|${consultationMoment(item.consultationDate, item.createdAt)}`;
+  return `${client}|${consultationDay(item.consultationDate, item.createdAt)}`;
 }
 
 function queueItemCompleteness(item: WorkspaceQueueItem) {

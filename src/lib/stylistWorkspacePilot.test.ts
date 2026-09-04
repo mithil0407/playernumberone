@@ -87,11 +87,12 @@ test('queue search and paging inputs are deterministic and bounded', () => {
   assert.equal(indiaDayEnd(Date.parse('2026-09-02T01:00:00Z')), Date.parse('2026-09-02T18:29:59.999Z'));
 });
 
-test('workspace shows one card for retried copies of the same consultation', () => {
-  const emptyDuplicate = workspaceQueueItem(queueRow({ id: 'duplicate-empty', client_phone: '+91 74997 28976' }));
+test('workspace shows one card for retried copies of the same consultation day', () => {
+  const emptyDuplicate = workspaceQueueItem(queueRow({ id: 'duplicate-empty', client_phone: '+91 74997 28976', consultation_date: '2026-09-01T10:03:00.000Z' }));
   const completeDuplicate = workspaceQueueItem(queueRow({
     id: 'duplicate-complete',
     client_phone: '7499728976',
+    consultation_date: '2026-09-01T10:08:00.000Z',
     form_occupation: 'Founder',
     consultation_upload_links: { submitted_at: '2026-09-01T11:00:00Z', photo_paths: { headshot: 'a.jpg' }, measurements: {} },
   }));
