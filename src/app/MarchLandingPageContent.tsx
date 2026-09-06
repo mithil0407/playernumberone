@@ -9,6 +9,7 @@ import {
   trackViewContent,
 } from '@/lib/metaPixel';
 import { INDIA_FUNNEL_ENTRY_STORAGE_KEY } from '@/lib/metaTrackingContract';
+import { INDIA_ROOT_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -36,7 +37,7 @@ export default function LandingPageContent({
   subheadline,
   headlineClassName,
   checkoutHref = '/checkout',
-  basePrice = 2499,
+  basePrice = INDIA_ROOT_BLUEPRINT_PRICE,
 }: LandingPageContentProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

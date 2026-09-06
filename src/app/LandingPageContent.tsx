@@ -42,6 +42,7 @@ interface LandingPageContentProps {
   headline: ReactNode;
   subheadline: ReactNode;
   variant?: 'default' | 'offer2699';
+  trackingEntry?: IndiaFunnelEntry;
   headlineClassName?: string;
   checkoutHref?: string;
   basePrice?: number;
@@ -179,6 +180,7 @@ export default function LandingPageContent({
   headline,
   subheadline,
   variant = 'default',
+  trackingEntry,
   checkoutHref = BLUEPRINT_OFFER.checkoutPath,
   basePrice = BLUEPRINT_OFFER.currentPriceInr,
   originalPrice = BLUEPRINT_OFFER.referencePriceInr,
@@ -196,8 +198,10 @@ export default function LandingPageContent({
 
   // The root price test and the established /offer-2699 funnel share the visual
   // component but have separate prices, checkout routes, and Meta categories.
-  const funnelEntry: IndiaFunnelEntry = isOffer2699 ? 'offer2699' : 'root';
-  const contentCategory = isOffer2699 ? INDIA_OFFER_2699_FUNNEL_CATEGORY : INDIA_ROOT_FUNNEL_CATEGORY;
+  const funnelEntry: IndiaFunnelEntry = trackingEntry ?? (isOffer2699 ? 'offer2699' : 'root');
+  const contentCategory = funnelEntry === 'offer2699'
+    ? INDIA_OFFER_2699_FUNNEL_CATEGORY
+    : INDIA_ROOT_FUNNEL_CATEGORY;
 
   useEffect(() => {
     // Retained for attribution continuity in the wider funnel. Each checkout

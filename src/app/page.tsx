@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import MarchLandingPageContent from './MarchLandingPageContent';
+import LandingPageContent from './LandingPageContent';
 import { buildMetadata } from '@/lib/seo';
 import { INDIA_ROOT_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
 
@@ -18,21 +18,30 @@ export const metadata: Metadata = buildMetadata({
   ],
 });
 
-export default function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ scan?: string }> }) {
+  const { scan = '' } = await searchParams;
+
   return (
-    <MarchLandingPageContent
-      checkoutHref="/checkout"
-      basePrice={INDIA_ROOT_BLUEPRINT_PRICE}
+    <LandingPageContent
+      variant="offer2699"
+      trackingEntry="root"
       headline={
         <>
-          Discover Your <span className="text-luxury-green">Signature Style</span> in <span className="text-luxury-charcoal">24 hours</span>
+          <span className="block sm:whitespace-nowrap">
+            <span className="text-luxury-accent">Stop Guessing</span> What Suits You.
+          </span>
+          <span className="mt-1 block sm:mt-2 sm:whitespace-nowrap">
+            <span className="text-luxury-accent">Talk to a Stylist</span> Who&apos;ll Tell You.
+          </span>
         </>
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">20 personalized outfits</span>, your <span className="font-semibold text-luxury-green">color palette</span>, and a <span className="font-semibold text-luxury-accent">30-minute 1-on-1 stylist consultation</span>
+          30 minutes with your ICONIK stylist, then a personal Style Blueprint — <span className="font-semibold text-luxury-accent">20 complete outfits</span>, your <span className="font-semibold text-luxury-green">colour palette</span>, and exactly what to avoid. Built for your body, not a body type.
         </>
       }
+      checkoutHref={scan ? `/checkout?scan=${encodeURIComponent(scan)}` : '/checkout'}
+      basePrice={INDIA_ROOT_BLUEPRINT_PRICE}
     />
   );
 }

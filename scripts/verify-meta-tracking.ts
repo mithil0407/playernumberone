@@ -41,7 +41,7 @@ const selected = { outfitPreview: false, wardrobeDetox: true, smartShopper: true
 
 const variants = [
   {
-    label: 'root-2499',
+    label: 'root-2699',
     basePrice: INDIA_ROOT_BLUEPRINT_PRICE,
     contentCategory: INDIA_ROOT_FUNNEL_CATEGORY,
     checkoutUrl: INDIA_ROOT_BLUEPRINT_CHECKOUT_URL,
