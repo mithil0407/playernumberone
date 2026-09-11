@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Fraunces, JetBrains_Mono, Newsreader } from "next/font/google";
+import { Bodoni_Moda, Inter, Manrope, Playfair_Display, Fraunces, JetBrains_Mono, Newsreader } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
@@ -63,6 +63,20 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
   variable: '--font-jetbrains-mono',
   fallback: ['monospace'],
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-manrope',
+  fallback: ['system-ui', 'arial'],
+});
+
+const bodoniModa = Bodoni_Moda({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-bodoni-moda',
+  fallback: ['Didot', 'Georgia', 'serif'],
 });
 
 export const metadata: Metadata = {
@@ -132,7 +146,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${manrope.variable} ${bodoniModa.variable}`}>
       <head>
         <meta httpEquiv="Permissions-Policy" content="payment=*" />
         {/* Meta Pixel + Signals Gateway. PageView is owned by MetaPixelProvider. */}

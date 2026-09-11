@@ -1,5 +1,5 @@
 import { revalidateTag } from 'next/cache';
-import { supabaseAdmin } from './supabase';
+import { supabaseAdmin } from './supabase.ts';
 
 export const STYLIST_BLUEPRINT_CACHE_SECONDS = 60;
 

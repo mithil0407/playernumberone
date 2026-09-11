@@ -15,6 +15,7 @@ import {
 } from './whatsappPilot.ts';
 import {
   buildManWhatsappShoppingIntent,
+  buildManWhatsappOutfitEngineContext,
   buildRetailerFallbackUrl,
   contextClarificationForVagueOutfit,
   findRequestedRetailer,
@@ -23,10 +24,12 @@ import {
   resolveShoppingQuery,
   retailersForShoppingIntent,
   routeManWhatsappRequest,
+  styleClarificationForUnclearOutfit,
   limitManWhatsappReply,
   manWhatsappVoiceRules,
   quickManWhatsappReply,
 } from './manWhatsappStylist.ts';
+import { resolveManWhatsappStylePortfolio } from './manWhatsappStyleModes.ts';
 import { buildManWhatsappOutfitImagePrompt } from './manWhatsappOutfitImagePrompt.ts';
 import {
   buildRecommendationDiversityBrief,
@@ -320,6 +323,78 @@ test('asks one focused question for a genuinely vague context continuation', () 
     contextClarificationForVagueOutfit('Make me another casual outfit', 'Black football shorts with a Barcelona jersey.'),
     null,
   );
+});
+
+test('resolves contextual style identities from the request and saved preferences', () => {
+  const night = resolveManWhatsappStylePortfolio({
+    message: 'I want a seductive date-night outfit',
+    memories: ['soft_preference/fit: Likes baggy jeans', 'hard_constraint/other: No chains'],
+  });
+  assert.equal(night.modes[0]?.name, 'After-Dark Icon');
+  assert.ok(night.modes.some(mode => mode.name === 'Elevated Streetwear'));
+  assert.equal(night.confident, true);
+
+  const day = resolveManWhatsappStylePortfolio({
+    message: 'Give me a youthful coffee outfit with baggy jeans',
+    memories: ['soft_preference/fit: Likes baggy jeans'],
+  });
+  assert.equal(day.modes[0]?.name, 'Elevated Streetwear');
+
+  const work = resolveManWhatsappStylePortfolio({
+    message: 'What should I wear to an investor meeting?',
+    memories: ['soft_preference/fit: Likes baggy jeans', 'soft_preference/other: Likes youthful streetwear'],
+  });
+  assert.equal(work.modes[0]?.name, 'Understated Authority');
+  assert.ok(work.modes.some(mode => mode.name === 'Elevated Streetwear'));
+});
+
+test('asks one natural style question only when the direction is unclear', () => {
+  const classification = {
+    client: { location_region: 'India' },
+    style_brief: { primary_brief: '', aesthetic_direction: '', tribes: [] },
+  } as never;
+  assert.equal(
+    styleClarificationForUnclearOutfit({
+      classification,
+      message: 'What should I wear for dinner tonight?',
+      route: 'outfit_recommendation',
+      memories: [],
+    }),
+    'What vibe do you want tonight—dark and magnetic, polished and understated, or relaxed streetwear?',
+  );
+  assert.equal(
+    styleClarificationForUnclearOutfit({
+      classification,
+      message: 'Give me a trendy outfit with baggy jeans',
+      route: 'outfit_recommendation',
+      memories: [],
+    }),
+    null,
+  );
+});
+
+test('style mode controls whether the classic outfit library is used', () => {
+  const classification = {
+    client: { location_region: 'India' },
+    style_brief: { primary_brief: '', aesthetic_direction: '', tribes: [] },
+  } as never;
+  const streetwearContext = buildManWhatsappOutfitEngineContext({
+    classification,
+    message: 'Give me a youthful coffee outfit with baggy jeans',
+    intent: 'outfit_recommendation',
+    memories: ['soft_preference/fit: Likes baggy jeans'],
+  });
+  assert.match(streetwearContext, /PRIMARY MODE — Elevated Streetwear/);
+  assert.match(streetwearContext, /No compatible classic-library references/);
+
+  const workContext = buildManWhatsappOutfitEngineContext({
+    classification,
+    message: 'What should I wear to an investor meeting?',
+    intent: 'outfit_recommendation',
+    memories: ['soft_preference/fit: Likes baggy jeans'],
+  });
+  assert.match(workContext, /PRIMARY MODE — Understated Authority/);
+  assert.match(workContext, /REFERENCE 1/);
 });
 
 test('outfit visuals use separate face and body authorities on a white cyclorama', () => {

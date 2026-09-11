@@ -3,10 +3,18 @@ import 'server-only';
 import { GoogleGenAI } from '@google/genai';
 import OpenAI, { toFile } from 'openai';
 import sharp from 'sharp';
-import { supabaseAdmin } from './supabase';
-import { revalidateStylistBlueprintCache } from './stylistBlueprintCache';
+import { colourFromPieceText } from './stylistColourMatching.ts';
+import { supabaseAdmin } from './supabase.ts';
+import { revalidateStylistBlueprintCache } from './stylistBlueprintCache.ts';
 import {
   getStylistBlueprintCapsulePageRanges,
+  getStylistBlueprintBodyGeometryPage,
+  getStylistBlueprintChromaticPage,
+  getStylistBlueprintColourDrapePage,
+  getStylistBlueprintContinuationPage,
+  getStylistBlueprintEyeframePage,
+  getStylistBlueprintFaceArchitecturePage,
+  getStylistBlueprintHairstylePage,
   getStylistBlueprintHairColourPage,
   getStylistBlueprintMakeupPage,
   getStylistBlueprintOutfitCount,
@@ -19,7 +27,7 @@ import {
   type SilhouetteProofOutfit,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
-} from './stylistBlueprintGenerator';
+} from './stylistBlueprintGenerator.ts';
 
 const BUCKET = 'stylist-blueprint-images';
 const SIGNED_URL_TTL = 60 * 60;
@@ -44,6 +52,7 @@ let bucketReady = false;
 export type StylistBlueprintImageGroup =
   | 'diagnosis'
   | 'prescription'
+  | 'application'
   | 'capsule_1'
   | 'capsule_2'
   | 'capsule_3'
@@ -263,7 +272,7 @@ async function getStoredPaths(reportId: string) {
 }
 
 async function persistPaths(reportId: string, paths: MutablePaths, shareToken?: string | null, progressStage?: string | null) {
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
     .update({
       image_urls: paths,
@@ -271,12 +280,13 @@ async function persistPaths(reportId: string, paths: MutablePaths, shareToken?: 
       updated_at: new Date().toISOString(),
     })
     .eq('id', reportId);
+  if (error) throw new Error(`Could not save report images: ${error.message}`);
   await revalidateStylistBlueprintCache(reportId, shareToken);
 }
 
 async function uploadBuffer(reportId: string, fileName: string, buffer: Buffer) {
   const path = `${reportId}/${fileName}.jpg`;
-  const jpeg = await sharp(buffer, { failOn: 'none' }).jpeg({ quality: 92 }).toBuffer();
+  const jpeg = await sharp(buffer, { limitInputPixels: 40_000_000 }).rotate().jpeg({ quality: 92 }).toBuffer();
   const upload = () => supabaseAdmin.storage
     .from(BUCKET)
     .upload(path, jpeg, { contentType: 'image/jpeg', upsert: true });
@@ -547,6 +557,18 @@ function formulaPiece(item: unknown) {
   return typeof piece === 'string' ? piece.trim() : '';
 }
 
+/**
+ * The outfit as an image model should read it: one colour per piece, no metadata.
+ *
+ * This used to emit `${colour} ${hex} ${piece}`, which produced lines like
+ * "Layer: Espresso Olive #30261E Espresso Olive Navy knitted jacket" — the hex
+ * code, the colour name twice, and a palette colour contradicting the colour in
+ * the garment description. Hex codes are for the report's swatches; an image
+ * model either renders them as literal text or lets them distort the garment.
+ *
+ * The written garment wins. The palette colour is only used to fill a gap when
+ * the piece names no colour of its own.
+ */
 function compactOutfitRenderText(page: BlueprintPage) {
   const items = outfitFormulaItems(page)
     .map((item) => {
@@ -554,9 +576,10 @@ function compactOutfitRenderText(page: BlueprintPage) {
       const slot = formulaSlot(item);
       const piece = formulaPiece(item);
       if (!slot || !piece || /^none$/i.test(piece)) return '';
-      const colour = typeof record.colour_name === 'string' ? record.colour_name : '';
-      const hex = typeof record.colour_hex === 'string' ? record.colour_hex : '';
-      return `${slot}: ${[colour, hex, piece].filter(Boolean).join(' ')}`;
+      const alreadyColoured = Boolean(colourFromPieceText(piece));
+      const fallbackColour = typeof record.colour_name === 'string' ? record.colour_name.trim() : '';
+      const described = alreadyColoured || !fallbackColour ? piece : `${fallbackColour} ${piece}`;
+      return `${slot}: ${described.replace(/\s+/g, ' ').trim()}`;
     })
     .filter(Boolean);
   return items.length ? items.join('\n') : pageText(page);
@@ -585,21 +608,6 @@ function silhouetteProofOutfits(reportData: StylistBlueprintReportData): Silhoue
   return proofs;
 }
 
-function proofFormulaText(proof: SilhouetteProofOutfit) {
-  return (proof.formula_items ?? [])
-    .map((item) => {
-      const slot = typeof item.slot === 'string' ? item.slot : '';
-      const piece = typeof item.piece === 'string' ? item.piece : '';
-      if (!slot || !piece || /^none$/i.test(piece)) return '';
-      const colour = typeof item.colour_name === 'string' ? item.colour_name : '';
-      const hex = typeof item.colour_hex === 'string' ? item.colour_hex : '';
-      const notes = typeof item.structural_notes === 'string' ? item.structural_notes : '';
-      return `${slot}: ${[colour, hex, piece, notes].filter(Boolean).join(' ')}`;
-    })
-    .filter(Boolean)
-    .join('\n');
-}
-
 function silhouetteProofPageForPrompt(proof: SilhouetteProofOutfit): BlueprintPage {
   const index = Number(proof.image_slot.split('.').at(-1));
   return {
@@ -621,72 +629,57 @@ function silhouetteProofPageForPrompt(proof: SilhouetteProofOutfit): BlueprintPa
 }
 
 function silhouetteProofPrompt(reportData: StylistBlueprintReportData, proof: SilhouetteProofOutfit) {
+  // Same simple base as any outfit; the only extra is the shape principle this
+  // particular image has to demonstrate.
   return `${wornOutfitPrompt(reportData, silhouetteProofPageForPrompt(proof))}
 
-Silhouette Rules proof priority:
-- This image is for a Silhouette Rules proof card, not a normal outfit recommendation page.
-- The outfit must visibly demonstrate this principle: ${proof.principle}
-- Keep the silhouette architecture obvious from head to toe while still looking polished, wearable, and client-specific.
-- Follow the proof formula colours literally; if the top and bottom share a colour name or hex, render them as a matching or tonal column.
-- No text, labels, captions, annotations, or rule callouts in the image.
-
-Proof formula:
-${proofFormulaText(proof)}`;
+The outfit must clearly show this shape principle: ${proof.principle}`;
 }
 
-function outfitCoverageAuthority(reportData: StylistBlueprintReportData) {
+/**
+ * Shared half of every worn-outfit render prompt. Deliberately short: the long
+ * version was ~570 words of rules the image model mostly ignored, and it made
+ * the studio Visuals panel unreadable. Identity, pose and background are all the
+ * base needs to carry; what she wears comes from the outfit formula.
+ */
+const WORN_OUTFIT_RENDER_BASE = `Using the reference images, create a full-body studio photograph of the same woman wearing the outfit below.
+
+Keep her original body proportions, weight, physique and natural body shape. Keep her face, skin tone and hairstyle. Do not slim, reshape, age or idealise her.
+
+She is smiling, straight on to camera in a slightly stylish standing pose, with soft natural flattering makeup.
+
+Plain studio background in matte slate ${SLATE}. Head to toe in frame, portrait 2:3, nothing cropped. No text, logos or watermarks.`;
+
+/**
+ * The per-slot half: the outfit itself, plus a coverage line only when this
+ * client actually has coverage requirements. Coverage stays in the prompt
+ * because an image model will otherwise render a neckline the client explicitly
+ * ruled out — but it is one line now, not three paragraphs.
+ */
+function wornOutfitPromptDelta(reportData: StylistBlueprintReportData, page: BlueprintPage) {
+  const coverage = shortCoverageLine(reportData);
+  return [
+    `Outfit:\n${compactOutfitRenderText(page)}`,
+    coverage ? `Must stay covered: ${coverage}` : '',
+  ].filter(Boolean).join('\n\n');
+}
+
+/** One line, only when the client has real coverage requirements. */
+function shortCoverageLine(reportData: StylistBlueprintReportData) {
   const profile = inferStylistCoverageProfile(reportData);
-  const rules = [
-    profile.neckline
-      ? `Neckline/chest coverage is mandatory: render a neckline that does not expose cleavage or sit very low, such as ${profile.approvedNecklines.slice(0, 5).join(', ')}. Safe open necklines are allowed when the chest is covered; do not automatically make it a high neck. Absolutely no cleavage, plunging neckline, deep V, low scoop, low-cut top, keyhole, strapless, off-shoulder, one-shoulder, spaghetti straps, strappy standalone camisole, or exposed chest.`
-      : 'Avoid plunging, cleavage-revealing, or obviously low-cut necklines unless explicitly written in the outfit text.',
-    profile.arms ? 'Arm/shoulder coverage is mandatory: render real sleeves or the specified layer; do not show bare upper arms or shoulders.' : '',
-    profile.legs ? 'Leg/knee coverage is mandatory: render trousers/full-length bottoms or at/below-knee hemlines.' : '',
-    profile.opacity ? 'Fabric opacity is mandatory: no sheer, transparent, see-through, or unlined exposure.' : '',
-    profile.looseFit ? 'Fit comfort is mandatory: avoid bodycon or clingy rendering through sensitive areas.' : '',
-  ].filter(Boolean);
-  return rules.join('\n- ');
+  return [
+    profile.neckline ? 'no cleavage or low necklines' : '',
+    profile.arms ? 'sleeves, no bare upper arms or shoulders' : '',
+    profile.legs ? 'trousers or at/below-knee hems' : '',
+    profile.opacity ? 'nothing sheer' : '',
+    profile.looseFit ? 'nothing clingy' : '',
+  ].filter(Boolean).join(', ');
 }
 
 function wornOutfitPrompt(reportData: StylistBlueprintReportData, page: BlueprintPage) {
-  const outfit = compactOutfitRenderText(page);
-  return `Professional editorial fashion catalogue photography for the ICONIK women's Style Blueprint.
+  return `${WORN_OUTFIT_RENDER_BASE}
 
-Reference photos may be provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
-
-Extract the client's face, skin tone, facial features, hair constraints, and identity from the headshot when provided. Extract body proportions, body shape, stance, and scale from the full-body reference. Preserve the client's exact skin tone, facial features, body proportions, and identity. Do not alter, slim, age, or idealise the client.
-
-CRITICAL CLOTHING INSTRUCTION:
-- Remove and discard the original clothing from the reference photos.
-- Do not preserve, copy, blend, reinterpret, or borrow garments, shoes, accessories, colours, collars, sleeves, silhouettes, or prints from the reference photos.
-- The compact outfit formula below is the only authority for what the client wears. Render only those listed pieces.
-- If the formula has no Layer line, do not add any jacket, blazer, cardigan, vest, overshirt, coat, shrug, duster, or third-piece layer.
-- Do not add Indianwear, ethnicwear, kurtas, sarees, dupattas, juttis, festive Indian garments, or cultural accessories unless the outfit text explicitly names that exact item.
-- If the outfit text includes a Finishing Detail / slot 07 item such as a scarf, belt, watch, lip tone, hair accessory, or hair detail, render it visibly and accurately as part of the styling. Do not drop scarves or belts when they are listed.
-- Render at most one pair of eyewear on the client. If the outfit text describes eyewear or sunglasses in more than one place, use only the slot-08 EYEWEAR item and ignore any other eyewear mention. Never draw two pairs of glasses.
-
-Background and style:
-- Matte ICONIK slate background ${SLATE}.
-- Premium studio cyclorama fashion editorial, clean front/three-quarter pose.
-- Portrait vertical 2:3 composition. Final image must be tall, not landscape or square.
-- Full outfit visible from head to toe, centered in frame, with generous margin above the head and below the footwear. Both shoes and all footwear details must be fully visible.
-- Absolutely no text, letters, typography, captions, labels, logos, signage, watermarks, UI marks, brand marks, readable symbols, extra people, or mannequin.
-- Natural realistic fabric behavior and correct garment construction.
-- Practical colour realism: never render coloured leather sneakers. If the outfit mentions sneakers, they must be white, off-white, cream, or grey-neutral with no coloured trim.
-- Bags and shoes are a single realistic leather/suede colour head to toe: black, espresso, chocolate, cognac, tan, taupe, burgundy, cream, or restrained grey. Never add a coloured trim, tag, stripe, piping, hardware, stitch, sole, or "detail" in a different colour on a bag or shoe — if a piece is a bag or shoe, ignore any stray colour accent and render the whole item in its realistic neutral leather colour.
-- Accent colours appear only on knitwear, tops, layers, scarves, belts, jewellery stones/enamel, garment prints, or an evening clutch — never as a small detail bolted onto an otherwise neutral bag or shoe.
-
-Client styling constraints:
-- Body geometry: ${reportData.classification.body.geometry}.
-- Proportion directive: ${reportData.classification.body.proportion_directive}.
-- Coverage rules: ${reportData.classification.body.coverage_rules.join(', ') || 'follow intake coverage preferences'}.
-- Rendered coverage authority:
-- ${outfitCoverageAuthority(reportData)}
-- Exact outfit colours: use the per-piece colours in the compact formula below.
-- Taste direction: ${reportData.classification.taste.style_archetype}; avoid: ${reportData.classification.taste.anti_codes.join(', ') || 'anything outside the stated outfit text'}.
-
-Compact outfit formula to render:
-${outfit}`;
+${wornOutfitPromptDelta(reportData, page)}`;
 }
 
 function editTeaserPrompt(reportData: StylistBlueprintReportData) {
@@ -1060,6 +1053,32 @@ export function buildStylistBlueprintImageSlotPlanSummaryForTest(
   };
 }
 
+/** Only slots that appear in this report and can use the supplied client photos. */
+export function planStylistBlueprintImageGeneration(
+  reportData: StylistBlueprintReportData,
+  paths: StylistBlueprintImagePaths | null,
+  submission: StylistIntakeSubmission | null,
+  group: StylistBlueprintImageGroup = 'all',
+  force = false,
+) {
+  const hidden = new Set(reportData.studio?.hidden_page_numbers ?? []);
+  const photos = sourcePhotos(submission);
+  return STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS.filter(slot => {
+    const page = getStylistBlueprintImageSlotPageNumber(slot, reportData);
+    if (!page || hidden.has(page) || !reportData.pages.some(item => item.page_number === page)) return false;
+    if (slot === 'closing.editTeaser' && isManualStylistBlueprintSubmission(submission)) return false;
+    const index = Number(slot.split('.').at(-1));
+    const slotGroup = slot.startsWith('application.outfitFlatlays.')
+      ? `capsule_${Math.floor(index / (getStylistBlueprintOutfitCount(reportData) / 4)) + 1}` : slot.split('.')[0];
+    if (group !== 'all' && group !== slotGroup) return false;
+    try {
+      const plan = buildSingleSlotPlan(slot, reportData, photos);
+      if (!plan.sourceUrl) return false;
+      return force || !plan.getCurrent(normalise(paths));
+    } catch { return false; }
+  });
+}
+
 export function buildStylistBlueprintManualImagePrompt(
   slotKey: StylistBlueprintImageSlotKey,
   reportData: StylistBlueprintReportData,
@@ -1070,7 +1089,13 @@ export function buildStylistBlueprintManualImagePrompt(
     headshot: 'manual-source-photo',
     outfit: 'manual-source-photo',
   });
-  return { prompt: plan.prompt, size: plan.size ?? '1024x1536' };
+  const prompt = plan.prompt;
+  // 28 of the 38 slots share WORN_OUTFIT_RENDER_BASE verbatim. Splitting it out
+  // lets the studio show the few lines that actually differ per slot and keep
+  // the shared preamble collapsed, instead of 28 walls of identical text.
+  const sharedPreamble = prompt.startsWith(WORN_OUTFIT_RENDER_BASE) ? WORN_OUTFIT_RENDER_BASE : null;
+  const slotDetail = sharedPreamble ? prompt.slice(sharedPreamble.length).trim() : prompt;
+  return { prompt, size: plan.size ?? '1024x1536', sharedPreamble, slotDetail };
 }
 
 export async function uploadStylistBlueprintManualImage(input: {
@@ -1079,8 +1104,13 @@ export async function uploadStylistBlueprintManualImage(input: {
   slotKey: StylistBlueprintImageSlotKey;
   buffer: Buffer;
   shareToken?: string | null;
+  pageNumber?: number | null;
 }) {
-  const paths = await getStoredPaths(input.reportId);
+  const { data: current, error: loadError } = await supabaseAdmin.from('stylist_blueprint_reports')
+    .select('image_urls, updated_at, revision, section_approvals, status, progress_stage').eq('id', input.reportId).single();
+  if (loadError || !current) throw new Error('Could not load report for upload');
+  if (current.status === 'generating' || current.progress_stage) throw new Error('Wait for generation to finish before uploading');
+  const paths = normalise(current.image_urls as StylistBlueprintImagePaths | null);
   const plan = buildSingleSlotPlan(input.slotKey, input.reportData, {
     front: 'manual-source-photo',
     side: 'manual-source-photo',
@@ -1089,7 +1119,15 @@ export async function uploadStylistBlueprintManualImage(input: {
   });
   const path = await uploadBuffer(input.reportId, `${input.slotKey.replace(/\./g, '-')}-manual-${Date.now()}`, input.buffer);
   plan.setCurrent(paths, path);
-  await persistPaths(input.reportId, paths, input.shareToken, null);
+  const approvals = { ...(current.section_approvals as Record<string, boolean> ?? {}) };
+  if (input.pageNumber) approvals[`p${input.pageNumber}`] = false;
+  const { data: saved, error } = await supabaseAdmin.from('stylist_blueprint_reports').update({
+    image_urls: paths, section_approvals: approvals, published_at: null, delivered_at: null,
+    status: 'in_review', revision: Number(current.revision ?? 0) + 1, updated_at: new Date().toISOString(),
+  }).eq('id', input.reportId).eq('updated_at', current.updated_at).select('id').maybeSingle();
+  if (error) throw new Error(`Could not save uploaded image: ${error.message}`);
+  if (!saved) throw new Error('The report changed during upload. Retry the upload.');
+  await revalidateStylistBlueprintCache(input.reportId, input.shareToken);
   return { imagePaths: paths, imageUrls: await resolveStylistBlueprintImageUrls(paths), path };
 }
 
@@ -1414,6 +1452,22 @@ export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintIm
   } as ResolvedStylistBlueprintImageUrls;
 }
 
+export function getStylistBlueprintImageSlotPageNumber(slot: StylistBlueprintImageSlotKey, data?: StylistBlueprintReportData) {
+  if (slot === 'diagnosis.silhouetteFront' || slot === 'diagnosis.silhouetteSide') return getStylistBlueprintBodyGeometryPage(data);
+  if (slot === 'diagnosis.undertoneMap') return getStylistBlueprintChromaticPage(data);
+  if (slot === 'diagnosis.faceShapeDiagram') return getStylistBlueprintFaceArchitecturePage(data);
+  if (slot === 'prescription.colourDrapeComparison') return getStylistBlueprintColourDrapePage(data);
+  if (slot === 'prescription.hairDirections') return getStylistBlueprintHairstylePage(data);
+  if (slot === 'prescription.hairColourDirections') return getStylistBlueprintHairColourPage(data);
+  if (slot === 'prescription.eyewearFrames') return getStylistBlueprintEyeframePage(data);
+  if (slot === 'prescription.makeupLook') return getStylistBlueprintMakeupPage(data);
+  if (slot.startsWith('application.transformationLooks.')) return getStylistBlueprintTransformationPage(data);
+  if (slot.startsWith('application.silhouetteProofs.')) return getStylistBlueprintRulesStartPage(data);
+  if (slot.startsWith('application.outfitFlatlays.')) return getStylistBlueprintOutfitStartPage(data) + Number(slot.split('.').at(-1));
+  if (slot === 'closing.editTeaser') return getStylistBlueprintContinuationPage(data);
+  return null;
+}
+
 export function getStylistBlueprintImageCounts(
   paths: StylistBlueprintImagePaths | null | undefined,
   options: {
@@ -1425,45 +1479,40 @@ export function getStylistBlueprintImageCounts(
     includeClosingEditTeaser?: boolean;
     includeTransformationPreview?: boolean;
     includeBeautyPages?: boolean;
+    reportData?: StylistBlueprintReportData;
   } = {},
 ) {
   const normalised = normalise(paths);
   const outfitCount = options.outfitCount ?? 20;
   const capsuleSize = Math.ceil(outfitCount / 4);
-  const outfitSlots = normalised.application.outfitFlatlays.slice(0, outfitCount);
-  const groups = {
-    diagnosis: [
-      ...(options.hasFrontPhoto ? [normalised.diagnosis.silhouetteFront] : []),
-      ...(options.hasSidePhoto ? [normalised.diagnosis.silhouetteSide] : []),
-      ...(options.hasHeadshot ? [
-        normalised.diagnosis.undertoneMap,
-        normalised.diagnosis.faceShapeDiagram,
-        normalised.diagnosis.faceRatios,
-      ] : []),
-    ],
-    prescription: options.hasHeadshot ? [
-      ...(options.includeTransformationPreview ? [normalised.prescription.colourDrapeComparison] : []),
-      normalised.prescription.hairDirections,
-      ...(options.includeBeautyPages ? [normalised.prescription.hairColourDirections] : []),
-      normalised.prescription.eyewearFrames,
-      ...(options.includeBeautyPages ? [normalised.prescription.makeupLook] : []),
-    ] : [],
-    application: [
-      ...(options.hasClientPhoto && options.includeTransformationPreview ? normalised.application.transformationLooks : []),
-      ...normalised.application.silhouetteProofs,
-    ],
-    capsule_1: options.hasClientPhoto ? outfitSlots.slice(0, capsuleSize) : [],
-    capsule_2: options.hasClientPhoto ? outfitSlots.slice(capsuleSize, capsuleSize * 2) : [],
-    capsule_3: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 2, capsuleSize * 3) : [],
-    capsule_4: options.hasClientPhoto ? outfitSlots.slice(capsuleSize * 3, outfitCount) : [],
-    closing: [
-      ...(options.hasClientPhoto && options.includeClosingEditTeaser !== false ? [normalised.closing.editTeaser] : []),
-    ],
-  };
-  return Object.fromEntries(
-    Object.entries(groups).map(([key, values]) => [key, {
-      done: values.filter(Boolean).length,
-      total: values.length,
-    }]),
+  const hidden = new Set(options.reportData?.studio?.hidden_page_numbers ?? []);
+  const counts: Record<string, { done: number; total: number }> = Object.fromEntries(
+    ['diagnosis', 'prescription', 'application', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing']
+      .map(group => [group, { done: 0, total: 0 }]),
   );
+  for (const slot of STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS) {
+    const page = getStylistBlueprintImageSlotPageNumber(slot, options.reportData);
+    if (page && hidden.has(page)) continue;
+    let group = slot.split('.')[0];
+    if (slot === 'diagnosis.silhouetteFront' && !options.hasFrontPhoto) continue;
+    if (slot === 'diagnosis.silhouetteSide' && !options.hasSidePhoto) continue;
+    if ((slot === 'diagnosis.undertoneMap' || slot === 'diagnosis.faceShapeDiagram') && !options.hasHeadshot) continue;
+    if (slot.startsWith('prescription.')) {
+      if (!options.hasHeadshot) continue;
+      if (slot === 'prescription.colourDrapeComparison' && !options.includeTransformationPreview) continue;
+      if ((slot === 'prescription.hairColourDirections' || slot === 'prescription.makeupLook') && !options.includeBeautyPages) continue;
+    }
+    if (slot.startsWith('application.transformationLooks.') && (!options.hasClientPhoto || !options.includeTransformationPreview)) continue;
+    if (slot.startsWith('application.outfitFlatlays.')) {
+      const index = Number(slot.split('.').at(-1));
+      if (!options.hasClientPhoto || index >= outfitCount) continue;
+      group = `capsule_${Math.floor(index / capsuleSize) + 1}`;
+    }
+    if (slot === 'closing.editTeaser' && (!options.hasClientPhoto || options.includeClosingEditTeaser === false)) continue;
+    let current: unknown = normalised;
+    for (const key of slot.split('.')) current = current && typeof current === 'object' ? (current as Record<string, unknown>)[key] : null;
+    counts[group].total += 1;
+    if (typeof current === 'string' && current) counts[group].done += 1;
+  }
+  return counts;
 }

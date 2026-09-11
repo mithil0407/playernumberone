@@ -214,3 +214,37 @@ export function isVersionedStylistBlueprintReportData(data: unknown): data is St
     && Array.isArray(record.pages)
   );
 }
+
+/**
+ * The reader-facing section a page belongs to. This is the label in the page
+ * corner and the grouping in the viewer's contents sheet, so the two can never
+ * disagree about where a page lives.
+ */
+export function getStylistBlueprintSectionLabel(pageNumber: number, dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
+  if (pageNumber === getStylistBlueprintTransformationPage(dataOrVersion)) return 'Three looks';
+  if (pageNumber <= getStylistBlueprintReadingGuidePage(dataOrVersion)) return 'Start here';
+  if (pageNumber <= getStylistBlueprintAvoidancePage(dataOrVersion)) return 'What we found';
+  if (pageNumber <= (getStylistBlueprintStudioGuidePages(dataOrVersion).at(-1)?.page ?? getStylistBlueprintFabricPage(dataOrVersion))) return 'Your rules';
+  if (pageNumber <= getStylistBlueprintOutfitEndPage(dataOrVersion)) return 'Your outfits';
+  return 'Putting it to work';
+}
+
+/**
+ * The pages a reader actually sees, in reading order: studio-hidden pages are
+ * dropped (unless `includeHidden`, for the editor) and the studio's page order
+ * is applied. The report renderer and the viewer chrome both call this, so the
+ * page counter in the corner and the contents sheet always agree.
+ */
+export function getVisibleStylistBlueprintPages<T extends { page_number: number }>(
+  data: Pick<StylistBlueprintReportData, 'version' | 'studio'> & { pages: T[] },
+  options: { hideContinuationPage?: boolean; includeHidden?: boolean } = {},
+): T[] {
+  const continuationPage = getStylistBlueprintContinuationPage(data);
+  const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);
+  const order = data.studio?.page_order ?? [];
+  const orderIndex = new Map(order.map((pageNumber, index) => [pageNumber, index]));
+  return [...data.pages]
+    .filter(page => !options.hideContinuationPage || page.page_number !== continuationPage)
+    .filter(page => options.includeHidden || !hiddenPages.has(page.page_number))
+    .sort((a, b) => (orderIndex.get(a.page_number) ?? a.page_number) - (orderIndex.get(b.page_number) ?? b.page_number));
+}

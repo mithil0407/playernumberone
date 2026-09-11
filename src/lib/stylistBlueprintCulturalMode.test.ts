@@ -1,3 +1,4 @@
+import test from 'node:test';
 import {
   STYLIST_BLUEPRINT_VERSION,
   STYLIST_COLOUR_CLASSIFICATION_RULES,
@@ -10,6 +11,11 @@ import {
   buildStylistBlueprintIntakeDigest,
   collectSilhouetteRuleProofTargetsForTest,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintPageCount,
+  getStylistBlueprintOutfitSystemPage,
+  getStylistBlueprintMatrixPage,
+  getStylistBlueprintAuditPage,
+  getStylistBlueprintContinuationPage,
   getStylistBlueprintRulesStartPage,
   getStylistOutfitCulturalMode,
   replacementOutfitContextPrompt,
@@ -19,9 +25,9 @@ import {
   type StylistBlueprintClassification,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
-} from './stylistBlueprintGenerator';
-import { buildStylistBlueprintImageSlotPlanSummaryForTest } from './stylistBlueprintImageGenerator';
-import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2';
+} from './stylistBlueprintGenerator.ts';
+import { buildStylistBlueprintImageSlotPlanSummaryForTest } from './stylistBlueprintImageGenerator.ts';
+import { WOMEN_OUTFIT_HARNESS_V2 } from './womenOutfitHarnessV2.ts';
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -223,7 +229,8 @@ function transformationPage(): BlueprintPage {
 
 function reportWithOutfitOverride(pieceOverride?: string): StylistBlueprintReportData {
   const outfitStart = getStylistBlueprintOutfitStartPage(STYLIST_BLUEPRINT_VERSION);
-  const pages = Array.from({ length: 41 }, (_, offset) => {
+  const pageCount = getStylistBlueprintPageCount(STYLIST_BLUEPRINT_VERSION);
+  const pages = Array.from({ length: pageCount }, (_, offset) => {
     const pageNumber = offset + 1;
     if (pageNumber === 2) return transformationPage();
     if (pageNumber >= outfitStart && pageNumber < outfitStart + 20) {
@@ -231,16 +238,20 @@ function reportWithOutfitOverride(pieceOverride?: string): StylistBlueprintRepor
     }
     return genericPage(pageNumber);
   });
-  pages[17] = {
-    page_number: 18,
+  const systemPage = getStylistBlueprintOutfitSystemPage(STYLIST_BLUEPRINT_VERSION);
+  pages[systemPage - 1] = {
+    page_number: systemPage,
     page_type: 'outfit_system',
     title: 'Outfit System',
     blocks: [{ label: 'Capsules', heading: 'Capsules', body: 'Professional, Social, Everyday, Occasion.' }],
     image_refs: [],
   };
-  pages[38] = { ...genericPage(39), page_type: 'matrix' };
-  pages[39] = { ...genericPage(40), page_type: 'audit' };
-  pages[40] = { ...genericPage(41), page_type: 'continuation' };
+  const matrixPage = getStylistBlueprintMatrixPage(STYLIST_BLUEPRINT_VERSION);
+  const auditPage = getStylistBlueprintAuditPage(STYLIST_BLUEPRINT_VERSION);
+  const continuationPage = getStylistBlueprintContinuationPage(STYLIST_BLUEPRINT_VERSION);
+  pages[matrixPage - 1] = { ...genericPage(matrixPage), page_type: 'matrix' };
+  pages[auditPage - 1] = { ...genericPage(auditPage), page_type: 'audit' };
+  pages[continuationPage - 1] = { ...genericPage(continuationPage), page_type: 'continuation' };
   return {
     version: STYLIST_BLUEPRINT_VERSION,
     generated_at: '2026-07-01T00:00:00.000Z',
@@ -453,7 +464,7 @@ export function runStylistBlueprintCulturalModeAssertions() {
   try {
     validateStylistBlueprintReport(missingPageReport, { culturalMode: 'western_default' });
   } catch (error) {
-    missingPageRejected = /Expected 41 pages|Missing page/i.test(error instanceof Error ? error.message : String(error));
+    missingPageRejected = /Expected \d+ pages|Missing page/i.test(error instanceof Error ? error.message : String(error));
   }
   invariant(missingPageRejected, 'lightweight validator still catches missing pages');
 
@@ -550,8 +561,16 @@ export function runStylistBlueprintCulturalModeAssertions() {
   invariant(imagePlan.extraSourceUrl === 'https://example.com/headshot.jpg', 'silhouette proof image slot passes the headshot as identity reference');
   invariant(imagePlan.size === '1024x1536', 'silhouette proof image slot uses portrait worn-outfit sizing');
   invariant(
-    imagePlan.prompt.includes('Professional editorial fashion catalogue photography') &&
-    imagePlan.prompt.includes('Silhouette Rules proof priority'),
+    imagePlan.prompt.includes('create a full-body studio photograph of the same woman') &&
+    imagePlan.prompt.includes('must clearly show this shape principle'),
     'silhouette proof image slot uses the worn-outfit prompt path',
   );
+  invariant(
+    imagePlan.prompt.split(/\s+/).length < 200,
+    'worn-outfit prompt stays short enough to review in the studio panel',
+  );
 }
+
+test('stylist blueprint cultural mode, palette and harness invariants hold', () => {
+  runStylistBlueprintCulturalModeAssertions();
+});

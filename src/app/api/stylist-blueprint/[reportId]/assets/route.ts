@@ -99,11 +99,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!(await canAccessBlueprintReport(reportId))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const report = await loadReport(reportId);
   if (!report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
-  const form = await request.formData();
+  const form = await request.formData().catch(() => null);
+  if (!form) return NextResponse.json({ error: 'Invalid image upload' }, { status: 400 });
   const slotKey = form.get('slotKey');
   const file = form.get('file');
   if (!isStylistBlueprintImageSlotKey(slotKey)) return NextResponse.json({ error: 'Invalid image slot' }, { status: 400 });
-  if (!(file instanceof File) || !file.type.startsWith('image/')) return NextResponse.json({ error: 'Choose a JPG, PNG or WebP image' }, { status: 400 });
+  if (!(file instanceof File) || !/^image\/(jpeg|png|webp)$/.test(file.type) || !file.size) return NextResponse.json({ error: 'Choose a JPG, PNG or WebP image' }, { status: 400 });
   if (file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: 'Image must be smaller than 8 MB' }, { status: 400 });
   try {
     const result = await uploadStylistBlueprintManualImage({
@@ -112,22 +113,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       slotKey,
       buffer: Buffer.from(await file.arrayBuffer()),
       shareToken: report.share_token,
+      pageNumber: pageForSlot(slotKey, report.report_data),
     });
-    const pageNumber = pageForSlot(slotKey, report.report_data);
-    if (pageNumber) {
-      await supabaseAdmin
-        .from('stylist_blueprint_reports')
-        .update({
-          section_approvals: { ...((report.section_approvals as Record<string, boolean> | null) ?? {}), [`p${pageNumber}`]: false },
-          published_at: null,
-          delivered_at: null,
-          status: 'in_review',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', reportId);
-    }
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Image upload failed' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Image upload failed';
+    return NextResponse.json({ error: message }, { status: /report changed|generation to finish/.test(message) ? 409 : 500 });
   }
 }

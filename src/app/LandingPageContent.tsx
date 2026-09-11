@@ -37,6 +37,7 @@ import {
   VolumeX
 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import type { RootDesignVariant } from '@/lib/rootDesign';
 
 interface LandingPageContentProps {
   headline: ReactNode;
@@ -49,6 +50,7 @@ interface LandingPageContentProps {
   originalPrice?: number;
   displayBasePrice?: string;
   displayOriginalPrice?: string;
+  designVariant?: RootDesignVariant;
 }
 
 interface TestimonialVideoCardProps {
@@ -91,7 +93,7 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBl
   };
 
   return (
-    <figure className="mx-auto w-full max-w-[360px] overflow-hidden rounded-3xl md:last:col-span-2 lg:last:col-span-1" style={{ border: '1px solid rgba(244,239,229,0.18)', background: '#171411', boxShadow: '0 28px 70px rgba(0,0,0,0.28)' }}>
+    <figure className="root-video-card mx-auto w-full max-w-[360px] overflow-hidden rounded-3xl md:last:col-span-2 lg:last:col-span-1" style={{ border: '1px solid rgba(244,239,229,0.18)', background: '#171411', boxShadow: '0 28px 70px rgba(0,0,0,0.28)' }}>
       <div className="relative">
         <video
           ref={videoRef}
@@ -155,7 +157,7 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBl
           </button>
         </div>
       </div>
-      <figcaption className="p-6 md:p-7">
+      <figcaption className="root-video-caption p-6 md:p-7">
         <div className="mb-4 flex gap-1" aria-label={`${rating} out of 5 stars`}>
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
@@ -168,7 +170,7 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBl
           ))}
         </div>
         <div className="iconik-micro mb-3" style={{ color: '#D7B57A', opacity: 0.9 }}>{name} · ICONIK Client</div>
-        <blockquote className="iconik-display-it" style={{ color: '#F4EFE5', fontSize: '19px', lineHeight: 1.55 }}>
+        <blockquote className="root-video-quote iconik-display-it" style={{ color: '#F4EFE5', fontSize: '19px', lineHeight: 1.55 }}>
           “{quote}”
         </blockquote>
       </figcaption>
@@ -186,6 +188,7 @@ export default function LandingPageContent({
   originalPrice = BLUEPRINT_OFFER.referencePriceInr,
   displayBasePrice,
   displayOriginalPrice,
+  designVariant,
 }: LandingPageContentProps) {
   const isOffer2699 = variant === 'offer2699';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -302,7 +305,7 @@ export default function LandingPageContent({
   ];
 
   return (
-    <div className="man-editorial min-h-screen overflow-x-hidden pb-20 md:pb-0">
+    <div className={`man-editorial min-h-screen overflow-x-hidden pb-20 md:pb-0 ${designVariant ? `root-design-preview root-concept-${designVariant}` : ''}`}>
 
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
@@ -312,8 +315,8 @@ export default function LandingPageContent({
       </nav>
 
       {/* ── SECTION 1: Hero ─────────────────────────────────────────────── */}
-      <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
-        <div className="max-w-5xl mx-auto text-center">
+      <section className="root-hero-section pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+        <div className="root-hero-inner max-w-5xl mx-auto text-center">
 
           {!isOffer2699 && (
             <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
@@ -323,7 +326,7 @@ export default function LandingPageContent({
 
           {/* Headline */}
           {isOffer2699 && (
-            <div className="iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
+            <div className="root-hero-eyebrow iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
               SCIENTIFIC PERSONAL STYLING FOR INDIAN WOMEN
             </div>
           )}
@@ -341,7 +344,7 @@ export default function LandingPageContent({
             ref={heroCtaRef}
             href={checkoutHref}
             onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', contentCategory)}
-            className="inline-flex items-center gap-2 bg-[#2C2622] px-5 py-4 text-[#F4EFE5] transition-all duration-300 transform rounded-full hover:-translate-y-0.5 hover:bg-[#3d3430] hover:shadow-xl sm:gap-3 sm:px-10 sm:py-5"
+            className="root-hero-cta inline-flex items-center gap-2 bg-[#2C2622] px-5 py-4 text-[#F4EFE5] transition-all duration-300 transform rounded-full hover:-translate-y-0.5 hover:bg-[#3d3430] hover:shadow-xl sm:gap-3 sm:px-10 sm:py-5"
           >
             <span className="iconik-display whitespace-nowrap" style={{ fontSize: '15px' }}>
               {isOffer2699 ? (
@@ -354,7 +357,7 @@ export default function LandingPageContent({
             <ArrowRight className="h-4 w-4 opacity-60" />
           </Link>
 
-          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+          <div className="root-hero-trust mt-4 flex items-center justify-center gap-2 flex-wrap">
             <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
             <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
               Secure checkout · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included
@@ -362,7 +365,7 @@ export default function LandingPageContent({
           </div>
 
           {/* Client transformation preview */}
-          <div className="max-w-sm mx-auto mt-9 mb-2">
+          <div className="root-hero-media max-w-sm mx-auto mt-9 mb-2">
             <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
               <div className="relative mx-auto w-full max-w-[320px]">
                 <div className="relative aspect-square w-full overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
@@ -389,7 +392,7 @@ export default function LandingPageContent({
       </section>
 
       {isOffer2699 && (
-        <section className="px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
+        <section className="root-process-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>How It Works</div>
@@ -415,7 +418,7 @@ export default function LandingPageContent({
       )}
 
       {/* ── SECTION 2: Stats ────────────────────────────────────────────── */}
-      <section className="py-12 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      <section className="root-stats-section py-12 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -436,7 +439,7 @@ export default function LandingPageContent({
       </section>
 
       {isOffer2699 && (
-        <section className="px-4 py-20 md:px-6 md:py-24" style={{ background: '#2C2622' }}>
+        <section id="video-testimonials" className="root-video-testimonials px-4 py-20 md:px-6 md:py-24" style={{ background: '#2C2622' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
               <div className="iconik-micro mb-5" style={{ color: '#D7B57A', opacity: 0.85 }}>Real Clients · Real Experiences</div>
@@ -481,7 +484,7 @@ export default function LandingPageContent({
       )}
 
       {/* ── SECTION 3: Report Preview ────────────────────────────────────── */}
-      <section id="features" className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+      <section id="features" className="root-report-section py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Your Deliverable</div>
@@ -733,7 +736,7 @@ export default function LandingPageContent({
       </section>
 
       {/* ── SECTION 4: What's Inside ──────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      <section id="inside" className="root-inclusions-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Everything Inside</div>
@@ -743,11 +746,11 @@ export default function LandingPageContent({
           </div>
           <div className="max-w-2xl mx-auto">
             {blueprintItems.map((item, i) => (
-              <div key={i} className="flex items-start gap-5 py-5 transition-all duration-300" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+              <div key={i} className="root-inclusion-item flex items-start gap-5 py-5 transition-all duration-300" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
                 {item.icon}
                 <div>
-                  <div className="iconik-display mb-1" style={{ fontSize: '17px', color: '#2C2622' }}>{item.title}</div>
-                  <p style={{ fontSize: '13px', lineHeight: 1.75, color: '#2C2622', opacity: 0.6 }}>{item.desc}</p>
+                  <div className="root-inclusion-title iconik-display mb-1" style={{ fontSize: '17px', color: '#2C2622' }}>{item.title}</div>
+                  <p className="root-inclusion-copy" style={{ fontSize: '13px', lineHeight: 1.75, color: '#2C2622', opacity: 0.6 }}>{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -756,7 +759,7 @@ export default function LandingPageContent({
             <Link
               href={checkoutHref}
               onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', contentCategory)}
-              className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
+              className="root-primary-action inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
             >
               <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Personal Style Blueprint — ${formattedBasePrice}` : 'Get Your Style Consultation'}</span>
               <ArrowRight className="h-4 w-4 opacity-60" />
@@ -766,7 +769,7 @@ export default function LandingPageContent({
       </section>
 
       {isOffer2699 && (
-        <section className="px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
+        <section id="comparison" className="root-comparison-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-3xl text-center">
               <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Why ICONIK Is Different</div>
@@ -778,8 +781,8 @@ export default function LandingPageContent({
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.12)', background: '#fff' }}>
-              <div className="grid grid-cols-[1.5fr_0.75fr_0.75fr] items-stretch md:grid-cols-[1.7fr_0.65fr_0.65fr]" style={{ background: '#2C2622' }}>
+            <div className="root-comparison-table overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.12)', background: '#fff' }}>
+              <div className="root-comparison-head grid grid-cols-[1.5fr_0.75fr_0.75fr] items-stretch md:grid-cols-[1.7fr_0.65fr_0.65fr]" style={{ background: '#2C2622' }}>
                 <div className="p-4 md:p-6">
                   <span className="iconik-micro" style={{ color: '#F4EFE5', opacity: 0.65 }}>What You Receive</span>
                 </div>
@@ -792,15 +795,15 @@ export default function LandingPageContent({
               </div>
 
               {humanStylingComparison.map((row, index) => (
-                <div key={row.label} className="grid grid-cols-[1.5fr_0.75fr_0.75fr] items-stretch md:grid-cols-[1.7fr_0.65fr_0.65fr]" style={{ borderTop: index === 0 ? 'none' : '1px solid rgba(44,38,34,0.08)' }}>
-                  <div className="flex items-center p-4 md:p-5">
+                <div key={row.label} className="root-comparison-row grid grid-cols-[1.5fr_0.75fr_0.75fr] items-stretch md:grid-cols-[1.7fr_0.65fr_0.65fr]" style={{ borderTop: index === 0 ? 'none' : '1px solid rgba(44,38,34,0.08)' }}>
+                  <div className="root-comparison-label flex items-center p-4 md:p-5">
                     <span style={{ color: '#2C2622', fontSize: '13px', lineHeight: 1.55, fontWeight: 500 }}>{row.label}</span>
                   </div>
-                  <div className="flex items-center justify-center border-l p-3 text-center md:p-5" style={{ borderColor: 'rgba(44,38,34,0.08)', background: 'rgba(237,229,210,0.55)' }}>
-                    <span className="iconik-display" style={{ color: row.iconik === 'Yes' ? '#54705d' : '#9c4f4f', fontSize: '16px' }}>{row.iconik}</span>
+                  <div className="root-comparison-iconik flex items-center justify-center border-l p-3 text-center md:p-5" style={{ borderColor: 'rgba(44,38,34,0.08)', background: 'rgba(237,229,210,0.55)' }}>
+                    <span className={`root-comparison-value root-comparison-value--${row.iconik.toLowerCase()} iconik-display`} style={{ color: row.iconik === 'Yes' ? '#54705d' : '#9c4f4f', fontSize: '16px' }}>{row.iconik}</span>
                   </div>
                   <div className="flex items-center justify-center border-l p-3 text-center md:p-5" style={{ borderColor: 'rgba(44,38,34,0.08)' }}>
-                    <span className="iconik-display" style={{ color: row.instant === 'Yes' ? '#54705d' : '#9c4f4f', fontSize: '16px' }}>{row.instant}</span>
+                    <span className={`root-comparison-value root-comparison-value--${row.instant.toLowerCase()} iconik-display`} style={{ color: row.instant === 'Yes' ? '#54705d' : '#9c4f4f', fontSize: '16px' }}>{row.instant}</span>
                   </div>
                 </div>
               ))}
@@ -817,7 +820,7 @@ export default function LandingPageContent({
       )}
 
       {/* ── Client Results ───────────────────────────────────────────────── */}
-      <section id="testimonials" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      <section id="testimonials" className="root-client-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Client Stories</div>
@@ -830,7 +833,7 @@ export default function LandingPageContent({
               { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['I felt conscious about my arms and wore full sleeves even in Delhi summer.'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap and flutter sleeves that still felt comfortable', 'Raglan cuts to soften the shoulder line', 'More colour instead of wearing only black'], quote: 'I always thought covering my arms was the only option. The sleeve suggestions were practical, and the outfits still felt like me.', stars: 5 },
               { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['On my petite frame, too much fabric made most outfits feel overwhelming.'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Cleaner monochromatic combinations', 'Hem lengths that suited her height', 'Smaller accessories scaled to her frame'], quote: 'I used to save so many outfits and then buy nothing because I was confused. Now shopping feels much more straightforward.', stars: 4 },
             ].map((c) => (
-              <div key={c.name} className="rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <div key={c.name} className="root-client-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
                 <div className="aspect-square overflow-hidden" style={{ background: 'rgba(237,229,210,0.5)' }}>
                   <Image src={c.image} alt={c.name} width={300} height={300} className="w-full h-full object-cover" loading="lazy" />
                 </div>
@@ -843,12 +846,12 @@ export default function LandingPageContent({
                     { label: 'Concern', val: c.concern.join(' ') },
                     { label: 'Finding', val: c.finding.join(' · ') },
                   ].map((row) => (
-                    <div key={row.label} className="grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
+                    <div key={row.label} className="root-client-detail grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
                       <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
                       <span style={{ fontSize: '13px', color: '#2C2622', opacity: 0.75, lineHeight: 1.6 }}>{row.val}</span>
                     </div>
                   ))}
-                  <div className="grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
+                  <div className="root-client-detail root-client-changes grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
                     <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>Changed</span>
                     <div className="space-y-1">
                       {c.changed.map((ch) => (
@@ -861,7 +864,7 @@ export default function LandingPageContent({
                   </div>
                   <div className="me-rule-thin" />
                   <div>
-                    <div className="iconik-display-it mb-3" style={{ fontSize: '14px', color: '#2C2622', opacity: 0.7, lineHeight: 1.6 }}>&ldquo;{c.quote}&rdquo;</div>
+                    <div className="root-client-quote iconik-display-it mb-3" style={{ fontSize: '14px', color: '#2C2622', opacity: 0.7, lineHeight: 1.6 }}>&ldquo;{c.quote}&rdquo;</div>
                     <div className="flex gap-1">
                       {[...Array(c.stars)].map((_, i) => <Star key={i} className="h-3 w-3 fill-current" style={{ color: '#9a7d4a' }} />)}
                     </div>
@@ -874,7 +877,7 @@ export default function LandingPageContent({
       </section>
 
       {/* ── Price ─────────────────────────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6 me-slate">
+      <section className="root-price-section py-24 px-4 md:px-6 me-slate">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
             A styling session can end when the call does. Your {isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Blueprint'} remains as a practical reference for getting dressed, shopping, hair, eyewear and colour decisions.
@@ -887,7 +890,7 @@ export default function LandingPageContent({
           <Link
             href={checkoutHref}
             onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', contentCategory)}
-            className="inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
+            className="root-primary-action inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
           >
             <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>{isOffer2699 ? `Get My Personal Style Blueprint — ${formattedBasePrice}` : `Get Your Style Consultation — ${formattedBasePrice}`}</span>
             <ArrowRight className="h-4 w-4 opacity-60" style={{ color: '#F4EFE5' }} />
@@ -896,7 +899,7 @@ export default function LandingPageContent({
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      <section id="faq" className="root-faq-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>Frequently Asked Questions</div>
@@ -919,7 +922,7 @@ export default function LandingPageContent({
       </section>
 
       {/* ── SECTION 11: Final CTA ─────────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6 text-center me-slate relative">
+      <section className="root-final-section py-24 px-4 md:px-6 text-center me-slate relative">
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#F4EFE5', lineHeight: 1.1 }}>
             {isOffer2699 ? (
@@ -934,7 +937,7 @@ export default function LandingPageContent({
           <Link
             href={checkoutHref}
             onClick={() => trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', contentCategory)}
-            className="inline-flex items-center gap-5 px-10 py-5 rounded-full mb-6 hover:opacity-75 transition-opacity me-glass-light"
+            className="root-primary-action inline-flex items-center gap-5 px-10 py-5 rounded-full mb-6 hover:opacity-75 transition-opacity me-glass-light"
           >
             <span className="iconik-display" style={{ fontSize: '28px', color: '#F4EFE5' }}>{formattedBasePrice}</span>
             <div className="w-px h-7" style={{ background: 'rgba(244,239,229,0.25)' }} />
@@ -1012,7 +1015,7 @@ export default function LandingPageContent({
           <Link
             href={checkoutHref}
             onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', contentCategory)}
-            className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#2C2622] px-4 py-3 text-[#F4EFE5] transition-colors duration-300 hover:bg-[#3d3430]"
+            className="root-primary-action inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#2C2622] px-4 py-3 text-[#F4EFE5] transition-colors duration-300 hover:bg-[#3d3430]"
           >
             <span className="iconik-display text-center" style={{ fontSize: '14px' }}>{isOffer2699 ? 'Get My Personal Style Blueprint' : 'Begin Your Transformation'}</span>
           </Link>

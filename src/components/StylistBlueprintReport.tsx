@@ -36,12 +36,13 @@ import {
   getStylistBlueprintShoppingPlanPage,
   getStylistBlueprintStudioGuidePages,
   getStylistBlueprintTransformationPage,
+  getStylistBlueprintSectionLabel,
+  getVisibleStylistBlueprintPages,
   isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { createContext, type ElementType, type FocusEvent, type ReactNode, useContext } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { createContext, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
+import { Check, Copy, Loader2, RefreshCw, Upload } from 'lucide-react';
 
 const SLATE = '#94A6AD';
 const SLATE_LIGHT = '#A0B2B9';
@@ -71,6 +72,13 @@ type EditableReportContextValue = {
   onImageRegenerate?: (slotKey: StylistBlueprintImageSlotKey) => void | Promise<void>;
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
+  /**
+   * Admin-only. The client report never passes these, so a prompt cannot reach
+   * a client view even by mistake — there is nothing for it to render.
+   */
+  imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
+  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | Promise<void>;
+  uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
   reportData?: StylistBlueprintReportData;
   visibleTotalPages?: number;
   visiblePageNumbers?: number[];
@@ -97,20 +105,60 @@ function EditableText({
 }) {
   const { editable, onPageChange } = useContext(EditableReportContext);
   const Component = as ?? 'span';
+  const elementRef = useRef<HTMLElement | null>(null);
+  const commitTimerRef = useRef<number | undefined>(undefined);
+  const incoming = value ?? fallback;
+  const incomingRef = useRef(incoming);
+  incomingRef.current = incoming;
+  // Captured once. After mount the browser owns this node's text, not React:
+  // re-rendering children under a live caret is what sent the cursor back to
+  // the start of the field whenever a save landed mid-sentence.
+  const initialRef = useRef(incoming);
+
+  // Pull server-side changes (a regenerated page, an undo) into the DOM, but
+  // never into the field the stylist is currently typing in.
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element || document.activeElement === element) return;
+    if (element.innerText === incoming) return;
+    element.innerText = incoming;
+  }, [incoming]);
+
+  useEffect(() => () => window.clearTimeout(commitTimerRef.current), []);
+
   if (!editable) return <Component className={className}>{children ?? value ?? fallback}</Component>;
+
+  // Commit while typing, not only on blur. Blur-only meant nothing reached
+  // React state — and so nothing reached the autosave — until the stylist
+  // clicked away, and an edit typed just before a reload or a toolbar action
+  // was simply lost.
+  const commit = (next: string) => {
+    const trimmed = next.trim();
+    if (trimmed === incomingRef.current) return;
+    onPageChange?.(update(trimmed));
+  };
+
   return (
     <Component
+      ref={elementRef as Ref<HTMLElement>}
       className={className}
       contentEditable
       data-page-number={page.page_number}
       suppressContentEditableWarning
-      onBlur={(event: FocusEvent<HTMLElement>) => {
-        const nextValue = event.currentTarget.innerText.trim();
-        if (nextValue !== (value ?? fallback)) onPageChange?.(update(nextValue));
+      onInput={(event: FormEvent<HTMLElement>) => {
+        const next = event.currentTarget.innerText;
+        window.clearTimeout(commitTimerRef.current);
+        commitTimerRef.current = window.setTimeout(() => commit(next), 400);
       }}
-      style={{ outline: 'none' }}
+      onBlur={(event: FocusEvent<HTMLElement>) => {
+        window.clearTimeout(commitTimerRef.current);
+        commit(event.currentTarget.innerText);
+      }}
+      // Line breaks the stylist types are kept in the stored string, so they
+      // have to survive rendering too.
+      style={{ outline: 'none', whiteSpace: 'pre-wrap' }}
     >
-      {children ?? value ?? fallback}
+      {initialRef.current}
     </Component>
   );
 }
@@ -161,13 +209,53 @@ function ImageSlotFrame({
   label: string;
   children: ReactNode;
 }) {
-  const { onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled } = useContext(EditableReportContext);
+  const {
+    onImageRegenerate,
+    regeneratingImageSlot,
+    imageRegenerationDisabled,
+    imagePrompts,
+    onImageUpload,
+    uploadingImageSlot,
+  } = useContext(EditableReportContext);
   const canRegenerate = Boolean(onImageRegenerate);
   const isRegenerating = regeneratingImageSlot === slotKey;
   const disabled = Boolean(imageRegenerationDisabled || (regeneratingImageSlot && !isRegenerating));
 
+  const prompt = imagePrompts?.[slotKey];
+  const canUpload = Boolean(onImageUpload);
+  const isUploading = uploadingImageSlot === slotKey;
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+
+  const acceptFile = (file: File | null | undefined) => {
+    if (!file || !onImageUpload || disabled || uploadingImageSlot) return;
+    void onImageUpload(slotKey, file);
+  };
+
+  const copyPrompt = async () => {
+    if (!prompt) return;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
-    <div className={`image-slot-frame ${className}`}>
+    <div
+      className={`image-slot-frame ${className} ${dragging ? 'slot-dragging' : ''}`}
+      onDragOver={canUpload ? event => { event.preventDefault(); setDragging(true); } : undefined}
+      onDragLeave={canUpload ? () => setDragging(false) : undefined}
+      onDrop={canUpload ? event => {
+        event.preventDefault();
+        setDragging(false);
+        acceptFile(event.dataTransfer?.files?.[0]);
+      } : undefined}
+    >
       {children}
       {canRegenerate && (
         <button
@@ -184,6 +272,42 @@ function ImageSlotFrame({
         >
           {isRegenerating ? <Loader2 size={14} className="spin-icon" /> : <RefreshCw size={14} />}
         </button>
+      )}
+      {dragging && <div className="slot-drop-hint">Drop to replace this image</div>}
+      {(canUpload || prompt) && (
+        <div className="slot-tools">
+          {canUpload && (
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={event => { acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
+              />
+              <button type="button" className="slot-tool" onClick={() => inputRef.current?.click()} disabled={disabled || Boolean(uploadingImageSlot)}>
+                {isUploading ? <Loader2 size={12} className="spin-icon" /> : <Upload size={12} />}
+                {isUploading ? 'Uploading' : 'Upload'}
+              </button>
+            </>
+          )}
+          {prompt && (
+            <>
+              <button type="button" className="slot-tool" onClick={() => { void copyPrompt(); }}>
+                {copied ? <Check size={12} /> : <Copy size={12} />}
+                {copied ? 'Copied' : 'Copy prompt'}
+              </button>
+              <button type="button" className="slot-tool" onClick={() => setShowPrompt(value => !value)}>
+                {showPrompt ? 'Hide' : 'Prompt'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {prompt && showPrompt && (
+        <div className="slot-prompt">
+          <textarea readOnly value={prompt} rows={10} />
+        </div>
       )}
     </div>
   );
@@ -265,15 +389,107 @@ const HIDDEN_SUMMARY_FIELDS = new Set([
   'prompt',
   'generation_prompt',
   'visual_prompt',
+  'colour_hex',
+  'hex',
+  'palette_role',
+  'image_slot',
+  'slot',
+  'example_outfit',
 ]);
 
+/** Joins separate rules into readable prose instead of one run-on line. */
+function sentenceList(values: string[] | null | undefined) {
+  return (values ?? [])
+    .map(value => value.trim())
+    .filter(Boolean)
+    .map(value => (/[.!?]$/.test(value) ? value : `${value}.`))
+    .join(' ');
+}
+
+/**
+ * Intake focus areas are checkbox labels ("Hips/Thighs"), never prose. This
+ * wraps them in a sentence so they are readable wherever body copy is required;
+ * where the layout allows, prefer rendering them as chips instead.
+ */
+function focusAreaSentence(data: StylistBlueprintReportData) {
+  const areas = data.analysis.proportional_focus.map(area => area.trim().toLowerCase()).filter(Boolean);
+  if (!areas.length) return data.classification.body.proportion_directive;
+  const list = areas.length === 1
+    ? areas[0]
+    : `${areas.slice(0, -1).join(', ')} and ${areas[areas.length - 1]}`;
+  return `Your outfits are built around ${list}. ${data.classification.body.proportion_directive}`;
+}
+
+/**
+ * The large italic quote on diagnosis pages. It used to read `page.subtitle`,
+ * which is also the second half of the page headline, so the same string was
+ * printed twice and editing one silently rewrote the other. It now has its own
+ * field, and refuses anything that is not a real sentence — joined intake
+ * fragments such as "Hips/Thighs. Mid-section definition" are never a quote.
+ */
+function pullQuoteFor(page: BlueprintPage, data: StylistBlueprintReportData, fallback?: string) {
+  const quote = page.pull_quote?.trim();
+  if (quote) return quote;
+  const candidate = (fallback ?? '').trim();
+  if (isClientSentence(candidate)) return candidate;
+  return data.classification.body.proportion_directive;
+}
+
+/** A sentence a client can read aloud, not a label or a joined list. */
+function isClientSentence(value: string) {
+  const text = value.trim();
+  if (text.split(/\s+/).length < 5) return false;
+  return !/[\/|]|\s-\s/.test(text);
+}
+
+// Order matters: this is the sequence the fields read in as a sentence.
+const SUMMARY_FIELD_ORDER = [
+  'question',
+  'answer',
+  'name',
+  'piece',
+  'heading',
+  'rule',
+  'guidance',
+  'recommendation',
+  'body',
+  'note',
+  'reason',
+  'why',
+];
+
+function summaryFieldValue(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(summaryFieldValue).filter(Boolean).join(', ');
+  if (isObject(value)) return objectSummary(value);
+  return '';
+}
+
+/**
+ * Renders a structured item as client-readable prose. It used to emit
+ * "name: X - guidance: Y - reason: Z", which put our own schema keys in front of
+ * the client on every fallback path — the exact thing the generation prompt
+ * forbids the model from doing. Keys are now dropped and the values are joined
+ * as sentences.
+ */
 function objectSummary(item: unknown): string {
   if (typeof item === 'string') return item;
   if (!isObject(item)) return String(item ?? '');
-  return Object.entries(item)
-    .filter(([key, value]) => !HIDDEN_SUMMARY_FIELDS.has(key) && value !== null && value !== undefined && value !== '')
-    .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${Array.isArray(value) ? value.join(', ') : isObject(value) ? objectSummary(value) : value}`)
-    .join(' - ');
+  const seen = new Set<string>();
+  const ordered = [
+    ...SUMMARY_FIELD_ORDER.filter(key => key in item),
+    ...Object.keys(item).filter(key => !SUMMARY_FIELD_ORDER.includes(key)),
+  ];
+  const parts: string[] = [];
+  for (const key of ordered) {
+    if (HIDDEN_SUMMARY_FIELDS.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    const text = summaryFieldValue(item[key]);
+    if (!text) continue;
+    parts.push(/[.!?]$/.test(text) ? text : `${text}.`);
+  }
+  return parts.join(' ');
 }
 
 const OUTFIT_SLOT_KEYS = [
@@ -333,6 +549,30 @@ function splitDisplayName(name: string) {
   return { first: parts.slice(0, -1).join(' '), rest: parts.at(-1) || '' };
 }
 
+/**
+ * The cover prints the client's name at 80px, so it has to be typed the way she
+ * would write it. Intake gives us whatever the stylist entered — "dr swathi v s"
+ * — and honorifics need their own casing rather than the generic title-case.
+ */
+const HONORIFICS: Record<string, string> = {
+  dr: 'Dr', 'dr.': 'Dr', mr: 'Mr', 'mr.': 'Mr', mrs: 'Mrs', 'mrs.': 'Mrs',
+  ms: 'Ms', 'ms.': 'Ms', prof: 'Prof', 'prof.': 'Prof',
+};
+
+function coverName(raw: string) {
+  const parts = (raw ?? '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  if (!parts.length) return 'Your Blueprint';
+  return parts
+    .map((word, index) => {
+      const honorific = index === 0 ? HONORIFICS[word.toLowerCase()] : undefined;
+      if (honorific) return honorific;
+      // A lone letter is an initial: "v s" -> "V S".
+      if (word.length === 1) return word.toUpperCase();
+      return word[0].toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+}
+
 function pageClass(pageNumber: number, pageType: BlueprintPage['page_type']) {
   if (pageNumber === 1 || pageType === 'continuation' || pageType === 'matrix') return 'slate';
   if (pageType === 'transformation') return 'slate-deep';
@@ -379,14 +619,13 @@ function getCanonicalTypeForData(page: BlueprintPage, data: StylistBlueprintRepo
   return page.page_type;
 }
 
+/**
+ * Section label in the page corner. These used to be our internal pipeline
+ * stage names ("Pillar 03", "Act II - Prescription"), which mean nothing to a
+ * client.
+ */
 function pageKicker(page: BlueprintPage, data?: StylistBlueprintReportData) {
-  const outfitEndPage = getStylistBlueprintOutfitEndPage(data);
-  if (page.page_number === getStylistBlueprintTransformationPage(data)) return 'Transformation';
-  if (page.page_number <= getStylistBlueprintReadingGuidePage(data)) return 'Opening';
-  if (page.page_number <= getStylistBlueprintAvoidancePage(data)) return `Pillar ${String(page.page_number - getStylistBlueprintReadingGuidePage(data)).padStart(2, '0')}`;
-  if (page.page_number <= (getStylistBlueprintStudioGuidePages(data).at(-1)?.page ?? getStylistBlueprintFabricPage(data))) return 'Act II - Prescription';
-  if (page.page_number <= outfitEndPage) return 'Act III - Application';
-  return 'Closing';
+  return getStylistBlueprintSectionLabel(page.page_number, data);
 }
 
 function imageForPage(page: BlueprintPage, imageUrls?: ResolvedStylistBlueprintImageUrls | null, data?: StylistBlueprintReportData) {
@@ -484,7 +723,6 @@ function PageFrame({
 
 function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
   const { editable, onReportDataChange, visibleTotalPages } = useContext(EditableReportContext);
-  const name = splitDisplayName(data.client.display_name);
   const totalPages = visibleTotalPages ?? getStylistBlueprintPageCount(data);
   const updateDisplayName = (value: string) => {
     const nextName = value.replace(/\s+/g, ' ').trim();
@@ -509,10 +747,8 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
       <div className="grain" />
       <div className="corner-tl">
         <div className="display wordmark">I C O N I K</div>
-        <div className="micro muted">EST - MMXXIV</div>
       </div>
       <div className="corner-tr">
-        <div className="micro muted">Volume I - Issue {String(Math.abs(data.client.email.length * 13)).padStart(3, '0')}</div>
         <div className="micro muted date-line">{data.client.month_year}</div>
       </div>
       <div className="cover-center">
@@ -521,48 +757,71 @@ function CoverPage({ page, data }: { page: BlueprintPage; data: StylistBlueprint
           <div className="micro">A Personal Blueprint</div>
           <span />
         </div>
+        {/* One editable node, not two styled spans: splitting the name meant
+            React rewrote both halves under the caret on every keystroke, and it
+            broke "Dr Swathi V S" onto a line of its own trailing initial. */}
         <h1
+          className="display cover-name"
           contentEditable={editable}
           suppressContentEditableWarning
           onBlur={event => updateDisplayName(event.currentTarget.innerText)}
           style={{ outline: 'none' }}
         >
-          <span className="display">{name.first}</span>
-          <span className="display-it">{name.rest}</span>
+          {coverName(data.client.display_name)}
         </h1>
-        <div className="mono cover-number">No. {String(page.page_number).padStart(5, '0')} / bp.iconik.pro</div>
-      </div>
-      <div className="corner-bl">
-        <div className="display-it cover-tag">Same body.</div>
-        <div className="display-it cover-tag">Different science.</div>
+        <div className="cover-tagline">
+          <span className="display-it">Same body.</span>
+          <span className="display-it cover-tagline-accent">Different science.</span>
+        </div>
+        <div className="cover-swatches" aria-hidden="true">
+          {data.classification.colour.base_palette.slice(0, 9).map((colour, index) => (
+            <span
+              key={`${colour.hex}-${index}`}
+              style={{ background: colour.hex, ['--i' as string]: index }}
+            />
+          ))}
+        </div>
+        {/* Two lines by construction, so a wrap can never strand a separator
+            at the start of the second one. */}
+        <div className="micro cover-caption">
+          <span>{data.classification.colour.palette_name}</span>
+          <span>{getStylistBlueprintOutfitCount(data)} outfits · {totalPages} pages</span>
+        </div>
       </div>
       <div className="corner-br"><div className="mono corner-kicker">01 / {totalPages}</div></div>
+      {/* The cover fills the first screen, so without a cue a first-time reader
+          on a phone has no hint that fifty-four pages follow. */}
+      {!editable && (
+        <div className="cover-scroll-cue" aria-hidden="true">
+          <span className="micro">Scroll</span>
+          <i />
+        </div>
+      )}
     </section>
   );
 }
 
 function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
-  const focus = data.analysis.proportional_focus.join('. ');
-  const colourSummary = `Use the palette as a full colour territory: grounded neutrals, wearable colour families, and controlled accents selected by depth, contrast, and undertone axis.`;
+  const colourSummary = `Your palette is built from grounded neutrals you can wear every day, plus a smaller set of colours chosen to suit your skin.`;
   const cards = [
-    ['01 - SILHOUETTE', data.analysis.silhouette_profile, 'relative body geometry', firstBody(page.blocks, data.classification.body.proportion_directive)],
-    ['02 - CHROMATIC', data.analysis.chromatic_family, `${data.classification.colour.depth} depth`, colourSummary],
-    ['03 - ARCHITECTURE', data.classification.face_hair_accessories.face_shape, 'face and neckline logic', data.classification.face_hair_accessories.face_direction],
-    ['04 - DIRECTION', data.analysis.style_direction, data.classification.taste.moodboard, data.classification.client.lifestyle_summary],
+    ['01 - YOUR SHAPE', data.analysis.silhouette_profile, 'how your body reads', firstBody(page.blocks, data.classification.body.proportion_directive)],
+    ['02 - YOUR COLOURS', data.analysis.chromatic_family, `${data.classification.colour.depth} depth`, colourSummary],
+    ['03 - YOUR FACE', data.classification.face_hair_accessories.face_shape, 'necklines and collars', data.classification.face_hair_accessories.face_direction],
+    ['04 - YOUR STYLE', data.analysis.style_direction, data.classification.taste.moodboard, data.classification.client.lifestyle_summary],
   ];
+  const focusAreas = data.analysis.proportional_focus.filter(area => area.trim());
   return (
     <PageFrame page={page} className="summary-page">
       <div className="summary-grid">
         <aside className="summary-rail">
-          <div className="micro faded">Section</div>
-          <div className="display rail-number">02</div>
-          <Metric label="Reading time" value="4 min" />
-          <Metric label="Axes measured" value="Five" />
-          <Metric label="Confidence" value={`${data.analysis.confidence.body}/${data.analysis.confidence.colour}/${data.analysis.confidence.face}`} />
+          <div className="micro faded">In this report</div>
+          <Metric label="Pages" value={String(getStylistBlueprintPageCount(data))} />
+          <Metric label="Outfits" value={String(getStylistBlueprintOutfitCount(data))} />
+          <Metric label="Colours" value={String(data.classification.colour.base_palette.length + data.classification.colour.accent_palette.length)} />
         </aside>
         <div className="summary-main">
-          <div className="micro faded">The Summary</div>
-          <h2><span className="display">Five measurements</span><span className="display-it">define everything.</span></h2>
+          <div className="micro faded">The short version</div>
+          <h2><span className="display">Four things</span><span className="display-it">we found.</span></h2>
           <div className="rule" />
           <div className="dossier-cards">
             {cards.map(([label, title, sub, body]) => (
@@ -577,10 +836,16 @@ function SummaryPage({ page, data }: { page: BlueprintPage; data: StylistBluepri
           </div>
           <div className="rule thesis-rule" />
           <div className="thesis">
-            <div className="mono faded">05</div>
             <div>
-              <p className="display-it">&quot;{focus || data.analysis.style_direction}&quot;</p>
-              <div className="micro faded">The Proportional Focus - your styling thesis</div>
+              <p className="display-it">&quot;{page.pull_quote || data.classification.body.proportion_directive}&quot;</p>
+              {focusAreas.length > 0 && (
+                <>
+                  <div className="micro faded">What we keep coming back to</div>
+                  <div className="focus-chips">
+                    {focusAreas.map(area => <span key={area} className="focus-chip">{area}</span>)}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -647,6 +912,8 @@ function TransformationPage({
             const slotKey = `application.transformationLooks.${index}` as StylistBlueprintImageSlotKey;
             const image = imageUrls?.application?.transformationLooks?.[index] ?? null;
             const items = asItems(block).slice(0, 5);
+            // Images only by design — this page is a visual preview, not a
+            // written section.
             return (
               <div key={index} className="transformation-card">
                 <div className="transformation-label">Look {index + 1}</div>
@@ -693,9 +960,9 @@ function DiagnosisPage({
   const secondarySlot = secondaryImageSlotForPage(page, data);
   const showSecondary = Boolean(secondary || (onImageRegenerate && secondarySlot));
   const statements = page.blocks.length ? page.blocks : [
-    { label: 'Finding', body: data.classification.body.proportion_directive },
-    { label: 'Implication', body: data.classification.body.silhouette_rules.join(' ') },
-    { label: 'Discipline', body: data.analysis.evidence_notes.join(' ') },
+    { label: 'What we saw', body: data.classification.body.proportion_directive },
+    { label: 'What that means', body: sentenceList(data.classification.body.silhouette_rules) },
+    { label: 'How we worked it out', body: sentenceList(data.analysis.evidence_notes) },
   ];
 
   if (page.page_number === getStylistBlueprintChromaticPage(data)) return <ChromaticPage page={page} data={data} image={image} />;
@@ -754,7 +1021,7 @@ function DiagnosisPage({
             ))}
           </div>
           <div className="rule quote-rule" />
-          <p className="display-it diagnosis-quote">&quot;<EditableText page={page} value={page.subtitle || data.analysis.proportional_focus.join('. ')} update={value => ({ ...page, subtitle: value })} />&quot;</p>
+          <p className="display-it diagnosis-quote">&quot;<EditableText page={page} value={pullQuoteFor(page, data)} update={value => ({ ...page, pull_quote: value })} />&quot;</p>
         </div>
       </div>
     </PageFrame>
@@ -800,7 +1067,7 @@ function ChromaticPage({
           </div>
         </div>
         <div className="rule quote-rule" />
-        <p className="display-it diagnosis-quote">&quot;{page.subtitle || data.analysis.chromatic_family}&quot;</p>
+        <p className="display-it diagnosis-quote">&quot;{pullQuoteFor(page, data)}&quot;</p>
       </div>
     </PageFrame>
   );
@@ -847,9 +1114,9 @@ function MiniAxis({ label, value, position }: { label: string; value: string; po
 
 function ProportionalAxesPage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData }) {
   const blocks = page.blocks.length ? page.blocks : [
-    { label: 'Axis 01', heading: 'Vertical balance', body: data.classification.body.proportion_directive },
-    { label: 'Axis 02', heading: 'Horizontal balance', body: data.classification.body.silhouette_rules.join(' ') },
-    { label: 'Axis 03', heading: 'Focal control', body: data.analysis.proportional_focus.join(', ') },
+    { label: '01', heading: 'Height and line', body: data.classification.body.proportion_directive },
+    { label: '02', heading: 'Width and balance', body: sentenceList(data.classification.body.silhouette_rules) },
+    { label: '03', heading: 'Where the eye lands', body: focusAreaSentence(data) },
   ];
   return (
     <PageFrame page={page} className="proportion-page">
@@ -860,16 +1127,16 @@ function ProportionalAxesPage({ page, data }: { page: BlueprintPage; data: Styli
             <EditableText page={page} value={page.subtitle || 'aligned.'} update={value => ({ ...page, subtitle: value })} className="display-it" />
           </h2>
           <div className="rule" />
-          <p className="display-it diagnosis-quote">&quot;{data.analysis.proportional_focus.join('. ')}&quot;</p>
+          <p className="display-it diagnosis-quote">&quot;{pullQuoteFor(page, data)}&quot;</p>
         </div>
         <div className="proportion-card-grid">
           {blocks.slice(0, 6).map((block, index) => (
             <div key={index} className="glass-dark proportion-card">
-              <div className="mono dossier-label">{block.label || `Axis ${String(index + 1).padStart(2, '0')}`}</div>
+              <div className="mono dossier-label">{block.label || String(index + 1).padStart(2, '0')}</div>
               <EditableText
                 as="h3"
                 page={page}
-                value={block.heading || block.label || `Axis ${index + 1}`}
+                value={block.heading || block.label || `Point ${index + 1}`}
                 update={value => updateBlock(page, index, block.heading !== undefined ? { heading: value } : { label: value })}
                 className="display"
               />
@@ -888,14 +1155,19 @@ function ProportionalAxesPage({ page, data }: { page: BlueprintPage; data: Styli
 }
 
 function PalettePage({ page, data }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
+  const base = data.classification.colour.base_palette;
+  const accents = data.classification.colour.accent_palette;
   return (
     <PageFrame page={page} className="palette-page">
       <div className="palette-inner">
         <div className="palette-copy">
-          <h2><span className="display">Fifteen</span><span className="display-it">colours, one rule.</span></h2>
-          <p className="palette-intro">Fifteen base shades to build the wardrobe. Five accent shades for tension. Together they describe a complete chromatic territory - your territory.</p>
-          <PaletteSwatchGrid title="The Base - 15 shades - wardrobe territory" colours={data.classification.colour.base_palette} />
-          <PaletteSwatchGrid title="The Accents - 5 shades - for emphasis" colours={data.classification.colour.accent_palette} />
+          <h2><span className="display">Your colours,</span><span className="display-it">and what each one is for.</span></h2>
+          <p className="palette-intro">
+            The first set is your everyday wardrobe: the colours to buy trousers, shirts, knitwear and coats in.
+            The second set is for one piece at a time — a knit, a scarf, a bag — when you want the outfit to lift.
+          </p>
+          <PaletteSwatchGrid title={`Everyday colours - ${base.length} shades`} colours={base} />
+          <PaletteSwatchGrid title={`Lift colours - ${accents.length} shades, one at a time`} colours={accents} />
         </div>
       </div>
     </PageFrame>
@@ -920,6 +1192,7 @@ function PaletteSwatchGrid({
           <div key={`${colour.hex}-${index}`} className="premium-swatch">
             <div className="swatch-tile" style={{ background: colour.hex }} />
             <div className="display-it swatch-name">{colour.name}</div>
+            {colour.usage && <div className="swatch-usage">{colour.usage}</div>}
           </div>
         ))}
       </div>
@@ -942,9 +1215,13 @@ function ColourDrapePage({ page, imageUrls }: { page: BlueprintPage; data: Styli
   );
 }
 
+/**
+ * Returns only the directions we actually have. This used to pad to four by
+ * repeating the same fallback paragraph, which rendered four identical cards.
+ */
 function directionCards(input: string[] | null | undefined, fallback: string) {
   const values = (input ?? []).map(item => item.trim()).filter(Boolean);
-  return Array.from({ length: 4 }, (_, index) => values[index] || fallback);
+  return values.length ? values.slice(0, 4) : (fallback.trim() ? [fallback.trim()] : []);
 }
 
 function VisualDirectionPage({
@@ -1012,7 +1289,7 @@ function VisualDirectionPage({
           {sourceCards.map((card, index) => (
             <div key={`${card}-${index}`} className="visual-direction-card">
               <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
-              <div className="display-it">{card}</div>
+              <div className="direction-copy">{card}</div>
             </div>
           ))}
         </div>
@@ -1046,7 +1323,7 @@ function MakeupPage({
               {colours.map((colour, index) => (
                 <div key={`${colour}-${index}`} className="visual-direction-card">
                   <div className="mono dossier-label">SHADE</div>
-                  <div className="display-it">{colour}</div>
+                  <div className="direction-copy">{colour}</div>
                 </div>
               ))}
             </div>
@@ -1059,7 +1336,7 @@ function MakeupPage({
           {steps.map((step, index) => (
             <div key={`${step}-${index}`} className="visual-direction-card">
               <div className="mono dossier-label">{`STEP ${String(index + 1).padStart(2, '0')}`}</div>
-              <div className="display-it">{step}</div>
+              <div className="direction-copy">{step}</div>
             </div>
           ))}
         </div>
@@ -1134,9 +1411,9 @@ function RuleProofOutfit({
 
   return (
     <div className="rule-proof">
-      <div className="rule-proof-media">
+      <ImageSlotFrame slotKey={`application.silhouetteProofs.${slotIndex}` as StylistBlueprintImageSlotKey} label={`rule example ${slotIndex + 1}`} className="rule-proof-media">
         {image ? <ReportImage src={image} /> : <OutfitFallback palette={palette} />}
-      </div>
+      </ImageSlotFrame>
     </div>
   );
 }
@@ -1173,7 +1450,7 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
   return (
     <PageFrame page={page} className="rule-page">
       <div className="rule-layout">
-        <div>
+        <div className="rule-head">
           <h2>
             <EditableText page={page} value={page.title} update={value => ({ ...page, title: value })} className="display" />
             {page.subtitle && <EditableText page={page} value={page.subtitle} update={value => ({ ...page, subtitle: value })} className="display-it" />}
@@ -1188,23 +1465,28 @@ function RuleLikePage({ page, data, imageUrls }: { page: BlueprintPage; data: St
         <div className="rule-card-grid">
           {cards.slice(0, 8).map((block, index) => (
             <div key={index} className="glass-dark premium-rule-card">
-              <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
-              <EditableText
-                as="h3"
-                page={page}
-                value={block.heading || block.label}
-                update={value => updateBlock(page, block.sourceIndex, block.titleField === 'heading' ? { heading: value } : { label: value })}
-                className="display"
-              />
-              <EditableText
-                as="p"
-                page={page}
-                value={block.body}
-                update={value => updateBlock(page, block.sourceIndex, { body: value })}
-              />
-              {block.reason && (
-                <p className="why">Why: <EditableText page={page} value={block.reason} update={value => updateBlock(page, block.sourceIndex, { reason: value })} /></p>
-              )}
+              {/* Copy is wrapped so the card is a simple two-column row. Letting
+                  the proof image span auto rows made the grid share its height
+                  out between the number, title and body as dead gaps. */}
+              <div className="rule-card-copy">
+                <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
+                <EditableText
+                  as="h3"
+                  page={page}
+                  value={block.heading || block.label}
+                  update={value => updateBlock(page, block.sourceIndex, block.titleField === 'heading' ? { heading: value } : { label: value })}
+                  className="display"
+                />
+                <EditableText
+                  as="p"
+                  page={page}
+                  value={block.body}
+                  update={value => updateBlock(page, block.sourceIndex, { body: value })}
+                />
+                {block.reason && (
+                  <p className="why">Why: <EditableText page={page} value={block.reason} update={value => updateBlock(page, block.sourceIndex, { reason: value })} /></p>
+                )}
+              </div>
               <RuleProofOutfit
                 proof={block.exampleOutfit}
                 imageUrls={imageUrls}
@@ -1334,6 +1616,47 @@ function OutfitSystemPage({ page, data, imageUrls }: { page: BlueprintPage; data
   );
 }
 
+/**
+ * A Google Shopping search for one garment.
+ *
+ * This deliberately builds a *search*, not a deep link to a single product
+ * page. A specific product URL cannot be produced reliably without a shopping
+ * feed behind it: any hard-coded listing goes out of stock, gets re-slugged, or
+ * is regional, and a paid report full of dead links is worse than none. A
+ * well-formed query lands her on live, buyable results for the exact piece.
+ *
+ * The library writes descriptions for a stylist, not for a search box, so the
+ * clause after the garment ("with a fine white border and a plain body") and our
+ * own heel annotation ("1.2-2 inch") are stripped — both wreck the results.
+ */
+function shoppingQuery(piece: string, colourName: string) {
+  const head = (piece ?? '')
+    .split(',')[0]
+    .split(/\s+(?:with|that|featuring|worn|in a|on a)\s+/i)[0];
+  const cleaned = head
+    .replace(/\b\d+(?:\.\d+)?\s*[-–]\s*\d+(?:\.\d+)?\s*inch(?:es)?\b/gi, ' ')
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return '';
+  const lead = (colourName ?? '').trim().split(/\s+/)[0] ?? '';
+  const alreadyNamesColour = lead
+    ? new RegExp(`\\b${lead.replace(/[^\p{L}\p{N}]/gu, '')}\\b`, 'iu').test(cleaned)
+    : true;
+  return `${alreadyNamesColour ? '' : `${colourName} `}${cleaned} women`.replace(/\s+/g, ' ').trim();
+}
+
+function shoppingUrl(query: string, country: string | undefined) {
+  // udm=28 is Google's current Shopping surface. The older tbm=shop still works
+  // but is served as a redirect to this, so we send the canonical form and skip
+  // the hop. If Google retires the parameter the link degrades to an ordinary
+  // search for the same garment rather than breaking.
+  const params = new URLSearchParams({ q: query, udm: '28', hl: 'en' });
+  // Scope to her market so prices and retailers are ones she can actually use.
+  if (/india/i.test(country ?? '')) params.set('gl', 'in');
+  return `https://www.google.com/search?${params.toString()}`;
+}
+
 function SwatchDot({ hex }: { hex: string }) {
   return <span className="swatch-dot" style={{ background: hex }} />;
 }
@@ -1374,11 +1697,24 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
   const image = imageForPage(page, imageUrls, data);
   const detail = secondaryImageForPage(page, imageUrls, data);
   const reasoning = page.blocks.find(block => block.reason || /reason|why|works/i.test(`${block.label} ${block.heading}`));
+  // The pull-quote and the Logic row must never render the same string: pick the
+  // quote first, then give Logic whatever text the quote did not take.
+  const quoteText = page.pull_quote?.trim() || reasoning?.reason?.trim() || reasoning?.body?.trim() || '';
+  const logicCandidates = [reasoning?.body?.trim(), reasoning?.reason?.trim(), firstBody(page.blocks).trim()];
+  const logicRaw = logicCandidates.find(value => value && value !== quoteText) ?? '';
+  // Equality alone was not enough: the body opens with the very sentence used
+  // as the pull quote, so the page printed it twice, once in quotes and once
+  // again three lines below. Keep the remainder instead of dropping the block.
+  const logicTrimmed = quoteText && logicRaw.startsWith(quoteText)
+    ? logicRaw.slice(quoteText.length).trim()
+    : logicRaw;
+  const logicText = logicTrimmed || logicRaw;
   const formula = formulaItemsForOutfit(page);
   const items = formula.items;
   const palette = paletteForOutfitPage(page, data, items);
   const outfitNumber = page.page_number - getStylistBlueprintOutfitStartPage(data) + 1;
   const imageSlot = imageSlotForPage(page, data);
+  const formulaPieceCount = (items.length ? items : page.blocks.slice(0, 5)).length;
   return (
     <PageFrame page={page} className="outfit-page">
       <div className="outfit-hero">
@@ -1392,15 +1728,15 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
               className="display"
             />
           </h2>
-          <p className="display-it outfit-quote">&quot;<EditableText page={page} value={reasoning?.reason || reasoning?.body || page.subtitle || data.classification.body.proportion_directive} update={value => reasoning ? updateBlock(page, page.blocks.indexOf(reasoning), reasoning.reason !== undefined ? { reason: value } : { body: value }) : { ...page, subtitle: value }} />&quot;</p>
+          <p className="display-it outfit-quote">&quot;<EditableText page={page} value={quoteText || data.classification.body.proportion_directive} update={value => ({ ...page, pull_quote: value })} />&quot;</p>
           <div className="rule" />
           <div className="outfit-meta">
             <div className="mono faded">Occasion</div>
             <EditableText as="p" page={page} value={page.subtitle || getField(page.blocks[0], ['body'], 'Context-specific formula')} update={value => ({ ...page, subtitle: value })} />
             <div className="mono faded">Palette</div>
-            <div>{palette.map(colour => <SwatchDot key={`${colour.hex}-${colour.name}`} hex={colour.hex} />)}</div>
-            <div className="mono faded">Logic</div>
-            <EditableText as="p" page={page} value={reasoning?.body || reasoning?.reason || firstBody(page.blocks)} update={value => reasoning ? updateBlock(page, page.blocks.indexOf(reasoning), reasoning.body !== undefined ? { body: value } : { reason: value }) : page} />
+            <div>{palette.map((colour, index) => <SwatchDot key={`${colour.hex}-${colour.name}-${index}`} hex={colour.hex} />)}</div>
+            <div className="mono faded">Why it works</div>
+            <EditableText as="p" page={page} value={logicText} update={value => reasoning ? updateBlock(page, page.blocks.indexOf(reasoning), reasoning.body !== undefined ? { body: value } : { reason: value }) : page} />
           </div>
         </div>
         <div className="outfit-art">
@@ -1418,11 +1754,15 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
       </div>
       <div className="rule formula-rule" />
       <div>
-        <div className="mono faded formula-label">The Formula - {Math.max(items.length, 5)} pieces</div>
+        <div className="formula-head">
+          <div className="mono faded formula-label">{formulaPieceCount === 1 ? 'The outfit - 1 piece' : `The outfit - ${formulaPieceCount} pieces`}</div>
+          <div className="formula-hint">Each piece opens a live shopping search in your colour.</div>
+        </div>
         <div className="formula-grid">
           {(items.length ? items : page.blocks.slice(0, 5)).map((item, index) => {
             const colour = colourForFormulaItem(item, page, data, index);
             const pieceValue = getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`));
+            const query = shoppingQuery(pieceValue, colour.name);
             return (
               <div key={index} className="formula-card">
                 <SwatchDot hex={colour.hex} />
@@ -1432,6 +1772,25 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
                     ? <EditableText page={page} value={pieceValue} update={value => updateItem(page, formula.blockIndex, index, { piece: value })} />
                     : pieceValue}
                 </h3>
+                {query && (
+                  <a
+                    className="formula-shop"
+                    href={shoppingUrl(query, data.classification.client.country)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Shop for ${query} on Google Shopping`}
+                    title={query}
+                  >
+                    <svg className="formula-shop-bag" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                      <path d="M3.2 5.5h9.6l-.7 7.3a1 1 0 0 1-1 .9H4.9a1 1 0 0 1-1-.9z" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                      <path d="M5.6 5.5V4.6a2.4 2.4 0 0 1 4.8 0v.9" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    </svg>
+                    <span>Shop this piece</span>
+                    <svg className="formula-shop-arrow" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                      <path d="M3 9L9 3M9 3H4.2M9 3v4.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </a>
+                )}
               </div>
             );
           })}
@@ -1511,9 +1870,10 @@ function ContinuationPage({ page, data, imageUrls }: { page: BlueprintPage; data
             value={firstBody(page.blocks, 'A weekly study built on the data in this Blueprint. New outfit formulas, shopping intelligence, and styling logic matched to your palette and geometry.')}
             update={value => updateBlock(page, page.blocks.findIndex(block => block.body || block.reason), { body: value })}
           />
+          {/* The price was hardcoded as "$39/mo" — wrong currency for an Indian
+              client base, and not sourced from any pricing config. Left out
+              until an ICONIK Edit price exists in indiaBlueprintPricing.ts. */}
           <div className="edit-pill">
-            <div className="display">$39<span>/mo</span></div>
-            <i />
             <div className="display-it">Continue with the Edit &gt;</div>
           </div>
           <div className="short-rule" />
@@ -1602,14 +1962,7 @@ function LegacyReport({ data }: { data: LegacyStylistBlueprintReportData; imageU
   return <PremiumReport data={reportData} imageUrls={null} />;
 }
 
-function DeferredBlueprintPage({
-  page,
-  data,
-  defer,
-  totalPages,
-  displayPageNumber,
-  children,
-}: {
+function DeferredBlueprintPage({ defer, children }: {
   page: BlueprintPage;
   data: StylistBlueprintReportData;
   defer: boolean;
@@ -1617,41 +1970,10 @@ function DeferredBlueprintPage({
   displayPageNumber?: number;
   children: ReactNode;
 }) {
-  const { elementRef, hasIntersected } = useIntersectionObserver({
-    threshold: 0,
-    rootMargin: '700px 0px',
-  });
-  const shouldRender = !defer || hasIntersected;
-  if (shouldRender) return <>{children}</>;
-
-  const pageType = canonicalPageType(page, data);
-  return (
-    <div
-      ref={elementRef}
-      className={`iconik-page ${pageClass(page.page_number, pageType)} deferred-page`}
-      data-blueprint-page-number={page.page_number}
-    >
-      <div className="grain" />
-      <div className="corner-tl">
-        <div className="mono corner-kicker">{pageKicker(page, data)}</div>
-        <div className="small-caps corner-title">{page.title}</div>
-      </div>
-      <div className="corner-tr">
-        <div className="mono corner-kicker">{String(displayPageNumber ?? page.page_number).padStart(2, '0')} / {totalPages ?? getStylistBlueprintPageCount(data)}</div>
-      </div>
-      <div className="deferred-skeleton" aria-hidden="true">
-        <div className="deferred-kicker" />
-        <div className="deferred-title" />
-        <div className="deferred-title short" />
-        <div className="deferred-rule" />
-        <div className="deferred-grid">
-          <div />
-          <div />
-          <div />
-        </div>
-      </div>
-    </div>
-  );
+  // Keep every page in the document for print, find-in-page and accessibility.
+  // The browser skips layout/paint for distant pages without omitting content.
+  if (!defer) return <>{children}</>;
+  return <div className="blueprint-deferred-shell" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 1100px' }}>{children}</div>;
 }
 
 function PremiumReport({
@@ -1666,6 +1988,9 @@ function PremiumReport({
   onImageRegenerate,
   regeneratingImageSlot,
   imageRegenerationDisabled,
+  imagePrompts,
+  onImageUpload,
+  uploadingImageSlot,
 }: {
   data: StylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
@@ -1678,19 +2003,15 @@ function PremiumReport({
   onImageRegenerate?: (slotKey: StylistBlueprintImageSlotKey) => void | Promise<void>;
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
+  imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
+  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | Promise<void>;
+  uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
 }) {
-  const continuationPage = getStylistBlueprintContinuationPage(data);
-  const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);
-  const order = data.studio?.page_order ?? [];
-  const orderIndex = new Map(order.map((pageNumber, index) => [pageNumber, index]));
-  const visiblePages = [...data.pages]
-    .filter(page => !hideContinuationPage || page.page_number !== continuationPage)
-    .filter(page => editable || !hiddenPages.has(page.page_number))
-    .sort((a, b) => (orderIndex.get(a.page_number) ?? a.page_number) - (orderIndex.get(b.page_number) ?? b.page_number));
+  const visiblePages = getVisibleStylistBlueprintPages(data, { hideContinuationPage, includeHidden: editable });
   const pages = visiblePages.filter(page => !focusPageNumber || page.page_number === focusPageNumber);
   const visibleTotalPages = visiblePages.length;
   return (
-    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, reportData: data, visibleTotalPages, visiblePageNumbers: visiblePages.map(page => page.page_number) }}>
+    <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, imagePrompts, onImageUpload, uploadingImageSlot, reportData: data, visibleTotalPages, visiblePageNumbers: visiblePages.map(page => page.page_number) }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
         <BlueprintStyles />
         {pages.map(page => {
@@ -1732,6 +2053,9 @@ export default function StylistBlueprintReport({
   onImageRegenerate,
   regeneratingImageSlot,
   imageRegenerationDisabled,
+  imagePrompts,
+  onImageUpload,
+  uploadingImageSlot,
 }: {
   data: StylistBlueprintReportData | LegacyStylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
@@ -1744,6 +2068,9 @@ export default function StylistBlueprintReport({
   onImageRegenerate?: (slotKey: StylistBlueprintImageSlotKey) => void | Promise<void>;
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
+  imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
+  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | Promise<void>;
+  uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
 }) {
   if (!isVersionedStylistBlueprintReportData(data)) return <LegacyReport data={data} imageUrls={imageUrls} />;
   return (
@@ -1759,6 +2086,9 @@ export default function StylistBlueprintReport({
       onImageRegenerate={onImageRegenerate}
       regeneratingImageSlot={regeneratingImageSlot}
       imageRegenerationDisabled={imageRegenerationDisabled}
+      imagePrompts={imagePrompts}
+      onImageUpload={onImageUpload}
+      uploadingImageSlot={uploadingImageSlot}
     />
   );
 }
@@ -1766,12 +2096,19 @@ export default function StylistBlueprintReport({
 function BlueprintStyles() {
   return (
     <style jsx global>{`
+      /* One typeface for the whole document. Manrope carries the display sizes
+         at a tight -0.04em and still sets clean body copy, so the report reads
+         as a single voice instead of a serif/sans/mono collage. */
       .iconik-report {
         background: ${INK};
         color: ${INK};
-        font-family: var(--font-inter), Inter, system-ui, sans-serif;
-        font-weight: 300;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
+        font-weight: 400;
+        letter-spacing: -0.011em;
+        font-variant-numeric: tabular-nums;
         padding: 20px;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
       }
       .iconik-report-editable [contenteditable="true"] {
         cursor: text;
@@ -1789,6 +2126,76 @@ function BlueprintStyles() {
       .image-slot-frame {
         position: relative;
         overflow: hidden;
+      }
+      /* Admin-only affordances: they render solely when the studio passes
+         imagePrompts / onImageUpload, which the client report never does. */
+      .slot-tools {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+        z-index: 5;
+        display: flex;
+        gap: 6px;
+        opacity: 0;
+        transition: opacity 140ms ease;
+      }
+      .image-slot-frame:hover .slot-tools,
+      .image-slot-frame:focus-within .slot-tools {
+        opacity: 1;
+      }
+      .slot-tool {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        border: 1px solid rgba(244, 239, 229, 0.4);
+        background: rgba(44, 38, 34, 0.72);
+        color: ${IVORY};
+        font-size: 11px;
+        line-height: 1;
+        padding: 6px 10px;
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+      .slot-tool:hover:not(:disabled) { background: rgba(44, 38, 34, 0.88); }
+      .slot-tool:disabled { opacity: 0.55; cursor: not-allowed; }
+      .image-slot-frame.slot-dragging {
+        outline: 2px dashed rgba(201, 169, 110, 0.9);
+        outline-offset: -4px;
+      }
+      .slot-drop-hint {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(44, 38, 34, 0.55);
+        color: ${IVORY};
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+      .slot-prompt {
+        position: absolute;
+        inset: 8px;
+        z-index: 7;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .slot-prompt textarea {
+        width: 100%;
+        height: 100%;
+        resize: none;
+        border: 1px solid rgba(244, 239, 229, 0.35);
+        border-radius: 12px;
+        background: rgba(44, 38, 34, 0.94);
+        color: ${IVORY};
+        font-size: 11px;
+        line-height: 1.55;
+        padding: 10px;
       }
       .image-regenerate-button {
         position: absolute;
@@ -1825,41 +2232,54 @@ function BlueprintStyles() {
         to { transform: rotate(360deg); }
       }
       .display {
-        font-family: var(--font-fraunces), Fraunces, Georgia, serif;
-        font-weight: 300;
-        letter-spacing: -0.025em;
-        line-height: 0.95;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        line-height: 0.98;
+        text-wrap: balance;
       }
+      /* Manrope has no true italic, and a synthesised slant on a geometric sans
+         looks broken. The secondary voice is carried by weight and colour
+         instead, which keeps the contrast without faking a cut that does not
+         exist. */
       .display-it {
-        font-family: var(--font-fraunces), Fraunces, Georgia, serif;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, sans-serif;
         font-weight: 300;
-        font-style: italic;
-        letter-spacing: -0.025em;
-        line-height: 1.04;
+        font-style: normal;
+        letter-spacing: -0.035em;
+        line-height: 1.14;
+        text-wrap: balance;
       }
       .mono {
-        font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-        font-weight: 400;
-        letter-spacing: 0;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, sans-serif;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
       }
+      /* Uppercase needs positive tracking to stay readable — the -0.04em above
+         is for the display sizes, not for 10px capitals. */
       .micro {
-        font-size: 9px;
-        letter-spacing: 0.32em;
+        font-size: 10px;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
-        font-weight: 400;
+        font-weight: 600;
       }
       .small-caps {
-        font-size: 10px;
-        letter-spacing: 0.22em;
+        font-size: 11px;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        font-weight: 400;
+        font-weight: 600;
       }
       .iconik-page {
         max-width: 1060px;
         min-height: 760px;
         margin: 0 auto 20px;
         border-radius: 20px;
-        padding: 64px 56px;
+        /* The running header (corner-tl/tr) is absolutely positioned, so the
+           content box has to start below it. At 64px the page title sat on top
+           of the first line of content — "Style Summary Dossier" printed
+           straight through "Pages". */
+        padding: 116px 56px 92px;
         position: relative;
         overflow: hidden;
         page-break-after: always;
@@ -1961,16 +2381,20 @@ function BlueprintStyles() {
         position: absolute;
         z-index: 2;
       }
-      .corner-tl { top: 28px; left: 32px; }
-      .corner-tr { top: 28px; right: 32px; text-align: right; }
-      .corner-bl { bottom: 28px; left: 32px; }
-      .corner-br { bottom: 28px; right: 32px; text-align: right; }
+      .corner-tl { top: 40px; left: 56px; right: 56px; }
+      .corner-tr { top: 40px; right: 56px; text-align: right; }
+      .corner-bl { bottom: 36px; left: 56px; }
+      .corner-br { bottom: 36px; right: 56px; text-align: right; }
+      /* The page number must never be overlapped by a long page title. */
+      .corner-tl { padding-right: 92px; }
+      .corner-tr { z-index: 3; }
       .corner-kicker, .faded, .muted {
         opacity: 0.55;
       }
       .corner-title {
-        margin-top: 6px;
-        opacity: 0.7;
+        display: block;
+        margin-top: 7px;
+        opacity: 0.72;
       }
       .wordmark {
         font-size: 14px;
@@ -1980,14 +2404,136 @@ function BlueprintStyles() {
       .date-line {
         margin-top: 8px;
       }
-      .cover-page {
-        min-height: 720px;
+      /* ── Opening sequence ────────────────────────────────────────────────
+         The share link is the first time she sees any of this, so the cover
+         assembles rather than simply appearing: rule, name, promise, then her
+         own palette wiping in one colour at a time.
+
+         Every animation uses fill-mode backwards, which means the "from"
+         state exists only while the animation is pending. If motion is turned
+         off, or the animation never runs at all, every element sits at its
+         normal visible style — the page can never get stuck invisible. The
+         sequence is skipped in the editor, where a stylist would sit through it
+         on every reload. */
+      @keyframes blueprint-rise {
+        from { opacity: 0; transform: translate3d(0, 18px, 0); }
+        to { opacity: 1; transform: none; }
       }
+      @keyframes blueprint-draw {
+        from { opacity: 0; transform: scaleX(0.2); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes blueprint-swatch {
+        from { opacity: 0; transform: scaleX(0) translate3d(0, 4px, 0); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes blueprint-panel {
+        from { opacity: 0; transform: scale(1.012); }
+        to { opacity: 1; transform: none; }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .iconik-report:not(.iconik-report-editable) .cover-page {
+          animation: blueprint-panel 1100ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-rule {
+          animation: blueprint-draw 900ms cubic-bezier(0.16, 1, 0.3, 1) 140ms backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-name {
+          animation: blueprint-rise 1000ms cubic-bezier(0.16, 1, 0.3, 1) 260ms backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-tagline {
+          animation: blueprint-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) 460ms backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-swatches span {
+          transform-origin: left center;
+          animation: blueprint-swatch 620ms cubic-bezier(0.16, 1, 0.3, 1) calc(640ms + var(--i, 0) * 65ms) backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-caption {
+          animation: blueprint-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) 1180ms backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-page .corner-tl,
+        .iconik-report:not(.iconik-report-editable) .cover-page .corner-tr,
+        .iconik-report:not(.iconik-report-editable) .cover-page .corner-br {
+          animation: blueprint-rise 800ms ease-out 1320ms backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-scroll-cue {
+          animation: blueprint-rise 800ms ease-out 1800ms backwards;
+        }
+        .iconik-report:not(.iconik-report-editable) .cover-scroll-cue i {
+          animation: blueprint-cue 2200ms cubic-bezier(0.4, 0, 0.2, 1) 2400ms infinite;
+        }
+        /* ── Reading sequence ──────────────────────────────────────────────
+           Every page after the cover settles into place as it enters the
+           viewport. The hidden state is only ever applied once the viewer
+           chrome has mounted and is observing (.iconik-report-reveal), and a
+           page is released the moment any part of it intersects, so a page can
+           never be left invisible by a timeline that failed to advance. */
+        .iconik-report-reveal .iconik-page:not(.cover-page) {
+          transition: opacity 720ms cubic-bezier(0.16, 1, 0.3, 1), transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .iconik-report-reveal .iconik-page:not(.cover-page):not(.is-in-view) {
+          opacity: 0;
+          transform: translate3d(0, 28px, 0);
+        }
+        .iconik-report-reveal .iconik-page:not(.cover-page) > *:not(.grain) {
+          transition: opacity 640ms ease-out, transform 820ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .iconik-report-reveal .iconik-page:not(.cover-page):not(.is-in-view) > *:not(.grain) {
+          opacity: 0;
+          transform: translate3d(0, 14px, 0);
+        }
+        .iconik-report-reveal .iconik-page.is-in-view > *:not(.grain):nth-child(3) { transition-delay: 80ms; }
+        .iconik-report-reveal .iconik-page.is-in-view > *:not(.grain):nth-child(4) { transition-delay: 160ms; }
+        .iconik-report-reveal .iconik-page.is-in-view > *:not(.grain):nth-child(5) { transition-delay: 240ms; }
+        .iconik-report-reveal .iconik-page.is-in-view > *:not(.grain):nth-child(n+6) { transition-delay: 300ms; }
+      }
+      /* Images that open in the viewer's lightbox. */
+      .iconik-report-interactive .flatlay-media img,
+      .iconik-report-interactive .transformation-media img,
+      .iconik-report-interactive .diagram-media img,
+      .iconik-report-interactive .secondary-strip img,
+      .iconik-report-interactive .axis-portrait img,
+      .iconik-report-interactive .visual-direction-media img,
+      .iconik-report-interactive .colour-drape-hero-frame img,
+      .iconik-report-interactive .rule-proof-media img,
+      .iconik-report-interactive .continuation-image img {
+        cursor: zoom-in;
+      }
+      /* A scroll-driven fade for the other fifty-four pages was tried and
+         removed. Its resting state before the scroll range begins is a faded
+         page, so any device where the timeline does not advance as expected
+         leaves a page of a paid report sitting at partial opacity. The opening
+         is the moment worth animating; the rest of the document should just be
+         legible. */
+      @media print {
+        .iconik-report *, .iconik-report {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      .cover-page {
+        /* The cover owns the first screen: nothing of page two shows until she
+           scrolls, so the opening reads as a title card rather than the top of
+           a long document. The 40px is the report's own padding. */
+        min-height: max(780px, calc(100svh - 40px));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Equal top and bottom so the centred block is actually centred; the
+           running head and page number sit in the margins either way. */
+        padding-top: 104px;
+        padding-bottom: 104px;
+      }
+      /* Optically centred rather than measured: the running head and the page
+         number sit in the margins, so a mathematically centred block reads low.
+         Flex centring plus a small lift puts the name on the eye line. */
       .cover-center {
-        position: absolute;
-        top: 32%;
-        left: 56px;
-        right: 56px;
+        position: relative;
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        transform: translateY(-14px);
+        text-align: center;
         z-index: 2;
       }
       .cover-portrait {
@@ -2010,9 +2556,10 @@ function BlueprintStyles() {
       }
       .cover-rule {
         display: flex;
-        align-items: baseline;
-        gap: 24px;
-        margin-bottom: 36px;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 30px;
+        opacity: 0.9;
       }
       .cover-rule span {
         height: 1px;
@@ -2022,23 +2569,98 @@ function BlueprintStyles() {
       .cover-rule div {
         opacity: 0.7;
       }
-      .cover-center h1 {
+      /* A soft bloom behind the name so the type sits in the page rather than
+         floating on a flat panel. */
+      .cover-center::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 46%;
+        width: 132%;
+        aspect-ratio: 2 / 1;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 68%);
+        pointer-events: none;
+        z-index: -1;
+      }
+      .cover-name {
         margin: 0;
-        text-align: center;
+        /* Scales with the name's length so a long one never breaks to an
+           orphaned initial the way "Dr Swathi V / S" did. */
+        font-size: clamp(46px, 7.6vw, 88px);
+        font-weight: 550;
+        letter-spacing: -0.045em;
+        line-height: 0.94;
+        text-wrap: balance;
       }
-      .cover-center h1 span {
+      .cover-tagline {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: clamp(16px, 1.6vw, 20px);
+        line-height: 1.28;
+        opacity: 0.72;
+      }
+      .cover-tagline-accent {
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        opacity: 1;
+      }
+      /* Her actual palette, on the cover. The opening should already be about
+         her rather than about us. */
+      .cover-swatches {
+        margin: 42px auto 0;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+      .cover-swatches span {
+        width: 34px;
+        height: 5px;
+        border-radius: 999px;
+        box-shadow: inset 0 0 0 1px rgba(244, 239, 229, 0.24);
+      }
+      .cover-caption {
+        margin-top: 20px;
+        opacity: 0.55;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px 14px;
+      }
+      .cover-caption span + span::before {
+        content: '·';
+        margin-right: 14px;
+        opacity: 0.6;
+      }
+      .cover-scroll-cue {
+        position: absolute;
+        left: 50%;
+        bottom: 34px;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        opacity: 0.55;
+        z-index: 2;
+      }
+      .cover-scroll-cue .micro {
+        letter-spacing: 0.3em;
+        font-size: 9px;
+      }
+      .cover-scroll-cue i {
         display: block;
-        font-size: clamp(62px, 11vw, 92px);
+        width: 1px;
+        height: 36px;
+        background: linear-gradient(to bottom, rgba(244, 239, 229, 0.9), rgba(244, 239, 229, 0));
+        transform-origin: top center;
       }
-      .cover-number {
-        text-align: center;
-        margin-top: 48px;
-        font-size: 11px;
-        opacity: 0.7;
-      }
-      .cover-tag {
-        font-size: 15px;
-        opacity: 0.85;
+      @keyframes blueprint-cue {
+        0% { transform: scaleY(0); opacity: 0; }
+        35% { transform: scaleY(1); opacity: 1; }
+        100% { transform: scaleY(1) translateY(14px); opacity: 0; }
       }
       .summary-grid {
         display: grid;
@@ -2050,17 +2672,28 @@ function BlueprintStyles() {
         border-right: 1px solid rgba(44, 38, 34, 0.12);
         padding-right: 32px;
       }
+      /* The rail heading was sitting on top of the first metric label. */
+      .summary-rail > .micro {
+        display: block;
+        margin-bottom: 26px;
+      }
       .rail-number {
         font-size: 48px;
         margin-top: 8px;
         margin-bottom: 32px;
       }
       .metric {
-        margin-bottom: 28px;
+        margin-bottom: 26px;
+      }
+      .metric .small-caps {
+        display: block;
+        margin-bottom: 4px;
       }
       .metric .display {
-        font-size: 22px;
-        margin-top: 4px;
+        font-size: 30px;
+        font-weight: 500;
+        letter-spacing: -0.045em;
+        line-height: 1;
       }
       .summary-main h2,
       .reading-inner h2,
@@ -2087,7 +2720,12 @@ function BlueprintStyles() {
       .continuation-inner h2 span,
       .generic-inner h2 span {
         display: block;
-        font-size: clamp(44px, 7vw, 80px);
+        font-size: clamp(34px, 5.4vw, 64px);
+        overflow-wrap: break-word;
+        /* Auto-hyphenation on display type ("Architec-tural") reads as a
+           typesetting fault. It is enabled again below 900px, where a single
+           long word can otherwise overflow the column. */
+        hyphens: manual;
       }
       .summary-main h2 span {
         font-size: clamp(42px, 6vw, 64px);
@@ -2113,9 +2751,10 @@ function BlueprintStyles() {
         margin-top: 2px;
       }
       .dossier-card p, .palette-intro, .rule-layout p, .system-inner p, .matrix-grid p, .generic-blocks p {
-        font-size: 13px;
-        line-height: 1.6;
-        opacity: 0.7;
+        font-size: 14px;
+        line-height: 1.75;
+        opacity: 0.86;
+        max-width: 52ch;
       }
       .dossier-card .rule-thin {
         margin: 14px 0;
@@ -2132,6 +2771,20 @@ function BlueprintStyles() {
         font-size: 22px;
         line-height: 1.4;
         margin: 0 0 14px;
+      }
+      .focus-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .focus-chip {
+        border: 1px solid rgba(244, 239, 229, 0.24);
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12px;
+        line-height: 1.2;
+        opacity: 0.86;
       }
       .reading-inner, .palette-inner, .system-inner, .generic-inner {
         margin-top: 72px;
@@ -2160,10 +2813,11 @@ function BlueprintStyles() {
         border-radius: 999px;
         background: rgba(44, 38, 34, 0.72);
         color: ${IVORY};
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-        font-size: 11px;
+        font-family: var(--font-manrope), Manrope, ui-sans-serif, sans-serif;
+        font-weight: 600;
+        font-size: 10px;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.16em;
       }
       .transformation-media {
         aspect-ratio: 2 / 3;
@@ -2178,25 +2832,40 @@ function BlueprintStyles() {
       }
       .reading-blocks, .generic-blocks {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
         margin-top: 32px;
+        align-items: start;
       }
       .reading-card, .premium-rule-card {
-        padding: 24px;
-      }
-      .premium-rule-card {
+        padding: 26px 26px 28px;
         display: flex;
         flex-direction: column;
+        align-items: stretch;
+      }
+      .reading-card .dossier-label, .premium-rule-card .dossier-label {
+        margin-bottom: 14px;
       }
       .reading-card h3, .premium-rule-card h3 {
-        font-size: 24px;
-        margin: 10px 0 12px;
+        font-size: 21px;
+        line-height: 1.2;
+        margin: 0 0 12px;
+        max-width: 22ch;
       }
       .reading-card p, .premium-rule-card p {
         font-size: 14px;
         line-height: 1.75;
-        opacity: 0.72;
+        opacity: 0.88;
+        margin: 0;
+        max-width: 46ch;
+      }
+      .reading-card p + p, .premium-rule-card p + p {
+        margin-top: 12px;
+      }
+      .direction-copy {
+        font-size: 14px;
+        line-height: 1.6;
+        margin-top: 6px;
       }
       .diagnosis-grid {
         margin-top: 80px;
@@ -2407,20 +3076,29 @@ function BlueprintStyles() {
       .proportion-card-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        gap: 18px;
+        align-items: start;
       }
       .proportion-card {
-        padding: 24px;
+        padding: 26px 26px 28px;
+        display: flex;
+        flex-direction: column;
+      }
+      .proportion-card .dossier-label {
+        margin-bottom: 14px;
       }
       .proportion-card h3 {
-        font-size: 26px;
-        margin: 12px 0;
+        font-size: 21px;
+        line-height: 1.2;
+        margin: 0 0 12px;
+        max-width: 22ch;
       }
       .proportion-card p {
-        font-size: 13px;
-        line-height: 1.65;
-        opacity: 0.78;
+        font-size: 14px;
+        line-height: 1.75;
+        opacity: 0.88;
         margin: 0;
+        max-width: 46ch;
       }
       .palette-inner h2 {
         display: flex;
@@ -2521,16 +3199,79 @@ function BlueprintStyles() {
         font-size: 15px;
         margin-top: 8px;
       }
+      .swatch-usage {
+        font-size: 11px;
+        line-height: 1.45;
+        margin-top: 4px;
+        opacity: 0.68;
+      }
+      /* The headline used to sit in a 0.68fr column beside the rules, which gave
+         a 64px display face about 300px to wrap into: "Rules / for your /
+         silhouette" ran six lines deep and pushed the first rule below the fold.
+         It now runs as a band across the top, and the rules get the full width. */
       .rule-layout {
         margin-top: 78px;
-        display: grid;
-        grid-template-columns: 0.8fr 1.2fr;
-        gap: 44px;
+        display: block;
       }
+      .rule-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+        gap: 40px;
+        align-items: end;
+        margin-bottom: 30px;
+      }
+      .rule-head h2 {
+        margin: 0;
+      }
+      /* Sized to sit on one or two lines across the band rather than the three
+         to six the narrow column forced. */
+      .rule-head h2 span {
+        font-size: clamp(30px, 3.4vw, 46px);
+      }
+      .rule-head h2 span.display-it {
+        font-size: clamp(22px, 2.4vw, 32px);
+        margin-top: 6px;
+        opacity: 0.85;
+      }
+      .rule-head p {
+        margin: 0 0 8px;
+        max-width: 46ch;
+      }
+      /* Two columns of card tiles rather than one stack of full-width rows.
+         Halving the number of rows is what lets a full guide page be taken in at
+         a glance instead of scrolled through. */
       .rule-card-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .rule-card-grid .premium-rule-card {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 18px;
+        padding: 20px 22px;
+      }
+      .rule-card-copy {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      /* The proof stays beside the copy and keeps its portrait crop. It is a
+         full-body outfit: laid across the top of the card it would have to be
+         cropped to a landscape band, which cuts the outfit in half and loses the
+         one thing the proof is there to show. */
+      .rule-card-grid .premium-rule-card .rule-proof {
+        flex: 0 0 108px;
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+      }
+      .rule-card-grid .premium-rule-card h3 {
+        max-width: none;
+      }
+      .rule-card-grid .premium-rule-card p {
+        max-width: none;
       }
       .premium-rule-card .why {
         opacity: 0.9;
@@ -2606,12 +3347,16 @@ function BlueprintStyles() {
       }
       .visual-direction-card {
         border-top: 1px solid rgba(44, 38, 34, 0.12);
-        padding-top: 14px;
+        padding-top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
-      .visual-direction-card .display-it {
-        font-size: 18px;
-        line-height: 1.3;
-        margin-top: 6px;
+      .visual-direction-card .direction-copy {
+        font-size: 15px;
+        line-height: 1.6;
+        margin-top: 0;
+        max-width: 42ch;
       }
       .hair-inner {
         margin-top: 72px;
@@ -2688,9 +3433,10 @@ function BlueprintStyles() {
       }
       .hair-card-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
         margin-top: 18px;
+        align-items: start;
       }
       .capsule-map {
         display: grid;
@@ -2745,13 +3491,22 @@ function BlueprintStyles() {
       .outfit-meta {
         display: grid;
         grid-template-columns: auto 1fr;
-        gap: 14px 24px;
+        gap: 16px 24px;
         margin-top: 28px;
+        align-items: start;
+      }
+      .outfit-meta > .mono {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 600;
+        padding-top: 4px;
+        white-space: nowrap;
       }
       .outfit-meta p {
         margin: 0;
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.6;
       }
       .swatch-dot {
         display: inline-block;
@@ -2806,21 +3561,111 @@ function BlueprintStyles() {
       }
       .formula-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        /* Was align-items:start, which left a short card floating with a hole
+           beneath it while the card beside it ran on. Cards now fill their row,
+           so the grid reads as a set rather than as five loose tiles. */
+        align-items: stretch;
       }
       .formula-card {
         background: rgba(255, 255, 255, 0.6);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(44, 38, 34, 0.08);
         border-radius: 16px;
-        padding: 20px 18px;
+        padding: 20px 18px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      /* Pushes the shop link to the bottom edge of every card, so the buttons
+         line up across a row no matter how long the description runs. */
+      .formula-card .formula-shop {
+        margin-top: auto;
+      }
+      .formula-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 6px 24px;
+        margin-bottom: 24px;
+      }
+      .formula-head .formula-label {
+        margin-bottom: 0;
+      }
+      .formula-hint {
+        font-size: 12px;
+        opacity: 0.55;
+      }
+      /* The one thing on an outfit page she can act on, so it is set as a
+         real button rather than a text link: full card width, a 44px tap
+         target, ink on bone so it is the darkest object in the card. */
+      .formula-shop {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        min-height: 44px;
+        margin-top: 16px;
+        padding: 11px 14px;
+        border-radius: 12px;
+        border: 1px solid ${INK};
+        background: ${INK};
+        color: ${IVORY};
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+      }
+      .formula-shop span {
+        flex: 1;
+        text-align: left;
+      }
+      .formula-shop svg {
+        flex: none;
+      }
+      .formula-shop-bag {
+        width: 15px;
+        height: 15px;
+        opacity: 0.9;
+      }
+      .formula-shop-arrow {
+        width: 11px;
+        height: 11px;
+        opacity: 0.7;
+        transition: transform 180ms ease, opacity 180ms ease;
+      }
+      .formula-shop:hover,
+      .formula-shop:focus-visible {
+        background: #3B342F;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(44, 38, 34, 0.18);
+      }
+      .formula-shop:hover .formula-shop-arrow,
+      .formula-shop:focus-visible .formula-shop-arrow {
+        transform: translate(1px, -1px);
+        opacity: 1;
+      }
+      .formula-shop:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+      .formula-shop:focus-visible {
+        outline: 2px solid rgba(201, 169, 110, 0.9);
+        outline-offset: 2px;
+      }
+      /* A printed report cannot be clicked. */
+      @media print {
+        .formula-shop { display: none; }
       }
       .formula-card .swatch-dot {
         width: 32px;
         height: 32px;
         display: block;
-        margin-bottom: 14px;
+        margin-bottom: 0;
       }
       .formula-card h3 {
         font-size: 17px;
@@ -3034,13 +3879,92 @@ function BlueprintStyles() {
         }
         .corner-tl {
           left: 20px;
+          right: 20px;
+          padding-right: 76px;
         }
         .corner-tr {
           right: 20px;
         }
+        /* The share link is opened on a phone far more often than on a desktop,
+           so the opening has to be composed for this width, not merely survive
+           it. */
+        .cover-page {
+          min-height: 100svh;
+          padding-top: 72px;
+          padding-bottom: 72px;
+        }
+        .cover-scroll-cue {
+          bottom: 22px;
+        }
+        .summary-main h2 span,
+        .reading-inner h2 span,
+        .palette-inner h2 span,
+        .diagnosis-copy h2 span,
+        .chromatic-inner h2 span,
+        .rule-layout h2 span,
+        .system-inner h2 span,
+        .outfit-copy h2 span,
+        .matrix-grid h2 span,
+        .continuation-inner h2 span,
+        .generic-inner h2 span {
+          hyphens: auto;
+        }
+        /* On a phone the look itself leads; the copy about it follows. */
+        .outfit-art {
+          order: -1;
+        }
+        .outfit-hero {
+          margin-top: 28px;
+        }
+        .outfit-quote {
+          margin: 20px 0;
+        }
+        .outfit-meta {
+          gap: 14px 16px;
+          grid-template-columns: auto 1fr;
+        }
+        .formula-head {
+          margin-bottom: 18px;
+        }
+        .cover-center {
+          max-width: none;
+          transform: none;
+        }
+        .cover-rule {
+          gap: 14px;
+          margin-bottom: 24px;
+        }
+        .cover-name {
+          font-size: clamp(38px, 12.5vw, 60px);
+        }
+        .cover-tagline {
+          margin-top: 22px;
+          font-size: 16px;
+        }
+        .cover-swatches {
+          margin-top: 32px;
+          gap: 6px;
+        }
+        .cover-swatches span {
+          width: 22px;
+          height: 4px;
+        }
+        /* "· 55 PAGES" was breaking so that "PAGES" landed alone on its own
+           line under the rest of the caption. */
+        .cover-caption {
+          font-size: 9px;
+          letter-spacing: 0.14em;
+          line-height: 1.8;
+          flex-direction: column;
+          gap: 5px;
+        }
+        .cover-caption span + span::before {
+          content: none;
+        }
         .summary-grid,
         .diagnosis-grid,
         .rule-layout,
+        .rule-head,
         .chromatic-map,
         .proportion-inner,
         .palette-inner,
@@ -3056,6 +3980,18 @@ function BlueprintStyles() {
           border-bottom: 1px solid rgba(44, 38, 34, 0.12);
           padding: 0 0 20px;
         }
+        /* On a phone the card is about 280px wide, so a proof beside the copy
+           left roughly sixteen characters a line. The proof moves above the
+           copy as a small portrait tile and the text gets the full width. */
+        .rule-card-grid .premium-rule-card {
+          flex-direction: column;
+          gap: 14px;
+        }
+        .rule-card-grid .premium-rule-card .rule-proof {
+          order: -1;
+          flex: 0 0 auto;
+          width: 132px;
+        }
         .dossier-cards,
         .transformation-grid,
         .reading-blocks,
@@ -3069,10 +4005,28 @@ function BlueprintStyles() {
         .reference-images {
           grid-template-columns: 1fr;
         }
-        .premium-swatches,
-        .formula-grid {
+        .premium-swatches {
           grid-template-columns: repeat(2, 1fr);
         }
+        /* One column on a phone: two abreast left each card about 130px of
+           text, which cut "Shop this piece" off mid-word. The swatch sits
+           beside the piece name so the card stays short. */
+        .formula-grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        .formula-card {
+          display: grid;
+          grid-template-columns: 32px 1fr;
+          grid-template-areas: 'dot label' 'dot title' 'shop shop';
+          column-gap: 14px;
+          row-gap: 4px;
+          padding: 16px 16px 16px;
+        }
+        .formula-card .swatch-dot { grid-area: dot; margin-top: 2px; }
+        .formula-card .dossier-label { grid-area: label; }
+        .formula-card h3 { grid-area: title; margin: 2px 0 0; font-size: 16px; }
+        .formula-card .formula-shop { grid-area: shop; margin-top: 12px; }
         .palette-inner h2 {
           display: block;
         }
@@ -3105,8 +4059,7 @@ function BlueprintStyles() {
           width: min(78%, 280px);
           margin: 0 auto;
         }
-        .finding-list,
-        .outfit-meta {
+        .finding-list {
           grid-template-columns: 1fr;
           gap: 8px;
         }
@@ -3123,7 +4076,9 @@ function BlueprintStyles() {
           page-break-after: always;
           box-shadow: none !important;
         }
-        .image-regenerate-button { display: none !important; }
+        .image-regenerate-button, .slot-tools, .slot-prompt, .cover-scroll-cue { display: none !important; }
+        .iconik-report-reveal .iconik-page, .iconik-report-reveal .iconik-page > * { opacity: 1 !important; transform: none !important; }
+        .blueprint-deferred-shell { content-visibility: visible !important; contain-intrinsic-size: none !important; }
       }
     `}</style>
   );

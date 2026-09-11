@@ -13,12 +13,15 @@
     "test:meta-pixel": "node --experimental-strip-types --test src/lib/metaPageView.test.ts src/lib/metaTrackingContract.test.ts src/lib/indiaBlueprintPricing.test.ts",
     "test:whatsapp": "node --experimental-strip-types --test src/lib/whatsapp.test.ts",
     "verify:meta-tracking": "node --experimental-strip-types --conditions=react-server --env-file=.env.local scripts/verify-meta-tracking.ts",
-    "test:stylist-workspace": "node --experimental-strip-types --test src/lib/stylistWorkspacePilot.test.ts src/lib/stylistReportStudio.test.ts",
+    "test:stylist-workspace": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/stylist*.test.ts",
     "seo:images": "node scripts/build-seo-images.mjs",
     "indexnow": "node scripts/submit-indexnow.mjs",
     "migrate:au-globe": "node scripts/migrate-au-globe-to-primary.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/*.test.ts src/components/*.test.ts",
+    "typecheck": "tsc --noEmit --incremental false",
+    "smoke:stylist-reports": "node --env-file=.env.local scripts/smoke-stylist-reports.mjs"
   },
   "dependencies": {
     "@calcom/embed-react": "^1.5.3",
@@ -28,18 +31,17 @@
     "@supabase/supabase-js": "^2.55.0",
     "@vercel/analytics": "^1.5.0",
     "apify-client": "^2.23.4",
-    "cashfree-pg-sdk-nodejs": "^2.0.2",
     "framer-motion": "^12.23.12",
     "geist": "^1.3.0",
     "googleapis": "^159.0.0",
     "lucide-react": "^0.540.0",
-    "next": "15.4.8",
-    "nodemailer": "^8.0.1",
+    "next": "^15.5.25",
+    "nodemailer": "^10.0.1",
     "openai": "^6.29.0",
     "razorpay": "^2.9.6",
     "react": "19.1.2",
     "react-dom": "19.1.2",
-    "sharp": "^0.34.3",
+    "sharp": "^0.35.4",
     "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
@@ -50,8 +52,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.4.8",
+    "eslint-config-next": "^15.5.25",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.28"
   }
 }

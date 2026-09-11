@@ -12,5 +12,9 @@ export async function GET(
     return NextResponse.json({ error: 'Report not found or not yet published' }, { status: 404 });
   }
 
-  return NextResponse.json({ report });
+  return NextResponse.json({ report }, { headers: {
+    'Cache-Control': 'private, no-store, max-age=0',
+    'X-Robots-Tag': 'noindex, nofollow, noarchive',
+    'Referrer-Policy': 'no-referrer',
+  } });
 }

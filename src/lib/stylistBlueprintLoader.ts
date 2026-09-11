@@ -14,6 +14,7 @@ import {
   type ResolvedStylistBlueprintImageUrls,
 } from './stylistBlueprintImageGenerator';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from './stylistBlueprintGenerator';
+import { isVersionedStylistBlueprintReportData } from './stylistBlueprintSchema';
 
 const ADMIN_REPORT_SELECT_WITH_SOURCE = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name, intake_source, consultation_id)';
 const ADMIN_REPORT_SELECT_LEGACY = '*, stylist_intake_responses(id, customer_email, customer_phone, full_name)';
@@ -42,6 +43,26 @@ export interface LoadedStylistBlueprintReport {
 type RawStylistBlueprintReport = Omit<LoadedStylistBlueprintReport, 'image_urls'> & {
   image_urls: StylistBlueprintImagePaths | null;
 };
+
+type PublicStylistBlueprintReport = Pick<LoadedStylistBlueprintReport, 'id' | 'status' | 'report_data' | 'image_urls' | 'progress_stage' | 'error_message'> & {
+  stylist_intake_responses: { intake_source?: string | null } | null;
+};
+
+async function publicReport(row: RawStylistBlueprintReport): Promise<PublicStylistBlueprintReport> {
+  let data = row.report_data;
+  if (isVersionedStylistBlueprintReportData(data)) {
+    const { outfit_engine: _internalEngine, ...clientData } = data;
+    void _internalEngine;
+    const hidden = new Set(data.studio?.hidden_page_numbers ?? []);
+    data = { ...clientData, pages: data.pages.filter(page => !hidden.has(page.page_number)) };
+  }
+  return {
+    id: row.id, status: row.status, report_data: data,
+    image_urls: await resolveStylistBlueprintImageUrls(row.image_urls),
+    progress_stage: null, error_message: null,
+    stylist_intake_responses: row.stylist_intake_responses ? { intake_source: row.stylist_intake_responses.intake_source } : null,
+  };
+}
 
 async function resolveRowImages<T extends { image_urls: StylistBlueprintImagePaths | null }>(
   row: T,
@@ -83,7 +104,7 @@ export async function loadStylistBlueprintReportByIdFresh(reportId: string): Pro
   return null;
 }
 
-async function loadPublicByShareToken(shareToken: string): Promise<LoadedStylistBlueprintReport | null> {
+async function loadPublicByShareToken(shareToken: string): Promise<PublicStylistBlueprintReport | null> {
   const result = await supabaseAdmin
     .from('stylist_blueprint_reports')
     .select(PUBLIC_REPORT_SELECT_WITH_SOURCE)
@@ -96,7 +117,7 @@ async function loadPublicByShareToken(shareToken: string): Promise<LoadedStylist
       ? row.stylist_intake_responses[0]
       : row.stylist_intake_responses;
     if (intake?.intake_source === 'india_consultation' && !row.published_at) return null;
-    return resolveRowImages(row);
+    return publicReport({ ...row, stylist_intake_responses: intake });
   }
 
   if (isMissingIntakeSourceError(result.error)) {
@@ -107,7 +128,7 @@ async function loadPublicByShareToken(shareToken: string): Promise<LoadedStylist
       .maybeSingle();
 
     if (!legacyResult.error && legacyResult.data) {
-      return resolveRowImages(legacyResult.data as unknown as RawStylistBlueprintReport);
+      return publicReport(legacyResult.data as unknown as RawStylistBlueprintReport);
     }
   }
 
@@ -126,7 +147,7 @@ export const getStylistBlueprintReportById = cache(async (reportId: string) => {
 export const getPublicStylistBlueprintByShareToken = cache(async (shareToken: string) => {
   const load = unstable_cache(
     () => loadPublicByShareToken(shareToken),
-    ['stylist-blueprint-public-v2', shareToken],
+    ['stylist-blueprint-public-v3', shareToken],
     { revalidate: STYLIST_BLUEPRINT_CACHE_SECONDS, tags: [getStylistBlueprintShareCacheTag(shareToken)] },
   );
   return load();

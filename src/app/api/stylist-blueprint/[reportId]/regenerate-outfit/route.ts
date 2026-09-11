@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { canAccessBlueprintReport, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
   generateStylistBlueprintReplacementOutfit,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintOutfitCount,
   getStylistOutfitCulturalMode,
   isVersionedStylistBlueprintReportData,
   validateStylistBlueprintReport,
@@ -132,6 +133,10 @@ export async function POST(
       .from('stylist_blueprint_reports')
       .update({
         report_data: nextReportData,
+        image_urls: { ...(report.image_urls ?? {}), application: { ...(report.image_urls?.application ?? {}),
+          outfitFlatlays: Array.from({ length: getStylistBlueprintOutfitCount(reportData) }, (_, index) =>
+            index === pageNumber - outfitStart ? null : report.image_urls?.application?.outfitFlatlays?.[index] ?? null),
+        } },
         section_approvals: nextApprovals,
         status: 'in_review',
         published_at: null,
@@ -144,12 +149,12 @@ export async function POST(
     await revalidateStylistBlueprintCache(reportId, report.share_token ?? null);
 
     const imageSlot = `application.outfitFlatlays.${pageNumber - outfitStart}` as StylistBlueprintImageSlotKey;
-    const imageResult = await regenerateStylistBlueprintImageSlot(
+    const imageResult = await isAdminCookieAuthenticated() ? await regenerateStylistBlueprintImageSlot(
       reportId,
       nextReportData,
       imageSlot,
       { shareToken: report.share_token ?? null, submission: resolvedSubmission },
-    );
+    ) : null;
 
     const { data: freshReport } = await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -161,8 +166,8 @@ export async function POST(
       success: true,
       page: nextReplacementPage,
       report: freshReport,
-      imageUrls: imageResult.imageUrls,
-      imageUrl: imageResult.imageUrl,
+      imageUrls: imageResult?.imageUrls,
+      imageUrl: imageResult?.imageUrl,
       slotKey: imageSlot,
     });
   } catch (err) {

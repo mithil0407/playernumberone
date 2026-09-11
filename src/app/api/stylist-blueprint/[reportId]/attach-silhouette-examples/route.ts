@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { canAccessBlueprintReport, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { supabaseAdmin } from '@/lib/supabase';
 import { generateStylistBlueprintSilhouetteProofImages } from '@/lib/stylistBlueprintImageGenerator';
@@ -62,6 +62,7 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const dryRun = Boolean(body.dry_run);
   const generateImages = Boolean(body.generate_images);
+  if (generateImages && !(await isAdminCookieAuthenticated())) return NextResponse.json({ error: 'Image generation is available to admins only' }, { status: 403 });
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')

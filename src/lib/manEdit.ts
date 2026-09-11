@@ -410,6 +410,7 @@ export async function generateManEditChatReply(input: {
   message: string;
   image?: { bytes: Buffer; mimeType: string } | null;
   memories?: string[];
+  styleSignals?: string[];
   channel?: 'web' | 'whatsapp';
   firstName?: string;
   route?: ManWhatsappRouteDecision;
@@ -439,6 +440,8 @@ export async function generateManEditChatReply(input: {
         classification,
         message: input.message,
         intent: input.route.intent,
+        memories: input.styleSignals ?? input.memories,
+        conversationReference: input.conversationReference,
       })
     : '';
 

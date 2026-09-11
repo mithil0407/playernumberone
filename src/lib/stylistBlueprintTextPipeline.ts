@@ -71,10 +71,11 @@ const REPAIR_ACT_STAGES: Array<{
 ];
 
 async function updateReport(reportId: string, patch: Record<string, unknown>, shareToken?: string | null) {
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq('id', reportId);
+  if (error) throw new Error(`Could not save report progress: ${error.message}`);
   await revalidateStylistBlueprintCache(reportId, shareToken);
 }
 
@@ -148,6 +149,7 @@ export async function runStylistBlueprintTextPipeline(
   submission: StylistIntakeSubmission,
   shareToken: string | null,
   existingReportData?: StylistBlueprintReportData | null,
+  options: { maxWorkUnits?: number } = {},
 ): Promise<StylistBlueprintReportData | null> {
   let currentStage = getNextStylistBlueprintTextProgressStage(existingReportData) ?? 'finalising';
   try {
@@ -157,12 +159,29 @@ export async function runStylistBlueprintTextPipeline(
     let reportData = existingReportData ?? createBlueprintShell(submission, classification);
 
     await updateReport(reportId, { report_data: reportData }, shareToken);
+    let workUnits = existingReportData?.classification ? 0 : 1;
 
     for (const item of ACT_STAGES) {
       if (hasAllPages(reportData, expectedPagesForAct(reportData, item.act))) continue;
+      if (workUnits >= (options.maxWorkUnits ?? Infinity)) return reportData;
       currentStage = item.stage;
       await updateReport(reportId, { progress_stage: currentStage }, shareToken);
 
+      // The wardrobe manual spans 21 pages. Save small batches so a provider
+      // deadline never discards the whole section, and resume only missing pages.
+      if (item.act === 'prescription') {
+        const missing = expectedPagesForAct(reportData, item.act)
+          .filter(number => !reportData.pages.some(page => page.page_number === number));
+        for (let offset = 0; offset < missing.length; offset += 4) {
+          if (workUnits >= (options.maxWorkUnits ?? Infinity)) return reportData;
+          const batch = missing.slice(offset, offset + 4);
+          const generated = normaliseGeneratedPagesResult(await generateStylistBlueprintPages(submission, reportData, item.act, batch));
+          reportData = { ...reportData, pages: mergeBlueprintPages(reportData.pages, generated.pages) };
+          await updateReport(reportId, { report_data: reportData }, shareToken);
+          workUnits += 1;
+        }
+        continue;
+      }
       const generated = normaliseGeneratedPagesResult(await generateStylistBlueprintPages(submission, reportData, item.act));
       reportData = {
         ...reportData,
@@ -174,6 +193,7 @@ export async function runStylistBlueprintTextPipeline(
         reportData = await attachSilhouetteRuleOutfitExamples(reportData, submission);
       }
       await updateReport(reportId, { report_data: reportData }, shareToken);
+      workUnits += 1;
     }
 
     validateStylistBlueprintReport(reportData, { culturalMode: getStylistOutfitCulturalMode(submission) });

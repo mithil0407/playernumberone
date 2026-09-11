@@ -25,6 +25,7 @@ import {
   limitManWhatsappReply,
   quickManWhatsappReply,
   routeManWhatsappRequest,
+  styleClarificationForUnclearOutfit,
 } from '@/lib/manWhatsappStylist';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -333,6 +334,15 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     route: route.intent,
   });
   const memories = memorySelection.promptLines;
+  const structuredMemoryKeys = new Set(memoryContext.memories.map(memory => memory.memoryKey));
+  const styleSignals = [
+    ...memoryContext.memories
+      .filter(memory => memory.status === 'active' && memory.kind !== 'local_feedback')
+      .map(memory => `${memory.kind}/${memory.category}: ${memory.value}`),
+    ...legacyMemoryRecords
+      .filter(memory => memory.status === 'active' && memory.kind !== 'local_feedback' && !structuredMemoryKeys.has(memory.memoryKey))
+      .map(memory => `${memory.kind}/${memory.category}: ${memory.value}`),
+  ];
   const memoryDiversityBrief = buildRecommendationDiversityBrief(memoryContext.history);
   const imageRequested = wantsGeneratedOutfitImage(message.text);
   const conversationReference = route.needsConversationReference
@@ -342,6 +352,15 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     message.text,
     conversationReference ?? '',
   );
+  const reportData = asRecord(context.report.report_data);
+  const classification = asRecord(reportData.classification) as unknown as Parameters<typeof styleClarificationForUnclearOutfit>[0]['classification'];
+  const styleClarification = contextClarification ? null : styleClarificationForUnclearOutfit({
+    classification,
+    message: message.text,
+    route: route.intent,
+    memories: styleSignals,
+    conversationReference,
+  });
   const shouldGenerateImage = imageRequested && !contextClarification;
   const quickReply = quickManWhatsappReply(message.text);
   let reply: string;
@@ -349,6 +368,8 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
     reply = quickReply;
   } else if (contextClarification) {
     reply = contextClarification;
+  } else if (styleClarification) {
+    reply = styleClarification;
   } else if (imageRequested && conversationReference) {
     reply = whatsappImageProgressCopy(message.id);
   } else if (route.intent === 'shopping') {
@@ -375,6 +396,7 @@ export async function processIconikManWhatsappPilotMessage(message: WhatsappInbo
         message: message.text,
         image: modelImage,
         memories,
+        styleSignals,
         channel: 'whatsapp',
         firstName: config.firstName,
         route,

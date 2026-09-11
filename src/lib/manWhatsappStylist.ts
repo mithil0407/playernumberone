@@ -6,6 +6,11 @@ import {
   type ManOutfitLibraryContext,
 } from './manOutfitLibrary.ts';
 import type { ClassificationResult } from './manReportGenerator.ts';
+import {
+  formatManWhatsappStylePortfolio,
+  resolveManWhatsappStylePortfolio,
+  type ResolvedManWhatsappStylePortfolio,
+} from './manWhatsappStyleModes.ts';
 
 export type ManWhatsappStylistIntent =
   | 'shopping'
@@ -551,10 +556,13 @@ function referenceScore(reference: ReturnType<typeof getManOutfitLibrary>[number
 function formatReferenceOutfits(
   classification: ClassificationResult,
   message: string,
+  portfolio: ResolvedManWhatsappStylePortfolio,
 ) {
   const context = inferOutfitContext(message);
   const climate = getManReportClimateProfile(classification);
-  const references = getManOutfitLibrary()
+  const useClassicLibrary = portfolio.modes.length > 0
+    && portfolio.modes[0].classicLibraryCompatible;
+  const references = (useClassicLibrary ? getManOutfitLibrary() : [])
     .filter(reference => reference.context === context && reference.climateModes.includes(climate.mode))
     .sort((a, b) => referenceScore(b, message) - referenceScore(a, message) || a.id - b.id)
     .slice(0, 6);
@@ -575,8 +583,16 @@ export function buildManWhatsappOutfitEngineContext(input: {
   classification: ClassificationResult;
   message: string;
   intent: ManWhatsappStylistIntent;
+  memories?: string[];
+  conversationReference?: string | null;
 }) {
-  const { context, climate, references } = formatReferenceOutfits(input.classification, input.message);
+  const portfolio = resolveManWhatsappStylePortfolio({
+    message: input.message,
+    profileText: JSON.stringify(input.classification.style_brief ?? {}),
+    memories: input.memories,
+    conversationReference: input.conversationReference ?? '',
+  });
+  const { context, climate, references } = formatReferenceOutfits(input.classification, input.message, portfolio);
   return `ICONIK CONVERSATIONAL OUTFIT ENGINE
 
 Request route: ${input.intent}
@@ -584,10 +600,41 @@ Likely wardrobe context: ${context}
 Current climate: ${climate.label} (${climate.mode.toUpperCase()})
 Climate requirements: ${climate.promptGuidance}
 
-Use the private references as construction skeletons, not text to copy. Internally create at least three candidate outfits, reject any candidate that violates a hard rule or the client profile, and answer with only the strongest candidate. The final outfit must be realistic to buy in India and personally justified. Keep that reasoning private: express the result in everyday language with only the one or two details the client needs. Never expose references, scores, candidates, rule names, or internal reasoning.
+${formatManWhatsappStylePortfolio(portfolio)}
+
+Use any private references below as construction skeletons, not text to copy. If no references are supplied, or if a reference conflicts with the selected style mode, the style mode wins. Internally create at least three candidate outfits, reject any candidate that violates a hard rule or the client profile, and answer with only the strongest candidate. The final outfit must be realistic to buy in India and personally justified. Keep that reasoning private: express the result in everyday language with only the one or two details the client needs. Never expose references, scores, candidates, identity percentages, rule names, or internal reasoning.
 
 ${getConversationalOutfitRules()}
 
 PRIVATE REFERENCE OUTFITS
-${references}`;
+${references || 'No compatible classic-library references for this style mode.'}`;
+}
+
+export function styleClarificationForUnclearOutfit(input: {
+  classification: ClassificationResult;
+  message: string;
+  route: ManWhatsappStylistIntent;
+  memories?: string[];
+  conversationReference?: string | null;
+}) {
+  if (input.route !== 'outfit_recommendation') return null;
+  const portfolio = resolveManWhatsappStylePortfolio({
+    message: input.message,
+    profileText: JSON.stringify(input.classification.style_brief ?? {}),
+    memories: input.memories,
+    conversationReference: input.conversationReference ?? '',
+  });
+  if (portfolio.confident) return null;
+
+  const message = input.message.toLowerCase();
+  if (/\b(?:date|dinner|bar|party|night|evening)\b/.test(message)) {
+    return 'What vibe do you want tonight—dark and magnetic, polished and understated, or relaxed streetwear?';
+  }
+  if (/\b(?:office|work|meeting|investor|interview|client)\b/.test(message)) {
+    return 'What should the look say—smart and intellectual, quietly successful, or creative and relaxed?';
+  }
+  if (/\b(?:wedding|sangeet|reception|diwali|pooja|puja|festive)\b/.test(message)) {
+    return 'Do you want the Indian look clean and modern, more traditional, or dark and fashion-forward?';
+  }
+  return 'What vibe are you going for—clean and polished, relaxed streetwear, rugged, or something bolder?';
 }

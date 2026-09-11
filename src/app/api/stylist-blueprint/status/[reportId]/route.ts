@@ -80,6 +80,7 @@ export async function GET(
     includeClosingEditTeaser,
     includeTransformationPreview,
     includeBeautyPages,
+    reportData: isVersionedStylistBlueprintReportData(data.report_data) ? data.report_data : undefined,
   });
   const imagesComplete = Object.values(imageCounts).every(group => group.done >= group.total);
   let progressStage = data.progress_stage;

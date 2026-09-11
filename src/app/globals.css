@@ -1388,3 +1388,1230 @@ body:has(.seo-editorial) {
     font-weight: 400;
   }
 }
+
+/* ── Root funnel design previews ─────────────────────────────────────────
+   These concepts are opt-in through ?design= and intentionally do not alter
+   the live root funnel or any of the shared regional/offer pages. */
+.root-design-preview {
+  --root-carbon: #111315;
+  --root-bone: #F5F3EE;
+  --root-steel: #AEBBC1;
+  --root-brand: #94A6AD;
+  --root-oxblood: #6A1F2B;
+  --root-line: rgba(17, 19, 21, 0.14);
+  --root-glass: rgba(245, 243, 238, 0.62);
+  --root-glass-strong: rgba(245, 243, 238, 0.82);
+  --root-shadow: 0 24px 80px rgba(17, 19, 21, 0.11);
+  position: relative;
+  isolation: isolate;
+  background: var(--root-bone) !important;
+  color: var(--root-carbon);
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-variation-settings: "wght" 470;
+}
+
+.root-design-preview .iconik-display,
+.root-design-preview .iconik-display-it,
+.root-design-preview .iconik-mono,
+.root-design-preview .iconik-micro,
+.root-design-preview .iconik-small-caps,
+.root-design-preview button,
+.root-design-preview input,
+.root-design-preview label {
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-style: normal;
+}
+
+.root-design-preview .iconik-display {
+  font-weight: 720 !important;
+  letter-spacing: -0.055em !important;
+  line-height: 0.98 !important;
+}
+
+.root-design-preview .iconik-micro,
+.root-design-preview .iconik-mono,
+.root-design-preview .iconik-small-caps {
+  font-weight: 650 !important;
+  letter-spacing: 0.18em !important;
+}
+
+.root-design-preview .root-serif-moment,
+.root-design-preview .root-serif-moment.iconik-display-it {
+  font-family: var(--font-bodoni-moda), Didot, Georgia, serif !important;
+  font-style: italic !important;
+  font-weight: 480 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.root-design-preview > section {
+  background: rgba(245, 243, 238, 0.88) !important;
+  color: var(--root-carbon);
+}
+
+.root-design-preview > section:nth-of-type(even) {
+  background: rgba(174, 187, 193, 0.24) !important;
+}
+
+.root-design-preview > section :is(h1, h2, h3, p, .iconik-display, .iconik-display-it, .iconik-micro, .iconik-mono),
+.root-design-preview > footer :is(h1, h2, h3, p, span, a, .iconik-display, .iconik-display-it, .iconik-micro, .iconik-mono) {
+  color: inherit !important;
+}
+
+.root-design-preview .text-luxury-accent,
+.root-design-preview .text-luxury-green {
+  color: var(--root-oxblood) !important;
+}
+
+.root-design-preview > section::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 30px;
+  right: max(18px, calc((100vw - 1120px) / 2));
+  width: 72px;
+  height: 7px;
+  opacity: 0.45;
+  border-top: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  background: repeating-linear-gradient(90deg, transparent 0 7px, currentColor 7px 8px);
+  pointer-events: none;
+}
+
+.root-design-preview > section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.root-design-preview :is(.rounded-2xl, .rounded-3xl) {
+  border-radius: 28px !important;
+  border: 1px solid rgba(255, 255, 255, 0.64) !important;
+  background: var(--root-glass) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.76), var(--root-shadow) !important;
+  backdrop-filter: blur(28px) saturate(135%);
+  -webkit-backdrop-filter: blur(28px) saturate(135%);
+}
+
+.root-design-preview :is(.rounded-xl, .rounded-full) {
+  border-color: rgba(17, 19, 21, 0.14) !important;
+}
+
+.root-design-preview .root-hero-cta,
+.root-design-preview a.me-glass-light,
+.root-design-preview button[type="submit"],
+.root-design-preview .fixed.bottom-0 a {
+  border: 1px solid rgba(255,255,255,0.24) !important;
+  background: var(--root-oxblood) !important;
+  color: var(--root-bone) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24), 0 14px 38px rgba(106,31,43,0.22) !important;
+}
+
+.root-design-preview .root-hero-cta *,
+.root-design-preview a.me-glass-light *,
+.root-design-preview button[type="submit"] *,
+.root-design-preview .fixed.bottom-0 a * {
+  color: var(--root-bone) !important;
+}
+
+.root-design-preview footer {
+  background: rgba(174, 187, 193, 0.3) !important;
+  color: var(--root-carbon);
+}
+
+/* Preview-only switcher; excluded from the approved production design. */
+.root-design-switcher {
+  position: fixed;
+  z-index: 80;
+  top: 76px;
+  right: 16px;
+  width: min(316px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.66);
+  border-radius: 24px;
+  background: rgba(245,243,238,0.78);
+  color: #111315;
+  box-shadow: 0 18px 55px rgba(17,19,21,0.16), inset 0 1px 0 rgba(255,255,255,0.88);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+}
+
+.root-design-switcher__label {
+  margin: 0 4px 9px;
+  color: rgba(17,19,21,0.52);
+  font: 700 10px/1 var(--font-manrope), system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.root-design-switcher__options {
+  display: grid;
+  gap: 5px;
+}
+
+.root-design-switcher__options a,
+.root-design-switcher__companion {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 8px 11px;
+  border-radius: 13px;
+  color: rgba(17,19,21,0.68);
+  font: 650 12px/1.2 var(--font-manrope), system-ui, sans-serif;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.root-design-switcher__options a:hover,
+.root-design-switcher__companion:hover {
+  transform: translateX(2px);
+  color: #111315;
+}
+
+.root-design-switcher__options a.is-active {
+  background: #111315;
+  color: #F5F3EE;
+}
+
+.root-design-switcher__companion {
+  justify-content: space-between;
+  margin-top: 8px;
+  border: 1px solid rgba(106,31,43,0.2);
+  color: #6A1F2B;
+}
+
+/* 01 — Precision Glass: pale, clinical, and quietly engineered. */
+.root-concept-precision {
+  --root-glass: rgba(255, 255, 255, 0.48);
+  --root-glass-strong: rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(circle at 10% 3%, rgba(148,166,173,0.5), transparent 30rem),
+    radial-gradient(circle at 92% 17%, rgba(255,255,255,0.9), transparent 28rem),
+    var(--root-bone) !important;
+}
+
+.root-concept-precision > section:first-of-type {
+  padding-top: 9.5rem !important;
+  padding-bottom: 8rem !important;
+  background:
+    linear-gradient(rgba(17,19,21,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,19,21,0.055) 1px, transparent 1px),
+    radial-gradient(circle at 50% 38%, rgba(255,255,255,0.9), rgba(148,166,173,0.2) 48%, rgba(245,243,238,0.92) 76%) !important;
+  background-size: 32px 32px, 32px 32px, auto !important;
+}
+
+.root-concept-precision .root-hero-inner > h1 {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: clamp(3rem, 7.4vw, 6.8rem) !important;
+}
+
+.root-concept-precision .root-hero-media > div {
+  transform: perspective(900px) rotateX(2deg);
+  background: rgba(255,255,255,0.36) !important;
+}
+
+.root-concept-precision .root-hero-media img {
+  filter: saturate(0.84) contrast(1.03);
+}
+
+/* 02 — Carbon Monolith: darker, architectural, and cinematic. */
+.root-concept-monolith {
+  --root-line: rgba(245, 243, 238, 0.18);
+  --root-glass: rgba(174, 187, 193, 0.095);
+  --root-glass-strong: rgba(174, 187, 193, 0.16);
+  --root-shadow: 0 28px 90px rgba(0, 0, 0, 0.3);
+  background: var(--root-carbon) !important;
+  color: var(--root-bone);
+}
+
+.root-concept-monolith > section,
+.root-concept-monolith > section:nth-of-type(even),
+.root-concept-monolith footer {
+  background: #111315 !important;
+  color: var(--root-bone);
+}
+
+.root-concept-monolith > section:nth-of-type(3n + 2) {
+  background: #171B1D !important;
+}
+
+.root-concept-monolith > section:nth-of-type(3n) {
+  background: linear-gradient(135deg, #94A6AD 0%, #7F9198 100%) !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-monolith :is(.rounded-2xl, .rounded-3xl) {
+  border-color: rgba(245,243,238,0.17) !important;
+  background: rgba(174,187,193,0.1) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), var(--root-shadow) !important;
+}
+
+.root-concept-monolith > section:first-of-type {
+  min-height: 820px;
+  display: flex;
+  align-items: center;
+  padding-top: 9rem !important;
+  background:
+    linear-gradient(90deg, transparent 0 49.9%, rgba(245,243,238,0.12) 50%, transparent 50.1%),
+    radial-gradient(circle at 78% 32%, rgba(148,166,173,0.28), transparent 30rem),
+    #111315 !important;
+}
+
+@media (min-width: 768px) {
+  .root-concept-monolith .root-hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+    grid-template-rows: auto auto auto auto auto;
+    align-items: center;
+    column-gap: clamp(3rem, 7vw, 7rem);
+    text-align: left;
+  }
+
+  .root-concept-monolith .root-hero-eyebrow,
+  .root-concept-monolith .root-hero-inner > h1,
+  .root-concept-monolith .root-hero-inner > p,
+  .root-concept-monolith .root-hero-cta,
+  .root-concept-monolith .root-hero-trust {
+    grid-column: 1;
+  }
+
+  .root-concept-monolith .root-hero-inner > h1 {
+    font-size: clamp(4.25rem, 6vw, 6.8rem) !important;
+  }
+
+  .root-concept-monolith .root-hero-cta {
+    justify-self: start;
+  }
+
+  .root-concept-monolith .root-hero-trust {
+    justify-content: flex-start;
+  }
+
+  .root-concept-monolith .root-hero-media {
+    grid-column: 2;
+    grid-row: 1 / 6;
+    width: 100%;
+    max-width: 440px;
+    margin: 0;
+  }
+}
+
+.root-concept-monolith .root-hero-media > div {
+  padding: 8px !important;
+  transform: rotate(1.5deg);
+}
+
+.root-concept-monolith input {
+  background: rgba(245,243,238,0.95) !important;
+  color: var(--root-carbon) !important;
+}
+
+/* 03 — Editorial Atelier: warmer whitespace and asymmetric fashion-book pacing. */
+.root-concept-atelier {
+  --root-glass: rgba(245, 243, 238, 0.56);
+  --root-glass-strong: rgba(245, 243, 238, 0.78);
+  background:
+    linear-gradient(90deg, rgba(148,166,173,0.46) 0 20%, transparent 20% 100%),
+    var(--root-bone) !important;
+}
+
+.root-concept-atelier > section:first-of-type {
+  padding-top: 10.5rem !important;
+  padding-bottom: 9rem !important;
+  background:
+    linear-gradient(90deg, rgba(148,166,173,0.5) 0 17%, transparent 17% 100%),
+    var(--root-bone) !important;
+}
+
+.root-concept-atelier .root-hero-inner {
+  text-align: left;
+}
+
+.root-concept-atelier .root-hero-inner > h1 {
+  max-width: 900px;
+  font-size: clamp(3.25rem, 8vw, 7.4rem) !important;
+}
+
+.root-concept-atelier .root-hero-inner > p {
+  margin-left: 0 !important;
+  max-width: 660px !important;
+}
+
+.root-concept-atelier .root-hero-cta {
+  border-radius: 20px !important;
+}
+
+.root-concept-atelier .root-hero-trust {
+  justify-content: flex-start;
+}
+
+.root-concept-atelier .root-hero-media {
+  margin-left: auto;
+  margin-right: 2vw;
+  margin-top: -2rem;
+  transform: rotate(-2deg);
+}
+
+.root-concept-atelier > section:nth-of-type(4n + 2) {
+  background: linear-gradient(125deg, #AEBBC1, #94A6AD) !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-atelier :is(.rounded-2xl, .rounded-3xl) {
+  border-radius: 34px 18px 34px 18px !important;
+}
+
+/* Checkout applies the same design language to a denser conversion surface. */
+.root-checkout-preview {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% 4%, rgba(148,166,173,0.44), transparent 28rem),
+    var(--root-bone) !important;
+}
+
+.root-checkout-preview > header {
+  border-color: rgba(17,19,21,0.12) !important;
+  background: rgba(245,243,238,0.7) !important;
+  color: var(--root-carbon);
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+}
+
+.root-checkout-preview > header * {
+  color: inherit !important;
+}
+
+.root-checkout-preview > main > div:first-child h1 {
+  font-size: clamp(2.6rem, 6vw, 5.4rem) !important;
+}
+
+.root-checkout-preview > main {
+  padding-top: 12rem !important;
+}
+
+.root-checkout-preview main section,
+.root-checkout-preview main aside {
+  border: 1px solid rgba(255,255,255,0.7) !important;
+  background: var(--root-glass-strong) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.82), var(--root-shadow) !important;
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+}
+
+.root-checkout-preview input {
+  border-color: rgba(17,19,21,0.16) !important;
+  background: rgba(255,255,255,0.64) !important;
+}
+
+.root-checkout-preview.root-concept-monolith {
+  background:
+    radial-gradient(circle at 82% 8%, rgba(148,166,173,0.22), transparent 30rem),
+    #111315 !important;
+  color: var(--root-bone);
+}
+
+.root-checkout-preview.root-concept-monolith > header {
+  border-color: rgba(245,243,238,0.13) !important;
+  background: rgba(17,19,21,0.74) !important;
+  color: var(--root-bone);
+}
+
+.root-checkout-preview.root-concept-monolith > main,
+.root-checkout-preview.root-concept-monolith > main :is(h1,h2,h3,p,span,label,.iconik-display,.iconik-micro,.iconik-mono) {
+  color: var(--root-bone) !important;
+}
+
+.root-checkout-preview.root-concept-monolith main section,
+.root-checkout-preview.root-concept-monolith main aside {
+  border-color: rgba(245,243,238,0.14) !important;
+  background: rgba(174,187,193,0.1) !important;
+}
+
+.root-checkout-preview.root-concept-monolith input {
+  color: var(--root-carbon) !important;
+  background: rgba(245,243,238,0.95) !important;
+}
+
+.root-checkout-preview.root-concept-atelier {
+  background:
+    linear-gradient(90deg, rgba(148,166,173,0.48) 0 14%, transparent 14% 100%),
+    var(--root-bone) !important;
+}
+
+@media (max-width: 640px) {
+  .root-design-switcher {
+    top: 68px;
+    right: 10px;
+    width: calc(100vw - 20px);
+    padding: 9px;
+    border-radius: 18px;
+  }
+
+  .root-design-switcher__label { display: none; }
+  .root-design-switcher__options { grid-template-columns: repeat(3, 1fr); }
+  .root-design-switcher__options a {
+    justify-content: center;
+    min-height: 34px;
+    padding: 6px;
+    text-align: center;
+    font-size: 9px;
+  }
+  .root-design-switcher__companion {
+    min-height: 32px;
+    margin-top: 5px;
+    font-size: 10px;
+  }
+
+  .root-design-preview > section:first-of-type {
+    padding-top: 10.75rem !important;
+  }
+
+  .root-design-preview > section::after { top: 24px; right: 16px; }
+  .root-concept-monolith > section:first-of-type { min-height: auto; }
+  .root-concept-atelier .root-hero-media { margin-top: 2rem; margin-right: auto; }
+}
+
+/* ── Precision Glass refinement ──────────────────────────────────────────
+   Final single-concept pass. These later, section-specific rules replace the
+   exploratory blanket styling above without touching the live default page. */
+.root-concept-precision {
+  --root-carbon: #111315;
+  --root-bone: #F5F3EE;
+  --root-steel: #AEBBC1;
+  --root-brand: #94A6AD;
+  --root-oxblood: #6A1F2B;
+  --root-hairline: rgba(17, 19, 21, 0.12);
+  --root-glass-surface: rgba(255, 255, 255, 0.58);
+  --root-glass-border: rgba(255, 255, 255, 0.82);
+  --root-glass-shadow: 0 24px 70px rgba(17, 19, 21, 0.09);
+  background: var(--root-bone) !important;
+  color: var(--root-carbon);
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-variation-settings: normal;
+}
+
+.root-concept-precision .iconik-display,
+.root-concept-precision .iconik-display-it {
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-style: normal !important;
+  font-weight: 545 !important;
+  letter-spacing: -0.022em !important;
+  line-height: 1.16 !important;
+}
+
+.root-concept-precision .root-serif-moment {
+  font-family: var(--font-bodoni-moda), Didot, Georgia, serif !important;
+  font-style: italic !important;
+  font-weight: 450 !important;
+  letter-spacing: -0.012em !important;
+  margin-right: 0;
+}
+
+.root-concept-precision .root-headline-tail {
+  display: inline-block;
+  margin-left: 0.2em;
+}
+
+.root-concept-precision .iconik-micro,
+.root-concept-precision .iconik-mono,
+.root-concept-precision .iconik-small-caps {
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.095em !important;
+  line-height: 1.5 !important;
+}
+
+.root-concept-precision > section::after {
+  display: none !important;
+}
+
+.root-concept-precision > section {
+  border-top: 1px solid var(--root-hairline);
+}
+
+.root-concept-precision > section:first-of-type {
+  border-top: 0;
+}
+
+.root-concept-precision .root-hero-section {
+  min-height: auto;
+  padding-top: 7.75rem !important;
+  padding-bottom: 7rem !important;
+  background:
+    linear-gradient(rgba(17,19,21,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,19,21,0.035) 1px, transparent 1px),
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,0.98), rgba(148,166,173,0.18) 52%, rgba(245,243,238,0.98) 82%) !important;
+  background-size: 40px 40px, 40px 40px, auto !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-precision .root-hero-inner {
+  max-width: 1240px !important;
+}
+
+.root-concept-precision .root-hero-inner > h1 {
+  max-width: 1240px;
+  margin: 0 auto 1.75rem;
+  font-size: clamp(3.3rem, 5vw, 4.6rem) !important;
+  font-weight: 520 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.02 !important;
+  text-wrap: balance;
+}
+
+.root-concept-precision .root-hero-inner > h1 > span + span {
+  margin-top: 0.12em !important;
+}
+
+.root-concept-precision .root-hero-inner > p {
+  max-width: 720px !important;
+  margin-bottom: 2.25rem !important;
+  color: rgba(17,19,21,0.7) !important;
+  font-size: 1.1rem !important;
+  font-weight: 400;
+  line-height: 1.78 !important;
+  text-wrap: pretty;
+}
+
+.root-concept-precision .root-hero-eyebrow {
+  margin-bottom: 1.5rem !important;
+  color: rgba(17,19,21,0.54) !important;
+}
+
+.root-concept-precision .root-primary-action,
+.root-concept-precision .root-hero-cta {
+  min-height: 3.75rem;
+  padding: 1rem 2rem !important;
+  border: 1px solid rgba(255,255,255,0.24) !important;
+  border-radius: 999px !important;
+  background: var(--root-oxblood) !important;
+  color: var(--root-bone) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 14px 34px rgba(106,31,43,0.2) !important;
+}
+
+.root-concept-precision .root-primary-action *,
+.root-concept-precision .root-hero-cta * {
+  color: var(--root-bone) !important;
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-size: 0.92rem !important;
+  font-style: normal !important;
+  font-weight: 580 !important;
+  letter-spacing: 0.002em !important;
+  line-height: 1.3 !important;
+}
+
+.root-concept-precision .root-hero-trust {
+  margin-top: 1.15rem !important;
+}
+
+.root-concept-precision .root-hero-trust .iconik-mono {
+  color: rgba(17,19,21,0.5) !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+.root-concept-precision .root-hero-media {
+  max-width: 410px !important;
+  margin-top: 3rem !important;
+}
+
+.root-concept-precision .root-hero-media > div {
+  padding: 0.65rem !important;
+  border: 1px solid var(--root-glass-border) !important;
+  border-radius: 32px !important;
+  background: rgba(255,255,255,0.42) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), 0 30px 90px rgba(17,19,21,0.12) !important;
+  transform: none !important;
+  backdrop-filter: blur(30px) saturate(130%);
+  -webkit-backdrop-filter: blur(30px) saturate(130%);
+}
+
+.root-concept-precision .root-hero-media .aspect-square {
+  border: 1px solid rgba(17,19,21,0.08) !important;
+  border-radius: 24px !important;
+  background: var(--root-bone) !important;
+  box-shadow: none !important;
+}
+
+.root-concept-precision .root-process-section,
+.root-concept-precision .root-report-section,
+.root-concept-precision .root-comparison-section,
+.root-concept-precision .root-faq-section {
+  background: var(--root-bone) !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-precision .root-stats-section,
+.root-concept-precision .root-inclusions-section,
+.root-concept-precision .root-client-section {
+  background: linear-gradient(135deg, rgba(174,187,193,0.34), rgba(245,243,238,0.96)) !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-precision .root-video-testimonials,
+.root-concept-precision .root-price-section,
+.root-concept-precision .root-final-section {
+  background:
+    radial-gradient(circle at 84% 8%, rgba(148,166,173,0.2), transparent 28rem),
+    var(--root-carbon) !important;
+  color: var(--root-bone);
+}
+
+.root-concept-precision > :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-price-section,.root-faq-section,.root-final-section) {
+  padding-top: 7rem !important;
+  padding-bottom: 7rem !important;
+}
+
+.root-concept-precision :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-faq-section) p {
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+  line-height: 1.78 !important;
+}
+
+.root-concept-precision .root-process-section .grid > .rounded-2xl,
+.root-concept-precision .root-client-section .grid > .rounded-2xl,
+.root-concept-precision .root-inclusions-section .max-w-2xl,
+.root-concept-precision .root-report-section > div > .rounded-2xl {
+  border: 1px solid var(--root-glass-border) !important;
+  border-radius: 28px !important;
+  background: var(--root-glass-surface) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--root-glass-shadow) !important;
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+}
+
+.root-concept-precision .root-video-testimonials .rounded-3xl,
+.root-concept-precision :is(.root-price-section,.root-final-section) .rounded-2xl {
+  border-color: rgba(245,243,238,0.15) !important;
+  background: rgba(174,187,193,0.1) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 28px 70px rgba(0,0,0,0.28) !important;
+}
+
+.root-concept-precision .root-comparison-table {
+  overflow: hidden;
+  border: 1px solid rgba(17,19,21,0.11) !important;
+  border-radius: 30px !important;
+  background: rgba(255,255,255,0.7) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), var(--root-glass-shadow) !important;
+}
+
+.root-concept-precision .root-comparison-head {
+  min-height: 5.25rem;
+  background: var(--root-carbon) !important;
+  color: var(--root-bone) !important;
+}
+
+.root-concept-precision .root-comparison-head > div {
+  border-color: rgba(245,243,238,0.15) !important;
+}
+
+.root-concept-precision .root-comparison-head > div:nth-child(2) {
+  background: var(--root-brand) !important;
+  color: var(--root-carbon) !important;
+}
+
+.root-concept-precision .root-comparison-head :is(span,.iconik-display,.iconik-micro) {
+  color: var(--root-bone) !important;
+  font-size: 0.8rem !important;
+  font-weight: 560 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.35 !important;
+}
+
+.root-concept-precision .root-comparison-head > div:nth-child(2) span {
+  color: var(--root-carbon) !important;
+}
+
+.root-concept-precision .root-comparison-row {
+  min-height: 4.8rem;
+  border-color: rgba(17,19,21,0.085) !important;
+  background: rgba(255,255,255,0.44);
+}
+
+.root-concept-precision .root-comparison-row:nth-child(odd) {
+  background: rgba(174,187,193,0.1);
+}
+
+.root-concept-precision .root-comparison-row > div {
+  border-color: rgba(17,19,21,0.085) !important;
+}
+
+.root-concept-precision .root-comparison-label span {
+  color: var(--root-carbon) !important;
+  font-size: 0.95rem !important;
+  font-weight: 430 !important;
+  line-height: 1.55 !important;
+}
+
+.root-concept-precision .root-comparison-iconik {
+  background: rgba(148,166,173,0.16) !important;
+}
+
+.root-concept-precision .root-comparison-value {
+  min-width: 3.25rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(17,19,21,0.1);
+  border-radius: 999px;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1 !important;
+}
+
+.root-concept-precision .root-comparison-value--yes {
+  background: rgba(148,166,173,0.28);
+  color: #31454c !important;
+}
+
+.root-concept-precision .root-comparison-value--no {
+  background: rgba(106,31,43,0.07);
+  color: var(--root-oxblood) !important;
+}
+
+.root-concept-precision footer {
+  border-top: 1px solid var(--root-hairline) !important;
+  background: var(--root-bone) !important;
+  color: var(--root-carbon);
+}
+
+/* Precision checkout: compact, calm, and readable at normal laptop widths. */
+.root-checkout-preview.root-concept-precision {
+  background:
+    radial-gradient(circle at 12% 2%, rgba(148,166,173,0.32), transparent 30rem),
+    var(--root-bone) !important;
+}
+
+.root-checkout-preview.root-concept-precision > main {
+  padding-top: 4rem !important;
+  padding-bottom: 6rem !important;
+}
+
+.root-checkout-preview.root-concept-precision > main > div:first-child {
+  max-width: 760px !important;
+  margin-bottom: 3rem !important;
+}
+
+.root-checkout-preview.root-concept-precision > main > div:first-child h1 {
+  font-size: clamp(2.4rem, 4.6vw, 4.5rem) !important;
+  letter-spacing: -0.05em !important;
+  line-height: 0.98 !important;
+  text-wrap: balance;
+}
+
+.root-checkout-preview.root-concept-precision > main > div:first-child p {
+  color: rgba(17,19,21,0.62) !important;
+  font-size: 1rem !important;
+  line-height: 1.65 !important;
+}
+
+.root-checkout-preview.root-concept-precision main section,
+.root-checkout-preview.root-concept-precision main aside {
+  border: 1px solid var(--root-glass-border) !important;
+  border-radius: 28px !important;
+  background: rgba(255,255,255,0.62) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.94), 0 22px 58px rgba(17,19,21,0.08) !important;
+}
+
+.root-checkout-preview.root-concept-precision main :is(h1,h2,.iconik-display) {
+  color: var(--root-carbon) !important;
+}
+
+.root-checkout-preview.root-concept-precision main label {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.root-checkout-preview.root-concept-precision input {
+  min-height: 3.25rem;
+  border: 1px solid rgba(17,19,21,0.14) !important;
+  border-radius: 15px !important;
+  background: rgba(255,255,255,0.84) !important;
+  color: var(--root-carbon) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95) !important;
+}
+
+.root-checkout-preview.root-concept-precision button[type="submit"] {
+  min-height: 3.75rem;
+  border-radius: 999px !important;
+  background: var(--root-oxblood) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.002em;
+}
+
+@media (max-width: 900px) {
+  .root-concept-precision .root-hero-inner > h1 {
+    max-width: 820px;
+    font-size: clamp(3.1rem, 6.5vw, 3.7rem) !important;
+    letter-spacing: -0.028em !important;
+  }
+
+  .root-concept-precision .root-hero-inner > p {
+    max-width: 650px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .root-concept-precision .root-hero-section {
+    padding-top: 6.5rem !important;
+    padding-bottom: 5.25rem !important;
+    background-size: 28px 28px, 28px 28px, auto !important;
+  }
+
+  .root-concept-precision .root-hero-inner > h1 {
+    font-size: clamp(2.6rem, 12.2vw, 3.8rem) !important;
+    letter-spacing: -0.028em !important;
+    line-height: 1.04 !important;
+  }
+
+  .root-concept-precision .root-hero-inner > p {
+    font-size: 1rem !important;
+    line-height: 1.65 !important;
+  }
+
+  .root-concept-precision .root-primary-action,
+  .root-concept-precision .root-hero-cta {
+    width: 100%;
+    max-width: 390px;
+    justify-content: center;
+    padding-inline: 1rem !important;
+  }
+
+  .root-concept-precision .root-hero-trust .iconik-mono {
+    max-width: 330px;
+    font-size: 0.75rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .root-concept-precision > :is(.root-process-section,.root-inclusions-section,.root-comparison-section,.root-client-section,.root-price-section,.root-faq-section,.root-final-section) {
+    padding-top: 5rem !important;
+    padding-bottom: 5rem !important;
+  }
+
+  .root-concept-precision .root-comparison-table {
+    border-radius: 22px !important;
+  }
+
+  .root-concept-precision .root-comparison-head,
+  .root-concept-precision .root-comparison-row {
+    grid-template-columns: minmax(0, 1.6fr) minmax(64px, 0.58fr) minmax(78px, 0.72fr) !important;
+  }
+
+  .root-concept-precision .root-comparison-head > div,
+  .root-concept-precision .root-comparison-row > div {
+    padding: 0.9rem 0.75rem !important;
+  }
+
+  .root-concept-precision .root-comparison-head :is(span,.iconik-display,.iconik-micro) {
+    font-size: 0.68rem !important;
+  }
+
+  .root-concept-precision .root-comparison-label span {
+    font-size: 0.83rem !important;
+  }
+
+  .root-concept-precision .root-comparison-value {
+    min-width: 2.7rem;
+    padding: 0.42rem 0.48rem;
+    font-size: 0.72rem !important;
+  }
+
+  .root-checkout-preview.root-concept-precision > main {
+    padding-top: 2.5rem !important;
+    padding-bottom: 5rem !important;
+  }
+}
+
+/* Precision Glass responsive correction pass. Higher-specificity selectors
+   explicitly neutralize the exploratory nth-of-type rules above. */
+div.root-concept-precision > section::before {
+  display: none !important;
+}
+
+div.root-concept-precision > section.root-hero-section {
+  padding-top: 6rem !important;
+  padding-bottom: 3.5rem !important;
+  background:
+    linear-gradient(rgba(17,19,21,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17,19,21,0.035) 1px, transparent 1px),
+    radial-gradient(circle at 50% 32%, rgba(255,255,255,0.98), rgba(148,166,173,0.15) 52%, rgba(245,243,238,0.98) 84%) !important;
+  background-size: 40px 40px, 40px 40px, auto !important;
+}
+
+div.root-concept-precision > section.root-process-section,
+div.root-concept-precision > section.root-report-section,
+div.root-concept-precision > section.root-comparison-section,
+div.root-concept-precision > section.root-faq-section {
+  background: var(--root-bone) !important;
+  color: var(--root-carbon) !important;
+}
+
+div.root-concept-precision > section.root-stats-section,
+div.root-concept-precision > section.root-inclusions-section,
+div.root-concept-precision > section.root-client-section {
+  background: linear-gradient(135deg, rgba(174,187,193,0.28), rgba(245,243,238,0.98)) !important;
+  color: var(--root-carbon) !important;
+}
+
+div.root-concept-precision > section.root-video-testimonials,
+div.root-concept-precision > section.root-price-section,
+div.root-concept-precision > section.root-final-section {
+  background:
+    radial-gradient(circle at 84% 8%, rgba(148,166,173,0.16), transparent 28rem),
+    var(--root-carbon) !important;
+  color: var(--root-bone) !important;
+}
+
+.root-concept-precision .root-hero-inner > p .font-semibold {
+  white-space: nowrap;
+  font-weight: 530 !important;
+}
+
+.root-concept-precision .root-hero-media {
+  margin-top: 1.5rem !important;
+}
+
+.root-concept-precision .root-video-testimonials :is(h2,p,.iconik-display,.iconik-micro,.iconik-mono),
+.root-concept-precision .root-video-card :is(blockquote,span,.iconik-display-it,.iconik-micro) {
+  color: var(--root-bone) !important;
+}
+
+.root-concept-precision .root-video-testimonials > div > div:first-child p {
+  color: rgba(245,243,238,0.72) !important;
+  opacity: 1 !important;
+}
+
+.root-concept-precision .root-video-testimonials > div > div:first-child .iconik-micro {
+  color: var(--root-brand) !important;
+}
+
+.root-concept-precision .root-video-card,
+.root-concept-precision .root-video-testimonials .root-video-card.rounded-3xl {
+  border: 1px solid rgba(245,243,238,0.14) !important;
+  background: #171B1D !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 64px rgba(0,0,0,0.32) !important;
+}
+
+.root-concept-precision .root-video-caption {
+  background: #171B1D !important;
+}
+
+.root-concept-precision .root-video-quote,
+.root-concept-precision .root-video-card .root-video-quote.iconik-display-it {
+  color: rgba(245,243,238,0.92) !important;
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-size: 1rem !important;
+  font-style: normal !important;
+  font-weight: 420 !important;
+  letter-spacing: -0.004em !important;
+  line-height: 1.68 !important;
+}
+
+.root-concept-precision .root-inclusions-section .max-w-2xl {
+  padding-inline: 1.25rem;
+  background: rgba(255,255,255,0.78) !important;
+}
+
+.root-concept-precision .root-inclusion-item {
+  gap: 0.9rem !important;
+  padding-block: 1.15rem !important;
+}
+
+.root-concept-precision .root-inclusion-title,
+.root-concept-precision .root-inclusion-title.iconik-display {
+  font-size: 1rem !important;
+  font-weight: 580 !important;
+  letter-spacing: -0.014em !important;
+  line-height: 1.45 !important;
+}
+
+.root-concept-precision .root-inclusion-copy {
+  color: rgba(17,19,21,0.66) !important;
+  font-size: 0.92rem !important;
+  font-weight: 400 !important;
+  line-height: 1.72 !important;
+  opacity: 1 !important;
+}
+
+.root-concept-precision .root-client-card {
+  background: rgba(255,255,255,0.86) !important;
+}
+
+.root-concept-precision .root-client-card p,
+.root-concept-precision .root-client-card .root-client-detail > span:last-child {
+  color: rgba(17,19,21,0.72) !important;
+  font-size: 0.88rem !important;
+  font-weight: 400 !important;
+  line-height: 1.68 !important;
+  opacity: 1 !important;
+}
+
+.root-concept-precision .root-client-card .root-client-detail > span:first-child {
+  color: rgba(17,19,21,0.62) !important;
+  font-size: 0.7rem !important;
+  font-weight: 560 !important;
+  letter-spacing: 0.085em !important;
+  line-height: 1.5 !important;
+  opacity: 1 !important;
+}
+
+.root-concept-precision .root-client-section > div > div:first-child > p {
+  color: rgba(17,19,21,0.66) !important;
+  opacity: 1 !important;
+}
+
+.root-concept-precision .root-client-quote,
+.root-concept-precision .root-client-card .root-client-quote.iconik-display-it {
+  color: rgba(17,19,21,0.72) !important;
+  font-family: var(--font-manrope), system-ui, sans-serif !important;
+  font-size: 0.9rem !important;
+  font-style: normal !important;
+  font-weight: 430 !important;
+  letter-spacing: -0.004em !important;
+  line-height: 1.66 !important;
+}
+
+@media (max-width: 640px) {
+  div.root-concept-precision > section.root-hero-section {
+    padding-top: 5.25rem !important;
+    padding-bottom: 3rem !important;
+    background-size: 28px 28px, 28px 28px, auto !important;
+  }
+
+  .root-concept-precision .root-hero-eyebrow {
+    margin-bottom: 0.9rem !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.085em !important;
+  }
+
+  .root-concept-precision .root-hero-inner > h1 {
+    margin-bottom: 1.15rem !important;
+    font-size: clamp(2.4rem, 10.6vw, 2.9rem) !important;
+    letter-spacing: -0.026em !important;
+    line-height: 1.05 !important;
+  }
+
+  .root-concept-precision .root-hero-inner > p {
+    margin-bottom: 1.35rem !important;
+    font-size: 0.96rem !important;
+    line-height: 1.58 !important;
+  }
+
+  .root-concept-precision .root-hero-cta {
+    min-height: 3.45rem;
+    padding-block: 0.85rem !important;
+  }
+
+  .root-concept-precision .root-hero-trust {
+    margin-top: 0.85rem !important;
+  }
+
+  .root-concept-precision .root-hero-trust .iconik-mono {
+    font-size: 0.7rem !important;
+  }
+
+  .root-concept-precision .root-hero-media {
+    width: min(100%, 340px);
+    margin-top: 1.15rem !important;
+  }
+
+  div.root-concept-precision > :is(section.root-process-section,section.root-video-testimonials,section.root-report-section,section.root-inclusions-section,section.root-comparison-section,section.root-client-section,section.root-price-section,section.root-faq-section,section.root-final-section) {
+    padding-top: 3.75rem !important;
+    padding-bottom: 3.75rem !important;
+  }
+
+  .root-concept-precision .root-video-testimonials > div > div:first-child {
+    margin-bottom: 2rem !important;
+  }
+
+  .root-concept-precision .root-video-testimonials > div > div:first-child h2 {
+    font-size: 2.25rem !important;
+    line-height: 1.14 !important;
+  }
+
+  .root-concept-precision .root-video-testimonials > div > div:first-child p {
+    margin-top: 1rem !important;
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .root-concept-precision .root-video-caption {
+    padding: 1.25rem !important;
+  }
+
+  .root-concept-precision .root-inclusions-section > div > div:first-child {
+    margin-bottom: 2rem !important;
+  }
+
+  .root-concept-precision .root-inclusions-section .max-w-2xl {
+    padding-inline: 1rem;
+    border-radius: 22px !important;
+  }
+
+  .root-concept-precision .root-inclusion-item {
+    align-items: flex-start;
+    gap: 0.7rem !important;
+  }
+
+  .root-concept-precision .root-inclusion-item > svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .root-concept-precision .root-client-section > div > div:first-child {
+    margin-bottom: 2rem !important;
+  }
+
+  .root-concept-precision .root-client-card > div:last-child {
+    padding: 1.25rem !important;
+  }
+
+  .root-concept-precision .root-client-detail {
+    grid-template-columns: 1fr !important;
+    row-gap: 0.3rem;
+  }
+
+  .root-concept-precision .root-client-changes > div {
+    margin-top: 0.15rem;
+  }
+
+  .root-concept-precision .root-client-card .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.85rem !important;
+  }
+}
+
+/* ── Precision Glass type polish ─────────────────────────────────────────
+   Small-size display text needs more leading than the large headings, and
+   the wordmark needs positive tracking that the global negative tracking
+   would otherwise swallow. */
+.root-concept-precision nav .iconik-display,
+.root-concept-precision footer .iconik-display {
+  font-weight: 560 !important;
+  letter-spacing: 0.15em !important;
+}
+
+.root-concept-precision .root-faq-section .cursor-pointer .iconik-display,
+.root-concept-precision .root-client-card .iconik-display,
+.root-concept-precision .root-process-section h3.iconik-display {
+  font-weight: 570 !important;
+  letter-spacing: -0.012em !important;
+  line-height: 1.42 !important;
+}
+
+.root-concept-precision .root-comparison-section p.iconik-display-it {
+  font-weight: 480 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.5 !important;
+}
+
+.root-concept-precision .root-faq-section .cursor-pointer p {
+  font-weight: 400 !important;
+  line-height: 1.78 !important;
+}
+
+/* Numerals read cleaner without the text tracking applied to them. */
+.root-concept-precision .root-stats-section .iconik-display,
+.root-concept-precision .root-price-section .rounded-2xl > .iconik-display {
+  letter-spacing: -0.015em !important;
+  font-variant-numeric: lining-nums tabular-nums;
+}

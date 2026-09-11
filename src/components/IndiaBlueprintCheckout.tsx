@@ -32,6 +32,7 @@ import {
   calculateIndiaBlueprintTotal,
   type IndiaBlueprintCheckoutSource,
 } from '@/lib/indiaBlueprintPricing';
+import type { RootDesignVariant } from '@/lib/rootDesign';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -106,6 +107,7 @@ interface IndiaBlueprintCheckoutProps {
   checkoutSource: IndiaBlueprintCheckoutSource;
   backHref: '/' | '/offer-2699';
   scanToken?: string;
+  designVariant?: RootDesignVariant;
 }
 
 export default function IndiaBlueprintCheckout({
@@ -114,6 +116,7 @@ export default function IndiaBlueprintCheckout({
   checkoutSource,
   backHref,
   scanToken = '',
+  designVariant,
 }: IndiaBlueprintCheckoutProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -317,7 +320,7 @@ export default function IndiaBlueprintCheckout({
             window.location.href = `/checkout/success?payment_id=${encodeURIComponent(paymentId)}`;
           },
           prefill: { name: email.split('@')[0], email, contact: phone },
-          theme: { color: '#2C2622' },
+          theme: { color: designVariant ? '#6A1F2B' : '#2C2622' },
           modal: { ondismiss: () => setIsProcessing(false) },
         };
         new paymentWindow.Razorpay(options).open();
@@ -347,7 +350,7 @@ export default function IndiaBlueprintCheckout({
       setIsProcessing(false);
       window.alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, validateDetails, wardrobeDetox, whatsappOptIn]);
+  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, designVariant, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, validateDetails, wardrobeDetox, whatsappOptIn]);
 
   const addonCards = [
     {
@@ -375,7 +378,7 @@ export default function IndiaBlueprintCheckout({
   ];
 
   return (
-    <div className="man-editorial min-h-screen bg-[#F8F3E9]">
+    <div className={`man-editorial min-h-screen bg-[#F8F3E9] ${designVariant ? `root-design-preview root-checkout-preview root-concept-${designVariant}` : ''}`}>
       <header className="sticky top-0 z-40 border-b border-[#2C2622]/10 bg-[#F8F3E9]/95 backdrop-blur-xl">
         <div className="relative mx-auto flex max-w-5xl items-center justify-center px-4 py-4">
           <Link href={backHref} aria-label="Back to the ICONIK offer" className="absolute left-4 inline-flex min-h-10 items-center gap-2 text-[#2C2622]/65 transition-opacity hover:opacity-70">
@@ -389,7 +392,7 @@ export default function IndiaBlueprintCheckout({
       <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
         <div className="mx-auto mb-8 max-w-2xl text-center">
           <div className="iconik-micro mb-3 text-[#2C2622]/45">Secure One-Page Checkout</div>
-          <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Complete Your Personal Style Blueprint</h1>
+          <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Complete Your <span className="root-serif-moment">Personal Style Blueprint</span></h1>
           <p className="mt-3 text-sm leading-6 text-[#2C2622]/60 sm:text-base">Enter your details, choose any optional add-ons, and pay securely—all on this page.</p>
         </div>
 

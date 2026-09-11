@@ -7,9 +7,11 @@ import {
   getStylistBlueprintTransformationPage,
   isVersionedStylistBlueprintReportData,
   type StylistBlueprintReportData,
+  validateStylistBlueprintReport,
 } from '@/lib/stylistBlueprintGenerator';
+import { checkStudioReportQuality } from '@/lib/stylistReportStudio';
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
-import { canAccessBlueprintReport, getStylistWorkspaceIdentity, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
+import { canAccessBlueprintReport, getStylistWorkspaceIdentity, isAdminCookieAuthenticated, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { buildWhatsappUrl, normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
 
@@ -23,14 +25,15 @@ export async function POST(
 ) {
   const { reportId } = await params;
   const identity = await getStylistWorkspaceIdentity();
-  if (!identity || !(await canAccessBlueprintReport(reportId))) {
+  if ((!identity && !(await isAdminCookieAuthenticated())) || !(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const body = await request.json().catch(() => ({})) as { action?: string };
   const action = body.action ?? 'prepare';
+  if (!['prepare', 'confirm', 'copied', 'opened'].includes(action)) return NextResponse.json({ error: 'Invalid delivery action' }, { status: 400 });
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, status, report_data, image_urls, share_token, section_approvals, published_at, submission_id, stylist_intake_responses(id, consultation_id, customer_phone, full_name, source_photo_paths, intake_source)')
+    .select('id, status, progress_stage, updated_at, report_data, image_urls, share_token, section_approvals, published_at, submission_id, stylist_intake_responses(id, consultation_id, customer_phone, full_name, source_photo_paths, intake_source)')
     .eq('id', reportId)
     .single();
   if (error || !report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
@@ -45,17 +48,22 @@ export async function POST(
   if (action === 'confirm') {
     if (!report.published_at) return NextResponse.json({ error: 'Publish the report first' }, { status: 400 });
     const now = new Date().toISOString();
-    const { error: updateError } = await supabaseAdmin
+    const { data: delivered, error: updateError } = await supabaseAdmin
       .from('stylist_blueprint_reports')
       .update({ status: 'delivered', delivered_at: now, updated_at: now })
-      .eq('id', reportId);
+      .eq('id', reportId)
+      .eq('updated_at', report.updated_at)
+      .eq('published_at', report.published_at)
+      .select('id')
+      .maybeSingle();
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (!delivered) return NextResponse.json({ error: 'The report changed during delivery. Review and publish it again.' }, { status: 409 });
     await supabaseAdmin
       .from('consultations')
       .update({ status: 'delivered', delivered_at: now, updated_at: now })
       .eq('id', intake.consultation_id);
     await logStylistReportActivity({
-      action: 'whatsapp_delivery_confirmed', reportId, consultationId: intake.consultation_id, stylistId: identity.stylistId,
+      action: 'whatsapp_delivery_confirmed', reportId, consultationId: intake.consultation_id, stylistId: identity?.stylistId,
     });
     await revalidateStylistBlueprintCache(reportId, report.share_token);
     return NextResponse.json({ success: true, status: 'delivered', deliveredAt: now });
@@ -66,14 +74,24 @@ export async function POST(
       action: action === 'copied' ? 'report_link_copied' : 'whatsapp_opened',
       reportId,
       consultationId: intake.consultation_id,
-      stylistId: identity.stylistId,
+      stylistId: identity?.stylistId,
     });
   }
 
-  if (action === 'prepare' && !report.published_at) {
+  if (action === 'prepare') {
     const reportData = report.report_data as StylistBlueprintReportData | null;
     if (!isVersionedStylistBlueprintReportData(reportData)) {
       return NextResponse.json({ error: 'The report is not ready to publish' }, { status: 400 });
+    }
+    if (report.status === 'generating' || report.status === 'error' || report.progress_stage) {
+      return NextResponse.json({ error: 'Finish report generation before publishing' }, { status: 400 });
+    }
+    try {
+      validateStylistBlueprintReport(reportData);
+      const issue = reportData.studio && checkStudioReportQuality(reportData).find(issue => issue.level === 'error');
+      if (issue) throw new Error(issue.message);
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Report quality checks failed' }, { status: 400 });
     }
     if (reportData.studio && !reportData.studio.analysis_confirmed) {
       return NextResponse.json({ error: 'Confirm the body, colour and face analysis before publishing' }, { status: 400 });
@@ -82,7 +100,7 @@ export async function POST(
     const hiddenPages = new Set(reportData.studio?.hidden_page_numbers ?? []);
     const visiblePages = reportData.pages.filter(page => page.page_number !== continuationPage && !hiddenPages.has(page.page_number));
     const approvals = report.section_approvals as Record<string, boolean> | null;
-    if (!visiblePages.every(page => Boolean(approvals?.[`p${page.page_number}`]))) {
+    if (!visiblePages.every(page => approvals?.[`p${page.page_number}`] === true)) {
       return NextResponse.json({ error: 'Approve every report page before publishing' }, { status: 400 });
     }
     const sourcePaths = (intake.source_photo_paths ?? {}) as Record<string, string>;
@@ -95,17 +113,23 @@ export async function POST(
       includeClosingEditTeaser: false,
       includeTransformationPreview: Boolean(getStylistBlueprintTransformationPage(reportData)),
       includeBeautyPages: Boolean(getStylistBlueprintHairColourPage(reportData)),
+      reportData,
     });
     if (!Object.values(imageCounts).every(group => group.done >= group.total)) {
       return NextResponse.json({ error: 'Upload every required image before publishing', imageCounts }, { status: 400 });
     }
     const publishedAt = new Date().toISOString();
-    await supabaseAdmin
+    const { data: published, error: publishError } = await supabaseAdmin
       .from('stylist_blueprint_reports')
       .update({ status: 'approved', published_at: publishedAt, updated_at: publishedAt })
-      .eq('id', reportId);
+      .eq('id', reportId)
+      .eq('updated_at', report.updated_at)
+      .select('id')
+      .maybeSingle();
+    if (publishError) return NextResponse.json({ error: 'Could not publish report' }, { status: 500 });
+    if (!published) return NextResponse.json({ error: 'The report changed during publication. Review it again.' }, { status: 409 });
     await logStylistReportActivity({
-      action: 'report_published', reportId, consultationId: intake.consultation_id, stylistId: identity.stylistId,
+      action: 'report_published', reportId, consultationId: intake.consultation_id, stylistId: identity?.stylistId,
     });
     await revalidateStylistBlueprintCache(reportId, report.share_token);
   }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
+import { isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import {
   isStylistBlueprintImageSlotKey,
+  getStylistBlueprintImageSlotPageNumber,
   regenerateStylistBlueprintImageSlot,
 } from '@/lib/stylistBlueprintImageGenerator';
 import { getStylistBlueprintOutfitCount, isVersionedStylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
@@ -15,8 +16,8 @@ export async function POST(
   { params }: { params: Promise<{ reportId: string }> },
 ) {
   const { reportId } = await params;
-  if (!(await canAccessBlueprintReport(reportId))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await isAdminCookieAuthenticated())) {
+    return NextResponse.json({ error: 'Image generation is available to admins only' }, { status: 403 });
   }
   const body = await request.json().catch(() => ({}));
   const slotKey = body.slotKey;
@@ -27,7 +28,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, share_token, submission_id, progress_stage')
+    .select('id, report_data, share_token, submission_id, progress_stage, status, updated_at, section_approvals, revision')
     .eq('id', reportId)
     .single();
 
@@ -35,7 +36,7 @@ export async function POST(
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
 
-  if (report.progress_stage) {
+  if (report.progress_stage || report.status === 'generating') {
     return NextResponse.json(
       { error: 'Image generation already in progress', progressStage: report.progress_stage },
       { status: 409 },
@@ -52,6 +53,15 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid outfit image slot for this report version' }, { status: 400 });
     }
   }
+
+  const page = getStylistBlueprintImageSlotPageNumber(slotKey, report.report_data);
+  const { data: claimed, error: claimError } = await supabaseAdmin.from('stylist_blueprint_reports')
+    .update({ progress_stage: `generating_image_${slotKey}`, updated_at: new Date().toISOString(),
+      section_approvals: { ...(report.section_approvals ?? {}), ...(page ? { [`p${page}`]: false } : {}) },
+      revision: (report.revision ?? 1) + 1, published_at: null, delivered_at: null, status: 'in_review' })
+    .eq('id', reportId).eq('updated_at', report.updated_at).select('id').maybeSingle();
+  if (claimError) return NextResponse.json({ error: 'Could not start image generation' }, { status: 500 });
+  if (!claimed) return NextResponse.json({ error: 'The report changed. Reload before generating.' }, { status: 409 });
 
   try {
     const { data: submission } = await supabaseAdmin

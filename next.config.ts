@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_BUILD_DIR || '.next',
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -19,8 +20,15 @@ const nextConfig: NextConfig = {
     '/api/stylist-blueprint/**': [
       './stylistoutfitlibrary.md',
       './outfitlibrarywomen.md',
+      './outfitlibrarypinterest.md',
+      './outfitlibraryethnicoffice.md',
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
+    ],
+    '/api/stylist-workspace/**': [
+      './stylistoutfitlibrary.md', './outfitlibrarywomen.md',
+      './outfitlibrarypinterest.md', './outfitlibraryethnicoffice.md',
+      './src/lib/stylistOutfitLibrary.md', './src/lib/womenOutfitRecommendationSkill.md',
     ],
   },
   async headers() {
