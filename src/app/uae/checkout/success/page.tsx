@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle, Users } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackPurchase, updateUserData } from '@/lib/metaPixel';
 import { clearQuizPhotos, getQuizPhoto } from '@/lib/uaeQuizStorage';
 
 const QUIZ_STORAGE_KEY = 'uaeStyleQuizData';
@@ -22,8 +22,6 @@ function UaeCheckoutSuccessContent() {
   const [customerName, setCustomerName] = useState('');
 
   useEffect(() => {
-    trackPageView('UAE Success');
-
     const purchaseAmount = localStorage.getItem('purchaseAmount');
     if (purchaseAmount) {
       trackCompleteRegistration(parseFloat(purchaseAmount), 'UAE Style Blueprint', 'AED');

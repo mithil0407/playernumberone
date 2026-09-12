@@ -1,189 +1,309 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  SeoArticleLayout,
+  SeoAuthorReview,
+  SeoBlueprintCta,
+  SeoFaqSection,
+  SeoInsightCard,
+  SeoQuickAnswer,
+  SeoRelatedGuides,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "Kurti Length Guide by Body Type and Height — Iconik",
-  description: "Which kurti length flatters your body type and height? The complete guide to short, hip-length, knee-length, calf-length, and floor-length kurtis — and which works for which silhouette.",
-  keywords: "kurti length guide India, which kurti length for body type, kurti length for short women India, kurti length for tall women, best kurti length Indian women",
-  alternates: { canonical: "https://www.iconik.pro/style-guides/kurti-length-guide" },
-  openGraph: {
-    title: "Kurti Length Guide by Body Type and Height — Iconik",
-    description: "Which kurti length flatters each body type — short, hip, knee, calf, and floor-length kurtis mapped to silhouette and height.",
-    url: "https://www.iconik.pro/style-guides/kurti-length-guide",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Kurti length guide India — Iconik" }],
+const path = "/style-guides/kurti-length-guide";
+const title = "Kurti Length Guide: Choose the Hem by Proportion";
+const description =
+  "Choose short, hip, knee, calf or ankle-length kurtis using body landmarks, torso-to-leg proportion, bottom width and outfit context—not rigid height or body-type rules.";
+const published = "2025-01-01";
+const modified = "2026-07-24";
+
+export const metadata: Metadata = buildArticleMetadata({
+  title,
+  description,
+  path,
+  datePublished: published,
+  dateModified: modified,
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "kurti length guide India",
+    "best kurti length by height",
+    "kurti length for body type",
+    "kurti and trouser proportion",
+  ],
+  image: {
+    path: "/images/seo/look-taller-top-layer-hem-guide-iconik.webp",
+    width: 1122,
+    height: 1402,
+    alt: "Garment hem positions at the waist, widest hip and upper thigh.",
   },
-};
+});
 
 const faqs = [
   {
-    q: "What is the most universally flattering kurti length?",
-    a: "Hip-length kurtis (ending at the lower hip, approximately 32–34 inches from shoulder) are the most versatile. They work for most body types, are appropriate for most occasions, and pair well with both straight trousers and leggings. For petite women, a slightly shorter version (30–32 inches) creates a more proportionate silhouette.",
+    q: "What is the most versatile kurti length?",
+    a: "A hem around the lower hip or upper thigh is versatile because it can work with straight trousers, jeans and some wider bottoms. But the exact point should be judged on your body and with the intended bottom; a fixed inch measurement cannot fit every height or size.",
   },
   {
-    q: "What kurti length makes you look taller?",
-    a: "Knee-length to floor-length kurtis in the same colour as the bottom create the strongest height illusion — the unbroken vertical line from shoulder to hem elongates the full body. Avoid short kurtis with contrasting bottoms for height — the colour break at the waist shortens the perceived height.",
+    q: "Which kurti length can create a taller impression?",
+    a: "The strongest length effect usually comes from continuity: a clear shoulder fit, a deliberate waist or rise, limited colour breaks and a hem that does not stop at an awkward widest point. Knee, calf and ankle lengths can all look long when the kurti and bottom create one visual route.",
   },
   {
-    q: "Can a tall woman wear floor-length kurtis?",
-    a: "Yes — tall women can wear any length, including floor-length. A floor-length Anarkali on a tall woman with long legs creates a dramatic, elegant silhouette. The proportional consideration for tall women: avoid very short kurtis (above the hip) without leggings, as very short proportions with long legs can look unbalanced.",
+    q: "Can petite women wear long kurtis?",
+    a: "Yes. Keep scale intentional: check sleeve length, side-slit height, print scale, bottom pooling and the amount of fabric. Heels are optional; clean hem and footwear continuity can create direction without them.",
   },
   {
-    q: "What kurti length works best for a plus-size or fuller body?",
-    a: "Knee-length or longer kurtis with a straight or A-line silhouette create a clean vertical line past the midsection. The longer the kurti, the longer the vertical line and the more elongating the effect. A floor-length Anarkali in a single colour is particularly powerful for fuller bodies — it requires no waist definition and creates a dramatic, elegant silhouette.",
+    q: "Do plus-size women need longer kurtis?",
+    a: "No. Plus size is not one proportion. Choose length from torso, leg, hip, tummy, shoulder and garment-fit relationships. A shorter structured kurti can work just as well as a longer fluid one.",
+  },
+  {
+    q: "Should a kurti end above or below the widest hip?",
+    a: "If you want a smoother vertical line, test a hem clearly above or below the fullest point rather than directly on it. If you want to emphasise the hip or create a strong horizontal break, ending on that point may be intentional.",
+  },
+];
+
+const lengthGuide = [
+  {
+    name: "Short or tunic",
+    landmark: "Above or around the upper hip",
+    worksWith: "Jeans, straight trousers, wide trousers or skirts depending on volume",
+    watch: "A boxy shape can lose direction if both top and bottom are equally wide",
+  },
+  {
+    name: "Hip length",
+    landmark: "Around the hip or upper thigh",
+    worksWith: "Straight trousers, cigarette pants, jeans and controlled palazzos",
+    watch: "Move the hem if it cuts exactly across a point you do not want emphasised",
+  },
+  {
+    name: "Knee length",
+    landmark: "Above, at or just below the knee",
+    worksWith: "Straight trousers, churidars and some palazzos",
+    watch: "Check side-slit height and whether the bottom width competes with the kurti",
+  },
+  {
+    name: "Calf length",
+    landmark: "Between knee and ankle",
+    worksWith: "Straight, narrow or wide bottoms when the proportions are deliberate",
+    watch: "Judge where the hem meets the calf and whether fabric gathers around the leg",
+  },
+  {
+    name: "Ankle or floor length",
+    landmark: "Near the ankle or shoe",
+    worksWith: "Narrow hidden bottoms, full-length layers or occasion silhouettes",
+    watch: "Check walking clearance, pooling, flare volume and whether footwear finishes the line",
   },
 ];
 
 export default function KurtiLengthGuidePage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "headline": "Kurti Length Guide by Body Type and Height",
-        "description": "Complete guide to choosing kurti length by body type and height — all 5 silhouettes covered.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/kurti-length-guide" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Style Guides", "item": "https://www.iconik.pro/style-guides" },
-          { "@type": "ListItem", "position": 3, "name": "Kurti Length Guide", "item": "https://www.iconik.pro/style-guides/kurti-length-guide" },
-        ],
-      },
-    ],
-  };
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title,
+      description,
+      path,
+      datePublished: published,
+      dateModified: modified,
+      images: ["/images/seo/look-taller-top-layer-hem-guide-iconik.webp"],
+      about: ["Kurti length", "Indian wear", "Proportion styling"],
+    }),
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Style Guides", path: "/style-guides" },
+      { name: "Kurti Length Guide", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoArticleLayout
+        hero={{
+          eyebrow: "Indian-wear proportion guide",
+          title,
+          summary:
+            "Kurti length is not a number printed on a size chart. It is where the hem lands on your body, how that line interacts with the bottom, and whether the full outfit creates the direction you want.",
+          breadcrumbs: [
+            { label: "Home", href: "/" },
+            { label: "Style Guides", href: "/style-guides" },
+            { label: "Kurti Length Guide" },
+          ],
+          published: "1 January 2025",
+          updated: "24 July 2026",
+          reviewer: "Jasmine Rana",
+          readingTime: "9 min read",
+        }}
+        quickAnswer={
+          <SeoQuickAnswer
+            answer="Choose kurti length by body landmark first, then test it with the intended bottom and footwear."
+            detail="Two kurtis with the same listed length can land differently because of shoulder slope, bust, torso length, size and pattern cutting."
+          />
+        }
+        tableOfContents={[
+          { href: "#measure-landmark", label: "Measure the hem correctly" },
+          { href: "#lengths", label: "Five useful length families" },
+          { href: "#proportion", label: "Match length to proportion" },
+          { href: "#bottoms", label: "Pair the bottom" },
+          { href: "#shopping-check", label: "Fitting-room checklist" },
+        ]}
+        afterArticle={
+          <>
+            <SeoFaqSection faqs={faqs} />
+            <SeoAuthorReview>
+              <p>
+                Jasmine reviews ICONIK&apos;s Indian-wear guidance across different heights, sizes and
+                proportion patterns. The recommendations are tests to try, not rules about what a body
+                is allowed to wear.
+              </p>
+            </SeoAuthorReview>
+            <SeoRelatedGuides
+              links={[
+                {
+                  href: "/style-guides/salwar-kameez-body-type",
+                  title: "Salwar Kameez by Body Type",
+                  description: "Coordinate kurta, bottom and dupatta proportions.",
+                },
+                {
+                  href: "/body-type-styling/how-to-look-taller-clothing",
+                  title: "How to Look Taller with Clothing",
+                  description: "Understand rise, colour breaks, hems and vertical fall.",
+                },
+                {
+                  href: "/methodology/geometric-silhouette-profiling",
+                  title: "Geometric Silhouette Profiling™",
+                  description: "Read ICONIK's canonical proportion framework.",
+                },
+              ]}
+            />
+            <SeoBlueprintCta
+              title="Want kurti formulas based on your real proportions?"
+              description="The ICONIK Blueprint combines Indian and western outfit formulas with colour, hairstyle and eyewear guidance after a 30-minute consultation."
+            />
+          </>
+        }
+      >
+        <SeoTeachingVisual
+          src="/images/seo/look-taller-top-layer-hem-guide-iconik.webp"
+          alt="Garment hem positions at the waist, widest hip and upper thigh."
+          caption="The visual effect comes from where the hem lands on your body—not from a universal inch measurement."
+          width={1122}
+          height={1402}
+          priority
+        />
 
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/style-guides" className="hover:underline">Style Guides</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Kurti Length Guide</li>
-            </ol>
-          </nav>
+        <section id="measure-landmark">
+          <h2>Measure kurti length by body landmark</h2>
+          <p>
+            Product listings usually measure from the high shoulder point to the hem. That number is
+            useful for comparing two products, but it does not predict where the kurti will land on
+            every person.
+          </p>
+          <p>When trying a kurti, record the actual landmark:</p>
+          <ul>
+            <li>above the hip;</li>
+            <li>at the fullest hip;</li>
+            <li>upper thigh;</li>
+            <li>above, at or below the knee;</li>
+            <li>mid-calf; or</li>
+            <li>ankle.</li>
+          </ul>
+          <p>
+            Bust projection, shoulder slope, torso length and size can all make the front and back hem
+            sit differently. Check both sides, not only the front mirror view.
+          </p>
+        </section>
 
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Kurti Length Guide by Body Type and Height
-            </h1>
-            <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Kurti length is one of the most impactful proportion variables in Indian women&apos;s dressing — and one of the most poorly understood. The same silhouette in a knee-length vs a floor-length creates a completely different impression. This guide maps every kurti length category to specific body types, heights, and silhouette goals.
-            </p>
-          </header>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Are the Standard Kurti Length Categories?</h2>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside">
-              <li><strong>Short / tunic length (22–26 inches):</strong> Ends above the hip. Pairs with jeans or leggings only.</li>
-              <li><strong>Hip length (28–32 inches):</strong> Ends at the lower hip or upper thigh. The most versatile length — pairs with trousers, leggings, churidars, and palazzos.</li>
-              <li><strong>Knee length (34–38 inches):</strong> Ends at or just above the knee. Creates a strong vertical line. Appropriate for casual, work, and semi-formal contexts.</li>
-              <li><strong>Calf length (40–46 inches):</strong> Ends between the knee and ankle. Very elongating. Appropriate for formal and semi-formal contexts.</li>
-              <li><strong>Floor length / Anarkali (48+ inches):</strong> Ends at or near the ankle. The most formal and most height-creating length. Appropriate for formal and occasion wear.</li>
-            </ul>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Which Kurti Length Works for Each Body Type?</h2>
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Apple (fuller midsection)</h3>
-                <p className="text-gray-600">Best: hip length to knee length in a straight or A-line silhouette. The longer hem creates a vertical line past the midsection. Same colour as the bottom maximises the elongating effect. Avoid: short/tunic kurtis with contrasting bottoms — the horizontal break at the midsection is the least flattering placement.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Pear (wider hips)</h3>
-                <p className="text-gray-600">Best: hip length to knee length — the hem ending at the hip or slightly past it creates a clean line. A-line or flared from the hip. Avoid: kurtis that end exactly at the widest point of the hip — this is the least flattering cut line.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Rectangle (minimal waist definition)</h3>
-                <p className="text-gray-600">Best: hip length with a defined waistline — either a wrap style or worn with a belt. Colour blocking (contrasting top and bottom) is most effective at hip length. Floor-length Anarkali creates elongation but loses waist definition — add a waist chain if wearing floor-length.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Hourglass (defined waist)</h3>
-                <p className="text-gray-600">All lengths work — the hourglass silhouette is proportionally harmonious at any kurti length. The key: the kurti must have a defined waist seam or fit closely at the waist. Oversized or boxy kurtis at any length obscure the natural shape.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-2">Inverted Triangle (wider shoulders)</h3>
-                <p className="text-gray-600">Best: hip length to floor-length with A-line or flared silhouettes. The flare adds lower body volume to balance wide shoulders. Avoid: short kurtis that end at the waist — these emphasise the upper body width without adding lower body balance.</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Does Height Affect Kurti Length?</h2>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside">
-              <li><strong>Petite (under 5&apos;2&quot;):</strong> Hip length works best — it does not cut the body at an awkward mid-leg point. Floor-length kurtis create an elongating vertical line but should be paired with heels. Avoid knee-length kurtis that end at the widest part of the calf.</li>
-              <li><strong>Average height (5&apos;2&quot;–5&apos;5&quot;):</strong> All lengths work — choose by body type formula. Hip length and knee length are most versatile for daily wear.</li>
-              <li><strong>Tall (above 5&apos;5&quot;):</strong> All lengths work and often look more dramatic. Floor-length kurtis create a particularly striking silhouette on tall frames. Short/tunic kurtis can look disproportionate on long legs unless paired deliberately.</li>
-            </ul>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Bottom Pairs with Each Kurti Length?</h2>
-            <ul className="space-y-2 text-gray-600 list-disc list-inside">
-              <li><strong>Short/tunic (22–26&quot;):</strong> Jeans, leggings, jeggings — pairs with casual bottoms only</li>
-              <li><strong>Hip length (28–32&quot;):</strong> Straight trousers, leggings, churidars, palazzos — the most versatile pairing range</li>
-              <li><strong>Knee length (34–38&quot;):</strong> Churidars, straight salwars, leggings — bottoms that do not add volume at the hip</li>
-              <li><strong>Calf length (40–46&quot;):</strong> Churidars or leggings — full-length slim bottoms</li>
-              <li><strong>Floor length (48&quot;+):</strong> Churidars or no visible bottom — the kurti itself is the full outfit</li>
-            </ul>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed faq-answer">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/style-guides/salwar-kameez-body-type" className="underline hover:opacity-70">Salwar Kameez by Body Type</Link></li>
-              <li>→ <Link href="/body-type-styling/how-to-look-taller-clothing" className="underline hover:opacity-70">How to Look Taller with Clothing</Link></li>
-              <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
-              <li>→ <Link href="/style-guides/office-wear-indian-women" className="underline hover:opacity-70">Office Wear for Indian Women</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your exact kurti formula?</h2>
-            <p className="text-gray-600 mb-6">Your Iconik Style Blueprint includes precise kurti length, silhouette, and colour recommendations based on your measured body proportions.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
+        <section id="lengths">
+          <h2>Five useful kurti-length families</h2>
+          <div className="not-prose space-y-4">
+            {lengthGuide.map((item) => (
+              <article key={item.name} className="rounded-2xl border border-[rgba(44,38,34,0.12)] bg-white/35 p-6">
+                <p className="seo-eyebrow">{item.landmark}</p>
+                <h3 className="mt-3 font-[family-name:var(--font-fraunces)] text-2xl font-normal text-[var(--seo-ink)]">{item.name}</h3>
+                <p className="mt-3 text-sm leading-6 text-[rgba(44,38,34,0.68)]"><strong>Try with:</strong> {item.worksWith}</p>
+                <p className="mt-2 text-sm leading-6 text-[rgba(44,38,34,0.68)]"><strong>Check:</strong> {item.watch}</p>
+              </article>
+            ))}
           </div>
+        </section>
 
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Kurti Length Guide by Body Type and Height.&quot; Iconik LLP, 2025. https://www.iconik.pro/style-guides/kurti-length-guide</p>
-          </div>
+        <section id="proportion">
+          <h2>Match length to the proportion you want to create</h2>
+          <h3>For a longer leg impression</h3>
+          <p>
+            Test a shorter kurti with a higher-looking rise, or use a longer kurti and bottom in a
+            related colour so the eye follows one route. These are different solutions to the same
+            goal.
+          </p>
+          <h3>For more visible waist direction</h3>
+          <p>
+            Use a shaped side seam, wrap, panel, belt or controlled tuck. Length alone cannot create a
+            waist if the garment remains equally wide from shoulder to hem.
+          </p>
+          <h3>For less emphasis at the hip or tummy</h3>
+          <p>
+            Move the hem away from the fullest point, reduce cling, and make sure the fabric falls from
+            a stable shoulder or yoke. Longer is not automatically better; a long garment can still
+            pull or bunch.
+          </p>
+          <h3>For stronger lower-body presence</h3>
+          <p>
+            Use a shorter or cleaner top line with a wider, brighter or more textured bottom. This can
+            support an inverted-triangle proportion or simply make the trousers the outfit&apos;s hero.
+          </p>
+        </section>
 
-        </div>
-      </main>
+        <SeoInsightCard eyebrow="Body shape is secondary" title="Start with the garment outcome">
+          <p>
+            Instead of asking “What length is allowed for my body type?”, ask whether you want the
+            outfit to feel long, waist-directed, fluid, structured or bottom-led. Then choose the hem,
+            bottom and fabric that create that effect.
+          </p>
+        </SeoInsightCard>
+
+        <section id="bottoms">
+          <h2>Pair kurti length with bottom width</h2>
+          <ul>
+            <li><strong>Short + wide:</strong> can look directional when the kurti fits at the shoulder and the trouser falls cleanly.</li>
+            <li><strong>Hip length + straight:</strong> an easy workwear formula when the hem and waistband do not compete.</li>
+            <li><strong>Knee length + narrow:</strong> creates a clear kurti-led line; check slit height and mobility.</li>
+            <li><strong>Knee or calf + wide:</strong> needs intentional volume and enough height in the side slit or shoe line to avoid visual heaviness.</li>
+            <li><strong>Ankle length:</strong> check whether the visible bottom, if any, supports rather than interrupts the final line.</li>
+          </ul>
+          <p>
+            Add the dupatta last. A long one-sided drape reinforces vertical direction; a wide
+            shoulder drape adds upper-body presence. Neither is universally more flattering.
+          </p>
+        </section>
+
+        <section id="shopping-check">
+          <h2>The kurti fitting-room checklist</h2>
+          <ol>
+            <li>Does the shoulder seam sit correctly?</li>
+            <li>Is the front hem being lifted by bust or tummy fit?</li>
+            <li>Does the hem land at an intentional body landmark?</li>
+            <li>Can you sit, walk and raise your arms without the kurti riding up?</li>
+            <li>Does the side slit begin at a comfortable and useful point?</li>
+            <li>Does the bottom width support the kurti rather than compete with it?</li>
+            <li>Does the footwear finish the line without avoidable pooling?</li>
+          </ol>
+          <p>
+            Photograph the complete outfit from a consistent distance before altering the length.
+            Compare one hem change at a time. Continue with the <Link href="/body-type-styling" className="underline">body-type styling hub</Link> for more proportion guidance.
+          </p>
+        </section>
+      </SeoArticleLayout>
     </>
   );
 }

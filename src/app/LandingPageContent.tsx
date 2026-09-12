@@ -1,11 +1,26 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import {
+  INDIA_BLUEPRINT_PRODUCT_ID,
+  INDIA_OFFER_2699_FUNNEL_CATEGORY,
+  INDIA_ROOT_FUNNEL_CATEGORY,
+  trackCTAClick,
+  trackViewContent,
+} from '@/lib/metaPixel';
+import { INDIA_FUNNEL_ENTRY_STORAGE_KEY, type IndiaFunnelEntry } from '@/lib/metaTrackingContract';
 import Link from 'next/link';
 import Image from 'next/image';
 import ExploreLinksSection from '@/components/ExploreLinksSection';
 import { footerExploreGroups } from '@/lib/seoContent';
 import { SUPPORT_EMAIL } from '@/lib/seo';
+import {
+  BLUEPRINT_OFFER,
+  BUSINESS_HOURS,
+  CLIENT_PROOF,
+  LEGAL_ENTITY_NAME,
+  SUPPORT_WHATSAPP_DISPLAY,
+  SUPPORT_WHATSAPP_URL,
+} from '@/lib/siteFacts';
 import {
   CheckCircle,
   ArrowRight,
@@ -15,65 +30,202 @@ import {
   Gem,
   Shield,
   Trophy,
-  Award
+  Award,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import type { RootDesignVariant } from '@/lib/rootDesign';
 
 interface LandingPageContentProps {
   headline: ReactNode;
   subheadline: ReactNode;
   variant?: 'default' | 'offer2699';
+  trackingEntry?: IndiaFunnelEntry;
   headlineClassName?: string;
   checkoutHref?: string;
   basePrice?: number;
   originalPrice?: number;
   displayBasePrice?: string;
   displayOriginalPrice?: string;
+  designVariant?: RootDesignVariant;
+}
+
+interface TestimonialVideoCardProps {
+  src: string;
+  poster: string;
+  quote: string;
+  name: string;
+  rating: number;
+  number: number;
+  faceBlur?: {
+    left: string;
+    top: string;
+    width: string;
+    height: string;
+  };
+}
+
+function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBlur }: TestimonialVideoCardProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      void video.play();
+    } else {
+      video.pause();
+    }
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  return (
+    <figure className="root-video-card mx-auto w-full max-w-[360px] overflow-hidden rounded-3xl md:last:col-span-2 lg:last:col-span-1" style={{ border: '1px solid rgba(244,239,229,0.18)', background: '#171411', boxShadow: '0 28px 70px rgba(0,0,0,0.28)' }}>
+      <div className="relative">
+        <video
+          ref={videoRef}
+          className="block aspect-[720/1276] w-full cursor-pointer object-cover"
+          disablePictureInPicture
+          disableRemotePlayback
+          playsInline
+          preload="metadata"
+          poster={poster}
+          aria-label={`ICONIK client testimonial video ${number}`}
+          onClick={togglePlayback}
+          onDoubleClick={(event) => event.preventDefault()}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        >
+          <source src={src} type="video/mp4" />
+          Your browser does not support embedded video.
+        </video>
+        {faceBlur && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 rounded-[50%]"
+            style={{
+              ...faceBlur,
+              backdropFilter: 'blur(1.5px)',
+              WebkitBackdropFilter: 'blur(1.5px)',
+              maskImage: 'radial-gradient(ellipse, black 50%, rgba(0,0,0,0.82) 68%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(ellipse, black 50%, rgba(0,0,0,0.82) 68%, transparent 100%)',
+            }}
+          />
+        )}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(244,239,229,0.62) 1px, transparent 0)',
+            backgroundSize: '3px 3px',
+            mixBlendMode: 'soft-light',
+            opacity: 0.08,
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between p-4" style={{ background: 'linear-gradient(transparent, rgba(23,20,17,0.82))' }}>
+          <button
+            type="button"
+            onClick={togglePlayback}
+            className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
+            style={{ background: '#F4EFE5', color: '#2C2622' }}
+            aria-label={`${isPlaying ? 'Pause' : 'Play'} testimonial video ${number}`}
+          >
+            {isPlaying ? <Pause className="h-5 w-5" fill="currentColor" /> : <Play className="ml-0.5 h-5 w-5" fill="currentColor" />}
+          </button>
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
+            style={{ background: 'rgba(23,20,17,0.72)', border: '1px solid rgba(244,239,229,0.28)', color: '#F4EFE5' }}
+            aria-label={`${isMuted ? 'Unmute' : 'Mute'} testimonial video ${number}`}
+          >
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+      <figcaption className="root-video-caption p-6 md:p-7">
+        <div className="mb-4 flex gap-1" aria-label={`${rating} out of 5 stars`}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              className="h-4 w-4"
+              fill={star <= rating ? '#D7B57A' : 'transparent'}
+              color="#D7B57A"
+              strokeWidth={star <= rating ? 0 : 1.5}
+            />
+          ))}
+        </div>
+        <div className="iconik-micro mb-3" style={{ color: '#D7B57A', opacity: 0.9 }}>{name} · ICONIK Client</div>
+        <blockquote className="root-video-quote iconik-display-it" style={{ color: '#F4EFE5', fontSize: '19px', lineHeight: 1.55 }}>
+          “{quote}”
+        </blockquote>
+      </figcaption>
+    </figure>
+  );
 }
 
 export default function LandingPageContent({
   headline,
   subheadline,
   variant = 'default',
-  checkoutHref = '/checkout',
-  basePrice = 3299,
-  originalPrice = 5999,
+  trackingEntry,
+  checkoutHref = BLUEPRINT_OFFER.checkoutPath,
+  basePrice = BLUEPRINT_OFFER.currentPriceInr,
+  originalPrice = BLUEPRINT_OFFER.referencePriceInr,
   displayBasePrice,
   displayOriginalPrice,
+  designVariant,
 }: LandingPageContentProps) {
   const isOffer2699 = variant === 'offer2699';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState({ minutes: 5, seconds: 0 });
+  const [showMobileCta, setShowMobileCta] = useState(false);
+  const heroCtaRef = useRef<HTMLAnchorElement>(null);
 
   const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
 
+  // The root price test and the established /offer-2699 funnel share the visual
+  // component but have separate prices, checkout routes, and Meta categories.
+  const funnelEntry: IndiaFunnelEntry = trackingEntry ?? (isOffer2699 ? 'offer2699' : 'root');
+  const contentCategory = funnelEntry === 'offer2699'
+    ? INDIA_OFFER_2699_FUNNEL_CATEGORY
+    : INDIA_ROOT_FUNNEL_CATEGORY;
+
   useEffect(() => {
-    trackPageView('India');
-    trackViewContent('ICONIK Style Consultation', basePrice, ['iconik_style_consultation'], 'INR', 'India');
-  }, [basePrice]);
+    // Retained for attribution continuity in the wider funnel. Each checkout
+    // route also declares its entry explicitly, so direct checkout visits cannot
+    // inherit a stale category from another offer.
+    try {
+      window.sessionStorage.setItem(INDIA_FUNNEL_ENTRY_STORAGE_KEY, funnelEntry);
+    } catch {
+      // Analytics must never block the user journey.
+    }
+    trackViewContent(BLUEPRINT_OFFER.name, basePrice, [INDIA_BLUEPRINT_PRODUCT_ID], 'INR', contentCategory);
+  }, [basePrice, contentCategory, funnelEntry]);
 
   const transformationImages = useMemo(() => [
-    { src: '/transformation-1.webp', testimonial: 'Finally found my signature style! I feel confident every day.', name: 'Shreya, Mumbai' },
-    { src: '/transformation-2.webp', testimonial: 'The color palette changed everything. I get compliments daily!', name: 'Kavya, Delhi' },
-    { src: '/transformation-3.webp', testimonial: 'Shopping is no longer overwhelming. I know exactly what works for me.', name: 'Priya, Bangalore' },
+    { src: '/transformation-1.webp' },
+    { src: '/transformation-2.webp' },
+    { src: '/transformation-3.webp' },
   ], []);
 
   const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % transformationImages.length);
   const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + transformationImages.length) % transformationImages.length);
-
-  useEffect(() => {
-    if (isOffer2699) return;
-    const timer = setInterval(() => {
-      setTimeLeft(prevTime => {
-        if (prevTime.minutes === 0 && prevTime.seconds === 0) return { minutes: 5, seconds: 0 };
-        if (prevTime.seconds === 0) return { minutes: prevTime.minutes - 1, seconds: 59 };
-        return { minutes: prevTime.minutes, seconds: prevTime.seconds - 1 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isOffer2699]);
 
   useEffect(() => {
     const timer = setInterval(nextImage, 4000);
@@ -81,28 +233,79 @@ export default function LandingPageContent({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const heroCta = heroCtaRef.current;
+    if (!heroCta) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowMobileCta(!entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    observer.observe(heroCta);
+    return () => observer.disconnect();
+  }, []);
+
   const faqs = [
-    { question: 'Will this really help me look more elegant and confident?', answer: "Absolutely! ICONIK focuses on your complete style transformation - personalized colors, flattering silhouettes, and confidence-building. We've helped 200+ women discover their signature style." },
+    { question: 'Will this really help me look more elegant and confident?', answer: `Your Blueprint turns your proportions, colouring, facial architecture, lifestyle and preferences into specific styling decisions. ICONIK has worked with ${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ women and men across ${CLIENT_PROOF.countriesServed}+ countries.` },
     { question: "What if the style suggestions don't feel like me?", answer: "We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level." },
     {
       question: isOffer2699 ? 'What will I receive?' : 'How quickly will I see results?',
       answer: isOffer2699
-        ? 'You receive 20 personalised outfits, your personal colour palette, body-shape and concern-zone guidance, plus hair and makeup recommendations.'
-        : 'Most women see immediate improvements in how they feel about their appearance within the first week. The complete transformation and confidence boost typically develops over 2-3 weeks.',
+        ? 'You receive 20 personalised outfit formulas, colour analysis, hairstyle and eyewear guidance, body-shape and concern-zone guidance, plus a 30-minute video consultation.'
+        : `Your ICONIK Blueprint is delivered within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after your 30-minute consultation.`,
+    },
+    { question: 'What if I want changes after delivery?', answer: `${BLUEPRINT_OFFER.revisionPromise} ${BLUEPRINT_OFFER.refundSummary}` },
+  ];
+
+  const blueprintItems = isOffer2699
+    ? [
+        { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Private 30-Minute Stylist Consultation', desc: 'A private video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, lifestyle, comfort and goals are understood by a human first.' },
+        { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: `${BLUEPRINT_OFFER.outfitFormulas} Complete Outfit Formulas`, desc: 'Complete Western and ethnic looks — clothing, footwear, bag and accessories — built for work, everyday dressing, family events and occasions.' },
+        { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Body Shape & Fit Guide', desc: 'The necklines, sleeves, lengths and silhouettes that work for your proportions, plus the cuts and shapes to avoid.' },
+        { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Personal Colour Palette', desc: '10 exact colours selected for your undertone and depth, plus 4 colours to avoid, with real shopping examples from Myntra and Ajio.' },
+        { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Face, Hair & Accessory Guide', desc: 'Necklines, earrings, collars, eyewear, hairstyles and finishing details chosen to complement your face.' },
+        { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Solutions for Your Styling Concerns', desc: 'Practical structures and cuts for concerns such as arms, tummy, height or bust — adapted to your comfort, not used to hide your body.' },
+      ]
+    : [
+        { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Geometric Silhouette Profile™', desc: 'Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame.' },
+        { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Facial Architecture Analysis™', desc: 'Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance.' },
+        { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Chromatic Harmony Map™', desc: '10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio.' },
+        { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: `${BLUEPRINT_OFFER.outfitFormulas} Personalised Outfit Formulas`, desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
+        { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Concern Zone Solutions', desc: 'Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it.' },
+        { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '30-Minute Stylist Consultation', desc: 'A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first.' },
+      ];
+
+  const offerProcess = [
+    {
+      number: '01',
+      title: 'Book Your Blueprint',
+      description: 'Pay securely and receive your consultation scheduling details on WhatsApp.',
+    },
+    {
+      number: '02',
+      title: 'Talk to Your Stylist',
+      description: 'Spend 30 private minutes discussing your lifestyle, comfort, preferences, budget and concerns.',
+    },
+    {
+      number: '03',
+      title: 'Receive Your Personal Style Blueprint',
+      description: `Your stylist builds your recommendations and delivers them within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days. Revisions within your original consultation scope are included.`,
     },
   ];
 
-  const blueprintItems = [
-    { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Geometric Silhouette Profile™', desc: 'Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame.' },
-    { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Facial Architecture Analysis™', desc: 'Your face geometry mapped to exact necklines, earring shapes, collar structures, and eyewear that create visual balance.' },
-    { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Chromatic Harmony Map™', desc: '10 exact colours that work for your undertone depth + 4 colours to eliminate entirely, with real shopping examples from Myntra and Ajio.' },
-    { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: isOffer2699 ? '20 Personalised Outfits' : '16 Outfit Formulas', desc: 'Complete looks (top, bottom, footwear, bag) built specifically for your geometry and lifestyle — office, family events, occasions.' },
-    { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Concern Zone Solutions', desc: 'Your specific insecurity (arms, tummy, height, bust) addressed with the exact garment structures and cuts that solve it.' },
-    { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '30-Minute Stylist Consultation', desc: 'A 1:1 video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, your lifestyle, your goals — understood by a human first.' },
+  const humanStylingComparison = [
+    { label: 'Private conversation with a real stylist', iconik: 'Yes', instant: 'No' },
+    { label: 'Stylist hears your concerns in your own words', iconik: 'Yes', instant: 'No' },
+    { label: 'Lifestyle, comfort and preferences discussed', iconik: 'Yes', instant: 'No' },
+    { label: 'Recommendations created after understanding you', iconik: 'Yes', instant: 'No' },
+    { label: 'Opportunity to ask questions directly', iconik: 'Yes', instant: 'No' },
+    { label: 'Human stylist accountable for the recommendations', iconik: 'Yes', instant: 'No' },
+    { label: 'Revisions based on your original consultation', iconik: 'Yes', instant: 'No' },
+    { label: 'Delivered within minutes', iconik: 'No', instant: 'Yes' },
   ];
 
   return (
-    <div className="man-editorial min-h-screen overflow-x-hidden pb-20 md:pb-0">
+    <div className={`man-editorial min-h-screen overflow-x-hidden pb-20 md:pb-0 ${designVariant ? `root-design-preview root-concept-${designVariant}` : ''}`}>
 
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
@@ -112,106 +315,121 @@ export default function LandingPageContent({
       </nav>
 
       {/* ── SECTION 1: Hero ─────────────────────────────────────────────── */}
-      <section className="pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
-        <div className="max-w-5xl mx-auto text-center">
+      <section className="root-hero-section pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+        <div className="root-hero-inner max-w-5xl mx-auto text-center">
 
-          {/* Featured in */}
-          <div className="mb-6">
-            <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Featured in</div>
-            <div className="flex items-center justify-center gap-8">
-              <Image src="/times-of-india-logo.png" alt="Times of India" width={100} height={30} className="opacity-35 hover:opacity-60 transition-opacity h-[30px] w-auto" />
-              <Image src="/femina-logo.png" alt="Femina" width={80} height={25} className="opacity-35 hover:opacity-60 transition-opacity h-[25px] w-auto" />
-              <Image src="/vogue-india-logo.png" alt="Vogue India" width={60} height={20} className="opacity-35 hover:opacity-60 transition-opacity h-[20px] w-auto md:h-[25px]" />
+          {!isOffer2699 && (
+            <div className="iconik-micro mb-6 opacity-55" style={{ color: '#2C2622' }}>
+              {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ CLIENTS · {CLIENT_PROOF.countriesServed}+ COUNTRIES · {BLUEPRINT_OFFER.weeklyClientCapacity} PLACES EACH WEEK
             </div>
-          </div>
+          )}
 
           {/* Headline */}
           {isOffer2699 && (
-            <div className="iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
+            <div className="root-hero-eyebrow iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
               SCIENTIFIC PERSONAL STYLING FOR INDIAN WOMEN
             </div>
           )}
-          <h1 className="iconik-display mb-5 leading-none" style={{ fontSize: 'clamp(32px, 7vw, 72px)', color: '#2C2622' }}>
+          <h1 className="iconik-display mb-5" style={{ fontSize: isOffer2699 ? 'clamp(30px, 8.2vw, 64px)' : 'clamp(32px, 7vw, 72px)', lineHeight: isOffer2699 ? 1.06 : 1, color: '#2C2622', letterSpacing: isOffer2699 ? '-0.025em' : undefined }}>
             {headline}
           </h1>
 
           {/* Subheadline */}
-          <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, maxWidth: '600px', margin: '0 auto 32px' }}>
+          <p style={{ fontSize: isOffer2699 ? 'clamp(15px, 4.1vw, 18px)' : '15px', lineHeight: isOffer2699 ? 1.62 : 1.8, color: '#2C2622', opacity: 0.65, maxWidth: isOffer2699 ? '560px' : '600px', margin: '0 auto 32px' }}>
             {subheadline}
           </p>
 
-          {/* Carousel */}
-          <div className="max-w-sm mx-auto mb-8">
+          {/* Primary CTA */}
+          <Link
+            ref={heroCtaRef}
+            href={checkoutHref}
+            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', contentCategory)}
+            className="root-hero-cta inline-flex items-center gap-2 bg-[#2C2622] px-5 py-4 text-[#F4EFE5] transition-all duration-300 transform rounded-full hover:-translate-y-0.5 hover:bg-[#3d3430] hover:shadow-xl sm:gap-3 sm:px-10 sm:py-5"
+          >
+            <span className="iconik-display whitespace-nowrap" style={{ fontSize: '15px' }}>
+              {isOffer2699 ? (
+                <>
+                  <span className="sm:hidden">Get My Style Blueprint — {formattedBasePrice}</span>
+                  <span className="hidden sm:inline">Get My Personal Style Blueprint — {formattedBasePrice}</span>
+                </>
+              ) : 'Begin Your Transformation'}
+            </span>
+            <ArrowRight className="h-4 w-4 opacity-60" />
+          </Link>
+
+          <div className="root-hero-trust mt-4 flex items-center justify-center gap-2 flex-wrap">
+            <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
+            <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
+              Secure checkout · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included
+            </span>
+          </div>
+
+          {/* Client transformation preview */}
+          <div className="root-hero-media max-w-sm mx-auto mt-9 mb-2">
             <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
-              <div className="flex items-center justify-center gap-3 md:gap-4">
-                <button onClick={prevImage} className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:-translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Previous image">
+              <div className="relative mx-auto w-full max-w-[320px]">
+                <div className="relative aspect-square w-full overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
+                  <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill sizes="(max-width: 640px) 320px, 320px" className="object-cover" priority={currentImageIndex === 0} />
+                </div>
+                <button onClick={prevImage} className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-300 hover:-translate-x-0.5" style={{ background: 'rgba(248,243,233,0.92)', border: '1px solid rgba(44,38,34,0.1)', boxShadow: '0 8px 24px rgba(44,38,34,0.12)' }} aria-label="Previous image">
                   <ArrowLeft className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
-                <div className="relative w-52 md:w-64" style={{ aspectRatio: '1/1' }}>
-                  <div className="w-full h-full rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(44,38,34,0.1)' }}>
-                    <Image src={transformationImages[currentImageIndex].src} alt="Style Transformation" fill className="object-cover" priority={currentImageIndex === 0} />
-                  </div>
-                </div>
-                <button onClick={nextImage} className="p-2 md:p-3 rounded-full transition-all duration-300 flex-shrink-0 hover:translate-x-0.5" style={{ background: '#F8F3E9', border: '1px solid rgba(44,38,34,0.1)' }} aria-label="Next image">
+                <button onClick={nextImage} className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-all duration-300 hover:translate-x-0.5" style={{ background: 'rgba(248,243,233,0.92)', border: '1px solid rgba(44,38,34,0.1)', boxShadow: '0 8px 24px rgba(44,38,34,0.12)' }} aria-label="Next image">
                   <ArrowRight className="w-4 h-4" style={{ color: '#2C2622' }} />
                 </button>
               </div>
-              <div className="mt-4 text-center">
-                <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.65, lineHeight: 1.6 }}>&ldquo;{transformationImages[currentImageIndex].testimonial}&rdquo;</p>
-                <p className="iconik-mono mt-1" style={{ fontSize: '10px', color: '#94A6AD' }}>— {transformationImages[currentImageIndex].name}</p>
-              </div>
-              <div className="flex justify-center gap-2 mt-3">
+              <div className="mt-2 flex justify-center">
                 {transformationImages.map((_, idx) => (
-                  <button key={idx} onClick={() => setCurrentImageIndex(idx)} className="h-1.5 rounded-full transition-all duration-300" style={{ width: idx === currentImageIndex ? '16px' : '6px', background: idx === currentImageIndex ? '#2C2622' : 'rgba(44,38,34,0.2)' }} aria-label={`Go to slide ${idx + 1}`} />
+                  <button key={idx} onClick={() => setCurrentImageIndex(idx)} className="flex h-11 w-11 items-center justify-center" aria-label={`Go to slide ${idx + 1}`}>
+                    <span className="h-1.5 rounded-full transition-all duration-300" style={{ width: idx === currentImageIndex ? '16px' : '6px', background: idx === currentImageIndex ? '#2C2622' : 'rgba(44,38,34,0.2)' }} />
+                  </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* CTA */}
-          <Link
-            href={checkoutHref}
-            onClick={() => trackCTAClick(isOffer2699 ? 'Get My Style Blueprint' : 'Begin Your Transformation', 'Hero Section', basePrice, 'INR', 'India')}
-            className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-10 py-5 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform mb-8"
-          >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
-            <ArrowRight className="h-4 w-4 opacity-60" />
-          </Link>
-
-          {/* Trust strip */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: '#9a7d4a' }} />)}
-            </div>
-            {isOffer2699 ? (
-              <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>200+ women styled · Rated 4.9/5</span>
-            ) : (
-              <>
-                <span className="iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>Trusted by 200+ women across India</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>24-Hour Delivery</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.3 }}>·</span>
-                <span className="hidden md:inline iconik-mono" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.6 }}>7-Day Guarantee</span>
-              </>
-            )}
-          </div>
         </div>
       </section>
 
+      {isOffer2699 && (
+        <section className="root-process-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>How It Works</div>
+              <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1.08 }}>
+                A real conversation comes first.
+              </h2>
+              <p className="mx-auto mt-5 max-w-xl" style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.62 }}>
+                Your stylist understands you before making a single recommendation.
+              </p>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-3">
+              {offerProcess.map((step) => (
+                <div key={step.number} className="rounded-2xl p-7 md:p-8" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
+                  <div className="iconik-mono mb-8" style={{ color: '#9a7d4a', fontSize: '10px', letterSpacing: '0.3em', fontWeight: 700 }}>{step.number}</div>
+                  <h3 className="iconik-display mb-3" style={{ color: '#2C2622', fontSize: '22px', lineHeight: 1.2 }}>{step.title}</h3>
+                  <p style={{ color: '#2C2622', fontSize: '14px', lineHeight: 1.75, opacity: 0.65 }}>{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── SECTION 2: Stats ────────────────────────────────────────────── */}
-      <section className="py-12 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      <section className="root-stats-section py-12 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { num: '200+', label: 'Transformations' },
-              { num: '95%', label: 'Confidence Elevation' },
-              { num: '4.9', label: 'Client Satisfaction', star: true },
-              isOffer2699 ? { num: '20', label: 'Personalised Outfits' } : { num: '2-3', label: 'Weeks to Elegance' },
+              { num: `${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+`, label: 'Clients Styled' },
+              { num: `${CLIENT_PROOF.countriesServed}+`, label: 'Countries Served' },
+              { num: `${BLUEPRINT_OFFER.outfitFormulas}`, label: 'Outfit Formulas' },
+              { num: `${BLUEPRINT_OFFER.weeklyClientCapacity}`, label: 'Clients Per Week' },
             ].map((s) => (
               <div key={s.label}>
                 <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
                   {s.num}
-                  {s.star && <Star className="h-5 w-5 fill-current" style={{ color: '#9a7d4a' }} />}
                 </div>
                 <div className="iconik-micro mt-2 opacity-50" style={{ color: '#2C2622' }}>{s.label}</div>
               </div>
@@ -220,8 +438,53 @@ export default function LandingPageContent({
         </div>
       </section>
 
+      {isOffer2699 && (
+        <section id="video-testimonials" className="root-video-testimonials px-4 py-20 md:px-6 md:py-24" style={{ background: '#2C2622' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
+              <div className="iconik-micro mb-5" style={{ color: '#D7B57A', opacity: 0.85 }}>Real Clients · Real Experiences</div>
+              <h2 className="iconik-display" style={{ color: '#F4EFE5', fontSize: 'clamp(36px, 6vw, 64px)', lineHeight: 1.05 }}>
+                Hear it in their own words.
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl" style={{ color: '#F4EFE5', fontSize: '16px', lineHeight: 1.8, opacity: 0.72 }}>
+                Three quick notes from ICONIK clients about what personal styling changed for them.
+              </p>
+            </div>
+
+            <div className="grid items-start gap-8 md:grid-cols-2 md:gap-10 lg:grid-cols-3 lg:gap-8">
+              <TestimonialVideoCard
+                src="/testimonialvideo2.mp4"
+                poster="/testimonialvideo2-poster.jpg"
+                name="Tina"
+                rating={5}
+                number={1}
+                quote="Thanks to ICONIK’s stylists. They helped me get styled for my events. It was absolutely worth it."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo1.mp4"
+                poster="/testimonialvideo1-poster.jpg"
+                name="Priya"
+                rating={5}
+                number={2}
+                faceBlur={{ left: '40.5%', top: '32.3%', width: '22.5%', height: '20.3%' }}
+                quote="I was very insecure about my tummy. Thanks to ICONIK for actually suggesting outfits that helped me get my confidence back."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo3.mp4"
+                poster="/testimonialvideo3-poster.jpg"
+                name="Gayathri"
+                rating={4}
+                number={3}
+                faceBlur={{ left: '28.5%', top: '34.3%', width: '23%', height: '18.5%' }}
+                quote="I found ICONIK on Instagram, and Jazz was very helpful in finding what actually suited me. It was a very good experience."
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── SECTION 3: Report Preview ────────────────────────────────────── */}
-      <section id="features" className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+      <section id="features" className="root-report-section py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Your Deliverable</div>
@@ -243,7 +506,7 @@ export default function LandingPageContent({
               </div>
             </div>
 
-            <div className="h-[640px] overflow-y-auto overflow-x-hidden" style={{ background: '#faf9f6', scrollbarWidth: 'thin' }}>
+            <div className="relative h-[520px] overflow-hidden md:h-[640px]" style={{ background: '#faf9f6' }}>
 
               {/* Report nav */}
               <div className="sticky top-0 z-10 px-6 md:px-10 h-14 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
@@ -266,7 +529,7 @@ export default function LandingPageContent({
                 <div className="flex flex-wrap gap-3 mt-4">
                   <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass Profile</span>
                   <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Oval Face</span>
-                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{isOffer2699 ? '20 Outfits' : '14 Ensembles'}</span>
+                  <span className="iconik-mono px-4 py-2" style={{ background: '#faf9f6', border: '1px solid rgba(44,38,34,0.08)', color: '#2C2622', opacity: 0.45, fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>{BLUEPRINT_OFFER.outfitFormulas} Outfits</span>
                 </div>
               </div>
 
@@ -395,7 +658,7 @@ export default function LandingPageContent({
               {/* Section 04: Outfit teaser */}
               <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#faf9f6' }}>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {isOffer2699 ? '20 PERSONALISED OUTFITS' : '14 OUTFIT FORMULAS'}</span>
+                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {BLUEPRINT_OFFER.outfitFormulas} PERSONALISED OUTFIT FORMULAS</span>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
               </div>
               {[
@@ -459,34 +722,35 @@ export default function LandingPageContent({
               ))}
 
               <div className="px-6 md:px-10 py-10 text-center" style={{ background: '#fff' }}>
-                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {isOffer2699 ? '18 More Outfits' : '12 More Ensembles'} in Your Blueprint</span>
+                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.5em', fontWeight: 700 }}>+ {BLUEPRINT_OFFER.outfitFormulas - 2} More Outfits in Your Blueprint</span>
               </div>
             </div>
 
             {/* Bottom fade */}
             <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none rounded-b-2xl" style={{ background: 'linear-gradient(to top, #faf9f6, transparent)' }} />
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
-              <span className="iconik-mono opacity-30" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Scroll to explore</span>
-              <ArrowRight size={10} className="rotate-90 opacity-30" style={{ color: '#2C2622' }} />
+              <span className="iconik-mono opacity-45" style={{ fontSize: '9px', color: '#2C2622', letterSpacing: '0.3em' }}>Sample Blueprint Preview</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── SECTION 4: What's Inside ──────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      <section id="inside" className="root-inclusions-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Everything Inside</div>
-            <div className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>The 6 Sections of Your Blueprint</div>
+            <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>
+              {isOffer2699 ? 'Everything in Your Personal Style Blueprint' : 'The 6 Sections of Your Blueprint'}
+            </h2>
           </div>
           <div className="max-w-2xl mx-auto">
             {blueprintItems.map((item, i) => (
-              <div key={i} className="flex items-start gap-5 py-5 transition-all duration-300" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+              <div key={i} className="root-inclusion-item flex items-start gap-5 py-5 transition-all duration-300" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
                 {item.icon}
                 <div>
-                  <div className="iconik-display mb-1" style={{ fontSize: '17px', color: '#2C2622' }}>{item.title}</div>
-                  <p style={{ fontSize: '13px', lineHeight: 1.75, color: '#2C2622', opacity: 0.6 }}>{item.desc}</p>
+                  <div className="root-inclusion-title iconik-display mb-1" style={{ fontSize: '17px', color: '#2C2622' }}>{item.title}</div>
+                  <p className="root-inclusion-copy" style={{ fontSize: '13px', lineHeight: 1.75, color: '#2C2622', opacity: 0.6 }}>{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -494,46 +758,82 @@ export default function LandingPageContent({
           <div className="text-center mt-12">
             <Link
               href={checkoutHref}
-              onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', 'India')}
-              className="inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
+              onClick={() => trackCTAClick('Style Consultation', 'Whats Inside Section', basePrice, 'INR', contentCategory)}
+              className="root-primary-action inline-flex items-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-8 py-4 rounded-full transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 transform"
             >
-              <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Get Your Style Consultation'}</span>
+              <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Personal Style Blueprint — ${formattedBasePrice}` : 'Get Your Style Consultation'}</span>
               <ArrowRight className="h-4 w-4 opacity-60" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── SECTION 5: Personal Style Guide ─────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
-        <div className="max-w-4xl mx-auto">
-          <div className="rounded-3xl p-8 md:p-12" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
-            <div className="text-center">
-              <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto mb-6">
-                <Image src="/book.png" alt="ICONIK Style Guide Preview" width={400} height={400} className="object-contain drop-shadow-2xl" loading="lazy" />
-              </div>
-              <div className="iconik-display mb-3" style={{ fontSize: 'clamp(24px, 4vw, 40px)', color: '#2C2622' }}>Your Personal Style Guide</div>
-              <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.6, lineHeight: 1.8 }}>Comprehensive style transformation roadmap</p>
+      {isOffer2699 && (
+        <section id="comparison" className="root-comparison-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto mb-12 max-w-3xl text-center">
+              <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Why ICONIK Is Different</div>
+              <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 58px)', color: '#2C2622', lineHeight: 1.08 }}>
+                A real stylist changes everything.
+              </h2>
+              <p className="mx-auto mt-5 max-w-2xl" style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.62 }}>
+                An instant report can process answers. A stylist can listen, ask follow-up questions and understand what will actually work in your life.
+              </p>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── SECTION 6: Case Studies ──────────────────────────────────────── */}
-      <section id="testimonials" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+            <div className="root-comparison-table overflow-hidden rounded-2xl" style={{ border: '1px solid rgba(44,38,34,0.12)', background: '#fff' }}>
+              <div className="root-comparison-head grid grid-cols-[1.5fr_0.75fr_0.75fr] items-stretch md:grid-cols-[1.7fr_0.65fr_0.65fr]" style={{ background: '#2C2622' }}>
+                <div className="p-4 md:p-6">
+                  <span className="iconik-micro" style={{ color: '#F4EFE5', opacity: 0.65 }}>What You Receive</span>
+                </div>
+                <div className="flex items-center justify-center border-l p-3 text-center md:p-6" style={{ borderColor: 'rgba(244,239,229,0.15)', background: '#9a7d4a' }}>
+                  <span className="iconik-display" style={{ color: '#fff', fontSize: 'clamp(13px, 2vw, 18px)', lineHeight: 1.15 }}>ICONIK</span>
+                </div>
+                <div className="flex items-center justify-center border-l p-3 text-center md:p-6" style={{ borderColor: 'rgba(244,239,229,0.15)' }}>
+                  <span className="iconik-display" style={{ color: '#F4EFE5', fontSize: 'clamp(12px, 2vw, 17px)', lineHeight: 1.15 }}>Instant Style Reports</span>
+                </div>
+              </div>
+
+              {humanStylingComparison.map((row, index) => (
+                <div key={row.label} className="root-comparison-row grid grid-cols-[1.5fr_0.75fr_0.75fr] items-stretch md:grid-cols-[1.7fr_0.65fr_0.65fr]" style={{ borderTop: index === 0 ? 'none' : '1px solid rgba(44,38,34,0.08)' }}>
+                  <div className="root-comparison-label flex items-center p-4 md:p-5">
+                    <span style={{ color: '#2C2622', fontSize: '13px', lineHeight: 1.55, fontWeight: 500 }}>{row.label}</span>
+                  </div>
+                  <div className="root-comparison-iconik flex items-center justify-center border-l p-3 text-center md:p-5" style={{ borderColor: 'rgba(44,38,34,0.08)', background: 'rgba(237,229,210,0.55)' }}>
+                    <span className={`root-comparison-value root-comparison-value--${row.iconik.toLowerCase()} iconik-display`} style={{ color: row.iconik === 'Yes' ? '#54705d' : '#9c4f4f', fontSize: '16px' }}>{row.iconik}</span>
+                  </div>
+                  <div className="flex items-center justify-center border-l p-3 text-center md:p-5" style={{ borderColor: 'rgba(44,38,34,0.08)' }}>
+                    <span className={`root-comparison-value root-comparison-value--${row.instant.toLowerCase()} iconik-display`} style={{ color: row.instant === 'Yes' ? '#54705d' : '#9c4f4f', fontSize: '16px' }}>{row.instant}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mx-auto mt-8 max-w-3xl text-center iconik-display-it" style={{ color: '#2C2622', fontSize: 'clamp(18px, 3vw, 24px)', lineHeight: 1.55 }}>
+              Instant reports are instant because nobody is looking at you. Yours takes five working days because a stylist does.
+            </p>
+            <p className="mx-auto mt-4 max-w-2xl text-center" style={{ color: '#2C2622', fontSize: '12px', lineHeight: 1.7, opacity: 0.5 }}>
+              Revisions are included when the delivered Blueprint does not reflect the needs, goals or preferences shared in your original consultation.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ── Client Results ───────────────────────────────────────────────── */}
+      <section id="testimonials" className="root-client-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Real Findings</div>
-            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>What the Blueprint actually found</div>
-            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Three women. Three different geometries. Three specific solutions.</p>
+            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Client Stories</div>
+            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>What changed for three ICONIK clients</div>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Their concerns were different. The advice had to fit their bodies, comfort and real lives.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { name: 'Priya', age: '28', city: 'Mumbai', image: '/testimonial-priya.webp', concern: ['Post-partum tummy, avoided', 'fitted anything for 2 years'], finding: ['Rectangle frame', 'Deep warm autumn undertone'], changed: ['Straight kurtas replaced flowy tops', 'Dark autumn palette introduced', 'Peplum added for occasions'], quote: 'I stopped hiding. I started showing up.', stars: 5 },
-              { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['Heavy arms, wore full', 'sleeves in 35° heat'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap sleeves + flutter sleeves introduced', 'Raglan cuts for shoulder balance', 'Eliminated black-only dressing'], quote: 'Everyone keeps asking if I lost weight', stars: 5 },
-              { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['Petite frame, felt', 'overwhelmed by fabric'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Monochromatic dressing introduced', 'Hem lengths calibrated precisely', 'Accessories scaled to frame'], quote: 'Shopping is no longer overwhelming.', stars: 4 },
+              { name: 'Priya', age: '28', city: 'Mumbai', image: '/testimonial-priya.webp', concern: ['After my delivery, I felt conscious about my tummy and kept choosing loose tops.'], finding: ['Rectangle frame', 'Deep warm autumn undertone'], changed: ['Straight-cut kurtas instead of shapeless tops', 'Warmer, deeper colours near the face', 'Peplum and structured layers for occasions'], quote: 'Earlier I would change three or four times before going out. Now I know what to pick, and I still feel comfortable in it.', stars: 5 },
+              { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['I felt conscious about my arms and wore full sleeves even in Delhi summer.'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap and flutter sleeves that still felt comfortable', 'Raglan cuts to soften the shoulder line', 'More colour instead of wearing only black'], quote: 'I always thought covering my arms was the only option. The sleeve suggestions were practical, and the outfits still felt like me.', stars: 5 },
+              { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['On my petite frame, too much fabric made most outfits feel overwhelming.'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Cleaner monochromatic combinations', 'Hem lengths that suited her height', 'Smaller accessories scaled to her frame'], quote: 'I used to save so many outfits and then buy nothing because I was confused. Now shopping feels much more straightforward.', stars: 4 },
             ].map((c) => (
-              <div key={c.name} className="rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <div key={c.name} className="root-client-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
                 <div className="aspect-square overflow-hidden" style={{ background: 'rgba(237,229,210,0.5)' }}>
                   <Image src={c.image} alt={c.name} width={300} height={300} className="w-full h-full object-cover" loading="lazy" />
                 </div>
@@ -546,12 +846,12 @@ export default function LandingPageContent({
                     { label: 'Concern', val: c.concern.join(' ') },
                     { label: 'Finding', val: c.finding.join(' · ') },
                   ].map((row) => (
-                    <div key={row.label} className="grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
+                    <div key={row.label} className="root-client-detail grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
                       <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
                       <span style={{ fontSize: '13px', color: '#2C2622', opacity: 0.75, lineHeight: 1.6 }}>{row.val}</span>
                     </div>
                   ))}
-                  <div className="grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
+                  <div className="root-client-detail root-client-changes grid gap-x-3" style={{ gridTemplateColumns: '70px 1fr' }}>
                     <span className="iconik-mono pt-0.5" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.2em', fontWeight: 700 }}>Changed</span>
                     <div className="space-y-1">
                       {c.changed.map((ch) => (
@@ -564,7 +864,7 @@ export default function LandingPageContent({
                   </div>
                   <div className="me-rule-thin" />
                   <div>
-                    <div className="iconik-display-it mb-3" style={{ fontSize: '14px', color: '#2C2622', opacity: 0.7, lineHeight: 1.6 }}>&ldquo;{c.quote}&rdquo;</div>
+                    <div className="root-client-quote iconik-display-it mb-3" style={{ fontSize: '14px', color: '#2C2622', opacity: 0.7, lineHeight: 1.6 }}>&ldquo;{c.quote}&rdquo;</div>
                     <div className="flex gap-1">
                       {[...Array(c.stars)].map((_, i) => <Star key={i} className="h-3 w-3 fill-current" style={{ color: '#9a7d4a' }} />)}
                     </div>
@@ -576,90 +876,34 @@ export default function LandingPageContent({
         </div>
       </section>
 
-      {/* ── SECTION 7: Price Anchor ───────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6 me-slate">
+      {/* ── Price ─────────────────────────────────────────────────────────── */}
+      <section className="root-price-section py-24 px-4 md:px-6 me-slate">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
-            A personal styling session in India costs ₹15,000–50,000+. They give you one day. You forget half of it. You still don&apos;t know your colours or your frame.
+            A styling session can end when the call does. Your {isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Blueprint'} remains as a practical reference for getting dressed, shopping, hair, eyewear and colour decisions.
           </p>
           <div className="rounded-2xl p-10 mb-10 me-glass-light">
-            <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>ICONIK Style Consultation</div>
+            <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>{isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Style Consultation'}</div>
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(40px, 8vw, 72px)', color: '#F4EFE5' }}>{formattedBasePrice}</div>
             <p style={{ fontSize: '16px', color: '#F4EFE5', opacity: 0.7, lineHeight: 1.8 }}>Yours forever. Built on your specific frame, face, and colour profile.</p>
           </div>
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', 'India')}
-            className="inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
+            onClick={() => trackCTAClick('Style Consultation', 'Price Section', basePrice, 'INR', contentCategory)}
+            className="root-primary-action inline-flex items-center gap-4 px-10 py-5 rounded-full transition-all duration-300 hover:opacity-75 me-glass-light"
           >
-            <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : `Get Your Style Consultation — ${formattedBasePrice}`}</span>
+            <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>{isOffer2699 ? `Get My Personal Style Blueprint — ${formattedBasePrice}` : `Get Your Style Consultation — ${formattedBasePrice}`}</span>
             <ArrowRight className="h-4 w-4 opacity-60" style={{ color: '#F4EFE5' }} />
           </Link>
         </div>
       </section>
 
-      {/* ── SECTION 8: Before / After ─────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>The Blueprint in Practice</div>
-            <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>Real clients. Specific findings. Measurable change.</div>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-              { before: '/style-before.webp', after: '/style-after.webp', beforeLabel: 'Before — avoiding structure entirely', afterLabel: 'After — Geometric Silhouette Profile™ applied', caption: 'Rekha, 34, Bangalore · Rectangle frame · Warm autumn undertone · Blueprint prescribed vertical seams, cap sleeves, dark palette' },
-              { before: '/wardrobe-before.webp', after: '/wardrobe-after.webp', beforeLabel: 'Before — dressing to hide', afterLabel: 'After — Concern Zone Solutions applied', caption: 'Ananya, 29, Mumbai · Apple frame · Cool neutral undertone · Blueprint prescribed empire cuts, A-line kurtas, deep cool palette' },
-            ].map((comparison) => (
-              <div key={comparison.caption} className="rounded-3xl p-6 md:p-8 hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
-                <div className="grid grid-cols-2 gap-4 mb-5">
-                  <div>
-                    <p className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>{comparison.beforeLabel}</p>
-                    <div className="relative w-full aspect-square rounded-xl overflow-hidden"><Image src={comparison.before} alt={comparison.beforeLabel} fill className="object-cover" /></div>
-                  </div>
-                  <div>
-                    <p className="iconik-micro mb-3" style={{ color: '#94A6AD' }}>{comparison.afterLabel}</p>
-                    <div className="relative w-full aspect-square rounded-xl overflow-hidden"><Image src={comparison.after} alt={comparison.afterLabel} fill className="object-cover" /></div>
-                  </div>
-                </div>
-                <div className="me-rule-thin mb-4" />
-                <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, lineHeight: 1.8 }}>{comparison.caption}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 9: Sound Familiar ─────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>Sound Familiar?</div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-            {[
-              { num: '01', text: 'You get dressed every morning and something still feels off. Not wrong exactly. Just never quite right.', image: '/feeling-overlooked1.webp', imageAlt: 'Woman at mirror' },
-              { num: '02', text: "You've tried the body type guides. The Pinterest boards. The 'flattering for pears' articles. Nothing has stuck.", image: '/style-confusion1.webp', imageAlt: 'Woman with clothes' },
-              { num: '03', text: "The weight hasn't changed. The budget hasn't changed. But every outfit still feels like a compromise.", image: '/confidence-issues1.webp', imageAlt: 'Woman looking at mirror side-on' },
-            ].map((item) => (
-              <div key={item.num} className="rounded-3xl p-6 md:p-8 hover:-translate-y-1 transition-all duration-300" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
-                <div className="relative w-full aspect-square mb-6 rounded-xl overflow-hidden">
-                  <Image src={item.image} alt={item.imageAlt} fill className="object-cover" />
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(44,38,34,0.3), transparent)' }} />
-                </div>
-                <div className="iconik-display mb-4" style={{ fontSize: '24px', color: '#94A6AD' }}>{item.num}</div>
-                <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.75, lineHeight: 1.75 }}>{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 10: FAQ ───────────────────────────────────────────────── */}
-      <section id="faq" className="py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      <section id="faq" className="root-faq-section py-24 px-4 md:px-6" style={{ background: '#EDE5D2' }}>
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>Frequently Asked Questions</div>
-            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55, maxWidth: '380px', margin: '0 auto' }}>Everything you need to know about our consultations.</p>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55, maxWidth: '380px', margin: '0 auto' }}>{isOffer2699 ? 'Everything you need to know about your Personal Style Blueprint.' : 'Everything you need to know about our consultations.'}</p>
           </div>
           <div className="space-y-0">
             {faqs.map((faq, i) => (
@@ -678,7 +922,7 @@ export default function LandingPageContent({
       </section>
 
       {/* ── SECTION 11: Final CTA ─────────────────────────────────────────── */}
-      <section className="py-24 px-4 md:px-6 text-center me-slate relative">
+      <section className="root-final-section py-24 px-4 md:px-6 text-center me-slate relative">
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#F4EFE5', lineHeight: 1.1 }}>
             {isOffer2699 ? (
@@ -688,40 +932,34 @@ export default function LandingPageContent({
             )}
           </div>
           <p style={{ fontSize: '17px', color: '#F4EFE5', opacity: 0.75, marginTop: '16px', marginBottom: '40px', lineHeight: 1.85 }}>
-            {isOffer2699 ? 'Get 20 personalised outfits, your colour palette and a 30-minute video consultation.' : 'Join 200+ women who have already transformed their confidence and discovered their elegant style.'}
+            Get {BLUEPRINT_OFFER.outfitFormulas} personalised outfit formulas, your colour palette, hairstyle and eyewear guidance, plus a {BLUEPRINT_OFFER.consultationMinutes}-minute video consultation.
           </p>
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', 'India')}
-            className="inline-flex items-center gap-5 px-10 py-5 rounded-full mb-6 hover:opacity-75 transition-opacity me-glass-light"
+            onClick={() => trackCTAClick('Final CTA', 'Bottom Section', basePrice, 'INR', contentCategory)}
+            className="root-primary-action inline-flex items-center gap-5 px-10 py-5 rounded-full mb-6 hover:opacity-75 transition-opacity me-glass-light"
           >
             <span className="iconik-display" style={{ fontSize: '28px', color: '#F4EFE5' }}>{formattedBasePrice}</span>
             <div className="w-px h-7" style={{ background: 'rgba(244,239,229,0.25)' }} />
-            <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>{isOffer2699 ? 'Get My Style Blueprint →' : 'Start Your Transformation →'}</span>
+            <span className="iconik-display-it" style={{ fontSize: '18px', color: '#F4EFE5' }}>{isOffer2699 ? 'Get My Personal Style Blueprint →' : 'Start Your Transformation →'}</span>
           </Link>
           <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
-            {isOffer2699 ? (
-              <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ 200+ women styled · Rated 4.9/5</span>
-            ) : (
-              <>
-                <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>★★★★★ Trusted by 200+ women across India</span>
-                <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-                <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>24-Hour Delivery</span>
-                <span className="hidden md:inline iconik-mono opacity-30" style={{ fontSize: '11px', color: '#F4EFE5' }}>·</span>
-                <span className="hidden md:inline iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>7-Day Money-Back Guarantee</span>
-              </>
-            )}
+            <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>
+              {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients · {CLIENT_PROOF.countriesServed}+ countries · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery
+            </span>
           </div>
         </div>
       </section>
 
-      <ExploreLinksSection
-        eyebrow="Knowledge Hub"
-        title="Learn Before You Buy"
-        description="Use the pages below to understand how Iconik works, what it costs, and the methodology behind the recommendations."
-        groups={footerExploreGroups}
-        className="bg-[#EDE5D2]/40"
-      />
+      {!isOffer2699 && (
+        <ExploreLinksSection
+          eyebrow="Knowledge Hub"
+          title="Learn Before You Buy"
+          description="Use the pages below to understand how Iconik works, what it costs, and the methodology behind the recommendations."
+          groups={footerExploreGroups}
+          className="bg-[#EDE5D2]/40"
+        />
+      )}
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="py-12 px-6" style={{ background: '#EDE5D2', borderTop: '1px solid rgba(44,38,34,0.08)' }}>
@@ -734,6 +972,8 @@ export default function LandingPageContent({
                 Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
               </p>
               <a href={`mailto:${SUPPORT_EMAIL}`} className="block mt-3 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>{SUPPORT_EMAIL}</a>
+              <a href={SUPPORT_WHATSAPP_URL} className="block mt-1 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>WhatsApp {SUPPORT_WHATSAPP_DISPLAY}</a>
+              <p className="mt-2" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.45 }}>{BUSINESS_HOURS.display}</p>
             </div>
             {/* Links */}
             <div className="flex flex-wrap gap-x-12 gap-y-6">
@@ -757,39 +997,27 @@ export default function LandingPageContent({
           </div>
           <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
             <p className="iconik-micro opacity-35" style={{ color: '#2C2622' }}>© {new Date().getFullYear()} ICONIK. All rights reserved. Scientific personal styling for Indian women.</p>
-            <p className="iconik-micro opacity-25 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: MITHIL NILESH NAVALAKHA · Results may vary.</p>
+            <p className="iconik-micro opacity-25 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: {LEGAL_ENTITY_NAME} · Results may vary.</p>
           </div>
         </div>
       </footer>
 
-      {/* ── Sticky Mobile CTA ───────────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t p-3 md:hidden z-50" style={{ background: 'rgba(248,243,233,0.98)', borderColor: 'rgba(44,38,34,0.08)' }}>
-        <div className="max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex-1">
-              <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Complete Package</div>
-              <div className="flex items-baseline gap-1">
-                <span className="iconik-display" style={{ fontSize: '16px', color: '#2C2622' }}>{formattedBasePrice}</span>
-                <span className="line-through" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</span>
-              </div>
-            </div>
-            {isOffer2699 ? (
-              <div className="text-right ml-2 iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.55 }}>30-minute video consultation</div>
-            ) : (
-              <div className="text-right ml-2">
-                <div className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.5 }}>Expires:</div>
-                <div className="iconik-display" style={{ fontSize: '14px', color: '#2C2622' }}>
-                  {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-                </div>
-              </div>
-            )}
+      {/* ── Compact mobile CTA, shown only after the hero CTA leaves view ──── */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 border-t px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-xl transition-all duration-300 md:hidden ${showMobileCta ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-full opacity-0'}`}
+        style={{ background: 'rgba(248,243,233,0.98)', borderColor: 'rgba(44,38,34,0.08)' }}
+      >
+        <div className="mx-auto flex max-w-sm items-center gap-3">
+          <div className="shrink-0">
+            <div className="iconik-display" style={{ fontSize: '17px', color: '#2C2622' }}>{formattedBasePrice}</div>
+            <div className="line-through" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</div>
           </div>
           <Link
             href={checkoutHref}
-            onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', 'India')}
-            className="w-full inline-flex items-center justify-center gap-3 bg-[#2C2622] hover:bg-[#3d3430] text-[#F4EFE5] px-6 py-4 rounded-full transition-all duration-300 block"
+            onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', contentCategory)}
+            className="root-primary-action inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#2C2622] px-4 py-3 text-[#F4EFE5] transition-colors duration-300 hover:bg-[#3d3430]"
           >
-            <span className="iconik-display" style={{ fontSize: '15px' }}>{isOffer2699 ? `Get My Style Blueprint — ${formattedBasePrice}` : 'Begin Your Transformation'}</span>
+            <span className="iconik-display text-center" style={{ fontSize: '14px' }}>{isOffer2699 ? 'Get My Personal Style Blueprint' : 'Begin Your Transformation'}</span>
           </Link>
         </div>
       </div>

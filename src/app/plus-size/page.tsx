@@ -13,7 +13,7 @@ export default function PlusSizePage() {
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">16 outfits</span> built around your <span className="font-semibold text-luxury-green">proportions</span>, your <span className="font-semibold text-luxury-accent">frame geometry</span>, and your <span className="font-semibold text-luxury-green">colour palette</span>. Delivered in 24 hours.
+          Get <span className="font-semibold text-luxury-accent">20 outfits</span> built around your <span className="font-semibold text-luxury-green">proportions</span>, your <span className="font-semibold text-luxury-accent">frame geometry</span>, and your <span className="font-semibold text-luxury-green">colour palette</span>. Delivered in 24 hours.
         </>
       }
     />

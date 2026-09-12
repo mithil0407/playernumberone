@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Best Necklines for Every Face Shape — Indian Women's Guide",
@@ -10,13 +11,18 @@ export const metadata: Metadata = {
     title: "Best Necklines for Every Face Shape — Indian Women's Guide",
     description: "Complete neckline guide for all face shapes — for blouses, kurtas, and Western wear. India-specific.",
     url: "https://www.iconik.pro/faq/neckline-guide-face-shape-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Neckline guide for face shapes — Indian women — Iconik" }],
+    type: "article",
+    siteName: "Iconik",
+    locale: "en_IN",
+    publishedTime: "2025-01-01",
+    modifiedTime: "2026-07-24",
+    images: [{ url: "/images/seo/neckline-face-shape-guide-iconik-og.webp", width: 1200, height: 630, alt: "V-neck, boat, scoop and square neckline directions mapped to Indian face architecture — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Best Necklines for Every Face Shape — Indian Women's Guide",
     description: "Complete neckline guide for all face shapes — blouses, kurtas, and Western wear.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/neckline-face-shape-guide-iconik-og.webp"],
   },
 };
 
@@ -35,7 +41,8 @@ const jsonLd = {
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
       "datePublished": "2025-01-01",
-      "dateModified": "2025-06-01",
+      "dateModified": "2026-07-24",
+      "image": "https://www.iconik.pro/images/seo/neckline-face-shape-guide-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/faq/neckline-guide-face-shape-india",
     },
     {
@@ -109,6 +116,15 @@ export default function NecklineGuideFaceShapePage() {
         <p className="text-lg text-gray-600 mb-8">
           The neckline of a blouse, kurta, or top sits directly below your face — which means it has an outsized effect on how your face looks. The right neckline for your face shape elongates, softens, or balances your features. The wrong one amplifies what you want to minimise. This guide covers every common face shape with specific guidance for Indian blouses, kurta necklines, and Western wear.
         </p>
+
+        <SeoTeachingVisual
+          src="/images/seo/neckline-face-shape-guide-iconik.webp"
+          alt="Indian face architecture diagram beside V-neck, boat-neck, scoop-neck and square-neck fabric examples."
+          caption="Necklines add vertical direction, width, curves or angles immediately below the face; choose the line that supports your intended balance."
+          width={1024}
+          height={1536}
+          priority
+        />
 
         {/* How to find your face shape */}
         <section className="mb-10">
@@ -356,13 +372,13 @@ export default function NecklineGuideFaceShapePage() {
         <section className="bg-stone-50 border border-stone-200 rounded-xl p-6 mb-10">
           <h2 className="text-xl font-semibold mb-2">Facial Architecture Analysis™ — Your Exact Neckline Map</h2>
           <p className="mb-4">
-            Iconik&rsquo;s Facial Architecture Analysis™ goes beyond face shape to analyse your specific facial proportions — forehead width, jaw angle, face length, and facial features — and identifies which necklines, collar styles, and accessories will specifically flatter your face. Part of your full Style Blueprint, delivered in 48 hours.
+            Iconik&rsquo;s Facial Architecture Analysis™ goes beyond face shape to analyse your specific facial proportions — forehead width, jaw angle, face length, and facial features — and identifies which necklines, collar styles, and accessories will specifically flatter your face. Part of your full Style Blueprint, delivered within 5 working days after the consultation.
           </p>
           <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
-            Get Your Style Blueprint — ₹3,299
+            Get Your Style Blueprint — ₹2,699
           </Link>
         </section>
 

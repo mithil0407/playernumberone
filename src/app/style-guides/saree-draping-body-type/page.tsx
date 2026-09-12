@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Saree Draping for Your Body Type: The Complete Guide — Iconik",
@@ -10,7 +11,13 @@ export const metadata: Metadata = {
     title: "Saree Draping for Your Body Type: The Complete Guide — Iconik",
     description: "Body-type-specific saree draping techniques for all 5 silhouettes — pallu, blouse, and petticoat guidance.",
     url: "https://www.iconik.pro/style-guides/saree-draping-body-type",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Saree draping by body type India — Iconik" }],
+    images: [{ url: "/images/seo/saree-drape-direction-body-balance-iconik-og.webp", width: 1200, height: 630, alt: "Same Indian woman comparing horizontal and vertical saree pallu direction — Iconik" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Saree Draping for Your Body Type: The Complete Guide — Iconik",
+    description: "Pallu direction, pleat volume and border placement change saree balance while the body remains the same.",
+    images: ["/images/seo/saree-drape-direction-body-balance-iconik-og.webp"],
   },
 };
 
@@ -44,6 +51,8 @@ export default function SareeDrapingBodyTypePage() {
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
         "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
         "datePublished": "2025-01-01",
+        "dateModified": "2026-07-24",
+        "image": "https://www.iconik.pro/images/seo/saree-drape-direction-body-balance-iconik.webp",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/saree-draping-body-type" },
       },
       {
@@ -89,6 +98,15 @@ export default function SareeDrapingBodyTypePage() {
               The saree is one of the most silhouette-adaptable garments in existence — the same six yards can be draped to elongate, add volume, define the waist, or balance proportions. The secret is knowing which adjustments serve your specific body type. This guide gives you body-type-specific draping techniques, blouse guidance, and pallu placement for all five silhouettes.
             </p>
           </header>
+
+          <SeoTeachingVisual
+            src="/images/seo/saree-drape-direction-body-balance-iconik.webp"
+            alt="Same fuller-bodied Indian woman with a horizontal pallu stop and a narrower vertical pallu fall in the same navy saree."
+            caption="The saree and body stay the same; pallu direction, pleat volume and border placement change the visual balance."
+            width={1024}
+            height={1536}
+            priority
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">The Three Variables That Determine How a Saree Looks</h2>
@@ -195,7 +213,7 @@ export default function SareeDrapingBodyTypePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your complete saree formula?</h2>
             <p className="text-gray-600 mb-6">Your Iconik Style Blueprint includes body-type-specific saree draping guidance, blouse neckline formulas, and undertone-matched colour recommendations.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

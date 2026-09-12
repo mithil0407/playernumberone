@@ -3,14 +3,8 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
-import { trackPageView } from '@/lib/metaPixel';
 
 export default function UaeOtoSuccessPage() {
-  useEffect(() => {
-    trackPageView('UAE OTO Success');
-  }, []);
-
   return (
     <div className="min-h-screen bg-luxury-warm-white text-luxury-charcoal flex items-center justify-center px-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl text-center">

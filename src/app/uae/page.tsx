@@ -7,13 +7,12 @@ import ExploreLinksSection from '@/components/ExploreLinksSection';
 import { footerExploreGroups } from '@/lib/seoContent';
 import { ArrowRight, ArrowLeft, CheckCircle, Palette, Shapes, Ban } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 
 export default function UaeLandingPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
-    trackPageView('UAE');
     trackViewContent('UAE Style Blueprint', 179, ['uae_style_blueprint'], 'AED', 'UAE');
   }, []);
 

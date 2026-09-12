@@ -1,6 +1,6 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -122,7 +122,6 @@ export default function MonthlyPage() {
 
   // Track page view and product view on mount
   useEffect(() => {
-    trackPageView('USA_Monthly_Tiered');
     trackViewContent('ICONIK Monthly Tiered Pricing', 237, ['iconik_monthly_tiered'], 'USD', 'USA_Monthly_Tiered');
   }, []);
 
@@ -527,28 +526,27 @@ export default function MonthlyPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
               <div className="text-center group">
                 <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                  200+
+                  5,000+
                 </div>
-                <div className="luxury-body text-luxury-charcoal/70">Transformations</div>
+                <div className="luxury-body text-luxury-charcoal/70">Clients Served</div>
               </div>
               <div className="text-center group">
                 <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                  95%
+                  10+
                 </div>
-                <div className="luxury-body text-luxury-charcoal/70">Confidence Elevation</div>
-              </div>
-              <div className="text-center group">
-                <div className="flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300">
-                  <span className="text-4xl md:text-6xl luxury-heading text-luxury-green">4.9</span>
-                  <Star className="h-6 w-6 md:h-8 md:w-8 text-luxury-gold fill-current ml-2" />
-                </div>
-                <div className="luxury-body text-luxury-charcoal/70">Client Satisfaction</div>
+                <div className="luxury-body text-luxury-charcoal/70">Countries Served</div>
               </div>
               <div className="text-center group">
                 <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
-                  2-3
+                  70K+
                 </div>
-                <div className="luxury-body text-luxury-charcoal/70">Weeks to Elegance</div>
+                <div className="luxury-body text-luxury-charcoal/70">Instagram Community</div>
+              </div>
+              <div className="text-center group">
+                <div className="text-4xl md:text-6xl luxury-heading text-luxury-green mb-4 group-hover:scale-105 transition-transform duration-300">
+                  Mon–Fri
+                </div>
+                <div className="luxury-body text-luxury-charcoal/70">Support Hours</div>
               </div>
             </div>
           </div>
@@ -1091,7 +1089,7 @@ export default function MonthlyPage() {
                 © {new Date().getFullYear()} Iconik. All rights reserved. | Personal styling with ongoing support.
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
-                Business Legal Name: MITHIL NILESH NAVALAKHA
+                Business Legal Name: ICONIK LLP
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-1">
                 Results may vary. Individual success depends on effort and commitment to the program.

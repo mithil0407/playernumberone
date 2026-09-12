@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "How to Build a Capsule Wardrobe in India — Iconik",
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     title: "How to Build a Capsule Wardrobe in India — Iconik",
     description: "Step-by-step capsule wardrobe guide for Indian women — piece counts, categories, colour strategy, and how to integrate ethnic wear.",
     url: "https://www.iconik.pro/faq/how-to-build-capsule-wardrobe-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "How to build a capsule wardrobe India — Iconik" }],
+    images: [{ url: "/images/seo/capsule-wardrobe-ten-pieces-iconik-og.webp", width: 1200, height: 630, alt: "Ten-piece Indian capsule wardrobe connected into six repeatable outfit formulas — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "How to Build a Capsule Wardrobe in India — Iconik",
     description: "Step-by-step capsule wardrobe guide for Indian women — piece counts, categories, colour strategy, and how to integrate ethnic wear.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/capsule-wardrobe-ten-pieces-iconik-og.webp"],
   },
 };
 
@@ -108,6 +109,7 @@ export default function CapsuleWardrobeIndiaPage() {
       {
         "@type": "HowTo",
         "name": "How to Build a Capsule Wardrobe in India",
+        "image": "https://www.iconik.pro/images/seo/capsule-wardrobe-ten-pieces-iconik.webp",
         "step": steps.map((s) => ({
           "@type": "HowToStep",
           "name": s.title,
@@ -149,6 +151,15 @@ export default function CapsuleWardrobeIndiaPage() {
               A capsule wardrobe is a small, intentional collection of pieces that all work together — so every item combines with every other, and you can create a complete outfit for any occasion without effort. For Indian women, a capsule wardrobe is more complex than the standard Western model because it must span both western and ethnic wear. This guide covers the piece counts, categories, colour strategy, and ethnic wear integration specific to an Indian lifestyle.
             </p>
           </header>
+
+          <SeoTeachingVisual
+            src="/images/seo/capsule-wardrobe-ten-pieces-iconik.webp"
+            alt="Ten Indian capsule wardrobe pieces connected into six complete ethnic and western outfit formulas."
+            caption="A capsule works when colours and categories connect repeatedly—not merely because the wardrobe contains fewer pieces."
+            width={1024}
+            height={1536}
+            priority
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">The 6-Step Process</h2>
@@ -225,9 +236,9 @@ export default function CapsuleWardrobeIndiaPage() {
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Build your capsule around a professional colour analysis</h2>
-            <p className="text-gray-600 mb-6">The Iconik Style Blueprint gives you your exact colour palette (10 colours calibrated to your undertone), body type analysis, and 16+ outfit formulas — the complete foundation for a capsule wardrobe that actually works.</p>
+            <p className="text-gray-600 mb-6">The Iconik Style Blueprint gives you your exact colour palette (10 colours calibrated to your undertone), body type analysis, and 20 outfit formulas — the complete foundation for a capsule wardrobe that actually works.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

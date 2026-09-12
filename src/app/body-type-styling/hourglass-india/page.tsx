@@ -198,10 +198,10 @@ export default function HourglassIndiaPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get 16+ outfits designed for your body type</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get 20 outfit formulas designed for your body type</h2>
             <p className="text-gray-600 mb-6">Geometric Silhouette Profiling™ builds personalised outfit recommendations for your exact proportions — western and ethnic — as part of your Iconik Style Blueprint.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

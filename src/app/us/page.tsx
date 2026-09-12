@@ -1,6 +1,6 @@
 'use client';
 
-import { trackCTAClick, trackPageView, trackViewContent } from '@/lib/metaPixel';
+import { trackCTAClick, trackViewContent } from '@/lib/metaPixel';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -38,7 +38,6 @@ export default function Home() {
 
   // Track page view and product view on mount
   useEffect(() => {
-    trackPageView();
     trackViewContent('ICONIK Style Consultation', 119, ['iconik_style_consultation']);
   }, []);
 
@@ -1025,7 +1024,7 @@ export default function Home() {
                 © {new Date().getFullYear()} Iconik. All rights reserved. | Personal styling, delivered online.
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-2">
-                Business Legal Name: MITHIL NILESH NAVALAKHA
+                Business Legal Name: ICONIK LLP
               </p>
               <p className="luxury-body text-luxury-charcoal/50 text-sm mt-1">
                 Results may vary. Individual success depends on effort and commitment to the program.

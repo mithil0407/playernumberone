@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Colour Analysis for Indian Weddings: Complete Guide — Iconik",
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     title: "Colour Analysis for Indian Weddings: Complete Guide — Iconik",
     description: "Best wedding colours by undertone — bridal wear, mehendi, sangeet, reception, and wedding guest outfits for Indian women.",
     url: "https://www.iconik.pro/colour-analysis/colour-analysis-for-indian-weddings",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour analysis for Indian weddings — Iconik" }],
+    images: [{ url: "/images/seo/indian-wedding-colour-palette-iconik-og.webp", width: 1200, height: 630, alt: "Peacock, ruby, marigold, plum, antique gold and ivory Indian wedding palette — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Colour Analysis for Indian Weddings: Complete Guide — Iconik",
     description: "Best wedding colours by undertone — bridal wear, mehendi, sangeet, reception, and wedding guest outfits for Indian women.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/indian-wedding-colour-palette-iconik-og.webp"],
   },
 };
 
@@ -97,7 +98,8 @@ export default function ColourAnalysisIndianWeddingsPage() {
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
         "datePublished": "2025-04-01",
-        "dateModified": new Date().toISOString().split("T")[0],
+        "dateModified": "2026-07-24",
+        "image": "https://www.iconik.pro/images/seo/indian-wedding-colour-palette-iconik.webp",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/colour-analysis-for-indian-weddings" },
       },
       {
@@ -143,6 +145,15 @@ export default function ColourAnalysisIndianWeddingsPage() {
               Indian weddings involve multiple occasions, each with its own colour conventions and occasion wear requirements. Most colour advice for weddings focuses on skin depth — fair, wheatish, dusky — and produces recommendations that work for some women and not others. Undertone is what actually determines which colours look stunning on you. This guide breaks down the best colours for every Indian wedding occasion, organised by undertone.
             </p>
           </header>
+
+          <SeoTeachingVisual
+            src="/images/seo/indian-wedding-colour-palette-iconik.webp"
+            alt="Indian wedding guest in peacock teal beside ruby, marigold, plum, antique-gold and ivory fabric swatches."
+            caption="Build the wedding palette in order: undertone, occasion contrast, then the metal direction that completes the outfit."
+            width={1003}
+            height={1568}
+            priority
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Undertone Matters More at Weddings</h2>
@@ -248,7 +259,7 @@ export default function ColourAnalysisIndianWeddingsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Know your exact colours before the wedding season</h2>
             <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ identifies your undertone and builds a 10-colour palette with specific wedding occasion guidance — bridal, guest, and festive wear included. Part of your Iconik Style Blueprint.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "What Colours Make You Look Slimmer? — India Guide",
@@ -10,13 +11,13 @@ export const metadata: Metadata = {
     title: "What Colours Make You Look Slimmer? — India Guide",
     description: "Dark colours, monochromatic dressing, and how undertone affects whether slimming colours actually work for your skin.",
     url: "https://www.iconik.pro/faq/what-colours-make-you-look-slimmer-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colours that make you look slimmer — India guide — Iconik" }],
+    images: [{ url: "/images/seo/colours-look-slimmer-monochromatic-iconik-og.webp", width: 1200, height: 630, alt: "Monochromatic deep-colour outfit showing how continuity creates a longer visual line — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "What Colours Make You Look Slimmer? — India Guide",
     description: "Dark colours, monochromatic dressing, and undertone — the complete India guide.",
-    images: ["/og-image.webp"],
+    images: ["/images/seo/colours-look-slimmer-monochromatic-iconik-og.webp"],
   },
 };
 
@@ -35,7 +36,8 @@ const jsonLd = {
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
       "datePublished": "2025-01-01",
-      "dateModified": "2025-06-01",
+      "dateModified": "2026-07-24",
+      "image": "https://www.iconik.pro/images/seo/colours-look-slimmer-monochromatic-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/faq/what-colours-make-you-look-slimmer-india",
     },
     {
@@ -109,6 +111,15 @@ export default function ColoursLookSlimmerPage() {
         <p className="text-lg text-gray-600 mb-8">
           Dark colours are the most reliably slimming — but the real answer is more specific than that. The colour must be in your undertone palette, or it can make you look dull rather than slim. This guide covers which colours slim your silhouette, how to use them in Indian and Western wear, and the one technique that works better than any colour choice alone.
         </p>
+
+        <SeoTeachingVisual
+          src="/images/seo/colours-look-slimmer-monochromatic-iconik.webp"
+          alt="Fuller-bodied Indian woman in a deep emerald monochromatic outfit beside six undertone-aware deep neutral swatches."
+          caption="The strongest effect comes from an undertone-friendly deep colour continued from neckline to footwear, not darkness alone."
+          width={1003}
+          height={1568}
+          priority
+        />
 
         {/* Direct answer */}
         <section className="mb-10">
@@ -271,13 +282,13 @@ export default function ColoursLookSlimmerPage() {
         <section className="bg-stone-50 border border-stone-200 rounded-xl p-6 mb-10">
           <h2 className="text-xl font-semibold mb-2">Your Exact Colour Palette + Silhouette Analysis</h2>
           <p className="mb-4">
-            Iconik&rsquo;s Style Blueprint combines your personal colour analysis (the specific shades that flatter your skin) with your body type silhouette analysis (the cuts and proportions that work for your frame) — delivered together in 48 hours. It is the complete picture, not just one dimension.
+            Iconik&rsquo;s Style Blueprint combines your personal colour analysis (the specific shades that flatter your skin) with your body type silhouette analysis (the cuts and proportions that work for your frame) — delivered together within 5 working days after the consultation. It is the complete picture, not just one dimension.
           </p>
           <Link
             href="/#pricing"
             className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >
-            Get Your Style Blueprint — ₹3,299
+            Get Your Style Blueprint — ₹2,699
           </Link>
         </section>
 

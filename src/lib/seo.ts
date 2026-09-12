@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+export { SUPPORT_EMAIL } from "@/lib/siteFacts";
 
 export const SITE_NAME = "Iconik";
 export const SITE_URL = "https://www.iconik.pro";
-export const SUPPORT_EMAIL = "help.iconikfashion@gmail.com";
 export const PRIVACY_EMAIL = "privacy@iconik.pro";
 export const OG_IMAGE_URL = `${SITE_URL}/og-image.webp`;
 

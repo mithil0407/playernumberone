@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
-import { generateStylistBlueprintImages, type StylistBlueprintImageGroup } from '@/lib/stylistBlueprintImageGenerator';
+import { isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
+import { generateStylistBlueprintImages, planStylistBlueprintImageGeneration, type StylistBlueprintImageGroup } from '@/lib/stylistBlueprintImageGenerator';
 import type { StylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
 
 export const maxDuration = 300;
@@ -11,26 +11,26 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { reportId } = await params;
+  if (!(await isAdminCookieAuthenticated())) {
+    return NextResponse.json({ error: 'Image generation is available to admins only' }, { status: 403 });
+  }
   const body = await request.json().catch(() => ({}));
-  const allowedGroups = new Set(['diagnosis', 'prescription', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing', 'all']);
+  const allowedGroups = new Set(['diagnosis', 'prescription', 'application', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing', 'all']);
   const group = allowedGroups.has(body.group) ? body.group as StylistBlueprintImageGroup : 'all';
   const force = Boolean(body.force);
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, share_token, submission_id')
+    .select('id, report_data, share_token, submission_id, status, progress_stage, image_urls')
     .eq('id', reportId)
     .single();
 
   if (error || !report?.report_data) {
     return NextResponse.json({ error: 'Report data not found' }, { status: 404 });
   }
+
+  if (report.status === 'generating' || report.progress_stage) return NextResponse.json({ error: 'Finish the current generation first' }, { status: 409 });
 
   try {
     const { data: submission } = await supabaseAdmin
@@ -39,11 +39,13 @@ export async function POST(
       .eq('id', report.submission_id)
       .maybeSingle();
 
+    const resolvedSubmission = submission ? await resolveConsultationIntakePhotos(submission) : null;
+    if (body.planOnly === true) return NextResponse.json({ slots: planStylistBlueprintImageGeneration(report.report_data as StylistBlueprintReportData, report.image_urls, resolvedSubmission, group, force) });
     const imagePaths = await generateStylistBlueprintImages(
       reportId,
       report.report_data as StylistBlueprintReportData,
       report.share_token ?? null,
-      { group, force, submission: submission ?? null },
+      { group, force, submission: resolvedSubmission },
     );
     return NextResponse.json({ success: true, imagePaths });
   } catch (err) {

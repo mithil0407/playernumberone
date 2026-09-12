@@ -5,7 +5,7 @@ import { CheckCircle, ArrowRight, Calendar, Users, Sparkles, Crown } from 'lucid
 import Link from 'next/link';
 import { useEffect, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView, trackPurchase } from '@/lib/metaPixel';
+import { trackCompleteRegistration, trackPurchase } from '@/lib/metaPixel';
 
 // Tier types
 type TierKey = 'starter' | 'seasonal' | 'vip';
@@ -35,12 +35,12 @@ const tierInfo: Record<TierKey, TierInfo> = {
             },
             {
                 title: 'Schedule Your Consultation',
-                description: "Book your 20-minute video call with our expert stylist at your convenience",
+                description: "Book your 30-minute video call with our expert stylist at your convenience",
                 icon: <Calendar className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
             },
             {
                 title: 'Receive Your Style Blueprint',
-                description: "Within 7 days, get your complete personalized style guide with 16 outfit previews",
+                description: "Within 5 working days after your consultation, get your complete personalised style guide with 20 outfit formulas",
                 icon: <Users className="w-6 h-6 text-luxury-accent mt-1 flex-shrink-0" />
             }
         ]
@@ -103,7 +103,6 @@ function SuccessPageContent() {
 
     useEffect(() => {
         // Track page view
-        trackPageView('USA_Monthly_Tiered');
 
         // Get tier from URL or localStorage
         const tierParam = searchParams.get('tier') as TierKey | null;

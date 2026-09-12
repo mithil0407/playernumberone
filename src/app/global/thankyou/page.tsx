@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Star, Sparkles, Shield, Clock } from 'lucide-react';
-import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
+import { trackCompleteRegistration } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
@@ -67,7 +67,6 @@ function GlobalThankyouInner() {
     const [subscribeError, setSubscribeError] = useState('');
 
     useEffect(() => {
-        trackPageView('Global Thankyou');
         const tracked = sessionStorage.getItem('global_purchaseTracked');
         if (!tracked) trackCompleteRegistration(orderAmount, 'ICONIK Blueprint Global', 'USD');
     }, [orderAmount]);

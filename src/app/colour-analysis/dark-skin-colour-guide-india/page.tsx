@@ -6,6 +6,13 @@ import {
   TrackedArticleLink,
 } from "@/components/ArticleGrowthTracker";
 import { buildMetadata } from "@/lib/seo";
+import { FOUNDERS } from "@/lib/siteFacts";
+import {
+  SeoEditorialFooter,
+  SeoEditorialHeader,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import InstagramReelsForArticle from "@/components/seo/InstagramReelsForArticle";
 
 const path = "/colour-analysis/dark-skin-colour-guide-india";
 const growthTracking = {
@@ -40,14 +47,14 @@ const jsonLd = {
       "@id": "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india#article",
       "headline": "Best Colours for Dark Skin Indian Women — Complete Colour Guide",
       "description": "How to find the best clothing colours for dark skin Indian women by identifying your undertone — warm, cool, or neutral.",
-      "author": { "@type": "Organization", "name": "Iconik" },
+      "author": { "@type": "Person", "name": FOUNDERS[0].name, "jobTitle": FOUNDERS[0].title, "sameAs": FOUNDERS[0].linkedIn },
       "publisher": {
         "@type": "Organization",
         "name": "Iconik",
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
       "datePublished": "2026-03-23",
-      "dateModified": "2026-07-11",
+      "dateModified": "2026-07-23",
       "mainEntityOfPage": "https://www.iconik.pro/colour-analysis/dark-skin-colour-guide-india",
     },
     {
@@ -58,7 +65,7 @@ const jsonLd = {
           "name": "What colours look best on dark skin Indian women?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The best colours for dark skin Indian women depend on your undertone, not just your skin depth. Warm dark skin (golden/orange undertone) looks best in earth tones, burnt orange, mustard, warm reds, and gold jewellery. Cool dark skin (blue/purple undertone) looks best in jewel tones — emerald, cobalt, magenta, royal purple — and silver jewellery. Neutral dark skin can wear both warm and cool palettes.",
+            "text": "Start with undertone, then refine by colour clarity and the amount of contrast you prefer. Warm deep skin often harmonises with terracotta, olive, coral, cocoa and warm ivory; cool deep skin often suits cobalt, emerald, berry, plum, charcoal and crisp white. These are useful starting points, not universal rules.",
           },
         },
         {
@@ -66,7 +73,7 @@ const jsonLd = {
           "name": "Do bright colours work for dark skin Indian women?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes — bright colours generally work very well for dark skin because deep skin tones provide a high-contrast base that makes vibrant colours appear more vivid. However, the specific bright colours that work best depend on your undertone. Cool dark skin: bright jewel tones (cobalt, magenta, emerald). Warm dark skin: bright warm tones (coral, golden yellow, tomato red). Avoid pastels, which are designed for light skin and appear washed out against deep skin.",
+            "text": "Yes. Deep skin can create a clear contrast with bright colour, but brightness alone does not make a colour suitable. Compare warm and cool brights near the face, then check whether the colour sharpens facial definition or adds grey, yellow or red shadows.",
           },
         },
         {
@@ -74,7 +81,7 @@ const jsonLd = {
           "name": "Should Indian women with dark skin avoid white?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No — white works well for dark skin Indian women, particularly bright white (which complements cool undertones) and off-white or ivory (which complements warm undertones). The idea that dark skin should avoid white is a misconception. White provides a striking high-contrast look that works with deep skin tones. The question is which white: bright white vs. warm cream/ivory.",
+            "text": "No. Compare crisp white, soft white and warm ivory in the same daylight. The best version is the one that keeps the eyes, lips and skin clear without introducing an unwanted grey, yellow or red cast. Skin depth alone cannot choose the correct white.",
           },
         },
         {
@@ -82,7 +89,7 @@ const jsonLd = {
           "name": "Can dark skin Indian women wear pastels?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Pastels are generally not the most flattering choice for dark skin tones because they are designed for light skin — they have low saturation and low contrast, and tend to wash out against deep skin rather than complementing it. If you love pastels, choose deeply saturated versions (dusty rose rather than baby pink, sage rather than mint) and pair them with statement accessories in your best metals.",
+            "text": "Yes. Pastels are not designed for one skin depth. Test temperature, clarity and contrast: clear lilac or powder blue may suit one person, while warm peach or dusty rose suits another. If a pastel feels chalky, try a clearer version or add a deeper anchor such as navy or cocoa.",
           },
         },
         {
@@ -90,7 +97,7 @@ const jsonLd = {
           "name": "What is the difference between 'dark skin' and 'dusky skin' in colour analysis?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "In Indian colour analysis, 'dusky' typically refers to medium-deep to deep brown skin with warm or neutral undertones — often medium Fitzpatrick IV. 'Dark skin' refers to Fitzpatrick V-VI, or very deep brown to ebony skin tones. The key difference for colour selection is that dark skin provides more contrast with both light and bright colours, making high-saturation and deep jewel tones generally more effective. Both groups still need undertone analysis to identify their specific best palette.",
+            "text": "Both are subjective appearance terms, not scientific colour categories. In everyday Indian usage, dusky often describes a medium-to-deep brown complexion and dark describes a deeper brown complexion. Neither term predicts undertone or one correct palette, so controlled fabric comparison is more useful than trying to fit a rigid label.",
           },
         },
       ],
@@ -112,7 +119,11 @@ export default function DarkSkinColourGuidePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ArticleGrowthTracker {...growthTracking} />
 
-      <main className="max-w-3xl mx-auto px-4 py-12 text-gray-800">
+      <div className="seo-editorial min-h-screen">
+        <SeoEditorialHeader />
+        <main>
+          <div className="seo-editorial-shell">
+            <div className="seo-classic-article mx-auto max-w-3xl py-16 text-gray-800 md:py-24">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
           <Link href="/" className="hover:underline">Home</Link> › <Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link> › Dark Skin Colour Guide — India
@@ -124,8 +135,8 @@ export default function DarkSkinColourGuidePage() {
         </p>
         <div className="mb-8 flex flex-wrap gap-2 text-xs text-gray-600">
           <span className="rounded-full border border-gray-200 px-3 py-1">Published 23 March 2026</span>
-          <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 11 July 2026</span>
-          <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
+          <span className="rounded-full border border-gray-200 px-3 py-1">Updated 23 July 2026</span>
+          <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by {FOUNDERS[0].name}, {FOUNDERS[0].title}</Link>
         </div>
 
         <aside className="mb-10 overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#9aabb2_0%,#71858e_100%)] p-1 shadow-[0_20px_55px_rgba(38,52,58,0.18)]">
@@ -139,6 +150,15 @@ export default function DarkSkinColourGuidePage() {
             </p>
           </div>
         </aside>
+
+        <SeoTeachingVisual
+          src="/images/seo/dark-indian-skin-colour-guide-hero-iconik.webp"
+          alt="Deep-skinned Indian woman beside terracotta, cobalt, ivory, emerald, berry and saffron fabric swatches."
+          caption="Deep skin is not one palette: start with temperature, then refine colour clarity and outfit contrast."
+          width={1672}
+          height={941}
+          priority
+        />
 
         {/* The fundamental principle */}
         <section className="mb-10">
@@ -154,44 +174,56 @@ export default function DarkSkinColourGuidePage() {
           </p>
         </section>
 
+        <SeoTeachingVisual
+          src="/images/seo/dark-skin-depth-undertone-iconik.webp"
+          alt="Deep Indian skin portrait with separate depth scale and warm, cool, neutral and olive undertone swatches."
+          caption="Depth influences contrast; undertone influences colour temperature; clarity determines how soft or vivid the final colour should be."
+          width={1122}
+          height={1402}
+        />
+
         {/* Find your undertone */}
         <section className="mb-10">
           <h2 className="text-2xl font-semibold mb-3">How to Find Your Undertone With Dark Skin</h2>
-          <p className="mb-4">Standard undertone tests (vein test, white paper test) are less reliable for very dark skin because the surface colour can obscure the undertone signal. The most reliable method for dark skin is fabric draping.</p>
+          <p className="mb-4">
+            Vein colour, jewellery preference and white-paper tests can be ambiguous on any skin depth. A controlled fabric comparison is more useful because it tests the actual decision you are making: what happens when a colour sits close to your face.
+          </p>
 
           <h3 className="text-xl font-medium mb-2">The Fabric Draping Method</h3>
           <ol className="list-decimal pl-6 space-y-2 mb-4">
-            <li>Go to natural daylight (not artificial lighting)</li>
-            <li>Remove any makeup and jewellery</li>
-            <li>Hold a piece of bright gold fabric under your chin and note how your face looks — does your skin appear vibrant, or dull?</li>
-            <li>Replace with bright silver fabric and note the difference</li>
-            <li>If gold makes your skin glow, you have a warm undertone. If silver does, you have a cool undertone. If both work equally, you are neutral.</li>
+            <li>Stand in indirect daylight and turn off strongly coloured indoor lights.</li>
+            <li>Keep your face, camera position and exposure unchanged; remove dominant makeup and large jewellery.</li>
+            <li>Compare one pair at a time: warm ivory versus crisp white, terracotta versus cobalt, then gold-toned versus silver-toned fabric.</li>
+            <li>Ignore which fabric you like more. Watch the eyes, lips, under-eye shadows, jawline and overall evenness of the face.</li>
+            <li>Repeat the winning colours on a second day. One comparison is a clue; a repeated pattern is more useful.</li>
           </ol>
 
-          <p className="mb-3">You can also observe these signals:</p>
+          <p className="mb-3">Record the pattern rather than forcing a label:</p>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Warm undertone dark skin</strong>: Your skin has golden, bronze, or orange-red richness. The sun brings out warmth in your complexion. You look best in gold jewellery.</li>
-            <li><strong>Cool undertone dark skin</strong>: Your skin has blue-black, reddish-brown, or ashy undertones in certain lights. Silver jewellery makes your skin look vibrant. You may notice a blue or purple quality in your darkest areas.</li>
-            <li><strong>Neutral undertone dark skin</strong>: Neither gold nor silver significantly outperforms the other. You don&rsquo;t notice a strong warm or cool cast.</li>
+            <li><strong>Warm-leaning pattern:</strong> warm ivory, terracotta and olive repeatedly create more facial clarity than their cooler comparison colours.</li>
+            <li><strong>Cool-leaning pattern:</strong> crisp white, cobalt, berry or cool emerald repeatedly look cleaner near the face.</li>
+            <li><strong>Neutral or olive pattern:</strong> temperature results are mixed, while clarity and the amount of grey in a colour make a larger difference.</li>
           </ul>
         </section>
 
         {/* Warm dark skin */}
         <section className="mb-10">
           <h2 className="text-2xl font-semibold mb-3">Best Colours for Warm Dark Skin</h2>
-          <p className="mb-4">If you have warm undertones with deep skin, you have one of the richest, most striking colour profiles. Earth tones and warm jewel tones genuinely glow against your complexion.</p>
+          <p className="mb-4">
+            Use the list below as a testing rail, not a permission system. Warm deep skin often supports earthy reds, golden greens and warm lights, but the best version still depends on whether your colouring prefers softness or clarity.
+          </p>
 
           <h3 className="text-xl font-medium mb-2">Your Best Colours</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             {[
-              { name: "Burnt Orange", note: "Stunning on warm dark skin" },
-              { name: "Mustard Yellow", note: "Deepens skin's warmth" },
-              { name: "Brick Red", note: "Rich, not harsh" },
-              { name: "Warm Terracotta", note: "Earth tone that glows" },
-              { name: "Forest Green", note: "Earthy, not cool" },
-              { name: "Copper & Bronze", note: "Your jewellery metals too" },
-              { name: "Chocolate Brown", note: "Tone-on-tone richness" },
-              { name: "Deep Coral", note: "Vibrant without clashing" },
+              { name: "Burnt Orange", note: "Compare clear and softened versions" },
+              { name: "Saffron", note: "Use as a lead or smaller accent" },
+              { name: "Brick Red", note: "A grounded warm red" },
+              { name: "Terracotta", note: "Useful near-face test colour" },
+              { name: "Olive Green", note: "Warm, practical wardrobe anchor" },
+              { name: "Copper & Bronze", note: "Test beside yellow gold" },
+              { name: "Cocoa Brown", note: "Deep neutral anchor" },
+              { name: "Deep Coral", note: "Clearer alternative to pale peach" },
             ].map((c) => (
               <div key={c.name} className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-sm">
                 <div className="font-medium">{c.name}</div>
@@ -200,30 +232,38 @@ export default function DarkSkinColourGuidePage() {
             ))}
           </div>
 
-          <h3 className="text-xl font-medium mb-2">What to Approach Carefully</h3>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Cool jewel tones (cobalt blue, royal purple, fuchsia) — these can clash with warm undertones, especially in large quantities</li>
-            <li>Pastels — low contrast and the wrong undertone for warm dark skin</li>
-            <li>Silver jewellery — gold is your metal</li>
-          </ul>
+          <h3 className="text-xl font-medium mb-2">How to rescue a difficult colour</h3>
+          <p>
+            If cobalt, lavender or a cool grey feels disconnected near the face, move it to trousers, a bag or footwear and place warm ivory, olive, coral or your preferred metal closer to the face. You do not need to discard an entire colour family.
+          </p>
         </section>
+
+        <SeoTeachingVisual
+          src="/images/seo/warm-deep-skin-colour-palette-iconik.webp"
+          alt="Warm deep Indian skin palette with terracotta, olive, coral, saffron, cocoa and warm ivory."
+          caption="A wearable warm palette combines one hero colour, one deep neutral and one soft light."
+          width={1003}
+          height={1568}
+        />
 
         {/* Cool dark skin */}
         <section className="mb-10">
           <h2 className="text-2xl font-semibold mb-3">Best Colours for Cool Dark Skin</h2>
-          <p className="mb-4">Cool undertone dark skin is stunning with jewel tones — the combination of deep skin and cool-toned saturated colour creates a high-drama, high-fashion look that few skin types can achieve.</p>
+          <p className="mb-4">
+            Cool deep skin often works well with clear blues, blue-greens, berries and cool neutrals. If the brightest version overpowers you, keep the temperature and reduce the intensity rather than switching to a warm colour automatically.
+          </p>
 
           <h3 className="text-xl font-medium mb-2">Your Best Colours</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             {[
-              { name: "Cobalt Blue", note: "Your signature colour" },
-              { name: "Emerald Green", note: "Rich and vibrant" },
-              { name: "Royal Purple", note: "Deep regal tone" },
-              { name: "Magenta", note: "Cool-based bright" },
-              { name: "Bright White", note: "High contrast, stunning" },
-              { name: "Hot Pink (cool)", note: "Fuchsia, not coral" },
-              { name: "Sapphire", note: "Deep blue jewel" },
-              { name: "Plum", note: "Deep cool purple" },
+              { name: "Cobalt Blue", note: "Clear near-face test colour" },
+              { name: "Emerald Green", note: "Compare blue-green and yellow-green" },
+              { name: "Royal Purple", note: "Use clear or deep versions" },
+              { name: "Berry", note: "Practical cool red family" },
+              { name: "Crisp White", note: "High-contrast light option" },
+              { name: "Fuchsia", note: "Test clarity before brightness" },
+              { name: "Sapphire", note: "Deep blue wardrobe anchor" },
+              { name: "Plum", note: "Softer alternative to black" },
             ].map((c) => (
               <div key={c.name} className="bg-stone-50 border border-stone-200 rounded-lg p-3 text-sm">
                 <div className="font-medium">{c.name}</div>
@@ -232,54 +272,97 @@ export default function DarkSkinColourGuidePage() {
             ))}
           </div>
 
-          <h3 className="text-xl font-medium mb-2">What to Approach Carefully</h3>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Orange-based warm tones (burnt orange, mustard, terracotta) — they can create a subtle clash with cool undertones</li>
-            <li>Gold jewellery — silver is your metal</li>
-            <li>Earth tones — these read as warm and don&rsquo;t harmonise with cool undertones as effectively</li>
-          </ul>
+          <h3 className="text-xl font-medium mb-2">How to rescue a difficult colour</h3>
+          <p>
+            Warm mustard, camel or orange can move away from the face or be separated by a crisp white, navy, berry or charcoal neckline. Jewellery is a finishing variable, not a diagnosis: compare metals against the complete outfit.
+          </p>
         </section>
+
+        <SeoTeachingVisual
+          src="/images/seo/cool-deep-skin-colour-palette-iconik.webp"
+          alt="Cool deep Indian skin palette with cobalt, emerald, berry, plum, charcoal and crisp white."
+          caption="Cool colour becomes easier to wear when one jewel tone is grounded by a cool neutral and a crisp light."
+          width={1003}
+          height={1568}
+        />
 
         {/* Neutral dark skin */}
         <section className="mb-10">
-          <h2 className="text-2xl font-semibold mb-3">Best Colours for Neutral Dark Skin</h2>
-          <p className="mb-4">Neutral undertone dark skin is the most flexible — you can wear both warm and cool palettes without clashing. The key is to choose the most saturated, richest version of any colour you love.</p>
+          <h2 className="text-2xl font-semibold mb-3">What About Neutral or Olive Deep Skin?</h2>
+          <p className="mb-4">
+            Neutral does not automatically mean muted, and olive does not automatically mean warm. If gold-versus-silver tests feel inconclusive, compare pink against olive, then compare soft colour against clear colour. The more useful question may be how much yellow, grey or brightness the face can carry.
+          </p>
 
           <ul className="list-disc pl-6 space-y-2 mb-4">
-            <li><strong>Deep jewel tones</strong>: emerald, sapphire, amethyst, ruby — all work</li>
-            <li><strong>Rich earth tones</strong>: terracotta, burnt sienna, forest green — all work</li>
-            <li><strong>Deep neutrals</strong>: charcoal, deep navy, espresso brown — all excellent</li>
-            <li><strong>Both gold and silver jewellery</strong> — rose gold is a particularly good metal for neutral undertones</li>
+            <li><strong>Balanced anchors:</strong> soft navy, cocoa, stone, charcoal and aubergine.</li>
+            <li><strong>Useful comparison colours:</strong> dusty rose versus coral, muted teal versus olive, crisp white versus ivory.</li>
+            <li><strong>Metal test:</strong> compare polished and brushed finishes as well as warm and cool metals; reflectiveness can matter as much as temperature.</li>
           </ul>
           <p>
-            Test very pale or muted colours near the face. If they flatten contrast, restore definition through a deeper neckline, jacket, dupatta, jewellery metal, or lip colour rather than discarding the entire colour family.
+            If a colour flattens facial definition, restore contrast with a deeper neckline, jacket, dupatta, bag or lip colour before rejecting the whole family.
           </p>
         </section>
 
-        {/* Colours that universally work */}
         <section className="mb-10">
-          <h2 className="text-2xl font-semibold mb-3">Colours That Work for Almost All Dark Skin Tones</h2>
-          <p className="mb-4">Regardless of undertone, these colours tend to be universally flattering for deep Indian skin:</p>
+          <h2 className="text-2xl font-semibold mb-3">Can Dark Skin Wear Pastels?</h2>
+          <p className="mb-3">
+            Yes. A pastel is simply a colour mixed with a large amount of white; it is not reserved for light skin. The failure point is often a chalky grey cast, an incompatible temperature or too little definition in the complete outfit.
+          </p>
+          <p className="mb-3">
+            Compare clear lilac with dusty lavender, powder blue with blue-grey, and warm peach with icy pink. If the face looks less defined, try a clearer version or add one deeper anchor such as navy, cocoa, berry or forest green.
+          </p>
+          <p>
+            Pastel sarees and kurtas can also gain definition through a deeper blouse, border, dupatta, bag or neckline. Evaluate the entire near-face composition rather than judging the fabric in isolation.
+          </p>
+        </section>
+
+        <SeoTeachingVisual
+          src="/images/seo/dark-skin-pastel-contrast-guide-iconik.webp"
+          alt="Deep Indian skin with clear lilac, dusty rose, warm peach and powder blue pastels plus navy and cocoa anchors."
+          caption="Pastels work when their temperature and clarity support the face and a deeper anchor preserves definition."
+          width={1003}
+          height={1568}
+        />
+
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-3">Which White and Jewellery Metal Should You Choose?</h2>
+          <p className="mb-3">
+            Compare crisp white, soft white and warm ivory in the same light. Crisp white creates the strongest edge; ivory softens the transition; soft white sits between them. Keep the version that sharpens the eyes and lips without making shadows look greyer, yellower or redder.
+          </p>
+          <p>
+            For jewellery, compare equal-size pieces with similar shine. A polished silver earring reflects more light than a brushed gold earring, so finish can distort a simple warm-versus-cool test. Judge the metal with the neckline and outfit colour you will actually wear.
+          </p>
+        </section>
+
+        <SeoTeachingVisual
+          src="/images/seo/dark-skin-outfit-contrast-framework-iconik.webp"
+          alt="Deep-skinned Indian woman in an emerald kurta showing near-face colour, outfit anchor and accent placement."
+          caption="Build contrast intentionally: decide what sits near the face, which colour anchors the outfit and where the accent belongs."
+          width={1003}
+          height={1568}
+        />
+
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-3">How to Build a Complete Outfit Instead of Collecting Colour Lists</h2>
+          <ol className="list-decimal pl-6 space-y-2">
+            <li><strong>Choose the near-face colour:</strong> blouse, kurta, scarf, dupatta, jacket lapel or saree pallu.</li>
+            <li><strong>Add one anchor:</strong> navy, cocoa, charcoal, ivory or another neutral that controls the outfit&apos;s contrast.</li>
+            <li><strong>Place one accent:</strong> jewellery, bag, border, footwear or lip colour. It should support the lead colour rather than compete with it.</li>
+            <li><strong>Take a mirror photo:</strong> if the garment is noticed before the face, reduce either brightness, pattern scale or the number of competing accents.</li>
+          </ol>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-3">How to Apply the Palette to Indian Wear</h2>
+          <p className="mb-3">
+            Indian wear adds border, blouse, dupatta, embroidery and metalwork to the colour decision. Use those parts strategically instead of asking whether one saree or kurta colour is universally flattering.
+          </p>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Deep jewel tones</strong> — the richness and saturation complement deep skin at any undertone</li>
-            <li><strong>White</strong> — bright white (cool skin) or cream (warm skin) — the contrast is always striking</li>
-            <li><strong>Black</strong> — high contrast, always clean; pair with statement jewellery in your best metal</li>
-            <li><strong>Deep, saturated colours in general</strong> — the rule for dark skin is saturation and depth; avoid pale and muted</li>
+            <li><strong>Saree:</strong> the blouse and pallu sit closest to the face; test them before judging the body colour.</li>
+            <li><strong>Kurta set:</strong> use a tonal trouser for length, then let the dupatta or neckline provide the near-face colour.</li>
+            <li><strong>Occasion wear:</strong> balance rich fabric, embroidery and jewellery so only one element becomes the visual hero.</li>
+            <li><strong>Pastel Indian wear:</strong> add definition through a deeper border, blouse, bag or metal rather than abandoning the pastel.</li>
           </ul>
-        </section>
-
-        {/* Ethnic wear note */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-semibold mb-3">A Note on Ethnic Wear and Dark Skin</h2>
-          <p className="mb-3">
-            Traditional Indian occasion wear — particularly bridal wear and heavily embellished pieces — tends to be richly coloured and embroidered, which works naturally in favour of dark skin. The challenge is more often in everyday and professional wear, where plain, dull fabrics in the wrong undertone palette can look flat.
-          </p>
-          <p className="mb-3">
-            <strong>Sarees</strong>: Kanjeevarams and Banarasis in rich jewel tones and warm earth tones are excellent for dark skin. Avoid pale or pastel sarees.
-          </p>
-          <p>
-            <strong>Salwar kameez and kurtas</strong>: Choose deep, rich colours. If you wear the wrong undertone, embellishments and embroidery in your correct metals (gold vs silver) can partially compensate by bringing light close to your face.
-          </p>
         </section>
 
         {/* FAQs */}
@@ -288,7 +371,7 @@ export default function DarkSkinColourGuidePage() {
           <div className="space-y-6">
             <div>
               <h3 className="font-medium mb-1">What colours look best on dark skin Indian women?</h3>
-              <p>It depends on your undertone. Warm dark skin: earth tones, burnt orange, mustard, brick red. Cool dark skin: jewel tones — cobalt, emerald, magenta, royal purple. Neutral dark skin: both palettes. All dark skin: deep, saturated colours over pastels.</p>
+              <p>Start with undertone, then refine by clarity and contrast. Warm deep skin often works with terracotta, olive, coral, cocoa and warm ivory; cool deep skin often works with cobalt, emerald, berry, plum, charcoal and crisp white.</p>
             </div>
             <div>
               <h3 className="font-medium mb-1">Do bright colours work for dark skin Indian women?</h3>
@@ -296,7 +379,7 @@ export default function DarkSkinColourGuidePage() {
             </div>
             <div>
               <h3 className="font-medium mb-1">Should Indian women with dark skin avoid white?</h3>
-              <p>No. White works well for dark skin — the high contrast is striking. Choose bright white for cool undertones and ivory or cream for warm undertones.</p>
+              <p>No. Compare crisp white, soft white and warm ivory in the same daylight. Keep the version that makes the eyes, lips and skin appear clearest.</p>
             </div>
             <div>
               <h3 className="font-medium mb-1">Can dark skin Indian women wear pastels?</h3>
@@ -304,7 +387,7 @@ export default function DarkSkinColourGuidePage() {
             </div>
             <div>
               <h3 className="font-medium mb-1">What is the difference between dark skin and dusky skin in colour analysis?</h3>
-              <p>&ldquo;Dusky&rdquo; in Indian usage typically refers to medium-deep brown skin (Fitzpatrick IV), often with warm undertones. &ldquo;Dark&rdquo; refers to deeper Fitzpatrick V-VI tones. Both groups need undertone analysis — skin depth and undertone are different things, and the undertone determines which specific colours will flatter.</p>
+              <p>They are subjective appearance terms, not scientific colour categories. Everyday usage may use dusky for medium-to-deep brown and dark for a deeper brown complexion, but neither term predicts undertone or one correct palette.</p>
             </div>
           </div>
         </section>
@@ -328,9 +411,11 @@ export default function DarkSkinColourGuidePage() {
           </div>
         </section>
 
+        <InstagramReelsForArticle articlePath={path} />
+
         {/* Cite */}
         <section className="border-t pt-6 mb-8 text-sm text-gray-500">
-          <p><strong>Cite this guide:</strong> Navalakha, Mithil. &ldquo;Best Clothing Colours for Dark Indian Skin by Undertone.&rdquo; Iconik. Reviewed 11 July 2026.</p>
+          <p><strong>Cite this guide:</strong> Rana, Jasmine. &ldquo;Best Clothing Colours for Dark Indian Skin by Undertone.&rdquo; Iconik. Updated 23 July 2026.</p>
         </section>
 
         {/* Related */}
@@ -345,7 +430,11 @@ export default function DarkSkinColourGuidePage() {
             <li><a href="/colour-analysis">All Colour Analysis Guides</a></li>
           </ul>
         </section>
-      </main>
+            </div>
+          </div>
+        </main>
+        <SeoEditorialFooter />
+      </div>
     </>
   );
 }

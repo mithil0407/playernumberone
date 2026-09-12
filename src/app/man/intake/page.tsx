@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, type ChangeEvent } from 'react';
+import { useState, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Image from 'next/image';
@@ -10,10 +10,28 @@ import {
     getManIntakePhotoValidationError,
     ManIntakeApiError,
     saveManIntakeSubmission,
-    uploadManIntakePhoto,
 } from '@/lib/supabaseMan';
-import { trackPageView, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
-import { MAN_PRICING } from '@/lib/manPricing';
+import {
+    getManIntakeUploadStatus,
+    ManIntakeTusUploadError,
+    normalizeClientUploadError,
+    prepareManIntakeUploads,
+    reportManIntakeUploadEvent,
+    uploadManIntakeFileResumable,
+    type ManIntakeFileSelection,
+    type ManIntakeUploadCredentials,
+} from '@/lib/manIntakeResumableUpload';
+import {
+    clearPendingManIntakePhotos,
+    deletePendingManIntakePhoto,
+    loadPendingManIntakePhoto,
+    savePendingManIntakePhoto,
+} from '@/lib/manIntakePhotoDraftStore';
+import { prepareManIntakePhoto } from '@/lib/manIntakePhotoPreparation';
+import type { ManIntakePhotoKind } from '@/lib/manIntakeUploadSession';
+import { INDIA_PHONE_COUNTRY_CODE, trackCompleteRegistration, updateUserData } from '@/lib/metaPixel';
+import { getManPricing } from '@/lib/manPricing';
+import { useManRegion } from '@/hooks/useManRegion';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +76,36 @@ interface FormState {
     styleAntiPrefNote: string;
     freeTextNote: string;
 }
+
+type PhotoUploadPhase = 'idle' | 'preparing' | 'uploading' | 'retrying' | 'resuming' | 'complete' | 'error';
+type PhotoUploadProgress = {
+    phase: PhotoUploadPhase;
+    uploaded: number;
+    total: number;
+    error?: string;
+};
+type PhotoUploadProgressMap = Record<ManIntakePhotoKind, PhotoUploadProgress>;
+type PhotoUploadReceipt = {
+    path: string;
+    fingerprint: string;
+    size: number;
+    content_type: string;
+};
+type PhotoUploadReceiptMap = Partial<Record<ManIntakePhotoKind, PhotoUploadReceipt>>;
+type PhotoFingerprintMap = Partial<Record<ManIntakePhotoKind, string>>;
+
+const MAN_INTAKE_DRAFT_KEY = 'iconik_man_intake_draft_v2';
+const EMPTY_PHOTO_PROGRESS = (): PhotoUploadProgressMap => ({
+    fullbody: { phase: 'idle', uploaded: 0, total: 0 },
+    headshot: { phase: 'idle', uploaded: 0, total: 0 },
+    side_profile: { phase: 'idle', uploaded: 0, total: 0 },
+});
+
+const PHOTO_PROGRESS_LABELS: Record<ManIntakePhotoKind, string> = {
+    fullbody: 'Full body',
+    headshot: 'Headshot',
+    side_profile: 'Side profile',
+};
 
 // ── Colour Season Derivation ──────────────────────────────────────────────────
 
@@ -428,10 +476,11 @@ function CheckCard({ selected, onClick, children }: { selected: boolean; onClick
     );
 }
 
-function PhotoUploadField({ label, instruction, file, onChange, error, onError, required }: {
+function PhotoUploadField({ label, instruction, file, uploaded, onChange, error, onError, required }: {
     label: string;
     instruction: string;
     file: File | null;
+    uploaded?: boolean;
     onChange: (file: File | null) => void;
     error?: string;
     onError: (error: string) => void;
@@ -466,13 +515,13 @@ function PhotoUploadField({ label, instruction, file, onChange, error, onError, 
                     background: file ? 'rgba(148,166,173,0.06)' : '#FAFAF8',
                 }}
             >
-                {file ? (
+                {file || uploaded ? (
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-14 h-14 rounded-full flex items-center justify-center mb-2" style={{ background: 'rgba(148,166,173,0.12)' }}>
                             <CheckCircle className="w-7 h-7" style={{ color: '#94A6AD' }} />
                         </div>
-                        <div className="iconik-display" style={{ fontSize: '15px', color: '#2C2622' }}>{file.name}</div>
-                        <div className="iconik-micro opacity-45" style={{ color: '#2C2622' }}>Click or drag to change</div>
+                        <div className="iconik-display" style={{ fontSize: '15px', color: '#2C2622' }}>{file?.name || 'Previously uploaded photo'}</div>
+                        <div className="iconik-micro opacity-45" style={{ color: '#2C2622' }}>{uploaded && !file ? 'Upload verified · click to replace' : 'Click or drag to change'}</div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-3">
@@ -495,12 +544,26 @@ function PhotoUploadField({ label, instruction, file, onChange, error, onError, 
 
 function ManIntakePageInner() {
     const searchParams = useSearchParams();
+    const { isIndia } = useManRegion();
+    const pricing = getManPricing(isIndia ? 'IN' : 'INTL');
     const [step, setStep] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [direction, setDirection] = useState(1);
     const [contactPrefilled, setContactPrefilled] = useState(false);
     const [photoErrors, setPhotoErrors] = useState({ fullBody: '', headshot: '', sideProfile: '' });
+    const [uploadSession, setUploadSession] = useState<ManIntakeUploadCredentials | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<PhotoUploadProgressMap>(EMPTY_PHOTO_PROGRESS);
+    const [uploadReceipts, setUploadReceipts] = useState<PhotoUploadReceiptMap>({});
+    const [photoFingerprints, setPhotoFingerprints] = useState<PhotoFingerprintMap>({});
+    const fingerprintVersions = useRef<Partial<Record<ManIntakePhotoKind, number>>>({});
+    const [sideUploadFailed, setSideUploadFailed] = useState(false);
+    const [draftReady, setDraftReady] = useState(false);
+    const [submitButtonLabel, setSubmitButtonLabel] = useState('Submit My Intake');
+    const uploadSessionRef = useRef<ManIntakeUploadCredentials | null>(null);
+    const uploadReceiptsRef = useRef<PhotoUploadReceiptMap>({});
+    const uploadQueueRef = useRef<Promise<void>>(Promise.resolve());
+    const activeUploadsRef = useRef<Partial<Record<ManIntakePhotoKind, Promise<void>>>>({});
 
     const [form, setForm] = useState<FormState>({
         email: '',
@@ -540,7 +603,144 @@ function ManIntakePageInner() {
     });
 
     useEffect(() => {
-        trackPageView('Man Intake');
+        let cancelled = false;
+        const restoreDraft = async () => {
+            try {
+                const raw = localStorage.getItem(MAN_INTAKE_DRAFT_KEY) || sessionStorage.getItem(MAN_INTAKE_DRAFT_KEY);
+                if (!raw) return;
+                const draft = JSON.parse(raw) as {
+                    step?: number;
+                    answers?: Partial<FormState>;
+                    session?: ManIntakeUploadCredentials | null;
+                    fingerprints?: PhotoFingerprintMap;
+                    receipts?: PhotoUploadReceiptMap;
+                };
+                if (draft.answers) {
+                    setForm(current => ({
+                        ...current,
+                        ...draft.answers,
+                        photoFullBody: null,
+                        photoHeadshot: null,
+                        photoSideProfile: null,
+                    }));
+                }
+                if (typeof draft.step === 'number' && draft.step >= 0 && draft.step <= 27) setStep(draft.step);
+                const restoredFingerprints = draft.fingerprints || {};
+                setPhotoFingerprints(restoredFingerprints);
+                uploadReceiptsRef.current = draft.receipts || {};
+                setUploadReceipts(draft.receipts || {});
+                setUploadProgress(current => {
+                    const next = { ...current };
+                    for (const kind of ['fullbody', 'headshot', 'side_profile'] as const) {
+                        const receipt = draft.receipts?.[kind];
+                        if (receipt) next[kind] = { phase: 'complete', uploaded: receipt.size, total: receipt.size };
+                    }
+                    return next;
+                });
+                if (draft.session) {
+                    // Keep the credentials and last verified receipts available
+                    // even when this first status check is temporarily offline.
+                    uploadSessionRef.current = draft.session;
+                    setUploadSession(draft.session);
+                    const status = await getManIntakeUploadStatus(draft.session);
+                    if (cancelled) return;
+                    if (status.status === 'submitted') {
+                        localStorage.removeItem(MAN_INTAKE_DRAFT_KEY);
+                        sessionStorage.removeItem(MAN_INTAKE_DRAFT_KEY);
+                        void clearPendingManIntakePhotos().catch(() => undefined);
+                        setStep(CONFIRMATION_STEP);
+                        return;
+                    }
+                    const nextFingerprints = { ...restoredFingerprints };
+                    const nextReceipts: PhotoUploadReceiptMap = {};
+                    const nextProgress = EMPTY_PHOTO_PROGRESS();
+                    status.photos.forEach(photo => {
+                            const changedFileWasSelected = Boolean(
+                                restoredFingerprints[photo.kind]
+                                && restoredFingerprints[photo.kind] !== photo.fingerprint,
+                            );
+                            if (!nextFingerprints[photo.kind]) nextFingerprints[photo.kind] = photo.fingerprint;
+                            if (photo.completed && !changedFileWasSelected) {
+                                nextReceipts[photo.kind] = {
+                                    path: photo.path,
+                                    fingerprint: photo.fingerprint,
+                                    size: photo.expected_size,
+                                    content_type: photo.expected_content_type,
+                                };
+                            }
+                            nextProgress[photo.kind] = photo.completed && !changedFileWasSelected
+                                ? { phase: 'complete', uploaded: photo.expected_size, total: photo.expected_size }
+                                : {
+                                    phase: 'idle',
+                                    uploaded: 0,
+                                    total: photo.expected_size,
+                                    ...(changedFileWasSelected
+                                        ? { error: 'Reselect this changed photo to finish uploading it.' }
+                                        : photo.error ? { error: photo.error } : {}),
+                                };
+                    });
+                    setUploadProgress(nextProgress);
+                    setPhotoFingerprints(nextFingerprints);
+                    uploadReceiptsRef.current = nextReceipts;
+                    setUploadReceipts(nextReceipts);
+                }
+            } catch (error) {
+                console.warn('Could not restore man intake upload session', error);
+                // A network outage during restore must not discard valid upload
+                // credentials or completed-photo receipts. Final submit always
+                // verifies them with the server before accepting the intake.
+                if (error instanceof Error && /expired|credentials are invalid|not found/i.test(error.message)) {
+                    uploadSessionRef.current = null;
+                    uploadReceiptsRef.current = {};
+                    setUploadSession(null);
+                    setUploadReceipts({});
+                    setPhotoFingerprints({});
+                    setUploadProgress(EMPTY_PHOTO_PROGRESS());
+                }
+            } finally {
+                if (!cancelled) setDraftReady(true);
+            }
+        };
+        void restoreDraft();
+        return () => { cancelled = true; };
+    }, []);
+
+    useEffect(() => {
+        if (!draftReady || step === CONFIRMATION_STEP) return;
+        const answers: Partial<FormState> = { ...form };
+        delete answers.photoFullBody;
+        delete answers.photoHeadshot;
+        delete answers.photoSideProfile;
+        try {
+            localStorage.setItem(MAN_INTAKE_DRAFT_KEY, JSON.stringify({
+            version: 2,
+            step,
+            answers,
+            session: uploadSession,
+            fingerprints: photoFingerprints,
+            receipts: uploadReceipts,
+            }));
+            sessionStorage.removeItem(MAN_INTAKE_DRAFT_KEY);
+        } catch {
+            // Browsers can disable local storage; the in-memory form still works.
+        }
+    }, [draftReady, form, photoFingerprints, step, uploadReceipts, uploadSession]);
+
+    useEffect(() => { uploadSessionRef.current = uploadSession; }, [uploadSession]);
+    useEffect(() => { uploadReceiptsRef.current = uploadReceipts; }, [uploadReceipts]);
+
+    const photoUploadActive = Object.values(uploadProgress).some(item => ['preparing', 'uploading', 'retrying', 'resuming'].includes(item.phase));
+    useEffect(() => {
+        if (!submitting && !photoUploadActive) return;
+        const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', warnBeforeLeaving);
+        return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+    }, [submitting, photoUploadActive]);
+
+    useEffect(() => {
         const urlEmail = searchParams.get('email') || '';
         const urlPhone = searchParams.get('phone') || '';
         const lsEmail = typeof window !== 'undefined' ? localStorage.getItem('man_customerEmail') || '' : '';
@@ -555,9 +755,9 @@ function ManIntakePageInner() {
 
     useEffect(() => {
         if (step >= 2 && form.email && form.phone) {
-            updateUserData(form.email, form.phone);
+            updateUserData(form.email, form.phone, isIndia ? INDIA_PHONE_COUNTRY_CODE : undefined);
         }
-    }, [step, form.email, form.phone]);
+    }, [step, form.email, form.phone, isIndia]);
 
     // Step 21 = Q18 anchor, step 22 = branch sub-question (skipped if no branch applies)
     const hasBranch = !!BRANCH_OPTIONS[form.primaryStyleGoal];
@@ -591,19 +791,194 @@ function ManIntakePageInner() {
         });
     };
 
-    const handleSubmit = async () => {
+    const uploadSelectedPhoto = async (selection: ManIntakeFileSelection, version: number) => {
+        const { kind } = selection;
+        let file = selection.file;
+        const isCurrent = () => fingerprintVersions.current[kind] === version;
+        if (!isCurrent()) return;
+        const startedAt = Date.now();
+        let activeSession = uploadSessionRef.current;
+        let attempts = 1;
+        const progress = (value: PhotoUploadProgress) => {
+            if (isCurrent()) setUploadProgress(current => ({ ...current, [kind]: value }));
+        };
+        try {
+            progress({ phase: 'preparing', uploaded: 0, total: file.size });
+            const optimized = await prepareManIntakePhoto(file);
+            if (!isCurrent()) return;
+            if (optimized !== file) {
+                file = optimized;
+                selection = { kind, file };
+                const field = { fullbody: 'photoFullBody', headshot: 'photoHeadshot', side_profile: 'photoSideProfile' }[kind];
+                setForm(current => ({ ...current, [field]: file }));
+                await savePendingManIntakePhoto(kind, file).catch(() => undefined);
+            }
+            const prepared = await prepareManIntakeUploads([selection], activeSession);
+            activeSession = prepared.session;
+            uploadSessionRef.current = prepared.session;
+            setUploadSession(prepared.session);
+            const upload = prepared.uploads.find(item => item.kind === kind);
+            if (!upload) throw new Error('The photo upload could not be prepared.');
+            if (!isCurrent()) return;
+            setPhotoFingerprints(current => ({ ...current, [kind]: upload.fingerprint }));
+            void reportManIntakeUploadEvent(activeSession, { event: 'prepared', kind, bytes: file.size, stage: 'prepare' }).catch(() => undefined);
+            if (!upload.completed) {
+                progress({ phase: 'uploading', uploaded: 0, total: file.size });
+                void reportManIntakeUploadEvent(activeSession, { event: 'started', kind, bytes: file.size, attempt: 1, stage: 'create', endpoint: 'direct' }).catch(() => undefined);
+                const result = await uploadManIntakeFileResumable({
+                    prepared: upload,
+                    file,
+                    refreshPrepared: async () => {
+                        const refreshed = await prepareManIntakeUploads([selection], activeSession);
+                        activeSession = refreshed.session;
+                        uploadSessionRef.current = refreshed.session;
+                        setUploadSession(refreshed.session);
+                        return refreshed.uploads[0];
+                    },
+                    onProgress: (uploaded, total) => progress({ phase: 'uploading', uploaded, total }),
+                    onResume: () => progress({ phase: 'resuming', uploaded: 0, total: file.size }),
+                    onRetry: (attempt, endpoint) => {
+                        attempts = attempt;
+                        progress({ phase: 'retrying', uploaded: 0, total: file.size });
+                        void reportManIntakeUploadEvent(activeSession!, { event: 'started', kind, bytes: file.size, attempt, endpoint }).catch(() => undefined);
+                    },
+                    onFallback: (endpoint, error) => {
+                        progress({ phase: 'retrying', uploaded: 0, total: file.size });
+                        void reportManIntakeUploadEvent(activeSession!, {
+                            event: 'fallback', kind, bytes: file.size, endpoint,
+                            error_code: error.code, stage: error.stage, http_status: error.status, request_id: error.requestId,
+                        }).catch(() => undefined);
+                    },
+                });
+                attempts = result.attempts;
+            }
+            const verified = await getManIntakeUploadStatus(activeSession);
+            const photo = verified.photos.find(item => item.kind === kind && item.path === upload.path);
+            if (!photo?.completed) throw new Error('The photo has not finished processing. Please retry it.');
+            if (!isCurrent()) return;
+            const receipt: PhotoUploadReceipt = {
+                path: photo.path, fingerprint: photo.fingerprint,
+                size: photo.expected_size, content_type: photo.expected_content_type,
+            };
+            uploadReceiptsRef.current = { ...uploadReceiptsRef.current, [kind]: receipt };
+            setUploadReceipts(uploadReceiptsRef.current);
+            progress({ phase: 'complete', uploaded: photo.expected_size, total: photo.expected_size });
+            void deletePendingManIntakePhoto(kind).catch(() => undefined);
+            void reportManIntakeUploadEvent(activeSession, {
+                event: 'succeeded', kind, bytes: file.size, duration_ms: Date.now() - startedAt,
+                attempt: attempts, stage: 'verify',
+            }).catch(() => undefined);
+        } catch (error) {
+            const detail = error instanceof ManIntakeTusUploadError
+                ? error.message
+                : 'We could not finish this photo yet. Your answers are saved; please retry it. (UPL-VERIFY)';
+            progress({ phase: 'error', uploaded: 0, total: file.size, error: detail });
+            if (activeSession) void reportManIntakeUploadEvent(activeSession, {
+                event: 'failed', kind, bytes: file.size, duration_ms: Date.now() - startedAt,
+                attempt: error instanceof ManIntakeTusUploadError ? error.attempts : attempts,
+                error_code: normalizeClientUploadError(error),
+                ...(error instanceof ManIntakeTusUploadError ? {
+                    stage: error.stage, endpoint: error.endpoint, http_status: error.status, request_id: error.requestId,
+                } : { stage: 'verify' as const }),
+            }).catch(() => undefined);
+            throw error;
+        }
+    };
+
+    const selectPhoto = (field: 'photoFullBody' | 'photoHeadshot' | 'photoSideProfile', kind: ManIntakePhotoKind, file: File | null) => {
+        setForm(current => ({ ...current, [field]: file }));
+        setUploadProgress(current => ({
+            ...current,
+            [kind]: { phase: file ? 'preparing' : 'idle', uploaded: 0, total: file?.size || 0 },
+        }));
+        const nextReceipts = { ...uploadReceiptsRef.current };
+        delete nextReceipts[kind];
+        uploadReceiptsRef.current = nextReceipts;
+        setUploadReceipts(nextReceipts);
+        const version = (fingerprintVersions.current[kind] || 0) + 1;
+        fingerprintVersions.current[kind] = version;
+        if (file) {
+            void savePendingManIntakePhoto(kind, file).catch(() => undefined);
+            // Mark replacement immediately. The prepared manifest supplies the
+            // final fingerprint after optional image optimization.
+            setPhotoFingerprints(current => ({ ...current, [kind]: `pending-${version}-${Date.now()}` }));
+            // Serialize session preparation and transfer so rapid selections
+            // cannot create competing sessions or overwrite each other's manifest.
+            const task = uploadQueueRef.current.catch(() => undefined).then(() => uploadSelectedPhoto({ kind, file }, version));
+            uploadQueueRef.current = task.catch(() => undefined);
+            activeUploadsRef.current[kind] = task;
+            void task.catch(() => undefined).finally(() => {
+                if (activeUploadsRef.current[kind] === task) delete activeUploadsRef.current[kind];
+            });
+        } else {
+            void deletePendingManIntakePhoto(kind).catch(() => undefined);
+            setPhotoFingerprints(current => {
+                const next = { ...current };
+                delete next[kind];
+                return next;
+            });
+        }
+        if (kind === 'side_profile') setSideUploadFailed(false);
+    };
+
+    useEffect(() => {
+        if (!draftReady) return;
+        let cancelled = false;
+        const fields = { fullbody: 'photoFullBody', headshot: 'photoHeadshot', side_profile: 'photoSideProfile' } as const;
+        void (async () => {
+            for (const kind of ['fullbody', 'headshot', 'side_profile'] as const) {
+                if (uploadReceiptsRef.current[kind]) {
+                    void deletePendingManIntakePhoto(kind).catch(() => undefined);
+                    continue;
+                }
+                const file = await loadPendingManIntakePhoto(kind).catch(() => null);
+                if (cancelled) return;
+                if (file) selectPhoto(fields[kind], kind, file);
+            }
+        })();
+        return () => { cancelled = true; };
+        // Recovery runs once after the saved session has been verified.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draftReady]);
+
+    useEffect(() => {
+        const retryAfterReconnect = () => {
+            const selections = [
+                ['photoFullBody', 'fullbody', form.photoFullBody],
+                ['photoHeadshot', 'headshot', form.photoHeadshot],
+                ['photoSideProfile', 'side_profile', form.photoSideProfile],
+            ] as const;
+            for (const [field, kind, file] of selections) {
+                if (file && !uploadReceiptsRef.current[kind] && !activeUploadsRef.current[kind]) selectPhoto(field, kind, file);
+            }
+        };
+        window.addEventListener('online', retryAfterReconnect);
+        return () => window.removeEventListener('online', retryAfterReconnect);
+        // The current file selections are the only values needed by this listener.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form.photoFullBody, form.photoHeadshot, form.photoSideProfile]);
+
+    const handleSubmit = async ({ skipSide = false }: { skipSide?: boolean } = {}) => {
         setSubmitting(true);
         setSubmitError('');
+        setSideUploadFailed(false);
+        setSubmitButtonLabel('Preparing uploads...');
         let submissionStage: 'upload' | 'save' = 'upload';
+        let failedKind: ManIntakePhotoKind | null = null;
         try {
-            if (!form.photoFullBody || !form.photoHeadshot) {
+            setSubmitButtonLabel('Finishing photo uploads...');
+            await Promise.allSettled(Object.values(activeUploadsRef.current));
+            const currentReceipts = uploadReceiptsRef.current;
+            const fullBodyReady = Boolean(form.photoFullBody) || Boolean(currentReceipts.fullbody);
+            const headshotReady = Boolean(form.photoHeadshot) || Boolean(currentReceipts.headshot);
+            if (!fullBodyReady || !headshotReady) {
                 setSubmitError('Please upload both your full body photo and headshot before submitting.');
                 return;
             }
 
             const selectedPhotoError = [
-                getManIntakePhotoValidationError(form.photoFullBody),
-                getManIntakePhotoValidationError(form.photoHeadshot),
+                form.photoFullBody ? getManIntakePhotoValidationError(form.photoFullBody) : null,
+                form.photoHeadshot ? getManIntakePhotoValidationError(form.photoHeadshot) : null,
                 form.photoSideProfile ? getManIntakePhotoValidationError(form.photoSideProfile) : null,
             ].find(Boolean);
             if (selectedPhotoError) {
@@ -611,26 +986,244 @@ function ManIntakePageInner() {
                 return;
             }
 
-            // Upload required photos plus the optional side profile in parallel.
-            const ts = Date.now();
-            const uploadPhoto = async (file: File, fileName: string, label: string) => {
-                try {
-                    return await uploadManIntakePhoto(file, fileName);
-                } catch (error) {
-                    const detail = error instanceof Error ? error.message : 'Upload failed';
-                    throw new Error(`${label}: ${detail}`);
-                }
-            };
-            const [photoFullBodyUrl, photoHeadshotUrl, photoSideProfileUrl] = await Promise.all([
-                uploadPhoto(form.photoFullBody, `${ts}_fullbody_${form.photoFullBody.name.replace(/\.[^.]+$/, '')}.jpg`, 'Full body photo'),
-                uploadPhoto(form.photoHeadshot, `${ts}_headshot_${form.photoHeadshot.name.replace(/\.[^.]+$/, '')}.jpg`, 'Headshot'),
-                form.photoSideProfile
-                    ? uploadPhoto(form.photoSideProfile, `${ts}_side_profile_${form.photoSideProfile.name.replace(/\.[^.]+$/, '')}.jpg`, 'Side-profile photo')
-                    : Promise.resolve<string | null>(null),
-            ]);
+            const selections: ManIntakeFileSelection[] = [
+                ...(form.photoFullBody && !currentReceipts.fullbody
+                    ? [{ kind: 'fullbody' as const, file: form.photoFullBody }]
+                    : []),
+                ...(form.photoHeadshot && !currentReceipts.headshot
+                    ? [{ kind: 'headshot' as const, file: form.photoHeadshot }]
+                    : []),
+                ...(!skipSide && form.photoSideProfile && !currentReceipts.side_profile
+                    ? [{ kind: 'side_profile' as const, file: form.photoSideProfile }]
+                    : []),
+            ];
 
-            if (!photoFullBodyUrl || !photoHeadshotUrl) {
-                throw new Error('Both photo uploads are required before submission.');
+            let activeSession = uploadSessionRef.current;
+            if (selections.length > 0) {
+                setUploadProgress(current => {
+                    const next = { ...current };
+                    selections.forEach(({ kind, file }) => {
+                        next[kind] = { phase: 'preparing', uploaded: 0, total: file.size };
+                    });
+                    return next;
+                });
+
+                const prepared = await prepareManIntakeUploads(selections, activeSession);
+                activeSession = prepared.session;
+                uploadSessionRef.current = prepared.session;
+                setUploadSession(prepared.session);
+                setPhotoFingerprints(current => {
+                    const next = { ...current };
+                    prepared.uploads.forEach(upload => { next[upload.kind] = upload.fingerprint; });
+                    return next;
+                });
+                prepared.uploads.forEach(upload => {
+                    void reportManIntakeUploadEvent(prepared.session, {
+                        event: 'prepared',
+                        kind: upload.kind,
+                        bytes: upload.size,
+                    }).catch(() => undefined);
+                });
+
+                for (const selection of selections) {
+                    failedKind = selection.kind;
+                    const upload = prepared.uploads.find(item => item.kind === selection.kind);
+                    if (!upload) throw new Error(`${PHOTO_PROGRESS_LABELS[selection.kind]} upload was not prepared.`);
+
+                    if (upload.completed) {
+                        setUploadProgress(current => ({
+                            ...current,
+                            [selection.kind]: { phase: 'complete', uploaded: selection.file.size, total: selection.file.size },
+                        }));
+                        uploadReceiptsRef.current = {
+                            ...uploadReceiptsRef.current,
+                            [selection.kind]: {
+                                path: upload.path,
+                                fingerprint: upload.fingerprint,
+                                size: upload.size,
+                                content_type: upload.content_type,
+                            },
+                        };
+                        setUploadReceipts(uploadReceiptsRef.current);
+                        continue;
+                    }
+
+                    const startedAt = Date.now();
+                    setSubmitButtonLabel(`Uploading ${PHOTO_PROGRESS_LABELS[selection.kind].toLowerCase()}...`);
+                    setUploadProgress(current => ({
+                        ...current,
+                        [selection.kind]: { phase: 'uploading', uploaded: 0, total: selection.file.size },
+                    }));
+                    void reportManIntakeUploadEvent(activeSession, {
+                        event: 'started',
+                        kind: selection.kind,
+                        bytes: selection.file.size,
+                        attempt: 1,
+                    }).catch(() => undefined);
+
+                    try {
+                        let uploadIsResuming = false;
+                        let uploadIsRetrying = false;
+                        const result = await uploadManIntakeFileResumable({
+                            prepared: upload,
+                            file: selection.file,
+                            refreshPrepared: async () => {
+                                const refreshed = await prepareManIntakeUploads([selection], activeSession);
+                                activeSession = refreshed.session;
+                                uploadSessionRef.current = refreshed.session;
+                                setUploadSession(refreshed.session);
+                                return refreshed.uploads[0];
+                            },
+                            onResume: () => {
+                                uploadIsResuming = true;
+                                setUploadProgress(current => ({
+                                    ...current,
+                                    [selection.kind]: {
+                                        ...current[selection.kind],
+                                        phase: 'resuming',
+                                    },
+                                }));
+                                void reportManIntakeUploadEvent(activeSession!, {
+                                    event: 'resumed',
+                                    kind: selection.kind,
+                                    bytes: selection.file.size,
+                                    attempt: 1,
+                                }).catch(() => undefined);
+                            },
+                            onRetry: (attempt) => {
+                                uploadIsRetrying = true;
+                                setSubmitButtonLabel(`Retrying ${PHOTO_PROGRESS_LABELS[selection.kind].toLowerCase()}...`);
+                                setUploadProgress(current => ({
+                                    ...current,
+                                    [selection.kind]: {
+                                        ...current[selection.kind],
+                                        phase: 'retrying',
+                                    },
+                                }));
+                                void reportManIntakeUploadEvent(activeSession!, {
+                                    event: 'started',
+                                    kind: selection.kind,
+                                    bytes: selection.file.size,
+                                    attempt,
+                                }).catch(() => undefined);
+                            },
+                            onFallback: (endpoint, error) => {
+                                setSubmitButtonLabel(`Switching upload connection for ${PHOTO_PROGRESS_LABELS[selection.kind].toLowerCase()}...`);
+                                void reportManIntakeUploadEvent(activeSession!, {
+                                    event: 'fallback', kind: selection.kind, bytes: selection.file.size,
+                                    endpoint, error_code: error.code, stage: error.stage,
+                                    http_status: error.status, request_id: error.requestId,
+                                }).catch(() => undefined);
+                            },
+                            onProgress: (uploaded, total) => {
+                                const percentage = total > 0 ? Math.round((uploaded / total) * 100) : 0;
+                                setSubmitButtonLabel(`Uploading ${PHOTO_PROGRESS_LABELS[selection.kind].toLowerCase()}... ${percentage}%`);
+                                setUploadProgress(current => ({
+                                    ...current,
+                                    [selection.kind]: {
+                                        phase: uploadIsRetrying ? 'retrying' : uploadIsResuming ? 'resuming' : 'uploading',
+                                        uploaded,
+                                        total,
+                                    },
+                                }));
+                            },
+                        });
+                        setUploadProgress(current => ({
+                            ...current,
+                            [selection.kind]: { phase: 'complete', uploaded: selection.file.size, total: selection.file.size },
+                        }));
+                        uploadReceiptsRef.current = {
+                            ...uploadReceiptsRef.current,
+                            [selection.kind]: {
+                                path: upload.path,
+                                fingerprint: upload.fingerprint,
+                                size: upload.size,
+                                content_type: upload.content_type,
+                            },
+                        };
+                        setUploadReceipts(uploadReceiptsRef.current);
+                        void deletePendingManIntakePhoto(selection.kind).catch(() => undefined);
+                        void reportManIntakeUploadEvent(activeSession, {
+                            event: 'succeeded',
+                            kind: selection.kind,
+                            bytes: selection.file.size,
+                            duration_ms: Date.now() - startedAt,
+                            attempt: result.attempts,
+                            endpoint: result.endpoint,
+                            stage: 'verify',
+                        }).catch(() => undefined);
+                    } catch (error) {
+                        const detail = error instanceof Error ? error.message : 'Upload failed';
+                        const errorCode = normalizeClientUploadError(error);
+                        setUploadProgress(current => ({
+                            ...current,
+                            [selection.kind]: {
+                                phase: 'error',
+                                uploaded: current[selection.kind].uploaded,
+                                total: selection.file.size,
+                                error: detail,
+                            },
+                        }));
+                        void reportManIntakeUploadEvent(activeSession, {
+                            event: 'failed',
+                            kind: selection.kind,
+                            bytes: selection.file.size,
+                            duration_ms: Date.now() - startedAt,
+                            attempt: error instanceof ManIntakeTusUploadError ? error.attempts : 1,
+                            error_code: errorCode,
+                            ...(error instanceof ManIntakeTusUploadError ? {
+                                endpoint: error.endpoint,
+                                stage: error.stage,
+                                http_status: error.status,
+                                request_id: error.requestId,
+                            } : {}),
+                        }).catch(() => undefined);
+                        if (selection.kind === 'side_profile' && !skipSide) {
+                            setSideUploadFailed(true);
+                            setSubmitError('Your required photos are preserved, but the optional side-profile photo could not finish uploading. Retry it or submit without it.');
+                            return;
+                        }
+                        throw new Error(detail);
+                    }
+                }
+            }
+
+            if (!activeSession) throw new Error('Upload session is missing. Please reselect your photos and retry.');
+
+            setSubmitButtonLabel('Verifying photos...');
+            const verified = await getManIntakeUploadStatus(activeSession);
+            setUploadProgress(current => {
+                const next = { ...current };
+                verified.photos.forEach(photo => {
+                    next[photo.kind] = photo.completed
+                        ? { phase: 'complete', uploaded: photo.expected_size, total: photo.expected_size }
+                        : { phase: 'error', uploaded: photo.size || 0, total: photo.expected_size, error: photo.error || 'Upload incomplete' };
+                });
+                return next;
+            });
+            const verifiedReceipts = { ...uploadReceiptsRef.current };
+                verified.photos.forEach(photo => {
+                    if (photo.completed) {
+                        verifiedReceipts[photo.kind] = {
+                            path: photo.path,
+                            fingerprint: photo.fingerprint,
+                            size: photo.expected_size,
+                            content_type: photo.expected_content_type,
+                        };
+                    } else {
+                        delete verifiedReceipts[photo.kind];
+                    }
+                });
+            uploadReceiptsRef.current = verifiedReceipts;
+            setUploadReceipts(verifiedReceipts);
+            const verifiedByKind = new Map(verified.photos.map(photo => [photo.kind, photo]));
+            if (!verifiedByKind.get('fullbody')?.completed || !verifiedByKind.get('headshot')?.completed) {
+                throw new Error('One or more required photos did not finish uploading. Please retry.');
+            }
+            if (!skipSide && form.photoSideProfile && !verifiedByKind.get('side_profile')?.completed) {
+                setSideUploadFailed(true);
+                setSubmitError('Your required photos are preserved, but the optional side-profile photo could not be verified. Retry it or submit without it.');
+                return;
             }
 
             const derivedColourSeason = deriveColourSeason(
@@ -644,9 +1237,6 @@ function ManIntakePageInner() {
             const submissionPayload = {
                 customer_email: form.email,
                 customer_phone: form.phone,
-                photo_fullbody_url: photoFullBodyUrl,
-                photo_headshot_url: photoHeadshotUrl,
-                ...(photoSideProfileUrl ? { photo_side_profile_url: photoSideProfileUrl } : {}),
                 primary_goal: form.primaryGoal,
                 style_relationship: form.styleRelationship,
                 dressing_context: form.dressingContext.join(','),
@@ -680,9 +1270,14 @@ function ManIntakePageInner() {
             };
 
             submissionStage = 'save';
-            await saveManIntakeSubmission(submissionPayload);
+            setSubmitButtonLabel('Saving your intake...');
+            const savedSubmission = await saveManIntakeSubmission(submissionPayload, activeSession);
 
-            trackCompleteRegistration(MAN_PRICING.IN.basePrice, 'ICONIK Blueprint Man — Intake Submitted', MAN_PRICING.IN.currency);
+            // Region-aware: an international buyer paid $97, not Rs 2,699.
+            trackCompleteRegistration(pricing.basePrice, 'ICONIK Blueprint Man — Intake Submitted', pricing.currency);
+            localStorage.removeItem(MAN_INTAKE_DRAFT_KEY);
+            sessionStorage.removeItem(MAN_INTAKE_DRAFT_KEY);
+            void clearPendingManIntakePhotos().catch(() => undefined);
             setDirection(1);
             setStep(CONFIRMATION_STEP);
 
@@ -690,7 +1285,7 @@ function ManIntakePageInner() {
             fetch('/api/man-intake-notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(submissionPayload),
+                body: JSON.stringify({ ...submissionPayload, ...(savedSubmission || {}) }),
             }).then(async res => {
                 if (!res.ok) {
                     const text = await res.text().catch(() => '');
@@ -702,7 +1297,8 @@ function ManIntakePageInner() {
             console.error('Man intake submit error:', err);
             if (submissionStage === 'upload') {
                 const detail = err instanceof Error ? err.message : 'One or more uploads failed.';
-                setSubmitError(`We could not upload your photos. ${detail} Please try again.`);
+                const label = failedKind ? `${PHOTO_PROGRESS_LABELS[failedKind]}: ` : '';
+                setSubmitError(`We could not finish uploading your photos. ${label}${detail} Your completed uploads are preserved; please retry.`);
             } else if (err instanceof ManIntakeApiError && err.code === 'INVALID_INTAKE') {
                 setSubmitError('We could not validate your intake. Your answers are still here; please review them and retry.');
             } else {
@@ -710,6 +1306,7 @@ function ManIntakePageInner() {
             }
         } finally {
             setSubmitting(false);
+            setSubmitButtonLabel('Submit My Intake');
         }
     };
 
@@ -717,8 +1314,8 @@ function ManIntakePageInner() {
         switch (step) {
             case 0: return true;
             case 1: return form.email.includes('@') && form.phone.length >= 7;
-            case 2: return !!form.photoFullBody;
-            case 3: return !!form.photoHeadshot;
+            case 2: return !!form.photoFullBody || uploadProgress.fullbody.phase === 'complete';
+            case 3: return !!form.photoHeadshot || uploadProgress.headshot.phase === 'complete';
             // Section 1
             case 4: return !!form.primaryGoal;
             case 5: return !!form.styleRelationship;
@@ -750,7 +1347,7 @@ function ManIntakePageInner() {
             case 27: return true; // optional free text
             default: return true;
         }
-    }, [step, form]);
+    }, [step, form, uploadProgress]);
 
     const slideVariants = {
         enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
@@ -759,6 +1356,18 @@ function ManIntakePageInner() {
     };
 
     const isLastQuestion = step === 27;
+    const visibleUploadKinds = (['fullbody', 'headshot', 'side_profile'] as ManIntakePhotoKind[])
+        .filter(kind => kind !== 'side_profile'
+            || Boolean(form.photoSideProfile)
+            || uploadProgress.side_profile.phase !== 'idle');
+    const overallUploadTotal = visibleUploadKinds.reduce((total, kind) => total + uploadProgress[kind].total, 0);
+    const overallUploadedBytes = visibleUploadKinds.reduce((total, kind) => {
+        const progress = uploadProgress[kind];
+        return total + (progress.phase === 'complete' ? progress.total : Math.min(progress.uploaded, progress.total));
+    }, 0);
+    const overallUploadPercentage = overallUploadTotal > 0
+        ? Math.min(100, Math.round((overallUploadedBytes / overallUploadTotal) * 100))
+        : 0;
 
     return (
         <div className="man-editorial me-page-wrapper min-h-screen overflow-x-hidden flex flex-col" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
@@ -800,7 +1409,7 @@ function ManIntakePageInner() {
                                     </div>
                                     <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Let&apos;s build your Blueprint.</div>
                                     <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.65, marginBottom: '24px', maxWidth: '420px', margin: '0 auto 24px' }}>
-                                        Two photos and a few key details so our stylists can personalise your report. Takes exactly <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>7 minutes</strong>.
+                                        Two photos and a few key details so our system can personalise your report before a human stylist reviews it. Takes exactly <strong style={{ fontWeight: 500, color: '#2C2622', opacity: 1 }}>7 minutes</strong>.
                                     </p>
                                     {contactPrefilled && form.email && (
                                         <div className="rounded-xl px-5 py-3 mb-8 inline-block" style={{ background: 'rgba(44,38,34,0.04)', border: '1px solid rgba(44,38,34,0.08)' }}>
@@ -866,12 +1475,13 @@ function ManIntakePageInner() {
                                         label="Full body photo"
                                         instruction="Stand facing camera · Natural light · Fitted clothes · No baggy fits"
                                         file={form.photoFullBody}
-                                        onChange={f => setForm(p => ({ ...p, photoFullBody: f }))}
+                                        uploaded={uploadProgress.fullbody.phase === 'complete'}
+                                        onChange={f => selectPhoto('photoFullBody', 'fullbody', f)}
                                         error={photoErrors.fullBody}
                                         onError={error => setPhotoErrors(current => ({ ...current, fullBody: error }))}
                                         required
                                     />
-                                    {!form.photoFullBody && <p className="iconik-micro mt-3 text-center" style={{ color: '#94A6AD' }}>A full-length photo is required to complete your Blueprint analysis.</p>}
+                                    {!form.photoFullBody && uploadProgress.fullbody.phase !== 'complete' && <p className="iconik-micro mt-3 text-center" style={{ color: '#94A6AD' }}>A full-length photo is required to complete your Blueprint analysis.</p>}
                                     <div className="mt-7 pt-7" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
                                         <h3 className="iconik-display mb-2" style={{ fontSize: '20px', color: '#2C2622', lineHeight: 1.2 }}>Optional side-profile photo.</h3>
                                         <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.52, marginBottom: '18px', lineHeight: 1.65 }}>Stand sideways in the same fitted clothes. This lets us build a more honest posture and midsection tailoring slide. Skip it if you do not have one.</p>
@@ -879,7 +1489,8 @@ function ManIntakePageInner() {
                                             label="Side profile photo"
                                             instruction="Side view · Head to toe · Same outfit if possible · Optional"
                                             file={form.photoSideProfile}
-                                            onChange={f => setForm(p => ({ ...p, photoSideProfile: f }))}
+                                            uploaded={uploadProgress.side_profile.phase === 'complete'}
+                                            onChange={f => selectPhoto('photoSideProfile', 'side_profile', f)}
                                             error={photoErrors.sideProfile}
                                             onError={error => setPhotoErrors(current => ({ ...current, sideProfile: error }))}
                                         />
@@ -902,11 +1513,15 @@ function ManIntakePageInner() {
                                         label="Headshot / selfie"
                                         instruction="Face the camera · No sunglasses · Natural or indoor light · Selfie is fine"
                                         file={form.photoHeadshot}
-                                        onChange={f => setForm(p => ({ ...p, photoHeadshot: f }))}
+                                        uploaded={uploadProgress.headshot.phase === 'complete'}
+                                        onChange={f => selectPhoto('photoHeadshot', 'headshot', f)}
                                         error={photoErrors.headshot}
                                         onError={error => setPhotoErrors(current => ({ ...current, headshot: error }))}
                                         required
                                     />
+                                    {uploadProgress.headshot.phase === 'complete' && !form.photoHeadshot && (
+                                        <p className="iconik-micro mt-3 text-center" style={{ color: '#94A6AD' }}>Your previously uploaded headshot was verified.</p>
+                                    )}
                                 </div>
                             )}
 
@@ -1395,8 +2010,94 @@ function ManIntakePageInner() {
                                         maxLength={200}
                                     />
                                     <p className="iconik-micro mt-2 text-right" style={{ color: '#2C2622', opacity: 0.35 }}>{form.freeTextNote.length}/200</p>
+                                    {(uploadSession || submitting || Object.values(uploadProgress).some(item => item.phase !== 'idle')) && (
+                                        <div className="mt-6 rounded-xl p-4 space-y-3" style={{ background: 'rgba(44,38,34,0.035)', border: '1px solid rgba(44,38,34,0.08)' }}>
+                                            <div className="flex items-center justify-between">
+                                                <p className="iconik-micro" style={{ color: '#2C2622', opacity: 0.5 }}>Photo upload progress</p>
+                                                <span className="iconik-mono" style={{ fontSize: '9px', color: '#94A6AD' }}>Overall {overallUploadPercentage}%</span>
+                                            </div>
+                                            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}>
+                                                <div
+                                                    className="h-full rounded-full transition-all duration-300"
+                                                    style={{ width: `${overallUploadPercentage}%`, background: '#2C2622' }}
+                                                />
+                                            </div>
+                                            {(['fullbody', 'headshot', 'side_profile'] as ManIntakePhotoKind[]).map(kind => {
+                                                const progress = uploadProgress[kind];
+                                                if (kind === 'side_profile' && !form.photoSideProfile && progress.phase === 'idle') return null;
+                                                const percentage = progress.total > 0
+                                                    ? Math.min(100, Math.round((progress.uploaded / progress.total) * 100))
+                                                    : 0;
+                                                const statusText = progress.phase === 'complete'
+                                                    ? 'Uploaded'
+                                                    : progress.phase === 'error'
+                                                        ? 'Needs retry'
+                                                        : progress.phase === 'idle'
+                                                            ? 'Ready'
+                                                            : progress.phase === 'preparing'
+                                                                ? 'Preparing'
+                                                                : progress.phase === 'resuming'
+                                                                    ? `Resuming · ${percentage}%`
+                                                                    : progress.phase === 'retrying'
+                                                                        ? `Retrying · ${percentage}%`
+                                                                        : `${percentage}%`;
+                                                return (
+                                                    <div key={kind}>
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <span style={{ fontSize: '12px', color: '#2C2622' }}>{PHOTO_PROGRESS_LABELS[kind]}</span>
+                                                            <span className="iconik-mono" style={{ fontSize: '9px', color: progress.phase === 'error' ? '#A13D46' : '#94A6AD' }}>{statusText}</span>
+                                                        </div>
+                                                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}>
+                                                            <div
+                                                                className="h-full rounded-full transition-all duration-300"
+                                                                style={{ width: `${progress.phase === 'complete' ? 100 : percentage}%`, background: progress.phase === 'error' ? '#A13D46' : '#94A6AD' }}
+                                                            />
+                                                        </div>
+                                                        {progress.phase === 'error' && progress.error && (
+                                                            <p className="mt-2 text-xs leading-5" style={{ color: '#991B1B' }}>{progress.error}</p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                     {submitError && (
-                                        <div className="mt-6 rounded-xl p-4 text-sm" style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B' }}>{submitError}</div>
+                                        <div className="mt-6 rounded-xl p-4 text-sm" style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B' }}>
+                                            <p>{submitError}</p>
+                                            {sideUploadFailed && (
+                                                <div className="flex flex-wrap gap-2 mt-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void handleSubmit()}
+                                                        disabled={submitting}
+                                                        className="px-4 py-2 rounded-full text-xs disabled:opacity-50"
+                                                        style={{ background: '#991B1B', color: '#FFF' }}
+                                                    >
+                                                        Retry side photo
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => void handleSubmit({ skipSide: true })}
+                                                        disabled={submitting}
+                                                        className="px-4 py-2 rounded-full text-xs disabled:opacity-50"
+                                                        style={{ background: '#FFF', color: '#991B1B', border: '1px solid #FCA5A5' }}
+                                                    >
+                                                        Submit without it
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {!sideUploadFailed && Object.values(uploadProgress).some(item => item.phase === 'error') && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => void handleSubmit()}
+                                                    disabled={submitting}
+                                                    className="mt-4 px-4 py-2 rounded-full text-xs disabled:opacity-50"
+                                                    style={{ background: '#991B1B', color: '#FFF' }}
+                                                >
+                                                    Retry failed photos
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -1416,7 +2117,7 @@ function ManIntakePageInner() {
                                     </motion.div>
                                     <div className="iconik-display mb-5" style={{ fontSize: 'clamp(28px, 6vw, 44px)', color: '#2C2622' }}>Your intake is complete.</div>
                                     <p style={{ fontSize: '16px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, maxWidth: '420px', margin: '0 auto 20px' }}>
-                                        Your ICONIK Man Blueprint is now being prepared by our expert stylists and will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>72 hours</strong>.
+                                        Your ICONIK Man Blueprint will arrive in your inbox within <strong style={{ fontWeight: 500, color: '#2C2622' }}>5 working days</strong> of submitting your intake.
                                     </p>
                                     <p className="iconik-micro" style={{ color: '#2C2622', opacity: 0.4 }}>Check your spam folder just in case.</p>
                                 </div>
@@ -1449,13 +2150,13 @@ function ManIntakePageInner() {
 
                             {isLastQuestion && (
                                 <button
-                                    onClick={handleSubmit}
+                                    onClick={() => void handleSubmit()}
                                     disabled={!stepValid() || submitting}
                                     className="flex items-center gap-3 px-8 py-4 rounded-full transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed hover:-translate-y-0.5 hover:shadow-lg transform"
                                     style={{ background: '#2C2622', color: '#F4EFE5' }}
                                 >
                                     <span className="iconik-display" style={{ fontSize: '15px' }}>
-                                        {submitting ? 'Submitting...' : 'Submit My Intake'}
+                                        {submitting ? submitButtonLabel : 'Submit My Intake'}
                                     </span>
                                     {!submitting && <ArrowRight className="w-4 h-4 opacity-60" />}
                                 </button>

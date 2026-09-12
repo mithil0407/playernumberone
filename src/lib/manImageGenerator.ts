@@ -23,6 +23,7 @@ import {
   type ComboGridKind,
   type ParsedComboGridGroup,
 } from './manComboGridSection';
+import { buildSourceLockedOutfitIdentityRules } from './manOutfitImageIdentity';
 
 const ai     = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 const MODEL  = 'gemini-3.1-flash-image-preview';
@@ -442,18 +443,15 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
     ? `\nAccessory rendering is mandatory: the accessories listed in the outfit specification must be visibly included where naturally visible (${outfit.accessories}). Do not omit them as optional styling hints.`
     : '';
 
-  const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
-  const defaultBeard = c.face.beard_style_recommendations?.[0];
-  const groomingTextInstruction = [
-    defaultHairstyle ? `Subtle hairstyle/scalp grooming: ${defaultHairstyle}` : null,
-    defaultBeard ? `Subtle beard/facial-hair grooming: ${defaultBeard}` : null,
-  ].filter(Boolean).join('\n');
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
 
   return `Professional editorial fashion catalogue photography for the ICONIK men's Style Blueprint.
 
 Reference photos are provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
 
 Extract the client's face, skin tone, facial features, current hair/facial-hair constraints, and identity from the headshot when provided. Extract body proportions, body shape, and scale from the full-body reference, but do not copy its stance. Preserve the client's exact skin tone, facial features, body proportions, and identity. Do not alter, slim, age, beautify, or idealise the client.
+
+${identityAndGroomingRules}
 
 CRITICAL CLOTHING INSTRUCTION:
 - Remove and discard the original clothing from the reference photos.
@@ -468,12 +466,6 @@ Background and style:
 Assigned editorial pose:
 - ${outfitPoseDirection(outfit.index)}
 - ${OUTFIT_POSE_VISIBILITY_RULE}
-
-Minimal grooming direction:
-${groomingTextInstruction || 'Keep grooming clean, subtle, realistic, and very close to the original headshot.'}
-- Apply only a low-delta, realistic tidy-up. Preserve the original hairline, hair density limits, beard density limits, face, skin tone, and age.
-- Do not use a generated grooming grid as a reference or blend multiple grooming options.
-- Do not reshape, retouch, beautify, or make the client look like a different person.
 
 Compact outfit formula to render:
 ${garmentLines}${layerInstruction}
@@ -536,19 +528,13 @@ function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: C
     return `Column ${index + 1}: ${pieces}\nPose: ${outfitPoseDirection(index + 1)}`;
   }).join('\n');
 
-  const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
-  const defaultBeard = c.face.beard_style_recommendations?.[0];
-  const groomingTextInstruction = [
-    defaultHairstyle ? `Default hairstyle/scalp grooming: ${defaultHairstyle}` : null,
-    defaultBeard ? `Default beard/facial-hair grooming: ${defaultBeard}` : null,
-  ].filter(Boolean).join('\n');
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
 
   return `Create one customised editorial styling grid image for ICONIK.
 
 Reference photos are provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
-Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply these TEXT grooming directions consistently in all three columns:
-${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
-${REALISTIC_MALE_GROOMING_RULE}
+Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply the following source-locked rules consistently in all three columns:
+${identityAndGroomingRules}
 Do not use a generated grooming grid as reference and do not blend multiple grooming options.
 
 The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client full-body in its assigned stylish editorial pose and a different outfit combination. ${OUTFIT_POSE_VISIBILITY_RULE} ${ABSOLUTE_NO_TEXT_RULE} No flat-lay items.
@@ -586,19 +572,13 @@ function buildEditedComboGridPrompt(group: ParsedComboGridGroup, c: Classificati
     `Pose: ${outfitPoseDirection(index + 1)}`,
   ].join('\n')).join('\n\n');
 
-  const defaultHairstyle = c.face.hairstyle_recommendations?.[0];
-  const defaultBeard = c.face.beard_style_recommendations?.[0];
-  const groomingTextInstruction = [
-    defaultHairstyle ? `Default hairstyle/scalp grooming: ${defaultHairstyle}` : null,
-    defaultBeard ? `Default beard/facial-hair grooming: ${defaultBeard}` : null,
-  ].filter(Boolean).join('\n');
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
 
   return `Create one customised editorial styling grid image for ICONIK.
 
 Reference photos are provided: the first is the client's full-body/body reference, and the second is the client's original headshot when available.
-Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply these TEXT grooming directions consistently in all three columns:
-${groomingTextInstruction || 'Keep grooming clean, fresh, realistic, and close to the original headshot.'}
-${REALISTIC_MALE_GROOMING_RULE}
+Use the second reference image for face identity, skin tone, and current hair/facial-hair constraints. Apply the following source-locked rules consistently in all three columns:
+${identityAndGroomingRules}
 Do not use a generated grooming grid as reference and do not blend multiple grooming options.
 
 The output must be a single wide image with exactly 1 row and 3 equal vertical columns. Each column shows the same client full-body in its assigned stylish editorial pose and a different outfit combination. ${OUTFIT_POSE_VISIBILITY_RULE} ${ABSOLUTE_NO_TEXT_RULE} No flat-lay items.
@@ -732,6 +712,8 @@ function outfitSpecForDeliverable(sections: ReportSections, outfitNumber: number
 }
 
 function buildBeforeAfterComparisonPrompt(classification: ClassificationResult, sections: ReportSections): string {
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence);
+
   return `Create one locked before/after transformation comparison for ICONIK as a single horizontal 4:3 image containing exactly two equal portrait 2:3 panels.
 
 ALIGNMENT — ABSOLUTELY NON-NEGOTIABLE:
@@ -745,11 +727,10 @@ BEFORE — LEFT PANEL:
 - Keep the original clothing, footwear, accessories, hair, and facial hair from the uploaded full-body reference exactly as shown. Do not improve or restyle them.
 
 AFTER — RIGHT PANEL:
-- Change only the clothing and low-delta grooming to the specification below while preserving the locked body and pose.
+- Change only the clothing and apply the tiny source-locked grooming tidy-up below while preserving the locked body and pose.
 - Outfit:
 ${outfitSpecForDeliverable(sections, 1)}
-- Grooming: ${classification.face.hairstyle_recommendations?.[0] ?? 'clean realistic grooming'}; ${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? 'preserve realistic facial hair'}.
-- ${REALISTIC_MALE_GROOMING_RULE}
+${identityAndGroomingRules}
 
 STUDIO AND CANVAS:
 - ${MAN_STUDIO_BACKGROUND_RULE}
@@ -762,8 +743,9 @@ ${ABSOLUTE_NO_TEXT_RULE}`;
 
 function buildLinkedinHeadshotPrompt(classification: ClassificationResult): string {
   const best = classification.colour.primary_palette?.[0] ?? classification.colour.neutral_base_colours?.[0];
-  return `Create a professional LinkedIn headshot from the uploaded headshot. Preserve the client's exact identity, facial features, skin tone, and natural proportions. Apply realistic polished grooming: ${classification.face.hairstyle_recommendations?.[0] ?? 'clean haircut or scalp grooming'} and ${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? 'clean facial hair lines'}.
-${REALISTIC_MALE_GROOMING_RULE}
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence);
+  return `Create a professional LinkedIn headshot from the uploaded headshot. Preserve the client's exact identity, facial features, skin tone, and natural proportions. The result should look like the same photograph professionally lit and lightly groomed, not a makeover or a newly cast model.
+${identityAndGroomingRules}
 
 Wardrobe: premium blazer, shirt, or overshirt near the face in ${best?.name ?? 'the strongest palette colour'} ${best?.hex ?? ''}, no logos. Studio background in warm neutral slate, soft professional light, confident approachable expression. Compose as a square 1:1 headshot with the face centred, balanced headroom, shoulders visible, and generous safe space on every side so the portrait remains natural inside a circular LinkedIn or Instagram crop. Keep the head and chin comfortably away from the crop edge. Profile-ready resolution. ${ABSOLUTE_NO_TEXT_RULE}`;
 }
@@ -788,6 +770,7 @@ function buildSocialMediaInspirationPrompt(
     },
   ];
   const spec = specs[Math.max(0, Math.min(specs.length - 1, shotIndex))];
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence);
   return `Create a realistic Instagram-ready social media style inspiration photo of the same client.
 
 Two reference photos are provided: full-body photo first, headshot second. Preserve identity, facial features, skin tone, and body proportions. Do not slim, age, or idealise. Use realistic lifestyle photography, not a fashion render.
@@ -796,10 +779,7 @@ Scene: ${spec.scene}.
 Outfit to apply:
 ${outfitSpecForDeliverable(sections, spec.outfitNumber)}
 
-Grooming:
-${classification.face.hairstyle_recommendations?.[0] ?? 'clean realistic grooming'}
-${classification.face.beard_style_recommendations?.[0] ?? classification.face.facial_hair_recommendations ?? ''}
-${REALISTIC_MALE_GROOMING_RULE}
+${identityAndGroomingRules}
 
 Composition: natural portrait or full-body lifestyle crop suitable for a premium personal Instagram inspiration grid, no other people, no readable signage, no logos. ${ABSOLUTE_NO_TEXT_RULE} The image must look like a real recent social post, not a dating-app photo and not a studio catalogue render.`;
 }

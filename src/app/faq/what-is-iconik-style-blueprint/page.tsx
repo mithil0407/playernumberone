@@ -26,7 +26,7 @@ export default function WhatIsIconikStyleBlueprintPage() {
             "name": "What is the Iconik Style Blueprint?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The Iconik Style Blueprint is a personalised styling document that contains: (1) Your Geometric Silhouette Profile — your body type classification and specific outfit formulas for your proportions. (2) Your Chromatic Harmony Mapping™ palette — your 10 best colours based on undertone and contrast analysis. (3) Your Facial Architecture Analysis™ — face shape classification and neckline/accessory guidance. (4) 16+ outfit formulas combining all three analyses across work, casual, and occasion contexts. (5) A personalised capsule wardrobe list. The Blueprint is delivered as a PDF document within 48 hours.",
+              "text": "The Iconik Style Blueprint is a personalised styling document that contains: (1) Your Geometric Silhouette Profile — your body type classification and specific outfit formulas for your proportions. (2) Your Chromatic Harmony Mapping™ palette — your 10 best colours based on undertone and contrast analysis. (3) Your Facial Architecture Analysis™ — face shape classification and neckline/accessory guidance. (4) 20 outfit formulas combining all three analyses across work, casual, and occasion contexts. (5) A personalised capsule wardrobe list. The Blueprint is delivered as a PDF document within 5 working days after the consultation.",
             },
           },
           {
@@ -87,7 +87,7 @@ export default function WhatIsIconikStyleBlueprintPage() {
               What Is the Iconik Style Blueprint?
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              The Iconik Style Blueprint is a personalised PDF document that contains your complete styling framework: body type analysis, colour palette, face shape analysis, and 16+ outfit formulas. It is built using three proprietary methodologies and delivered within 48 hours.
+              The Iconik Style Blueprint is a personalised PDF document that contains your complete styling framework: body type analysis, colour palette, face shape analysis, and 20 outfit formulas. It is built using three proprietary methodologies and delivered within 5 working days after the consultation.
             </p>
           </header>
 
@@ -107,7 +107,7 @@ export default function WhatIsIconikStyleBlueprintPage() {
                 <p className="text-gray-600">Your face shape classification and corresponding neckline recommendations for Indian and western garments. Includes eyewear frame guidance and jewellery shape recommendations.</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800 mb-2">4. 16+ Outfit Formulas</h3>
+                <h3 className="font-semibold text-gray-800 mb-2">4. 20 Outfit Formulas</h3>
                 <p className="text-gray-600">Specific outfit combinations built from your GSP™ and CHM™ analysis, organised by context: work (daily, formal meeting, interview), casual, and occasion (festival, wedding guest, formal event). Includes Indian ethnic and western wear.</p>
               </div>
               <div>
@@ -123,7 +123,7 @@ export default function WhatIsIconikStyleBlueprintPage() {
               <li>You complete Iconik&apos;s intake questionnaire — includes 7 body measurements, undertone self-test results, lifestyle context (work environment, occasion types), and any specific styling goals</li>
               <li>Iconik&apos;s team applies GSP™, CHM™, and FAA™ to your inputs</li>
               <li>A human stylist reviews the analysis and builds your Blueprint document</li>
-              <li>The Blueprint PDF is delivered to your email within 48 hours</li>
+              <li>The Blueprint PDF is delivered to your email within 5 working days after the consultation</li>
             </ol>
           </section>
 
@@ -148,10 +148,10 @@ export default function WhatIsIconikStyleBlueprintPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your Style Blueprint in 48 hours</h2>
-            <p className="text-gray-600 mb-6">Body analysis, colour palette, face shape guide, and 16+ outfit formulas — your complete styling framework, delivered.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your Style Blueprint within 5 working days after the consultation</h2>
+            <p className="text-gray-600 mb-6">Body analysis, colour palette, face shape guide, and 20 outfit formulas — your complete styling framework, delivered.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

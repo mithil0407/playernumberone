@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Upload, ArrowRight, ArrowLeft } from 'lucide-react';
 import { saveAUIntakeSubmission, uploadAUIntakePhoto } from '@/lib/supabaseAU';
-import { trackPageView, trackCompleteRegistration } from '@/lib/metaPixel';
+import { trackCompleteRegistration } from '@/lib/metaPixel';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -239,7 +239,6 @@ function AUIntakePageInner() {
     });
 
     useEffect(() => {
-        trackPageView('AU Intake');
         const urlEmail = searchParams.get('email') || '';
         const urlPhone = searchParams.get('phone') || '';
         const lsEmail = typeof window !== 'undefined' ? localStorage.getItem('au_customerEmail') || '' : '';

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, Star, ArrowRight, Sparkles, Gem, Heart, Shield, Award, Trophy, ArrowLeft } from 'lucide-react';
-import { trackPageView, trackViewContent, trackCTAClick } from '@/lib/metaPixel';
+import { trackViewContent, trackCTAClick } from '@/lib/metaPixel';
 import ExploreLinksSection from '@/components/ExploreLinksSection';
 import { footerExploreGroups } from '@/lib/seoContent';
 
@@ -116,7 +116,6 @@ export default function GlobalLandingPage() {
     const prevSlide = useCallback(() => setCarouselIndex(i => (i - 1 + heroImages.length) % heroImages.length), [heroImages.length]);
 
     useEffect(() => {
-        trackPageView('Global Landing');
         trackViewContent('ICONIK Blueprint Global', 119, ['iconik_blueprint_global'], 'USD', 'Global Funnel');
     }, []);
 

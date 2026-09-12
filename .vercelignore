@@ -1,0 +1,4 @@
+.next
+.next-audit
+node_modules
+tsconfig.tsbuildinfo

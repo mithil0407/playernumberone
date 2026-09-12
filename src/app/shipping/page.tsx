@@ -3,10 +3,16 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Clock, Mail, MessageCircle, Download, Calendar, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  BLUEPRINT_OFFER,
+  BUSINESS_HOURS,
+  LEGAL_ENTITY_NAME,
+  SUPPORT_EMAIL,
+} from '@/lib/siteFacts';
 
 export default function ShippingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="seo-policy-page min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -22,7 +28,7 @@ export default function ShippingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
+          className="seo-policy-card bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
         >
           {/* Header */}
           <div className="text-center mb-12">
@@ -102,10 +108,10 @@ export default function ShippingPage() {
                 <div className="border-l-4 border-red-500 pl-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 5: Blueprint Delivery</h3>
                   <p className="text-gray-700">
-                    Receive your personalized Blueprint or styling deliverable via email within 24 hours of your session, 
+                    Receive your personalized Blueprint or styling deliverable by email within {BLUEPRINT_OFFER.deliveryWorkingDays} working days after your consultation,
                     including specific recommendations and action steps.
                   </p>
-                  <p className="text-sm text-red-600 mt-2">⏱️ Delivery Time: Within 24 hours of session completion</p>
+                  <p className="text-sm text-red-600 mt-2">⏱️ Delivery Time: Within {BLUEPRINT_OFFER.deliveryWorkingDays} working days after consultation</p>
                 </div>
               </div>
             </section>
@@ -202,7 +208,7 @@ export default function ShippingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Personalized Transformation Plan</h3>
-                    <p className="text-gray-600">Within 24 hours of session completion</p>
+                    <p className="text-gray-600">Within {BLUEPRINT_OFFER.deliveryWorkingDays} working days after consultation</p>
                   </div>
                 </div>
               </div>
@@ -222,10 +228,10 @@ export default function ShippingPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
                   <div className="space-y-2">
                     <p className="text-gray-700">
-                      <strong>Email:</strong> <a href="mailto:help.iconikfashion@gmail.com" className="text-blue-600 hover:underline">help.iconikfashion@gmail.com</a>
+                      <strong>Email:</strong> <a href={`mailto:${SUPPORT_EMAIL}`} className="text-blue-600 hover:underline">{SUPPORT_EMAIL}</a>
                     </p>
                     <p className="text-gray-700">
-                      <strong>Response Time:</strong> Within 24 hours
+                      <strong>Business Hours:</strong> {BUSINESS_HOURS.display}
                     </p>
                     <p className="text-gray-700">
                       <strong>Emergency Support:</strong> For urgent delivery issues, mark your email as &quot;URGENT - Delivery Issue&quot;
@@ -249,7 +255,7 @@ export default function ShippingPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Service Provider</h3>
-                  <p className="text-gray-700"><strong>MITHIL NILESH NAVALAKHA</strong></p>
+                  <p className="text-gray-700"><strong>{LEGAL_ENTITY_NAME}</strong></p>
                   <p className="text-gray-600">Iconik</p>
                 </div>
 
@@ -265,7 +271,7 @@ export default function ShippingPage() {
 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Service Availability</h3>
-                  <p className="text-gray-700">24/7 Email Support | Scheduled Sessions During Business Hours</p>
+                  <p className="text-gray-700">{BUSINESS_HOURS.display}</p>
                 </div>
               </div>
             </section>
@@ -279,7 +285,7 @@ export default function ShippingPage() {
                 Get instant access to your transformation program and schedule your 1-on-1 session today.
               </p>
               <Link 
-                href="/checkout"
+                href={BLUEPRINT_OFFER.checkoutPath}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
               >
                 Start Your Transformation

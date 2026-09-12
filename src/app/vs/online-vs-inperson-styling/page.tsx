@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "Why is online styling often cheaper than in-person for equivalent output?",
-    a: "In-person styling costs include stylist travel, client meeting time, physical wardrobe review, and often accompanies shopping trips. Online styling eliminates all of these overheads. Iconik's ₹3,299 Style Blueprint delivers output that would cost ₹5,000–20,000 from an equivalent in-person stylist — at a fraction of the cost because the methodology is structured, not ad hoc.",
+    a: "In-person styling costs include stylist travel, client meeting time, physical wardrobe review, and often accompanies shopping trips. Online styling eliminates all of these overheads. Iconik's ₹2,699 Style Blueprint delivers output that would cost ₹5,000–20,000 from an equivalent in-person stylist — at a fraction of the cost because the methodology is structured, not ad hoc.",
   },
 ];
 
@@ -94,7 +94,7 @@ export default function OnlineVsInpersonStylingPage() {
               A good online styling service delivers the analytical foundation of personal styling: body type identification, proportion assessment, undertone and colour palette analysis, and outfit formula recommendations. When the methodology is structured and measurement-based, online styling can be more precise than in-person visual assessment.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Iconik&apos;s online Style Blueprint delivers three outputs: your Geometric Silhouette Profile (body type and proportion analysis), your Chromatic Harmony Mapping™ palette (10-colour palette based on undertone and contrast), and 16+ outfit formulas for your specific silhouette, lifestyle, and colour profile. The output is a documented reference — not a verbal consultation that you have to remember.
+              Iconik&apos;s online Style Blueprint delivers three outputs: your Geometric Silhouette Profile (body type and proportion analysis), your Chromatic Harmony Mapping™ palette (10-colour palette based on undertone and contrast), and 20 outfit formulas for your specific silhouette, lifestyle, and colour profile. The output is a documented reference — not a verbal consultation that you have to remember.
             </p>
           </section>
 
@@ -128,10 +128,10 @@ export default function OnlineVsInpersonStylingPage() {
                 <tbody className="divide-y divide-gray-100 text-gray-600">
                   <tr><td className="py-3 pr-4 font-medium">Body type analysis</td><td className="py-3 pr-4">Measurement-based precision</td><td className="py-3">Visual + hands-on</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Colour analysis</td><td className="py-3 pr-4">Undertone + contrast mapping</td><td className="py-3">Draping + observation</td></tr>
-                  <tr><td className="py-3 pr-4 font-medium">Outfit formulas</td><td className="py-3 pr-4">16+ documented formulas</td><td className="py-3">Variable by stylist</td></tr>
+                  <tr><td className="py-3 pr-4 font-medium">Outfit formulas</td><td className="py-3 pr-4">20 documented formulas</td><td className="py-3">Variable by stylist</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Physical fit check</td><td className="py-3 pr-4">Not applicable</td><td className="py-3">Real-time</td></tr>
-                  <tr><td className="py-3 pr-4 font-medium">Turnaround</td><td className="py-3 pr-4">48 hours</td><td className="py-3">Appointment-dependent</td></tr>
-                  <tr><td className="py-3 pr-4 font-medium">Cost range</td><td className="py-3 pr-4">₹3,299</td><td className="py-3">₹5,000–25,000+</td></tr>
+                  <tr><td className="py-3 pr-4 font-medium">Turnaround</td><td className="py-3 pr-4">Within 5 working days after the consultation</td><td className="py-3">Appointment-dependent</td></tr>
+                  <tr><td className="py-3 pr-4 font-medium">Cost range</td><td className="py-3 pr-4">₹2,699</td><td className="py-3">₹5,000–25,000+</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Location requirement</td><td className="py-3 pr-4">None</td><td className="py-3">Same city</td></tr>
                   <tr><td className="py-3 pr-4 font-medium">Reference document</td><td className="py-3 pr-4">Permanent PDF blueprint</td><td className="py-3">Varies — often verbal</td></tr>
                 </tbody>
@@ -172,10 +172,10 @@ export default function OnlineVsInpersonStylingPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get the online version — delivered in 48 hours</h2>
-            <p className="text-gray-600 mb-6">Body analysis, colour palette, and 16+ outfit formulas. Documented, precise, and available anywhere in India.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get the online version — delivered within 5 working days after the consultation</h2>
+            <p className="text-gray-600 mb-6">Body analysis, colour palette, and 20 outfit formulas. Documented, precise, and available anywhere in India.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

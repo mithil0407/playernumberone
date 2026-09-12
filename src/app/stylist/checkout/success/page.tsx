@@ -5,9 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { trackPageView } from '@/lib/metaPixel';
+import { trackPurchase } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
-import { trackGrowthEvent } from '@/lib/growthAnalytics';
 
 // ── Razorpay types ────────────────────────────────────────────────────────────
 
@@ -65,6 +64,7 @@ interface StylistEditRetryContext {
 const EDIT_STATE_KEY = 'stylist_editState';
 const EDIT_RETRY_CONTEXT_KEY = 'stylist_editRetryContext';
 const EDIT_SETUP_ERROR_KEY = 'stylist_editSetupError';
+const EDIT_PRICE = 39;
 
 function isEditState(value: string | null): value is StylistEditCheckoutState {
     return value === 'not_selected' ||
@@ -155,19 +155,22 @@ function StylistSuccessInner() {
     const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
     useEffect(() => {
-        trackPageView('Stylist Checkout Success');
         const paymentId = sessionStorage.getItem('stylist_purchaseTracked') || '';
         const purchaseAmount = Number(localStorage.getItem('stylist_purchaseAmount') || 149);
         const trackedAmount = Number.isFinite(purchaseAmount) ? purchaseAmount : 149;
-        window.fbq?.('trackCustom', 'blueprint_purchased', { funnel: 'style_scan', amount: trackedAmount, currency: 'USD', payment_id: paymentId });
-        window.fbq?.('track', 'Purchase', { value: trackedAmount, currency: 'USD', content_name: 'ICONIK Style Blueprint' });
-        trackGrowthEvent('purchase', {
-            value: trackedAmount,
-            currency: 'USD',
-            transaction_id: paymentId || undefined,
-            content_source: 'style_scan',
-        });
-        sessionStorage.removeItem('stylist_purchaseTracked');
+        if (paymentId) {
+            trackPurchase(
+                trackedAmount,
+                'ICONIK Style Blueprint',
+                ['iconik_style_blueprint'],
+                1,
+                'USD',
+                'style_scan',
+                paymentId,
+                paymentId,
+            );
+            sessionStorage.removeItem('stylist_purchaseTracked');
+        }
 
         // Read Edit state from localStorage
         const purchased = localStorage.getItem('stylist_editPurchased') === 'true';
@@ -224,7 +227,17 @@ function StylistSuccessInner() {
                 persistEditState('authorized');
                 setEditPurchased(true);
                 setEditState('authorized');
-                window.fbq?.('trackCustom', 'edit_purchased', { funnel: 'style_scan', source: editSelected ? 'checkout_pending' : 'success_page' });
+                if (response.razorpay_payment_id) {
+                    trackPurchase(
+                        EDIT_PRICE,
+                        'THE ICONIK EDIT',
+                        ['iconik_edit_subscription'],
+                        1,
+                        'USD',
+                        'style_scan_edit',
+                        response.razorpay_payment_id,
+                    );
+                }
                 setEditLoading(false);
             },
             prefill: { name: email.split('@')[0], email, contact: phone },
@@ -255,7 +268,7 @@ function StylistSuccessInner() {
                 }
             }, 10000);
         }
-    }, [email, phone, razorpayLoaded, editSelected]);
+    }, [email, phone, razorpayLoaded]);
 
     useEffect(() => {
         if (!editSelected || editPurchased || editState !== 'selected_ready_to_authorize' || !pendingSubId || !pendingSubKey) {
@@ -372,14 +385,15 @@ function StylistSuccessInner() {
                         {email ? <strong className="text-luxury-charcoal font-medium">{email}</strong> : 'your email'} shortly.
                     </p>
                     <p className="luxury-body text-luxury-charcoal/45 leading-relaxed mb-8" style={{ fontWeight: 300 }}>
-                        Your Blueprint arrives within <span className="text-luxury-charcoal">72 hours</span> of completing the intake form.
+                        After your 30-minute consultation, your Blueprint arrives within <span className="text-luxury-charcoal">5 working days</span>.
                     </p>
                     <div className="mb-5"><IntakeButton href={intakeHref} /></div>
                     <div className="rounded-2xl p-5 mb-8 text-left space-y-3 border" style={{ background: 'var(--luxury-cream)', borderColor: 'var(--luxury-cream)' }}>
                         <div className="iconik-micro text-luxury-charcoal/40 mb-3">Next Steps</div>
                         {[
                             'Complete the intake form here now, or use the email link later',
-                            'Receive your personalised Blueprint within 72 hours',
+                            'Complete your 30-minute stylist consultation',
+                            'Receive your personalised Blueprint within 5 working days after the consultation',
                             'Your ICONIK Edit is active — your first drop arrives within 72 hours',
                         ].map((step, i) => (
                             <div key={i} className="flex items-start gap-3">
@@ -505,7 +519,7 @@ function StylistSuccessInner() {
                         confirmed.
                     </h1>
                     <p className="luxury-body text-luxury-warm-white/60 leading-relaxed" style={{ fontWeight: 300 }}>
-                        It arrives within <span className="text-luxury-warm-white">72 hours</span> of completing your intake form.
+                        After your 30-minute consultation, it arrives within <span className="text-luxury-warm-white">5 working days</span>.
                     </p>
                 </motion.div>
             </div>
@@ -598,7 +612,8 @@ function StylistSuccessInner() {
                                 <div className="iconik-micro text-luxury-charcoal/40 mb-3">Next Steps</div>
                                 {[
                                     'Complete the intake form here now, or use the email link later',
-                                    'Receive your personalised Blueprint within 72 hours',
+                                    'Complete your 30-minute stylist consultation',
+                                    'Receive your personalised Blueprint within 5 working days after the consultation',
                                 ].map((step, i) => (
                                     <div key={i} className="flex items-start gap-3">
                                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'var(--luxury-charcoal)' }}>

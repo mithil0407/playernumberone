@@ -5,14 +5,13 @@ import { CheckCircle, ArrowRight, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView } from '@/lib/metaPixel';
+import { trackCompleteRegistration } from '@/lib/metaPixel';
 
 function SuccessPageContent() {
     const searchParams = useSearchParams();
 
     useEffect(() => {
         // Track page view
-        trackPageView('USA');
 
         // Extract customer ID and order ID from URL parameters
         const customerId = searchParams.get('customer_id');

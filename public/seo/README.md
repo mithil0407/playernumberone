@@ -26,3 +26,5 @@ Outputs:
 - `public/seo/{cluster}/{slug}-og.webp` — 1200×630 branded social card
 
 The command refuses to overwrite existing assets unless `--overwrite` is supplied.
+
+Detailed prompts and exact Phase 2 pilot paths are in [`PILOT_IMAGE_PROMPTS.md`](./PILOT_IMAGE_PROMPTS.md).

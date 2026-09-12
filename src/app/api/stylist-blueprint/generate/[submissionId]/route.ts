@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
-import { runStylistBlueprintTextPipeline } from '@/lib/stylistBlueprintTextPipeline';
-import { generateStylistBlueprintImages } from '@/lib/stylistBlueprintImageGenerator';
+import { canAccessBlueprintSubmission } from '@/lib/stylistWorkspaceAuth';
+import { enqueueStylistReportGeneration, runClaimedStylistWorkspaceJobs } from '@/lib/stylistWorkspaceJobs';
 import { STYLIST_BLUEPRINT_PAGE_COUNT, type StylistIntakeSubmission } from '@/lib/stylistBlueprintGenerator';
 
 export const maxDuration = 300;
@@ -12,13 +10,10 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ submissionId: string }> },
 ) {
-  const cookieStore = await cookies();
-  const cookieValue = cookieStore.get(ADMIN_COOKIE)?.value;
-  if (!isAdminAuthenticatedFromCookieValue(cookieValue)) {
+  const { submissionId } = await params;
+  if (!(await canAccessBlueprintSubmission(submissionId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { submissionId } = await params;
   const { data: submission, error: submissionError } = await supabaseAdmin
     .from('stylist_intake_responses')
     .select('*')
@@ -64,30 +59,14 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to start report generation' }, { status: 500 });
   }
 
-  after(async () => {
-    const intake = submission as StylistIntakeSubmission;
-    const reportData = await runStylistBlueprintTextPipeline(report.id, intake, report.share_token ?? null, null);
-    if (reportData) {
-      try {
-        await generateStylistBlueprintImages(report.id, reportData, report.share_token ?? null, {
-          group: 'all',
-          force: false,
-          submission: intake,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Image generation failed';
-        await supabaseAdmin
-          .from('stylist_blueprint_reports')
-          .update({
-            status: 'draft_ready',
-            progress_stage: null,
-            error_message: message,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', report.id);
-      }
-    }
-  });
+  try {
+    await enqueueStylistReportGeneration({ reportId: report.id, submission: submission as StylistIntakeSubmission });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Could not queue generation';
+    await supabaseAdmin.from('stylist_blueprint_reports').update({ status: 'error', progress_stage: null, error_message: message }).eq('id', report.id);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+  after(async () => { await runClaimedStylistWorkspaceJobs(1); });
 
   return NextResponse.json({ reportId: report.id, status: 'generating' });
 }

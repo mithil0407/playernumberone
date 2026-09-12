@@ -1,56 +1,61 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SeoEditorialFooter, SeoEditorialHeader } from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
 import { bodyTypeLinks } from "@/lib/seoContent";
+import { FOUNDERS } from "@/lib/siteFacts";
 
-export const metadata: Metadata = {
-  title: "How to Dress for Your Body Type in India — Complete Guide",
-  description: "The complete scientific guide to body type styling for Indian women. Learn how Geometric Silhouette Profiling™ maps your frame to the exact cuts, silhouettes, and Indian garments that work for your body.",
-  keywords: "how to dress for your body type India, body type styling Indian women, geometric silhouette profiling, apple body type India, pear body type India, plus size styling India, body shape guide Indian women",
-  alternates: { canonical: "https://www.iconik.pro/body-type-styling" },
-  openGraph: {
-    title: "How to Dress for Your Body Type in India — Iconik Complete Guide",
-    description: "Science-backed body type styling guide for Indian women. Covers all 5 silhouette types with Indian garment recommendations.",
-    url: "https://www.iconik.pro/body-type-styling",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Body type styling guide for Indian women — Iconik" }],
-  },
-};
+export const metadata: Metadata = buildArticleMetadata({
+  title: "How to Dress for Your Body Type in India",
+  description: "A practical, size-inclusive guide to proportion, garment shape and Indian-wear choices using ICONIK's Geometric Silhouette Profiling framework.",
+  path: "/body-type-styling",
+  datePublished: "2025-01-01",
+  dateModified: "2026-07-24",
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "how to dress for your body type India",
+    "body type styling Indian women",
+    "Geometric Silhouette Profiling",
+    "body shape guide Indian women",
+  ],
+});
 
 const silhouettes = [
   {
     name: "Apple",
-    slug: "apple",
+    href: "/body-type-styling/apple-body-shape-india",
     definition: "An apple silhouette carries more volume in the midsection relative to the shoulders and hips, with slimmer legs and arms.",
     principle: "Elongate the torso, define the waist visually, and draw attention upward and downward away from the midsection.",
     outfits: ["Empire-waist kurtas that skim the stomach", "A-line kurtis with vertical print panels", "Straight-leg trousers with a V-neck blouse"],
   },
   {
     name: "Pear",
-    slug: "pear",
+    href: "/body-type-styling/pear-body-shape-india",
     definition: "A pear silhouette has narrower shoulders and bust relative to wider hips and thighs.",
     principle: "Balance the upper and lower body by adding visual width to the shoulders and minimising volume at the hips.",
     outfits: ["Boat-neck or off-shoulder tops", "A-line skirts and palazzos", "Flared kurtis with slim-fit pants"],
   },
   {
     name: "Rectangle",
-    slug: "rectangle",
+    href: "/body-type-styling/rectangle-body-shape-india",
     definition: "A rectangle silhouette has similar shoulder, waist, and hip measurements with minimal curve differentiation.",
     principle: "Create the illusion of a defined waist by adding curves with fabric, draping, and colour blocking.",
     outfits: ["Peplum kurtis", "Wrap-style blouses with a defined waist tie", "Sarees with a padded or structured blouse"],
   },
   {
-    name: "Plus Size",
-    slug: "plus-size",
-    definition: "Plus-size silhouettes encompass a range of body geometries with fuller proportions across one or more zones of the body.",
-    principle: "The goal is never to minimise your body — it is to find the proportions and fabrics that make you feel composed, elegant, and aligned.",
-    outfits: ["Anarkali suits with a fitted yoke", "Straight-cut kurtas at tunic length", "Palazzo pants with a structured tunic"],
-  },
-  {
     name: "Hourglass",
-    slug: "hourglass",
+    href: "/body-type-styling/hourglass",
     definition: "An hourglass silhouette has balanced shoulder and hip width with a significantly narrower waist.",
     principle: "Celebrate the waist definition. The primary risk is clothing that obscures the waist rather than following it.",
     outfits: ["Wrap dresses and wrap-style kurtis", "Sarees with a fitted, waist-defining blouse", "Belted kurtas over straight trousers"],
+  },
+  {
+    name: "Inverted Triangle",
+    href: "/body-type-styling/inverted-triangle",
+    definition: "An inverted-triangle silhouette has broader shoulders or upper-torso emphasis relative to the hips.",
+    principle: "Keep the shoulder line clean and use shape, texture or movement below the waist when you want a more balanced visual line.",
+    outfits: ["Clean V-neck kurtas with straight sleeves", "Wide-straight trousers with a simple top", "Sarees with restrained shoulder detail and a fluid lower drape"],
   },
 ];
 
@@ -61,7 +66,7 @@ const faqs = [
   },
   {
     q: "Why doesn't standard Western body type advice work for Indian women?",
-    a: "Western body type frameworks were developed around Western garment categories — dresses, jeans, blazers. They rarely address kurta lengths, saree draping options, salwar silhouettes, or dupatta placement. Indian women also carry weight differently due to skeletal and soft tissue variation. Iconik's methodology was built specifically around the Indian body and Indian clothing vocabulary.",
+    a: "Many popular body-shape guides use Western garment examples—dresses, jeans and blazers—and rarely address kurta length, saree drape, salwar shape or dupatta placement. ICONIK applies familiar proportion concepts to Indian and fusion garment categories without assuming that every person in a category needs the same solution.",
   },
   {
     q: "What is Geometric Silhouette Profiling™?",
@@ -69,7 +74,7 @@ const faqs = [
   },
   {
     q: "Can my body type change over time?",
-    a: "Your skeletal frame is fixed, but your soft tissue distribution changes with weight, age, and life events like pregnancy or menopause. Iconik recommends updating your Blueprint after significant body changes. The styling principles remain the same; the specific recommendations may be refined.",
+    a: "Proportions and fit needs can change with weight, muscle, age, pregnancy, surgery and other life events. Re-measure and reassess when your existing recommendations stop matching the way garments sit; a category is only a working description, not a permanent identity.",
   },
   {
     q: "Does the Blueprint cover both ethnic and western wear?",
@@ -84,16 +89,27 @@ export default function BodyTypeStylingPage() {
       {
         "@type": "Article",
         "@id": "https://www.iconik.pro/body-type-styling/#article",
-        "headline": "How to Dress for Your Body Type in India: The Complete Scientific Guide",
+        "headline": "How to Dress for Your Body Type in India",
         "description": "A complete guide to body type styling for Indian women using Geometric Silhouette Profiling™.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
+        "author": {
+          "@type": "Person",
+          "name": FOUNDERS[0].name,
+          "jobTitle": FOUNDERS[0].title,
+          "sameAs": FOUNDERS[0].linkedIn,
+        },
+        "reviewedBy": {
+          "@type": "Person",
+          "name": FOUNDERS[0].name,
+          "jobTitle": FOUNDERS[0].title,
+          "sameAs": FOUNDERS[0].linkedIn,
+        },
         "publisher": {
           "@type": "Organization",
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" },
         },
         "datePublished": "2025-01-01",
-        "dateModified": new Date().toISOString().split("T")[0],
+        "dateModified": "2026-07-24",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling" },
       },
       {
@@ -115,14 +131,15 @@ export default function BodyTypeStylingPage() {
   };
 
   return (
-    <>
+    <div className="seo-editorial min-h-screen">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoEditorialHeader />
+      <main className="px-4 py-16 md:py-24">
+        <div className="seo-classic-article mx-auto max-w-3xl">
 
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
@@ -136,33 +153,36 @@ export default function BodyTypeStylingPage() {
           {/* Header */}
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              How to Dress for Your Body Type in India: The Complete Scientific Guide
+              How to Dress for Your Body Type in India
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Most body type advice was built for Western wardrobes. It ignores kurta lengths, saree draping, salwar geometry, and the actual proportions of Indian women&apos;s frames. This guide uses <strong>Geometric Silhouette Profiling™</strong> — Iconik&apos;s proprietary methodology — to give you styling principles that actually work in an Indian context.
+              Many body-shape guides stop at dresses and jeans. This practical guide applies proportion and fit decisions to kurtas, sarees, salwars, western wear and fusion wardrobes using <strong>Geometric Silhouette Profiling™</strong>—ICONIK&apos;s proprietary styling framework.
             </p>
+            <p className="mt-4 text-sm text-gray-500">Updated 24 July 2026 · Reviewed by Jasmine Rana, Co-Founder and Head Stylist</p>
           </header>
 
           {/* Section 1 */}
           <section className="mb-14">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Why Does Generic Body Type Advice Fail Indian Women?
+              Why Generic Body-Type Advice Can Be Hard to Apply
             </h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
               Standard body type frameworks — apple, pear, rectangle, hourglass — were designed around Western garment categories: jeans, blazers, bodycon dresses. The advice tells you to &quot;balance proportions&quot; but rarely explains what that means when you&apos;re choosing between an Anarkali and a straight-cut kurta, or deciding how to drape a saree.
             </p>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Indian women also carry weight in culturally and genetically distinct patterns. A framework that treats all &quot;apple&quot; bodies identically will miss the difference between a woman whose weight sits primarily at the midriff versus one with a fuller bust-to-hip ratio. Geometric Silhouette Profiling™ maps these distinctions precisely.
+              A broad label also hides meaningful differences in bust, torso length, shoulder line, hip shape and fabric preference. The category should narrow the questions you ask—not dictate what your body is allowed to wear.
             </p>
           </section>
 
           {/* Section 2 — GSP Definition */}
           <section className="mb-14 rounded-xl bg-gray-50 border border-gray-200 p-7">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              What Is Geometric Silhouette Profiling™?
+              <Link href="/methodology/geometric-silhouette-profiling" className="underline decoration-gray-300 underline-offset-4">
+                What Is Geometric Silhouette Profiling™?
+              </Link>
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              Geometric Silhouette Profiling™ is Iconik&apos;s proprietary body analysis method. It maps the proportional geometry of the human frame — shoulder width, bust span, waist-to-hip differential, and limb length — to five primary silhouette archetypes. Unlike traditional body shape quizzes, it accounts for both skeletal structure and soft tissue distribution, producing a precise styling prescription rather than a generic category label.
+              Geometric Silhouette Profiling™ is ICONIK&apos;s proprietary styling framework. It compares shoulder, bust, waist and hip relationships, torso and limb proportions, and the way garments currently fit. The result is a set of styling options—not a diagnosis or an obligation to make the body look smaller. Read the <Link href="/methodology/geometric-silhouette-profiling" className="font-medium underline">canonical method explanation</Link> for the full process and limitations.
             </p>
           </section>
 
@@ -185,9 +205,9 @@ export default function BodyTypeStylingPage() {
             </h2>
             <div className="space-y-8">
               {silhouettes.map((s) => (
-                <div key={s.slug} className="border border-gray-200 rounded-xl p-6">
+                <div key={s.href} className="border border-gray-200 rounded-xl p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    <Link href={`/body-type-styling/${s.slug}`} className="hover:underline">
+                    <Link href={s.href} className="hover:underline">
                       {s.name} Body Type
                     </Link>
                   </h3>
@@ -203,7 +223,7 @@ export default function BodyTypeStylingPage() {
                     ))}
                   </ul>
                   <Link
-                    href={`/body-type-styling/${s.slug}`}
+                    href={s.href}
                     className="mt-4 inline-block text-sm font-semibold text-black underline underline-offset-4 hover:opacity-70"
                   >
                     Full {s.name} styling guide →
@@ -212,6 +232,13 @@ export default function BodyTypeStylingPage() {
               ))}
             </div>
           </section>
+
+          <aside className="mb-14 rounded-xl border border-gray-200 bg-gray-50 p-7">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Plus size is a size range, not a body shape</h2>
+            <p className="text-gray-600 leading-relaxed">
+              A plus-size person can have any of the proportional relationships above. Start with fit, comfort and the garment outcome you want, then use the <Link href="/body-type-styling/plus-size" className="font-medium underline">plus-size styling guide</Link> for fabric, structure and sourcing considerations.
+            </p>
+          </aside>
 
           {/* Section 4 — Indian garments */}
           <section className="mb-14">
@@ -264,7 +291,7 @@ export default function BodyTypeStylingPage() {
               Silhouette analysis tells you <em>which shapes</em> to wear. Colour analysis tells you <em>which shades</em> to wear within those shapes. An outfit built on the right silhouette but in the wrong colour palette will still look off — the complexion will appear sallow, tired, or flat.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Iconik&apos;s <Link href="/colour-analysis" className="underline font-medium">Chromatic Harmony Mapping™</Link> identifies your skin undertone (warm, cool, or neutral) and maps it to a curated palette of 10 exact colours — including shades for Indian ethnic wear, western wear, and occasion dressing. Every Style Blueprint includes both analyses.
+              ICONIK&apos;s <Link href="/methodology/chromatic-harmony-mapping" className="underline font-medium">Chromatic Harmony Mapping™</Link> compares undertone, depth and contrast to create a practical palette for Indian ethnic wear, western wear and occasion dressing. <Link href="/methodology/facial-architecture-analysis" className="underline font-medium">Facial Architecture Analysis™</Link> adds guidance for necklines, eyewear, earrings and hairstyle direction.
             </p>
           </section>
 
@@ -321,27 +348,28 @@ export default function BodyTypeStylingPage() {
           {/* CTA */}
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Want this done for you in 48 hours?
+              Want this done for you within 5 working days after the consultation?
             </h2>
             <p className="text-gray-600 mb-6">
-              Your personalised Iconik Style Blueprint — body analysis, colour palette, and 16+ outfit recommendations.
+              Your personalised Iconik Style Blueprint — body analysis, colour palette, and 20 outfit formulas.
             </p>
             <Link
-              href="/"
+              href="/offer-2699"
               className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors"
             >
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 
           {/* Cite block */}
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;How to Dress for Your Body Type in India: The Complete Scientific Guide.&quot; Iconik LLP, 2025. https://www.iconik.pro/body-type-styling</p>
+            <p>Rana, Jasmine. &quot;How to Dress for Your Body Type in India.&quot; ICONIK LLP. Updated 24 July 2026. https://www.iconik.pro/body-type-styling</p>
           </div>
 
         </div>
       </main>
-    </>
+      <SeoEditorialFooter />
+    </div>
   );
 }

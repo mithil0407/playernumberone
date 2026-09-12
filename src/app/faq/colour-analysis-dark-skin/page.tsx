@@ -127,9 +127,9 @@ export default function ColourAnalysisDarkSkinPage() {
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Get colour analysis built for your skin</h2>
-            <p className="text-gray-600 mb-6">CHM™ is calibrated for Indian undertone ranges across all melanin depths. Your palette in 48 hours.</p>
+            <p className="text-gray-600 mb-6">CHM™ is calibrated for Indian undertone ranges across all melanin depths. Your palette within 5 working days after the consultation.</p>
             <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 

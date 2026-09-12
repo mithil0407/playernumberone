@@ -177,6 +177,68 @@ const photoUrlKeyByPhotoKey: Record<PhotoKey, string> = {
     outfit: 'one_outfit',
 };
 
+const PHOTO_UPLOAD_CACHE_PREFIX = 'iconik_stylist_uploaded_photos:';
+
+function photoUploadCacheKey(email: string, orderId: unknown) {
+    return `${PHOTO_UPLOAD_CACHE_PREFIX}${email.trim().toLowerCase()}:${String(orderId || 'unknown')}`;
+}
+
+function readCachedPhotoUrls(email: string, orderId: unknown): Record<string, string> {
+    if (typeof window === 'undefined' || !email) return {};
+    try {
+        const parsed = JSON.parse(localStorage.getItem(photoUploadCacheKey(email, orderId)) || '{}') as Record<string, unknown>;
+        return Object.fromEntries(
+            Object.entries(parsed).filter(([, value]) => typeof value === 'string' && value.trim()),
+        ) as Record<string, string>;
+    } catch {
+        return {};
+    }
+}
+
+function cachePhotoUrls(email: string, orderId: unknown, urls: Record<string, string>) {
+    if (typeof window === 'undefined' || !email) return;
+    try {
+        localStorage.setItem(photoUploadCacheKey(email, orderId), JSON.stringify(urls));
+    } catch {
+        // A storage quota/privacy setting should not turn a successful upload into a failure.
+    }
+}
+
+function clearCachedPhotoUrls(email: string, orderId: unknown) {
+    if (typeof window === 'undefined' || !email) return;
+    try {
+        localStorage.removeItem(photoUploadCacheKey(email, orderId));
+    } catch {
+        // The intake is already saved; cache cleanup is best-effort.
+    }
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+}
+
+function stringValue(value: unknown, fallback = '') {
+    return typeof value === 'string' ? value : fallback;
+}
+
+function stringArrayValue(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function photoUrlRecord(value: unknown): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(recordValue(value)).filter(([, item]) => typeof item === 'string' && item.trim()),
+    ) as Record<string, string>;
+}
+
+function resumeStepFromCompletion(value: unknown) {
+    const completion = Number(value);
+    if (!Number.isFinite(completion) || completion <= 0 || completion >= 90) return 0;
+    return Math.min(STEPS.length - 1, Math.max(0, Math.round(completion / (100 / STEPS.length))));
+}
+
 const moodBoards = [
     {
         id: 'structured-minimalist',
@@ -335,6 +397,7 @@ function StylistIntakeInner() {
     const [saving, setSaving] = useState(false);
     const [submitStage, setSubmitStage] = useState<'uploading' | 'saving' | 'complete' | null>(null);
     const [complete, setComplete] = useState(false);
+    const [resumeNotice, setResumeNotice] = useState('');
 
     const [profile, setProfile] = useState({ fullName: '', ageRange: '', country: '', language: 'English', phone: '' });
     const [measurements, setMeasurements] = useState({
@@ -347,7 +410,7 @@ function StylistIntakeInner() {
         hips: '',
     });
     const [photos, setPhotos] = useState<{ headshot?: File; front?: File; side?: File; outfit?: File }>({});
-    const [uploadedUrls, setUploadedUrls] = useState<Record<string, unknown>>({});
+    const [uploadedUrls, setUploadedUrls] = useState<Record<string, string>>({});
     const [selectedFocus, setSelectedFocus] = useState<string[]>([]);
     const [coverage, setCoverage] = useState({ primary: 'No restrictions', specifics: [] as string[] });
     const [lifestyle, setLifestyle] = useState({
@@ -387,15 +450,86 @@ function StylistIntakeInner() {
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.error || 'Unable to verify purchase');
             setOrder(data.order);
+            const existingIntake = recordValue(data.existingIntake);
+            const savedPhotoUrls = photoUrlRecord(existingIntake.photo_urls);
+            const cachedPhotoUrls = readCachedPhotoUrls(email, data.order.id);
+            const outfitUrl = stringValue(existingIntake.one_outfit_image_url);
+            const restoredPhotoUrls = {
+                ...savedPhotoUrls,
+                ...(outfitUrl ? { one_outfit: outfitUrl } : {}),
+                ...cachedPhotoUrls,
+            };
+            setUploadedUrls(restoredPhotoUrls);
             setProfile(prev => {
-                const phone = String(data.order.customer_phone || prev.phone || fallbackPhone || '');
+                const phone = stringValue(existingIntake.customer_phone)
+                    || String(data.order.customer_phone || prev.phone || fallbackPhone || '');
                 return {
                     ...prev,
-                    fullName: String(data.order.customer_name || prev.fullName || ''),
+                    fullName: stringValue(existingIntake.full_name)
+                        || String(data.order.customer_name || prev.fullName || ''),
                     phone,
-                    country: prev.country || deriveCountryFromPhone(phone),
+                    ageRange: stringValue(existingIntake.age_range, prev.ageRange),
+                    country: stringValue(existingIntake.country) || prev.country || deriveCountryFromPhone(phone),
+                    language: stringValue(existingIntake.primary_language, prev.language),
                 };
             });
+
+            const savedMeasurements = recordValue(existingIntake.body_measurements);
+            setMeasurements(prev => ({
+                ...prev,
+                length_unit: stringValue(savedMeasurements.length_unit, prev.length_unit),
+                weight_unit: stringValue(savedMeasurements.weight_unit, prev.weight_unit),
+                height: stringValue(savedMeasurements.height, prev.height),
+                weight: stringValue(savedMeasurements.weight, prev.weight),
+                bust: stringValue(savedMeasurements.bust, prev.bust),
+                waist: stringValue(savedMeasurements.waist, prev.waist),
+                hips: stringValue(savedMeasurements.hips, prev.hips),
+            }));
+
+            setSelectedFocus(stringArrayValue(existingIntake.focus_areas));
+            const savedCoverage = recordValue(existingIntake.coverage_requirements);
+            setCoverage(prev => ({
+                primary: stringValue(savedCoverage.primary, prev.primary),
+                specifics: stringArrayValue(savedCoverage.specifics),
+            }));
+
+            const savedLifestyle = recordValue(existingIntake.lifestyle_context);
+            const savedHair = recordValue(existingIntake.hair_context);
+            const savedPriorService = recordValue(existingIntake.prior_styling_experience);
+            setLifestyle(prev => ({
+                ...prev,
+                occupation: stringValue(savedLifestyle.occupation, prev.occupation),
+                occasions: stringArrayValue(savedLifestyle.occasions),
+                shopFrequency: stringValue(savedLifestyle.shop_frequency, prev.shopFrequency),
+                budget: stringValue(savedLifestyle.budget_per_outfit, prev.budget),
+                hairTexture: stringValue(savedHair.texture, prev.hairTexture),
+                hairColour: stringValue(savedHair.colour, prev.hairColour),
+                includeHair: typeof savedHair.include_hair_direction === 'boolean'
+                    ? savedHair.include_hair_direction
+                    : prev.includeHair,
+                shoppingRelationship: stringValue(existingIntake.shopping_relationship, prev.shoppingRelationship),
+                priorService: stringValue(savedPriorService.used_before, prev.priorService),
+                priorServiceResult: stringValue(savedPriorService.result, prev.priorServiceResult),
+            }));
+
+            const savedPreferences = recordValue(existingIntake.piece_preferences);
+            setPreferences(Object.fromEntries(pieceCategories.map(category => {
+                const group = recordValue(savedPreferences[category.key]);
+                return [category.key, {
+                    liked: stringArrayValue(group.liked),
+                    disliked: stringArrayValue(group.disliked),
+                    skipped: stringArrayValue(group.skipped),
+                }];
+            })));
+            setSelectedMoodboard(stringValue(existingIntake.selected_moodboard_id));
+            setSecondaryElements(stringArrayValue(existingIntake.secondary_moodboard_elements));
+
+            if (!existingIntake.completed_at) {
+                setStep(resumeStepFromCompletion(existingIntake.completion_percentage));
+            }
+            if (savedPhotoUrls.headshot && savedPhotoUrls.full_body_front && savedPhotoUrls.full_body_side) {
+                setResumeNotice('Your three body photos are already saved. You can continue without uploading them again.');
+            }
             setAccessState('allowed');
         } catch (err) {
             setAccessState('denied');
@@ -483,20 +617,68 @@ function StylistIntakeInner() {
         setUploadedUrls(prev => {
             const next = { ...prev };
             delete next[photoUrlKeyByPhotoKey[key]];
+            cachePhotoUrls(accessEmail, order?.id, next);
             return next;
         });
     };
 
     const uploadAllPhotos = async () => {
-        const entries = await Promise.all([
-            uploadedUrls.headshot ? Promise.resolve(['headshot', uploadedUrls.headshot] as const) : uploadOne(photos.headshot, 'headshot').then(url => ['headshot', url] as const),
-            uploadedUrls.full_body_front ? Promise.resolve(['full_body_front', uploadedUrls.full_body_front] as const) : uploadOne(photos.front, 'front').then(url => ['full_body_front', url] as const),
-            uploadedUrls.full_body_side ? Promise.resolve(['full_body_side', uploadedUrls.full_body_side] as const) : uploadOne(photos.side, 'side').then(url => ['full_body_side', url] as const),
-            uploadedUrls.one_outfit ? Promise.resolve(['one_outfit', uploadedUrls.one_outfit] as const) : uploadOne(photos.outfit, 'one_outfit').then(url => ['one_outfit', url] as const),
-        ]);
-        const urls = Object.fromEntries(entries);
-        setUploadedUrls(urls);
+        const urls = { ...uploadedUrls };
+        const uploads: Array<{ urlKey: string; photoKey: PhotoKey; file: File | undefined }> = [
+            { urlKey: 'headshot', photoKey: 'headshot', file: photos.headshot },
+            { urlKey: 'full_body_front', photoKey: 'front', file: photos.front },
+            { urlKey: 'full_body_side', photoKey: 'side', file: photos.side },
+            { urlKey: 'one_outfit', photoKey: 'outfit', file: photos.outfit },
+        ];
+
+        // Large concurrent multipart uploads are unreliable in iOS Safari. Sequence them
+        // and preserve each confirmation before starting the next upload.
+        for (const upload of uploads) {
+            if (urls[upload.urlKey] || !upload.file) continue;
+            const url = await uploadOne(upload.file, upload.photoKey);
+            if (!url) continue;
+            urls[upload.urlKey] = url;
+            setUploadedUrls({ ...urls });
+            cachePhotoUrls(accessEmail, order?.id, urls);
+        }
+
         return urls;
+    };
+
+    const postIntake = async (payload: Record<string, unknown>) => {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+            let res: Response;
+            let responseText: string;
+            try {
+                res = await fetch('/api/stylist-intake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                responseText = await res.text();
+            } catch {
+                if (attempt === 0) continue;
+                throw new Error('Your photos are saved, but the connection was interrupted. Please tap Confirm Direction again.');
+            }
+
+            if (!responseText.trim()) {
+                if (attempt === 0) continue;
+                throw new Error('Your photos are saved, but the server did not confirm the intake. Please tap Confirm Direction again.');
+            }
+
+            let data: { success?: boolean; error?: string };
+            try {
+                data = JSON.parse(responseText) as { success?: boolean; error?: string };
+            } catch {
+                if (attempt === 0) continue;
+                throw new Error('Your photos are saved, but the server response was unreadable. Please tap Confirm Direction again.');
+            }
+
+            if (!res.ok || !data.success) throw new Error(data.error || 'Unable to save intake');
+            return data;
+        }
+
+        throw new Error('Unable to save intake');
     };
 
     const submit = async () => {
@@ -515,48 +697,43 @@ function StylistIntakeInner() {
             setSubmitStage('saving');
             const selectedBoard = moodBoards.find(board => board.id === selectedMoodboard);
             const completionPercentage = selectedMoodboard ? 100 : Math.max(65, progress);
-            const res = await fetch('/api/stylist-intake', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    customer_email: accessEmail,
-                    customer_phone: profile.phone,
-                    full_name: profile.fullName,
-                    age_range: profile.ageRange,
-                    country: profile.country,
-                    primary_language: profile.language,
-                    lead_id: order?.lead_id ?? null,
-                    body_measurements: measurements,
-                    photo_urls: photoUrls,
-                    focus_areas: selectedFocus,
-                    coverage_requirements: coverage,
-                    lifestyle_context: {
-                        occupation: lifestyle.occupation,
-                        occasions: lifestyle.occasions,
-                        shop_frequency: lifestyle.shopFrequency,
-                        budget_per_outfit: lifestyle.budget,
-                    },
-                    piece_preferences: preferences,
-                    selected_moodboard_id: selectedMoodboard,
-                    selected_moodboard_label: selectedBoard?.label,
-                    secondary_moodboard_elements: secondaryElements,
-                    hair_context: {
-                        texture: lifestyle.hairTexture,
-                        colour: lifestyle.hairColour,
-                        include_hair_direction: lifestyle.includeHair,
-                    },
-                    shopping_relationship: lifestyle.shoppingRelationship,
-                    prior_styling_experience: {
-                        used_before: lifestyle.priorService,
-                        result: lifestyle.priorServiceResult,
-                    },
-                    one_outfit_image_url: (photoUrls.one_outfit as string | null) || null,
-                    completion_percentage: completionPercentage,
-                }),
+            await postIntake({
+                customer_email: accessEmail,
+                customer_phone: profile.phone,
+                full_name: profile.fullName,
+                age_range: profile.ageRange,
+                country: profile.country,
+                primary_language: profile.language,
+                lead_id: order?.lead_id ?? null,
+                body_measurements: measurements,
+                photo_urls: photoUrls,
+                focus_areas: selectedFocus,
+                coverage_requirements: coverage,
+                lifestyle_context: {
+                    occupation: lifestyle.occupation,
+                    occasions: lifestyle.occasions,
+                    shop_frequency: lifestyle.shopFrequency,
+                    budget_per_outfit: lifestyle.budget,
+                },
+                piece_preferences: preferences,
+                selected_moodboard_id: selectedMoodboard,
+                selected_moodboard_label: selectedBoard?.label,
+                secondary_moodboard_elements: secondaryElements,
+                hair_context: {
+                    texture: lifestyle.hairTexture,
+                    colour: lifestyle.hairColour,
+                    include_hair_direction: lifestyle.includeHair,
+                },
+                shopping_relationship: lifestyle.shoppingRelationship,
+                prior_styling_experience: {
+                    used_before: lifestyle.priorService,
+                    result: lifestyle.priorServiceResult,
+                },
+                one_outfit_image_url: photoUrls.one_outfit || null,
+                completion_percentage: completionPercentage,
             });
-            const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.error || 'Unable to save intake');
             setSubmitStage('complete');
+            clearCachedPhotoUrls(accessEmail, order?.id);
             setComplete(true);
         } catch (err) {
             setAccessError(err instanceof Error ? err.message : 'Unable to save intake');
@@ -607,7 +784,7 @@ function StylistIntakeInner() {
                     </div>
                     <div className="iconik-micro text-luxury-charcoal/35 mb-4">Style Direction Confirmed</div>
                     <h1 className="iconik-display text-luxury-charcoal mb-4" style={{ fontSize: 'clamp(28px, 5vw, 48px)' }}>{board?.label || 'Your ICONIK Direction'}</h1>
-                    <p className="luxury-body text-luxury-charcoal/55 leading-relaxed" style={{ fontWeight: 300 }}>This, combined with your body geometry analysis, colour profile, and facial architecture, is the foundation of your Blueprint. We will have it with you within 24 hours.</p>
+                    <p className="luxury-body text-luxury-charcoal/55 leading-relaxed" style={{ fontWeight: 300 }}>This, combined with your body geometry analysis, colour profile, and facial architecture, is the foundation of your Blueprint. After your 30-minute consultation, we will deliver it within 5 working days.</p>
                 </div>
             </div>
         );
@@ -626,7 +803,7 @@ function StylistIntakeInner() {
                             {submitStage === 'complete' && 'Intake received.'}
                         </h2>
                         <p className="luxury-body text-luxury-charcoal/45 text-sm leading-relaxed mt-3" style={{ fontWeight: 300 }}>
-                            Please keep this page open. Photo uploads now run together, so this should only take a few seconds.
+                            Please keep this page open. Each confirmed photo is saved, so a retry will continue where it left off.
                         </p>
                     </div>
                 </div>
@@ -645,6 +822,11 @@ function StylistIntakeInner() {
 
             <main className="max-w-4xl mx-auto px-4 py-8">
                 <div className="rounded-2xl border p-5 md:p-8" style={{ background: 'var(--luxury-warm-white)', borderColor: 'var(--luxury-cream)' }}>
+                    {resumeNotice && (
+                        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 luxury-body">
+                            {resumeNotice}
+                        </div>
+                    )}
                     {step === 0 && (
                         <section className="space-y-5">
                             <h1 className="iconik-display text-luxury-charcoal" style={{ fontSize: 'clamp(24px, 4vw, 36px)' }}>Basic profile</h1>
@@ -725,7 +907,7 @@ function StylistIntakeInner() {
                                         <div className="md:col-span-2 md:mx-auto md:w-full md:max-w-md">
 	                                            <PhotoUploadCard
 	                                                field={field}
-	                                                fileName={photos.headshot?.name}
+	                                                fileName={photos.headshot?.name || (uploadedUrls.headshot ? 'Photo saved' : undefined)}
 	                                                featured
 	                                                onChange={file => updatePhoto('headshot', file)}
 	                                            />
@@ -739,7 +921,7 @@ function StylistIntakeInner() {
                                         <PhotoUploadCard
                                             key={field.key}
 	                                            field={field}
-	                                            fileName={photos[field.key]?.name}
+	                                            fileName={photos[field.key]?.name || (uploadedUrls[photoUrlKeyByPhotoKey[field.key]] ? 'Photo saved' : undefined)}
 	                                            featured
 	                                            onChange={file => updatePhoto(field.key, file)}
 	                                        />
@@ -760,7 +942,7 @@ function StylistIntakeInner() {
                                     return (
                                         <PhotoUploadCard
 	                                            field={field}
-	                                            fileName={photos.outfit?.name}
+	                                            fileName={photos.outfit?.name || (uploadedUrls.one_outfit ? 'Photo saved' : undefined)}
 	                                            featured
 	                                            onChange={file => updatePhoto('outfit', file)}
 	                                        />

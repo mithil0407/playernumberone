@@ -13,7 +13,7 @@ export default function ModestPage() {
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">16 full-coverage outfits</span> built around your <span className="font-semibold text-luxury-green">frame</span>, your <span className="font-semibold text-luxury-accent">colour palette</span>, and your <span className="font-semibold text-luxury-green">lifestyle</span>. Delivered in 24 hours.
+          Get <span className="font-semibold text-luxury-accent">20 full-coverage outfits</span> built around your <span className="font-semibold text-luxury-green">frame</span>, your <span className="font-semibold text-luxury-accent">colour palette</span>, and your <span className="font-semibold text-luxury-green">lifestyle</span>. Delivered in 24 hours.
         </>
       }
     />

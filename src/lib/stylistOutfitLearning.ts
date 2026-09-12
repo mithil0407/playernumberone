@@ -1,17 +1,17 @@
-import { supabaseAdmin } from './supabase';
+import { supabaseAdmin } from './supabase.ts';
 import {
   normaliseStylistOutfitSlots,
   stylistOutfitCompletenessScore,
   stylistOutfitSignature,
   type ParsedStylistOutfit,
   type ParsedStylistOutfitSlot,
-} from './stylistOutfitLibraryParser';
+} from './stylistOutfitLibraryParser.ts';
 import {
   getStylistBlueprintCapsulePageRanges,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
-} from './stylistBlueprintSchema';
-import type { BlueprintBlock, BlueprintPage, StylistBlueprintReportData } from './stylistBlueprintGenerator';
+} from './stylistBlueprintSchema.ts';
+import type { BlueprintBlock, BlueprintPage, StylistBlueprintReportData } from './stylistBlueprintGenerator.ts';
 
 type CapsuleName = ParsedStylistOutfit['capsule'];
 const CAPSULES: CapsuleName[] = ['Professional', 'Social', 'Everyday', 'Occasion'];

@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import sharp from 'sharp';
+import sharp, { type OverlayOptions } from 'sharp';
 import { createSupabaseAdminServerClient } from './supabaseServer';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
@@ -369,7 +369,7 @@ async function createCollageCard(itemImageUrls: string[]): Promise<Buffer> {
   const rows = Math.ceil(Math.max(urls.length, 1) / cols);
   const cellW = Math.floor((W - PAD * (cols + 1)) / cols);
   const cellH = Math.floor((H - PAD * (rows + 1)) / rows);
-  const composites: sharp.OverlayOptions[] = [];
+  const composites: OverlayOptions[] = [];
 
   for (let i = 0; i < urls.length; i++) {
     const col = i % cols, row = Math.floor(i / cols);

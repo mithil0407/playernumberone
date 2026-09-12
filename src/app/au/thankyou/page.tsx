@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, Shield, Clock, Mail } from 'lucide-react';
 import { Suspense, useEffect, useState, useCallback } from 'react';
-import { trackPageView, trackPurchase, trackViewContent, trackInitiateCheckout } from '@/lib/metaPixel';
+import { trackPurchase, trackViewContent, trackInitiateCheckout } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types for subscription ─────────────────────────────────────────
@@ -111,8 +111,6 @@ function ThankYouContent() {
 
     // Track purchase + upsell view on mount
     useEffect(() => {
-        trackPageView('AU Thank You');
-
         // Only fire Purchase if the checkout page didn't already fire it
         // (guards against duplicate events on page refresh)
         const alreadyTracked = paymentId && sessionStorage.getItem('au_purchaseTracked') === paymentId;

@@ -1,4 +1,5 @@
 import { buildMetadata } from "@/lib/seo";
+import SeoSectionChrome from "@/components/seo/SeoSectionChrome";
 
 export const metadata = buildMetadata({
   title: "Terms of Service",
@@ -7,5 +8,5 @@ export const metadata = buildMetadata({
 });
 
 export default function TermsLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <SeoSectionChrome>{children}</SeoSectionChrome>;
 }

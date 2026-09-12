@@ -5,7 +5,13 @@ import { CheckCircle, Clock, Mail, Shield, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { trackCompleteRegistration, trackPageView } from '@/lib/metaPixel';
+import {
+  markMetaPurchaseHandoffTracked,
+  readMetaPurchaseHandoff,
+  trackCompleteRegistration,
+  updateUserData,
+} from '@/lib/metaPixel';
+import { resolveMetaCompleteRegistrationEventId } from '@/lib/metaTrackingContract';
 
 function SuccessPageContent() {
   const searchParams = useSearchParams();
@@ -13,22 +19,38 @@ function SuccessPageContent() {
   const [orderId, setOrderId] = useState('');
 
   useEffect(() => {
-    trackPageView('Checkout Success');
-
     const urlCustomerId = searchParams.get('customer_id');
     const urlOrderId = searchParams.get('order_id');
     const dbOrderId = searchParams.get('db_order_id');
     const paymentId = searchParams.get('payment_id');
-    const urlAmount = searchParams.get('amount');
-    const purchaseAmount = localStorage.getItem('purchaseAmount') || urlAmount;
-    const purchaseCurrency = localStorage.getItem('purchaseCurrency') || 'INR';
 
-    if (purchaseAmount) {
+    // The handoff record is keyed by payment ID, so it only resolves for the
+    // order this page is actually confirming — never a stale earlier amount.
+    const handoff = readMetaPurchaseHandoff(paymentId);
+    const eventId = resolveMetaCompleteRegistrationEventId(paymentId ?? handoff?.paymentId);
+
+    // Without a payment ID there is nothing to deduplicate against, and a reload
+    // would emit a fresh event every time. Better to send nothing.
+    if (eventId && !handoff?.completeRegistrationTracked) {
+      // Advanced matching first: the email and phone are already in storage, so
+      // firing without them was throwing away the strongest matching signal.
+      const email = handoff?.email || localStorage.getItem('customerEmail') || undefined;
+      const phone = handoff?.phone || localStorage.getItem('customerPhone') || undefined;
+      if (email || phone) updateUserData(email, phone, handoff?.phoneCountryCode);
+
       trackCompleteRegistration(
-        parseFloat(purchaseAmount),
+        handoff?.amount,
         'ICONIK Style Consultation Purchase',
-        purchaseCurrency
+        handoff?.currency ?? 'INR',
+        {
+          eventId,
+          contentIds: handoff?.contentIds,
+          contentCategory: handoff?.contentCategory,
+          transactionId: handoff?.paymentId ?? paymentId ?? undefined,
+        },
       );
+
+      if (handoff) markMetaPurchaseHandoffTracked(handoff.paymentId);
     }
 
     if (urlCustomerId) localStorage.setItem('customerId', urlCustomerId);

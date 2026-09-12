@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase';
-import { ADMIN_COOKIE, isAdminAuthenticatedFromCookieValue } from '@/lib/adminAuth';
+import { canAccessBlueprintReport, isAdminCookieAuthenticated } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import {
   generateStylistBlueprintReplacementOutfit,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintOutfitCount,
   getStylistOutfitCulturalMode,
   isVersionedStylistBlueprintReportData,
   validateStylistBlueprintReport,
@@ -21,6 +21,7 @@ import {
   generateStylistOutfitScienceApplication,
   isScienceBlueprintReport,
 } from '@/lib/stylistOutfitScience';
+import { resolveConsultationIntakePhotos } from '@/lib/stylistConsultationWorkspace';
 
 export const maxDuration = 300;
 
@@ -28,12 +29,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ reportId: string }> },
 ) {
-  const cookieStore = await cookies();
-  if (!isAdminAuthenticatedFromCookieValue(cookieStore.get(ADMIN_COOKIE)?.value)) {
+  const { reportId } = await params;
+  if (!(await canAccessBlueprintReport(reportId))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const { reportId } = await params;
   const body = await request.json().catch(() => ({}));
   const pageNumber = Number(body.pageNumber);
   const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
@@ -76,6 +75,7 @@ export async function POST(
     if (submissionError || !submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
+    const resolvedSubmission = await resolveConsultationIntakePhotos(submission as StylistIntakeSubmission & { source_photo_paths?: Record<string, string> | null });
 
     await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -87,18 +87,18 @@ export async function POST(
       .eq('id', reportId);
     await revalidateStylistBlueprintCache(reportId, report.share_token ?? null);
 
-    const culturalMode = getStylistOutfitCulturalMode(submission as StylistIntakeSubmission);
+    const culturalMode = getStylistOutfitCulturalMode(resolvedSubmission);
     let nextReportData: StylistBlueprintReportData | null = null;
     let nextReplacementPage = null as Awaited<ReturnType<typeof generateStylistBlueprintReplacementOutfit>> | null;
     let lastValidationError: unknown = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       const scienceResult = isScienceBlueprintReport(reportData)
-        ? await generateStylistOutfitScienceApplication(submission as StylistIntakeSubmission, reportData)
+        ? await generateStylistOutfitScienceApplication(resolvedSubmission, reportData)
         : null;
       const replacementPage = scienceResult
         ? scienceResult.pages.find(page => page.page_number === pageNumber)
         : await generateStylistBlueprintReplacementOutfit(
-          submission as StylistIntakeSubmission,
+          resolvedSubmission,
           reportData,
           pageNumber,
           attempt === 0 ? reason : `${reason || 'Admin requested outfit replacement.'}\n\nPrevious validation failed: ${lastValidationError instanceof Error ? lastValidationError.message : String(lastValidationError)}. Regenerate this outfit and fix that issue.`,
@@ -133,7 +133,14 @@ export async function POST(
       .from('stylist_blueprint_reports')
       .update({
         report_data: nextReportData,
+        image_urls: { ...(report.image_urls ?? {}), application: { ...(report.image_urls?.application ?? {}),
+          outfitFlatlays: Array.from({ length: getStylistBlueprintOutfitCount(reportData) }, (_, index) =>
+            index === pageNumber - outfitStart ? null : report.image_urls?.application?.outfitFlatlays?.[index] ?? null),
+        } },
         section_approvals: nextApprovals,
+        status: 'in_review',
+        published_at: null,
+        delivered_at: null,
         progress_stage: null,
         error_message: null,
         updated_at: new Date().toISOString(),
@@ -142,12 +149,12 @@ export async function POST(
     await revalidateStylistBlueprintCache(reportId, report.share_token ?? null);
 
     const imageSlot = `application.outfitFlatlays.${pageNumber - outfitStart}` as StylistBlueprintImageSlotKey;
-    const imageResult = await regenerateStylistBlueprintImageSlot(
+    const imageResult = await isAdminCookieAuthenticated() ? await regenerateStylistBlueprintImageSlot(
       reportId,
       nextReportData,
       imageSlot,
-      { shareToken: report.share_token ?? null, submission: submission as StylistIntakeSubmission },
-    );
+      { shareToken: report.share_token ?? null, submission: resolvedSubmission },
+    ) : null;
 
     const { data: freshReport } = await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -159,8 +166,8 @@ export async function POST(
       success: true,
       page: nextReplacementPage,
       report: freshReport,
-      imageUrls: imageResult.imageUrls,
-      imageUrl: imageResult.imageUrl,
+      imageUrls: imageResult?.imageUrls,
+      imageUrl: imageResult?.imageUrl,
       slotKey: imageSlot,
     });
   } catch (err) {

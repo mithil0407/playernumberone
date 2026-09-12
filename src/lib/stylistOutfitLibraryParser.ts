@@ -4,7 +4,14 @@ import { join } from 'path';
 export interface ParsedStylistOutfit {
   id: string;
   title: string;
-  source: 'women' | 'root' | 'curated' | 'learned';
+  source: 'pinterest' | 'women' | 'root' | 'curated' | 'learned';
+  /**
+   * Every capsule this look genuinely works for. A camel blazer over a tee and
+   * jeans is both a relaxed office outfit and a weekend one, so it should be
+   * reachable from either — while still appearing at most once per report.
+   * Always contains `capsule`.
+   */
+  capsules?: ParsedStylistOutfit['capsule'][];
   capsule: 'Professional' | 'Social' | 'Everyday' | 'Occasion';
   fields: Array<{ label: string; value: string }>;
   normalised_slots: ParsedStylistOutfitSlot[];
@@ -30,6 +37,12 @@ const LABEL_ALIASES: Record<string, string> = {
   bottom: 'Bottom',
   bottoms: 'Bottom',
   dress: 'Dress',
+  saree: 'Dress',
+  sari: 'Dress',
+  lehenga: 'Bottom',
+  kurta: 'Top',
+  blouse: 'Top',
+  dupatta: 'Outerwear',
   footwear: 'Footwear',
   handbag: 'Bag',
   hairstyle: 'Hairstyle',
@@ -79,6 +92,15 @@ const INLINE_LABELS = [
   'TOP INNER',
   'BASE LAYER',
   'STYLING LINE',
+  // Indian womenswear labels. Without these a stylist cannot write "SAREE:" or
+  // "BLOUSE:" in the library at all — the entry parses to zero fields and the
+  // whole outfit is silently dropped, which is why the library had no sarees.
+  'SAREE',
+  'SARI',
+  'BLOUSE',
+  'DUPATTA',
+  'LEHENGA',
+  'KURTA',
   'PATTERN DETAIL',
   'STATEMENT PIECE',
   'WAIST DETAIL',
@@ -115,6 +137,22 @@ function readWomenLibraryFile(): string {
 function readUserLibraryFile(): string {
   try {
     return readFileSync(join(process.cwd(), 'stylistoutfitlibrary.md'), 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
+function readPinterestLibraryFile(): string {
+  try {
+    return readFileSync(join(process.cwd(), 'outfitlibrarypinterest.md'), 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
+function readEthnicOfficeLibraryFile(): string {
+  try {
+    return readFileSync(join(process.cwd(), 'outfitlibraryethnicoffice.md'), 'utf-8');
   } catch {
     return '';
   }
@@ -224,15 +262,22 @@ export function stylistOutfitSignature(slots: ParsedStylistOutfitSlot[]) {
 
 export function stylistOutfitCompletenessScore(slots: ParsedStylistOutfitSlot[]): number {
   const text = slots.map(slot => `${slot.slot} ${slot.piece}`).join(' ').toLowerCase();
-  const hasOnePiece = /\b(dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble)\b/.test(text);
+  const hasOnePiece = /\b(dress(?:es)?|jumpsuits?|sarees?|saris?|kurtas?|kurtis?|tunics?|lehengas?|anarkalis?|shararas?|ghararas?|salwar|co-ords?|coords?|sets?|ensembles?)\b/.test(text);
   const hasTop = /\b(top|blouse|shirt|tee|t-shirt|knit|camisole|tank|base layer)\b/.test(text) || slots.some(slot => /top|base layer/i.test(slot.slot));
-  const hasBottom = /\b(bottom|trouser|pant|jean|skirt|palazzo|legging)\b/.test(text) || slots.some(slot => /bottom/i.test(slot.slot));
-  const hasFootwear = /\b(footwear|shoe|sandal|heel|flat|sneaker|loafer|pump|mule|jutti|wedge|espadrille)\b/.test(text);
-  const hasBag = /\b(bag|tote|clutch|crossbody|handbag|shoulder bag|baguette)\b/.test(text);
-  const hasAccessory = /\b(jewel|earring|necklace|bracelet|watch|bangle|accessor|sunglass|scarf|belt)\b/.test(text);
+  const hasBottom = /\b(bottom|trousers?|pants?|jeans?|skirts?|palazzos?|leggings?|churidars?|salwars?)\b/.test(text) || slots.some(slot => /bottom/i.test(slot.slot));
+  const hasFootwear = /\b(footwear|shoes?|sandals?|heels?|flats?|sneakers?|loafers?|pumps?|mules?|juttis?|kolhapuris?|wedges?|espadrilles?)\b/.test(text);
+  const hasBag = /\b(bags?|totes?|clutch(?:es)?|crossbody|handbags?|shoulder bags?|baguettes?|potlis?)\b/.test(text);
+  const hasAccessory = /\b(jewell?ery|jewels?|earrings?|necklaces?|bracelets?|watch(?:es)?|bangles?|accessor(?:y|ies)|sunglass(?:es)?|scarf|scarves|belts?|jhumkas?|chandbalis?|kundan|studs?|hoops?|cuffs?)\b/.test(text);
   const hasStructure = /\b(blazer|jacket|cardigan|vest|coat|outerwear|layer|overshirt|belt|waist|tie)\b/.test(text);
   const hasDetail = slots.length >= 5;
+  // How the look is worn — the tuck, the rolled sleeve, where the belt sits.
+  const hasStylingNote = slots.some(slot => /styling line/i.test(slot.slot));
 
+  // Bag and accessory stay separate signals so entries written to the older
+  // template keep their score, and the styling note is an extra point on top —
+  // it is what makes a stylist-described outfit more useful than a generated
+  // one. Collapsing bag and accessory instead cost the existing library 49
+  // anchors to gain 45 here, which is not a trade worth making.
   return [
     hasOnePiece || (hasTop && hasBottom),
     hasFootwear,
@@ -240,18 +285,23 @@ export function stylistOutfitCompletenessScore(slots: ParsedStylistOutfitSlot[])
     hasAccessory,
     hasStructure,
     hasDetail,
+    hasStylingNote,
   ].filter(Boolean).length;
 }
 
 function outfitHasCompleteBase(slots: ParsedStylistOutfitSlot[]): boolean {
   const text = slots.map(slot => `${slot.slot} ${slot.piece}`).join(' ').toLowerCase();
-  const hasOnePiece = /\b(dress|jumpsuit|saree|sari|kurta|tunic|co-ord|coord|set|ensemble)\b/.test(text);
+  const hasOnePiece = /\b(dress(?:es)?|jumpsuits?|sarees?|saris?|kurtas?|kurtis?|tunics?|lehengas?|anarkalis?|shararas?|ghararas?|salwar|co-ords?|coords?|sets?|ensembles?)\b/.test(text);
   const hasTop = /\b(top|blouse|shirt|tee|t-shirt|knit|camisole|tank|base layer)\b/.test(text) || slots.some(slot => /top|base layer/i.test(slot.slot));
   const hasBottom = /\b(bottom|trouser|pant|jean|skirt|palazzo|legging)\b/.test(text) || slots.some(slot => /bottom/i.test(slot.slot));
-  const hasFootwear = /\b(footwear|shoe|sandal|heel|flat|sneaker|loafer|pump|mule|jutti|wedge|espadrille|boot)\b/.test(text);
-  const hasBagOrAccessory = /\b(bag|tote|clutch|crossbody|handbag|shoulder bag|baguette|jewel|earring|necklace|bracelet|watch|bangle|accessor|sunglass|scarf|belt)\b/.test(text);
+  const hasFootwear = /\b(footwear|shoes?|sandals?|heels?|flats?|sneakers?|loafers?|pumps?|mules?|juttis?|kolhapuris?|wedges?|espadrilles?|boots?)\b/.test(text);
+  const hasBagOrAccessory = /\b(bags?|totes?|clutch(?:es)?|crossbody|handbags?|shoulder bags?|baguettes?|potlis?|jewell?ery|jewels?|earrings?|necklaces?|bracelets?|watch(?:es)?|bangles?|accessor(?:y|ies)|sunglass(?:es)?|scarf|scarves|belts?|jhumkas?|chandbalis?|kundan|studs?|hoops?|cuffs?)\b/.test(text);
 
-  return (hasOnePiece || (hasTop && hasBottom)) && hasFootwear && hasBagOrAccessory;
+  // An anchor's job is the garment relationship. Footwear and a bag are filled
+  // in by the engine when the anchor does not name them (see the fallback slots
+  // in generateOutfitCandidates), so demanding both here rejected complete
+  // outfits purely because the source photo cropped the shoes.
+  return (hasOnePiece || (hasTop && hasBottom)) && (hasFootwear || hasBagOrAccessory);
 }
 
 function outfitHasAmbiguousShoppingLanguage(outfit: Pick<ParsedStylistOutfit, 'fields'>): boolean {
@@ -263,9 +313,19 @@ function outfitHasAmbiguousShoppingLanguage(outfit: Pick<ParsedStylistOutfit, 'f
   );
 }
 
+/** The capsules an anchor may be drawn into. */
+export function outfitCapsules(outfit: ParsedStylistOutfit): ParsedStylistOutfit['capsule'][] {
+  return outfit.capsules?.length ? outfit.capsules : [outfit.capsule];
+}
+
 export function isUsableStylistOutfitAnchor(outfit: ParsedStylistOutfit): boolean {
-  return outfit.completeness_score >= 5 &&
-    outfit.normalised_slots.length >= 4 &&
+  // The reference board includes pins explicitly marked as men's looks to skip.
+  const text = outfit.fields.map(field => field.value).join(' ');
+  if (/\(\s*menswear\b|men['’]s look/i.test(text)) return false;
+  // completeness_score still ranks anchors against each other, but it is no
+  // longer a gate: it scored a missing bag and a missing shoe as two separate
+  // failures, which dropped complete looks twice over.
+  return outfit.normalised_slots.length >= 3 &&
     outfitHasCompleteBase(outfit.normalised_slots) &&
     !outfitHasAmbiguousShoppingLanguage(outfit);
 }
@@ -550,8 +610,252 @@ ${formatStylistOutfitsForPrompt(parsedOutfits)}
 ${formatStylistOutfitsForPrompt(parseCuratedOutfitLibrary(curatedLibrary))}`;
 }
 
+
+// --- Stylist-described board outfits -----------------------------------------
+// One outfit per line, positional rather than labelled:
+//   **12.** top / layer / bottom / shoes / accessories. *Styling: ...*
+// The styling note is the point of this source: it records how the look is
+// actually worn — the tuck, the rolled sleeve, where the belt sits — which no
+// generated outfit supplies.
+
+const PINTEREST_ENTRY_RE = /^\*\*(\d+)\.\*\*\s*(.+)$/;
+const NO_PIECE_RE = /^(no layer|none|not visible|no bag|no accessories|no jewellery|minimal|n\/a|[-–—])$/i;
+/** The "bottom" slot when the top is really a one-piece. */
+const ONE_PIECE_BOTTOM_RE = /^(dress|gown|jumpsuit|attached|built-in|skirt of the dress|romper|playsuit|the dress)\b/i;
+
+/**
+ * A garment that is already the whole outfit from shoulder to hem.
+ *
+ * One-piece-ness used to be read from the *bottom* segment alone, so it only
+ * worked when the pin restated the garment there ("... / dress / ..."). A pin
+ * that wrote "—" for the bottom left a jumpsuit sitting in the Top slot, and
+ * the outfit engine then bolted a pair of trousers onto it.
+ */
+const ONE_PIECE_TOP_RE = /\b(dress|gown|jumpsuit|romper|playsuit|kaftan|caftan|sari|saree|anarkali)\b/i;
+
+/**
+ * The same nouns worn as a layer over a separate outfit. A shirt-dress worn
+ * open over jeans is outerwear, not the outfit, so it keeps its real bottom.
+ */
+const ONE_PIECE_AS_LAYER_RE = /\b(worn open|open over|duster|cape|shrug|overlay|kaftan top|jacket)\b/i;
+
+/**
+ * A bottom that is a genuinely separate garment rather than a description of
+ * the one-piece's own lower half. "draped sari" and "A-line skirt with a
+ * ruffled hem" describe the dress; "matching blue palazzo trousers" under an
+ * anarkali does not.
+ */
+const SEPARATE_BOTTOM_RE = /\b(trouser|pant|jean|palazzo|legging|churidar|salwar|sharara|gharara|shorts|culotte|dhoti)\b/i;
+
+/** A board pin that photographs more than one outfit at once. */
+const MULTI_LOOK_PREFIX_RE = /^\*?\((?:two|three|four)\s+looks\)\*?\s*[-\u2013\u2014]?\s*/i;
+
+/** The labels a stylist uses to separate the looks inside such a pin. */
+const LOOK_LABEL_RE = /\s*\b(?:left|right|centre|center|middle)\s*:\s*/i;
+
+/**
+ * The looks described by one pin. A "(Two looks)" pin that labels them
+ * "Left: ... Right: ..." holds two complete outfits; splitting on the label is
+ * what stops the second look's pieces from shifting every slot of the first
+ * (trousers landing in Outerwear, pumps in Bottom, a bag in Footwear).
+ */
+function boardLooksFromFormula(formulaPart: string): string[] {
+  const cleaned = formulaPart
+    .replace(/^\*\(Flat-lay\)\*\s*/i, '')
+    .replace(MULTI_LOOK_PREFIX_RE, '')
+    .trim();
+  const looks = cleaned
+    .split(LOOK_LABEL_RE)
+    .map(part => part.trim().replace(/[.;]+$/, '').trim())
+    .filter(Boolean);
+  return looks.length ? looks : [cleaned];
+}
+
+/** Board look 138 and 138b, so a split pin keeps a stable, distinct id. */
+function boardLookSuffix(index: number) {
+  return index === 0 ? '' : String.fromCharCode(97 + index);
+}
+
+const FOOTWEAR_PIECE_RE = /\b(?:shoe|sandal|heel|heeled|flats|sneaker|trainer|loafer|pump|mule|boot|jutti|wedge|espadrille|slide|brogue|slingback|stiletto)s?\b/i;
+const BAG_PIECE_RE = /\b(?:bag|tote|clutch|crossbody|handbag|potli|purse|backpack)s?\b/i;
+const BOTTOM_PIECE_RE = /\b(?:trouser|pant|jean|palazzo|legging|skirt|shorts|culotte|churidar|salwar|sharara|gharara|dhoti|chino)s?\b/i;
+const LAYER_PIECE_RE = /\b(?:blazer|jacket|cardigan|waistcoat|vest|coat|duster|kimono|shrug|overshirt|dupatta|cape|shacket|poncho)s?\b/i;
+const ACCESSORY_PIECE_RE = /\b(?:necklace|earring|hoop|stud|bangle|bracelet|watch|cuff|belt|scarf|scarves|sunglasses|ring|brooch|headband|neckerchief)s?\b/i;
+
+/**
+ * Whether the pin skipped a position, so reading it by position is wrong.
+ *
+ * The board convention is top / layer / bottom / shoes / accessories, and a pin
+ * that omits the "no layer" placeholder shifts every slot after it: board look
+ * 138 put its trousers in Outerwear, its pumps in Bottom and its bag in
+ * Footwear. Trousers in the layer position, a shoe in the bottom position, or a
+ * bag where the shoe belongs are all things a real pin never says.
+ */
+function boardSegmentsAreShifted(segments: string[]) {
+  const [, layer = '', bottom = '', shoes = ''] = segments;
+  const layerIsBottom = BOTTOM_PIECE_RE.test(layer) && !LAYER_PIECE_RE.test(layer);
+  const bottomIsFootwear = FOOTWEAR_PIECE_RE.test(bottom);
+  const footwearIsBag = BAG_PIECE_RE.test(shoes) && !FOOTWEAR_PIECE_RE.test(shoes);
+  return layerIsBottom || bottomIsFootwear || footwearIsBag;
+}
+
+/** Reads a shifted pin by what each piece actually is, since position lied. */
+function boardSlotsByGarment(segments: string[]) {
+  const remaining = segments.filter(part => part && !NO_PIECE_RE.test(cleanText(part)));
+  const take = (match: RegExp, exclude?: RegExp) => {
+    const index = remaining.findIndex(part => match.test(part) && !exclude?.test(part));
+    return index >= 0 ? remaining.splice(index, 1)[0] : undefined;
+  };
+  const shoes = take(FOOTWEAR_PIECE_RE);
+  const bottom = take(BOTTOM_PIECE_RE);
+  const layer = take(LAYER_PIECE_RE);
+  const accessoryParts = remaining.filter(part => BAG_PIECE_RE.test(part) || ACCESSORY_PIECE_RE.test(part));
+  const top = remaining.find(part => !accessoryParts.includes(part));
+  return { top, layer, bottom, shoes, accessories: accessoryParts.join(', ').trim() };
+}
+
+/** The five board slots, read by position and repaired only when position lied. */
+function boardSlotsFromSegments(segments: string[]) {
+  if (boardSegmentsAreShifted(segments)) return boardSlotsByGarment(segments);
+  const [top, layer, bottom, shoes, ...accessoryParts] = segments;
+  return { top, layer, bottom, shoes, accessories: accessoryParts.join(', ').trim() };
+}
+
+interface CapsuleSignal { capsule: ParsedStylistOutfit['capsule']; pattern: RegExp; weight: number }
+
+// Ordered by how strongly a term implies its context. Occasion cues are checked
+// hardest because putting a gown in someone's everyday section is the worst
+// possible mistake; Everyday cues are the most common and weighted lowest.
+const CAPSULE_SIGNALS: CapsuleSignal[] = [
+  { capsule: 'Occasion', pattern: /\bgown\b|floor-length|sequin|embellish|bridal|lehenga|anarkali|sharara|gharara|banarasi|kanjivaram|zari|brocade|tulle|feather|corsage/i, weight: 4 },
+  { capsule: 'Occasion', pattern: /\bclutch\b/i, weight: 1 },
+  { capsule: 'Professional', pattern: /blazer|tailored trouser|pencil skirt|suiting|work tote|pinstripe|waistcoat|shirt dress|trouser suit|structured tote/i, weight: 2 },
+  { capsule: 'Professional', pattern: /loafer|court shoe|pointed pump|slingback/i, weight: 1 },
+  { capsule: 'Social', pattern: /satin|slip skirt|bias|silk|velvet|cocktail|evening|strappy heel|metallic|midi slip/i, weight: 2 },
+  { capsule: 'Everyday', pattern: /sneaker|trainer|\bjeans\b|\bdenim\b|\btee\b|t-shirt|crossbody|tote bag|flat sandal|slide sandal|espadrille|shorts|track pant|hoodie|sweatshirt|cap\b/i, weight: 2 },
+];
+
+function capsuleScores(text: string) {
+  const scores: Record<string, number> = { Professional: 0, Social: 0, Everyday: 0, Occasion: 0 };
+  for (const signal of CAPSULE_SIGNALS) {
+    if (signal.pattern.test(text)) scores[signal.capsule] += signal.weight;
+  }
+  return scores;
+}
+
+/** Best-guess primary capsule from the garment vocabulary alone. */
+export function inferPinterestCapsule(text: string): ParsedStylistOutfit['capsule'] {
+  const best = (Object.entries(capsuleScores(text)) as Array<[ParsedStylistOutfit['capsule'], number]>)
+    .sort((a, b) => b[1] - a[1]);
+  if (!best[0][1]) return 'Everyday';
+  return best[0][0];
+}
+
+/**
+ * Every capsule the look is good enough for, strongest first. A second capsule
+ * qualifies only when its evidence is close to the winner's, so a gown does not
+ * become an everyday option just because it scored a single stray point.
+ */
+export function inferPinterestCapsules(text: string): ParsedStylistOutfit['capsule'][] {
+  const ranked = (Object.entries(capsuleScores(text)) as Array<[ParsedStylistOutfit['capsule'], number]>)
+    .filter(([, score]) => score > 0)
+    .sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return ['Everyday'];
+  const [, topScore] = ranked[0];
+  return ranked.filter(([, score]) => score >= topScore - 1).map(([capsule]) => capsule);
+}
+
+interface BoardParseOptions {
+  /** Distinguishes ids when several board files are loaded. */
+  idPrefix?: string;
+  /**
+   * The context the file was collected for. A file of office looks is
+   * Professional by definition, so we do not ask the vocabulary to rediscover
+   * that — but any further capsule the look also suits is still inferred.
+   */
+  baseCapsule?: ParsedStylistOutfit['capsule'];
+}
+
+export function parsePinterestOutfitLibrary(raw: string, options: BoardParseOptions = {}): ParsedStylistOutfit[] {
+  const entries: ParsedStylistOutfit[] = [];
+  const seen = new Set<string>();
+
+  for (const line of raw.split(/\r?\n/)) {
+    const match = line.trim().match(PINTEREST_ENTRY_RE);
+    if (!match) continue;
+    const [, number, rest] = match;
+
+    const [formulaPart, stylingPart] = rest.split(/\*Styling:/i);
+    const styling = (stylingPart ?? '')
+      .replace(/\*/g, '')
+      .replace(/^\s*/, '')
+      .replace(/\s*$/, '')
+      .trim();
+
+    const looks = boardLooksFromFormula(formulaPart);
+    for (const [lookIndex, look] of looks.entries()) {
+      const segments = look
+        .split(' / ')
+        .map(part => part.trim().replace(/[.;]+$/, '').trim());
+      if (segments.length < 4) continue;
+
+      const { top, layer, bottom, shoes, accessories } = boardSlotsFromSegments(segments);
+      // The pin restates a one-piece in the bottom slot ("... / dress / ..."),
+      // but not every stylist does, so the top's own garment noun decides too.
+      const topIsOnePiece = ONE_PIECE_TOP_RE.test(top ?? '') && !ONE_PIECE_AS_LAYER_RE.test(top ?? '');
+      const bottomRestatesTop = topIsOnePiece && !SEPARATE_BOTTOM_RE.test(bottom ?? '');
+      const onePiece = ONE_PIECE_BOTTOM_RE.test(bottom ?? '') || bottomRestatesTop;
+
+      const fields: Array<{ label: string; value: string }> = [];
+      const push = (label: string, value: string | undefined) => {
+        const text = cleanText(value ?? '');
+        if (!text || NO_PIECE_RE.test(text)) return;
+        fields.push({ label, value: text });
+      };
+
+      push(topIsOnePiece || onePiece ? 'Dress' : 'Top', top);
+      push('Outerwear', layer);
+      if (!onePiece) push('Bottom', bottom);
+      push('Footwear', shoes);
+      push('Accessories', accessories);
+      push('Styling Line', styling);
+
+      const normalised_slots = normaliseStylistOutfitSlots(fields);
+      const text = fields.map(field => field.value).join(' ');
+      const signature = stylistOutfitSignature(normalised_slots) || text.toLowerCase();
+      if (seen.has(signature)) continue;
+      seen.add(signature);
+
+      const prefix = options.idPrefix ?? 'pinterest';
+      const reference = `${number}${boardLookSuffix(lookIndex)}`;
+      const inferred = inferPinterestCapsules(text);
+      const capsules = options.baseCapsule
+        ? [options.baseCapsule, ...inferred.filter(item => item !== options.baseCapsule)]
+        : inferred;
+
+      entries.push({
+        id: `${prefix}-${reference}`,
+        title: `Board look ${reference}`,
+        source: 'pinterest',
+        capsule: options.baseCapsule ?? inferPinterestCapsule(text),
+        capsules,
+        fields,
+        normalised_slots,
+        completeness_score: stylistOutfitCompletenessScore(normalised_slots),
+        signature,
+        notes: styling ? [`Stylist styling note: ${styling}`] : [],
+      });
+    }
+  }
+
+  return entries;
+}
+
 export function getParsedStylistOutfitLibrary(): ParsedStylistOutfit[] {
   return [
+    // Human-described board outfits lead: they carry a real styling note.
+    ...parsePinterestOutfitLibrary(readPinterestLibraryFile()),
+    ...parsePinterestOutfitLibrary(readEthnicOfficeLibraryFile(), { idPrefix: 'ethnic-office', baseCapsule: 'Professional' }),
     ...parseWomenOutfitLibrary(readWomenLibraryFile()),
     ...parseRawOutfitLibrary(readUserLibraryFile()),
     ...parseCuratedOutfitLibrary(readCuratedLibraryFile()),

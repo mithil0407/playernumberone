@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type TouchEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode, type TouchEvent } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, RotateCcw, X } from 'lucide-react';
 import ManReport, {
   getManReportChapters,
@@ -9,6 +9,9 @@ import ManReport, {
   type ManReportSlideMeta,
 } from '@/components/ManReport';
 import ManEditPanel from '@/components/ManEditPanel';
+import ManReportOpeningSequence from '@/components/ManReportOpeningSequence';
+import ManReportMobileV2 from '@/components/ManReportMobileV2';
+import ManReportCinematicPrototype from '@/components/ManReportCinematicPrototype';
 
 type ManReportProps = ComponentProps<typeof ManReport>;
 
@@ -19,6 +22,14 @@ interface PublicManReportExperienceProps {
   shopping: ManReportProps['shopping'];
   /** Escape hatch: `?view=deck` restores the previous slide-deck experience on mobile. */
   forceDeck?: boolean;
+  /** Temporary support route for comparing the retired mobile scroll experience. */
+  forceLegacyMobile?: boolean;
+  /** Reversible prototype of the scroll-directed report experience. */
+  cinematic?: boolean;
+  /** `?experience=v2` — the rebuilt mobile Blueprint (Reveal + Reference). */
+  mobileV2?: boolean;
+  /** True only after the report has been approved or sent. */
+  stylistReviewed?: boolean;
 }
 
 const MOBILE_QUERY = '(max-width: 900px)';
@@ -38,68 +49,96 @@ interface StoredPosition {
   ts: number;
 }
 
-export default function PublicManReportExperience({ shareToken, data, imageUrls, shopping, forceDeck = false }: PublicManReportExperienceProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  const [viewportReady, setViewportReady] = useState(false);
+export default function PublicManReportExperience({
+  shareToken,
+  data,
+  imageUrls,
+  shopping,
+  forceDeck = false,
+  forceLegacyMobile = false,
+  cinematic = false,
+  mobileV2 = false,
+  stylistReviewed = false,
+}: PublicManReportExperienceProps) {
+  const [{ isMobile, viewportReady }, setViewport] = useState({
+    isMobile: false,
+    viewportReady: false,
+  });
 
   useEffect(() => {
     const query = window.matchMedia(MOBILE_QUERY);
-    const sync = () => setIsMobile(query.matches);
+    const sync = () => setViewport({ isMobile: query.matches, viewportReady: true });
     sync();
-    setViewportReady(true);
     query.addEventListener('change', sync);
     return () => query.removeEventListener('change', sync);
   }, []);
 
+  // The explicit prototype route can still force V2 at any width for review.
+  if (mobileV2) {
+    return <ManReportMobileV2 shareToken={shareToken} data={data} imageUrls={imageUrls} stylistReviewed={stylistReviewed} />;
+  }
+
+  // Reveal + Reference is now the primary phone/tablet product. The legacy
+  // deck and scroll views remain available as explicit comparison routes.
+  if (isMobile && !cinematic && !forceDeck && !forceLegacyMobile) {
+    return <ManReportMobileV2 shareToken={shareToken} data={data} imageUrls={imageUrls} stylistReviewed={stylistReviewed} />;
+  }
+
   if (!viewportReady) {
     return (
       <>
-        <div className="public-report-initial-desktop">
-          <ManReport data={data} imageUrls={imageUrls} viewerMode="public" motionMode="reduced" deferSections shopping={shopping} />
-        </div>
-        <div className="public-report-initial-mobile" aria-label="Preparing your report">
+        <div className="public-report-initial-shell" aria-label="Preparing your report">
           <span>I C O N I K</span>
           <i />
           <small>Preparing your Blueprint</small>
         </div>
         <style jsx global>{`
-          .public-report-initial-mobile { display: none; }
-          @media (max-width: 900px) {
-            .public-report-initial-desktop { display: none; }
-            .public-report-initial-mobile {
-              height: 100dvh;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              gap: 16px;
-              background: #1B1815;
-              color: #F4EFE5;
-            }
-            .public-report-initial-mobile span { font-family: var(--font-fraunces), serif; font-size: 22px; letter-spacing: 0.28em; }
-            .public-report-initial-mobile i { width: 42px; height: 1px; background: rgba(244,239,229,0.42); }
-            .public-report-initial-mobile small { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.62; }
+          .public-report-initial-shell {
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            background: #1B1815;
+            color: #F4EFE5;
           }
+          .public-report-initial-shell span { font-family: var(--font-fraunces), serif; font-size: 22px; letter-spacing: 0.28em; }
+          .public-report-initial-shell i { width: 42px; height: 1px; background: rgba(244,239,229,0.42); }
+          .public-report-initial-shell small { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.62; }
         `}</style>
       </>
     );
   }
 
-  if (!isMobile) {
-    return (
+  let reportExperience: ReactNode;
+
+  if (cinematic) {
+    reportExperience = <ManReportCinematicPrototype data={data} imageUrls={imageUrls} />;
+  } else if (!isMobile) {
+    reportExperience = (
       <>
         <ManReport data={data} imageUrls={imageUrls} viewerMode="public" motionMode="standard" deferSections shopping={shopping} />
-        <ManEditPanel shareToken={shareToken} reportData={data} />
+        <DeferredManEditPanel shareToken={shareToken} reportData={data} />
         <ConfidentialityFootnote />
       </>
     );
+  } else if (forceDeck) {
+    reportExperience = <MobileDeckExperience shareToken={shareToken} data={data} imageUrls={imageUrls} shopping={shopping} />;
+  } else {
+    reportExperience = <MobileScrollExperience shareToken={shareToken} data={data} imageUrls={imageUrls} shopping={shopping} />;
   }
 
-  if (forceDeck) {
-    return <MobileDeckExperience shareToken={shareToken} data={data} imageUrls={imageUrls} shopping={shopping} />;
-  }
-
-  return <MobileScrollExperience shareToken={shareToken} data={data} imageUrls={imageUrls} shopping={shopping} />;
+  return (
+    <ManReportOpeningSequence
+      shareToken={shareToken}
+      classification={data.classification}
+      imageUrls={imageUrls}
+      stylistReviewed={stylistReviewed}
+    >
+      {reportExperience}
+    </ManReportOpeningSequence>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -320,8 +359,8 @@ function MobileScrollExperience({ shareToken, data, imageUrls, shopping }: Omit<
         shopping={shopping}
       />
 
-      <RecapBand data={data} />
-      <ManEditPanel shareToken={shareToken} reportData={data} />
+      <RecapBand data={data} onBrowse={openToc} />
+      <DeferredManEditPanel shareToken={shareToken} reportData={data} />
       <ConfidentialityFootnote />
 
       {resume && (
@@ -691,14 +730,18 @@ function MobileScrollExperience({ shareToken, data, imageUrls, shopping }: Omit<
           line-height: 1.3;
           text-align: right;
         }
-        .man-scroll-recap-next {
+        .man-scroll-recap-browse {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          margin: 34px 0 0;
+          margin-top: 34px;
+          padding: 11px 22px;
+          border: 1px solid rgba(244, 239, 229, 0.28);
+          border-radius: 999px;
+          color: ${IVORY};
           font-size: 11px;
-          letter-spacing: 0.04em;
-          color: rgba(244, 239, 229, 0.66);
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -764,9 +807,9 @@ function TocSheet({
   );
 }
 
-// A closing beat after the last page: the blueprint in one glance,
-// flowing straight into Iconik Edit below.
-function RecapBand({ data }: { data: ManReportProps['data'] }) {
+// A closing beat after the last page: the blueprint in one glance.
+// When Iconik Edit is active for this report, its panel renders below.
+function RecapBand({ data, onBrowse }: { data: ManReportProps['data']; onBrowse: () => void }) {
   const cls = data.classification;
   const palette = (cls.colour.primary_palette ?? []).slice(0, 5);
   const facts = [
@@ -796,10 +839,9 @@ function RecapBand({ data }: { data: ManReportProps['data'] }) {
           ))}
         </div>
       )}
-      <p className="man-scroll-recap-next">
-        Questions, swaps, monthly edits — continue with Iconik Edit
-        <ChevronDown size={14} />
-      </p>
+      <button type="button" className="man-scroll-recap-browse" onClick={onBrowse}>
+        Revisit a chapter
+      </button>
     </section>
   );
 }
@@ -959,6 +1001,41 @@ function MobileDeckExperience({ shareToken, data, imageUrls, shopping }: Omit<Pu
           .public-man-deck-progress b { transition: none; }
         }
       `}</style>
+    </div>
+  );
+}
+
+function DeferredManEditPanel({
+  shareToken,
+  reportData,
+}: {
+  shareToken: string;
+  reportData: ManReportProps['data'];
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const anchor = anchorRef.current;
+    if (!anchor || ready) return;
+    if (!('IntersectionObserver' in window)) {
+      setReady(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+      setReady(true);
+      observer.disconnect();
+    }, { rootMargin: '1000px 0px' });
+
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, [ready]);
+
+  return (
+    <div ref={anchorRef} style={{ minHeight: 1 }}>
+      {ready && <ManEditPanel shareToken={shareToken} reportData={reportData} />}
     </div>
   );
 }

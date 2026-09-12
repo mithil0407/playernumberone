@@ -1,6 +1,7 @@
 import {
   applyStaleMarks,
   buildFallbackSearchUrl,
+  buildTrustedBrandSearch,
   buildShoppingSlotKey,
   collectGarmentSlots,
   descriptorHash,
@@ -144,6 +145,31 @@ ACCESSORIES: None
   invariant(url.includes('gl=in'), 'fallback URL pins India');
 
   invariant(buildShoppingSlotKey(7, 'footwear') === '7:footwear', 'slot key format is stable');
+}
+
+// ── trusted-brand category search ───────────────────────────
+
+{
+  const formalShoes = buildTrustedBrandSearch('Black leather derby — almond toe');
+  invariant(formalShoes.category === 'Formal footwear', 'derby maps to formal footwear');
+  invariant(formalShoes.brands.includes('Clarks'), 'formal footwear includes Clarks');
+  invariant(
+    ['H&M', 'Zara', 'Westside'].every(brand => formalShoes.brands.includes(brand)),
+    'every shortlist includes the popular-brand layer',
+  );
+  invariant(decodeURIComponent(formalShoes.url).includes('"Hush Puppies"'), 'brand names stay phrase-matched');
+  invariant(decodeURIComponent(formalShoes.url).includes('black leather derby almond toe men'), 'exact normalized spec remains in trusted search');
+
+  const denim = buildTrustedBrandSearch('Mid-wash straight-fit jeans');
+  invariant(denim.category === 'Denim', 'jeans map to denim');
+  invariant(denim.brands[0] === "Levi's", 'denim shortlist prioritises Levi\'s');
+
+  const knitwear = buildTrustedBrandSearch('Navy merino half-zip sweater — regular fit');
+  invariant(knitwear.category === 'Knitwear & polos', 'half-zip sweater maps to knitwear');
+  invariant(knitwear.url.includes('tbm=shop') && knitwear.url.includes('gl=in'), 'trusted search targets Google Shopping India');
+
+  const unknown = buildTrustedBrandSearch('Minimal taupe resort piece');
+  invariant(unknown.category === 'Menswear', 'unknown garments use the dependable default shortlist');
 }
 
 console.log('manShopping.test.ts passed');

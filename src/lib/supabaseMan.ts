@@ -70,11 +70,19 @@ export class ManIntakeApiError extends Error {
     }
 }
 
-export const saveManIntakeSubmission = async (submission: ManIntakeSubmission) => {
+export const saveManIntakeSubmission = async (
+    submission: ManIntakeSubmission,
+    uploadSession?: { id: string; token: string } | null,
+) => {
     const response = await fetch('/api/man-intake-submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submission),
+        headers: {
+            'Content-Type': 'application/json',
+            ...(uploadSession?.token ? { Authorization: `Bearer ${uploadSession.token}` } : {}),
+        },
+        body: JSON.stringify(uploadSession
+            ? { upload_session_id: uploadSession.id, answers: submission }
+            : submission),
     });
 
     const result = await response.json().catch(() => ({})) as {

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArticleGrowthTracker, TrackedConsultationLink } from "@/components/ArticleGrowthTracker";
+import { BLUEPRINT_OFFER } from "@/lib/siteFacts";
 
 interface CityLandingPageProps {
   city: string;
@@ -290,7 +291,7 @@ export default function CityLandingPage({
           </p>
           <div className="mt-5 flex flex-wrap gap-2 text-sm text-gray-600">
             <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 2026</span>
-            <span className="rounded-full border border-gray-200 px-3 py-1">By Mithil Navalakha, Iconik founder</span>
+            <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed by Jasmine Rana, Co-Founder and Head Stylist</span>
             <span className="rounded-full border border-gray-200 px-3 py-1">Online across India</span>
           </div>
         </header>
@@ -319,9 +320,10 @@ export default function CityLandingPage({
           <div className="mb-6">
             <Image
               src="/blueprint-process.webp"
-              alt="How the Iconik Style Blueprint works — intake form, stylist call, Blueprint in 48 hours"
+              alt="How the Iconik Style Blueprint works — intake form, stylist consultation, and personalised delivery"
               width={1000}
               height={400}
+              priority
               className="w-full rounded-xl"
             />
           </div>
@@ -330,8 +332,8 @@ export default function CityLandingPage({
           </p>
           <ol className="space-y-3 text-gray-600 list-decimal list-inside">
             <li>Complete a detailed intake form covering your measurements, lifestyle, and wardrobe goals</li>
-            <li>Book a 20-minute video consultation with your assigned Iconik stylist</li>
-            <li>Receive your personalised Style Blueprint within 48 hours</li>
+            <li>Book a {BLUEPRINT_OFFER.consultationMinutes}-minute video consultation with your assigned Iconik stylist</li>
+            <li>Receive your personalised Style Blueprint within {BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation</li>
           </ol>
         </section>
 
@@ -360,7 +362,7 @@ export default function CityLandingPage({
             <li className="flex gap-3"><span className="text-green-600 font-bold">✓</span><span><strong>Geometric Silhouette Profiling™</strong> — your body frame mapped to a precise silhouette category with styling principles</span></li>
             <li className="flex gap-3"><span className="text-green-600 font-bold">✓</span><span><strong>Chromatic Harmony Mapping™</strong> — your undertone-matched colour palette (10 exact colours)</span></li>
             <li className="flex gap-3"><span className="text-green-600 font-bold">✓</span><span><strong>Facial Architecture Analysis™</strong> — necklines, earrings, and hairstyles for your face shape</span></li>
-            <li className="flex gap-3"><span className="text-green-600 font-bold">✓</span><span>16+ complete outfit formulas for your lifestyle (work, ethnic, casual, occasion)</span></li>
+            <li className="flex gap-3"><span className="text-green-600 font-bold">✓</span><span>{BLUEPRINT_OFFER.outfitFormulas} complete outfit formulas for your lifestyle (work, ethnic, casual, occasion)</span></li>
             <li className="flex gap-3"><span className="text-green-600 font-bold">✓</span><span>A &quot;what to avoid&quot; guide</span></li>
           </ul>
         </section>
@@ -423,10 +425,10 @@ export default function CityLandingPage({
             Build a wardrobe system for life in {city}
           </h2>
           <p className="text-gray-600 mb-6">
-            Science-backed styling. Delivered in 48 hours. ₹3,299.
+            Science-backed styling. Delivered within {BLUEPRINT_OFFER.deliveryWorkingDays} working days after your consultation. ₹{BLUEPRINT_OFFER.currentPriceInr.toLocaleString("en-IN")}.
           </p>
           <TrackedConsultationLink
-            href="/"
+            href={BLUEPRINT_OFFER.offerPath}
             tracking={growthTracking}
             className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors"
           >

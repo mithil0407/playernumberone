@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CheckCircle, Star, Lock, Clock, Shield, ArrowRight } from 'lucide-react';
-import { trackPageView, trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, updateUserData } from '@/lib/metaPixel';
 import { getAttributionPayload } from '@/lib/attribution';
 
 // ── Razorpay types ───────────────────────────────────────────────────────────
@@ -53,7 +53,6 @@ export default function AUCheckoutPage() {
 
     // Track page view + initiate checkout on mount
     useEffect(() => {
-        trackPageView('AU Checkout');
         trackInitiateCheckout(97, 1, 'ICONIK Blueprint AU', 'AUD', 'AU Funnel');
     }, []);
 

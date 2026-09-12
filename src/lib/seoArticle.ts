@@ -10,9 +10,12 @@ import {
   organizationNode,
 } from "@/lib/structuredData";
 
+export function resolveSeoArticleVisual(article: SeoArticleRecord) {
+  return article.visual?.src;
+}
+
 function openGraphPath(article: SeoArticleRecord) {
-  if (!article.visual) return undefined;
-  return article.visual.src.replace(/\.webp$/, "-og.webp");
+  return article.visual?.ogSrc;
 }
 
 export function buildSeoArticleMetadata(article: SeoArticleRecord) {
@@ -45,8 +48,9 @@ export function buildSeoArticleGraph(
     about?: string[];
   } = {},
 ) {
-  const visualImages = article.visual
-    ? [article.visual.src, openGraphPath(article)].filter((item): item is string => Boolean(item))
+  const visualPath = resolveSeoArticleVisual(article);
+  const visualImages = visualPath
+    ? [visualPath, openGraphPath(article)].filter((item): item is string => Boolean(item))
     : undefined;
 
   return graph([

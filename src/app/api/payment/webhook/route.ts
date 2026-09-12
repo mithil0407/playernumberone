@@ -8,6 +8,18 @@ import { recordRevenueEvent } from '@/lib/revenueEvents';
 import { attributionFromRow } from '@/lib/attribution';
 import { MAN_BLUEPRINT_PRODUCT_ID, MAN_OUTFIT_PREVIEW_PRODUCT_ID } from '@/lib/metaPixel';
 import { sendMetaPurchaseEvent } from '@/lib/metaConversionsApi';
+import { sendWomenConsultationConfirmationWhatsApp } from '@/lib/whatsapp';
+import {
+  INDIA_BLUEPRINT_CONTENT_NAME,
+  INDIA_BLUEPRINT_CHECKOUT_URL,
+  INDIA_ROOT_BLUEPRINT_CHECKOUT_URL,
+  MAN_EDIT_CHECKOUT_URL,
+  MAN_EDIT_CONTENT_NAME,
+  MAN_EDIT_FUNNEL_CATEGORY,
+  MAN_EDIT_PRODUCT_ID,
+  buildIndiaBlueprintContentIds,
+  indiaFunnelCategoryFromEntry,
+} from '@/lib/metaTrackingContract';
 import Razorpay from 'razorpay';
 import {
   getManEditSubscriptionByRazorpayId,
@@ -84,6 +96,76 @@ function mapProductType(baseProduct: string): string {
   if (baseProduct === 'Iconik Man Style Blueprint') return 'man_blueprint';
   if (baseProduct === 'Iconik Man Style Blueprint INTL') return 'man_blueprint_intl';
   return 'consultation';
+}
+
+async function fetchRazorpayOrderNotes(razorpayOrderId: string): Promise<Record<string, string>> {
+  try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return {};
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+    const orderDetails = await razorpay.orders.fetch(razorpayOrderId);
+    return (orderDetails.notes as Record<string, string>) || {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Builds the server-side Purchase payload for an order.paid event.
+ *
+ * Every product sold through /api/payment gets server coverage — a browser
+ * Purchase can always be lost to a closed tab, a UPI app-switch that never
+ * returns, or a blocked SDK, and the Signals Gateway can only relay events the
+ * browser actually fired. The payload deliberately mirrors what the checkout
+ * page sends: both events carry the Razorpay payment ID as their event ID, so
+ * Meta collapses them into one and whichever arrives first must not disagree.
+ *
+ * Returns null for products that have their own dedicated CAPI route.
+ */
+function buildMetaPurchasePayloadForOrder(input: {
+  baseProduct: string;
+  addOnsString: string;
+  notes: Record<string, string>;
+}) {
+  const { baseProduct, addOnsString, notes } = input;
+  const isMan = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
+
+  if (isMan) {
+    const hasOutfitPreview = addOnsString.includes('Outfit Preview on You');
+    const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(hasOutfitPreview ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+    return {
+      contentName: 'ICONIK Man Complete Package',
+      contentIds,
+      numItems: contentIds.length,
+      contentCategory: 'Man Funnel',
+      currency: baseProduct === 'Iconik Man Style Blueprint INTL' ? ('USD' as const) : ('INR' as const),
+      eventSourceUrl: 'https://www.iconik.pro/man/checkout',
+    };
+  }
+
+  if (baseProduct === 'Iconik Style Consultation') {
+    const contentIds = buildIndiaBlueprintContentIds({
+      wardrobeDetox: addOnsString.includes('Wardrobe Detox'),
+      smartShopper: addOnsString.includes("Smart Shopper's Guide"),
+      outfitPreview: addOnsString.includes('Outfit Preview on You'),
+    });
+    return {
+      contentName: INDIA_BLUEPRINT_CONTENT_NAME,
+      contentIds,
+      numItems: contentIds.length,
+      // The checkout writes the browser's content_category into the order notes
+      // so the deduplicated pair cannot disagree about the funnel entry point.
+      contentCategory: notes.funnel_entry || indiaFunnelCategoryFromEntry(null),
+      currency: 'INR' as const,
+      eventSourceUrl: notes.checkout_source === 'root_checkout'
+        ? INDIA_ROOT_BLUEPRINT_CHECKOUT_URL
+        : INDIA_BLUEPRINT_CHECKOUT_URL,
+    };
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -341,6 +423,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
               customer_phone: existingOrder.customers.phone,
               add_ons: addOnsString,
               order_amount: existingOrder.amount,
+              scan_lead_id: existingOrder.scan_lead_id,
             });
             if (crmResult.success) {
               console.log('Customer synced to CRM:', crmResult.consultation_id);
@@ -502,6 +585,7 @@ async function handlePaymentAuthorized(payment: RazorpayPayment) {
               customer_phone: existingOrder.customers.phone,
               add_ons: addOnsString,
               order_amount: existingOrder.amount,
+              scan_lead_id: existingOrder.scan_lead_id,
             });
             if (crmResult.success) {
               console.log('Test customer synced to CRM:', crmResult.consultation_id);
@@ -560,9 +644,11 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
 
     if (existingOrder) {
       // Fetch actual add-ons from Razorpay order notes
-      const addOnsString = await getAddOnsFromRazorpayOrder(order.id);
-
-      const baseProduct = await getBaseProductFromRazorpayOrder(order.id);
+      const [addOnsString, baseProduct, orderNotes] = await Promise.all([
+        getAddOnsFromRazorpayOrder(order.id),
+        getBaseProductFromRazorpayOrder(order.id),
+        fetchRazorpayOrderNotes(order.id),
+      ]);
 
       // Update order status in database
       const { error: updateError } = await supabaseAdmin
@@ -602,23 +688,30 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           metadata: { webhook_event: 'order.paid' },
         });
 
-        const isMenOrderForCapi = baseProduct === 'Iconik Man Style Blueprint' || baseProduct === 'Iconik Man Style Blueprint INTL';
-        if (isMenOrderForCapi) {
-          const orderAttribution = attributionFromRow(existingOrder);
-          const hasOutfitPreview = addOnsString.includes('Outfit Preview on You');
-          const contentIds = [MAN_BLUEPRINT_PRODUCT_ID, ...(hasOutfitPreview ? [MAN_OUTFIT_PREVIEW_PRODUCT_ID] : [])];
+        const metaPurchase = buildMetaPurchasePayloadForOrder({ baseProduct, addOnsString, notes: orderNotes });
+        if (metaPurchase) {
           await sendMetaPurchaseEvent({
             eventId: payment.id,
-            eventSourceUrl: orderAttribution.landing_page || 'https://www.iconik.pro/man/checkout',
+            eventSourceUrl: metaPurchase.eventSourceUrl,
+            externalId: String(existingOrder.id),
             customerEmail: existingOrder.customers?.email,
             customerName: existingOrder.customers?.name,
             customerPhone: existingOrder.customers?.phone,
-            amount: Math.round(order.amount / 100),
-            currency: baseProduct === 'Iconik Man Style Blueprint INTL' ? 'USD' : 'INR',
-            contentName: 'ICONIK Man Complete Package',
-            contentIds,
-            numItems: contentIds.length,
-            attribution: orderAttribution,
+            // Razorpay reports the minor unit. Do not round: USD cents are
+            // significant, and the browser Purchase this deduplicates against
+            // sends the exact amount.
+            amount: order.amount / 100,
+            currency: metaPurchase.currency,
+            // INR orders on this account are the Indian funnels; the phone is
+            // collected in 10-digit national format and needs its country code
+            // to match, exactly as the browser side now sends it.
+            countryCode: metaPurchase.currency === 'INR' ? 'in' : undefined,
+            phoneCountryCode: metaPurchase.currency === 'INR' ? '91' : undefined,
+            contentName: metaPurchase.contentName,
+            contentIds: metaPurchase.contentIds,
+            numItems: metaPurchase.numItems,
+            contentCategory: metaPurchase.contentCategory,
+            attribution: attributionFromRow(existingOrder),
           });
         }
 
@@ -673,13 +766,71 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
           }
         }
 
-        // 3. Sync to CRM database (independent)
+        // 3. Send the opt-in WhatsApp confirmation (independent)
+        if (baseProduct !== 'Iconik Style Consultation') {
+          console.log('Women consultation WhatsApp confirmation not applicable for:', baseProduct);
+        } else if (!existingOrder.whatsapp_opt_in) {
+          console.log('WhatsApp confirmation skipped because the customer did not opt in:', order.id);
+        } else if (existingOrder.whatsapp_confirmation_sent) {
+          console.log('WhatsApp confirmation already sent for order:', order.id, '— skipping duplicate');
+        } else {
+          const whatsAppResult = await sendWomenConsultationConfirmationWhatsApp({
+            customerPhone: existingOrder.customers.phone,
+            orderId: existingOrder.id,
+            orderAmount: order.amount / 100,
+            paymentId: payment.id,
+          });
+
+          if (whatsAppResult.success && whatsAppResult.messageId && whatsAppResult.recipient) {
+            const sentAt = new Date().toISOString();
+            const { error: whatsappUpdateError } = await supabaseAdmin
+              .from('orders')
+              .update({
+                whatsapp_confirmation_sent: true,
+                whatsapp_confirmation_sent_at: sentAt,
+                whatsapp_message_id: whatsAppResult.messageId,
+                whatsapp_last_error: null,
+              })
+              .eq('razorpay_order_id', order.id);
+
+            if (whatsappUpdateError) {
+              console.error('WhatsApp confirmation sent but order tracking update failed:', whatsappUpdateError);
+            }
+
+            const { error: deliveryInsertError } = await supabaseAdmin
+              .from('whatsapp_message_deliveries')
+              .upsert({
+                order_id: existingOrder.id,
+                whatsapp_message_id: whatsAppResult.messageId,
+                message_type: 'women_consultation_confirmation',
+                recipient: whatsAppResult.recipient,
+                status: 'accepted',
+                sent_at: sentAt,
+                updated_at: sentAt,
+              }, { onConflict: 'whatsapp_message_id' });
+
+            if (deliveryInsertError) {
+              console.error('WhatsApp confirmation delivery tracking insert failed:', deliveryInsertError);
+            }
+            console.log('WhatsApp confirmation accepted by Meta for order:', order.id);
+          } else {
+            const whatsappError = whatsAppResult.error || 'Unknown WhatsApp send error';
+            await supabaseAdmin
+              .from('orders')
+              .update({ whatsapp_last_error: whatsappError })
+              .eq('razorpay_order_id', order.id);
+            console.error('WhatsApp confirmation failed for order:', order.id, whatsappError);
+          }
+        }
+
+        // 4. Sync to CRM database (independent)
         try {
           const crmResult = await syncToCrm({
             customer_name: existingOrder.customers.name,
             customer_phone: existingOrder.customers.phone,
             add_ons: addOnsString,
             order_amount: existingOrder.amount,
+            scan_lead_id: existingOrder.scan_lead_id,
           });
           if (crmResult.success) {
             console.log('Customer synced to CRM:', crmResult.consultation_id);
@@ -757,6 +908,29 @@ async function handleManEditSubscriptionEvent(
 
   if (event === 'subscription.charged') {
     const eventSuffix = payment?.id || `${subscription.paid_count ?? 'unknown'}:${subscription.current_start ?? Date.now()}`;
+
+    // Only the first charge is a Purchase. Sending one for every monthly renewal
+    // would keep crediting the original ad and inflate its ROAS indefinitely.
+    if (payment?.id && subscription.paid_count === 1 && Number.isFinite(payment.amount)) {
+      await sendMetaPurchaseEvent({
+        eventId: payment.id,
+        eventSourceUrl: MAN_EDIT_CHECKOUT_URL,
+        externalId: String(dbSub.id),
+        customerEmail: dbSub.customer_email,
+        customerName: dbSub.customer_name,
+        customerPhone: dbSub.customer_phone,
+        countryCode: 'in',
+        phoneCountryCode: '91',
+        amount: payment.amount / 100,
+        currency: 'INR',
+        contentName: MAN_EDIT_CONTENT_NAME,
+        contentIds: [MAN_EDIT_PRODUCT_ID],
+        numItems: 1,
+        contentCategory: MAN_EDIT_FUNNEL_CATEGORY,
+        attribution: attributionFromRow(dbSub),
+      });
+    }
+
     await recordRevenueEvent({
       eventKey: `man_edit_subscriptions:${dbSub.id}:charge:${eventSuffix}`,
       sourceMarket: 'india',

@@ -1,4 +1,7 @@
 import { supabase as primarySupabase, supabaseAdmin } from '@/lib/supabase';
+import { readStyleScanPhotoUploadResponse } from '@/lib/styleScanPhotoUploadResponse';
+
+export { readStyleScanPhotoUploadResponse } from '@/lib/styleScanPhotoUploadResponse';
 
 const db = typeof window === 'undefined' ? supabaseAdmin : primarySupabase;
 const STYLIST_INTAKE_PHOTOS_BUCKET = 'stylist-intake-photos';
@@ -175,19 +178,43 @@ export const saveStylistOrder = async (order: StylistOrder) => {
 
 export const uploadStyleScanPhoto = async (file: File, fileName: string): Promise<string> => {
   if (typeof window !== 'undefined') {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('fileName', fileName);
-
-    const res = await fetch('/api/stylist-intake-photo', {
+    const prepareResponse = await fetch('/api/stylist-intake-photo', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName,
+        contentType: file.type || 'image/jpeg',
+        size: file.size,
+      }),
     });
-    const data = await res.json();
-    if (!res.ok || !data.url) {
-      throw new Error(data.error || 'Photo upload failed');
+    const responseText = await prepareResponse.text();
+    let prepared: { path?: unknown; token?: unknown; url?: unknown; error?: unknown } = {};
+    try {
+      prepared = responseText
+        ? JSON.parse(responseText) as typeof prepared
+        : {};
+    } catch {
+      throw new Error('We could not prepare this photo upload. Please try again.');
     }
-    return data.url;
+
+    if (!prepareResponse.ok || typeof prepared.path !== 'string' || typeof prepared.token !== 'string' || typeof prepared.url !== 'string') {
+      const serverError = typeof prepared.error === 'string' ? prepared.error : '';
+      throw new Error(serverError || 'We could not prepare this photo upload. Please try again.');
+    }
+
+    // The image goes directly to Supabase Storage. Keeping the media bytes away
+    // from Vercel avoids its hard function payload limit and Safari response issue.
+    const { error } = await primarySupabase.storage
+      .from(STYLIST_INTAKE_PHOTOS_BUCKET)
+      .uploadToSignedUrl(prepared.path, prepared.token, file, {
+        contentType: file.type || 'image/jpeg',
+      });
+
+    if (error) {
+      throw new Error('We could not upload this photo. Please check your connection and try again.');
+    }
+
+    return prepared.url;
   }
 
   const storagePath = `public/${fileName}`;

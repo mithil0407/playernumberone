@@ -10,7 +10,6 @@ import {
   trackPurchase,
   trackRemoveFromCart,
   trackViewContent,
-  trackPageView,
   updateUserData
 } from '@/lib/metaPixel';
 import { clearQuizPhotos, getQuizPhoto } from '@/lib/uaeQuizStorage';
@@ -73,7 +72,6 @@ export default function UaeCheckoutPage() {
   const totalAmount = useMemo(() => discountedPrice + (outfitPreviewAddon ? outfitPreviewPrice : 0), [outfitPreviewAddon]);
 
   useEffect(() => {
-    trackPageView('UAE Checkout');
     trackViewContent('UAE Style Blueprint - Checkout', discountedPrice, ['uae_style_blueprint'], 'AED', 'UAE');
   }, [discountedPrice]);
 

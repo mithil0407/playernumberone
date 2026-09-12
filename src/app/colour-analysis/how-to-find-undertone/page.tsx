@@ -1,261 +1,312 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  SeoArticleLayout,
+  SeoAuthorReview,
+  SeoBlueprintCta,
+  SeoFaqSection,
+  SeoInsightCard,
+  SeoQuickAnswer,
+  SeoRelatedGuides,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "How to Find Your Undertone: 3 At-Home Tests — Iconik",
-  description: "Identify your skin undertone at home with three simple tests: vein colour, white paper, and gold vs silver. Complete undertone guide for Indian women — warm, cool, or neutral.",
-  keywords: "how to find undertone, undertone test at home India, warm or cool undertone test, vein test undertone, how to know your undertone Indian skin",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/how-to-find-undertone" },
-  openGraph: {
-    title: "How to Find Your Undertone: 3 At-Home Tests — Iconik",
-    description: "Three simple at-home tests reveal your undertone. Complete Indian skin tone guide.",
-    url: "https://www.iconik.pro/colour-analysis/how-to-find-undertone",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "How to find your undertone — Iconik" }],
+const path = "/colour-analysis/how-to-find-undertone";
+const title = "How to Find Your Undertone at Home";
+const description =
+  "Use a controlled fabric-drape test to compare warm, cool and neutral colour directions on Indian skin, and learn why vein, paper and jewellery tests are only supporting clues.";
+const published = "2025-01-01";
+const modified = "2026-07-24";
+
+export const metadata: Metadata = buildArticleMetadata({
+  title,
+  description,
+  path,
+  datePublished: published,
+  dateModified: modified,
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "how to find undertone",
+    "undertone test at home India",
+    "warm cool neutral undertone test",
+    "Indian skin undertone",
+  ],
+  image: {
+    path: "/images/seo/skin-depth-undertone-difference-iconik.webp",
+    width: 1122,
+    height: 1402,
+    alt: "Skin depth and undertone shown as separate colour-analysis variables.",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "How to Find Your Undertone: 3 At-Home Tests — Iconik",
-    description: "Three simple at-home tests reveal your undertone. Complete Indian skin tone guide.",
-    images: ["/og-image.webp"],
-  },
-};
+});
 
 const faqs = [
   {
     q: "Is the vein test accurate for Indian skin?",
-    a: "Yes, but check the inner wrist only. Deeper skin tones may find the paper test more reliable because the vein colour can be harder to distinguish through higher melanin. Always check in natural daylight, not under yellow artificial light.",
+    a: "Vein colour is not a reliable standalone undertone test. Skin depth, vein depth, lighting and individual colour perception can all change what you see. Treat it as a weak clue and give more weight to repeated fabric comparisons under stable light.",
   },
   {
-    q: "Can your undertone change?",
-    a: "No. Surface skin tone changes with sun exposure but undertone is determined by your melanin type ratio (eumelanin vs pheomelanin) and is fixed throughout your life. Even after tanning or with ageing, your undertone remains the same.",
+    q: "Is white paper the best undertone test?",
+    a: "No single white-paper comparison can establish undertone. Paper brightness, wall colour, daylight and camera white balance can shift the apparent cast. Fabric drapes are more useful for styling because they test the same material relationship you are trying to choose.",
   },
   {
-    q: "What if all three tests give different results?",
-    a: "The white paper test in natural daylight is the most reliable single test. If results are still mixed, you likely have a neutral undertone — a balance of both warm and cool. Neutral is a genuine undertone category, not an absence of one.",
+    q: "What if warm and cool tests both look good?",
+    a: "You may be neutral, olive, close to the warm-cool boundary, or simply more affected by depth and clarity than temperature. Compare softer versus clearer colours next and keep notes about the exact fabrics rather than forcing a label.",
   },
   {
-    q: "Can I have a dark skin tone and a cool undertone?",
-    a: "Yes. Undertone is completely independent of skin depth. Many dark-skinned Indian women have cool undertones and look their best in jewel tones and cool blues rather than earthy warm colours. Chromatic Harmony Mapping™ is designed for this full spectrum.",
+    q: "Can dark Indian skin have a cool undertone?",
+    a: "Yes. Visible skin depth and undertone are separate observations. Fair, medium and deep skin can each lean warm, cool, neutral or olive, so depth alone should never determine a palette.",
+  },
+  {
+    q: "Does undertone decide every colour I can wear?",
+    a: "No. Undertone is one styling variable. Colour depth, clarity, contrast, fabric sheen, print scale, placement and personal preference can all change an outfit. A difficult neckline colour may still work in trousers, a border, footwear or a bag.",
   },
 ];
 
-export default function HowToFindUndertone() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/how-to-find-undertone#article",
-        "headline": "What is My Undertone? 3 Tests You Can Do at Home",
-        "description": "Three simple at-home tests to identify your skin undertone — designed for Indian skin tones.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
-        },
-        "datePublished": "2025-01-01",
-        "dateModified": new Date().toISOString().split("T")[0],
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/how-to-find-undertone" },
-      },
-      {
-        "@type": "HowTo",
-        "name": "How to Find Your Skin Undertone at Home",
-        "description": "Three simple at-home tests to identify whether you have a warm, cool, or neutral skin undertone — calibrated for Indian skin tones.",
-        "step": [
-          {
-            "@type": "HowToStep",
-            "position": 1,
-            "name": "The Vein Colour Test",
-            "text": "Look at the veins on your inner wrist in natural daylight. Blue-purple veins indicate cool undertone; green veins indicate warm undertone; a mix suggests neutral undertone.",
-          },
-          {
-            "@type": "HowToStep",
-            "position": 2,
-            "name": "The White Paper Test",
-            "text": "Hold a plain white sheet of paper next to your bare face in natural daylight. If your skin appears yellowish, golden, or olive, you have a warm undertone. If it appears pinkish, bluish, or greyish, you have a cool undertone. If neither is clear, you likely have a neutral undertone.",
-          },
-          {
-            "@type": "HowToStep",
-            "position": 3,
-            "name": "The Gold vs Silver Test",
-            "text": "Hold a piece of gold jewellery against your bare inner wrist, then a piece of silver. Whichever makes your skin look more radiant and alive indicates your undertone: gold = warm, silver = cool, both equally flattering = neutral.",
-          },
-        ],
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({
-          "@type": "Question",
-          "name": f.q,
-          "acceptedAnswer": { "@type": "Answer", "text": f.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Colour Analysis", "item": "https://www.iconik.pro/colour-analysis" },
-          { "@type": "ListItem", "position": 3, "name": "How to Find Your Undertone", "item": "https://www.iconik.pro/colour-analysis/how-to-find-undertone" },
-        ],
-      },
-    ],
-  };
+const howToSteps = [
+  {
+    "@type": "HowToStep",
+    position: 1,
+    name: "Create neutral test conditions",
+    text: "Use indirect daylight, turn off coloured indoor lights, remove strong makeup and keep the camera exposure and position fixed.",
+  },
+  {
+    "@type": "HowToStep",
+    position: 2,
+    name: "Compare two useful light neutrals",
+    text: "Place warm ivory and crisp white near the face one at a time. Observe eye definition, lip definition, under-eye shadow and unwanted yellow, grey or red cast.",
+  },
+  {
+    "@type": "HowToStep",
+    position: 3,
+    name: "Compare one warm and one cool colour",
+    text: "Test similar-depth fabrics such as terracotta and cobalt. Similar depth makes temperature the main changing variable.",
+  },
+  {
+    "@type": "HowToStep",
+    position: 4,
+    name: "Repeat before deciding",
+    text: "Repeat the strongest comparison in similar daylight on another day. Record mixed results instead of forcing a warm or cool label.",
+  },
+];
+
+export default function HowToFindUndertonePage() {
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title,
+      description,
+      path,
+      datePublished: published,
+      dateModified: modified,
+      images: ["/images/seo/skin-depth-undertone-difference-iconik.webp"],
+      about: ["Skin undertone", "Colour analysis", "Indian skin tones"],
+    }),
+    {
+      "@type": "HowTo",
+      "@id": `https://www.iconik.pro${path}#howto`,
+      name: "How to compare your undertone direction at home",
+      description: "A controlled four-step fabric comparison for warm, cool and neutral colour direction.",
+      step: howToSteps,
+    },
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Colour Analysis", path: "/colour-analysis" },
+      { name: "How to Find Your Undertone", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoArticleLayout
+        hero={{
+          eyebrow: "At-home colour test",
+          title,
+          summary:
+            "The most useful home test is not reading your veins or holding up white paper. It is a controlled fabric comparison that changes one colour variable at a time and observes the face under consistent light.",
+          breadcrumbs: [
+            { label: "Home", href: "/" },
+            { label: "Colour Analysis", href: "/colour-analysis" },
+            { label: "How to Find Your Undertone" },
+          ],
+          published: "1 January 2025",
+          updated: "24 July 2026",
+          reviewer: "Jasmine Rana",
+          readingTime: "9 min read",
+        }}
+        quickAnswer={
+          <SeoQuickAnswer
+            answer="Compare warm and cool fabrics of similar depth beside your face in indirect daylight. Keep the light, camera, makeup and position unchanged."
+            detail="Repeat the comparison before labelling yourself. Veins, white paper and jewellery can support an observation, but none should decide the result alone."
+          />
+        }
+        tableOfContents={[
+          { href: "#what-undertone-means", label: "What undertone means" },
+          { href: "#controlled-test", label: "The controlled drape test" },
+          { href: "#read-result", label: "How to read the result" },
+          { href: "#weak-clues", label: "Why common tests conflict" },
+          { href: "#use-result", label: "Turn the result into outfits" },
+        ]}
+        afterArticle={
+          <>
+            <SeoFaqSection faqs={faqs} />
+            <SeoAuthorReview>
+              <p>
+                Jasmine reviews ICONIK&apos;s colour methodology and its translation into Indian,
+                western and fusion wardrobes. This guide treats undertone as a styling observation,
+                not a medical classification.
+              </p>
+            </SeoAuthorReview>
+            <SeoRelatedGuides
+              links={[
+                {
+                  href: "/colour-analysis",
+                  title: "Colour Analysis for Indian Skin Tones",
+                  description: "Understand undertone, depth, clarity and contrast as one colour system.",
+                },
+                {
+                  href: "/colour-analysis/warm-cool-neutral-undertone-india",
+                  title: "Warm, Cool or Neutral?",
+                  description: "Compare the three broad temperature directions without rigid rules.",
+                },
+                {
+                  href: "/methodology/chromatic-harmony-mapping",
+                  title: "Chromatic Harmony Mapping™",
+                  description: "Read the canonical explanation of ICONIK's colour framework.",
+                },
+              ]}
+            />
+            <SeoBlueprintCta
+              title="Want a stylist to translate the comparisons into a wardrobe palette?"
+              description="The ICONIK Blueprint combines colour direction with silhouette, face-framing guidance and 20 outfit formulas after a 30-minute consultation."
+            />
+          </>
+        }
+      >
+        <SeoTeachingVisual
+          src="/images/seo/skin-depth-undertone-difference-iconik.webp"
+          alt="Skin depth and undertone shown as separate variables for Indian colour analysis."
+          caption="Skin depth describes how light or deep the visible complexion appears. Undertone is a separate colour-direction observation."
+          width={1122}
+          height={1402}
+          priority
+        />
 
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">How to Find Your Undertone</li>
-            </ol>
-          </nav>
+        <section id="what-undertone-means">
+          <h2>What undertone does—and does not—mean</h2>
+          <p>
+            In personal styling, undertone is shorthand for the colour temperature that appears most
+            harmonious near the face: broadly warm, cool or balanced. It is not the same as visible
+            skin depth. Two people described as fair, wheatish, dusky or deep can respond differently
+            to the same fabric.
+          </p>
+          <p>
+            Undertone is also not a health reading or a permanent wardrobe law. Tanning, redness,
+            hyperpigmentation, makeup, lighting and camera processing can alter what you see. That is
+            why the useful question is not simply “What am I?” but “Which repeated colour
+            relationships make my face look clearer and more even under controlled conditions?”
+          </p>
+        </section>
 
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              What is My Undertone? 3 Tests You Can Do at Home
-            </h1>
-            <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Your skin undertone is a fixed underlying tone beneath your surface skin colour — it does not change with sun exposure, ageing, or seasons. Knowing it is the foundation of Iconik&apos;s Chromatic Harmony Mapping™, and you can identify it accurately at home in under five minutes.
-            </p>
-          </header>
+        <section id="controlled-test">
+          <h2>The controlled fabric-drape test</h2>
+          <ol>
+            <li><strong>Set the light.</strong> Stand in indirect daylight. Turn off yellow, coloured or fluorescent indoor lights.</li>
+            <li><strong>Reduce competing colour.</strong> Remove dominant lipstick, tinted foundation, large earrings and bright clothing near the face.</li>
+            <li><strong>Fix the comparison.</strong> Keep your face, camera position and exposure unchanged. A mirror is better than an auto-adjusting phone if the phone changes brightness.</li>
+            <li><strong>Test light neutrals.</strong> Compare warm ivory with crisp white.</li>
+            <li><strong>Test temperature.</strong> Compare similarly deep fabrics such as terracotta and cobalt, or olive and cool emerald.</li>
+            <li><strong>Repeat.</strong> Re-test the clearest pair in similar light on another day before deciding.</li>
+          </ol>
+          <p>
+            Use actual garments or opaque fabrics when possible. A small digital swatch on a bright
+            phone screen does not reflect light onto the face in the same way.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Exactly Is a Skin Undertone?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Your skin has two layers of colour working simultaneously. The surface tone is what you see — fair, medium, dusky, or deep — and it shifts with sun, season, and age. The undertone is the fixed hue underneath: warm (yellow, golden, peachy), cool (pink, blue, red), or neutral (a balance of both).
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The reason this matters: a colour that creates harmony with your undertone makes your skin look vibrant, well-rested, and energised. A colour that clashes with your undertone makes you look washed out, sallow, or tired — regardless of how beautiful the colour is in isolation.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              Indian women often confuse surface tone with undertone. Two women with the same &quot;wheatish&quot; complexion can have opposite undertones — and need completely different colour palettes. This is precisely why generic &quot;best colours for Indian skin&quot; advice fails half the women it targets.
-            </p>
-          </section>
+        <SeoTeachingVisual
+          src="/images/seo/wheatish-skin-drape-test-iconik.webp"
+          alt="Indian woman comparing warm ivory, crisp white, terracotta and cobalt fabric drapes under consistent light."
+          caption="This example uses wheatish skin, but the method is the same at every skin depth: hold all conditions steady and change one fabric direction."
+          width={1003}
+          height={1568}
+        />
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Test 1: The Vein Colour Test</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Look at the veins on your inner wrist in natural daylight — not under fluorescent office lights or warm lamp light. Natural daylight is the only accurate context for this test.
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Blue-purple veins:</strong> cool undertone</li>
-              <li><strong>Green veins:</strong> warm undertone</li>
-              <li><strong>A mix of both, or hard to tell:</strong> neutral undertone</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              For Indian women: check the inner wrist (the pale inner side), not the back of the hand. The inner wrist has less sun exposure, making vein colour more distinguishable. If your skin is very deep in tone, this test may be less clear — use it alongside Test 2.
-            </p>
-          </section>
+        <section id="read-result">
+          <h2>How to read the face, not the colour name</h2>
+          <p>For each drape, look for several signals together:</p>
+          <ul>
+            <li>Are the eyes and lips easy to see, or does the fabric become the only thing you notice?</li>
+            <li>Do under-eye shadows appear stronger or softer?</li>
+            <li>Does the skin pick up an unwanted yellow, grey, red or green cast?</li>
+            <li>Does facial definition improve without requiring more makeup?</li>
+            <li>Would the effect still suit the outfit context you are dressing for?</li>
+          </ul>
+          <p>
+            One signal is not enough. A very bright cool blue may sharpen the eyes but overpower the
+            face; a softer blue may keep the cool direction without the intensity. That means clarity,
+            not temperature, was the second variable to adjust.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Test 2: The White Paper Test</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Hold a plain white A4 sheet of paper next to your bare face in natural daylight (by a window, not under artificial light). Compare what you see:
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Your skin looks yellowish, golden, or olive:</strong> warm undertone</li>
-              <li><strong>Your skin looks pinkish, bluish, or greyish:</strong> cool undertone</li>
-              <li><strong>Neither clearly — your skin just looks &quot;normal&quot;:</strong> neutral undertone</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              This test is the most reliable for deeper Indian skin tones because it works by contrast rather than requiring you to read vein colour through melanin. The white of the paper makes the undertone cast of your skin much more visible.
-            </p>
-          </section>
+        <SeoInsightCard eyebrow="Record mixed evidence" title="Neutral and olive results are not failures">
+          <p>
+            If warm and cool comparisons split evenly, do not force a category. Test soft versus clear
+            colours, yellow-green versus blue-green, and different depths. Olive skin can be read as
+            warm under one light and neutral under another, so the exact fabric matters more than the
+            label.
+          </p>
+        </SeoInsightCard>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Test 3: The Gold vs Silver Test</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Hold a piece of gold jewellery against your bare skin (inner wrist or décolletage). Then hold a piece of silver. Which makes your skin look more alive, radiant, and healthy?
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Gold looks better:</strong> warm undertone</li>
-              <li><strong>Silver looks better:</strong> cool undertone</li>
-              <li><strong>Both look equally flattering:</strong> neutral undertone</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              This test works because gold is a warm metal (yellow-based) and silver is a cool metal (blue-based). Your undertone naturally harmonises with one. Use actual gold and silver jewellery, not gold-toned or silver-toned fashion jewellery which may have different underlying tones.
-            </p>
-          </section>
+        <section id="weak-clues">
+          <h2>Why vein, paper and jewellery tests often conflict</h2>
+          <h3>Vein colour</h3>
+          <p>
+            Veins sit below skin and can appear blue, green or indistinct depending on skin depth,
+            vein depth and lighting. They do not directly test how clothing reflects colour onto the
+            face.
+          </p>
+          <h3>White paper</h3>
+          <p>
+            Paper can reveal a cast, but its own brightness and the surrounding room affect the
+            comparison. Use white versus ivory fabric instead, because that is a real wardrobe choice.
+          </p>
+          <h3>Gold versus silver</h3>
+          <p>
+            Metal finish, shine, scale and stones influence the result. Compare pieces of similar size
+            and finish, then judge them with the neckline colours you actually wear.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Are Undertone Tests Harder for Indian Women?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Indian skin has higher melanin concentrations than the Caucasian skin these tests were originally developed for. Higher melanin can mask undertone cues — making veins harder to read at deeper skin tones.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Two adjustments that improve accuracy for Indian skin:
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li>Always use the inner wrist or inner arm — areas with least sun exposure and therefore least melanin masking.</li>
-              <li>Test in natural daylight only. Warm artificial light casts a yellow glow on everyone, skewing results toward &quot;warm.&quot; Fluorescent light does the opposite.</li>
-            </ul>
-            <p className="text-gray-600 leading-relaxed">
-              If you have recently tanned, wait until the tan fades before testing. A fresh tan changes the surface tone significantly and can skew all three tests.
-            </p>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">What Should You Do Once You Know Your Undertone?</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Warm undertone:</strong> Your palette is earthen, golden, and rich. Terracotta, rust, burnt orange, mustard yellow, olive green, camel, warm reds, coral, peach, earthy browns. Gold jewellery. Ivory over stark white.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Cool undertone:</strong> Your palette is jewelled and crisp. Cobalt blue, emerald green, royal purple, cool pinks, fuchsia, icy pastels, navy, burgundy. Silver or white gold jewellery. Stark white works well.
-            </p>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              <strong>Neutral undertone:</strong> You can wear both warm and cool colours, but shine brightest in muted, greyed versions. You have the widest range but often look best when colours are not at full saturation extremes.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              Iconik&apos;s Chromatic Harmony Mapping™ takes this further — it maps your specific undertone and melanin depth to an exact 10-colour palette, with your best neutrals, accent colours, and the specific shades within each colour family that work best for you.
-            </p>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed faq-answer">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones — Full Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/warm-cool-neutral-undertone-india" className="underline hover:opacity-70">Warm vs Cool vs Neutral Undertone: Complete Comparison</Link></li>
-              <li>→ <Link href="/colour-analysis/indian-skin-tones" className="underline hover:opacity-70">Why Western Colour Systems Fail Indian Women</Link></li>
-              <li>→ <Link href="/colour-analysis/warm-undertone" className="underline hover:opacity-70">Warm Undertone Colour Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/cool-undertone" className="underline hover:opacity-70">Cool Undertone Colour Guide</Link></li>
-            </ul>
-          </section>
-
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want your exact colour palette in 48 hours?</h2>
-            <p className="text-gray-600 mb-6">Iconik&apos;s Chromatic Harmony Mapping™ identifies your undertone and maps it to an exact 10-colour palette — part of your personalised Style Blueprint.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;What is My Undertone? 3 Tests You Can Do at Home.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/how-to-find-undertone</p>
-          </div>
-
-        </div>
-      </main>
+        <section id="use-result">
+          <h2>Turn the observation into outfits</h2>
+          <p>
+            Start with three categories instead of a long prohibited-colour list:
+          </p>
+          <ul>
+            <li><strong>One useful light:</strong> crisp white, soft white or warm ivory.</li>
+            <li><strong>Two reliable neutrals:</strong> for trousers, jackets, bags and repeat wear.</li>
+            <li><strong>Three face colours:</strong> for kurtas, blouses, shirts, dupattas and saree pallus.</li>
+          </ul>
+          <p>
+            Keep colours you love. If one is difficult near the face, move it to a lower garment,
+            border, bag or shoe, or separate it from the face with a more supportive neckline colour.
+            Continue with the <Link href="/colour-analysis" className="underline">complete colour-analysis guide</Link> or try
+            the <Link href="/tools/glow-test" className="underline">free Glow Test</Link>.
+          </p>
+        </section>
+      </SeoArticleLayout>
     </>
   );
 }

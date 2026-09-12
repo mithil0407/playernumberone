@@ -6,6 +6,13 @@ import {
   TrackedArticleLink,
 } from "@/components/ArticleGrowthTracker";
 import { buildMetadata } from "@/lib/seo";
+import { FOUNDERS } from "@/lib/siteFacts";
+import {
+  SeoEditorialFooter,
+  SeoEditorialHeader,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import InstagramReelsForArticle from "@/components/seo/InstagramReelsForArticle";
 
 const path = "/colour-analysis/best-colours-wheatish-skin-india";
 const growthTracking = {
@@ -35,23 +42,23 @@ export const metadata: Metadata = buildMetadata({
 const faqs = [
   {
     q: "What colours suit wheatish skin Indian women?",
-    a: "The colours that suit wheatish skin depend entirely on undertone — not the 'wheatish' label itself. Wheatish women with warm undertones look best in terracotta, mustard, olive green, burnt orange, and camel. Wheatish women with cool undertones look best in navy, emerald, fuchsia, royal purple, and burgundy. Wheatish women with neutral undertones look best in dusty rose, muted teal, warm taupe, and greyed lavender. Two women with identical wheatish skin tones can need completely opposite colour palettes.",
+    a: "Use wheatish only as a broad depth description. Warm-leaning wheatish skin often harmonises with terracotta, olive, coral, cocoa and warm ivory; cool-leaning wheatish skin often suits navy, emerald, berry, cobalt, charcoal and crisp white. Neutral or olive results may depend more on colour clarity and contrast. Treat every list as a starting point for controlled draping.",
   },
   {
     q: "Is wheatish skin warm or cool undertone?",
-    a: "Wheatish skin can have a warm, cool, or neutral undertone — the surface description 'wheatish' says nothing about the undertone. Warm undertone is more statistically common in Indian women overall, but many wheatish-skinned women have cool or neutral undertones. The only way to know is to run the undertone identification tests: vein colour, white paper test, and gold vs silver jewellery.",
+    a: "Wheatish skin can be warm, cool, neutral or olive. The surface description does not diagnose undertone. Instead of relying on vein colour or one jewellery test, compare warm ivory with crisp white and terracotta with cobalt under the same indirect daylight, then repeat the winning comparisons.",
   },
   {
     q: "Why does 'wear bold colours for wheatish skin' advice often feel wrong?",
-    a: "Because 'bold colours' is not an undertone prescription — it is a contrast prescription based on surface depth. Bold warm colours look great on warm-undertone wheatish women but can look garish on cool-undertone wheatish women. Bold cool colours look electric on cool-undertone wheatish women but can make warm-undertone women look sallow. The undertone, not the 'boldness', is the operative variable.",
+    a: "Because boldness combines several variables: temperature, clarity, depth and contrast. A bright colour can have the right temperature but still overpower the face, or the wrong temperature but work when moved away from the neckline. Test the exact fabric and its placement instead of following a brightness rule.",
   },
   {
     q: "What jewellery metal works for wheatish skin?",
-    a: "For warm undertone wheatish women: yellow gold. For cool undertone: silver or white gold. For neutral undertone: both work equally. The common assumption that all Indian women suit gold is based on the statistical prevalence of warm undertones — but it actively clashes with cool-undertone women regardless of their surface skin depth.",
+    a: "Compare metals of similar size and shine with the neckline colours you wear most. Warm metals may integrate better with a warm-leaning palette and cool metals with a cool-leaning palette, but finish, scale, stones and surrounding fabric can change the result. Skin depth alone cannot choose a metal.",
   },
   {
     q: "Can wheatish skin wear pastels?",
-    a: "Yes. Warm-undertone wheatish women look great in warm pastels: peach, warm blush, soft coral, muted warm yellow. Cool-undertone wheatish women look great in cool pastels: dusty rose, soft lavender, powder blue. The key is matching the pastel's temperature to your undertone — not avoiding the pastel category based on skin depth.",
+    a: "Yes. Compare pastel temperature and clarity: peach or warm blush may support a warm-leaning palette, while lilac, dusty rose or powder blue may support a cool-leaning palette. If the colour looks chalky, try a clearer version or add a deeper neckline, dupatta, jacket or bag.",
   },
 ];
 
@@ -64,14 +71,14 @@ export default function BestColoursWheatishSkinPage() {
         "@id": "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india#article",
         "headline": "Best Colours for Wheatish Skin Indian Women",
         "description": "Colour science for wheatish skin Indian women — why undertone determines your palette and how Chromatic Harmony Mapping™ works for medium Indian skin tones.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
+        "author": { "@type": "Person", "name": FOUNDERS[0].name, "jobTitle": FOUNDERS[0].title, "sameAs": FOUNDERS[0].linkedIn },
         "publisher": {
           "@type": "Organization",
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
         "datePublished": "2026-03-21",
-        "dateModified": "2026-07-11",
+        "dateModified": "2026-07-23",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india" },
       },
       {
@@ -97,8 +104,11 @@ export default function BestColoursWheatishSkinPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ArticleGrowthTracker {...growthTracking} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <div className="seo-editorial min-h-screen">
+        <SeoEditorialHeader />
+        <main>
+          <div className="seo-editorial-shell">
+            <div className="seo-classic-article mx-auto max-w-3xl py-16 md:py-24">
 
           <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
             <ol className="flex items-center gap-2 flex-wrap">
@@ -119,8 +129,8 @@ export default function BestColoursWheatishSkinPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-gray-600">
               <span className="rounded-full border border-gray-200 px-3 py-1">Published 21 March 2026</span>
-              <span className="rounded-full border border-gray-200 px-3 py-1">Reviewed 11 July 2026</span>
-              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by Mithil Navalakha</Link>
+              <span className="rounded-full border border-gray-200 px-3 py-1">Updated 23 July 2026</span>
+              <Link href="/about" className="rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50">Reviewed by {FOUNDERS[0].name}, {FOUNDERS[0].title}</Link>
             </div>
           </header>
 
@@ -136,42 +146,64 @@ export default function BestColoursWheatishSkinPage() {
             </div>
           </aside>
 
+          <SeoTeachingVisual
+            src="/images/seo/wheatish-skin-colour-guide-hero-iconik.webp"
+            alt="Wheatish Indian skin beside terracotta, navy, olive, berry, ivory and white fabric swatches."
+            caption="Wheatish describes a broad skin depth, not one undertone or one colour palette."
+            width={1672}
+            height={941}
+            priority
+          />
+
           <section className="mb-12">
             <h2 className="mb-4 text-2xl font-bold text-gray-900">What Does Wheatish Skin Tone Mean in India?</h2>
+            <p className="mb-4 leading-relaxed text-gray-600">
+              In Indian usage, wheatish usually describes a medium beige-to-brown complexion between common descriptions of fair and dusky. The term is subjective and shaped by culture; it is not a scientific skin classification and should not be used to rank complexion.
+            </p>
             <p className="leading-relaxed text-gray-600">
-              In Indian usage, wheatish usually describes a medium complexion between common descriptions of fair and dusky. The term is subjective and should not be used to predict undertone, ethnicity, or one universal palette. For clothing decisions, treat it as skin depth and test temperature, clarity, and contrast separately.
+              For clothing decisions, treat wheatish as a broad depth description. Test three separate qualities: <strong>temperature</strong> (warm or cool), <strong>clarity</strong> (soft or vivid), and <strong>contrast</strong> (light-to-deep difference across the outfit).
             </p>
           </section>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Is Colour Advice for Wheatish Skin So Generic?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Wheatish skin is the most common skin description in India — which means there is an enormous amount of colour advice aimed at it. Almost all of it is wrong, because it treats &quot;wheatish&quot; as a single colouring category rather than a surface depth that can contain any undertone.
+              Generic advice treats &quot;wheatish&quot; as a complete colouring category. It is not. Two people with a similar visible depth can need different temperatures, different levels of brightness and different amounts of contrast.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Advice like &quot;wear bright colours&quot;, &quot;avoid pastels&quot;, or &quot;terracotta suits everyone wheatish&quot; are surface-depth prescriptions that ignore the undertone variable entirely. A wheatish woman with a cool undertone wearing terracotta will look sallow. A wheatish woman with a warm undertone wearing cobalt will look flat. The undertone is the operative variable — always.
+              Advice such as &quot;wear bright colours&quot;, &quot;avoid pastels&quot;, or &quot;terracotta suits everyone&quot; ignores the exact fabric and where it sits. A colour that is difficult at the neckline can still work in trousers, a bag, a border or footwear. The goal is not to ban colours; it is to control their temperature, clarity and placement.
             </p>
           </section>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How to Identify Your Undertone Within Wheatish Skin</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Wheatish skin can carry a warm, cool, or neutral undertone. The surface depth does not predict the undertone. Use the three standard tests:
+              Wheatish skin can carry a warm, cool, neutral or olive undertone. Vein colour, a white-paper test and one jewellery comparison can produce conflicting results, so use them only as clues. A controlled fabric test is more directly connected to clothing.
             </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside mb-4">
-              <li><strong>Vein colour:</strong> inner wrist in natural daylight — green veins (warm), blue-purple (cool), blue-green mix (neutral)</li>
-              <li><strong>White paper test:</strong> hold white paper next to your bare face in natural light — golden/olive cast (warm), pink/grey cast (cool), no clear cast (neutral)</li>
-              <li><strong>Gold vs silver:</strong> hold gold jewellery against your inner wrist, then silver — whichever looks more radiant indicates your undertone</li>
-            </ul>
+            <ol className="space-y-3 text-gray-600 list-decimal pl-6 mb-4">
+              <li>Use indirect daylight and turn off coloured indoor lighting.</li>
+              <li>Keep your face, camera and exposure fixed; remove dominant makeup and large jewellery.</li>
+              <li>Compare warm ivory with crisp white, then terracotta with cobalt.</li>
+              <li>Watch the face: eye clarity, lip definition, under-eye shadow and unwanted yellow, grey or red cast.</li>
+              <li>Repeat the strongest comparison on another day before deciding.</li>
+            </ol>
             <p className="text-gray-600 leading-relaxed">
               For a full step-by-step walkthrough, see the <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">complete at-home undertone test guide</Link>.
             </p>
           </section>
 
+          <SeoTeachingVisual
+            src="/images/seo/wheatish-skin-drape-test-iconik.webp"
+            alt="Wheatish Indian woman conducting a controlled drape test with warm ivory, white, terracotta and cobalt."
+            caption="Change one fabric at a time and keep the light, camera and face constant so the comparison is meaningful."
+            width={1003}
+            height={1568}
+          />
+
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Best Colours for Wheatish Skin with Warm Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Warm undertone wheatish skin has a golden, yellow, or peachy base. Earthy, golden colours with sufficient depth create the most harmony:
+              If repeated drape comparisons show a warm-leaning pattern, begin with earthy reds, warm greens and golden neutrals. Then decide whether you need a clear version or a softer, more muted one:
             </p>
             <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
               <li>Terracotta, rust, and burnt orange</li>
@@ -184,14 +216,22 @@ export default function BestColoursWheatishSkinPage() {
               <li>Ivory (more flattering than stark white)</li>
             </ul>
             <p className="text-gray-600 leading-relaxed">
-              <strong>Avoid:</strong> Icy blue, cool lavender, stark white, ashy grey, cool fuchsia. These introduce coolness that clashes with the yellow-golden base.
+              <strong>If a cool colour feels difficult:</strong> move it away from the face or separate it with warm ivory, olive, coral or cocoa. Do not discard an entire family based on one fabric.
             </p>
           </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/warm-wheatish-skin-palette-iconik.webp"
+            alt="Warm wheatish Indian skin palette with terracotta, olive, coral, camel, cocoa and warm ivory."
+            caption="A warm wheatish outfit becomes easier to build with one lead colour, one cocoa anchor and one warm light."
+            width={1003}
+            height={1568}
+          />
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Best Colours for Wheatish Skin with Cool Undertone</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Cool undertone wheatish skin has a pink, blue, or red base. Jewel tones and blue-based colours create the most vibrant effect:
+              If cool comparisons repeatedly sharpen the face, use blue-based colours, berries and cool neutrals as the starting rail. Reduce brightness if the clearest version dominates you:
             </p>
             <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
               <li>Navy and midnight blue</li>
@@ -204,14 +244,22 @@ export default function BestColoursWheatishSkinPage() {
               <li>Stark white (creates clean, fresh contrast)</li>
             </ul>
             <p className="text-gray-600 leading-relaxed">
-              <strong>Avoid:</strong> Mustard yellow, warm orange, camel, earthy brown. These introduce yellow warmth that clashes with the pink or blue base of a cool undertone.
+              <strong>If a warm colour feels difficult:</strong> move mustard, camel or orange into trousers, footwear or a bag, then use navy, white, berry or charcoal near the face.
             </p>
           </section>
 
+          <SeoTeachingVisual
+            src="/images/seo/cool-wheatish-skin-palette-iconik.webp"
+            alt="Cool wheatish Indian skin palette with navy, emerald, berry, cobalt, charcoal and crisp white."
+            caption="A cool wheatish outfit can use one clear lead, navy as the anchor and crisp white for lift."
+            width={1003}
+            height={1568}
+          />
+
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Best Colours for Wheatish Skin with Neutral Undertone</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">What About Neutral or Olive Wheatish Skin?</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Neutral undertone wheatish skin has a balance of warm and cool. It is particularly common in the wheatish skin depth. The most flattering approach is muted, slightly greyed versions of both warm and cool palettes:
+              Neutral does not mean that only muted colour will work, and olive does not automatically mean warm. When temperature tests are mixed, compare colour clarity and the amount of grey instead:
             </p>
             <ul className="space-y-2 text-gray-600 list-disc list-inside mb-4">
               <li>Dusty rose and soft blush</li>
@@ -223,14 +271,61 @@ export default function BestColoursWheatishSkinPage() {
               <li>Soft mauve and muted plum</li>
             </ul>
             <p className="text-gray-600 leading-relaxed">
-              See the full <Link href="/colour-analysis/neutral-undertone" className="underline hover:opacity-70">neutral undertone guide</Link> for a deeper breakdown.
+              Also test a few clearer colours—emerald, berry or teal—because balanced colouring can still carry intensity. See the full <Link href="/colour-analysis/neutral-undertone" className="underline hover:opacity-70">neutral undertone guide</Link> for a deeper breakdown.
             </p>
+          </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/neutral-olive-wheatish-palette-iconik.webp"
+            alt="Neutral olive wheatish Indian skin with soft navy, cocoa, aubergine, dusty rose, muted teal and stone."
+            caption="Mixed temperature results do not require a colourless wardrobe; compare softness and clarity before ruling out colour."
+            width={1003}
+            height={1568}
+          />
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Can Wheatish Skin Wear Pastels?</h2>
+            <p className="text-gray-600 mb-4 leading-relaxed">
+              Yes. Test the exact pastel rather than the category. Warm peach, soft coral and warm blush may support a warm-leaning palette; lilac, dusty rose and powder blue may support a cool-leaning palette. Olive and neutral colouring may prefer a pastel with less chalky white or a slightly greyed finish.
+            </p>
+            <p className="text-gray-600 leading-relaxed">
+              If a pastel reduces facial definition, add a deeper neckline, jacket, dupatta, saree blouse, bag or border. This restores contrast without changing the colour you wanted to wear.
+            </p>
+          </section>
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">White or Ivory, Gold or Silver?</h2>
+            <p className="text-gray-600 mb-4 leading-relaxed">
+              Compare crisp white, soft white and warm ivory in the same indirect daylight. Keep the version that makes the face appear even and defined. A preference for strong or soft contrast can matter as much as undertone.
+            </p>
+            <p className="text-gray-600 leading-relaxed">
+              Compare jewellery with similar size and finish. Polished metal reflects more light than brushed metal, while stones and surrounding fabric alter the effect. Judge the complete neckline composition instead of using skin depth as a metal rule.
+            </p>
+          </section>
+
+          <SeoTeachingVisual
+            src="/images/seo/wheatish-skin-colour-levers-iconik.webp"
+            alt="Wheatish Indian office outfit illustrating temperature, clarity and contrast as three colour-selection levers."
+            caption="Choose temperature first, refine softness or clarity second, then set the amount of light-to-deep contrast."
+            width={1003}
+            height={1568}
+          />
+
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">How to Translate the Palette Into Real Indian Outfits</h2>
+            <ul className="space-y-3 text-gray-600 list-disc pl-6">
+              <li><strong>Kurta set:</strong> place your strongest colour in the kurta or dupatta, then repeat one neutral in the trousers and bag.</li>
+              <li><strong>Saree:</strong> test the blouse and pallu closest to the face; the body colour can be more flexible.</li>
+              <li><strong>Office wear:</strong> let one colour lead and keep prints controlled so the outfit does not compete with the face.</li>
+              <li><strong>Occasion wear:</strong> balance fabric sheen, embroidery and jewellery; a colour can feel harsher when every surface is highly reflective.</li>
+              <li><strong>Shopping:</strong> photograph fabrics near the face in consistent light. Store lighting can make warm colours yellower and cool colours greyer.</li>
+            </ul>
           </section>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How Does Chromatic Harmony Mapping™ Work for Wheatish Skin?</h2>
             <p className="text-gray-600 leading-relaxed">
-              CHM identifies undertone type (warm, cool, or neutral) and melanin depth simultaneously. For wheatish skin, the undertone identification step is particularly critical because the surface depth is not itself a predictor of undertone — unlike deeper skin tones where melanin intensity creates more visible constraints on palette intensity. The result is a 10-colour palette calibrated to your specific undertone and melanin depth, not a generic &quot;wheatish skin&quot; category.
+              ICONIK&apos;s Chromatic Harmony Mapping™ is a proprietary styling framework. It compares observed temperature, skin depth, facial contrast and colour clarity, then translates the pattern into a practical wardrobe palette. It is a styling prescription—not a medical or biological diagnosis—and it should not reduce wheatish skin to one generic category.
             </p>
           </section>
 
@@ -269,13 +364,18 @@ export default function BestColoursWheatishSkinPage() {
             </div>
           </section>
 
+          <InstagramReelsForArticle articlePath={path} />
+
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Navalakha, Mithil. &quot;Wheatish Skin Tone: Meaning, Undertones and Best Colours.&quot; Iconik, reviewed 11 July 2026. https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india</p>
+            <p>Rana, Jasmine. &quot;Wheatish Skin Tone: Meaning, Undertones and Best Colours.&quot; Iconik, updated 23 July 2026. https://www.iconik.pro/colour-analysis/best-colours-wheatish-skin-india</p>
           </div>
 
-        </div>
-      </main>
+            </div>
+          </div>
+        </main>
+        <SeoEditorialFooter />
+      </div>
     </>
   );
 }

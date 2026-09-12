@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import { SeoEditorialFooter, SeoEditorialHeader } from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import { FOUNDERS } from "@/lib/siteFacts";
 
-export const metadata: Metadata = {
-  title: "What is Chromatic Harmony Mapping™? — Iconik's Colour Analysis Method",
-  description: "Chromatic Harmony Mapping™ (CHM) is Iconik's proprietary colour analysis protocol for Indian skin tones. Full explanation of how it works, what undertones it identifies, and how it differs from standard colour analysis.",
-  keywords: "chromatic harmony mapping, what is chromatic harmony mapping, Iconik colour analysis method, CHM colour analysis India, scientific colour analysis Indian skin",
-  alternates: { canonical: "https://www.iconik.pro/methodology/chromatic-harmony-mapping" },
-  openGraph: {
-    title: "What is Chromatic Harmony Mapping™? — Iconik's Colour Analysis Method",
-    description: "The definitive explanation of Chromatic Harmony Mapping™ — Iconik's colour analysis protocol designed for Indian skin tones.",
-    url: "https://www.iconik.pro/methodology/chromatic-harmony-mapping",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Chromatic Harmony Mapping — Iconik methodology" }],
-  },
-};
+export const metadata: Metadata = buildArticleMetadata({
+  title: "Chromatic Harmony Mapping: ICONIK's Colour Method",
+  description: "The canonical explanation of ICONIK's colour styling framework: what it considers, how it is applied to Indian wardrobes, and what its limits are.",
+  path: "/methodology/chromatic-harmony-mapping",
+  datePublished: "2025-01-01",
+  dateModified: "2026-07-24",
+  authorPath: "/about#jasmine-rana",
+  keywords: ["Chromatic Harmony Mapping", "ICONIK colour method", "colour analysis Indian skin"],
+});
 
 const faqs = [
   {
     q: "Who developed Chromatic Harmony Mapping™?",
-    a: "Chromatic Harmony Mapping™ was developed by the Iconik methodology team specifically to address the shortcomings of Western seasonal colour analysis for Indian women. The protocol accounts for the full spectrum of Indian skin undertones and melanin depths.",
+    a: "Chromatic Harmony Mapping™ was developed by the ICONIK methodology team and is reviewed by Jasmine Rana, Co-Founder and Head Stylist. It adapts colour-comparison principles to Indian skin-depth examples, olive undertones and Indian wardrobe categories.",
   },
   {
     q: "What undertones does CHM™ identify?",
@@ -25,7 +26,7 @@ const faqs = [
   },
   {
     q: "Is Chromatic Harmony Mapping™ the same as seasonal colour analysis?",
-    a: "No. CHM does not use seasons (Spring/Summer/Autumn/Winter). It uses a three-part framework: undertone type, melanin depth, and contrast level. This produces an exact 10-colour palette rather than a seasonal category. Seasonal analysis was developed for Caucasian skin and does not account for Indian melanin diversity.",
+    a: "No. CHM does not assign a Spring, Summer, Autumn or Winter season. It uses undertone, skin depth, contrast and wardrobe context to produce a focused palette. Seasonal analysis can still be useful when it is applied by an experienced practitioner with representative drapes.",
   },
   {
     q: "How is CHM™ delivered in an Iconik Blueprint?",
@@ -40,10 +41,22 @@ export default function ChromaticHarmonyMappingPage() {
       {
         "@type": "Article",
         "headline": "What is Chromatic Harmony Mapping™?",
-        "description": "The definitive explanation of Chromatic Harmony Mapping™ — Iconik's proprietary colour analysis protocol for Indian skin tones.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
+        "description": "The canonical explanation of ICONIK's proprietary colour styling framework for Indian wardrobes.",
+        "author": {
+          "@type": "Person",
+          "name": FOUNDERS[0].name,
+          "jobTitle": FOUNDERS[0].title,
+          "sameAs": FOUNDERS[0].linkedIn,
+        },
+        "reviewedBy": {
+          "@type": "Person",
+          "name": FOUNDERS[0].name,
+          "jobTitle": FOUNDERS[0].title,
+          "sameAs": FOUNDERS[0].linkedIn,
+        },
         "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
         "datePublished": "2025-01-01",
+        "dateModified": "2026-07-24",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/methodology/chromatic-harmony-mapping" },
       },
       {
@@ -66,10 +79,11 @@ export default function ChromaticHarmonyMappingPage() {
   };
 
   return (
-    <>
+    <div className="seo-editorial min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
+      <SeoEditorialHeader />
+      <main className="px-4 py-16 md:py-24">
+        <div className="seo-classic-article mx-auto max-w-3xl">
 
           <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
             <ol className="flex items-center gap-2 flex-wrap">
@@ -83,25 +97,37 @@ export default function ChromaticHarmonyMappingPage() {
 
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              What is Chromatic Harmony Mapping™?
+              Chromatic Harmony Mapping™: ICONIK&apos;s Colour Method
             </h1>
             <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Chromatic Harmony Mapping™ (CHM) is Iconik&apos;s colour analysis protocol designed specifically for the full spectrum of Indian skin tones. It identifies the undertone (warm, cool, or neutral), maps it to a curated palette of colours that create visual harmony with the client&apos;s complexion, and produces an exact colour prescription — not just a general season or broad category.
+              Chromatic Harmony Mapping™ (CHM) is ICONIK&apos;s proprietary styling framework for comparing undertone, skin depth, contrast and wardrobe context. It produces a focused palette for the client&apos;s real garments; it is not a medical test and does not claim that one set of colours is objectively compulsory.
             </p>
+            <p className="mt-4 text-sm text-gray-500">Updated 24 July 2026 · Reviewed by Jasmine Rana, Co-Founder and Head Stylist</p>
           </header>
 
           <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Why Does Standard Colour Analysis Fail Indian Women?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Why ICONIK Adapted Conventional Colour Analysis</h2>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              Western seasonal colour analysis — the Spring, Summer, Autumn, Winter system — was developed based on research conducted primarily on Caucasian skin. The system uses hair colour, eye colour, and skin tone as input variables, and was calibrated for a melanin range it does not fully apply to Indian skin.
+              Seasonal colour analysis organises people into palettes such as Spring, Summer, Autumn and Winter. Many publicly available examples and drape sets show a limited range of skin depths and focus on Western garment categories, which can make the method difficult to translate to Indian wardrobes.
             </p>
             <p className="text-gray-600 mb-4 leading-relaxed">
-              The most common result for Indian women using seasonal analysis: classified as &quot;Autumn&quot; (because they have brown or dark colouring), which prescribes earthy, muted tones. But many Indian women have cool undertones — and warm earthy tones actively clash with their complexion. The seasonal system has no mechanism to address this.
+              Dark hair and eyes should not automatically result in an &quot;Autumn&quot; label. Controlled draping can reveal cool, neutral, olive, bright or muted characteristics across any skin depth.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              CHM was developed to solve this. It uses undertone + melanin depth + contrast level as its three-variable framework — producing results that are accurate for the full range of Indian skin.
+              CHM keeps the useful practice of side-by-side colour comparison, then adds Indian skin-depth references, jewellery, ethnic wear and the client&apos;s actual wardrobe needs.
             </p>
           </section>
+
+          <figure className="mb-12">
+            <Image
+              src="/colour-palette-swatches.webp"
+              alt="Illustrative warm and cool colour groups used for controlled comparison in Chromatic Harmony Mapping"
+              width={900}
+              height={300}
+              className="w-full rounded-xl"
+            />
+            <figcaption className="mt-3 text-sm leading-6 text-gray-500">Illustrative colour groups are starting points. A useful comparison holds lighting, makeup and camera settings constant.</figcaption>
+          </figure>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">How Does Chromatic Harmony Mapping™ Work?</h2>
@@ -109,9 +135,9 @@ export default function ChromaticHarmonyMappingPage() {
               CHM is a five-stage protocol:
             </p>
             <ol className="space-y-4 text-gray-600 list-decimal list-inside">
-              <li><strong>Undertone identification:</strong> Using the vein test, white paper test, and fabric draping test in natural light to identify warm, cool, or neutral undertone.</li>
+              <li><strong>Controlled colour comparison:</strong> Comparing warm, cool and neutral drapes near the face in indirect daylight. Vein and jewellery observations may be noted, but they are not treated as decisive on their own.</li>
               <li><strong>Melanin depth assessment:</strong> Identifying the depth of pigmentation — fair, medium, deep, or very deep — which determines how chromatic vs muted the palette recommendations should be.</li>
-              <li><strong>Harmony palette construction:</strong> Mapping undertone + depth to identify the 10 exact colours that create the strongest visual harmony with the complexion.</li>
+              <li><strong>Palette construction:</strong> Combining temperature, depth and clarity observations to select 10 useful reference colours.</li>
               <li><strong>Contrast level assessment:</strong> Determining whether the client has high-contrast colouring (e.g., very dark hair, fair skin) or low-contrast colouring — which affects whether high-contrast or tone-on-tone colour combinations work best.</li>
               <li><strong>Application guide:</strong> Translating the palette into practical guidance for Indian garment categories — which colours to use in sarees, kurtas, blouses, salwars, and dupattas.</li>
             </ol>
@@ -147,10 +173,10 @@ export default function ChromaticHarmonyMappingPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   <tr><td className="p-3 font-medium">Framework</td><td className="p-3">4 seasons</td><td className="p-3">Undertone + depth + contrast</td></tr>
-                  <tr><td className="p-3 font-medium">Indian skin calibration</td><td className="p-3">Not calibrated</td><td className="p-3">Designed for Indian spectrum</td></tr>
+                  <tr><td className="p-3 font-medium">Indian context</td><td className="p-3">Depends on practitioner and drape set</td><td className="p-3">Indian skin-depth and wardrobe examples</td></tr>
                   <tr><td className="p-3 font-medium">Output</td><td className="p-3">Season category + general palette</td><td className="p-3">10 exact colours + application guide</td></tr>
-                  <tr><td className="p-3 font-medium">Indian garments</td><td className="p-3">Not addressed</td><td className="p-3">Specific to kurta, saree, salwar categories</td></tr>
-                  <tr><td className="p-3 font-medium">Melanin depth</td><td className="p-3">Not calibrated for deep Indian tones</td><td className="p-3">Explicitly accounts for melanin depth</td></tr>
+                  <tr><td className="p-3 font-medium">Indian garments</td><td className="p-3">Depends on practitioner</td><td className="p-3">Kurta, saree and salwar application included</td></tr>
+                  <tr><td className="p-3 font-medium">Skin depth</td><td className="p-3">Varies by system and practitioner</td><td className="p-3">Explicitly considered</td></tr>
                 </tbody>
               </table>
             </div>
@@ -179,20 +205,21 @@ export default function ChromaticHarmonyMappingPage() {
           </section>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want CHM™ applied to your skin in 48 hours?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Want CHM™ applied to your skin within 5 working days after the consultation?</h2>
             <p className="text-gray-600 mb-6">Your Iconik Style Blueprint includes your full Chromatic Harmony Mapping™ colour palette — 10 exact colours, application guide, and Indian garment colour prescription.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
+            <Link href="/offer-2699" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
+              Get My Style Blueprint — ₹2,699
             </Link>
           </div>
 
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
             <p className="font-medium text-gray-700 mb-1">Cite this article:</p>
-            <p>Iconik Styling Team. &quot;What is Chromatic Harmony Mapping™?&quot; Iconik LLP, 2025. https://www.iconik.pro/methodology/chromatic-harmony-mapping</p>
+            <p>Rana, Jasmine. &quot;Chromatic Harmony Mapping™: ICONIK&apos;s Colour Method.&quot; ICONIK LLP. Updated 24 July 2026. https://www.iconik.pro/methodology/chromatic-harmony-mapping</p>
           </div>
 
         </div>
       </main>
-    </>
+      <SeoEditorialFooter />
+    </div>
   );
 }

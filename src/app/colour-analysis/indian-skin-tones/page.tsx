@@ -1,175 +1,283 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
+import {
+  SeoArticleLayout,
+  SeoAuthorReview,
+  SeoBlueprintCta,
+  SeoFaqSection,
+  SeoInsightCard,
+  SeoQuickAnswer,
+  SeoRelatedGuides,
+  SeoTeachingVisual,
+} from "@/components/seo/SeoEditorial";
+import { buildArticleMetadata } from "@/lib/seo";
+import {
+  articleNode,
+  breadcrumbList,
+  faqPageNode,
+  founderPerson,
+  graph,
+  organizationNode,
+} from "@/lib/structuredData";
 
-export const metadata: Metadata = {
-  title: "Colour Analysis for Indian Skin Tones — Undertone Guide",
-  description: "Why standard colour analysis fails Indian women — and how Chromatic Harmony Mapping™ was designed specifically for the full spectrum of Indian skin tones, from fair to deep.",
-  keywords: "colour analysis Indian skin, undertone Indian skin tones, dusky skin colour guide India, dark skin colour palette India, olive skin colours India, best colours dusky skin Indian women",
-  alternates: { canonical: "https://www.iconik.pro/colour-analysis/indian-skin-tones" },
-  openGraph: {
-    title: "Colour Analysis for Indian Skin Tones — Iconik",
-    description: "How Chromatic Harmony Mapping™ was built for the full spectrum of Indian skin tones — from fair to deep.",
-    url: "https://www.iconik.pro/colour-analysis/indian-skin-tones",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour analysis for Indian skin tones — Iconik" }],
+const path = "/colour-analysis/indian-skin-tones";
+const title = "Colour Analysis for Indian Skin: What Needs Adapting";
+const description =
+  "Learn how to apply colour analysis across Indian skin depths and undertones without assuming dark hair means Autumn or Winter, or that one palette suits every Indian complexion.";
+const published = "2025-01-01";
+const modified = "2026-07-24";
+
+export const metadata: Metadata = buildArticleMetadata({
+  title,
+  description,
+  path,
+  datePublished: published,
+  dateModified: modified,
+  authorPath: "/about#jasmine-rana",
+  keywords: [
+    "colour analysis Indian skin tones",
+    "Indian skin undertone",
+    "colour palette Indian women",
+    "olive undertone India",
+  ],
+  image: {
+    path: "/images/seo/skin-depth-undertone-difference-iconik.webp",
+    width: 1122,
+    height: 1402,
+    alt: "Indian skin depth and undertone shown as separate colour variables.",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Colour Analysis for Indian Skin Tones — Iconik",
-    description: "How Chromatic Harmony Mapping™ was built for the full spectrum of Indian skin tones — from fair to deep.",
-    images: ["/og-image.webp"],
-  },
-};
+});
 
 const faqs = [
   {
-    q: "Why does Western colour analysis not work well for Indian women?",
-    a: "Most Western colour systems (Seasonal Colour Analysis, Kibbe) were developed and calibrated using lighter, less melanin-rich complexions as the base reference. When applied to Indian skin — which has significantly more melanin and a wider range of undertones — these systems produce inaccurate classifications. The 'cool Winter' or 'warm Autumn' categories often misclassify Indian women or prescribe palettes that look flat or clinical against Indian skin.",
+    q: "Do all Indian skin tones have a warm undertone?",
+    a: "No. Indian skin can lean warm, cool, neutral or olive at every visible depth. Dark hair and eyes do not prove a warm undertone, so use controlled fabric comparisons instead of demographic assumptions.",
   },
   {
-    q: "What is the best colour for dusky or deep Indian skin?",
-    a: "The best colours for dusky or deep Indian skin depend on the undertone, not just the depth. Dusky warm-undertone women are lit up by terracotta, mustard, olive, rust, and deep burnt orange. Dusky cool-undertone women look stunning in jewel tones — emerald, navy, fuchsia, and magenta. Dusky skin can carry bold, saturated colours that paler skin cannot — this is an advantage, not a limitation.",
+    q: "Why do Indian women often get typed as Autumn or Winter?",
+    a: "Simplified seasonal quizzes often use dark hair and eyes as dominant inputs. That can funnel many South Asian users toward the two deeper seasons before undertone, clarity and individual contrast have been properly compared.",
   },
   {
-    q: "Do Indian women with olive skin have warm or cool undertones?",
-    a: "Olive skin often has a neutral-to-warm undertone, but not always. Olive skin has green-grey pigmentation in addition to melanin, which can make undertone identification tricky. The key tests are: veins (greenish = warm, blue-purple = cool), jewellery preference (gold = warm, silver = cool), and how your skin responds to warm vs cool clothing colours. Iconik's Chromatic Harmony Mapping™ was specifically designed to navigate the olive skin classification challenge.",
+    q: "Is seasonal colour analysis useless for Indian skin?",
+    a: "No. Temperature, depth, clarity and contrast are useful observations. The difficulty is usually limited examples, unrepresentative drapes or rigid category shortcuts—not the idea of comparing colour itself.",
   },
   {
-    q: "Can Indian women with fair skin have warm undertones?",
-    a: "Absolutely. Skin depth (fair to deep) and undertone (warm vs cool) are independent variables. Many fair-skinned Indian women have warm undertones — their skin appears ivory or peachy rather than pinkish. The common mistake is assuming that fairer skin must be cool-toned. Undertone is determined by the underlying pigment, not the surface depth.",
+    q: "What is olive undertone?",
+    a: "Olive describes a green-grey or muted cast that can sit across warm, neutral or cool-leaning colour behaviour. It should not automatically be labelled warm. Compare yellow-green with blue-green and soft with clear colours under the same light.",
+  },
+  {
+    q: "Should deeper Indian skin avoid pastels?",
+    a: "No. Test the pastel's temperature and amount of white. If a pale shade appears chalky, try a clearer version, a slightly deeper tint or stronger contrast at the neckline instead of banning the whole colour family.",
   },
 ];
 
 export default function IndianSkinTonesPage() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": "https://www.iconik.pro/colour-analysis/indian-skin-tones#article",
-        "headline": "Colour Analysis for Indian Skin Tones — Why Western Systems Fail and What Works Instead",
-        "description": "Why standard colour analysis fails Indian women and how Chromatic Harmony Mapping™ was built for the full spectrum of Indian skin tones.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
-        },
-        "datePublished": "2025-01-01",
-        "dateModified": new Date().toISOString().split("T")[0],
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/indian-skin-tones" },
-      },
-      {
-        "@type": "FAQPage",
-        "mainEntity": faqs.map((f) => ({ "@type": "Question", "name": f.q, "acceptedAnswer": { "@type": "Answer", "text": f.a } })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.iconik.pro" },
-          { "@type": "ListItem", "position": 2, "name": "Colour Analysis", "item": "https://www.iconik.pro/colour-analysis" },
-          { "@type": "ListItem", "position": 3, "name": "Indian Skin Tones", "item": "https://www.iconik.pro/colour-analysis/indian-skin-tones" },
-        ],
-      },
-    ],
-  };
+  const jsonLd = graph([
+    organizationNode,
+    founderPerson,
+    articleNode({
+      title,
+      description,
+      path,
+      datePublished: published,
+      dateModified: modified,
+      images: [
+        "/images/seo/skin-depth-undertone-difference-iconik.webp",
+        "/images/seo/dark-skin-depth-undertone-iconik.webp",
+      ],
+      about: ["Indian skin tones", "Colour analysis", "Undertone", "Skin depth"],
+    }),
+    faqPageNode(faqs),
+    breadcrumbList([
+      { name: "Home", path: "/" },
+      { name: "Colour Analysis", path: "/colour-analysis" },
+      { name: "Indian Skin Tones", path },
+    ]),
+  ]);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <main className="min-h-screen bg-white px-4 py-16 md:py-24">
-        <div className="mx-auto max-w-3xl">
-
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-500">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link href="/" className="hover:underline">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link href="/colour-analysis" className="hover:underline">Colour Analysis</Link></li>
-              <li aria-hidden="true">›</li>
-              <li className="text-gray-800 font-medium">Indian Skin Tones</li>
-            </ol>
-          </nav>
-
-          <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-5 leading-tight">
-              Colour Analysis for Indian Skin Tones: Why Western Systems Fail
-            </h1>
-            <p className="article-summary text-lg text-gray-600 leading-relaxed">
-              Indian women span one of the widest ranges of skin tone and undertone of any population in the world — from fair ivory to deep ebony, across warm, cool, and neutral undertones, with unique complexities like olive and wheatish skin that sit between standard categories. Standard Western colour analysis systems were not built for this range. Chromatic Harmony Mapping™ was.
-            </p>
-          </header>
-
-          <div className="mb-12">
-            <Image
-              src="/undertone-comparison.webp"
-              alt="Undertone identification for Indian skin — warm, cool, and neutral vein comparison"
-              width={900}
-              height={400}
-              className="w-full rounded-xl"
-              priority
+      <SeoArticleLayout
+        hero={{
+          eyebrow: "Indian colour analysis",
+          title,
+          summary:
+            "Colour analysis can work across Indian skin tones when the method separates skin depth from undertone, represents olive and neutral results, and translates the palette into Indian garments. The problem is usually the shortcut—not the person being analysed.",
+          breadcrumbs: [
+            { label: "Home", href: "/" },
+            { label: "Colour Analysis", href: "/colour-analysis" },
+            { label: "Indian Skin Tones" },
+          ],
+          published: "1 January 2025",
+          updated: "24 July 2026",
+          reviewer: "Jasmine Rana",
+          readingTime: "10 min read",
+        }}
+        quickAnswer={
+          <SeoQuickAnswer
+            answer="Do not use 'Indian skin' as one palette. Separate visible depth, undertone, clarity and contrast, then test the exact fabrics you plan to wear."
+            detail="Fair, wheatish, dusky and deep are broad appearance descriptions. None of them decides warm, cool, neutral or olive direction by itself."
+          />
+        }
+        tableOfContents={[
+          { href: "#four-variables", label: "The four variables" },
+          { href: "#common-shortcuts", label: "Shortcuts that mislead" },
+          { href: "#depth-guidance", label: "Depth-specific guidance" },
+          { href: "#indian-wardrobe", label: "Apply it to Indian wear" },
+          { href: "#method", label: "ICONIK's method" },
+        ]}
+        afterArticle={
+          <>
+            <SeoFaqSection faqs={faqs} />
+            <SeoAuthorReview>
+              <p>
+                Jasmine reviews ICONIK&apos;s colour guidance for Indian, western and fusion
+                wardrobes. The framework is designed to support decisions, not rank skin colours or
+                impose a single cultural beauty standard.
+              </p>
+            </SeoAuthorReview>
+            <SeoRelatedGuides
+              links={[
+                {
+                  href: "/colour-analysis/how-to-find-undertone",
+                  title: "How to Find Your Undertone",
+                  description: "Run a controlled at-home fabric comparison instead of relying on veins.",
+                },
+                {
+                  href: "/colour-analysis/seasonal-colour-analysis-india",
+                  title: "Seasonal Colour Analysis in India",
+                  description: "See where seasonal language helps and where rigid categories become limiting.",
+                },
+                {
+                  href: "/methodology/chromatic-harmony-mapping",
+                  title: "Chromatic Harmony Mapping™",
+                  description: "Read the canonical scope and limitations of ICONIK's colour method.",
+                },
+              ]}
             />
-          </div>
+            <SeoBlueprintCta
+              title="Build a palette around your skin and your actual wardrobe."
+              description="The ICONIK Blueprint combines colour direction with proportion, face framing and 20 outfit formulas after a 30-minute consultation."
+            />
+          </>
+        }
+      >
+        <SeoTeachingVisual
+          src="/images/seo/skin-depth-undertone-difference-iconik.webp"
+          alt="Indian skin depth and undertone shown as separate variables."
+          caption="Visible depth and colour direction are related observations, not interchangeable labels."
+          width={1122}
+          height={1402}
+          priority
+        />
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">The Problem with Standard Colour Analysis for Indian Women</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              The most widely used colour analysis system — Seasonal Colour Analysis — divides people into four seasonal palettes (Spring, Summer, Autumn, Winter) based on combinations of depth (light vs dark) and temperature (warm vs cool). This system was developed using predominantly Northern European skin as its reference baseline.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              When applied to Indian skin — which has significantly higher melanin density, a wider undertone range, and unique intermediate complexions like olive and wheatish — the seasonal system frequently misclassifies. Indian women are often told they are &quot;Autumn&quot; when they are actually cool-toned, or &quot;Winter&quot; when their undertone is neutral-warm. The resulting palette prescriptions look flat, clinical, or simply wrong.
-            </p>
-          </section>
+        <section id="four-variables">
+          <h2>Use four variables—not one skin-tone label</h2>
+          <h3>1. Skin depth</h3>
+          <p>
+            Depth describes how light or deep the visible complexion appears. Terms such as fair,
+            wheatish, dusky and deep are subjective social descriptions, not complete palette
+            categories.
+          </p>
+          <h3>2. Undertone direction</h3>
+          <p>
+            Warm, cool, neutral and olive describe colour behaviour observed through comparison.
+            Every direction can appear at every depth.
+          </p>
+          <h3>3. Clarity</h3>
+          <p>
+            Some faces remain defined beside vivid colour; others look more coherent beside softened,
+            greyed or complex shades. This is independent of simply being warm or cool.
+          </p>
+          <h3>4. Contrast</h3>
+          <p>
+            Contrast compares light and dark across skin, hair, eyes and the outfit. It helps decide
+            whether stark black-and-white, tonal dressing or a medium contrast feels most intentional.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">How Chromatic Harmony Mapping™ Is Different</h2>
-            <p className="text-gray-600 mb-4 leading-relaxed">
-              Chromatic Harmony Mapping™ was built from the ground up using Indian skin tone diversity as its reference. Key differences:
-            </p>
-            <ul className="space-y-3 text-gray-600 list-disc list-inside">
-              <li><strong>Undertone identification calibrated for olive and wheatish skin</strong> — the most commonly misclassified Indian skin types</li>
-              <li><strong>Depth-adjusted palette recommendations</strong> — the same warm undertone looks different on fair, medium, and deep skin, and the palette reflects this</li>
-              <li><strong>Indian garment colour guidance included</strong> — saree fabric colours, ethnic occasion colours, and regional colour traditions are part of the prescription</li>
-              <li><strong>Human stylist review</strong> — every CHM analysis is reviewed before delivery</li>
-            </ul>
-          </section>
+        <section id="common-shortcuts">
+          <h2>Three shortcuts that produce weak advice</h2>
+          <h3>“Brown skin is warm”</h3>
+          <p>
+            Brown skin can lean warm, cool, neutral or olive. A golden surface cast can also coexist
+            with cooler colour behaviour. Test fabric rather than assuming.
+          </p>
+          <h3>“Dark hair means Autumn or Winter”</h3>
+          <p>
+            Dark hair is common across South Asia, so it cannot do most of the classification work.
+            Undertone, clarity and overall contrast still need to be observed.
+          </p>
+          <h3>“Deeper skin needs only jewel tones”</h3>
+          <p>
+            Jewel tones can create useful saturation and contrast, but deeper skin can also wear
+            pastels, earth tones and neutrals. The exact tint, fabric finish and surrounding contrast
+            decide the outcome.
+          </p>
+        </section>
 
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
-            <div className="divide-y divide-gray-200">
-              {faqs.map((faq, i) => (
-                <div key={i} className="py-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.q}</h3>
-                  <p className="text-gray-600 leading-relaxed faq-answer">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+        <SeoInsightCard eyebrow="Language matters" title="Skin-depth words should describe, not rank">
+          <p>
+            “Fair”, “wheatish”, “dusky” and “dark” carry cultural history and are used inconsistently.
+            Use them only as broad search and appearance terms. Never treat lighter skin as the target
+            or deeper skin as a problem to correct.
+          </p>
+        </SeoInsightCard>
 
-          <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Related Guides</h2>
-            <ul className="space-y-2 text-gray-600">
-              <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones — Full Guide</Link></li>
-              <li>→ <Link href="/colour-analysis/how-to-find-undertone" className="underline hover:opacity-70">How to Find Your Undertone: 3 At-Home Tests</Link></li>
-              <li>→ <Link href="/colour-analysis/warm-cool-neutral-undertone-india" className="underline hover:opacity-70">Warm vs Cool vs Neutral Undertone: Complete Comparison</Link></li>
-              <li>→ <Link href="/colour-analysis/best-colours-dusky-skin" className="underline hover:opacity-70">Best Colours for Dusky Skin</Link></li>
-              <li>→ <Link href="/colour-analysis/best-colours-wheatish-skin-india" className="underline hover:opacity-70">Best Colours for Wheatish Skin</Link></li>
-            </ul>
-          </section>
+        <section id="depth-guidance">
+          <h2>What changes as skin depth changes?</h2>
+          <p>
+            Depth does not dictate temperature, but it can change how much white, grey or saturation a
+            fabric can carry before it appears chalky, dull or overpowering.
+          </p>
+          <ul>
+            <li><strong>Lighter depth:</strong> test whether pale colours need softness or a deeper anchor to preserve facial definition.</li>
+            <li><strong>Medium or wheatish depth:</strong> compare temperature first, then check olive and clarity because surface gold can hide mixed results.</li>
+            <li><strong>Dusky or medium-deep depth:</strong> test clear and muted versions; avoid assuming all pastels will wash the face out.</li>
+            <li><strong>Deep depth:</strong> compare the amount of white in a tint and the outfit&apos;s total contrast. Rich colour is an option, not an obligation.</li>
+          </ul>
+        </section>
 
-          <div className="rounded-2xl bg-gray-50 border border-gray-200 p-8 text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Get your personalised colour palette in 48 hours</h2>
-            <p className="text-gray-600 mb-6">Chromatic Harmony Mapping™ — included in every Iconik Style Blueprint.</p>
-            <Link href="/" className="inline-block rounded-full bg-black px-8 py-3 text-white font-semibold hover:bg-gray-800 transition-colors">
-              Get My Style Blueprint — ₹3,299
-            </Link>
-          </div>
+        <SeoTeachingVisual
+          src="/images/seo/dark-skin-depth-undertone-iconik.webp"
+          alt="Deep Indian skin shown with separate warm, cool, neutral and olive colour directions."
+          caption="Deeper skin is not one palette. Undertone and clarity still change which versions of a colour are easiest near the face."
+          width={1122}
+          height={1402}
+        />
 
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-5 text-sm text-gray-500">
-            <p className="font-medium text-gray-700 mb-1">Cite this guide:</p>
-            <p>Iconik Styling Team. &quot;Colour Analysis for Indian Skin Tones: Why Western Systems Fail.&quot; Iconik, 2025. https://www.iconik.pro/colour-analysis/indian-skin-tones</p>
-          </div>
-        </div>
-      </main>
+        <section id="indian-wardrobe">
+          <h2>Translate the palette into Indian garments</h2>
+          <p>
+            A palette is only valuable when it answers real purchase and outfit questions:
+          </p>
+          <ul>
+            <li><strong>Saree:</strong> test the blouse and pallu nearest the face; the saree body can be more flexible.</li>
+            <li><strong>Kurta set:</strong> place the supportive colour in the kurta or dupatta and repeat one neutral below.</li>
+            <li><strong>Lehenga:</strong> evaluate blouse, dupatta, zari and stones together because reflected light changes the neckline effect.</li>
+            <li><strong>Office wear:</strong> choose two repeatable neutrals before adding statement colours.</li>
+            <li><strong>Jewellery:</strong> compare metal finish, scale and stones with the neckline colour rather than selecting metal from skin depth alone.</li>
+          </ul>
+          <p>
+            For controlled comparisons, follow the <Link href="/colour-analysis/how-to-find-undertone" className="underline">at-home undertone guide</Link>.
+          </p>
+        </section>
+
+        <section id="method">
+          <h2>What ICONIK adapts in Chromatic Harmony Mapping™</h2>
+          <p>
+            ICONIK&apos;s proprietary framework records undertone direction, skin depth, clarity,
+            contrast and wardrobe context. It then turns those observations into a limited set of
+            reference colours, useful neutrals and outfit applications.
+          </p>
+          <p>
+            It is a styling framework, not a physiological assessment or a scientifically validated
+            diagnostic system. The reader&apos;s preferences, culture, dress code and the exact fabric
+            can override the framework. Read the <Link href="/methodology/chromatic-harmony-mapping" className="underline">canonical methodology page</Link> for its process and limitations.
+          </p>
+        </section>
+      </SeoArticleLayout>
     </>
   );
 }

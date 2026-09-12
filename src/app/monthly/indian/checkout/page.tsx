@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Shield, Clock, Users, CheckCircle, Star, Lock, Calendar } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, Users, CheckCircle, Lock, Calendar } from 'lucide-react';
 import { trackAddToCart, trackInitiateCheckout, trackCTAClick, trackViewContent, updateUserData } from '@/lib/metaPixel';
 import { useSearchParams } from 'next/navigation';
 import { getAttributionPayload } from '@/lib/attribution';
@@ -392,15 +392,15 @@ function CheckoutContent() {
                 >
                     <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
                         <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-                        <span className="text-xs md:text-sm luxury-body">247+ Active Members</span>
+                        <span className="text-xs md:text-sm luxury-body">ICONIK Styling Community</span>
                     </div>
                     <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
                         <Lock className="w-3 h-3 md:w-4 md:h-4" />
                         <span className="text-xs md:text-sm luxury-body">100% Secure</span>
                     </div>
                     <div className="flex items-center gap-1 md:gap-2 bg-luxury-pink-bg text-luxury-charcoal px-2 md:px-3 py-1 md:py-2 rounded-full">
-                        <Star className="w-3 h-3 md:w-4 md:h-4" />
-                        <span className="text-xs md:text-sm luxury-body">4.9/5 Rating</span>
+                        <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
+                        <span className="text-xs md:text-sm luxury-body">Stylist-Curated</span>
                     </div>
                 </motion.div>
 
@@ -751,15 +751,15 @@ function CheckoutContent() {
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600 font-light">
                                     <Clock className="w-5 h-5 text-blue-500" />
-                                    <span>7-day money-back guarantee</span>
+                                    <span>Refund eligibility subject to policy</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600 font-light">
                                     <Users className="w-5 h-5 text-purple-500" />
-                                    <span>247+ active members</span>
+                                    <span>Personalised styling community</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600 font-light">
                                     <Calendar className="w-5 h-5 text-luxury-green" />
-                                    <span>Cancel anytime, no questions asked</span>
+                                    <span>Cancel future renewals anytime</span>
                                 </div>
                             </div>
                         </div>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import LandingPageContent from './LandingPageContent';
 import { buildMetadata } from '@/lib/seo';
+import { INDIA_ROOT_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
+import type { RootDesignVariant } from '@/lib/rootDesign';
 
 export const metadata: Metadata = buildMetadata({
   title: "Scientific Personal Styling for Indian Women",
@@ -17,19 +19,32 @@ export const metadata: Metadata = buildMetadata({
   ],
 });
 
-export default function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ scan?: string }> }) {
+  const { scan = '' } = await searchParams;
+  const designVariant: RootDesignVariant = 'precision';
+
   return (
     <LandingPageContent
+      variant="offer2699"
+      trackingEntry="root"
+      designVariant={designVariant}
       headline={
         <>
-          Discover Your <span className="text-luxury-green">Signature Style</span> in <span className="text-luxury-charcoal">24 hours</span>
+          <span className="block">
+            <span className="text-luxury-accent">Stop Guessing</span> What Suits You.
+          </span>
+          <span className="mt-1 block sm:mt-2">
+            <span className="text-luxury-accent root-serif-moment">Talk to a Stylist</span><span className="root-headline-tail">Who&apos;ll Tell You.</span>
+          </span>
         </>
       }
       subheadline={
         <>
-          Get <span className="font-semibold text-luxury-accent">20 personalized outfits</span>, your <span className="font-semibold text-luxury-green">color palette</span>, and a <span className="font-semibold text-luxury-accent">1-on-1 stylist call</span>
+          30 minutes with your ICONIK stylist, then a personal Style Blueprint — <span className="font-semibold text-luxury-accent">20 complete outfits</span>, your <span className="font-semibold text-luxury-green">colour palette</span>, and exactly what to avoid. Built for your body, not a body type.
         </>
       }
+      checkoutHref={scan ? `/checkout?scan=${encodeURIComponent(scan)}` : '/checkout'}
+      basePrice={INDIA_ROOT_BLUEPRINT_PRICE}
     />
   );
 }

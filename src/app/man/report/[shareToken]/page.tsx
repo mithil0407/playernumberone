@@ -1,6 +1,11 @@
 import { notFound } from 'next/navigation';
 import PublicManReportExperience from '@/components/PublicManReportExperience';
 import { getPublicManReportByShareToken, type PublicLoadedManReport } from '@/lib/manReportLoader';
+import {
+  applyManReportGoldCopy,
+  MAN_REPORT_GOLD_COPY_SAMPLE_TOKEN,
+} from '@/lib/manReportGoldCopy';
+import { isManReportStylistReviewed } from '@/lib/manReportPresentation';
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
@@ -24,6 +29,17 @@ export default async function PublicReportPage({ params, searchParams }: PagePro
 
   if (!result) notFound();
 
+  const useGoldCopy = process.env.NODE_ENV !== 'production'
+    && shareToken === MAN_REPORT_GOLD_COPY_SAMPLE_TOKEN
+    && query.copy === 'gold';
+  const useCinematicPrototype = process.env.NODE_ENV !== 'production'
+    && shareToken === MAN_REPORT_GOLD_COPY_SAMPLE_TOKEN
+    && query.experience === 'cinematic';
+  const forceMobileV2 = process.env.NODE_ENV !== 'production'
+    && query.experience === 'v2';
+  const reportData = useGoldCopy ? applyManReportGoldCopy(result.report_data) : result.report_data;
+  const stylistReviewed = isManReportStylistReviewed(result.status, result.sent_at);
+
   return (
     <>
       {/* Mobile viewport & scroll optimisations */}
@@ -39,10 +55,14 @@ export default async function PublicReportPage({ params, searchParams }: PagePro
       >
         <PublicManReportExperience
           shareToken={shareToken}
-          data={result.report_data}
+          data={reportData}
           imageUrls={result.image_urls}
           shopping={result.shopping_data}
           forceDeck={query.view === 'deck'}
+          forceLegacyMobile={query.experience === 'legacy'}
+          cinematic={useCinematicPrototype}
+          mobileV2={forceMobileV2}
+          stylistReviewed={stylistReviewed}
         />
       </div>
     </>
@@ -58,6 +78,13 @@ export async function generateMetadata({ params }: PageProps) {
     title:       `Your ICONIK Blueprint — ${cls.body.silhouette_type} · ${cls.colour.season}`,
     description: `Your personalised ICONIK Men's Style Blueprint. ${cls.style_brief.key_aspiration}`,
     robots:      { index: false, follow: false },
-    viewport:    'width=device-width, initial-scale=1, viewport-fit=cover',
+  };
+}
+
+export function generateViewport() {
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover' as const,
   };
 }

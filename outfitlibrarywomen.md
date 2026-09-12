@@ -1,4 +1,4 @@
-200 ELEVATED ICONIK WOMEN OUTFITS — V2
+373 ELEVATED ICONIK WOMEN OUTFITS — V2
 OFFICE / BUSINESS CASUAL / SOFT POWER
 
 TOP: Ice-blue contrast-collar cotton-poplin shirt with French cuffs and a slightly shaped waist. LAYER: Charcoal double-breasted cropped blazer with sharp shoulders and horn buttons. BOTTOM: Charcoal full-length wide-leg trousers with a pressed crease. BELT: Slim black leather belt with a brushed-gold buckle. SHOES: Black pointed slingback heels. BAG: Cognac structured work tote. ACCESSORIES: Gold oval hoops, slim watch, black rectangular sunglasses. STYLING LINE: Fully tuck the shirt, keep the French cuffs visible under the blazer, and let the ice-blue collar frame the face against the charcoal suit.
@@ -90,6 +90,82 @@ TOP: Powder-blue cotton-silk blouse with a soft neck bow that ties flat. BOTTOM:
 
 TOP: Rust compact-knit polo with tonal buttons. BOTTOM: Mid-grey flannel wide-leg trousers. BELT: Chocolate leather belt. SHOES: Chocolate loafers. BAG: Olive structured tote. ACCESSORIES: Gold hoops, tortoiseshell hair claw. STYLING LINE: Tuck the polo fully and let the rust-against-grey pairing replace jewellery as the interest.
 
+SAREE: Ivory handloom cotton saree with a fine charcoal selvedge border and crisp starch. BLOUSE: Charcoal cotton-poplin blouse with a closed round neckline and elbow sleeves. SHOES: Chocolate leather block-heel court shoes. BAG: Cognac structured work tote. ACCESSORIES: Gold oval hoops, slim watch. STYLING LINE: Pleat the saree sharp and pin the pallu flat at the shoulder so it reads as tailored workwear rather than occasion dressing.
+
+SAREE: Deep teal chanderi saree with a matte finish and narrow tonal border. BLOUSE: Ivory raw-silk blouse with a boat neckline and three-quarter sleeves. SHOES: Nude pointed block heels. BAG: Chocolate structured top-handle bag. ACCESSORIES: Gold sculptural studs, slim gold bracelet. STYLING LINE: Keep the pallu pinned in a single clean fall down the back so the vertical line stays unbroken from shoulder to hem.
+
+TOP: Ivory straight-cut cotton kurta ending just below the knee with a mandarin placket and full sleeves. LAYER: Charcoal bandhgala-style tailored jacket with a nipped waist. BOTTOM: Charcoal churidar in matching suiting fabric. SHOES: Chocolate leather block-heel court shoes. BAG: Cognac structured work tote. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Button the bandhgala fully and let the kurta hem show below it to keep the column long and deliberate.
+
+SAREE: Stone-grey cotton-silk saree with a fine ivory pinstripe woven through the body. BLOUSE: Black compact-rib knit blouse with a soft square neckline and elbow sleeves. SHOES: Black pointed slingback heels. BAG: Tan structured tote. ACCESSORIES: Pearl studs, gold cuff, slim watch. STYLING LINE: Use the knit blouse instead of a silk one so the saree reads like a considered office outfit rather than a wedding guest look.
+
+SAREE: Mocha satin-silk saree with a plain body and no border. BLOUSE: Mocha matte-crepe blouse with a closed round neckline and elbow sleeves. SHOES: Chocolate leather block-heel court shoes. BAG: Cognac structured work tote. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Keep the whole look one colour head to toe and let the satin sheen carry it, so a saree reads as modern corporate rather than festive.
+
+SAREE: Ivory cotton-silk saree with a wide charcoal border running the full length of the pallu. BLOUSE: Charcoal raw-silk blouse with a closed boat neckline and elbow sleeves. SHOES: Black pointed block heels. BAG: Ivory structured top-handle bag. ACCESSORIES: Gold hoops, slim watch. STYLING LINE: Match the blouse to the wide border rather than the body, and pin the pallu flat so the dark border draws one long vertical line.
+
+SAREE: Silver-grey tissue saree with a fine black border and a crisp hand. BLOUSE: Black raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Black pointed slingback heels. BAG: Black structured top-handle bag. ACCESSORIES: Silver studs, slim silver bracelet. STYLING LINE: Starch the tissue so it holds sharp pleats, which keeps a metallic fabric looking structured instead of shiny.
+
+SAREE: Ivory tussar silk saree with a slubby texture and a fine gold-brown border. BLOUSE: Chocolate raw-silk blouse with a high closed neckline and full sleeves. SHOES: Chocolate leather block-heel court shoes. BAG: Cognac structured work tote. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Tussar holds its own shape, so pleat it sharp and keep the blouse fully sleeved to make the saree read as boardroom clothing.
+
+SAREE: White kota doria cotton saree with a fine woven grid and a thin black border. BLOUSE: Black cotton-poplin blouse with a shirt collar and elbow sleeves. SHOES: Black pointed block heels. BAG: Black structured work tote. ACCESSORIES: Silver studs, slim watch. STYLING LINE: Kota is light enough for real heat, so wear it over a full-length lined petticoat and use a collared blouse to keep the look office-correct.
+
+SAREE: Indigo ikat cotton saree with a fine white warp pattern and a plain border. BLOUSE: Indigo cotton blouse with a closed round neckline and three-quarter sleeves. SHOES: Tan leather block-heel court shoes. BAG: Tan structured work tote. ACCESSORIES: Silver studs, slim silver bangle. STYLING LINE: Let the ikat weave be the only pattern and keep every other piece plain, so the saree reads as a considered work uniform.
+
+SAREE: Ecru khadi cotton saree with a hand-spun texture and a narrow rust border. BLOUSE: Rust khadi blouse with a high closed neckline and full sleeves. SHOES: Chocolate leather block-heel court shoes. BAG: Cognac structured work tote. ACCESSORIES: Oxidised silver studs, slim watch. STYLING LINE: Khadi creases by nature, so lean into the texture and keep the silhouette crisp with a high neck and sharp pleats.
+
+SAREE: Charcoal pre-stitched saree with a plain body, worn over matching straight trousers instead of a petticoat. BLOUSE: Ivory silk blouse with a closed boat neckline and elbow sleeves. SHOES: Black pointed block heels. BAG: Black structured work tote. ACCESSORIES: Gold studs, slim watch. STYLING LINE: The trouser base makes this a saree she can stride and sit in, which is what makes it viable for a full working day.
+
+SAREE: Sand linen saree with a crisp hand and a fine tonal border. BLOUSE: Sand linen blouse with a shirt collar and elbow sleeves. BELT: Slim chocolate leather belt worn at the natural waist over the pleats. SHOES: Chocolate leather block-heel court shoes. BAG: Cognac structured work tote. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Belt the linen so it does not go shapeless through the day, and keep blouse and saree in one shade to lengthen the frame.
+
+DRESS: Black pinstripe wrap jumpsuit in matte suiting crepe with a self-tie waist and a cropped wide-leg hem. LAYER: Blush cropped blazer with soft shoulders and a single button. SHOES: Black pointed pumps. BAG: Tan structured handbag. ACCESSORIES: Slim gold watch, fine gold bracelet. STYLING LINE: Tie the wrap waist flat under the blazer and let the cropped hem show the ankle so the pinstripe reads modern, not corporate.
+
+DRESS: Black wrap V-neck midi dress in matte jersey with a fitted column skirt and elbow sleeves. BELT: Slim black leather belt at the natural waist. SHOES: Black pointed pumps. BAG: Black quilted handbag with a gold chain. ACCESSORIES: Small gold hoops, slim gold watch. STYLING LINE: Push the sleeves to mid-forearm and belt over the wrap tie so the waist stays the sharpest line in the outfit.
+
+TOP: Neutral ribbed tank with a clean scoop neckline. LAYER: Ivory cropped blazer in textured suiting twill. BOTTOM: Light-wash wide-leg jeans with a high rise and a clean hem. BELT: Brown leather belt with a brushed-gold buckle. SHOES: Nude pointed heels. ACCESSORIES: Printed silk scarf, gold drop earrings. STYLING LINE: Keep the blazer open with the sleeves pushed up and tuck the tank so the belt stays on show between the crop and the jeans.
+
+TOP: Blush matte crepe wrap top with an asymmetric drape and a flat side tie. BOTTOM: Ivory straight-leg trousers in structured twill. SHOES: Nude pointed heels. BAG: Beige structured handbag. ACCESSORIES: Slim gold watch, fine gold bracelet. STYLING LINE: Let the wrap fall in one clean diagonal and keep the neck bare so the drape is the only detail.
+
+TOP: Ivory-and-burgundy fine-stripe cropped cardigan worn buttoned as the top. BOTTOM: Burgundy pleated midi skirt in fluid crepe. SHOES: Burgundy pointed pumps. BAG: Burgundy structured handbag. ACCESSORIES: Slim gold watch, small gold studs. STYLING LINE: Button the cardigan all the way and let the crop land exactly at the skirt waistband so the tonal burgundy reads as one long line.
+
+TOP: White cotton crew-neck tee with a compact fit. LAYER: Camel tailored waistcoat with a curved hem and horn buttons. BOTTOM: Black wide-leg trousers with a pressed crease. SHOES: Black pointed flats. BAG: Black structured shoulder bag. ACCESSORIES: Gold hoops, slim gold watch. STYLING LINE: Tuck the tee flat and button the waistcoat so the camel is the only warm note against the black base.
+
+DRESS: Emerald button-through shirt dress in soft cotton-sateen with a midi skirt and a self-fabric tie belt. SHOES: Beige loafers. BAG: Beige structured handbag. ACCESSORIES: Slim gold watch, small gold studs. STYLING LINE: Tie the belt flat at the natural waist and leave the lowest two buttons open so the skirt moves when you walk.
+
+TOP: Black matte crepe wrap blouse with a flat side tie. BOTTOM: Leopard-print pencil skirt in fluid twill with a clean back vent. SHOES: Black pointed pumps. BAG: Black envelope clutch. ACCESSORIES: Gold watch, small gold studs. STYLING LINE: Keep the wrap tie flat and the jewellery tiny so the leopard skirt is the only piece asking for attention.
+
+TOP: Black structured sleeveless waistcoat with a sculpted fit and covered buttons. BOTTOM: Leopard-print midi skirt in fluid crepe with a soft flare. SHOES: Black pointed flats. BAG: Burgundy structured handbag. ACCESSORIES: Stacked gold bangles, small gold studs. STYLING LINE: Button the waistcoat fully so the structure on top balances the movement in the skirt.
+
+TOP: Powder-blue ribbed tank with a clean neckline. LAYER: Matching powder-blue tailored blazer with soft shoulders. BOTTOM: Orange high-rise tailored Bermuda shorts with a pressed crease. BELT: White leather belt with a gold buckle. SHOES: Powder-blue pointed heels. BAG: Orange structured handbag. ACCESSORIES: Tortoiseshell sunglasses, small gold studs. STYLING LINE: Tuck the tank so the white belt splits the two colour blocks cleanly at the high waist.
+
+TOP: Cobalt cotton-poplin button-down shirt with a clean collar. BOTTOM: Zebra-print A-line midi skirt in structured cotton. SHOES: Red pointed slingbacks. BAG: Red structured handbag. ACCESSORIES: Gold hoops, slim watch. STYLING LINE: Tuck the shirt fully and roll the sleeves to mid-forearm so the print skirt keeps a sharp waistline.
+
+TOP: Emerald matte crepe shirt with a soft collar and cuffed sleeves. BOTTOM: Rust wide-leg trousers in fluid twill. SHOES: Beige pointed flats. BAG: Cobalt structured handbag. ACCESSORIES: Blue-stone earrings, layered fine gold necklaces. STYLING LINE: Half-tuck the shirt so it blouses slightly and let the blue accessories act as the third colour.
+
+TOP: Beige tailored waistcoat worn buttoned as the top, with a curved hem. BOTTOM: Matching beige wide-leg trousers with a pressed crease. SHOES: Chocolate pointed heels. BAG: Chocolate structured handbag. ACCESSORIES: Cream silk scarf tied at the neck, gold watch. STYLING LINE: Button the waistcoat fully and knot the scarf loose and low so the tonal suit gets one soft detail.
+
+TOP: Red structured waistcoat with sharp shoulders and gold buttons. BOTTOM: Matching red straight-leg trousers in matte suiting. SHOES: Nude pointed pumps. BAG: Beige structured handbag. ACCESSORIES: Ivory silk scarf at the neck, gold hoops, black sunglasses. STYLING LINE: Keep every other piece neutral so the red co-ord reads as one deliberate column.
+
+TOP: Chocolate-brown matte crepe wrap blouse with a flat side tie. BOTTOM: Ivory wide-leg trousers in structured twill. SHOES: Nude pointed heels. BAG: Chocolate structured handbag. ACCESSORIES: Gold watch, tortoiseshell sunglasses. STYLING LINE: Tie the wrap flat at the natural waist and let the ivory trouser carry the length.
+
+DRESS: Olive wrap shirt dress in soft cotton-sateen with an A-line midi skirt and rolled cuffs. BELT: Leopard-print leather belt at the natural waist. SHOES: Leopard-print pointed heels. BAG: Burgundy structured handbag. ACCESSORIES: Slim gold watch, small gold hoops. STYLING LINE: Wrap the dress firmly, belt over the tie, and keep the leopard to the belt and shoe so it reads as a repeat, not a clash.
+
+TOP: Ivory polka-dot blouse with a soft pussy-bow neckline. LAYER: Coral tailored blazer with clean shoulders. BOTTOM: Black wide-leg trousers with a pressed crease. SHOES: White pointed heels. BAG: Black structured tote. ACCESSORIES: Gold watch, small gold studs. STYLING LINE: Tie the bow loose and slightly off-centre and keep the blazer open so the coral frames the print.
+
+TOP: Blue-and-white fine-stripe cotton shirt. LAYER: Navy tailored blazer with a nipped waist. BOTTOM: Ivory pencil skirt in structured twill. SHOES: White pointed pumps. BAG: Black structured tote. ACCESSORIES: Black sunglasses, slim gold watch. STYLING LINE: Tuck the shirt tightly and leave the blazer open so the ivory skirt stops the navy going heavy.
+
+TOP: Butter-yellow matte crepe blouse with a cascading draped neckline. BOTTOM: Optic white wide-leg trousers in structured twill. SHOES: White pointed heels. ACCESSORIES: Gold cuff, stacked fine bracelets. STYLING LINE: Tuck the blouse smoothly and skip a necklace so the neckline drape stays the focal point.
+
+TOP: Burgundy sleeveless peplum waistcoat with a defined waist seam. BOTTOM: Matching burgundy wide-leg trousers. SHOES: Burgundy pointed pumps. BAG: Burgundy structured handbag. ACCESSORIES: Slim gold watch, small gold studs. STYLING LINE: Let the peplum seam do the waist shaping and add no belt, so the tonal co-ord stays one clean line.
+
+TOP: Peach corded-lace shirt with a soft collar and a relaxed fit. BOTTOM: Navy wide-leg trousers in matte suiting. SHOES: Chocolate pointed heels. BAG: Chocolate structured tote. ACCESSORIES: Tortoiseshell eyeglasses, small gold studs. STYLING LINE: Half-tuck the lace shirt and keep jewellery minimal so the texture reads as the detail.
+
+TOP: Red matte crepe sleeveless blouse with a softly draped front. BOTTOM: Black tailored straight-leg trousers with a pressed crease. SHOES: Nude pointed pumps. BAG: Beige structured handbag. ACCESSORIES: Small gold studs, slim bracelet. STYLING LINE: Tuck the blouse loosely so it blouses just over the waistband and keep everything else sharp.
+
+TOP: Navy-and-white striped cotton shirt with a clean collar. BOTTOM: Beige A-line midi skirt in structured twill. BELT: Tan leather belt with a gold buckle. SHOES: Black pointed flats. BAG: Tan structured tote. ACCESSORIES: Small gold hoops, slim watch. STYLING LINE: Tuck the shirt fully and let the tan belt mark the waist so the A-line skirt keeps its shape.
+
+TOP: Crisp white cotton-poplin shirt. LAYER: Navy wrap waistcoat with a self-tie waist. BOTTOM: Matching navy tailored trousers. SHOES: Burgundy pointed pumps. BAG: Burgundy structured tote. ACCESSORIES: Small gold studs, slim watch. STYLING LINE: Tie the waistcoat flat to one side over the shirt and let the burgundy accessories carry the colour.
+
+TOP: Ivory silk camisole with fine straps. LAYER: Blush tailored blazer with soft shoulders. BOTTOM: Chocolate-brown wide-leg trousers in fluid suiting. SHOES: Blush pointed heels. BAG: Taupe structured handbag. ACCESSORIES: Fine gold pendant necklace, tortoiseshell sunglasses. STYLING LINE: Wear the blazer open over the camisole so the blush frames the chocolate trouser instead of covering it.
+
 INDO-WESTERN / MODERN ETHNIC
 
 041. TOP: Warm ivory split-neck kurta. LAYER: Indigo block-print long jacket. BOTTOM: Ivory straight trousers. SHOES: Tan pointed juttis. BAG: Cognac top-handle. ACCESSORIES: Gold chandbalis, stacked rings.
@@ -171,6 +247,40 @@ INDO-WESTERN / MODERN ETHNIC
 079. TOP: Bottle green embroidered jacket kurta. BOTTOM: White wide denim. SHOES: Brown block heels. BAG: Tan tote. ACCESSORIES: Gold earrings, cuff.
 
 080. TOP: Dusty rose kurta with diagonal drape. LAYER: Chocolate sleeveless vest. BOTTOM: Ivory satin trousers. SHOES: Nude pumps. BAG: Tan clutch. ACCESSORIES: Pearl hoops, scarf at low bun.
+
+SAREE: Indigo mul cotton saree with a hand-block white geometric print. BLOUSE: White cotton blouse with a plain round neck and short sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan woven crossbody. ACCESSORIES: Silver studs, thin silver bangle stack. STYLING LINE: Drape loose and unstarched with the pallu over one shoulder, and keep the jewellery small so the print stays the only busy element.
+
+TOP: Rust short anarkali-cut kurta with a gathered flare from the yoke and elbow sleeves. BOTTOM: Ivory cotton churidar. SHOES: Tan leather juttis. BAG: Tan structured crossbody. ACCESSORIES: Silver studs, slim silver bangle. STYLING LINE: Keep the anarkali short at mid-thigh so the churidar shows properly and the look stays daywear rather than festive.
+
+TOP: Olive cotton salwar-kameez set with a straight knee-length kameez and a plain round neckline. BOTTOM: Matching olive cotton salwar with a controlled fall. SHOES: Chocolate leather block-heel sandals. BAG: Cognac structured crossbody. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Skip the dupatta entirely and let the matched two-piece read as a clean column with modern leather accessories.
+
+SAREE: Champagne tissue saree with a fine tonal self-stripe. BLOUSE: Champagne raw-silk blouse with a closed round neckline and three-quarter sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan structured crossbody. ACCESSORIES: Pearl studs, single strand pearl necklace. STYLING LINE: Keep blouse and saree in the same shade so the outfit reads as one soft column, and let pearls be the only ornament.
+
+SAREE: Chambray cotton saree with a plain body and a fine white edge. BLOUSE: White cotton shirt-blouse with a collar and elbow sleeves, worn tucked into the pleats. SHOES: Tan leather block-heel sandals. BAG: Tan structured crossbody. ACCESSORIES: Gold studs, slim watch. STYLING LINE: A tucked shirt makes the saree read like separates, which is what makes a cotton drape wearable on an ordinary day.
+
+TOP: Ivory cotton angrakha kurta with an overlapping tie front and elbow sleeves. BOTTOM: Indigo cotton straight pant. SHOES: Tan leather juttis. BAG: Tan woven crossbody. ACCESSORIES: Oxidised silver studs, thin silver bangle. STYLING LINE: The angrakha tie creates a diagonal line across the body, which does the shaping without needing a belt or a layer.
+
+TOP: Moss cotton indo-western tunic cut straight to mid-thigh with a mandarin collar and elbow sleeves. BOTTOM: Ivory cotton dhoti pant with a soft drape at the hip. SHOES: Tan leather juttis. BAG: Tan structured crossbody. ACCESSORIES: Oxidised silver studs, silver bangle stack. STYLING LINE: Keep the tunic short and fitted so the dhoti drape reads as deliberate shape rather than extra fabric.
+
+TOP: Ivory cotton kurti cut straight to mid-thigh with a mandarin collar and short sleeves. BOTTOM: Indigo straight-leg jeans. SHOES: Tan leather block-heel sandals. BAG: Tan woven crossbody. ACCESSORIES: Oxidised silver studs, slim watch, tortoiseshell sunglasses. STYLING LINE: A short kurti over jeans is the standard weekend brunch answer, and the block heel plus structured bag is what lifts it out of college dressing.
+
+SAREE: Sage cotton saree with a plain body and a fine white border. BLOUSE: White cotton blouse with a closed round neckline and elbow sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan woven crossbody. ACCESSORIES: Oxidised silver studs, thin silver bangle. STYLING LINE: A plain cotton saree in a soft colour is the easiest daily drape, so keep the blouse white and the jewellery minimal and it works for any ordinary day.
+
+SAREE: Grey handloom cotton saree with a fine woven texture and a narrow black border. BLOUSE: Black cotton blouse with a closed round neckline and short sleeves. SHOES: Black leather block-heel sandals. BAG: Black structured crossbody. ACCESSORIES: Silver studs, slim watch. STYLING LINE: Handloom cotton softens with every wash, so this is the drape she reaches for when she wants a saree without any occasion attached.
+
+SAREE: Rust cotton saree with a fine white ikat border and a plain body. BLOUSE: Ivory cotton blouse with a closed square neckline and elbow sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan woven crossbody. ACCESSORIES: Oxidised silver studs, thin silver bangle. STYLING LINE: Keep the blouse plain ivory so the ikat border reads as the only detail, which keeps a daily saree from looking underdressed.
+
+SAREE: Olive linen saree with a crisp hand and a plain body. BLOUSE: Ivory linen shirt-blouse with a collar and elbow sleeves, worn tucked. BELT: Slim tan leather belt over the pleats at the natural waist. SHOES: Tan leather block-heel sandals. BAG: Tan structured crossbody. ACCESSORIES: Gold studs, slim watch. STYLING LINE: Belting a linen saree over a tucked shirt makes it read as separates, which is what makes a drape practical for a working weekday.
+
+SAREE: Powder blue cotton saree with a fine tonal stripe and a plain border. BLOUSE: Powder blue cotton blouse with a closed round neckline and elbow sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan woven crossbody. ACCESSORIES: Silver studs, thin silver bangle. STYLING LINE: A tonal cotton saree in one soft shade is the quietest possible drape, so it suits the days she wants to wear a saree without being looked at.
+
+KURTA: Dusty-pink straight kurta in soft cotton-silk with a clean round neckline. DUPATTA: Floral-print dupatta worn as two straight front panels. BOTTOM: Matching dusty-pink wide-leg trousers. BELT: Tan leather belt worn over the dupatta panels. SHOES: Beige embroidered juttis. BAG: Beige structured handbag. ACCESSORIES: Slim gold watch, small gold studs. STYLING LINE: Let the dupatta fall straight down both sides and belt over it so the whole look gets a waist.
+
+KURTA: Charcoal straight kurta in matte cotton-silk. LAYER: Patterned Nehru jacket in tonal jacquard with a mandarin collar. BOTTOM: Charcoal cropped wide-leg trousers. SHOES: Tan flat sandals. BAG: Navy structured tote. ACCESSORIES: Gold watch, small gold hoops. STYLING LINE: Leave the Nehru jacket open so the charcoal column runs unbroken underneath the pattern.
+
+KURTA: Teal vertical-stripe cold-shoulder kurta with a straight cut. BOTTOM: Royal-blue ankle-length trousers in matte twill. SHOES: Beige pointed flats. BAG: Neutral structured tote. ACCESSORIES: Gold drop earrings, slim watch. STYLING LINE: Keep the kurta straight and unbelted so the vertical stripe carries the whole line.
+
+KURTA: Burnt-orange straight kurta in soft cotton with a front slit and a clean neckline. BOTTOM: Mid-blue wide-leg jeans with a high rise. SHOES: Tan flat sandals. BAG: Beige structured shoulder bag. ACCESSORIES: Slim gold watch, small oxidised studs. STYLING LINE: Let the front slit open over the jeans so the long kurta still shows the leg line.
 
 BOHO / ARTISTIC / PRINT-LED
 
@@ -254,6 +364,26 @@ BOHO / ARTISTIC / PRINT-LED
 
 120. TOP: Cream blouse with vertical floral embroidery. LAYER: Camel linen overshirt. BOTTOM: Olive palazzos. SHOES: Brown mules. BAG: Tan woven tote. ACCESSORIES: Gold hoops, oversized sunglasses.
 
+TOP: Black ribbed tank with a clean neckline. BOTTOM: Beige cargo trousers in washed cotton twill. BELT: Black leather belt. SHOES: Tan lace-up boots. ACCESSORIES: Printed silk headscarf, black sunglasses, layered gold chains. STYLING LINE: Tuck the tank fully and let the headscarf plus the gold layering keep the utility trouser from reading plain.
+
+TOP: Geometric-print tunic in fluid crepe with an asymmetric hem. BOTTOM: Ivory straight-leg trousers. SHOES: Nude heeled sandals. BAG: Tan structured handbag. ACCESSORIES: Gold cuff, small gold studs. STYLING LINE: Roll the sleeves to the elbow and leave the tunic untucked so the asymmetric hem stays visible.
+
+TOP: Ivory halter top in matte crepe with a clean high neckline. BOTTOM: Blue botanical-print maxi skirt in fluid viscose. SHOES: Nude heeled sandals. BAG: Black envelope clutch. ACCESSORIES: Gold cuff, small gold studs. STYLING LINE: Wear the skirt high on the waist and tuck the halter fully so the print starts right under the ribcage.
+
+TOP: Black fitted camisole. LAYER: Cream drawstring shirt in soft cotton with a gathered waist tie. BOTTOM: Zebra-print wide-leg trousers in fluid crepe. SHOES: Black flat sandals. BAG: Black structured handbag. ACCESSORIES: Black sunglasses, stacked fine bracelets. STYLING LINE: Cinch the drawstring at the natural waist so the shirt gathers in and the print trouser keeps all the volume below.
+
+TOP: Neutral fitted rib top. LAYER: Patchwork-print blazer in mixed tonal panels. BOTTOM: White ripped wide-leg jeans with a high rise. SHOES: Burgundy heeled sandals. BAG: Burgundy crossbody. ACCESSORIES: Gold hoops, slim bracelet. STYLING LINE: Keep everything under the blazer plain so the patchwork stays the only pattern in the outfit.
+
+TOP: White V-neck blouse in soft cotton with short sleeves. BOTTOM: Multicoloured striped tiered midi skirt in lightweight cotton. SHOES: Woven flat sandals. BAG: Crochet tote. ACCESSORIES: Stacked bangles, layered pendant necklace. STYLING LINE: Tuck the blouse fully so the tiers start at the waist and the stripe direction stays clean.
+
+TOP: Emerald satin shirt with a soft collar and a fluid drape. BOTTOM: Magenta printed palazzo trousers in flowing crepe. SHOES: Nude heeled sandals. BAG: Emerald structured handbag. ACCESSORIES: Layered gold necklaces, green stone bangles. STYLING LINE: Tuck the shirt and roll the sleeves so the emerald reads as a deliberate partner to the magenta print, not an accident.
+
+TOP: Citrus graphic-print cotton tee with a compact fit. BOTTOM: Powder-blue corded-lace A-line midi skirt. SHOES: Orange pointed flats. BAG: Orange crossbody. ACCESSORIES: White sunglasses, stacked bangles. STYLING LINE: Tuck the tee fully so the lace skirt keeps its shape and the graphic stays the only loud element up top.
+
+TOP: Ivory gathered blouse in soft cotton with a smocked shoulder. BOTTOM: Red gingham A-line midi skirt in crisp cotton. SHOES: White heeled sandals. BAG: Red structured handbag. ACCESSORIES: Gold hoops, slim bracelet. STYLING LINE: Tuck the blouse and let it blouse gently over the waistband so the gingham skirt keeps its swing.
+
+TOP: White polka-dot peplum blouse with a gathered waist. BOTTOM: Dusty-rose maxi skirt in fluid viscose. SHOES: Beige flat sandals. BAG: Burgundy bucket bag. ACCESSORIES: Stacked bangles, small gold studs. STYLING LINE: Let the peplum sit just over the skirt waistband so the gathered waist and the flowing skirt meet in one line.
+
 RESORT / VACATION / BRUNCH
 
 121. TOP: Navy crinkled resort shirt. BOTTOM: Ivory flowing palazzos. SHOES: Tan espadrilles. BAG: Straw tote. ACCESSORIES: Shell earrings, oversized sunglasses, pendant.
@@ -295,6 +425,16 @@ RESORT / VACATION / BRUNCH
 139. TOP: Cobalt cotton blouse with tie cuffs. BOTTOM: Beige linen palazzos. SHOES: Bronze sandals. BAG: Tan woven tote. ACCESSORIES: Blue earrings, sunglasses.
 
 140. TOP: Chocolate linen wrap top. LAYER: Cream open-weave jacket. BOTTOM: Ivory full-length trousers. SHOES: Tan wedges. BAG: Straw tote. ACCESSORIES: Gold cuff, tortoiseshell sunglasses.
+
+DRESS: Blue-and-white printed kaftan in lightweight viscose with a fluid midi length. SHOES: Nude flat sandals. BAG: Woven straw tote. ACCESSORIES: Turquoise statement necklace, stacked bangles. STYLING LINE: Wear the kaftan completely loose and let the necklace do all the shaping at the neckline.
+
+DRESS: Taupe linen column dress with a relaxed midi fall and clean sleeveless armholes. SHOES: Dark woven flat sandals. BAG: Chocolate structured tote. ACCESSORIES: Tortoiseshell sunglasses, gold statement cuff. STYLING LINE: Leave the column unbelted and let the cuff be the single point of shine.
+
+TOP: Floral-print wrap blouse in soft crepe with a flat side tie. BOTTOM: Beige tailored Bermuda shorts with a pressed crease. SHOES: Nude lace-up flat sandals. BAG: Woven straw shoulder bag. ACCESSORIES: Fine pendant necklace, slim bracelet. STYLING LINE: Tie the wrap at the natural waist so the tailored short still reads high and long-legged.
+
+DRESS: Orange-to-pink-to-yellow ombre kaftan in lightweight georgette with a fluid midi length. SHOES: Nude flat sandals. BAG: Woven straw tote. ACCESSORIES: Layered turquoise necklaces, stacked bangles. STYLING LINE: Keep the kaftan loose and let the ombre gradient run uninterrupted from shoulder to hem.
+
+TOP: Leopard-print blouse in soft matte crepe with a relaxed fit. BOTTOM: Beige tailored Bermuda shorts. SHOES: Black loafers. BAG: Black quilted handbag with a gold chain. ACCESSORIES: Black sunglasses, slim gold watch. STYLING LINE: Roll the sleeves and half-tuck the blouse so the leopard stays relaxed against the tailored short.
 
 ELEVATED EVERYDAY
 
@@ -377,6 +517,40 @@ DRESS: Olive matte crepe draped midi dress with bracelet sleeves. BELT: Chocolat
 
 DRESS: Peacock blue cotton kaftan-style midi dress with a defined waist tie and structured side slits. SHOES: Gold sandals. BAG: Ivory structured shoulder bag. ACCESSORIES: Blue-stone earrings, stacked rings, dark brown sunglasses. STYLING LINE: Tie the waist firmly and keep the structured bag so the kaftan shape feels elevated everyday, not beachwear.
 
+DRESS: Blue-and-white striped shirt dress in soft cotton with a relaxed midi skirt. BELT: Matching self-tie fabric belt. SHOES: Black embellished flats. BAG: Black crossbody. ACCESSORIES: Black sunglasses, small gold studs. STYLING LINE: Tie the belt loosely and roll the sleeves so the dress stays easy rather than uniform.
+
+TOP: Leopard-print fitted top in fine jersey with a crew neckline. BOTTOM: High-rise denim midi skirt with a front slit. BELT: Black leather belt. SHOES: Black ankle boots. BAG: Black structured handbag. ACCESSORIES: Small gold hoops, slim watch. STYLING LINE: Let the top end right at the waistband so it reads cropped without showing skin.
+
+TOP: Grey cotton crew-neck tee with a compact fit. DRESS: Black bias-cut slip midi dress worn over the tee. SHOES: Leopard-print flats. BAG: Woven crossbody. ACCESSORIES: Black sunglasses, layered fine necklaces. STYLING LINE: Keep the tee close-fitting so the slip hangs flat over it instead of bunching at the straps.
+
+TOP: Mauve fitted cotton tee. LAYER: Olive utility vest with patch pockets. BOTTOM: Black high-rise leggings. SHOES: Tan hiking boots. ACCESSORIES: Olive visor, smartwatch. STYLING LINE: Wear the vest open so the mauve runs down the centre and breaks up the olive-and-black.
+
+DRESS: Black fitted midi dress in compact jersey. LAYER: Olive cotton overshirt with rolled sleeves. SHOES: White leather sneakers. BAG: Neutral shoulder bag. ACCESSORIES: Black baseball cap, small gold studs. STYLING LINE: Leave the overshirt open with the sleeves rolled so the black dress still shows as a full column.
+
+TOP: Chambray shirt in soft washed cotton. BOTTOM: Relaxed light-wash straight jeans with a high rise. BELT: Brown leather belt. SHOES: Cognac pointed heels. BAG: Cognac structured handbag. ACCESSORIES: Tortoiseshell sunglasses, slim watch. STYLING LINE: Tuck the shirt fully, roll the sleeves to the elbow, and keep the belt visible so double denim reads styled.
+
+TOP: Soft pink cotton crew-neck tee. BOTTOM: Mid-blue wide-leg jeans with a high rise. BELT: Printed silk scarf tied through the belt loops. SHOES: White leather sneakers. BAG: Woven shoulder bag. ACCESSORIES: Slim gold watch, small gold studs. STYLING LINE: Front-tuck the tee and let the scarf ends hang at one hip so the waist gets colour and shape at once.
+
+TOP: Relaxed beige shirt in soft washed cotton. BOTTOM: Mid-blue straight-leg jeans. SHOES: Chocolate loafers. BAG: Orange structured handbag. ACCESSORIES: Tortoiseshell sunglasses, slim gold watch. STYLING LINE: Leave the shirt untucked with the sleeves rolled and let the orange bag be the only colour.
+
+TOP: Burgundy ribbed tank. LAYER: Plaid cotton shirt-jacket worn open. BOTTOM: Burgundy high-rise leggings. SHOES: Brown hiking boots. ACCESSORIES: Smartwatch, layered fine necklaces. STYLING LINE: Keep the burgundy base tonal top to toe so the open plaid layer reads as the only pattern.
+
+TOP: Burnt-orange short-sleeve shirt in soft cotton. BOTTOM: Light-wash cropped straight jeans. SHOES: Nude block heels. BAG: Tan woven shoulder bag. ACCESSORIES: Gold drop earrings, slim bracelet. STYLING LINE: Tie the shirt hem at the front so the crop lands at the high waist of the jean.
+
+TOP: Ivory fitted rib top. LAYER: Ivory longline sleeveless vest with a clean open front. BOTTOM: Red wide-leg track pants in fluid tech twill. SHOES: White leather sneakers. BAG: Neutral crossbody. ACCESSORIES: Black sunglasses, small gold hoops. STYLING LINE: Wear the vest open so it draws two long vertical lines beside the wide red trouser.
+
+DRESS: Mid-blue denim jumpsuit with a shirt collar and a wide-leg fall. BELT: Brown leather belt at the natural waist. SHOES: White leather sneakers. ACCESSORIES: Denim visor, black sunglasses, fine pendant necklace. STYLING LINE: Belt the jumpsuit firmly and roll the sleeves so the waist stays defined under all that denim.
+
+TOP: Optic white sleeveless top in compact rib. BOTTOM: Olive tapered trousers in matte twill. SHOES: Nude flat sandals. BAG: White quilted handbag with a gold chain. ACCESSORIES: Silk scarf tied loosely at the neck, small gold hoops. STYLING LINE: Tuck the top fully and knot the scarf soft and low so the olive trouser stays the clean line.
+
+TOP: White cotton crew-neck tee. LAYER: Cropped denim vest worn open. BOTTOM: Navy-and-white gingham straight trousers. SHOES: Tan flat sandals. ACCESSORIES: Layered fine necklaces, black sunglasses, slim watch. STYLING LINE: Tuck the tee and leave the denim vest open so the gingham trouser stays uninterrupted from the waist down.
+
+TOP: Soft pink ribbed tank. BOTTOM: Distressed denim Bermuda shorts with a high rise. BELT: Printed silk scarf tied at the waist. SHOES: White leather sneakers. BAG: Cream shoulder bag. ACCESSORIES: Black sunglasses, small gold studs. STYLING LINE: Tuck the tank and tie the scarf at the waist so a plain summer combination gets one styled detail.
+
+TOP: Navy-and-white striped cotton tee. LAYER: Red double-breasted blazer with gold buttons. BOTTOM: Mid-blue straight-leg jeans. SHOES: Black loafers. BAG: Black structured tote. ACCESSORIES: Small gold hoops, slim watch. STYLING LINE: Wear the blazer open with the sleeves pushed up so it layers casually over the stripe instead of formalising it.
+
+DRESS: Dusty-rose button-front shirt dress with a tiered midi skirt in soft cotton-voile. SHOES: Cream flat sandals. BAG: Woven straw tote. ACCESSORIES: Layered fine necklaces, stacked bangles. STYLING LINE: Leave the dress unbelted and roll the sleeves so the tiers keep all the movement.
+
 WESTERN EVENING / DINNER / COCKTAIL
 
 TOP: Taupe-and-black leopard print sleeveless draped top in soft matte jersey with a high bateau neckline and asymmetric pointed hem. BOTTOM: Black satin bias-cut midi skirt with a fluid ankle-length fall. FOOTWEAR: Black pointed pumps. BAG: Deep brown structured shoulder bag. ACCESSORIES: Gold stacked bangles, small gold hoops. STYLING LINE: Keep everything besides the print quiet so the leopard reads elegant, not loud.
@@ -433,9 +607,69 @@ DRESS: Black wide-leg jumpsuit in fluid crepe with a modest V neckline and a sel
 
 TOP: Ivory silk blouse with a soft neck bow tied loose. LAYER: Midnight-blue velvet blazer with a satin lapel. BOTTOM: Midnight-blue slim tailored trousers. FOOTWEAR: Black patent kitten heels. BAG: Black satin clutch. ACCESSORIES: Pearl drops, slim watch. STYLING LINE: Keep the velvet suit matched and let the bow blouse soften the tailoring.
 
+DRESS: Burgundy A-line midi dress with a corded-lace bodice and a fitted waist. SHOES: Nude pointed pumps. BAG: Beige envelope clutch. ACCESSORIES: Gold drop earrings, slim bracelet. STYLING LINE: Keep the neckline bare so the lace bodice reads as the jewellery.
+
+TOP: Cobalt off-shoulder crop top in structured crepe. BOTTOM: High-rise mid-blue jeans with a straight leg. SHOES: Ivory pointed heels. BAG: Beige envelope clutch. ACCESSORIES: Fine pendant necklace, gold hoops, slim bracelet. STYLING LINE: Let the crop meet the waistband exactly so the off-shoulder line is the only skin the outfit shows.
+
+TOP: Black one-shoulder draped top in fluid matte jersey. BOTTOM: High-rise wide-leg jeans in a dark rinse. SHOES: Black strappy heeled sandals. ACCESSORIES: Gold cuff, stacked fine bracelets. STYLING LINE: Tuck the top fully and stack the gold on the bare arm so the asymmetry looks intentional.
+
+DRESS: Blush A-line midi dress with a structured strapless bodice. BELT: Printed silk scarf tied at the waist. SHOES: Nude block heels. BAG: Beige structured handbag. ACCESSORIES: Stacked bangles, small gold studs. STYLING LINE: Tie the scarf at the natural waist so the strapless dress gets a colour break and a defined middle.
+
+TOP: Taupe one-shoulder top in soft matte crepe with a diagonal drape. BOTTOM: Teal satin bias midi skirt. SHOES: Nude heeled sandals. BAG: Beige structured box bag. ACCESSORIES: Gold hoops, slim cuff. STYLING LINE: Tuck the top cleanly so the diagonal drape runs straight into the satin skirt line.
+
+TOP: Black one-shoulder crop top in structured crepe. BOTTOM: Black-and-white polka-dot ankle trousers with tie hems. SHOES: Black pointed heels. BAG: Black structured handbag. ACCESSORIES: Textured black headband, black sunglasses, small gold studs. STYLING LINE: Keep the midriff gap to a couple of inches so the high-waist trouser and the one-shoulder line do the work.
+
+DRESS: Lime-yellow flutter-sleeve dress with a fitted waist and an A-line midi skirt. SHOES: Magenta pointed slingbacks. BAG: Magenta envelope clutch. ACCESSORIES: Gold drop earrings, slim bracelet. STYLING LINE: Let the flutter sleeve stay unstructured and keep the magenta to the shoe and bag so the pairing looks planned.
+
+DRESS: Powder-blue satin midi dress with a twisted front detail and a side slit. SHOES: Nude ankle-strap heels. BAG: Blush envelope clutch. ACCESSORIES: Small gold studs, fine bracelet. STYLING LINE: Let the twist detail sit flat at the waist and keep jewellery minimal so the satin stays the shine.
+
+INDIAN EVENING / DINNER SAREES
+
+SAREE: Deep burgundy chanderi saree with a fine gold zari border. BLOUSE: Burgundy raw-silk blouse with a closed boat neckline and elbow sleeves. SHOES: Nude pointed block heels. BAG: Chocolate structured top-handle bag. ACCESSORIES: Gold chandbalis, stacked thin gold bangles. STYLING LINE: Pin the pallu in soft pleats at the shoulder and let the zari border do the shining so the rest of the look stays matte.
+
+SAREE: Charcoal georgette saree with a plain body and a narrow tonal border. BLOUSE: Ivory silk blouse with a high closed neckline and three-quarter sleeves. BELT: Slim chocolate leather belt worn over the drape at the natural waist. SHOES: Chocolate block-heel sandals. BAG: Cognac structured shoulder bag. ACCESSORIES: Gold hoops, slim gold bracelet. STYLING LINE: Belt the saree over the pleats to mark the waist, which turns a plain georgette drape into a modern dinner outfit.
+
+SAREE: Emerald organza saree with a fine tonal self-stripe and a plain edge. BLOUSE: Emerald matte-crepe blouse with a square neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold sculptural earrings, thin gold bangle. STYLING LINE: Keep the whole look tonal in one colour and let the organza texture carry the occasion instead of adding contrast.
+
+SAREE: Black silk-cotton saree with a woven ivory temple border. BLOUSE: Black velvet blouse with a closed round neckline and elbow sleeves. SHOES: Black pointed heels. BAG: Black beaded clutch. ACCESSORIES: Gold jhumkas, gold cuff. STYLING LINE: Use the velvet blouse as the texture story so the plain silk body reads expensive under evening light.
+
+SAREE: Optic white cotton saree with a plain body and a narrow woven edge. BLOUSE: Black cotton blouse with a closed round neckline and elbow sleeves. SHOES: Black block-heel sandals. BAG: Black structured shoulder bag. ACCESSORIES: Oxidised silver statement earrings, oxidised silver collar necklace. STYLING LINE: Use the black blouse and heavy silver as the whole story so a plain white cotton saree becomes a considered evening outfit.
+
+SAREE: Black georgette saree with a plain body and a narrow tonal edge. BLOUSE: Ivory blouse with a dense botanical print in black and moss, cut with a closed round neckline and elbow sleeves. SHOES: Black pointed heels. BAG: Black structured clutch. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: Let the printed blouse be the only pattern in the outfit and keep the drape completely plain so the print stays the focal point.
+
+SAREE: Champagne georgette saree with a ruffled edge running the length of the pallu. BLOUSE: Champagne raw-silk blouse with a closed square neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold sculptural earrings, thin gold bangle. STYLING LINE: Keep the ruffle to the pallu edge only, and hold the rest of the drape plain so the movement reads elegant instead of fussy.
+
+SAREE: Teal kanjivaram silk saree with a fine gold zari border. BLOUSE: Teal and gold woven-stripe blouse with a closed round neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Green-stone statement necklace, gold jhumkas. STYLING LINE: Use a woven-stripe blouse against the plain silk body so the contrast looks intentional, and let the necklace sit against the closed neckline.
+
+SAREE: Deep teal chiffon saree with a plain body and a fine tonal edge. BLOUSE: Deep teal matte-crepe blouse with a closed round neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: Chiffon falls close to the body, so keep the pleats narrow and the jewellery small and the drape does all the work.
+
+SAREE: Ivory maheshwari cotton-silk saree with a fine gold border and a reversible pallu. BLOUSE: Moss raw-silk blouse with a closed square neckline and elbow sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan structured shoulder bag. ACCESSORIES: Gold studs, thin gold bangle stack. STYLING LINE: Pick the blouse from the pallu border rather than the body, which is the quickest way to make an inexpensive saree look styled.
+
+SAREE: White jamdani cotton saree with fine grey woven motifs across the body. BLOUSE: Grey cotton blouse with a high closed neckline and three-quarter sleeves. SHOES: Black block-heel sandals. BAG: Black structured shoulder bag. ACCESSORIES: Oxidised silver statement earrings, thin silver bangle. STYLING LINE: Jamdani motifs are delicate, so give them a plain dark blouse and heavy silver to stop the look from reading washed out.
+
+SAREE: Indigo bandhani cotton saree with fine white tie-dye dots and a plain border. BLOUSE: Indigo cotton blouse with a closed round neckline and elbow sleeves. SHOES: Tan leather block-heel sandals. BAG: Tan woven shoulder bag. ACCESSORIES: Oxidised silver jhumkas, silver bangle stack. STYLING LINE: Bandhani is already busy, so keep the blouse tonal and let the oxidised silver be the only added texture.
+
+SAREE: Ivory kalamkari cotton saree with a hand-painted rust and indigo border. BLOUSE: Rust cotton blouse with a closed round neckline and elbow sleeves. SHOES: Chocolate leather block-heel sandals. BAG: Cognac structured shoulder bag. ACCESSORIES: Oxidised silver studs, thin silver bangle. STYLING LINE: Draw the blouse colour out of the painted border so the outfit reads curated rather than accidentally matched.
+
+SAREE: Black linen saree with a plain body and a fine ivory edge. BLOUSE: Ivory linen blouse with a shirt collar and elbow sleeves, worn tucked. BELT: Slim chocolate leather belt over the pleats at the natural waist. SHOES: Chocolate leather block-heel sandals. BAG: Cognac structured shoulder bag. ACCESSORIES: Gold hoops, slim watch. STYLING LINE: A tucked shirt-blouse and a belt turn the saree into separates, which is the easiest modern way to wear one to dinner.
+
+SAREE: Slate grey pre-stitched saree with ready pleats and an attached pallu. BLOUSE: Slate grey matte-crepe blouse with a closed square neckline and elbow sleeves. SHOES: Black block-heel sandals. BAG: Black structured shoulder bag. ACCESSORIES: Silver sculptural earrings, thin silver bangle. STYLING LINE: A ready-pleated saree takes two minutes to wear, which is what makes it the realistic choice for a weeknight dinner.
+
+SAREE: Mustard mysore silk saree with a plain body and a fine gold border. BLOUSE: Mustard raw-silk blouse with a high closed neckline and full sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: Mysore silk is light and fluid, so a fully sleeved high-neck blouse gives it the structure the fabric does not have.
+
+TOP: Ivory chikankari cotton kurta cut straight to mid-thigh with elbow sleeves. BOTTOM: Ivory cotton churidar. DUPATTA: Moss cotton dupatta pinned at one shoulder and falling straight down the back. SHOES: Tan leather juttis. BAG: Tan structured shoulder bag. ACCESSORIES: Oxidised silver jhumkas, silver bangle stack. STYLING LINE: Keep the whole set tonal ivory and let the chikankari texture and the single moss dupatta carry all the colour.
+
+SAREE: Rust tissue saree with a fine gold shot through the weave. BLOUSE: Rust raw-silk blouse with a closed boat neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold chandbalis, thin gold bangle stack. STYLING LINE: Tissue catches light on its own, so keep the jewellery restrained and let the fabric be the shine in the outfit.
+
+SAREE: Ivory cotton-silk saree with a fine gold border and a plain body. BLOUSE: Ivory raw-silk blouse with a high closed neckline and full sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: For a puja or a temple visit, cover the shoulders and upper arms fully and choose slip-on shoes, because footwear comes off at the door.
+
+TOP: Blush cotton-silk short kurta with a closed round neckline and elbow sleeves. BOTTOM: Ivory cotton-silk straight pant. DUPATTA: Blush cotton-silk dupatta pinned at one shoulder. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: For a baby shower she will be seated, hugged and photographed all afternoon, so choose a set that does not crush and a dupatta that stays pinned.
+
+SAREE: Yellow mysore silk saree with a fine gold border and a plain body. BLOUSE: Yellow raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, stacked gold bangles. STYLING LINE: A housewarming runs long and involves floor seating, so keep the drape light and the jewellery small enough to sit comfortably in.
+
+SAREE: Charcoal-grey saree in fluid satin-georgette draped over one shoulder. BLOUSE: Navy corset-style blouse with structured boning and a sweetheart neckline. SHOES: Metallic heels. BAG: Silver potli bag. ACCESSORIES: Crystal choker, crystal drop earrings. STYLING LINE: Pin the pallu flat over the shoulder so the corset blouse stays fully visible at the waist.
 
 INDIAN FESTIVE / FAMILY OCCASION
-
 
 TOP: Ruby embroidered short kurta with a soft V neckline and elbow sleeves. BOTTOM: Ivory farshi-style palazzos with a controlled flare. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Kundan chandbalis, stacked bangles. STYLING LINE: Keep the kurta short enough to show the palazzo fall and avoid adding a dupatta.
 
@@ -468,3 +702,59 @@ TOP: Black silk kurta with gold thread side panels. LAYER: Antique-gold embroide
 TOP: Teal waistcoat-style kurta with covered buttons. BOTTOM: Champagne straight palazzos in matte crepe. SHOES: Bronze heels. BAG: Espresso clutch. ACCESSORIES: Blue-stone drops, gold bracelet. STYLING LINE: Button the waistcoat kurta fully and skip a dupatta so the tailoring remains sharp.
 
 TOP: Ivory shirt-style kurta with fine tonal embroidery. LAYER: Navy raw-silk waistcoat. BOTTOM: Navy wide-leg trousers. SHOES: Tan slingbacks. BAG: Chocolate top-handle. ACCESSORIES: Pearl hoops, gold watch. STYLING LINE: Tuck the front edge of the shirt kurta slightly under the waistcoat so the look feels tailored, not loose.
+
+SAREE: Ruby banarasi silk saree with a dense gold zari border and a plain body. BLOUSE: Ruby raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Kundan chandbalis, stacked gold bangles. STYLING LINE: Keep the blouse plain and closed so the banarasi weave stays the only ornament in the outfit.
+
+TOP: Ivory raw-silk fitted blouse with a closed boat neckline and elbow sleeves. BOTTOM: Deep teal silk lehenga skirt with a controlled A-line flare and a fine gold border. LAYER: Deep teal net dupatta pinned at one shoulder and falling straight down the back. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Kundan chandbalis, stacked gold bangles. STYLING LINE: Pin the dupatta straight rather than draping it across the body so the lehenga keeps a long uninterrupted line.
+
+TOP: Deep plum floor-length anarkali with a fitted bodice, elbow sleeves, and a controlled flare from the waist. BOTTOM: Matching plum churidar. LAYER: Ivory chanderi dupatta pinned at one shoulder. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: Keep the flare controlled rather than full so the anarkali lengthens the frame instead of widening it.
+
+TOP: Mustard silk short kurta with a closed round neckline, elbow sleeves, and fine gold thread detail at the yoke. BOTTOM: Mustard sharara with a sharp knife-pleat fall from the knee. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, stacked gold bangles. STYLING LINE: Keep the kurta short and fitted so the sharara pleats read as the movement in the outfit.
+
+SAREE: Ivory kanjivaram-style silk saree with a contrast cocoa border and gold zari checks. BLOUSE: Cocoa raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold temple jhumkas, gold cuff. STYLING LINE: Match the blouse to the border rather than the body so the contrast looks deliberate instead of mismatched.
+
+SAREE: Deep purple banarasi silk saree with a wide gold zari border and a densely woven pallu. BLOUSE: Deep purple raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold temple jhumkas, stacked gold bangles. STYLING LINE: Keep the blouse plain and tonal so the woven pallu is the only ornament, and drape the pallu wide across the shoulder to show the zari.
+
+SAREE: Magenta banarasi silk saree with small gold zari buti across the body and a wide gold border. BLOUSE: Magenta raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold chandbalis, stacked gold bangles. STYLING LINE: Match the blouse exactly to the saree body so the gold buti reads as the pattern and nothing competes with it.
+
+SAREE: Deep red organza saree with a fine gold border and a ruffled pallu edge. BLOUSE: Deep red raw-silk blouse with a closed V neckline and elbow sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold chandbalis, thin gold bangle stack. STYLING LINE: Let the sheer organza and the ruffled edge carry the drama, and keep the blouse structured so the outfit still has a firm shape.
+
+TOP: Blush embroidered peplum kurta with a closed V neckline, elbow sleeves, and a fitted waist seam. BOTTOM: Blush sharara with a sharp knife-pleat fall from the knee. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: Let the peplum waist seam do the shaping and keep the embroidery tonal so the set reads refined rather than heavy.
+
+TOP: Ivory short jacket with an all-over block print in mustard and moss, cut straight to the hip with elbow sleeves. BOTTOM: Mustard silk full-length skirt with a controlled A-line fall. SHOES: Gold juttis. BAG: Teal structured potli. ACCESSORIES: Gold studs, thin gold bangle stack. STYLING LINE: Keep the print to the jacket alone and the skirt plain, so the two pieces read as a deliberate set instead of a clash.
+
+SAREE: Deep green patola silk saree with a geometric double-ikat body and a wide red border. BLOUSE: Red raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold temple jhumkas, stacked gold bangles. STYLING LINE: Patola is a loud weave, so match the blouse to the border and add nothing patterned anywhere else in the look.
+
+SAREE: Ivory paithani silk saree with a peacock-motif pallu and a wide gold zari border. BLOUSE: Deep teal raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold temple jhumkas, gold cuff. STYLING LINE: Drape the pallu wide and flat across the shoulder so the woven motif is fully visible rather than folded away.
+
+SAREE: Mustard kanjivaram silk saree with a wide contrast maroon border and gold zari checks. BLOUSE: Maroon raw-silk blouse with a closed round neckline and elbow sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold temple jhumkas, stacked gold bangles. STYLING LINE: Take the blouse from the contrast border rather than the body, which is the traditional rule and still the one that looks best in photographs.
+
+SAREE: Ivory sambalpuri ikat silk saree with a fine maroon woven border. BLOUSE: Maroon raw-silk blouse with a high closed neckline and full sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, gold cuff. STYLING LINE: A fully sleeved high-neck blouse keeps a handloom silk saree looking deliberate rather than borrowed.
+
+TOP: Ivory embroidered short kurta with a closed round neckline, full sleeves, and fine gold thread at the yoke. BOTTOM: Ivory gharara with a sharp gathered flare from the knee and a gold band at the join. DUPATTA: Gold net dupatta pinned at one shoulder. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold chandbalis, stacked gold bangles. STYLING LINE: A gharara needs a short fitted kurta to show the knee join, which is the whole point of the silhouette.
+
+TOP: Emerald raw-silk fitted blouse with a closed boat neckline and elbow sleeves. LEHENGA: Emerald silk lehenga skirt with a controlled A-line flare and a fine gold border. DUPATTA: Emerald net dupatta pinned at one shoulder and falling straight down the back. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold chandbalis, stacked gold bangles. STYLING LINE: Keep the lehenga tonal top to bottom so the column stays long, and pin the dupatta straight rather than across the body.
+
+TOP: Blush raw-silk corset-structured blouse with a closed square neckline and elbow sleeves. LEHENGA: Blush silk lehenga skirt with a controlled A-line flare and tonal thread embroidery. DUPATTA: Ivory net dupatta pinned at one shoulder. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold chandbalis, thin gold bangle stack. STYLING LINE: A structured blouse holds the waist so the skirt can stay soft, which keeps a pale lehenga from looking shapeless.
+
+SAREE: Ivory organza saree with a fine gold border and a tonal thread-embroidered pallu. BLOUSE: Ivory raw-silk blouse with a closed square neckline and gathered puff sleeves. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: The puff sleeve gives a sheer saree the shoulder structure it needs, so the drape looks intentional rather than fragile.
+
+TOP: Saffron cotton-silk short kurta with a closed round neckline and bell sleeves. BOTTOM: Saffron cotton-silk sharara with a sharp knife-pleat fall from the knee. DUPATTA: Ivory bandhani cotton dupatta pinned at one shoulder. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, stacked gold bangles. STYLING LINE: Bell sleeves and a sharara both add movement, so keep the colour to a single tonal family or the look turns costume.
+
+TOP: Deep wine velvet fitted blouse with a closed round neckline and full sleeves. SAREE: Deep wine banarasi silk saree with a wide gold zari border. SHOES: Gold block-heel sandals. BAG: Gold beaded clutch. ACCESSORIES: Gold temple jhumkas, stacked gold bangles. STYLING LINE: A velvet blouse is the winter-wedding answer to a silk saree, adding warmth and depth without adding another colour.
+
+TOP: Ivory raw-silk fitted blouse with a closed boat neckline and elbow sleeves. BOTTOM: Rust bandhani silk lehenga skirt with a controlled gathered flare. DUPATTA: Rust bandhani dupatta pinned at one shoulder. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, stacked gold bangles. STYLING LINE: Bandhani carries the pattern, so keep the blouse plain ivory and let the skirt and dupatta match exactly.
+
+TOP: Champagne embroidered co-ord jacket cut straight to the hip with a closed round neckline and full sleeves. BOTTOM: Champagne matching straight trousers with a tonal embroidered hem. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold chandbalis, gold cuff. STYLING LINE: A matched embroidered co-ord is the easiest formal Indian option when a saree is impractical, and the straight trouser keeps it modern.
+
+TOP: Moss cotton-silk short kurta with a closed round neckline and full sleeves. BOTTOM: Moss cotton-silk sharara with a knife-pleat fall from the knee. DUPATTA: Ivory bandhani cotton dupatta pinned at one shoulder. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold jhumkas, thin gold bangle stack. STYLING LINE: For mehendi, full sleeves that push up past the elbow keep the fabric clear of wet henna, and light cotton-silk survives sitting on the floor for hours.
+
+TOP: Yellow cotton fitted blouse with a closed round neckline and elbow sleeves. SAREE: Yellow cotton saree with a fine white border and a plain body. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold studs, thin gold bangle stack. STYLING LINE: Haldi stains permanently, so wear cotton she is willing to lose and keep the jewellery to pieces that wash clean.
+
+TOP: Deep teal raw-silk fitted blouse with a closed boat neckline and elbow sleeves. LEHENGA: Deep teal silk lehenga skirt with a controlled gathered flare and a fine gold border. DUPATTA: Deep teal net dupatta pinned securely at both shoulders. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold jhumkas, stacked gold bangles. STYLING LINE: For sangeet she will actually be dancing, so pin the dupatta at both shoulders, keep the flare controlled, and choose a block heel she can stand in all night.
+
+SAREE: Wine georgette saree with a fine gold border and a tonal embroidered pallu. BLOUSE: Wine velvet fitted blouse with a closed round neckline and full sleeves. SHOES: Gold block-heel sandals. BAG: Gold beaded clutch. ACCESSORIES: Gold chandbalis, gold cuff. STYLING LINE: A reception is the most formal function of the sequence, so this is where the heavier fabric and the fuller jewellery belong.
+
+TOP: Ivory raw-silk fitted blouse with a closed square neckline and elbow sleeves. LEHENGA: Gold tissue lehenga skirt with a controlled A-line flare. DUPATTA: Ivory net dupatta pinned at one shoulder. SHOES: Gold block-heel sandals. BAG: Gold potli. ACCESSORIES: Gold chandbalis, stacked gold bangles. STYLING LINE: For an engagement she is the focus and will be photographed from every side, so keep the silhouette clean and let the tissue catch the light instead of adding embellishment.
+
+SAREE: Deep red banarasi silk saree with a wide gold zari border and a densely woven pallu. BLOUSE: Deep red raw-silk blouse with a closed round neckline and full sleeves. SHOES: Gold juttis. BAG: Gold potli. ACCESSORIES: Gold temple jhumkas, stacked gold bangles. STYLING LINE: For Diwali the traditional weave is the point, so keep everything else plain and let the zari carry the whole outfit.

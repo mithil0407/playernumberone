@@ -1,14 +1,19 @@
+import test from 'node:test';
 import {
   TECHNIQUE_GRAMMAR,
   buildScienceHarnessSummaryForTest,
   deriveFunctionDemands,
   extractStylistClientState,
   generateOutfitCandidates,
+  colourForSlotForTest,
+  pieceWithColourForTest,
+  scoreBandForTest,
   scoreColourPhysics,
+  shortGarmentForTest,
   scoreOutfitCandidatesBlind,
   selectOutfitPortfolio,
   scienceOutfitsToBlueprintPages,
-} from './stylistOutfitScience';
+} from './stylistOutfitScience.ts';
 import {
   STYLIST_BLUEPRINT_VERSION,
   getStylistBlueprintOutfitCount,
@@ -16,8 +21,8 @@ import {
   type StylistBlueprintClassification,
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
-} from './stylistBlueprintGenerator';
-import type { ParsedStylistOutfit } from './stylistOutfitLibraryParser';
+} from './stylistBlueprintGenerator.ts';
+import type { ParsedStylistOutfit } from './stylistOutfitLibraryParser.ts';
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -187,8 +192,134 @@ export function runStylistOutfitScienceAssertions() {
   const pages = scienceOutfitsToBlueprintPages(selected, reportData);
   invariant(pages.length === getStylistBlueprintOutfitCount(reportData) + 2, 'science projection returns transformation, outfit system, and outfit pages');
   invariant(pages[2].page_number === getStylistBlueprintOutfitStartPage(reportData), 'first science outfit lands on the existing outfit start page');
-  invariant(pages[2].blocks.some(block => block.label === 'Score summary'), 'projected page includes score summary block');
+  // The internal blind score is stylist metadata and lives on outfit_engine.
+  // It must not be a block in the client's report copy.
+  invariant(!pages[2].blocks.some(block => block.label === 'Score summary'), 'score summary must not reach client copy');
+  const outfitCopy = JSON.stringify(pages[2].blocks);
+  invariant(!/FRAME_FACE|ELONGATE|DEFINE_WAIST|CONTEXT_FIT|Demand /.test(outfitCopy), 'engine function codes leaked into client copy');
+  invariant(!/\b\d\/10\b/.test(outfitCopy), 'an internal score leaked into client copy');
+
+  // scoreColourPhysics returns 0-10, not 0-1. COLOUR_KEEP_THRESHOLD was written
+  // as 0.45 against that scale, so nothing ever fell below it, the palette snap
+  // never ran, and every library colour passed through untouched. Nothing in
+  // the RGB space scores below ~2.3, so a fractional threshold is always true.
+  let lowestPhysicsScore = Number.POSITIVE_INFINITY;
+  for (let r = 0; r < 256; r += 51) {
+    for (let g = 0; g < 256; g += 51) {
+      for (let b = 0; b < 256; b += 51) {
+        const hex = `#${[r, g, b].map(value => value.toString(16).padStart(2, '0')).join('')}`;
+        for (const zone of ['near_face', 'away_from_face'] as const) {
+          lowestPhysicsScore = Math.min(lowestPhysicsScore, scoreColourPhysics(clientState.colour, { name: 'probe', hex }, zone));
+        }
+      }
+    }
+  }
+  invariant(lowestPhysicsScore > 1, 'scoreColourPhysics is on a 0-10 scale, so a 0-1 threshold would never fire');
+
+  // Chroma is a band, not a slope. `1 - value` scored a colourless garment as
+  // perfectly muted, so optic white took a full mark on this axis and
+  // terracotta — a muted colour she asked for by name — took zero.
+  invariant(scoreBandForTest('muted', 0) < scoreBandForTest('muted', 0.35), 'a colourless garment must not be the most muted colour there is');
+  invariant(scoreBandForTest('muted', 0.35) > scoreBandForTest('muted', 1), 'a mid-chroma colour must beat a fully saturated one on a muted palette');
+  invariant(scoreBandForTest('clear', 1) < scoreBandForTest('clear', 0.85), 'clear chroma is a band, not a slope');
 
   const fullSummary = buildScienceHarnessSummaryForTest(reportData, submission);
   invariant(fullSummary.selectedCount === getStylistBlueprintOutfitCount(reportData), 'full science summary selects full report count');
+
+  // "The Black pointed heels on a finishes it." — a trim that stopped on a
+  // preposition, then had a verb appended. The library phrases footwear this
+  // way whenever the client states a heel height, so this is the common case.
+  // The stated white-dulling guard. Her intake answers what white clothing does
+  // to her face; "makes me dull" must keep ivory off every near-face slot, and
+  // the replacement must not be another off-white — the palette carries one.
+  const dullsSubmission: StylistIntakeSubmission = {
+    ...submission,
+    skin_tone_self_description: 'Natural tint: Yellowish\nWhite clothing effect: Makes me dull',
+  };
+  const dullsState = extractStylistClientState(dullsSubmission, reportData);
+  invariant(dullsState.preferences.avoid_light_near_face, 'a stated white-dulling answer must reach the client state');
+  invariant(!clientState.preferences.avoid_light_near_face, 'a submission that says nothing about white must not set the flag');
+
+  const ivoryLibrary: ParsedStylistOutfit[] = [{
+    ...library[0],
+    id: 'women-ivory',
+    signature: 'ivory-blouse',
+    normalised_slots: [
+      { slot: 'Top', piece: 'Ivory silk blouse with a closed neck and full sleeves', source_label: 'Top', role: 'base' },
+      { slot: 'Bottom', piece: 'charcoal tailored straight trousers', source_label: 'Bottom', role: 'base' },
+      { slot: 'Footwear', piece: 'chocolate leather court shoes', source_label: 'Footwear', role: 'finish' },
+      { slot: 'Bag', piece: 'structured leather tote', source_label: 'Bag', role: 'finish' },
+    ],
+  }];
+  const nearFaceRe = /top|dress|layer|outerwear|jewel|scarf|neck|blouse/i;
+  const readsWhite = (hex: string) => {
+    const value = parseInt(hex.slice(1), 16);
+    const [r, g, b] = [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+    const max = Math.max(r, g, b);
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 >= 0.8 && (max === 0 ? 0 : (max - Math.min(r, g, b)) / max) <= 0.35;
+  };
+  const guarded = generateOutfitCandidates(dullsState, deriveFunctionDemands(dullsState), ivoryLibrary);
+  invariant(guarded.length > 0, 'guard test generated no candidates to inspect');
+  for (const candidate of guarded) {
+    for (const item of candidate.formula_items.filter(entry => nearFaceRe.test(entry.slot))) {
+      invariant(!readsWhite(item.colour_hex), `an off-white reached a near-face slot: ${item.slot} ${item.colour_name}`);
+      invariant(!/\bivory\b/i.test(item.piece), `the piece text still names ivory while its swatch moved: "${item.piece}"`);
+    }
+  }
+
+  // Metals are materials, not colours: correcting them produced "Saffron temple
+  // jhumkas" next to "gold cuff" in the same line. Scored against a palette
+  // holding no metal, gold falls under the keep threshold and would be moved.
+  const metalHostile = {
+    ...dullsState,
+    colour: {
+      ...dullsState.colour,
+      undertone: 'olive' as const,
+      value_depth: 'deep' as const,
+      contrast: 'high' as const,
+      chroma: 'muted' as const,
+      base_palette: [{ name: 'Deep Teal', hex: '#184A59' }],
+      accent_palette: [{ name: 'Deep Teal', hex: '#184A59' }],
+    },
+  };
+  const metalSlot = { slot: 'Accessories', piece: 'Gold temple jhumkas, gold cuff', source_label: 'Accessories', role: 'finish' as const };
+  const metalResolved = colourForSlotForTest(metalSlot, metalHostile, 0, 'accent');
+  invariant(metalResolved.name === 'Gold', `a metal was recoloured as a fabric shade: ${metalResolved.name}`);
+  invariant(metalResolved.piece === metalSlot.piece, `a metal's description was rewritten: "${metalResolved.piece}"`);
+
+  // "Burnt Sienna Burnt Sienna tussar silk saree" — a palette name whose words
+  // are both absent from the colour lexicon was prepended to a description that
+  // already opened with it. The fixture palette alone cannot catch this, so the
+  // adversarial names are named here explicitly.
+  const twoWordColours = ['Burnt Sienna', 'Mushroom Taupe', 'Antique Cream', 'Rich Indigo', 'Espresso Olive'];
+  for (const name of twoWordColours) {
+    const described = pieceWithColourForTest(`${name} tussar silk saree`, name);
+    invariant(
+      !described.toLowerCase().startsWith(`${name.toLowerCase()} ${name.toLowerCase()}`),
+      `a palette name was prepended to a description that already opened with it: "${described}"`,
+    );
+  }
+  // The prefix must still be added when the description genuinely names no colour.
+  invariant(
+    pieceWithColourForTest('tussar silk saree', 'Burnt Sienna').startsWith('Burnt Sienna tussar'),
+    'a description naming no colour must still be given one',
+  );
+
+  const trimmed = [
+    'Black pointed heels on a 1.2-2 inch heel',
+    'Nude 1.2-2 inch block-heel court shoes',
+    'Gold studs, slim watch.',
+    'Mocha satin-silk saree with a plain body and no border.',
+    'light-wash denim jacket worn as a layer',
+  ].map(shortGarmentForTest);
+  for (const name of trimmed) {
+    invariant(!/\s(?:on|in|at|of|to|for|and|or|with|over|under|a|an|the)$/i.test(name), `garment name ends on a dangling word: "${name}"`);
+  }
+  invariant(trimmed[0] === 'Black pointed heels', `heel phrasing must not leak into the garment name: "${trimmed[0]}"`);
+  invariant(trimmed[1].endsWith('shoes'), `garment name must keep its head noun: "${trimmed[1]}"`);
+  invariant(trimmed[2] === 'Gold studs', `a comma list must trim to the first piece: "${trimmed[2]}"`);
 }
+
+test('outfit science invariants hold', () => {
+  runStylistOutfitScienceAssertions();
+});

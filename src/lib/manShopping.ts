@@ -167,6 +167,95 @@ export function buildFallbackSearchUrl(queryOrDescriptor: string): string {
   return `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}&gl=in`;
 }
 
+export interface ManTrustedBrandSearch {
+  category: string;
+  brands: readonly string[];
+  categorySpecialists: readonly string[];
+  popularBrands: readonly string[];
+  url: string;
+}
+
+interface ManTrustedBrandRule {
+  category: string;
+  pattern: RegExp;
+  brands: readonly string[];
+}
+
+const GENERAL_POPULAR_MAN_BRANDS = ['H&M', 'Zara', 'Westside'] as const;
+
+function withPopularBrands(...categorySpecialists: string[]): readonly string[] {
+  return [...categorySpecialists, ...GENERAL_POPULAR_MAN_BRANDS];
+}
+
+// Ordered from specific to broad so, for example, a leather sneaker is treated
+// as a sneaker rather than generic footwear. These are deliberately compact
+// shortlists: three category specialists are balanced with three popular,
+// accessible brands that give clients more choice without becoming exhaustive.
+const MAN_TRUSTED_BRAND_RULES: readonly ManTrustedBrandRule[] = [
+  {
+    category: 'Sneakers',
+    pattern: /\b(?:sneakers?|trainers?|running shoes?|court shoes?)\b/,
+    brands: withPopularBrands('Adidas', 'Puma', 'New Balance'),
+  },
+  {
+    category: 'Formal footwear',
+    pattern: /\b(?:derbys?|derbies|oxfords?|brogues?|loafers?|monk straps?|formal shoes?|dress shoes?|chelsea boots?)\b/,
+    brands: withPopularBrands('Clarks', 'Hush Puppies', 'Ruosh'),
+  },
+  {
+    category: 'Denim',
+    pattern: /\b(?:denim|jean|jeans)\b/,
+    brands: withPopularBrands("Levi's", 'Lee', 'Wrangler'),
+  },
+  {
+    category: 'Tailoring',
+    pattern: /\b(?:blazers?|suits?|tuxedos?|dress shirts?|formal shirts?|formal trousers?|tailored trousers?|pleated trousers?)\b/,
+    brands: withPopularBrands('Louis Philippe', 'Blackberrys', 'Van Heusen'),
+  },
+  {
+    category: 'Knitwear & polos',
+    pattern: /\b(?:knitwear|knits?|sweaters?|jumpers?|cardigans?|half[ -]?zips?|quarter[ -]?zips?|polos?|rugby shirts?|henleys?)\b/,
+    brands: withPopularBrands('Marks & Spencer', 'Uniqlo', 'U.S. Polo Assn.'),
+  },
+  {
+    category: 'Outerwear',
+    pattern: /\b(?:jackets?|overshirts?|shackets?|coats?|parkas?|bombers?|windbreakers?)\b/,
+    brands: withPopularBrands('Marks & Spencer', 'Uniqlo', 'Jack & Jones'),
+  },
+  {
+    category: 'Activewear',
+    pattern: /\b(?:joggers?|track pants?|track trousers?|sweatshirts?|hoodies?|performance tees?|gym)\b/,
+    brands: withPopularBrands('Nike', 'Adidas', 'Puma'),
+  },
+  {
+    category: 'Smart casual',
+    pattern: /\b(?:shirts?|chinos?|trousers?|t-shirts?|tees?|shorts?)\b/,
+    brands: withPopularBrands('Marks & Spencer', 'Uniqlo', 'Selected Homme'),
+  },
+];
+
+const DEFAULT_MAN_TRUSTED_BRANDS = {
+  category: 'Menswear',
+  brands: withPopularBrands('Marks & Spencer', 'Uniqlo', 'Selected Homme'),
+} as const;
+
+export function buildTrustedBrandSearch(queryOrDescriptor: string): ManTrustedBrandSearch {
+  const normalized = normalizeDescriptor(queryOrDescriptor) || queryOrDescriptor.toLowerCase().trim();
+  const match = MAN_TRUSTED_BRAND_RULES.find(rule => rule.pattern.test(normalized))
+    ?? DEFAULT_MAN_TRUSTED_BRANDS;
+  const base = /\bmen\b/.test(normalized) ? normalized : `${normalized} men`;
+  const brandFilter = match.brands.map(brand => `"${brand}"`).join(' OR ');
+  const query = `${base} (${brandFilter})`;
+
+  return {
+    category: match.category,
+    brands: match.brands,
+    categorySpecialists: match.brands.slice(0, 3),
+    popularBrands: GENERAL_POPULAR_MAN_BRANDS,
+    url: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}&gl=in`,
+  };
+}
+
 export function isShoppingSlotCurrent(slot: ManShoppingSlot | undefined, currentHash: string): boolean {
   return !!slot && slot.descriptorHash === currentHash && slot.status !== 'stale';
 }
