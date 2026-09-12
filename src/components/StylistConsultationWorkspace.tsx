@@ -53,12 +53,12 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   const [measurementValues, setMeasurementValues] = useState<Record<MeasurementKey, string>>({ shoulders: '', bust: '', chest: '', waist: '', hips: '' });
   const [selectedPhotos, setSelectedPhotos] = useState<Partial<Record<PhotoKey, File>>>({});
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (preserveNotes = false) => {
     const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}`, { cache: 'no-store' });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || 'Could not load consultation');
     setDetail(body);
-    setNotes(body.intake?.raw_consultation_notes || body.source.consultation.notes || '');
+    if (!preserveNotes) setNotes(body.intake?.raw_consultation_notes || body.source.consultation.notes || '');
     const storedMeasurements = (body.source.upload?.measurements ?? {}) as Json;
     setMeasurementUnit(['in', 'inch', 'inches'].includes(String(storedMeasurements.unit ?? '').toLowerCase()) ? 'in' : 'cm');
     setMeasurementValues({
@@ -73,9 +73,10 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
   useEffect(() => { void load().catch(caught => { setError(caught instanceof Error ? caught.message : 'Load failed'); setLoading(false); }); }, [load]);
 
   const generate = async (newVersion = false) => {
-    if (newVersion && !window.confirm('Create a new draft for testing? The existing delivered report stays available, and nothing is sent to the client.')) return;
+    if (newVersion && !window.confirm('Create a fresh report draft? The existing delivered report stays available, and nothing is sent to the client.')) return;
     setWorking('generate'); setError('');
     try {
+      await persistNotes();
       const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newVersion }),
       });
@@ -86,17 +87,19 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
     finally { setWorking(''); }
   };
 
+  const persistNotes = async () => {
+    const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_overrides', overrides: { raw_consultation_notes: notes } }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || 'Could not save notes');
+    setDetail(current => current ? { ...current, intake: body.intake } : current);
+  };
   const saveNotes = async () => {
     setWorking('save'); setError('');
-    try {
-      const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'save_overrides', overrides: { raw_consultation_notes: notes } }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || 'Could not save notes');
-      setDetail(current => current ? { ...current, intake: body.intake } : current);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Save failed'); }
+    try { await persistNotes(); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : 'Save failed'); }
     finally { setWorking(''); }
   };
 
@@ -112,7 +115,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'Could not save client inputs');
       setSelectedPhotos({});
-      await load();
+      await load(true);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save client inputs'); }
     finally { setWorking(''); }
   };
@@ -136,7 +139,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
       const response = await fetch(`/api/stylist-workspace/consultations/${consultationId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'refresh', confirmed: true }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || 'Could not refresh source');
-      await load();
+      await load(true);
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Refresh failed'); }
     finally { setWorking(''); }
   };
@@ -153,7 +156,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
 
   return (
     <div className="max-w-[1450px] mx-auto">
-      <Link href={backUrl} className="inline-flex items-center gap-2 text-sm luxury-body mb-6" style={{ color: C.muted }}><ArrowLeft size={14} /> Back to queue</Link>
+      <Link href={backUrl} className="inline-flex items-center gap-2 text-sm luxury-body mb-6" style={{ color: C.muted }}><ArrowLeft size={14} /> Back to report desk</Link>
       <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-5 mb-7">
         <div>
           <p className="iconik-micro mb-2" style={{ color: C.gold }}>{adminMode ? 'ADMIN · CONSULTATION WORKSPACE' : 'CONSULTATION WORKSPACE'}</p>
@@ -161,8 +164,8 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
           <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 luxury-body text-sm" style={{ color: C.muted }}><span>{consultation.client_phone}</span>{consultation.consultation_date && <span>Meeting {new Date(consultation.consultation_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}{consultation.report_due_at && <span>Due {new Date(consultation.report_due_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span>}</div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {latest ? <Link href={reportUrl(latest.id)} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body" style={{ background: C.ink, color: C.bg }}>Open latest report <ChevronRight size={15} /></Link>
-            : <button disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || working === 'generate'} onClick={() => void generate()} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body disabled:opacity-40" style={{ background: C.ink, color: C.bg }}>{working === 'generate' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Generate Blueprint</button>}
+          {latest ? <Link href={reportUrl(latest.id)} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body" style={{ background: C.ink, color: C.bg }}>Continue report <ChevronRight size={15} /></Link>
+            : <button disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} onClick={() => void generate()} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body disabled:opacity-40" style={{ background: C.ink, color: C.bg }}>{working === 'generate' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Create report</button>}
         </div>
       </div>
 
@@ -170,7 +173,8 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
       {error && <div className="rounded-2xl p-4 mb-5 luxury-body text-sm" style={{ background: 'rgba(196,100,90,.10)', color: C.error }}>{error}</div>}
       <div className="grid xl:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-5">
-          <Section title="Inputs Received on WhatsApp">
+          {latest && <div className="rounded-2xl p-5 border flex flex-wrap gap-4 items-center" style={{ borderColor: C.border, background: C.ink, color: C.bg }}><div className="mr-auto"><p className="iconik-display text-xl">{latest.status === 'delivered' || latest.status === 'sent' ? 'Your report has been delivered' : 'Your report is in progress'}</p><p className="luxury-body text-xs mt-2 opacity-70">Review the advice, edit outfits, and upload images in the report editor.</p></div><Link href={reportUrl(latest.id)} className="luxury-body text-sm rounded-xl px-4 py-3" style={{ background: C.bg, color: C.ink }}>Continue report →</Link></div>}
+          <Section title="01 · Client inputs">
             <div className="grid lg:grid-cols-[.85fr_1.15fr] gap-7">
               <div>
                 <div className="flex items-center justify-between gap-3 mb-4">
@@ -223,7 +227,7 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-6 pt-5" style={{ borderTop: `1px solid ${C.border}` }}>
               <p className="luxury-body text-xs" style={{ color: detail.readiness.ready ? C.success : C.muted }}>{detail.readiness.ready ? 'All required inputs are complete.' : `${detail.readiness.missing.length} required input${detail.readiness.missing.length === 1 ? '' : 's'} still missing.`}</p>
-              <button onClick={() => void saveClientInputs()} disabled={!consultation.stylist_id || working === 'inputs'} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 luxury-body text-sm disabled:opacity-50" style={{ background: C.ink, color: C.bg }}>{working === 'inputs' ? <Loader2 size={15} className="animate-spin" /> : <UploadCloud size={15} />} {working === 'inputs' ? 'Saving inputs…' : 'Save measurements & photos'}</button>
+              <button onClick={() => void saveClientInputs()} disabled={!consultation.stylist_id || Boolean(working)} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 luxury-body text-sm disabled:opacity-50" style={{ background: C.ink, color: C.bg }}>{working === 'inputs' ? <Loader2 size={15} className="animate-spin" /> : <UploadCloud size={15} />} {working === 'inputs' ? 'Saving inputs…' : 'Save measurements & photos'}</button>
             </div>
           </Section>
           <Section title="Client Direction">
@@ -238,32 +242,32 @@ export default function ConsultationWorkspacePage({ params, adminMode = false }:
               <div><Field label="Boundaries" value={clientData.boundaries} /><Field label="Fabric restrictions" value={clientData.fabricRestrictions} /><Field label="Cultural restrictions" value={clientData.culturalRestrictions} /><Field label="Height / weight" value={[clientData.height, clientData.weight].filter(Boolean)} /></div>
             </div>
           </Section>
-          <Section title="Wardrobe, Colour & Beauty">
+          <Section title="Style preferences">
             <div className="grid md:grid-cols-2 gap-x-8">
               <div><Field label="Items loved" value={clientData.itemsLoved} /><Field label="Items avoided" value={[clientData.itemsHated, clientData.wardrobeLeastFavorites].filter(Boolean)} /><Field label="Footwear" value={clientData.footwear} /><Field label="Experimentation" value={clientData.styleExperimentation} /></div>
               <div><Field label="Skin context" value={[clientData.skinTone, clientData.skinType, clientData.skinTint, clientData.sunReaction].filter(Boolean)} /><Field label="Colour preference" value={clientData.colorFamilyPreference} /><Field label="Metal preference" value={clientData.metalPreference} /><Field label="Hair" value={[clientData.hairType, clientData.hairChangeOpenness].filter(Boolean)} /></div>
             </div>
           </Section>
-          <Section title="Stylist’s Report Notes">
-            <textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Add report-specific context or corrections here. The original consultation stays unchanged." className="w-full min-h-44 rounded-2xl p-4 outline-none resize-y luxury-body text-sm leading-6" style={{ background: C.bg, border: `1px solid ${C.border}` }} />
-            <div className="flex flex-wrap gap-2 mt-4"><button onClick={() => void saveNotes()} disabled={!consultation.stylist_id || working === 'save'} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm luxury-body" style={{ background: C.ink, color: C.bg }}>{working === 'save' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save report notes</button>{detail.intake && <button onClick={() => void refreshSnapshot()} disabled={working === 'refresh'} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm luxury-body" style={{ border: `1px solid ${C.border}`, color: C.muted }}>{working === 'refresh' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Refresh source snapshot</button>}</div>
+          <Section title="02 · Your styling notes">
+            <textarea disabled={Boolean(working)} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Anything the report should know? Add preferences, corrections or details from your conversation." className="w-full min-h-44 rounded-2xl p-4 outline-none resize-y luxury-body text-sm leading-6" style={{ background: C.bg, border: `1px solid ${C.border}` }} />
+            <div className="flex flex-wrap gap-2 mt-4"><button onClick={() => void saveNotes()} disabled={!consultation.stylist_id || Boolean(working)} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm luxury-body" style={{ background: C.ink, color: C.bg }}>{working === 'save' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save report notes</button>{detail.intake && <button onClick={() => void refreshSnapshot()} disabled={Boolean(working)} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm luxury-body" style={{ border: `1px solid ${C.border}`, color: C.muted }}>{working === 'refresh' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Refresh source snapshot</button>}</div>
           </Section>
         </div>
 
         <aside className="space-y-5 xl:sticky xl:top-6">
-          <Section title="Generation Readiness">
-            <div className="flex items-center gap-3 mb-5"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: detail.readiness.ready ? 'rgba(90,139,106,.12)' : 'rgba(201,169,110,.16)', color: detail.readiness.ready ? C.success : C.gold }}>{detail.readiness.ready ? <Check size={18} /> : <Clock3 size={18} />}</div><div><p className="luxury-body text-sm font-medium">{detail.readiness.ready ? 'Ready to generate' : 'Waiting for inputs'}</p><p className="luxury-body text-xs mt-1" style={{ color: C.muted }}>{detail.readiness.ready ? 'All required source data is present.' : `${detail.readiness.missing.length} required items are missing.`}</p></div></div>
+          <Section title="Ready for the report?">
+            <div className="flex items-center gap-3 mb-5"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: detail.readiness.ready ? 'rgba(90,139,106,.12)' : 'rgba(201,169,110,.16)', color: detail.readiness.ready ? C.success : C.gold }}>{detail.readiness.ready ? <Check size={18} /> : <Clock3 size={18} />}</div><div><p className="luxury-body text-sm font-medium">{detail.readiness.ready ? 'Ready to generate' : 'Waiting for inputs'}</p><p className="luxury-body text-xs mt-1" style={{ color: C.muted }}>{detail.readiness.ready ? 'Photos and measurements are complete.' : `${detail.readiness.missing.length} required items are missing.`}</p></div></div>
             {!detail.readiness.ready && <div className="space-y-2">{detail.readiness.missing.map(item => <div key={item} className="rounded-xl px-3 py-2.5 luxury-body text-sm" style={{ background: C.bg, color: C.error }}>{item}</div>)}</div>}
             {!detail.readiness.ready && detail.uploadLink?.url && <a href={detail.uploadLink.url} target="_blank" rel="noreferrer" className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 luxury-body text-sm" style={{ background: C.ink, color: C.bg }}><ImageIcon size={15} /> Open client upload link</a>}
           </Section>
-          <Section title="Client Photos">
+          <Section title="Client reference photos">
             <div className="grid grid-cols-2 gap-3">{photos.map(([key, label]) => <div key={key} className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.border}`, background: C.bg }}><div className="aspect-[3/4] flex items-center justify-center">{detail.photoUrls[key] ? <img loading="lazy" decoding="async" src={detail.photoUrls[key]!} alt={label} className="w-full h-full object-cover" /> : <ImageIcon size={22} style={{ color: C.muted }} />}</div><p className="iconik-micro px-3 py-2.5" style={{ color: detail.photoUrls[key] ? C.success : C.muted }}>{label}</p></div>)}</div>
           </Section>
           <Section title="Measurements">
             <div className="flex items-center gap-2 mb-3" style={{ color: C.slate }}><Ruler size={16} /><span className="luxury-body text-sm">Current saved measurements</span></div>
             {Object.entries(detail.source.upload?.measurements ?? {}).map(([key, value]) => <div key={key} className="flex justify-between gap-4 py-2.5" style={{ borderTop: `1px solid ${C.border}` }}><span className="iconik-micro capitalize" style={{ color: C.muted }}>{key}</span><span className="luxury-body text-sm">{display(value)}</span></div>)}
           </Section>
-          {consultation.status === 'delivered' && <button disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || working === 'generate'} onClick={() => void generate(true)} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body disabled:opacity-40" style={{ border: `1px solid ${C.border}`, color: C.ink }}><Sparkles size={15} /> Create a new draft Blueprint</button>}
+          {consultation.status === 'delivered' && <button disabled={!detail.source.consultation.stylist_id || !detail.readiness.ready || Boolean(working)} onClick={() => void generate(true)} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm luxury-body disabled:opacity-40" style={{ border: `1px solid ${C.border}`, color: C.ink }}><Sparkles size={15} /> Create a new draft Blueprint</button>}
         </aside>
       </div>
     </div>

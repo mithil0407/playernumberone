@@ -13,9 +13,11 @@ const COLORS = {
 export default function StylistWorkspaceShell({
   children,
   stylist,
+  adminPreview = false,
 }: {
   children: React.ReactNode;
   stylist: { name: string; slug: string };
+  adminPreview?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -24,12 +26,15 @@ export default function StylistWorkspaceShell({
   const base = `/stylist/${stylist.slug}`;
   if (pathname.startsWith(`${base}/reports/`)) return <>{children}</>;
   const nav = [
-    { href: `${base}/dashboard`, label: 'Client workspace', icon: LayoutDashboard },
-    { href: `${base}/dashboard?bucket=needs_review`, label: 'Reports to Review', icon: ClipboardList },
-    { href: `${base}/dashboard?bucket=needs_attention`, label: 'Needs Attention', icon: AlertTriangle },
+    { href: `${base}/dashboard?bucket=reports`, label: 'My report desk', icon: LayoutDashboard },
+    { href: `${base}/dashboard?bucket=needs_review`, label: 'Continue reviewing', icon: ClipboardList },
+    { href: `${base}/dashboard?bucket=all`, label: 'All my clients', icon: LayoutDashboard },
+    { href: `${base}/dashboard?bucket=delivered`, label: 'Delivered reports', icon: ClipboardList },
+    { href: `${base}/dashboard?bucket=needs_attention`, label: 'Needs attention', icon: AlertTriangle },
   ];
 
   const logout = async () => {
+    if (adminPreview) { router.push('/stylist/admin/workspace'); return; }
     await fetch('/api/stylist-workspace/auth/logout', { method: 'POST' });
     router.replace('/stylist/login');
     router.refresh();
@@ -48,22 +53,22 @@ export default function StylistWorkspaceShell({
               <p className="iconik-display text-[13px] tracking-[.32em]">I C O N I K</p>
               <p className="iconik-micro mt-2" style={{ color: COLORS.muted }}>Stylist Workspace</p>
             </div>
-            <button className="lg:hidden" onClick={() => setOpen(false)} style={{ color: COLORS.muted }}><X size={18} /></button>
+            <button aria-label="Close navigation" className="lg:hidden" onClick={() => setOpen(false)} style={{ color: COLORS.muted }}><X size={18} /></button>
           </div>
         </div>
         <div className="px-4 py-5">
           <div className="rounded-2xl p-4" style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}` }}>
-            <p className="iconik-micro" style={{ color: COLORS.muted }}>Signed in as</p>
+            <p className="iconik-micro" style={{ color: COLORS.muted }}>{adminPreview ? 'Admin preview' : 'Your workspace'}</p>
             <p className="iconik-display text-xl mt-1">{stylist.name}</p>
             <div className="flex items-center gap-2 mt-3 text-xs luxury-body" style={{ color: '#5A8B6A' }}>
-              <span className="w-2 h-2 rounded-full bg-[#5A8B6A]" /> Pilot workspace active
+              <span className="w-2 h-2 rounded-full bg-[#5A8B6A]" /> Private client workspace
             </div>
           </div>
         </div>
         <nav className="px-3 space-y-1 flex-1">
           {nav.map(({ href, label, icon: Icon }) => {
             const hrefBucket = new URLSearchParams(href.split('?')[1] ?? '').get('bucket');
-            const currentBucket = searchParams.get('bucket') ?? 'all';
+            const currentBucket = searchParams.get('bucket') ?? 'reports';
             const active = pathname === href.split('?')[0] && (hrefBucket ? currentBucket === hrefBucket : !['needs_review', 'needs_attention'].includes(currentBucket));
             return (
               <Link key={href} href={href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body transition"
@@ -75,13 +80,13 @@ export default function StylistWorkspaceShell({
         </nav>
         <div className="p-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <button onClick={logout} className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body" style={{ color: COLORS.muted }}>
-            <LogOut size={15} /> Sign out
+            <LogOut size={15} /> {adminPreview ? 'Back to team overview' : 'Sign out'}
           </button>
         </div>
       </aside>
       <div className="min-w-0 flex-1">
         <header className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3" style={{ background: COLORS.shell, borderBottom: `1px solid ${COLORS.border}` }}>
-          <button onClick={() => setOpen(true)}><Menu size={20} /></button>
+          <button aria-label="Open navigation" onClick={() => setOpen(true)}><Menu size={20} /></button>
           <span className="iconik-display text-[13px] tracking-[.25em]">I C O N I K</span>
           <span className="ml-auto luxury-body text-sm" style={{ color: COLORS.muted }}>{stylist.name}</span>
         </header>

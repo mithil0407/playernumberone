@@ -6,10 +6,12 @@ import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { sendStylistBlueprintReportEmail } from '@/lib/email';
 import { assertStylistReportDraft, assertStylistPageApprovals } from '@/lib/stylistReportValidation';
 import { checkStudioReportQuality } from '@/lib/stylistReportStudio';
+import { outfitPieces } from '@/lib/stylistOutfitEditor';
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
   getStylistBlueprintPageCount,
   getStylistBlueprintOutfitCount,
+  getStylistBlueprintOutfitStartPage,
   getStylistBlueprintHairColourPage,
   getStylistBlueprintTransformationPage,
   getStylistBlueprintContinuationPage,
@@ -65,13 +67,14 @@ export async function PATCH(
   }
   const allowedStatuses = new Set(['pending', 'generating', 'draft_ready', 'in_review', 'approved', 'sent', 'delivered', 'error']);
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  let invalidatedOutfitImages: number[] = [];
   const expectedRevision = body.expectedRevision;
   if (expectedRevision !== undefined && (!Number.isInteger(expectedRevision) || expectedRevision < 0)) {
     return NextResponse.json({ error: 'Invalid report revision' }, { status: 400 });
   }
   const { data: currentRevisionRow, error: revisionError } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('revision, updated_at, status, progress_stage, report_data, section_approvals')
+    .select('revision, updated_at, status, progress_stage, report_data, section_approvals, image_urls')
     .eq('id', reportId)
     .single();
   if (revisionError || !currentRevisionRow) {
@@ -171,6 +174,27 @@ export async function PATCH(
   }
   if (body.error_message !== undefined) patch.error_message = body.error_message;
 
+  // A new garment or colour needs a matching image. Never leave an old image
+  // counted as complete after a stylist edits the outfit formula.
+  if (patch.report_data && isVersionedStylistBlueprintReportData(currentRevisionRow.report_data)) {
+    const before = currentRevisionRow.report_data;
+    const after = patch.report_data as StylistBlueprintReportData;
+    const start = getStylistBlueprintOutfitStartPage(after);
+    const changed = new Set(after.pages.filter(page => page.page_number >= start && page.page_number < start + getStylistBlueprintOutfitCount(after))
+      .filter(page => {
+        const previous = before.pages.find(item => item.page_number === page.page_number);
+        return !previous || JSON.stringify(outfitPieces(previous)) !== JSON.stringify(outfitPieces(page));
+      }).map(page => page.page_number - start));
+    invalidatedOutfitImages = [...changed];
+    if (changed.size) {
+      const paths = currentRevisionRow.image_urls as StylistBlueprintImagePaths | null;
+      patch.image_urls = { ...paths, application: { ...paths?.application,
+        outfitFlatlays: Array.from({ length: getStylistBlueprintOutfitCount(after) }, (_, index) => changed.has(index) ? null : paths?.application?.outfitFlatlays?.[index] ?? null),
+        outfitDetails: Array.from({ length: getStylistBlueprintOutfitCount(after) }, (_, index) => changed.has(index) ? null : paths?.application?.outfitDetails?.[index] ?? null),
+      } };
+    }
+  }
+
   const updateQuery = supabaseAdmin
     .from('stylist_blueprint_reports')
     .update(patch)
@@ -189,7 +213,7 @@ export async function PATCH(
   }
 
   await revalidateStylistBlueprintCache(reportId, data.share_token);
-  return NextResponse.json({ report: data });
+  return NextResponse.json({ report: data, invalidatedOutfitImages });
 }
 
 export async function POST(

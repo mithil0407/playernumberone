@@ -33,10 +33,10 @@ export interface QueueRow {
 
 export function workspaceBucket(input: { consultationStatus: string; readiness: ConsultationReadiness; reportStatus?: string | null; reportProgress?: string | null }) {
   if (input.reportStatus === 'error' || input.consultationStatus === 'stalled') return 'needs_attention';
+  if (input.reportStatus === 'generating' || input.reportProgress) return 'generating';
   if (input.reportStatus === 'delivered' || input.reportStatus === 'sent') return 'delivered';
   if (input.reportStatus === 'approved') return 'ready_to_deliver';
   if (input.reportStatus === 'draft_ready' || input.reportStatus === 'in_review') return 'needs_review';
-  if (input.reportStatus === 'generating' || input.reportProgress) return 'generating';
   if (input.consultationStatus === 'delivered') return 'delivered';
   return input.readiness.ready ? 'ready' : 'needs_inputs';
 }
@@ -61,6 +61,18 @@ export function workspaceQueueItem(row: QueueRow) {
   };
 }
 export type WorkspaceQueueItem = ReturnType<typeof workspaceQueueItem>;
+
+export function workspaceNextAction(item: WorkspaceQueueItem) {
+  switch (item.bucket) {
+    case 'needs_review': return { label: 'Continue report', hint: 'Review the advice, finish outfit images, and approve each page.', target: 'report' as const, step: 2 };
+    case 'ready_to_deliver': return { label: 'Deliver report', hint: 'Your reviewed report is ready for the client.', target: 'report' as const, step: 3 };
+    case 'needs_attention': return { label: item.report ? 'Fix report' : 'Review client', hint: 'Resolve the issue to keep this report moving.', target: item.report ? 'report' as const : 'client' as const, step: 1 };
+    case 'generating': return { label: 'View progress', hint: 'The report is being prepared. You can work on another client.', target: 'report' as const, step: 1 };
+    case 'delivered': return { label: item.report ? 'View report' : 'View client', hint: 'Delivered to the client.', target: item.report ? 'report' as const : 'client' as const, step: 4 };
+    case 'ready': return { label: 'Create report', hint: 'Check the client inputs, then create their first draft.', target: 'client' as const, step: 1 };
+    default: return { label: 'Complete inputs', hint: 'Add the missing photos and measurements.', target: 'client' as const, step: 0 };
+  }
+}
 
 function normalizedClientPhone(value: string) {
   const digits = value.replace(/\D/g, '');
@@ -151,6 +163,14 @@ export function queryWorkspaceItems(items: WorkspaceQueueItem[], options: { view
       return true;
     })
     .sort((a, b) => {
+      if (options.view === 'reports') {
+        const overdue = (item: WorkspaceQueueItem) => Boolean(item.reportDueAt && Date.parse(item.reportDueAt) <= now);
+        if (overdue(a) !== overdue(b)) return overdue(a) ? -1 : 1;
+        const priority: Record<string, number> = { needs_attention: 0, ready_to_deliver: 1, needs_review: 2, ready: 3, generating: 4 };
+        const difference = (priority[a.bucket] ?? 5) - (priority[b.bucket] ?? 5);
+        if (difference) return difference;
+        if (a.reportDueAt && b.reportDueAt && a.reportDueAt !== b.reportDueAt) return Date.parse(a.reportDueAt) - Date.parse(b.reportDueAt);
+      }
       if (options.view === 'today') return Date.parse(a.reportDueAt!) - Date.parse(b.reportDueAt!);
       const date = (item: WorkspaceQueueItem) => options.view === 'photos'
         ? item.uploadSubmittedAt || item.updatedAt

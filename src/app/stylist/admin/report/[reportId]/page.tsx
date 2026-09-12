@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
 import StylistBlueprintReport from '@/components/StylistBlueprintReport';
+import StylistOutfitEditor from '@/components/StylistOutfitEditor';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
 import {
   STYLIST_BLUEPRINT_LEGACY_VERSION,
@@ -45,7 +46,7 @@ import {
   isVersionedStylistBlueprintReportData,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
-import { checkStudioReportQuality, formatOutfitDraft, moveStudioPage, outfitPageToDraft } from '@/lib/stylistReportStudio';
+import { checkStudioReportQuality, moveStudioPage } from '@/lib/stylistReportStudio';
 
 interface Report {
   id: string;
@@ -177,7 +178,6 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
   const [studioPanel, setStudioPanel] = useState<StudioPanel | null>(null);
-  const [outfitDraft, setOutfitDraft] = useState('');
   const [manualPrompts, setManualPrompts] = useState<ManualImagePrompt[]>([]);
   const [, setLoadingPrompts] = useState(false);
   const [uploadingSlot, setUploadingSlot] = useState<StylistBlueprintImageSlotKey | null>(null);
@@ -195,13 +195,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const reportCanvasRef = useRef<HTMLDivElement | null>(null);
   const visiblePageNumberRef = useRef(1);
   const pendingFullReportPageRef = useRef<number | null>(null);
+  const resumedReportRef = useRef<string | null>(null);
 
   const load = useCallback(async (fresh = false) => {
     const statusPromise = fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' }).catch(() => null);
     const res = await fetch(`/api/stylist-blueprint/${reportId}${fresh ? '?fresh=1' : ''}`, { cache: 'no-store' });
-    const data = await readJsonBody<{ report?: Report; error?: string }>(res);
+    const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[] }>(res);
     if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to load report'));
-    if (data?.report) { setReport(data.report); lastReportUpdateRef.current = data.report.updated_at; }
+    if (data?.report) {
+      setReport(data.report); lastReportUpdateRef.current = data.report.updated_at;
+      if (resumedReportRef.current !== reportId) {
+        resumedReportRef.current = reportId;
+        try {
+          const savedPage = Number(localStorage.getItem(`stylist-report-page:${reportId}`));
+          if (isVersionedStylistBlueprintReportData(data.report.report_data) && data.report.report_data.pages.some(page => page.page_number === savedPage)) setActivePageNumber(savedPage);
+        } catch { /* Storage can be disabled in private browsers. */ }
+      }
+    }
     setLoading(false);
     const statusRes = await statusPromise;
     if (statusRes?.ok) {
@@ -210,6 +220,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     }
     setLoading(false);
   }, [reportId]);
+
+  useEffect(() => {
+    if (resumedReportRef.current === reportId) {
+      try { localStorage.setItem(`stylist-report-page:${reportId}`, String(activePageNumber)); } catch { /* Optional convenience. */ }
+    }
+  }, [reportId, activePageNumber]);
 
   const refreshGeneratedImages = useCallback(async () => {
     const res = await fetch(`/api/stylist-blueprint/${reportId}?fresh=1`, { cache: 'no-store' });
@@ -336,9 +352,6 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     ? IMAGE_GROUPS.filter(group => group.value !== 'closing')
     : IMAGE_GROUPS;
 
-  useEffect(() => {
-    if (activePageIsOutfit && activePage) setOutfitDraft(outfitPageToDraft(activePage));
-  }, [activePage, activePageIsOutfit]);
 
   useEffect(() => {
     if (!hideContinuationPage || !reviewData || pages.some(page => page.page_number === activePageNumber)) return;
@@ -534,11 +547,6 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     };
   });
 
-  const applyFormattedOutfit = () => {
-    if (!activePage || !activePageIsOutfit) return;
-    handlePageChange(formatOutfitDraft(outfitDraft, activePage));
-  };
-
   const loadManualPrompts = useCallback(async () => {
     setLoadingPrompts(true);
     try {
@@ -569,13 +577,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   );
 
   const uploadManualImage = async (slotKey: StylistBlueprintImageSlotKey, file: File | null) => {
-    if (!file) return;
-    if (uploadingSlot || saving || report?.status === 'generating' || report?.progress_stage) return;
+    if (!file) return false;
+    if (uploadingSlot || saving || report?.status === 'generating' || report?.progress_stage) return false;
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size === 0 || file.size > 8 * 1024 * 1024) {
       setError('Choose a JPG, PNG or WebP image smaller than 8 MB.');
-      return;
+      return false;
     }
-    if (!(await saveChangedPagesRef.current())) return;
+    if (!(await saveChangedPagesRef.current())) return false;
     setUploadingSlot(slotKey);
     setError('');
     try {
@@ -588,8 +596,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       await Promise.all([refreshGeneratedImages(), loadManualPrompts()]);
       const statusResponse = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
       if (statusResponse.ok) setImageCounts((await statusResponse.json()).imageCounts ?? null);
+      return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Image upload failed');
+      return false;
     } finally {
       setUploadingSlot(null);
     }
@@ -615,7 +625,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           expectedUpdatedAt: report?.updated_at,
         }),
       });
-      const data = await readJsonBody<{ report?: Report; error?: string }>(res);
+      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[] }>(res);
       if (!res.ok) {
         if (res.status === 409) setSaveConflict(true);
         throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
@@ -635,6 +645,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         status: data?.report?.status ?? reportRef.current.status,
         section_approvals: data?.report?.section_approvals ?? nextApprovals,
       } : null;
+      if (savedReport?.image_urls?.application && data?.invalidatedOutfitImages?.length) {
+        savedReport.image_urls = { ...savedReport.image_urls, application: { ...savedReport.image_urls.application,
+          outfitFlatlays: savedReport.image_urls.application.outfitFlatlays?.map((url, index) => data.invalidatedOutfitImages!.includes(index) ? null : url),
+        } };
+        void fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' }).then(async response => { if (response.ok) setImageCounts((await response.json()).imageCounts ?? null); }).catch(() => {});
+      }
       reportRef.current = savedReport;
       setReport(savedReport);
       if (savedReport) draftSeedRef.current = `${reportId}:${savedReport.updated_at}`;
@@ -1465,7 +1481,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       : '';
 
   return (
-    <div className="min-h-screen" style={{ background: S.bg, color: S.ink }}>
+    <div className={`min-h-screen ${isWorkspace ? 'stylist-workspace-report' : ''}`} style={{ background: S.bg, color: S.ink }}>
       <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
         <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
           <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
@@ -1558,6 +1574,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
       <main className="min-h-screen pl-[310px]">
         <header className="sticky top-0 z-20 border-b px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
+          {isWorkspace && <Link href={`/stylist/${workspaceSlug}/dashboard`} className="workspace-mobile-back luxury-body text-sm mb-3" style={{ color: S.muted }}>← Back to report desk</Link>}
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div>
               <div className="iconik-micro mb-1" style={{ color: S.muted }}>Women Blueprint Report</div>
@@ -1596,7 +1613,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                     <CheckCheck size={14} /> Analysis
                   </ActionButton>
                   <ActionButton onClick={() => openStudioPanel(activePageIsOutfit ? 'outfit' : 'pages')} title="Edit the current module or outfit in a structured workspace.">
-                    <PanelRight size={14} /> {activePageIsOutfit ? 'Outfit Editor' : 'Page Tools'}
+                    <PanelRight size={14} /> {activePageIsOutfit ? 'Change outfit' : 'Page Tools'}
                   </ActionButton>
                   <ActionButton onClick={() => openStudioPanel('quality')} tone={qualityIssues.some(issue => issue.level === 'error') ? 'danger' : 'success'} title="Run the report quality checks.">
                     <WandSparkles size={14} /> Quality {qualityIssues.length}
@@ -1607,7 +1624,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 </div>
               )}
 
-              <div className="admin-toolbar-group">
+              {(!isWorkspace || report.progress_stage || report.status === 'error') && <div className="admin-toolbar-group">
                 <span className="admin-toolbar-label">Report</span>
                 {(report.progress_stage || report.status === 'error') && (
                   <ActionButton
@@ -1631,7 +1648,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                     {unlockingProgress ? 'Unlocking...' : 'Unlock Stuck Job'}
                   </ActionButton>
                 )}
-                <ActionButton
+                {!isWorkspace && <ActionButton
                   onClick={rebuildReport}
                   disabled={Boolean(rebuildDisabledReason)}
                   title={rebuildDisabledReason || 'Create a fresh report from this intake.'}
@@ -1639,8 +1656,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 >
                   {rebuildingReport ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   {rebuildingReport ? 'Rebuilding...' : 'Rebuild Studio Report'}
-                </ActionButton>
-                {versioned && (
+                </ActionButton>}
+                {versioned && !isWorkspace && (
                   <ActionButton
                     onClick={replaceAllOutfits}
                     disabled={Boolean(replaceAllDisabledReason)}
@@ -1651,7 +1668,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                     {replacingAllOutfits ? 'Replacing all...' : 'Replace All Outfits'}
                   </ActionButton>
                 )}
-                {activePageIsPalette && (
+                {activePageIsPalette && !isWorkspace && (
                   <ActionButton
                     onClick={regeneratePalette}
                     disabled={Boolean(paletteDisabledReason)}
@@ -1662,7 +1679,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                     {regeneratingPalette ? 'Regenerating...' : 'Regenerate Palette'}
                   </ActionButton>
                 )}
-              </div>
+              </div>}
 
               {!isWorkspace && <div className="admin-toolbar-group">
                 <span className="admin-toolbar-label">Images</span>
@@ -1701,7 +1718,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 </ActionButton>
               </div>}
 
-              {activePageIsOutfit && (
+              {activePageIsOutfit && !isWorkspace && (
                 <div className="admin-toolbar-group admin-toolbar-group-wide">
                   <span className="admin-toolbar-label">Outfit</span>
                   <input
@@ -1813,6 +1830,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           </div>
         </header>
 
+        {isWorkspace && versioned && <div className="mx-4 md:mx-8 mt-5 rounded-2xl border p-4 flex flex-wrap items-center gap-4 luxury-body" style={{ borderColor: S.border, background: S.card }}>
+          <div className="mr-auto"><p className="text-sm font-medium">{activePageIsOutfit ? 'Make this outfit yours' : 'Review this page'}</p><p className="text-xs mt-1" style={{ color: S.muted }}>{activePageIsOutfit ? 'Edit the pieces, save the wording, then upload a matching image.' : 'Check the advice against the client’s inputs. Edit any text, then approve and continue.'}</p></div>
+          {activePageIsOutfit && <ActionButton onClick={() => openStudioPanel('outfit')} tone="primary"><PanelRight size={14} /> Edit outfit & image</ActionButton>}
+          <label className="text-xs" style={{ color: S.muted }}>Go to page<select aria-label="Go to report page" value={activePageNumber} onChange={e => { setActivePageNumber(Number(e.target.value)); setViewMode('page'); }} className="ml-2 max-w-56 rounded-lg border p-2" style={{ background: S.bg, color: S.ink, borderColor: S.border }}>{pages.map(page => <option key={page.page_number} value={page.page_number}>{page.page_number} · {page.title}</option>)}</select></label>
+        </div>}
         {!report.report_data ? (
           <div className="p-10 luxury-body" style={{ color: S.muted }}>
             {report.status === 'generating' ? stageLabel(report.progress_stage) : 'No report data yet.'}
@@ -1843,7 +1865,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 regeneratingImageSlot={regeneratingSlotKey}
                 imageRegenerationDisabled={generatingImages || replacingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || Boolean(report.progress_stage)}
                 imagePrompts={printing ? undefined : promptsBySlot}
-                onImageUpload={printing ? undefined : uploadManualImage}
+                onImageUpload={printing ? undefined : async (slot, file) => { await uploadManualImage(slot, file); }}
                 uploadingImageSlot={uploadingSlot}
               />
             </div>
@@ -1907,7 +1929,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       )}
 
       {studioPanel && reviewData && (
-        <div className="studio-drawer fixed right-0 top-0 bottom-0 z-[70] w-full max-w-[470px] overflow-y-auto border-l" style={{ background: S.bg, borderColor: S.border, boxShadow: '-24px 0 70px rgba(44,38,34,.18)' }}>
+        <div role="dialog" aria-label="Report studio editor" onKeyDown={event => { if (event.key === 'Escape') setStudioPanel(null); }} className="studio-drawer fixed right-0 top-0 bottom-0 z-[70] w-full max-w-[470px] overflow-y-auto border-l" style={{ background: S.bg, borderColor: S.border, boxShadow: '-24px 0 70px rgba(44,38,34,.18)' }}>
           <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-6 py-5" style={{ background: 'rgba(244,239,229,.97)', borderColor: S.border }}>
             <div>
               <div className="iconik-micro" style={{ color: S.gold }}>REPORT STUDIO</div>
@@ -1946,16 +1968,38 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               </>
             )}
 
-            {studioPanel === 'outfit' && activePage && (
-              <>
-                <p className="luxury-body text-sm leading-6" style={{ color: S.muted }}>Write freely inside the labelled structure. Each formula line uses: slot | piece | colour | hex | role | fit or styling note.</p>
-                <textarea value={outfitDraft} onChange={event => setOutfitDraft(event.target.value)} rows={22} spellCheck className="studio-field studio-code w-full rounded-2xl border p-4 text-xs leading-6" style={{ background: S.card, color: S.ink, borderColor: S.border }} />
-                <div className="flex flex-wrap gap-2">
-                  <ActionButton onClick={applyFormattedOutfit} tone="primary" title="Turn this draft into the report's designed outfit layout."><WandSparkles size={14} /> Auto Format</ActionButton>
-                  <ActionButton onClick={() => { setOutfitInstruction('Polish the wording while preserving every garment, colour, coverage requirement and styling decision.'); setStudioPanel(null); }} title="Prepare a precise instruction for the existing AI outfit editor."><RefreshCw size={14} /> Prepare AI Polish</ActionButton>
-                </div>
-                <p className="luxury-body text-xs leading-5" style={{ color: S.muted }}>Auto Format is deterministic and adds no AI cost. “Prepare AI Polish” places a safe instruction in the outfit toolbar for an optional rewrite.</p>
-              </>
+            {studioPanel === 'outfit' && activePage && versioned && (
+              <StylistOutfitEditor key={activePageNumber} page={activePage} onChange={handlePageChange}
+                saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
+                imageUrl={report.image_urls?.application?.outfitFlatlays?.[activePageNumber - getStylistBlueprintOutfitStartPage(versioned)] ?? null}
+                getAlternatives={async () => {
+                  if (!(await saveChangedPagesRef.current())) throw new Error('Save the current outfit before browsing alternatives.');
+                  const response = await fetch(`/api/stylist-blueprint/${reportId}/outfit-options?page=${activePageNumber}`, { cache: 'no-store' });
+                  const data = await response.json();
+                  if (!response.ok) throw new Error(data.error || 'Could not load alternative outfits');
+                  return data.options;
+                }}
+                chooseAlternative={async candidateId => {
+                  if (!(await saveChangedPagesRef.current())) throw new Error('Save the current outfit before replacing it.');
+                  const response = await fetch(`/api/stylist-blueprint/${reportId}/outfit-options`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageNumber: activePageNumber, candidateId, expectedUpdatedAt: reportRef.current?.updated_at }) });
+                  const data = await response.json();
+                  if (!response.ok) throw new Error(data.error || 'Could not change the outfit');
+                  await Promise.all([refreshGeneratedImages(), loadManualPrompts()]);
+                  const status = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
+                  if (status.ok) setImageCounts((await status.json()).imageCounts ?? null);
+                }}
+                onUpload={file => uploadManualImage(`application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}` as StylistBlueprintImageSlotKey, file)}
+                getPrompt={async () => {
+                  if (!(await saveChangedPagesRef.current())) throw new Error('Save the outfit before copying its prompt.');
+                  const response = await fetch(`/api/stylist-blueprint/${reportId}/assets`, { cache: 'no-store' });
+                  const body = await response.json();
+                  if (!response.ok) throw new Error(body.error || 'Could not load the image prompt');
+                  const slot = `application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}`;
+                  const prompt = body.prompts?.find((item: ManualImagePrompt) => item.slotKey === slot)?.prompt;
+                  if (!prompt) throw new Error('No image prompt is available for this outfit.');
+                  return prompt;
+                }} onApprove={approveAndNext} />
             )}
 
             {studioPanel === 'pages' && activePage && (
@@ -2024,6 +2068,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       )}
 
       <style jsx global>{`
+        .workspace-mobile-back { display: none; }
         .admin-toolbar {
           display: flex;
           flex-wrap: wrap;
@@ -2090,6 +2135,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           }
         }
         @media (max-width: 1000px) {
+          .workspace-mobile-back { display: inline-flex; }
+          .stylist-workspace-report aside.fixed { display: none; }
+          .stylist-workspace-report header.sticky { position: static; }
+          .stylist-workspace-report .admin-toolbar button { width: auto; }
+
           aside.fixed {
             position: relative;
             width: 100%;

@@ -11,8 +11,8 @@ import {
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null) as { slug?: string; pin?: string } | null;
-  const slug = body?.slug?.trim().toLowerCase() ?? '';
-  const pin = body?.pin?.trim() ?? '';
+  const slug = typeof body?.slug === 'string' ? body.slug.trim().toLowerCase() : '';
+  const pin = typeof body?.pin === 'string' ? body.pin.trim() : '';
   if (!slug || !/^\d{4,12}$/.test(pin)) {
     return NextResponse.json({ error: 'Invalid stylist or PIN' }, { status: 401 });
   }

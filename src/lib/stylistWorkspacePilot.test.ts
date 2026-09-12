@@ -120,3 +120,19 @@ test('reports to do includes ready and blocked work while excluding waiting and 
   assert.equal(counts.needs_inputs, 1);
   assert.equal(counts.delivered, 1);
 });
+
+import { workspaceNextAction, workspaceBucket } from './stylistWorkspaceQueueModel.ts';
+test('generating images keeps approved and reviewing reports out of delivery queues', () => {
+  const readiness = consultationReadiness({ upload: { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } } });
+  for (const reportStatus of ['approved', 'in_review']) assert.equal(workspaceBucket({ consultationStatus: 'ready', readiness, reportStatus, reportProgress: 'generating_images' }), 'generating');
+});
+test('report desk prioritizes overdue work and provides a direct next action', () => {
+  const report = { id: 'report', status: 'in_review', progress_stage: null, created_at: '2026-09-01T10:00:00Z', updated_at: '2026-09-01T10:00:00Z' };
+  const review = workspaceQueueItem(queueRow({ id: 'review', stylist_intake_responses: [{ stylist_blueprint_reports: [report] }] }));
+  const overdue = workspaceQueueItem(queueRow({ id: 'overdue', report_due_at: '2026-09-01T10:00:00Z', consultation_upload_links: { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } } }));
+  const blocked = workspaceQueueItem(queueRow({ id: 'blocked', status: 'stalled' }));
+  assert.deepEqual(queryWorkspaceItems([review, overdue, blocked], { view: 'reports' }, Date.parse('2026-09-02T00:00:00Z')).map(item => item.id), ['overdue', 'blocked', 'review']);
+  assert.equal(workspaceNextAction(review).target, 'report');
+  assert.equal(workspaceNextAction(review).label, 'Continue report');
+  assert.equal(workspaceNextAction(overdue).target, 'client');
+});

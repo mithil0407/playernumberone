@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /.next-audit/
+/.next-workspace-dev/
 /out/
 
 # production

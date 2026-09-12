@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStylistWorkspaceIdentity } from '@/lib/stylistWorkspaceAuth';
+import { getStylistWorkspaceIdentity, isAdminCookieAuthenticated, getWorkspaceStylistBySlug } from '@/lib/stylistWorkspaceAuth';
 import { loadWorkspaceQueue } from '@/lib/stylistWorkspaceQueue';
 import { positiveInteger, queryWorkspaceItems, workspaceCounts } from '@/lib/stylistWorkspaceQueueModel';
 
 export async function GET(request: NextRequest) {
-  const identity = await getStylistWorkspaceIdentity();
+  const previewSlug = request.nextUrl.searchParams.get('stylistSlug');
+  const adminStylist = previewSlug && await isAdminCookieAuthenticated() ? await getWorkspaceStylistBySlug(previewSlug) : null;
+  const identity = adminStylist ? { stylistId: adminStylist.id, name: adminStylist.name, slug: adminStylist.slug } : await getStylistWorkspaceIdentity();
   if (!identity) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const params = request.nextUrl.searchParams;
   const page = positiveInteger(params.get('page'), 1, 100000);
