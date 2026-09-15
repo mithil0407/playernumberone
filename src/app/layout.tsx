@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Inter, Manrope, Playfair_Display, Fraunces, JetBrains_Mono, Newsreader } from "next/font/google";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next";
+import PublicAnalytics from "@/components/PublicAnalytics";
+import { INTERNAL_PAGE_VIEW_PATTERNS } from "@/lib/metaPageView";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
 import { META_PIXEL_ID } from "@/lib/metaPixel";
 import {
@@ -152,7 +153,12 @@ export default function RootLayout({
         {/* Meta Pixel + Signals Gateway. PageView is owned by MetaPixelProvider. */}
         <Script id="meta-signals-gateway" strategy="beforeInteractive">
           {`
-            (function () {
+            window.__iconikStartPublicTracking = function () {
+              // Private staff and client pages must not load advertising SDKs.
+              if (${JSON.stringify(INTERNAL_PAGE_VIEW_PATTERNS.map(pattern => pattern.source))}.some(function (pattern) {
+                return new RegExp(pattern).test(window.location.pathname);
+              })) return;
+              if (window.fbq) return;
               !function(f,b,e,v,n,t,s)
               {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
               n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -259,26 +265,12 @@ export default function RootLayout({
               window.cbq('setHost', 'https://connect.iconik.pro/');
               window.cbq('init', '5610545609651043442');
               window.cbq('set', 'integrationMethod', 'forkFromSnippetCode@1.0');
-            })();
+            };
+            window.__iconikStartPublicTracking();
           `}
         </Script>
       </head>
       <body className={`${inter.variable} ${playfair.variable} ${fraunces.variable} ${newsreader.variable} ${jetbrainsMono.variable} ${inter.className}`}>
-        {/* Google Analytics — single gtag init shared across both properties */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            window.gtag = gtag;
-            gtag('js', new Date());
-            ${GA_MEASUREMENT_IDS.map((id) => `gtag('config', '${id}');`).join("\n            ")}
-          `}
-        </Script>
-
         {/* Organization + WebSite JSON-LD — AEO entity signal */}
         <script
           type="application/ld+json"
@@ -345,7 +337,7 @@ export default function RootLayout({
 
 
         {/* Vercel Analytics */}
-        <Analytics />
+        <PublicAnalytics measurementIds={GA_MEASUREMENT_IDS} />
       </body>
     </html>
   );

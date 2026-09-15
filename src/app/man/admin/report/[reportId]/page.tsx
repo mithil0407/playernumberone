@@ -759,12 +759,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     if (!updatedS4Outfits) return null;
     setError('');
 
-    // Update local state — text and QA only, image_urls intentionally untouched
+    // Reflect invalidated photos immediately so edited text never retains a stale preview.
     setReport(prev => {
       if (!prev?.report_data) return prev;
       return {
         ...prev,
         error_message: null,
+        section_approvals: { ...prev.section_approvals, s4: false },
+        image_urls: prev.image_urls ? {
+          ...prev.image_urls,
+          outfitCards: prev.image_urls.outfitCards.map((path, index) =>
+            data.clearedOutfitNumbers?.includes(index + 1) ? null : path),
+        } : null,
         report_data: {
           ...prev.report_data,
           qa: qa ?? prev.report_data.qa,
@@ -804,6 +810,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       if (!prev?.report_data) return prev;
       return {
         ...prev,
+        image_urls: prev.image_urls ? { ...prev.image_urls,
+          comboGridCards: { ...prev.image_urls.comboGridCards,
+            ...Object.fromEntries((data.clearedKinds ?? []).map((key: string) => [key, null])) },
+        } : null,
         report_data: {
           ...prev.report_data,
           sections: {

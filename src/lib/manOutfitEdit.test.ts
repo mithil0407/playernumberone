@@ -66,8 +66,8 @@ DO NOT BUY: Not specified by stylist`,
   invariant(placeholderRationale.includes('BOTTOM: Cream tailored trouser'), 'preserves edited bottom');
   invariant(placeholderRationale.includes('LAYER: No layer'), 'preserves valid no-layer choice');
   invariant(
-    placeholderRationale.includes('Use this for client-facing workdays where polish matters.'),
-    'reuses previous valid occasion rationale',
+    !placeholderRationale.includes('Use this for client-facing workdays where polish matters.'),
+    'does not reuse rationale written for different garments',
   );
   invariant(!/Not specified by stylist/i.test(placeholderRationale), 'removes placeholder rationale');
   invariant(!placeholderRationale.includes('FIT NOTE:'), 'does not output legacy fit note');
@@ -90,6 +90,18 @@ ACCESSORIES: Minimal watch`,
   invariant(!missingOccasionField.includes('FIT NOTE:'), 'does not fill legacy fit note');
   invariant(!missingOccasionField.includes('ACCEPTABLE SUBSTITUTES:'), 'does not fill legacy substitutes');
   invariant(!missingOccasionField.includes('DO NOT BUY:'), 'does not fill legacy do-not-buy guidance');
+
+  const completeSentence = 'Wear this for a relaxed dinner with friends when you want a comfortable outfit that still feels considered and appropriate.';
+  const copyEdit = completeManOutfitEditDeterministically({
+    classification, currentSection4, outfitNumber: 2,
+    editedBlock: `OUTFIT 2 — OFFICE / FORMAL\nTOP: Ecru polo\nBOTTOM: Navy trousers\nLAYER: No layer\nFOOTWEAR: Brown loafers\nACCESSORIES: Watch\nOCCASION ANCHOR: ${completeSentence}`,
+  });
+  invariant(copyEdit.includes(completeSentence), 'preserves a complete sentence instead of truncating after 18 words');
+  const staleCopy = completeManOutfitEditDeterministically({
+    classification, currentSection4, outfitNumber: 1,
+    editedBlock: `OUTFIT 1 — OFFICE / FORMAL\nTOP: Rust kurta\nBOTTOM: Stone trousers\nLAYER: No layer\nFOOTWEAR: Sandals\nACCESSORIES: Watch\nOCCASION ANCHOR: Use this for client-facing workdays where polish matters.`,
+  });
+  invariant(!staleCopy.includes('where polish matters'), 'drops untouched old rationale when garment fields change');
 
   let wrongNumberFailed = false;
   try {

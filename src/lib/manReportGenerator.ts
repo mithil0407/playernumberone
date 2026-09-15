@@ -1277,6 +1277,8 @@ V6.1 FINAL-OUTPUT OVERRIDE:
 - At least 6 final outfits must use a non-default elevated colour as a primary top or layer outside plain white/navy/black/beige/grey.
 - Use at least 5 bottom types, 6 top types, 4 layer types, 6 shoe types, 8 colour families, and 5-7 patterned pieces unless the client explicitly rejects patterns.
 - No satin, silk, or shiny fabric anywhere, including ties, pocket squares, and linings; ties are grenadine, knitted, or matte woven only.
+- CLIMATE REQUIREMENTS and the banned-descriptor list outrank the classification JSON and the skill examples. Never carry classification wording such as "architectural", "wool flannel", or "matte silk" into a garment line when those rules forbid it. In MONSOON, suede/nubuck shoes become smooth leather versions of the same shoe, and merino/wool/flannel become cotton, linen-cotton, or tropical-weight equivalents.
+- Adjacent visible layers must use different colour families: charcoal/grey/slate/slate grey are one grey family; navy/blue/slate blue/indigo/chambray/teal are one blue family.
 - Keep every assigned source look's footwear category and layer/no-layer decision exactly: adapt materials for climate within the category, and replace a climate-unsafe layer with a permitted equivalent instead of removing it.
 - Office / Formal is strict corporate formal: exactly 2 matched suits, 2 blazer separates, 2 shirt-and-tailored-trouser looks, at least 3 ties, and zero polos, tees, denim, sneakers, drawstrings, cargos, camp collars, or casual overshirts. Explicit suit/tie anti-preferences override only their matching quota: replace suit slots with climate-formal layers and omit ties without relaxing formality.
 - Evening must preserve its climate-aware statement-outerwear quota and may use at most 2 no-layer looks and 1 plain no-layer polo.
@@ -1376,7 +1378,8 @@ Mandatory corrected output:
 - Every garment must read as a purchasable product: colour + fabric + standard garment type.
 - Every outfit must look styled, not basic: use at least two v6.1 elevation moves and avoid plain default combinations.
 - At least 6 final outfits must use a non-default elevated colour as a primary top or layer outside plain white/navy/black/beige/grey.
-- Adjacent outfits must not repeat the same or close primary top colour family. Treat white/ecru/ivory/cream/off-white/chalk/bone as one light-neutral family and stone/oatmeal/sand/beige as one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either.
+- Adjacent outfits must not repeat the same or close primary top colour family. Treat white/ecru/ivory/cream/off-white/chalk/bone as one light-neutral family and stone/oatmeal/sand/beige as one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either: charcoal/grey/slate/slate grey are one grey family and navy/blue/slate blue/indigo/chambray/teal are one blue family, so recolour the later layer into a genuinely different family.
+- Each QA issue names the offending field and word in brackets. Remove or replace exactly that word in that garment line; banned words in OCCASION ANCHOR are not the problem.
 - No blazer in RELAXED CASUAL.
 - Never introduce satin, silk, or shiny fabrics anywhere, including ties and pocket squares; ties are grenadine, knitted, or matte woven only.
 - Never remove a layer while repairing: replace a climate- or preference-unsafe layer with a permitted equivalent of similar formality. Evening keeps at most 2 no-layer looks.

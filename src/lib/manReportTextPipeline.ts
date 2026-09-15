@@ -1,3 +1,4 @@
+import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
 import {
   runClassification,
   runGroomingImageClassification,
@@ -105,11 +106,18 @@ async function writePartialData(
   qa?: ReportData['qa'],
   selectionSalt = '',
 ) {
+  const { data: previous, error: readError } = await supabaseAdmin
+    .from('man_reports').select('report_data, image_urls').eq('id', reportId).single();
+  if (readError) throw readError;
   await supabaseAdmin
     .from('man_reports')
     .update({
       status: 'generating',
+      image_urls: invalidateChangedOutfitImages(previous?.image_urls,
+        previous?.report_data?.sections?.s4_outfits ?? '', sections.s4_outfits ?? ''),
       report_data: {
+        // Keep admin-added fields (e.g. face_style_swap_history) across resumes.
+        ...previous?.report_data,
         ...buildManBlueprintV2StructuredData(classification, selectionSalt),
         classification,
         sections: { ...sections },

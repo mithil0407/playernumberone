@@ -1,3 +1,4 @@
+import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
 // POST /api/man-report/[reportId]/generate-images
 //
 // Triggers image generation for a report that already has text.
@@ -230,6 +231,7 @@ async function runImagePipeline(
           generateV2Assets,
         ),
       },
+      sections.s4_outfits,
     );
 
     const doneOutfits = mergedImagePaths.outfitCards.filter(Boolean).length;
@@ -339,6 +341,7 @@ export async function POST(
         progress_stage: REPAIR_PROGRESS_STAGE,
         error_message: null,
         report_data: reportDataWithQa,
+        image_urls: invalidateChangedOutfitImages(existingImageUrls, reportData.sections.s4_outfits, reportDataWithQa.sections.s4_outfits),
         updated_at: new Date().toISOString(),
       })
       .eq('id', reportId)
@@ -409,6 +412,7 @@ export async function POST(
           progress_stage: INITIAL_PROGRESS_STAGE,
           error_message: null,
           report_data: reportDataWithQa,
+          image_urls: invalidateChangedOutfitImages(existingImageUrls, reportData.sections.s4_outfits, reportDataWithQa.sections.s4_outfits),
           updated_at: new Date().toISOString(),
         })
         .eq('id', reportId);
@@ -441,6 +445,7 @@ export async function POST(
       .update({
         progress_stage: null,
         report_data: reportDataWithQa,
+        image_urls: invalidateChangedOutfitImages(existingImageUrls, reportData.sections.s4_outfits, reportDataWithQa.sections.s4_outfits),
         error_message: `Fix Section 4 before images: ${blockingQaIssues[0].message}`,
         updated_at: new Date().toISOString(),
       })
@@ -460,6 +465,7 @@ export async function POST(
       progress_stage: INITIAL_PROGRESS_STAGE,
       error_message: null,
       report_data: reportDataWithQa,
+        image_urls: invalidateChangedOutfitImages(existingImageUrls, reportData.sections.s4_outfits, reportDataWithQa.sections.s4_outfits),
       updated_at: new Date().toISOString(),
     })
     .eq('id', reportId)

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 // manImageGenerator.ts
 // Phase 3 & 4 of the /man report pipeline: image generation via Gemini.
 //
@@ -142,6 +143,7 @@ interface PartialImagePathPatch {
   baseModel?: string | null;
 }
 interface StoredImagePathState {
+  section4: string;
   imageUrls: ManReportImagePaths | null;
   updatedAt: string | null;
 }
@@ -233,12 +235,13 @@ export function mergeManReportImagePaths(
 async function getStoredManReportImagePathState(reportId: string): Promise<StoredImagePathState> {
   const { data, error } = await supabaseAdmin
     .from('man_reports')
-    .select('image_urls, updated_at')
+    .select('image_urls, updated_at, report_data')
     .eq('id', reportId)
     .single();
 
   if (error) throw new Error(`Could not load current image paths for report ${reportId}: ${error.message}`);
   return {
+    section4: data?.report_data?.sections?.s4_outfits ?? '',
     imageUrls: data?.image_urls ? normaliseImagePaths(data.image_urls as ManReportImagePaths) : null,
     updatedAt: data?.updated_at ?? null,
   };
@@ -253,9 +256,13 @@ export async function mergeManReportImagePathsForReport(
   reportId: string,
   incoming: PartialImagePathPatch,
   extraUpdates: Record<string, unknown> = {},
+  expectedSection4?: string,
 ): Promise<ManReportImagePaths> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const state = await getStoredManReportImagePathState(reportId);
+    if (expectedSection4 !== undefined && state.section4 !== expectedSection4) {
+      throw new Error('Outfit descriptions changed during image generation. Retry using the current report.');
+    }
     const merged = mergeManReportImagePaths(state.imageUrls, incoming);
     const nextUpdatedAt = new Date().toISOString();
 
@@ -614,7 +621,7 @@ export function buildOutfitImagePromptFromText(
 ): string {
   const parsed = parseOutfitsFromSection(outfitText);
   const outfit = expectedOutfitNumber
-    ? parsed.find(candidate => candidate.index === expectedOutfitNumber) ?? parsed[0]
+    ? parsed.find(candidate => candidate.index === expectedOutfitNumber)
     : parsed[0];
 
   if (!outfit) {
@@ -962,12 +969,12 @@ async function splitBeforeAfterComparison(base64Data: string): Promise<{ before:
 }
 
 async function uploadToStorage(reportId: string, base64Data: string, filename: string): Promise<string> {
-  const path   = `${reportId}/${filename}`;
+  const path   = `${reportId}/${filename.replace(/\.jpg$/i, '')}_${randomUUID()}.jpg`;
   const buffer = Buffer.from(base64Data, 'base64');
 
   const { error } = await supabaseAdmin.storage
     .from(BUCKET)
-    .upload(path, buffer, { contentType: 'image/jpeg', upsert: true });
+    .upload(path, buffer, { contentType: 'image/jpeg', upsert: false });
 
   if (error) throw new Error(`Storage upload failed [${filename}]: ${error.message}`);
   return path;
@@ -1273,6 +1280,7 @@ export async function generateAllOutfitImages(
           reportId,
           { outfitCards: outfitPatch },
           {},
+          sections.s4_outfits,
         ).then(() => undefined)
       )
       .catch((e: unknown) => {

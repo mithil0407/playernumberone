@@ -32,6 +32,7 @@ function LoginForm() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError('');
     try {
@@ -39,14 +40,14 @@ function LoginForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, pin }),
+        signal: AbortSignal.timeout(20000),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Sign in failed');
       router.replace(stylistWorkspaceDestination(data.stylist.slug, search.get('redirectTo')));
-      router.refresh();
+      setPin('');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Sign in failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -78,7 +79,7 @@ function LoginForm() {
               {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          {error && <p className="mt-4 rounded-xl px-4 py-3 text-sm luxury-body" style={{ color: '#A8433B', background: 'rgba(196,100,90,.10)' }}>{error}</p>}
+          {error && <p role="alert" className="mt-4 rounded-xl px-4 py-3 text-sm luxury-body" style={{ color: '#A8433B', background: 'rgba(196,100,90,.10)' }}>{error}</p>}
           <button disabled={loading || rosterLoading || !stylists.some(person => person.slug === slug)} className="mt-5 w-full rounded-2xl py-4 flex items-center justify-center gap-2 luxury-body text-sm disabled:opacity-50" style={{ background: '#2C2622', color: '#F4EFE5' }}>
             {loading && <Loader2 size={16} className="animate-spin" />} {loading ? 'Opening workspace…' : 'Open workspace'}
           </button>

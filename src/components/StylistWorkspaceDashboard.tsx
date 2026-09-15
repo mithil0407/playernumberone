@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, FileText, ImageIcon, RefreshCw, Search, Users } from 'lucide-react';
-import { WORKSPACE_CATEGORIES, WORKSPACE_VIEWS, workspaceNextAction, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
+import { WORKSPACE_CATEGORIES, WORKSPACE_VIEWS, queryWorkspaceItems, workspaceNextAction, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
 
 const C = { ink: '#2C2622', muted: '#746D65', card: '#EDE5D2', bg: '#F4EFE5', border: 'rgba(44,38,34,.12)', gold: '#9A7538', success: '#426B4E' };
 type Stylist = { id: string; name: string; slug: string | null; is_active: boolean; workspace_enabled: boolean; clients: number; forms: number; photos: number };
-type Result = { items: WorkspaceQueueItem[]; counts: Record<string, number>; total: number; page: number; limit: number; stylists?: Stylist[]; unassigned?: number; stylist?: { name: string; slug: string } };
+type Result = { snapshotItems?: WorkspaceQueueItem[]; items: WorkspaceQueueItem[]; counts: Record<string, number>; total: number; page: number; limit: number; stylists?: Stylist[]; unassigned?: number; stylist?: { name: string; slug: string } };
 
 function dateLabel(value: string | null) {
   return value ? new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'Not recorded';
@@ -19,7 +19,7 @@ function statusLabel(item: WorkspaceQueueItem) {
   return item.readiness.ready ? 'Ready to generate' : 'Awaiting inputs';
 }
 
-export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }: { admin?: boolean; stylistSlug?: string }) {
+export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, initialResult }: { admin?: boolean; stylistSlug?: string; initialResult?: Result }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const requestedView = params.get('bucket') || (admin ? 'all' : 'reports');
@@ -30,8 +30,16 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }
   const page = Number.isFinite(parsedPage) ? Math.max(1, Math.floor(parsedPage)) : 1;
   const [search, setSearch] = useState(params.get('search') || '');
   const [debouncedSearch, setDebouncedSearch] = useState(search);
-  const [result, setResult] = useState<Result | null>(null);
-  const [busy, setBusy] = useState(true);
+  const scope = `${admin ? 'admin' : 'stylist'}:${stylistSlug || ''}`;
+  const [loaded, setLoaded] = useState<{ scope: string; data: Result } | null>(() => initialResult ? { scope, data: initialResult } : null);
+  const initialScope = useRef(initialResult ? scope : null);
+  const source = loaded?.scope === scope ? loaded.data : null;
+  const result = useMemo(() => {
+    if (!source?.snapshotItems) return source;
+    const visible = queryWorkspaceItems(source.snapshotItems, { view, search: debouncedSearch });
+    return { ...source, items: visible.slice((page - 1) * 24, page * 24), total: visible.length, page, limit: 24 };
+  }, [source, view, debouncedSearch, page]);
+  const [busy, setBusy] = useState(!initialResult);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [updated, setUpdated] = useState<number | null>(null);
@@ -57,19 +65,27 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }
     return () => clearTimeout(timeout);
   }, [search]);
 
+  // Only the admin's paginated endpoint depends on filters. A stylist loads
+  // their own summary once; filtering and paging then happen immediately.
+  const serverFilters = admin ? new URLSearchParams({ bucket: view, page: String(page), search: debouncedSearch, stylist: selectedStylist }).toString() : 'snapshot=1';
   useEffect(() => {
+    if (!admin && initialScope.current === scope && refresh === 0) {
+      setUpdated(Date.now());
+      return;
+    }
+    initialScope.current = null;
     controller.current?.abort();
     const abort = new AbortController(); controller.current = abort;
     const requestId = ++sequence.current;
     const fresh = refresh !== lastRefresh.current;
     lastRefresh.current = refresh;
     setBusy(true); setError('');
-    const query = new URLSearchParams({ bucket: view, page: String(page), limit: '24' });
+    const query = new URLSearchParams(serverFilters);
+    query.set('limit', '24');
     if (stylistSlug) query.set('stylistSlug', stylistSlug);
-    if (debouncedSearch) query.set('search', debouncedSearch);
-    if (selectedStylist) query.set('stylist', selectedStylist);
     if (fresh) query.set('fresh', '1');
     const endpoint = admin ? '/api/stylist-workspace/admin/overview' : '/api/stylist-workspace/queue';
+    const timeout = setTimeout(() => abort.abort(new Error('Request timed out. Please retry.')), 25000);
     void (async () => {
       try {
         const response = await fetch(`${endpoint}?${query}`, { cache: 'no-store', signal: abort.signal });
@@ -79,24 +95,28 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }
         }
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Could not load clients');
-        if (sequence.current === requestId) { setResult(data); setUpdated(Date.now()); }
+        if (sequence.current === requestId) { setLoaded({ scope, data }); setUpdated(Date.now()); }
       } catch (caught) {
-        if (!abort.signal.aborted && sequence.current === requestId) setError(caught instanceof Error ? caught.message : 'Could not load clients');
+        if (sequence.current === requestId && (!abort.signal.aborted || abort.signal.reason?.message?.includes('timed out'))) setError(abort.signal.aborted ? 'The connection is taking too long. Please retry.' : caught instanceof Error ? caught.message : 'Could not load clients');
       } finally {
-        if (!abort.signal.aborted && sequence.current === requestId) setBusy(false);
+        clearTimeout(timeout);
+        if (sequence.current === requestId) setBusy(false);
       }
     })();
-    return () => abort.abort();
-  }, [admin, stylistSlug, view, page, selectedStylist, debouncedSearch, refresh]);
+    return () => { sequence.current = requestId + 1; clearTimeout(timeout); abort.abort(); };
+  }, [admin, stylistSlug, scope, serverFilters, refresh]);
 
   const generating = Boolean(result?.counts.generating);
   useEffect(() => {
-    if (!generating) return;
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible' && !busy) setRefresh(value => value + 1);
-    }, 20000);
-    return () => clearInterval(timer);
-  }, [generating, busy]);
+    }, generating ? 20000 : 60000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && !busy && updated && Date.now() - updated > 20000) setRefresh(value => value + 1);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, [generating, busy, updated]);
 
   const staff = result?.stylists ?? [];
   const selectedName = staff.find(stylist => stylist.id === selectedStylist)?.name;
@@ -167,7 +187,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug }
     {view === 'photos' && <p className="luxury-body text-xs mb-4" style={{ color: C.muted }}>Includes clients with any saved photo, even if their report was already delivered manually.</p>}
     {error && <div role="alert" className="rounded-xl p-4 mb-4 text-sm luxury-body" style={{ color: '#9A4039', background: '#F8E8E3' }}>{error} <button onClick={() => setRefresh(value => value + 1)} className="underline ml-2">Retry</button></div>}
 
-    <section aria-label="Client cards" aria-busy={busy} className={`grid md:grid-cols-2 2xl:grid-cols-3 gap-4 ${busy && result ? 'opacity-60' : ''}`}>
+    <section aria-label="Client cards" aria-busy={busy} className="grid md:grid-cols-2 2xl:grid-cols-3 gap-4">
       {!result && busy && Array.from({ length: 6 }, (_, index) => <div key={index} className="rounded-3xl h-72 animate-pulse" style={{ background: C.card }} />)}
       {result?.items.map(item => {
         const nextAction = workspaceNextAction(item);

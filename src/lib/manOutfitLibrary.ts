@@ -1,3 +1,4 @@
+import { requiresIndianCasual } from './manOutfitConsistency';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import type { ClassificationResult } from './manReportGenerator';
@@ -26,7 +27,8 @@ export type ManOutfitArchetype =
   | 'refined-denim-knit'
   | 'resort-riviera'
   | 'daily-old-money'
-  | 'urban-travel';
+  | 'urban-travel'
+  | 'indian-casual';
 
 export type ManOutfitPatternFamily = 'solid' | 'stripe' | 'check' | 'jacquard' | 'print';
 
@@ -540,6 +542,26 @@ export function selectManOutfitLibraryReferences(
 
   const portfolioIssues = validateSelectedReferencePortfolio(selected, suppressPatterns, suitWaiver);
   if (portfolioIssues.length) throw new Error(`ICONIK v2 portfolio selection failed: ${portfolioIssues.join(' ')}`);
+  if (requiresIndianCasual(classification)) {
+    // Explicit intake preferences outrank the default Western casual portfolio.
+    // Preserve pattern/footwear diversity while replacing both resort slots.
+    for (const index of [15, 16]) {
+      const source = selected[index];
+      selected[index] = {
+        ...source,
+        id: index === 15 ? 101 : 102,
+        archetype: 'indian-casual', silhouetteFamily: 'indian-casual',
+        top: index === 15
+          ? `Warm ivory cotton short kurta — band collar — straight hem at upper thigh — side slits — full sleeves${suppressPatterns ? '' : ' — fine olive vertical stripes'}`
+          : `Muted rust cotton knee-length kurta — band collar — straight cut — side slits — full sleeves${suppressPatterns ? '' : ' — subtle tonal geometric print'}`,
+        bottom: index === 15
+          ? 'Deep olive cotton straight-leg trousers — mid-rise — ankle length'
+          : 'Warm stone cotton straight-leg trousers — mid-rise — ankle length',
+        layer: 'No layer',
+        tags: [...source.tags, 'indian-casual', 'kurta'],
+      };
+    }
+  }
   return selected;
 }
 
@@ -595,7 +617,7 @@ REFERENCE LOCK — non-negotiable:
 
 Library version: ${MAN_OUTFIT_LIBRARY_VERSION}. The source library is Warm Autumn-led. Never copy its colours blindly: the client's classification always wins near the face and across the outfit. Current climate mode: ${climate.label} (${climate.mode.toUpperCase()}). ${climate.promptGuidance} Do not mention library look numbers, source references, or adaptation in the visible report.
 
-The required 6/4/5/5 context split is already mapped below. Preserve the assigned archetype and silhouette family as well as the core garments. Formal must remain strict corporate formal; Evening must read unmistakably night-out; Relaxed Casual must preserve its exact 2 Resort/Riviera + 2 Daily Old-Money + 1 Urban/Travel portfolio. Across the final 20 use 5-7 patterned pieces unless the client explicitly rejects patterns, at least 6 footwear types, and no silhouette family more than twice inside one context or three times overall. Keep all v6.1 diversity, garment-reality, climate, and QA rules.
+The required 6/4/5/5 context split is already mapped below. Preserve the assigned archetype and silhouette family as well as the core garments. Formal must remain strict corporate formal; Evening must read unmistakably night-out; ${requiresIndianCasual(classification) ? 'CLIENT PREFERENCE OVERRIDE: Relaxed Casual must contain 2 Indian Casual kurta looks + 2 Daily Old-Money + 1 Urban/Travel. This replaces every default Resort/Riviera split instruction. Everyday kurtas are mandatory; wedding sherwanis or a Western shirt renamed Indian do not qualify.' : 'Relaxed Casual must preserve its exact 2 Resort/Riviera + 2 Daily Old-Money + 1 Urban/Travel portfolio.'} Across the final 20 use 5-7 patterned pieces unless the client explicitly rejects patterns, at least 6 footwear types, and no silhouette family more than twice inside one context or three times overall. Keep all v6.1 diversity, garment-reality, climate, and QA rules.
 
 ## SELECTED REFERENCES
 

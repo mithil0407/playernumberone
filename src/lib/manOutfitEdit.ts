@@ -80,9 +80,15 @@ function completeEditedOutfitBlock(
   const layer = pickField(editedParsed.layer, currentParsed?.layer ?? '', 'No layer');
   const footwear = pickField(editedParsed.footwear, currentParsed?.footwear ?? '', 'Clean leather loafer');
   const accessories = pickField(editedParsed.accessories, currentParsed?.accessories ?? '', 'Minimal watch or belt');
+  const garmentsChanged = !!currentParsed && (
+    top !== currentParsed.top || bottom !== currentParsed.bottom || layer !== currentParsed.layer ||
+    footwear !== currentParsed.footwear || accessories !== currentParsed.accessories
+  );
+  const editedRationale = garmentsChanged && editedParsed.whyItWorks === currentParsed?.whyItWorks
+    ? '' : editedParsed.whyItWorks;
   const whyItWorks = pickField(
-    editedParsed.whyItWorks,
-    currentParsed?.whyItWorks ?? '',
+    editedRationale,
+    '', // Never reuse rationale written for different garments.
     fallbackRationale(input, editedParsed, 'whyItWorks'),
   );
 
@@ -95,26 +101,22 @@ ACCESSORIES: ${accessories}
 OCCASION ANCHOR: ${whyItWorks}`);
 }
 
-function conciseSentence(value: string, maxWords: number): string {
+function conciseSentence(value: string): string {
   const cleaned = value.replace(/\s+/g, ' ').trim();
   const firstSentence = cleaned.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() ?? cleaned;
-  const words = firstSentence.split(/\s+/).filter(Boolean);
-  if (words.length <= maxWords) return firstSentence;
-  return `${words.slice(0, maxWords).join(' ').replace(/[,:;\-]+$/, '')}.`;
+  // The model is asked for brevity; cutting words can leave a misleading fragment.
+  return firstSentence;
 }
 
 function enforceConciseOutfitEditFields(block: string): string {
-  const limits: Array<[RegExp, number]> = [
-    [/OCCASION\s+ANCHOR/i, 18],
-  ];
-
-  return limits.reduce((text, [labelPattern, maxWords]) => {
+  const labels = [/OCCASION\s+ANCHOR/i];
+  return labels.reduce((text, labelPattern) => {
     const linePattern = new RegExp(
       `^([ \\t]*(?:[-\u2022][ \\t]*)?\\*{0,2}${labelPattern.source}\\*{0,2}[ \\t]*:[ \\t]*\\*{0,2})(.+)$`,
       'gim',
     );
     return text.replace(linePattern, (_match, prefix: string, value: string) =>
-      `${prefix}${conciseSentence(value.replace(/\*+$/g, ''), maxWords)}`
+      `${prefix}${conciseSentence(value.replace(/\*+$/g, ''))}`
     );
   }, block);
 }
@@ -232,18 +234,17 @@ export async function enrichManOutfitEdit(input: EnrichManOutfitEditInput): Prom
     return fallbackToDeterministicBlock(`AI returned ${parsedCandidate.context}; expected ${context}`);
   }
 
-  const explanatoryValues = [
-    parsedCandidate.fitNote,
-    parsedCandidate.colourLogic,
-    parsedCandidate.whyItWorks,
-    parsedCandidate.shoppingTranslation,
-    parsedCandidate.acceptableSubstitutes,
-    parsedCandidate.doNotBuy,
-  ];
+  // The current report contract has one explanatory field. Requiring retired
+  // fields rejected every valid AI rewrite and silently reused stale copy.
+  const explanatoryValues = [parsedCandidate.whyItWorks];
 
   if (explanatoryValues.some(needsEnrichment)) {
     return fallbackToDeterministicBlock('AI returned an outfit block with missing or placeholder stylist rationale');
   }
 
-  return candidateBlock;
+  // AI rewrites the explanation; the saved garment specification remains the
+  // stylist's edited input, including fields completed from the current block.
+  return completeEditedOutfitBlock(input, currentParsed, {
+    ...editedParsed, whyItWorks: parsedCandidate.whyItWorks,
+  }, context);
 }

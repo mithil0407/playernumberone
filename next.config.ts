@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     ],
   },
   compress: true,
+  poweredByHeader: false,
   outputFileTracingIncludes: {
     '/api/stylist-blueprint/**': [
       './stylistoutfitlibrary.md',

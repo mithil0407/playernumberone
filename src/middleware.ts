@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { isAdminAuthenticated } from '@/lib/adminAuth';
+import { isCrossOriginWorkspaceMutation, isStylistPrivatePath, isStylistWorkspacePage, WORKSPACE_SECURITY_HEADERS } from '@/lib/stylistWorkspaceSecurity';
 
 // Pages that belong to the India-only root funnel
 const INDIA_ONLY_PATHS = ['/', '/checkout', '/checkout-monthly', '/monthly', '/offer-2699', '/offer-2699/checkout'];
@@ -19,6 +20,32 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userAgent = request.headers.get('user-agent') ?? '';
   const isSearchBot = SEARCH_BOT_PATTERN.test(userAgent);
+
+  if (isStylistPrivatePath(pathname)) {
+    const privateResponse = (response: NextResponse) => {
+      for (const [key, value] of Object.entries(WORKSPACE_SECURITY_HEADERS)) response.headers.set(key, value);
+      return response;
+    };
+    if (pathname.startsWith('/api/') && isCrossOriginWorkspaceMutation(request.method, request.headers, request.url)) {
+      return privateResponse(NextResponse.json({ error: 'Please submit this request from your ICONIK workspace.' }, { status: 403 }));
+    }
+    if (isStylistWorkspacePage(pathname) && !pathname.startsWith('/stylist/admin/')
+      && !request.cookies.get('iconik_stylist_workspace')?.value && !isAdminAuthenticated(request)) {
+      const login = new URL('/stylist/login', request.url);
+      login.searchParams.set('redirectTo', pathname + request.nextUrl.search);
+      return privateResponse(NextResponse.redirect(login));
+    }
+    // Replace, never trust, an incoming path header. The layout uses this to
+    // preserve the exact client/report/filter after an expired-session login.
+    if (pathname.startsWith('/stylist/admin') && !pathname.startsWith('/stylist/admin/login') && !isAdminAuthenticated(request)) {
+      const login = new URL('/stylist/admin/login', request.url);
+      login.searchParams.set('redirectTo', pathname + request.nextUrl.search);
+      return privateResponse(NextResponse.redirect(login));
+    }
+    const headers = new Headers(request.headers);
+    headers.set('x-iconik-workspace-path', pathname + request.nextUrl.search);
+    return privateResponse(NextResponse.next({ request: { headers } }));
+  }
 
   // ── 1. Admin routes: simple cookie check ────────────────────────────────
   if (pathname.startsWith('/iconik-club/admin')) {
@@ -124,6 +151,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/api/stylist-workspace/:path*',
+    '/api/stylist-blueprint/:path*',
     '/globe/admin/:path*',
     '/((?!globe|api|_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|webp|avif|woff2?|ico)).*)',
   ],

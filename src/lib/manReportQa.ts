@@ -1,3 +1,4 @@
+import { requiresIndianCasual } from './manOutfitConsistency';
 import type { ClassificationResult, ReportData } from './manReportGenerator';
 import { inferOutfitContext, parseManOutfitsFromSection } from './manOutfitSection';
 import { getManOutfitPrimaryColourFamily, getManReportClimateProfile } from './manOutfitLibrary';
@@ -39,6 +40,7 @@ export interface ManOutfitPortfolioQuality {
 }
 
 export interface ManReportQaOptions {
+  indianCasualRequired?: boolean;
   enforceV2?: boolean;
   patternWaiver?: boolean;
   suitWaiver?: boolean;
@@ -175,6 +177,27 @@ function hasNoLayer(outfit: ParsedQaOutfit): boolean {
   return !outfit.fields.layer || /^\s*(none|no layer|n\/a)\s*$/i.test(outfit.fields.layer);
 }
 
+const GARMENT_FIELDS = ['top', 'layer', 'bottom', 'footwear', 'accessory'] as const;
+const NEGATION_BEFORE_MATCH = /\b(?:no|not|never|avoid|avoids|avoiding|without|instead\s+of|rather\s+than)\b[^.;—]{0,20}$/i;
+
+// Garment rules apply to garment lines only. The rationale often echoes the
+// classification ("architectural structure") or climate advice ("no suede"),
+// and matching those words made Section 4 repairs unable to converge.
+function findGarmentTerm(outfit: ParsedQaOutfit, pattern: RegExp): { field: string; term: string } | null {
+  const global = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`);
+  for (const field of GARMENT_FIELDS) {
+    const text = outfit.fields[field] ?? '';
+    for (const match of text.matchAll(global)) {
+      if (!NEGATION_BEFORE_MATCH.test(text.slice(0, match.index))) return { field, term: match[0] };
+    }
+  }
+  return null;
+}
+
+function describeHit(hit: { field: string; term: string }): string {
+  return ` (${hit.field.toUpperCase()}: "${hit.term}")`;
+}
+
 function countVisibleElevationMoves(outfit: ParsedQaOutfit): number {
   const text = outfit.block.toLowerCase();
   return ELEVATION_MOVE_PATTERNS.reduce((count, pattern) => count + (pattern.test(text) ? 1 : 0), 0);
@@ -287,7 +310,7 @@ function addV2PortfolioIssues(outfits: ParsedQaOutfit[], climateMode: ReturnType
     acc[archetype] = (acc[archetype] ?? 0) + 1;
     return acc;
   }, {});
-  if (relaxedCounts.resort !== 2 || relaxedCounts['old-money'] !== 2 || relaxedCounts.urban !== 1) {
+  if (!options.indianCasualRequired && (relaxedCounts.resort !== 2 || relaxedCounts['old-money'] !== 2 || relaxedCounts.urban !== 1)) {
     issues.push(issue('relaxed_archetype_split', 'error', `Relaxed Casual must be 2 Resort/Riviera, 2 Daily Old-Money and 1 Urban/Travel; found ${relaxedCounts.resort ?? 0}/${relaxedCounts['old-money'] ?? 0}/${relaxedCounts.urban ?? 0}.`));
   }
   const relaxedPlainTees = relaxed.filter(outfit => /\b(tee|t-shirt)\b/i.test(outfit.fields.top) && !isPatterned(outfit)).length;
@@ -357,9 +380,16 @@ export function validateManReportSection4(
   classification: ClassificationResult,
   options: ManReportQaOptions = {},
 ): ManReportQaResult {
+  options = { ...options, indianCasualRequired: requiresIndianCasual(classification) };
   const outfits = parseManReportOutfitsForQa(s4Text);
   const climate = getManReportClimateProfile(classification);
   const issues: ManReportQaIssue[] = [];
+  if (options.indianCasualRequired && outfits.filter(outfit =>
+    /casual/i.test(outfit.context) && /\bkurta\b/i.test(outfit.fields.top)
+    && !/sherwani|wedding|ceremonial/i.test(outfit.fields.top)
+  ).length < 2) {
+    issues.push(issue('missing_indian_casual', 'error', 'The client requested Indian Casual: include at least two everyday kurta outfits in casual contexts.'));
+  }
   const contextCounts = EXPECTED_CONTEXTS.reduce<Record<string, number>>((acc, context) => {
     acc[context] = 0;
     return acc;
@@ -401,33 +431,40 @@ export function validateManReportSection4(
       issues.push(issue('missing_rationale', 'warning', `Outfit ${outfit.number} is missing a client-specific rationale.`));
     }
 
-    const fullText = outfit.block.toLowerCase();
-    if (/\bskinny\s+(jeans|trousers|pants)\b|\bspray-on\b/.test(fullText)) {
-      issues.push(issue('banned_skinny', 'error', `Outfit ${outfit.number} includes a banned skinny/spray-on cut.`));
+    const garmentText = GARMENT_FIELDS.map(field => outfit.fields[field] ?? '').join(' — ');
+    const skinny = findGarmentTerm(outfit, /\bskinny\s+(jeans|trousers|pants)\b|\bspray-on\b/i);
+    if (skinny) {
+      issues.push(issue('banned_skinny', 'error', `Outfit ${outfit.number} includes a banned skinny/spray-on cut${describeHit(skinny)}.`));
     }
 
-    if (/\bcropped\b|\bankle[-\s]?cut\b|\b7\/8\b/.test(fullText)) {
-      issues.push(issue('cropped_trouser', 'error', `Outfit ${outfit.number} includes cropped or ankle-cut trousers, which v6.1 bans.`));
+    const cropped = findGarmentTerm(outfit, /\bcropped\b|\bankle[-\s]?cut\b|\b7\/8\b/i);
+    if (cropped) {
+      issues.push(issue('cropped_trouser', 'error', `Outfit ${outfit.number} includes cropped or ankle-cut trousers, which v6.1 bans${describeHit(cropped)}.`));
     }
 
-    if (INVENTED_DETAIL_PATTERN.test(fullText)) {
-      issues.push(issue('garment_reality_invented_detail', 'error', `Outfit ${outfit.number} includes an invented or non-retail garment detail.`));
+    const invented = findGarmentTerm(outfit, INVENTED_DETAIL_PATTERN);
+    if (invented) {
+      issues.push(issue('garment_reality_invented_detail', 'error', `Outfit ${outfit.number} includes an invented or non-retail garment detail${describeHit(invented)}; remove that word from the garment line.`));
     }
 
-    if (MULTI_COLOUR_GARMENT_PATTERN.test(fullText) && !STANDARD_TONAL_VARSITY_PATTERN.test(fullText)) {
-      issues.push(issue('garment_reality_multi_colour', 'error', `Outfit ${outfit.number} includes a multi-colour or contrast-detail garment.`));
+    const multiColour = findGarmentTerm(outfit, MULTI_COLOUR_GARMENT_PATTERN);
+    if (multiColour && !STANDARD_TONAL_VARSITY_PATTERN.test(garmentText)) {
+      issues.push(issue('garment_reality_multi_colour', 'error', `Outfit ${outfit.number} includes a multi-colour or contrast-detail garment${describeHit(multiColour)}.`));
     }
 
-    if (SHINY_FABRIC_PATTERN.test(fullText)) {
-      issues.push(issue('shiny_fabric', 'error', `Outfit ${outfit.number} includes satin/silk/shiny fabric, which is banned.`));
+    const shiny = findGarmentTerm(outfit, SHINY_FABRIC_PATTERN);
+    if (shiny) {
+      issues.push(issue('shiny_fabric', 'error', `Outfit ${outfit.number} includes satin/silk/shiny fabric, which is banned${describeHit(shiny)}.`));
     }
 
-    if (BANNED_SHIRT_PATTERN.test(fullText)) {
-      issues.push(issue('banned_collar', 'error', `Outfit ${outfit.number} includes a band/mandarin collar, which is banned.`));
+    const bannedCollar = findGarmentTerm(outfit, BANNED_SHIRT_PATTERN);
+    if (bannedCollar) {
+      issues.push(issue('banned_collar', 'error', `Outfit ${outfit.number} includes a band/mandarin collar, which is banned${describeHit(bannedCollar)}.`));
     }
 
-    if (BANNED_SNEAKER_PATTERN.test(fullText)) {
-      issues.push(issue('banned_sneaker_colour', 'error', `Outfit ${outfit.number} includes a banned sneaker colour or logo sneaker.`));
+    const bannedSneaker = findGarmentTerm(outfit, BANNED_SNEAKER_PATTERN);
+    if (bannedSneaker) {
+      issues.push(issue('banned_sneaker_colour', 'error', `Outfit ${outfit.number} includes a banned sneaker colour or logo sneaker${describeHit(bannedSneaker)}.`));
     }
 
     if (countStatementFabricsOutsideFootwear(outfit) > 1) {
@@ -438,16 +475,20 @@ export function validateManReportSection4(
       issues.push(issue('basic_combo_ban', 'error', `Outfit ${outfit.number} matches a v6.1 Basic Combo Ban pattern without at least two visible elevation moves.`));
     }
 
-    if (/relaxed\s+casual/i.test(outfit.context) && /\bblazer\b/.test(fullText)) {
+    if (/relaxed\s+casual/i.test(outfit.context) && findGarmentTerm(outfit, /\bblazer\b/i)) {
       issues.push(issue('relaxed_blazer', 'error', `Outfit ${outfit.number} uses a blazer in Relaxed Casual.`));
     }
 
-    if (climate.mode === 'hot' && (HOT_CLIMATE_RESTRICTED_PATTERN.test(fullText) || LEATHER_OUTERWEAR_PATTERN.test(fullText))) {
-      issues.push(issue('hot_climate_fabric', 'error', `Outfit ${outfit.number} includes a hot-climate restricted garment or fabric.`));
+    const climateHit = climate.mode === 'hot' || climate.mode === 'monsoon'
+      ? findGarmentTerm(outfit, climate.mode === 'hot' ? HOT_CLIMATE_RESTRICTED_PATTERN : MONSOON_RESTRICTED_PATTERN)
+        ?? findGarmentTerm(outfit, LEATHER_OUTERWEAR_PATTERN)
+      : null;
+    if (climate.mode === 'hot' && climateHit) {
+      issues.push(issue('hot_climate_fabric', 'error', `Outfit ${outfit.number} includes a hot-climate restricted garment or fabric${describeHit(climateHit)}.`));
     }
 
-    if (climate.mode === 'monsoon' && (MONSOON_RESTRICTED_PATTERN.test(fullText) || LEATHER_OUTERWEAR_PATTERN.test(fullText))) {
-      issues.push(issue('monsoon_weather_unsuitable', 'error', `Outfit ${outfit.number} includes suede, heavy winter fabric, or another monsoon-unsuitable material.`));
+    if (climate.mode === 'monsoon' && climateHit) {
+      issues.push(issue('monsoon_weather_unsuitable', 'error', `Outfit ${outfit.number} includes suede, heavy winter fabric, or another monsoon-unsuitable material${describeHit(climateHit)}; keep the garment category and swap to a rain-practical material.`));
     }
   }
 
@@ -475,7 +516,7 @@ export function validateManReportSection4(
         issues.push(issue(
           'consecutive_layer_colour',
           'error',
-          `Outfits ${previous.number} and ${current.number} repeat the ${currentLayerFamily.replace(/^patterned-/, '')} visible layer colour family; change one for visual variety.`,
+          `Outfits ${previous.number} and ${current.number} repeat the ${currentLayerFamily.replace(/^patterned-/, '')} visible layer colour family ("${previous.fields.layer}" / "${current.fields.layer}"); recolour the second look's layer into a different colour family.`,
         ));
       }
     }

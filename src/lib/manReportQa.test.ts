@@ -69,4 +69,16 @@ export function runManReportQaAssertions() {
     accessory: 'Burgundy silk knit tie — dark brown leather belt',
   }), classification);
   invariant(silkTie.issues.some(item => item.code === 'shiny_fabric'), 'still rejects real silk garments');
+
+  const echoedRationale = validateManReportSection4(`${block(1, 'OFFICE / FORMAL', {
+    bottom: 'Ink navy high-rise pleated tailored trousers — full length, never cropped',
+  })} The architectural shoulder line suits his brief, and it avoids suede for the rain.`, classification);
+  invariant(!echoedRationale.issues.some(item => ['garment_reality_invented_detail', 'cropped_trouser', 'monsoon_weather_unsuitable'].includes(item.code)),
+    'ignores banned words that appear only in the rationale or as negations');
+
+  const inventedLayer = validateManReportSection4(block(1, 'OFFICE / FORMAL', {
+    layer: 'Charcoal linen-cotton blazer — architectural shoulders — worn open',
+  }), classification);
+  invariant(inventedLayer.issues.some(item => item.code === 'garment_reality_invented_detail' && item.message.includes('LAYER: "architectural"')),
+    'still rejects banned descriptors on garment lines and names the term for repair');
 }

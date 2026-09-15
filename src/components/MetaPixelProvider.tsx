@@ -4,6 +4,7 @@ import { Suspense, useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { captureAttribution } from '@/lib/attribution';
 import { trackPageViewRoute } from '@/lib/metaPixel';
+import { isMetaPageViewExcluded } from '@/lib/metaPageView';
 
 interface MetaPixelProviderProps {
   children: React.ReactNode;
@@ -21,7 +22,12 @@ function MetaPageViewTracker() {
     // campaign data first read at the checkout URL — where the UTMs and fbclid
     // no longer exist. Running here also refreshes _fbp/_fbc once the Meta SDK
     // has written them.
-    captureAttribution();
+    if (!isMetaPageViewExcluded(pathname)) {
+      // A visitor may arrive on a private page and later navigate to checkout.
+      // Start the public bootstrap at that boundary, before its first event.
+      (window as Window & { __iconikStartPublicTracking?: () => void }).__iconikStartPublicTracking?.();
+      captureAttribution();
+    }
     trackPageViewRoute(pathname, search);
   }, [pathname, search]);
 

@@ -23,6 +23,8 @@ export default function StylistWorkspaceShell({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const base = `/stylist/${stylist.slug}`;
   if (pathname.startsWith(`${base}/reports/`)) return <>{children}</>;
   const nav = [
@@ -35,9 +37,17 @@ export default function StylistWorkspaceShell({
 
   const logout = async () => {
     if (adminPreview) { router.push('/stylist/admin/workspace'); return; }
-    await fetch('/api/stylist-workspace/auth/logout', { method: 'POST' });
-    router.replace('/stylist/login');
-    router.refresh();
+    if (signingOut) return;
+    setSigningOut(true); setLogoutError('');
+    try {
+      const response = await fetch('/api/stylist-workspace/auth/logout', { method: 'POST', signal: AbortSignal.timeout(15000) });
+      if (!response.ok) throw new Error('Could not sign out. Please try again.');
+      // Discard private client state when ending the session.
+      window.location.replace('/stylist/login');
+    } catch {
+      setLogoutError('Could not sign out. Check your connection and try again.');
+      setSigningOut(false);
+    }
   };
 
   return (
@@ -71,7 +81,13 @@ export default function StylistWorkspaceShell({
             const currentBucket = searchParams.get('bucket') ?? 'reports';
             const active = pathname === href.split('?')[0] && (hrefBucket ? currentBucket === hrefBucket : !['needs_review', 'needs_attention'].includes(currentBucket));
             return (
-              <Link key={href} href={href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body transition"
+              <Link key={href} href={href} prefetch={false} onClick={event => {
+                setOpen(false);
+                if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0 && pathname === href.split('?')[0]) {
+                  event.preventDefault();
+                  window.history.pushState(null, '', href);
+                }
+              }} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body transition"
                 style={{ background: active ? COLORS.ink : 'transparent', color: active ? COLORS.bg : COLORS.muted }}>
                 <Icon size={16} /> {label}
               </Link>
@@ -79,8 +95,9 @@ export default function StylistWorkspaceShell({
           })}
         </nav>
         <div className="p-4" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-          <button onClick={logout} className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body" style={{ color: COLORS.muted }}>
-            <LogOut size={15} /> {adminPreview ? 'Back to team overview' : 'Sign out'}
+          {logoutError && <p role="alert" className="px-4 pb-2 text-xs text-red-800">{logoutError}</p>}
+          <button disabled={signingOut} onClick={logout} className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm luxury-body disabled:opacity-50" style={{ color: COLORS.muted }}>
+            <LogOut size={15} /> {adminPreview ? 'Back to team overview' : signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </div>
       </aside>

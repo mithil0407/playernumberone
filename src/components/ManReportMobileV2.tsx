@@ -136,7 +136,6 @@ interface ParsedCombo {
   title: string;
   summary: string;
   logic: string;
-  sourceOutfit: number | null;
 }
 
 function parseCombos(data: ReportData): ParsedCombo[] {
@@ -152,13 +151,11 @@ function parseCombos(data: ReportData): ParsedCombo[] {
     let m: RegExpExecArray | null;
     while ((m = re.exec(chunk)) !== null) {
       const body = m[2];
-      const sm = body.match(/Source:\s*Derived from Outfit\s*#?(\d+)/i);
       out.push({
         group,
         title: clean(m[1]),
         summary: fieldFrom(body, 'Outfit summary'),
         logic: fieldFrom(body, 'Logic'),
-        sourceOutfit: sm ? Number(sm[1]) : null,
       });
     }
   }
@@ -896,17 +893,14 @@ export default function ManReportMobileV2({ shareToken, data, imageUrls, stylist
             </div>
           ) : null}
 
-          {/* Combinations — written in every report, rendered in none of them */}
+          {/* Derived combinations can change garments, so a source outfit photo
+              is not an illustration of the combination. Keep these text-only. */}
           {combos.length ? (
             <div className="combos">
               <span className="eyebrow">Repeatable combinations</span>
               <h3 className="ch-sub">Formulas, not costumes.</h3>
               {combos.map(cb => (
                 <div className="combo" key={cb.title}>
-                  {cb.sourceOutfit && outfitImage(cb.sourceOutfit) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={outfitImage(cb.sourceOutfit) as string} alt={cb.title} loading="lazy" decoding="async" />
-                  ) : <span className="combo-blank" />}
                   <div className="combo-txt">
                     <span className="combo-group">{cb.group}</span>
                     <b>{cb.title}</b>
@@ -1360,11 +1354,9 @@ function Styles() {
 
       /* combinations */
       .combos { margin-top:42px; border-top:1px solid var(--line); padding-top:30px; }
-      .combo { display:grid; grid-template-columns:92px 1fr; gap:16px; padding:18px 0;
+      .combo { padding:18px 0;
         border-top:1px solid var(--line); }
       .combo:first-of-type { border-top:none; }
-      .combo img, .combo-blank { width:92px; aspect-ratio:2/3; border-radius:1px; object-fit:cover;
-        background:linear-gradient(160deg,var(--ink-2),var(--ink-3)); }
       .combo-group { display:block; font-size:8.5px; font-weight:700; letter-spacing:.2em;
         text-transform:uppercase; color:var(--brass); margin-bottom:6px; }
       .combo-txt b { display:block; font-family:var(--font-fraunces), Fraunces, Georgia, serif;

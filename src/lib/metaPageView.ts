@@ -16,7 +16,7 @@ export type MetaPageViewResult =
   | { status: 'tracked'; routeKey: string; eventId: string }
   | { status: 'duplicate' | 'excluded' | 'unavailable'; routeKey: string };
 
-const INTERNAL_PAGE_VIEW_PATTERNS = [
+export const INTERNAL_PAGE_VIEW_PATTERNS = [
   /^\/dashboard(?:\/|$)/,
   /^\/(?:globe|man|stylist)\/admin(?:\/|$)/,
   /^\/iconik-club\/(?:admin|client)(?:\/|$)/,

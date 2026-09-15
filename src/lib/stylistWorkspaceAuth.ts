@@ -61,23 +61,35 @@ export async function getWorkspaceStylistBySlug(slug: string) {
 
 export async function isWorkspaceLoginLocked(stylistId: string, ip: string) {
   const since = new Date(Date.now() - LOGIN_WINDOW_MS).toISOString();
-  const { count } = await supabaseAdmin
+  const [perIp, perAccount] = await Promise.all([supabaseAdmin
     .from('stylist_login_attempts')
     .select('id', { count: 'exact', head: true })
     .eq('stylist_id', stylistId)
     .eq('ip_hash', fingerprint(ip))
     .eq('succeeded', false)
-    .gte('created_at', since);
+    .gte('created_at', since),
+    supabaseAdmin.from('stylist_login_attempts')
+      .select('id', { count: 'exact', head: true })
+      .eq('stylist_id', stylistId).eq('succeeded', false).gte('created_at', since),
+  ]);
 
-  return (count ?? 0) >= MAX_FAILED_ATTEMPTS;
+  if (perIp.error || perAccount.error) throw new Error('Login protection is temporarily unavailable');
+  return (perIp.count ?? 0) >= MAX_FAILED_ATTEMPTS || (perAccount.count ?? 0) >= 25;
 }
 
 export async function recordWorkspaceLoginAttempt(stylistId: string, ip: string, succeeded: boolean) {
-  await supabaseAdmin.from('stylist_login_attempts').insert({
+  const { data, error } = await supabaseAdmin.from('stylist_login_attempts').insert({
     stylist_id: stylistId,
     ip_hash: fingerprint(ip),
     succeeded,
-  });
+  }).select('id').single();
+  if (error || !data) throw new Error('Could not record login attempt');
+  return data.id as number;
+}
+
+export async function markWorkspaceLoginSucceeded(attemptId: number) {
+  const { error } = await supabaseAdmin.from('stylist_login_attempts').update({ succeeded: true }).eq('id', attemptId);
+  if (error) throw new Error('Could not complete login verification');
 }
 
 export async function verifyWorkspacePin(stylistId: string, pin: string) {
@@ -123,13 +135,15 @@ export function setWorkspaceSessionCookie(response: NextResponse, token: string)
 }
 
 export function clearWorkspaceSessionCookie(response: NextResponse) {
-  response.cookies.set(STYLIST_WORKSPACE_COOKIE, '', { maxAge: 0, path: '/' });
+  response.cookies.set(STYLIST_WORKSPACE_COOKIE, '', {
+    maxAge: 0, path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax',
+  });
 }
 
 export const getStylistWorkspaceIdentity = cache(async (): Promise<StylistWorkspaceIdentity | null> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(STYLIST_WORKSPACE_COOKIE)?.value;
-  if (!token) return null;
+  if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
 
   const { data: session, error } = await supabaseAdmin
     .from('stylist_sessions')
@@ -139,8 +153,10 @@ export const getStylistWorkspaceIdentity = cache(async (): Promise<StylistWorksp
 
   if (error || !session || session.revoked_at) return null;
   const now = Date.now();
-  if (new Date(session.expires_at).getTime() <= now) return null;
-  if (new Date(session.last_seen_at).getTime() < now - SESSION_IDLE_MS) {
+  const expires = Date.parse(session.expires_at);
+  const lastSeen = Date.parse(session.last_seen_at);
+  if (!Number.isFinite(expires) || !Number.isFinite(lastSeen) || expires <= now) return null;
+  if (lastSeen < now - SESSION_IDLE_MS) {
     await supabaseAdmin
       .from('stylist_sessions')
       .update({ revoked_at: new Date().toISOString() })
@@ -169,10 +185,11 @@ export const getStylistWorkspaceIdentity = cache(async (): Promise<StylistWorksp
 export async function revokeCurrentWorkspaceSession() {
   const identity = await getStylistWorkspaceIdentity();
   if (!identity) return;
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('stylist_sessions')
     .update({ revoked_at: new Date().toISOString() })
     .eq('id', identity.sessionId);
+  if (error) throw new Error('Could not sign out. Please retry.');
 }
 
 export async function isAdminCookieAuthenticated() {

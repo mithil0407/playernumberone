@@ -1,3 +1,4 @@
+import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
@@ -42,7 +43,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('man_reports')
-    .select('report_data, share_token')
+    .select('report_data, image_urls, section_approvals, share_token')
     .eq('id', reportId)
     .single();
 
@@ -88,11 +89,13 @@ export async function POST(
     },
   });
 
-  // Persist text + QA — image_urls is deliberately NOT touched so the existing image remains.
+  const imagePaths = invalidateChangedOutfitImages(report.image_urls, currentS4, newS4);
   const { error: saveErr } = await supabaseAdmin
     .from('man_reports')
     .update({
       report_data: nextReportData,
+      image_urls: imagePaths,
+      section_approvals: { ...report.section_approvals, s4: false },
       error_message: null,
       updated_at: new Date().toISOString(),
     })
@@ -109,6 +112,7 @@ export async function POST(
   await markStaleShoppingSlots(reportId, newS4);
 
   return NextResponse.json({
+    clearedOutfitNumbers: imagePaths.outfitCards.flatMap((path, index) => path ? [] : [index + 1]),
     updatedS4Outfits: newS4,
     enrichedOutfitText,
     qa: nextReportData.qa,

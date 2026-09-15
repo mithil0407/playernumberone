@@ -3254,7 +3254,12 @@ function OutfitsSection({
         setEditError('Could not save outfit text. Please try again.');
         return;
       }
-      setSectionNotice(`Outfit ${editingTarget.number} text saved. The existing image was not changed.`);
+      setImageOverrides(prev => {
+        const next = { ...prev };
+        delete next[editingTarget.identityKey];
+        return next;
+      });
+      setSectionNotice(`Outfit ${editingTarget.number} text saved. Changed garment photos must be regenerated before sending.`);
       cancelEdit(true);
     } finally {
       setSavingText(false);
@@ -3959,7 +3964,7 @@ function OutfitsSection({
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
                   {onSaveOutfitText
-                    ? 'Save text only keeps the current image intact. Save + regenerate replaces it.'
+                    ? 'Save text clears the photo if garments change. Save + regenerate creates the matching photo.'
                     : 'Saves this outfit text first, then regenerates only this outfit image.'
                   }
                 </p>
@@ -4393,7 +4398,7 @@ function ComboGridSection({
 
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
                 <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  Save text only keeps the current image intact. Save + regenerate replaces only this grid image.
+                  Save text clears the edited grid image. Save + regenerate creates a matching grid image.
                 </p>
                 <div className="flex items-center justify-end gap-2">
                   <button

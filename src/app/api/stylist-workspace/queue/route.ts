@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     const visible = queryWorkspaceItems(items, { view: params.get('bucket') || 'recent', search: params.get('search') || '', due: params.get('due') || '' });
     return NextResponse.json({
       stylist: { name: identity.name, slug: identity.slug },
+      // Summaries only: no photo URLs, storage paths, notes or report bodies.
+      ...(params.get('snapshot') === '1' ? { snapshotItems: items } : {}),
       items: visible.slice((page - 1) * limit, page * limit), counts: workspaceCounts(items), total: visible.length, page, limit,
     }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
