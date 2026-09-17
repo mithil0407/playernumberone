@@ -247,8 +247,8 @@ function ImageSlotFrame({
 
   const uploadDisabledReason = uploadingImageSlot
     ? isUploading ? 'Saving this photo…' : 'Wait for the other photo to finish saving.'
-    : disabled ? 'Wait for image generation to finish.' : '';
-  const regenerateDisabledReason = isRegenerating ? 'Creating a new image…' : disabled ? 'Wait for image generation to finish.' : '';
+    : disabled ? 'Available once the report has finished generating.' : '';
+  const regenerateDisabledReason = isRegenerating ? 'Creating a new image…' : disabled ? 'Available once the report has finished generating.' : '';
 
   const openCropper = (source: ImageCropSource) => {
     if (!onImageUpload || uploadDisabledReason) return;

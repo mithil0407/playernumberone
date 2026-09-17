@@ -5,6 +5,7 @@ import { flushSync } from 'react-dom';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+  AlertTriangle,
   ArrowLeft,
   Check,
   CheckCheck,
@@ -52,6 +53,13 @@ import {
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { checkStudioReportQuality, moveStudioPage } from '@/lib/stylistReportStudio';
+
+interface GenerationStatus {
+  state: 'working' | 'waiting' | 'paused' | 'failed' | 'busy' | 'complete';
+  label: string | null;
+  progress: { done: number; total: number };
+  message: string | null;
+}
 
 interface Report {
   id: string;
@@ -176,8 +184,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [regeneratingPalette, setRegeneratingPalette] = useState(false);
   const [imageGroup, setImageGroup] = useState<StylistBlueprintImageGroup>('all');
   const [sending, setSending] = useState(false);
-  const [unlockingProgress, setUnlockingProgress] = useState(false);
   const [resumingText, setResumingText] = useState(false);
+  const [generation, setGeneration] = useState<GenerationStatus | null>(null);
+  const [resumeNote, setResumeNote] = useState('');
   const [copied, setCopied] = useState(false);
   const [deliveryPrepared, setDeliveryPrepared] = useState<{ reportUrl: string; whatsappUrl: string; clientName?: string | null } | null>(null);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
@@ -221,8 +230,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setLoading(false);
     const statusRes = await statusPromise;
     if (statusRes?.ok) {
-      const statusData = await readJsonBody<{ imageCounts?: Record<string, { done: number; total: number }> }>(statusRes);
+      const statusData = await readJsonBody<{ imageCounts?: Record<string, { done: number; total: number }>; generation?: GenerationStatus }>(statusRes);
       setImageCounts(statusData?.imageCounts ?? null);
+      setGeneration(statusData?.generation ?? null);
     }
     setLoading(false);
   }, [reportId]);
@@ -269,6 +279,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         if (!res.ok) return;
         const status = await res.json();
         setImageCounts(status.imageCounts ?? null);
+        if (status.generation) setGeneration(status.generation);
         setReport(prev => prev ? { ...prev, status: status.status, progress_stage: status.progressStage, error_message: status.errorMessage } : prev);
         const finished = status.status !== 'generating' && !status.progressStage;
         if (finished && !unsavedEditsRef.current) await load(true);
@@ -584,7 +595,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
   const uploadManualImage = async (slotKey: StylistBlueprintImageSlotKey, file: File | null) => {
     if (!file) return false;
-    if (uploadingSlot || saving || report?.status === 'generating' || report?.progress_stage) return false;
+    if (report?.status === 'generating' || report?.progress_stage) {
+      setError('Images can be uploaded once the report has finished generating.');
+      return false;
+    }
+    if (uploadingSlot || saving) {
+      setError(uploadingSlot ? 'Wait for the current image to finish uploading.' : 'Wait for your edits to finish saving.');
+      return false;
+    }
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size === 0 || file.size > 8 * 1024 * 1024) {
       setError('Choose a JPG, PNG or WebP image smaller than 8 MB.');
       return false;
@@ -708,9 +726,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     if (saveConflict) return 'This report changed. Reload before continuing.';
     if (uploadingSlot) return 'Uploading a report image.';
     if (saving) return 'Saving edits first.';
-    if (unlockingProgress) return 'Unlocking stuck job.';
-    if (resumingText) return 'Resuming text generation.';
-    if (report?.progress_stage) return `Report generation in progress: ${stageLabel(report.progress_stage)}.`;
+    if (resumingText) return 'Continuing report generation.';
+    if (report?.progress_stage || report?.status === 'generating') return 'Wait for the report to finish generating.';
     if (generatingImages) return 'Image generation is running.';
     if (refreshingSilhouetteProofs) return 'Refreshing silhouette proof images.';
     if (rebuildingReport) return 'Report rebuild is running.';
@@ -944,62 +961,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     }
   };
 
-  const unlockProgressStage = async () => {
-    if (!report?.progress_stage || unlockingProgress) return;
-    const confirmed = window.confirm(
-      `Clear the stuck job "${stageLabel(report.progress_stage)}" and unlock this report? Only use this if the job is no longer running.`,
-    );
-    if (!confirmed) return;
-    setUnlockingProgress(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clear_progress_stage: true,
-          error_message: 'Admin cleared a stuck generation job. Retry the action if needed.',
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to unlock report');
-      setReport(prev => prev ? {
-        ...prev,
-        progress_stage: null,
-        error_message: 'Admin cleared a stuck generation job. Retry the action if needed.',
-        updated_at: new Date().toISOString(),
-      } : prev);
-      await load(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to unlock report.');
-    } finally {
-      setUnlockingProgress(false);
-    }
-  };
-
-  const resumeTextGeneration = async () => {
+  const continueGeneration = async () => {
     if (!report || resumingText) return;
     setResumingText(true);
     setError('');
+    setResumeNote('');
     try {
-      const res = await fetch(
-        isWorkspace && report.status === 'error'
-          ? `/api/stylist-workspace/reports/${reportId}/retry`
-          : `/api/stylist-blueprint/${reportId}/resume-text`,
-        { method: 'POST' },
-      );
-      const data = await readJsonBody<{ error?: string; progressStage?: string; status?: string }>(res);
-      if (!res.ok) throw new Error(responseErrorMessage(data, 'Failed to resume text generation'));
-      setReport(prev => prev ? {
-        ...prev,
-        status: data?.status === 'already_running' ? prev.status : 'generating',
-        progress_stage: data?.progressStage ?? prev.progress_stage ?? 'classifying',
-        error_message: null,
-        updated_at: new Date().toISOString(),
-      } : prev);
+      const res = await fetch(`/api/stylist-blueprint/${reportId}/resume-text`, { method: 'POST' });
+      const data = await readJsonBody<{ error?: string; state?: string; message?: string; progressStage?: string }>(res);
+      if (!res.ok) throw new Error(responseErrorMessage(data, 'Could not continue generating the report'));
+      setResumeNote(data?.message ?? '');
+      if (data?.state === 'started') {
+        setReport(prev => prev ? { ...prev, status: 'generating', progress_stage: data.progressStage ?? prev.progress_stage, error_message: null } : prev);
+        setGeneration(prev => prev ? { ...prev, state: 'waiting', message: null } : prev);
+      }
       await load(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resume text generation.');
+      setError(err instanceof Error ? err.message : 'Could not continue generating the report.');
       await load(true).catch(() => {});
     } finally {
       setResumingText(false);
@@ -1071,6 +1049,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       if (statusRes.ok) {
         const status = await statusRes.json();
         setImageCounts(status.imageCounts ?? null);
+        if (status.generation) setGeneration(status.generation);
         setReport(prev => prev ? {
           ...prev,
           status: status.status,
@@ -1492,6 +1471,23 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setActivePageNumber(pageNumber);
     setViewMode('page');
   };
+  // One place for text generation status and its one recovery action.
+  const generationState = generation?.state ?? (report.status === 'generating' || report.progress_stage ? 'waiting' : report.status === 'error' ? 'failed' : 'complete');
+  const showGenerationPanel = generationState !== 'complete';
+  const generationStopped = generationState === 'paused' || generationState === 'failed';
+  const canContinueGeneration = generationState !== 'working' && generationState !== 'busy';
+  const generationProgress = generationState === 'busy' ? null : generation?.progress ?? null;
+  const generationLabel = generation?.label ?? 'Writing the report';
+  const generationTitle = generationState === 'working' ? generationLabel
+    : generationState === 'waiting' ? `Up next: ${generationLabel.charAt(0).toLowerCase()}${generationLabel.slice(1)}`
+      : generationState === 'busy' ? 'Finishing an image or outfit change'
+        : generationState === 'failed' ? 'Report generation stopped'
+          : 'Report generation paused';
+  const generationDetail = generation?.message
+    || (generationState === 'working' ? 'Pages save as they are written, so you can leave this page and come back.'
+      : generationState === 'waiting' ? 'Starting shortly. Pages already written are kept.'
+        : generationState === 'busy' ? 'This usually finishes within a few minutes.'
+          : report.error_message || 'Continue generating to pick up from the last saved page.');
   const saveDisabledReason = saving
     ? 'Saving edits.'
     : !hasUnsavedEdits
@@ -1613,7 +1609,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 {imageCounts && <Pill tone={requiredImagesDone ? 'success' : 'gold'}>Images {Object.values(imageCounts).reduce((sum, group) => sum + group.done, 0)}/{Object.values(imageCounts).reduce((sum, group) => sum + group.total, 0)}</Pill>}
               </div>
               {isWorkspace && versioned && viewMode === 'page' && <p className="luxury-body text-xs mt-1.5" style={{ color: '#655E57' }}>{activePageIsOutfit ? 'Edit the pieces and wording, upload a matching image, then approve.' : 'Check the advice against the client’s inputs. Click any text to edit it.'}</p>}
-              {report.error_message && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
+              {report.error_message && !showGenerationPanel && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
               {isLegacyReport && (
                 <p className="luxury-body text-sm mt-2" style={{ color: S.muted }}>
@@ -1662,30 +1658,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 </div>
               )}
 
-              {(!isWorkspace || report.progress_stage || report.status === 'error') && <div className="admin-toolbar-group">
+              {!isWorkspace && <div className="admin-toolbar-group">
                 <span className="admin-toolbar-label">Report</span>
-                {(report.progress_stage || report.status === 'error') && (
-                  <ActionButton
-                    onClick={resumeTextGeneration}
-                    disabled={resumingText}
-                    title={isWorkspace && report.status === 'error' ? 'Retry the failed durable report job from its completed checkpoints.' : 'Resume text generation in this report and skip pages that already exist.'}
-                    tone="primary"
-                  >
-                    {resumingText ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    {resumingText ? 'Resuming...' : isWorkspace && report.status === 'error' ? 'Retry Generation' : 'Resume Text'}
-                  </ActionButton>
-                )}
-                {report.progress_stage && (
-                  <ActionButton
-                    onClick={unlockProgressStage}
-                    disabled={unlockingProgress || resumingText}
-                    title={`Clear stuck stage: ${stageLabel(report.progress_stage)}.`}
-                    tone="danger"
-                  >
-                    {unlockingProgress ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    {unlockingProgress ? 'Unlocking...' : 'Unlock Stuck Job'}
-                  </ActionButton>
-                )}
                 {!isWorkspace && <ActionButton
                   onClick={rebuildReport}
                   disabled={Boolean(rebuildDisabledReason)}
@@ -1867,6 +1841,35 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             </div>
           </div>
         </header>
+
+        {showGenerationPanel && (
+          <section aria-live="polite" className="mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 luxury-body" style={{ background: generationStopped ? '#FBF1EE' : S.panel, borderColor: generationStopped ? 'rgba(154,64,57,0.25)' : S.border }}>
+            <div className="flex items-start gap-3 min-w-0 flex-1 basis-[280px]">
+              {generationStopped
+                ? <AlertTriangle size={18} className="mt-0.5 shrink-0" style={{ color: '#9A4039' }} />
+                : <Loader2 size={18} className="mt-0.5 shrink-0 animate-spin" style={{ color: '#655E57' }} />}
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: S.ink }}>{generationTitle}</p>
+                <p className="text-xs mt-1 leading-5" style={{ color: generationStopped ? '#9A4039' : '#655E57' }}>{generationDetail}</p>
+                {resumeNote && <p className="text-xs mt-1" style={{ color: '#3F6A4C' }}>{resumeNote}</p>}
+              </div>
+            </div>
+            {generationProgress && generationProgress.total > 0 && (
+              <div className="w-full sm:w-44">
+                <p className="text-[11px] mb-1.5 tabular-nums" style={{ color: '#655E57' }}>Step {Math.min(generationProgress.done + 1, generationProgress.total)} of {generationProgress.total}</p>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(generationProgress.done / generationProgress.total) * 100}%`, background: '#426B4E' }} />
+                </div>
+              </div>
+            )}
+            {canContinueGeneration && (
+              <ActionButton onClick={continueGeneration} disabled={resumingText} tone={generationStopped ? 'primary' : 'neutral'} title="Picks up from the last saved page. Safe to press at any time.">
+                {resumingText ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                {resumingText ? 'Continuing…' : 'Continue generating'}
+              </ActionButton>
+            )}
+          </section>
+        )}
 
         {!report.report_data ? (
           <div className="p-10 luxury-body" style={{ color: S.muted }}>

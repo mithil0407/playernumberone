@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isStylistWorkerRequestAuthorized } from '@/lib/stylistWorkerAuth';
 import { runClaimedStylistWorkspaceJobs } from '@/lib/stylistWorkspaceJobs';
 
 export const maxDuration = 300;
 
-function authorized(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  return Boolean(secret && request.headers.get('authorization') === `Bearer ${secret}`);
-}
-
 export async function POST(request: NextRequest) {
-  if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isStylistWorkerRequestAuthorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const processed = await runClaimedStylistWorkspaceJobs(Number(process.env.STYLIST_WORKER_CONCURRENCY || 2));
   return NextResponse.json({ processed });
 }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { getStylistReportGenerationSnapshot, runClaimedStylistWorkspaceJobs } from '@/lib/stylistWorkspaceJobs';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
@@ -12,6 +13,9 @@ import {
 } from '@/lib/stylistBlueprintGenerator';
 
 const STALE_PROGRESS_MS = 6 * 60 * 1000;
+
+// A poll may hand a due job to the worker, which runs inside this request's lifetime.
+export const maxDuration = 300;
 
 function readReport(reportId: string) {
   return supabaseAdmin
@@ -112,7 +116,17 @@ export async function GET(
     await revalidateStylistBlueprintCache(reportId, data.share_token);
   }
 
+  const generation = await getStylistReportGenerationSnapshot({
+    id: data.id, status: data.status, progress_stage: progressStage, updated_at: updatedAt, error_message: data.error_message, report_data: data.report_data,
+  });
+  if (generation.kickWorker) {
+    after(async () => {
+      try { await runClaimedStylistWorkspaceJobs(1); } catch (error) { console.error('[stylist-blueprint] status poll dispatch failed', error); }
+    });
+  }
+
   return NextResponse.json({
+    generation: { state: generation.state, label: generation.label, progress: generation.progress, message: generation.message },
     reportId: data.id,
     status: data.status,
     progressStage,
