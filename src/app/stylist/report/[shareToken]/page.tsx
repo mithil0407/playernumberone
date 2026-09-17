@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import StylistBlueprintReport from '@/components/StylistBlueprintReport';
 import StylistBlueprintViewerChrome, { type BlueprintOutlineEntry } from '@/components/StylistBlueprintViewerChrome';
-import { getPublicStylistBlueprintByShareToken } from '@/lib/stylistBlueprintLoader';
+import StylistBlueprintPreviewBanner from '@/components/StylistBlueprintPreviewBanner';
+import { getPublicStylistBlueprintByShareToken, getStylistBlueprintClientPreviewByShareToken } from '@/lib/stylistBlueprintLoader';
+import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { isManualStylistBlueprintSubmission, isVersionedStylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
 import {
   getStylistBlueprintOutfitEndPage,
@@ -16,6 +18,21 @@ const GOLD = '#C9A96E';
 
 interface PageProps {
   params: Promise<{ shareToken: string }>;
+  searchParams: Promise<{ preview?: string | string[] }>;
+}
+
+/**
+ * `?preview=1` lets the report's own stylist (or an admin) see the client view
+ * before it is published. Anyone else gets exactly the public behaviour, so a
+ * forwarded preview link is no more revealing than the plain share link.
+ */
+async function loadReportForViewer(shareToken: string, wantsPreview: boolean) {
+  if (wantsPreview) {
+    const loaded = await getStylistBlueprintClientPreviewByShareToken(shareToken);
+    if (loaded && await canAccessBlueprintReport(loaded.report.id)) return { report: loaded.report, preview: { live: loaded.live } };
+  }
+  const report = await getPublicStylistBlueprintByShareToken(shareToken);
+  return report ? { report, preview: null } : null;
 }
 
 function formatStage(stage: string | null) {
@@ -82,11 +99,12 @@ function PublicReportPendingPage({
   );
 }
 
-export default async function StylistPublicReportPage({ params }: PageProps) {
-  const { shareToken } = await params;
-  const report = await getPublicStylistBlueprintByShareToken(shareToken);
+export default async function StylistPublicReportPage({ params, searchParams }: PageProps) {
+  const [{ shareToken }, { preview: previewParam }] = await Promise.all([params, searchParams]);
+  const loaded = await loadReportForViewer(shareToken, previewParam === '1');
 
-  if (!report) notFound();
+  if (!loaded) notFound();
+  const { report, preview } = loaded;
   if (!report.report_data) {
     return (
       <PublicReportPendingPage
@@ -173,6 +191,7 @@ export default async function StylistPublicReportPage({ params }: PageProps) {
         </div>
       </div>
       {outline.length > 0 && <StylistBlueprintViewerChrome outline={outline} clientName={clientName} />}
+      {preview && <StylistBlueprintPreviewBanner live={preview.live} />}
     </>
   );
 }
@@ -180,7 +199,7 @@ export default async function StylistPublicReportPage({ params }: PageProps) {
 export async function generateMetadata({ params }: PageProps) {
   const { shareToken } = await params;
   const report = await getPublicStylistBlueprintByShareToken(shareToken);
-  if (!report) return {};
+  if (!report) return { robots: { index: false, follow: false }, referrer: 'no-referrer' as const };
   if (!report.report_data) {
     return {
       title: 'Your ICONIK Blueprint is being prepared',

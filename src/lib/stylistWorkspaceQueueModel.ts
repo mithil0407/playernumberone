@@ -1,22 +1,43 @@
 import { consultationReadiness, type ConsultationReadiness } from './stylistConsultationReadiness.ts';
 
-export type WorkspaceView = 'recent' | 'all' | 'forms' | 'photos' | 'reports' | 'ready' | 'today' | 'needs_inputs' | 'generating' | 'needs_review' | 'ready_to_deliver' | 'delivered' | 'needs_attention';
+export type WorkspaceView = 'recent' | 'all' | 'forms' | 'photos' | 'reports' | 'ready' | 'today' | 'needs_inputs' | 'waiting' | 'stale' | 'generating' | 'needs_review' | 'ready_to_deliver' | 'delivered' | 'needs_attention';
 export const WORKSPACE_VIEWS: Array<{ key: WorkspaceView; label: string }> = [
-  { key: 'reports', label: 'All report stages' },
+  { key: 'reports', label: 'To do' },
   { key: 'recent', label: 'Recent consultations' }, { key: 'photos', label: 'Photos received' },
-  { key: 'forms', label: 'Forms filled' }, { key: 'ready', label: 'Ready to generate' },
+  { key: 'forms', label: 'Forms filled' }, { key: 'ready', label: 'Ready to start' },
   { key: 'all', label: 'All clients' }, { key: 'today', label: 'Due today' },
-  { key: 'needs_inputs', label: 'Awaiting inputs' }, { key: 'generating', label: 'Generating' },
-  { key: 'needs_review', label: 'Needs review' }, { key: 'ready_to_deliver', label: 'Ready to deliver' },
+  { key: 'needs_inputs', label: 'Waiting on client' }, { key: 'waiting', label: 'Waiting on client' },
+  { key: 'stale', label: 'Older than 30 days' }, { key: 'generating', label: 'Generating' },
+  { key: 'needs_review', label: 'In review' }, { key: 'ready_to_deliver', label: 'Ready to deliver' },
   { key: 'delivered', label: 'Delivered' }, { key: 'needs_attention', label: 'Needs attention' },
 ];
 
-export const WORKSPACE_CATEGORIES: Array<{ key: WorkspaceView; label: string; description: string; views: WorkspaceView[] }> = [
-  { key: 'all', label: 'All clients', description: 'Browse your clients, or narrow the list by consultations, forms, photos or due date.', views: ['all', 'recent', 'forms', 'photos', 'today'] },
-  { key: 'needs_inputs', label: 'Awaiting inputs', description: 'Clients who still need to provide photos or measurements before their report can begin.', views: ['needs_inputs'] },
-  { key: 'reports', label: 'Reports to do', description: 'Reports ready to start, being generated, awaiting review or delivery, and any needing attention.', views: ['reports', 'ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'] },
-  { key: 'delivered', label: 'Delivered', description: 'Completed reports, including those delivered outside the studio.', views: ['delivered'] },
+/** The four tabs a stylist sees. Every view key resolves to exactly one tab. */
+export const WORKSPACE_CATEGORIES: Array<{ key: WorkspaceView; label: string; views: WorkspaceView[] }> = [
+  { key: 'reports', label: 'To do', views: ['reports', 'ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'] },
+  { key: 'waiting', label: 'Waiting on client', views: ['waiting', 'stale', 'needs_inputs'] },
+  { key: 'delivered', label: 'Delivered', views: ['delivered'] },
+  { key: 'all', label: 'All clients', views: ['all', 'recent', 'forms', 'photos', 'today'] },
 ];
+
+/** One vocabulary for a client's stage, used on every card, row and tab. */
+export const WORKSPACE_STAGE_LABELS: Record<string, string> = {
+  ready: 'Ready to start', generating: 'Generating', needs_review: 'In review', ready_to_deliver: 'Ready to deliver',
+  needs_attention: 'Needs attention', needs_inputs: 'Waiting on client', delivered: 'Delivered',
+};
+
+/** Clients who have not sent inputs this long after their consultation are unlikely to be active work. */
+export const STALE_INPUT_DAYS = 30;
+
+export function isStaleWaiting(item: WorkspaceQueueItem, now = Date.now()) {
+  if (item.bucket !== 'needs_inputs') return false;
+  const since = Date.parse(item.consultationDate || item.createdAt);
+  return Number.isFinite(since) && since < now - STALE_INPUT_DAYS * 86_400_000;
+}
+
+export function isOverdue(item: WorkspaceQueueItem, now = Date.now()) {
+  return item.bucket !== 'delivered' && Boolean(item.reportDueAt && Date.parse(item.reportDueAt) < now);
+}
 
 export interface QueueReport {
   id: string; status: string; progress_stage: string | null; error_message: string | null;
@@ -139,12 +160,16 @@ export function matchesWorkspaceView(item: WorkspaceQueueItem, view: string, now
   if (view === 'forms') return item.formCompleted;
   if (view === 'photos') return item.photosSubmitted;
   if (view === 'reports') return ['ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'].includes(item.bucket);
+  if (view === 'waiting') return item.bucket === 'needs_inputs' && !isStaleWaiting(item, now);
+  if (view === 'stale') return isStaleWaiting(item, now);
   if (view !== 'today') return item.bucket === view;
   return item.bucket !== 'delivered' && Boolean(item.reportDueAt) && Date.parse(item.reportDueAt!) <= indiaDayEnd(now);
 }
 
 export function workspaceCounts(items: WorkspaceQueueItem[], now = Date.now()) {
-  return Object.fromEntries(WORKSPACE_VIEWS.map(({ key }) => [key, items.filter(item => matchesWorkspaceView(item, key, now)).length]));
+  const counts: Record<string, number> = Object.fromEntries(WORKSPACE_VIEWS.map(({ key }) => [key, items.filter(item => matchesWorkspaceView(item, key, now)).length]));
+  counts.overdue = items.filter(item => matchesWorkspaceView(item, 'reports', now) && isOverdue(item, now)).length;
+  return counts;
 }
 
 export function queryWorkspaceItems(items: WorkspaceQueueItem[], options: { view?: string; search?: string; stylistId?: string; due?: string }, now = Date.now()) {

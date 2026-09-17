@@ -8,6 +8,9 @@ import {
   ArrowLeft,
   Check,
   CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
   Copy,
   Eye,
   EyeOff,
@@ -17,6 +20,7 @@ import {
   Loader2,
   LogOut,
   Mail,
+  MoreHorizontal,
   MoveDown,
   MoveUp,
   PanelRight,
@@ -33,6 +37,7 @@ import {
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
 import StylistBlueprintReport from '@/components/StylistBlueprintReport';
 import StylistOutfitEditor from '@/components/StylistOutfitEditor';
+import { measureImageSlotAspect } from '@/components/ImageCropDialog';
 import type { LegacyStylistBlueprintReportData, StylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
 import {
   STYLIST_BLUEPRINT_LEGACY_VERSION,
@@ -151,6 +156,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [loading, setLoading] = useState(true);
   const [activePageNumber, setActivePageNumber] = useState(1);
   const [viewMode, setViewMode] = useState<'page' | 'full'>('page');
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const [draftData, setDraftData] = useState<StylistBlueprintReportData | null>(null);
   const [dirtyPages, setDirtyPages] = useState<Set<number>>(() => new Set());
   const [reportDataDirty, setReportDataDirty] = useState(false);
@@ -1457,6 +1463,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const imageDisabledReason = !versioned ? 'A v1 Blueprint report is required.' : currentBusyReason;
   const silhouetteProofDisabledReason = imageDisabledReason;
   const recipientEmail = report.stylist_intake_responses?.customer_email?.trim() ?? '';
+  // Consultation reports stay private until published; the public page 404s before then.
+  const clientLinkLive = Boolean(report.published_at) || report.stylist_intake_responses?.intake_source !== 'india_consultation';
   const clientDisplayName = report.stylist_intake_responses?.full_name
     || recipientEmail
     || report.stylist_intake_responses?.customer_phone
@@ -1474,6 +1482,16 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         : sending
           ? (isWorkspace ? 'Preparing WhatsApp delivery.' : 'Sending report email.')
           : '';
+  const activePageApproved = Boolean(report.section_approvals?.[`p${activePageNumber}`]);
+  const activePageIndex = pages.findIndex(page => page.page_number === activePageNumber);
+  const previousPage = activePageIndex > 0 ? pages[activePageIndex - 1] : null;
+  const followingPage = activePageIndex >= 0 ? pages[activePageIndex + 1] ?? null : null;
+  const needsApproval = (page: (typeof pages)[number]) => !report.section_approvals?.[`p${page.page_number}`] && !reviewData?.studio?.hidden_page_numbers?.includes(page.page_number);
+  const nextPageToReview = pages.slice(activePageIndex + 1).find(needsApproval) ?? pages.slice(0, Math.max(0, activePageIndex)).find(needsApproval) ?? null;
+  const goToPage = (pageNumber: number) => {
+    setActivePageNumber(pageNumber);
+    setViewMode('page');
+  };
   const saveDisabledReason = saving
     ? 'Saving edits.'
     : !hasUnsavedEdits
@@ -1511,19 +1529,25 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             <Pill tone={report.status === 'error' ? 'error' : report.status === 'sent' || report.status === 'delivered' ? 'success' : report.status === 'generating' ? 'gold' : 'slate'}>
               {report.progress_stage ? stageLabel(report.progress_stage) : report.status.replace(/_/g, ' ')}
             </Pill>
-            {versioned && <Pill tone={allApproved ? 'success' : 'muted'}>Approved {approvedCount}/{totalPageCount}</Pill>}
             {isLegacyReport && <Pill tone="gold">28-page legacy</Pill>}
           </div>
+          {versioned && <div className="mt-4">
+            <div className="flex items-baseline justify-between luxury-body text-xs"><span style={{ color: S.ink }}>{approvedCount} of {totalPageCount} pages approved</span><span style={{ color: '#655E57' }}>{totalPageCount ? Math.round((approvedCount / totalPageCount) * 100) : 0}%</span></div>
+            <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}><div className="h-full rounded-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#426B4E' }} /></div>
+          </div>}
         </div>
         {versioned && (
           <div className="flex-1 overflow-y-auto px-4 py-4">
-            <div className="iconik-micro mb-3" style={{ color: S.muted }}>Review Queue</div>
             <div className="space-y-4">
-              {['Opening', 'Diagnosis', 'Style Guide', 'Outfits', 'Closing'].map(group => (
+              {['Opening', 'Diagnosis', 'Style Guide', 'Outfits', 'Closing'].map(group => {
+                const groupPages = pages.filter(page => pageGroup(page.page_number, reviewData) === group);
+                if (!groupPages.length) return null;
+                const groupApproved = groupPages.filter(page => report.section_approvals?.[`p${page.page_number}`]).length;
+                return (
                 <div key={group}>
-                  <p className="iconik-mono mb-1.5" style={{ fontSize: '10px', color: S.muted }}>{group}</p>
-                  <div className="space-y-1">
-                    {pages.filter(page => pageGroup(page.page_number, reviewData) === group).map(page => {
+                  <p className="flex items-center justify-between px-3 mb-1 luxury-body text-[11px] uppercase tracking-[0.12em]" style={{ color: '#655E57' }}><span>{group}</span><span className="tabular-nums tracking-normal">{groupApproved}/{groupPages.length}</span></p>
+                  <div className="space-y-0.5">
+                    {groupPages.map(page => {
                       const approved = Boolean(report.section_approvals?.[`p${page.page_number}`]);
                       const active = activePageNumber === page.page_number;
                       const hidden = Boolean(reviewData?.studio?.hidden_page_numbers?.includes(page.page_number));
@@ -1534,23 +1558,27 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                             setActivePageNumber(page.page_number);
                             setViewMode('page');
                           }}
-                          className="w-full grid grid-cols-[1fr_auto] items-center gap-2 rounded-xl px-3 py-2.5 text-left transition"
+                          aria-current={active ? 'page' : undefined}
+                          className="w-full grid grid-cols-[22px_1fr_auto] items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[rgba(44,38,34,0.05)]"
                           style={{
-                            background: active ? S.ink : 'transparent',
-                            color: active ? S.bg : S.muted,
-                            border: `1px solid ${active ? S.ink : S.border}`,
+                            background: active ? S.ink : undefined,
+                            color: active ? S.bg : hidden ? '#8A837B' : S.ink,
                           }}
                         >
-                          <span className="iconik-mono truncate" style={{ fontSize: '11px' }}>{String(page.page_number).padStart(2, '0')} - {page.title}</span>
-                          <span className="rounded-full px-2 py-0.5 iconik-micro" style={{ background: approved ? `${S.success}18` : S.bg, color: approved ? S.success : S.muted }}>
-                            {hidden ? 'Hidden' : approved ? 'OK' : 'Open'}
-                          </span>
+                          <span className="luxury-body text-[11px] tabular-nums" style={{ opacity: 0.6 }}>{page.page_number}</span>
+                          <span className="luxury-body text-[13px] truncate" style={{ textDecoration: hidden ? 'line-through' : undefined }}>{page.title}</span>
+                          {hidden
+                            ? <EyeOff size={14} aria-label="Hidden from client" style={{ opacity: 0.6 }} />
+                            : approved
+                              ? <CircleCheck size={15} aria-label="Approved" style={{ color: active ? '#A9D3B4' : '#426B4E' }} />
+                              : <span aria-label="Not approved yet" className="w-3.5 h-3.5 rounded-full border" style={{ borderColor: active ? 'rgba(244,239,229,0.5)' : 'rgba(44,38,34,0.25)' }} />}
                         </button>
                       );
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {imageCounts && (
               <div className="mt-5 rounded-2xl border p-4 space-y-2" style={{ background: S.bg, borderColor: S.border }}>
@@ -1573,17 +1601,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       </aside>
 
       <main className="min-h-screen pl-[310px]">
-        <header className="sticky top-0 z-20 border-b px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
+        <header className="sticky top-0 z-20 border-b px-4 md:px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
           {isWorkspace && <Link href={`/stylist/${workspaceSlug}/dashboard`} className="workspace-mobile-back luxury-body text-sm mb-3" style={{ color: S.muted }}>← Back to report desk</Link>}
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div>
-              <div className="iconik-micro mb-1" style={{ color: S.muted }}>Women Blueprint Report</div>
+              <div className="iconik-micro mb-1" style={{ color: '#655E57' }}>{isWorkspace ? clientDisplayName : 'Women Blueprint Report'}</div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>
                   {viewMode === 'full' ? 'Full report' : activePage ? `Page ${activePage.page_number}: ${activePage.title || 'Untitled'}` : 'Report'}
                 </h2>
                 {imageCounts && <Pill tone={requiredImagesDone ? 'success' : 'gold'}>Images {Object.values(imageCounts).reduce((sum, group) => sum + group.done, 0)}/{Object.values(imageCounts).reduce((sum, group) => sum + group.total, 0)}</Pill>}
               </div>
+              {isWorkspace && versioned && viewMode === 'page' && <p className="luxury-body text-xs mt-1.5" style={{ color: '#655E57' }}>{activePageIsOutfit ? 'Edit the pieces and wording, upload a matching image, then approve.' : 'Check the advice against the client’s inputs. Click any text to edit it.'}</p>}
               {report.error_message && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
               {isLegacyReport && (
@@ -1593,15 +1622,24 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               )}
             </div>
             <div className="admin-toolbar">
-              <div className="admin-toolbar-group">
-                <span className="admin-toolbar-label">View</span>
-                <ActionButton onClick={toggleReportView} tone={viewMode === 'full' ? 'primary' : 'neutral'} title={viewTitle}>
-                  {viewMode === 'full' ? `Page View · ${activePageNumber}` : 'Full Report'}
+              {isWorkspace && versioned && <select aria-label="Go to report page" value={activePageNumber} onChange={event => goToPage(Number(event.target.value))} className="workspace-mobile-only admin-toolbar-select luxury-body" style={{ background: S.panel, color: S.ink, border: `1px solid ${S.border}` }}>{pages.map(page => <option key={page.page_number} value={page.page_number}>{page.page_number} · {page.title}</option>)}</select>}
+              {isWorkspace && versioned && activePageIsOutfit && <ActionButton onClick={() => openStudioPanel('outfit')} tone="primary"><PanelRight size={14} /> Edit outfit & image</ActionButton>}
+              <div className={`admin-toolbar-group ${isWorkspace ? 'admin-toolbar-group-plain' : ''}`}>
+                {!isWorkspace && <span className="admin-toolbar-label">View</span>}
+                <ActionButton onClick={toggleReportView} tone={isWorkspace ? 'ghost' : viewMode === 'full' ? 'primary' : 'neutral'} title={viewTitle}>
+                  {viewMode === 'full' ? `Back to page ${activePageNumber}` : 'Full report'}
                 </ActionButton>
-                <ActionButton onClick={copyLink} title="Copy the public report link.">
-                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}
+                <ActionButton
+                  onClick={() => window.open(`/stylist/report/${report.share_token}?preview=1`, '_blank')}
+                  tone={isWorkspace ? 'ghost' : 'neutral'}
+                  title="Open the report exactly as your client will see it, in a new tab."
+                >
+                  <Eye size={14} /> Preview as client
                 </ActionButton>
-                <ActionButton onClick={printReport} title="Open the browser print dialog to save the full report as a PDF.">
+                <ActionButton onClick={copyLink} tone={isWorkspace ? 'ghost' : 'neutral'} title={clientLinkLive ? 'Copy the client link.' : 'Copy the client link. It opens for your client only after Publish & deliver.'}>
+                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy link'}
+                </ActionButton>
+                <ActionButton onClick={printReport} tone={isWorkspace ? 'ghost' : 'neutral'} title="Open the browser print dialog to save the full report as a PDF.">
                   <Printer size={14} /> Print / PDF
                 </ActionButton>
               </div>
@@ -1830,11 +1868,6 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           </div>
         </header>
 
-        {isWorkspace && versioned && <div className="mx-4 md:mx-8 mt-5 rounded-2xl border p-4 flex flex-wrap items-center gap-4 luxury-body" style={{ borderColor: S.border, background: S.card }}>
-          <div className="mr-auto"><p className="text-sm font-medium">{activePageIsOutfit ? 'Make this outfit yours' : 'Review this page'}</p><p className="text-xs mt-1" style={{ color: S.muted }}>{activePageIsOutfit ? 'Edit the pieces, save the wording, then upload a matching image.' : 'Check the advice against the client’s inputs. Edit any text, then approve and continue.'}</p></div>
-          {activePageIsOutfit && <ActionButton onClick={() => openStudioPanel('outfit')} tone="primary"><PanelRight size={14} /> Edit outfit & image</ActionButton>}
-          <label className="text-xs" style={{ color: S.muted }}>Go to page<select aria-label="Go to report page" value={activePageNumber} onChange={e => { setActivePageNumber(Number(e.target.value)); setViewMode('page'); }} className="ml-2 max-w-56 rounded-lg border p-2" style={{ background: S.bg, color: S.ink, borderColor: S.border }}>{pages.map(page => <option key={page.page_number} value={page.page_number}>{page.page_number} · {page.title}</option>)}</select></label>
-        </div>}
         {!report.report_data ? (
           <div className="p-10 luxury-body" style={{ color: S.muted }}>
             {report.status === 'generating' ? stageLabel(report.progress_stage) : 'No report data yet.'}
@@ -1865,7 +1898,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 regeneratingImageSlot={regeneratingSlotKey}
                 imageRegenerationDisabled={generatingImages || replacingOutfitPage !== null || replacingAllOutfits || regeneratingPalette || Boolean(report.progress_stage)}
                 imagePrompts={printing ? undefined : promptsBySlot}
-                onImageUpload={printing ? undefined : async (slot, file) => { await uploadManualImage(slot, file); }}
+                onImageUpload={printing ? undefined : (slot, file) => uploadManualImage(slot, file)}
                 uploadingImageSlot={uploadingSlot}
               />
             </div>
@@ -1874,55 +1907,68 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       </main>
 
       {versioned && (
-        <footer className="fixed bottom-0 left-[310px] right-0 z-30 border-t px-8 py-3 backdrop-blur" style={{ background: 'rgba(244,239,229,0.96)', borderColor: S.border }}>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Pill tone={report.section_approvals?.[`p${activePageNumber}`] ? 'success' : 'gold'}>
-                Page {activePageNumber} {report.section_approvals?.[`p${activePageNumber}`] ? 'approved' : 'open'}
-              </Pill>
-              <span className="luxury-body text-xs" style={{ color: S.muted }}>
-                {hasUnsavedEdits
-                  ? saveConflict
-                    ? 'A newer revision exists. Reload the report before editing again.'
-                    : isWorkspace && saving
-                      ? 'Saving changes...'
-                      : `${dirtyPages.size} page${dirtyPages.size === 1 ? '' : 's'} waiting to save.`
-                  : isWorkspace
-                    ? 'All changes saved.'
-                    : 'Click report text to edit in the original design.'}
-              </span>
+        <footer className="report-actionbar fixed bottom-0 left-[310px] right-0 z-30 border-t" style={{ background: 'rgba(251,248,240,0.97)', borderColor: S.border, boxShadow: '0 -8px 30px rgba(44,38,34,0.06)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="h-[3px]" style={{ background: 'rgba(44,38,34,0.06)' }}><div className="h-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#426B4E' }} /></div>
+          <div className="flex items-center gap-3 px-4 md:px-6 py-3">
+            <div className="flex items-center gap-1 min-w-0">
+              <ActionButton tone="ghost" size="sm" ariaLabel="Previous page" title="Previous page" disabled={!previousPage} onClick={() => previousPage && goToPage(previousPage.page_number)} className="!px-2 !py-2"><ChevronLeft size={18} /></ActionButton>
+              <div className="min-w-0 shrink-0 sm:shrink px-1">
+                <p className="luxury-body text-sm whitespace-nowrap sm:truncate" style={{ color: S.ink }}>
+                  <span className="font-medium"><span className="hidden sm:inline">Page </span>{activePageNumber}</span>
+                  <span style={{ color: '#655E57' }}><span className="hidden sm:inline"> of </span><span className="sm:hidden">/</span>{pages.length}</span>
+                  {activePageApproved && <span className="ml-2 inline-flex items-center gap-1 text-xs align-middle" style={{ color: '#3F6A4C' }}><CircleCheck size={13} /> Approved</span>}
+                </p>
+                <p className={`luxury-body text-xs truncate ${saveConflict || saving || hasUnsavedEdits ? '' : 'hidden sm:block'}`} role="status" aria-live="polite" style={{ color: saveConflict ? '#9A4039' : '#655E57' }}>
+                  {saveConflict
+                    ? 'A newer revision exists. Reload before editing again.'
+                    : saving
+                      ? 'Saving changes…'
+                      : hasUnsavedEdits
+                        ? `${dirtyPages.size || 1} page${dirtyPages.size > 1 ? 's' : ''} with unsaved edits`
+                        : isWorkspace ? 'All changes saved' : 'Click report text to edit'}
+                </p>
+              </div>
+              <ActionButton tone="ghost" size="sm" ariaLabel="Next page" title="Next page" disabled={!followingPage} onClick={() => followingPage && goToPage(followingPage.page_number)} className="!px-2 !py-2"><ChevronRight size={18} /></ActionButton>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <ActionButton onClick={saveChangedPages} disabled={Boolean(saveDisabledReason)} title={saveDisabledReason || 'Save inline report edits.'}>
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {saving ? 'Saving...' : 'Save Edits'}
-              </ActionButton>
-              <ActionButton
-                onClick={toggleCurrentApproval}
-                disabled={Boolean(currentBusyReason)}
-                title={currentBusyReason || autoSaveHint || 'Toggle approval for the current page.'}
-                tone="success"
-              >
-                <Check size={14} /> {report.section_approvals?.[`p${activePageNumber}`] ? 'Unapprove' : 'Approve'}
-              </ActionButton>
-              <ActionButton
-                onClick={approveAndNext}
-                disabled={Boolean(currentBusyReason)}
-                title={currentBusyReason || autoSaveHint || 'Approve this page and move to the next page.'}
-                tone="success"
-              >
-                <CheckCheck size={14} /> Approve and Next
-              </ActionButton>
-              <ActionButton
-                onClick={approveAll}
-                disabled={Boolean(currentBusyReason)}
-                title={currentBusyReason || autoSaveHint || 'Approve every page.'}
-                tone="success"
-              >
-                <CheckCheck size={14} /> Approve All
-              </ActionButton>
-              <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || (isWorkspace ? 'Publish and prepare WhatsApp delivery.' : 'Send the report email to the client.')} tone="primary">
-                {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? (usesWhatsAppDelivery ? 'Preparing...' : 'Sending...') : usesWhatsAppDelivery ? (report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & Deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}
-              </ActionButton>
+
+            <div className="ml-auto flex items-center gap-2">
+              {!allApproved && <span className="hidden xl:inline luxury-body text-xs mr-2" style={{ color: '#655E57' }}>{totalPageCount - approvedCount} page{totalPageCount - approvedCount === 1 ? '' : 's'} left to approve</span>}
+              {allApproved && sendDisabledReason && !sending && <span className="hidden lg:inline luxury-body text-xs mr-2 max-w-[260px] truncate" title={sendDisabledReason} style={{ color: '#9A4039' }}>{sendDisabledReason}</span>}
+              {(!isWorkspace || hasUnsavedEdits) && (
+                <ActionButton onClick={saveChangedPages} disabled={Boolean(saveDisabledReason)} title={saveDisabledReason || 'Save inline report edits.'} tone="neutral">
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {saving ? 'Saving…' : 'Save'}
+                </ActionButton>
+              )}
+              <div className="relative">
+                <ActionButton tone="neutral" ariaLabel="More approval actions" title="More actions" onClick={() => setMoreActionsOpen(open => !open)} className="!px-3"><MoreHorizontal size={16} /></ActionButton>
+                {moreActionsOpen && <>
+                  <button aria-label="Close menu" className="fixed inset-0 z-10 cursor-default" onClick={() => setMoreActionsOpen(false)} />
+                  <div role="menu" className="absolute bottom-full right-0 z-20 mb-2 w-64 rounded-2xl border p-1.5" style={{ background: S.panel, borderColor: S.border, boxShadow: '0 16px 40px rgba(44,38,34,0.16)' }}>
+                    <button role="menuitem" disabled={!activePageApproved || Boolean(currentBusyReason)} onClick={() => { setMoreActionsOpen(false); void toggleCurrentApproval(); }} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left luxury-body text-sm hover:bg-[rgba(44,38,34,0.05)] disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: S.ink }}>
+                      <Undo2 size={15} /> Undo approval for this page
+                    </button>
+                    <button role="menuitem" disabled={allApproved || Boolean(currentBusyReason)} onClick={() => {
+                      setMoreActionsOpen(false);
+                      if (window.confirm(`Approve all ${totalPageCount - approvedCount} remaining pages without reviewing them one by one?`)) void approveAll();
+                    }} className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left luxury-body text-sm hover:bg-[rgba(44,38,34,0.05)] disabled:opacity-40 disabled:cursor-not-allowed" style={{ color: S.ink }}>
+                      <CheckCheck size={15} /> Approve all remaining pages
+                    </button>
+                  </div>
+                </>}
+              </div>
+              {allApproved ? (
+                <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || (isWorkspace ? 'Publish and prepare WhatsApp delivery.' : 'Send the report email to the client.')} tone="primary" size="lg">
+                  {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {sending ? (usesWhatsAppDelivery ? 'Preparing…' : 'Sending…') : usesWhatsAppDelivery ? (report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send to client'}
+                </ActionButton>
+              ) : activePageApproved ? (
+                <ActionButton onClick={() => nextPageToReview && goToPage(nextPageToReview.page_number)} disabled={!nextPageToReview} tone="primary" size="lg" title="Go to the next page that still needs approval.">
+                  Next to review <ChevronRight size={16} />
+                </ActionButton>
+              ) : (
+                <ActionButton onClick={approveAndNext} disabled={Boolean(currentBusyReason)} title={currentBusyReason || autoSaveHint || 'Approve this page and move to the next page.'} tone="primary" size="lg">
+                  <Check size={15} /> {nextPageToReview ? 'Approve & next' : 'Approve page'}
+                </ActionButton>
+              )}
             </div>
           </div>
         </footer>
@@ -1989,6 +2035,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   const status = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
                   if (status.ok) setImageCounts((await status.json()).imageCounts ?? null);
                 }}
+                getCropAspect={() => measureImageSlotAspect(`application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}`)}
                 onUpload={file => uploadManualImage(`application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}` as StylistBlueprintImageSlotKey, file)}
                 getPrompt={async () => {
                   if (!(await saveChangedPagesRef.current())) throw new Error('Save the outfit before copying its prompt.');
@@ -2069,6 +2116,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
       <style jsx global>{`
         .workspace-mobile-back { display: none; }
+        .workspace-mobile-only { display: none; }
+        .admin-toolbar-group.admin-toolbar-group-plain {
+          border-color: transparent;
+          background: transparent;
+          padding: 0;
+          gap: 2px;
+        }
         .admin-toolbar {
           display: flex;
           flex-wrap: wrap;
@@ -2133,12 +2187,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             flex: 1 1 100%;
             justify-content: flex-start;
           }
+          .admin-toolbar-group.admin-toolbar-group-plain {
+            flex: 0 1 auto;
+          }
         }
         @media (max-width: 1000px) {
           .workspace-mobile-back { display: inline-flex; }
+          .workspace-mobile-only { display: block; width: 100%; }
           .stylist-workspace-report aside.fixed { display: none; }
           .stylist-workspace-report header.sticky { position: static; }
           .stylist-workspace-report .admin-toolbar button { width: auto; }
+          .stylist-workspace-report .admin-toolbar-group-plain { flex-wrap: nowrap; }
+          .stylist-workspace-report .admin-toolbar-group-plain button { padding-left: 10px; padding-right: 10px; }
 
           aside.fixed {
             position: relative;
@@ -2167,7 +2227,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           }
         }
         @media print {
-          aside.fixed, header.sticky, footer.fixed, .studio-drawer { display: none !important; }
+          aside.fixed, header.sticky, footer.fixed, .report-actionbar, .studio-drawer { display: none !important; }
           main.min-h-screen { padding-left: 0 !important; }
           main .px-8.py-8 { padding: 0 !important; }
           main .max-w-\[1120px\] { max-width: none !important; border-radius: 0 !important; }

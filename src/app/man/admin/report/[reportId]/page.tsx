@@ -1789,9 +1789,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             </div>
             <div className="flex flex-wrap gap-2">
               <ActionButton onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} disabled={!canEditActiveSection || isGenerating}>Edit Page Text</ActionButton>
-              <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
-              <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success"><CheckCheck size={14} /> Approve and Next</ActionButton>
-              <ActionButton onClick={approveAll} disabled={isGenerating} tone="success"><CheckCheck size={14} /> Approve All</ActionButton>
+              <ActionButton onClick={approveAll} disabled={isGenerating} tone="ghost" title="Approve every page without reviewing each one."><CheckCheck size={14} /> Approve all</ActionButton>
+              <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="neutral"><Check size={14} /> {activeApproved ? 'Undo approval' : 'Approve'}</ActionButton>
+              <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success" size="lg"><CheckCheck size={15} /> Approve & next</ActionButton>
               <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={!ready ? 'Approve every visible page before sending.' : !qualityGatePassed ? 'Review the automated outfit findings, then confirm whether to send.' : 'Send the report email to the client.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
             </div>
           </div>
