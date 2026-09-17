@@ -53,6 +53,7 @@ import {
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { checkStudioReportQuality, moveStudioPage } from '@/lib/stylistReportStudio';
+import { prepareReportForPrint } from '@/lib/reportPrint';
 
 interface GenerationStatus {
   state: 'working' | 'waiting' | 'paused' | 'failed' | 'busy' | 'complete';
@@ -1377,15 +1378,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const printReport = async () => {
     if (printing) return;
     flushSync(() => { setPrinting(true); setViewMode('full'); });
-    const images = Array.from(reportCanvasRef.current?.querySelectorAll('img') ?? []);
-    const ready = images.map(image => {
-      image.loading = 'eager';
-      return image.decode().catch(() => undefined);
-    });
-    await Promise.race([
-      Promise.all([...ready, document.fonts.ready]),
-      new Promise(resolve => window.setTimeout(resolve, 12000)),
-    ]);
+    const restore = await prepareReportForPrint();
+    window.addEventListener('afterprint', restore, { once: true });
     window.print();
   };
 
@@ -1636,7 +1630,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy link'}
                 </ActionButton>
                 <ActionButton onClick={printReport} tone={isWorkspace ? 'ghost' : 'neutral'} title="Open the browser print dialog to save the full report as a PDF.">
-                  <Printer size={14} /> Print / PDF
+                  {printing ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />} {printing ? 'Preparing PDF…' : 'Print / PDF'}
                 </ActionButton>
               </div>
 
@@ -1843,7 +1837,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         </header>
 
         {showGenerationPanel && (
-          <section aria-live="polite" className="mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 luxury-body" style={{ background: generationStopped ? '#FBF1EE' : S.panel, borderColor: generationStopped ? 'rgba(154,64,57,0.25)' : S.border }}>
+          <section aria-live="polite" className="report-generation-panel mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 luxury-body" style={{ background: generationStopped ? '#FBF1EE' : S.panel, borderColor: generationStopped ? 'rgba(154,64,57,0.25)' : S.border }}>
             <div className="flex items-start gap-3 min-w-0 flex-1 basis-[280px]">
               {generationStopped
                 ? <AlertTriangle size={18} className="mt-0.5 shrink-0" style={{ color: '#9A4039' }} />
@@ -2230,7 +2224,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           }
         }
         @media print {
-          aside.fixed, header.sticky, footer.fixed, .report-actionbar, .studio-drawer { display: none !important; }
+          aside.fixed, header.sticky, footer.fixed, .report-actionbar, .report-generation-panel, .studio-drawer { display: none !important; }
           main.min-h-screen { padding-left: 0 !important; }
           main .px-8.py-8 { padding: 0 !important; }
           main .max-w-\[1120px\] { max-width: none !important; border-radius: 0 !important; }

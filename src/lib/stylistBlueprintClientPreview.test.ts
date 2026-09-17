@@ -34,3 +34,15 @@ test('the client report sends its styles with the server HTML', () => {
   assert.match(page, /<StyledJsxRegistry>/);
   assert.match(readFileSync('src/components/StyledJsxRegistry.tsx', 'utf8'), /useServerInsertedHTML/);
 });
+
+test('printing keeps backgrounds and a desktop layout, and Save as PDF waits for images', () => {
+  const report = readFileSync('src/components/StylistBlueprintReport.tsx', 'utf8');
+  const print = report.slice(report.lastIndexOf('@media print {'));
+  assert.match(print, /print-color-adjust: exact !important/);
+  assert.match(print, /\.iconik-report \{ padding: 0 !important; background: \$\{INK\} !important; zoom: 0\.72; \}/);
+  assert.match(print, /\.grain \{ display: none !important; \}/);
+  const chrome = readFileSync('src/components/StylistBlueprintViewerChrome.tsx', 'utf8');
+  assert.match(chrome, /const restore = await prepareReportForPrint\(\);[\s\S]*window\.print\(\)/);
+  const editor = readFileSync('src/app/stylist/admin/report/[reportId]/page.tsx', 'utf8');
+  assert.match(editor, /const restore = await prepareReportForPrint\(\);[\s\S]*window\.print\(\);/);
+});
