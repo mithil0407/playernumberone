@@ -3,6 +3,7 @@ import StylistBlueprintReport from '@/components/StylistBlueprintReport';
 import StylistBlueprintViewerChrome, { type BlueprintOutlineEntry } from '@/components/StylistBlueprintViewerChrome';
 import StylistBlueprintPreviewBanner from '@/components/StylistBlueprintPreviewBanner';
 import StyledJsxRegistry from '@/components/StyledJsxRegistry';
+import StylistBlueprintReportIntro from '@/components/StylistBlueprintReportIntro';
 import { getPublicStylistBlueprintByShareToken, getStylistBlueprintClientPreviewByShareToken } from '@/lib/stylistBlueprintLoader';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { isManualStylistBlueprintSubmission, isVersionedStylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
@@ -194,6 +195,7 @@ export default async function StylistPublicReportPage({ params, searchParams }: 
       </div>
       {outline.length > 0 && <StylistBlueprintViewerChrome outline={outline} clientName={clientName} />}
       {preview && <StylistBlueprintPreviewBanner live={preview.live} />}
+      <StylistBlueprintReportIntro clientName={clientName} />
       </StyledJsxRegistry>
     </>
   );

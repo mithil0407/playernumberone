@@ -2305,10 +2305,10 @@ function BlueprintStyles() {
       .rule-thin {
         opacity: 0.1;
       }
+      /* No backdrop blur: every card sits on a flat page, so blurring it changed
+         nothing visible but made long reports stutter while scrolling on phones. */
       .glass-dark {
         background: rgba(44, 38, 34, 0.03);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
         border: 1px solid rgba(44, 38, 34, 0.08);
         border-radius: 18px;
       }
@@ -3709,7 +3709,6 @@ function BlueprintStyles() {
       }
       .matrix-table {
         background: rgba(244, 239, 229, 0.08);
-        backdrop-filter: blur(24px);
         border: 1px solid rgba(244, 239, 229, 0.16);
         border-radius: 20px;
         padding: 20px 24px;
@@ -3813,7 +3812,6 @@ function BlueprintStyles() {
         margin-top: 48px;
         padding: 22px 36px;
         background: rgba(244, 239, 229, 0.08);
-        backdrop-filter: blur(24px);
         border: 1px solid rgba(244, 239, 229, 0.18);
         border-radius: 100px;
       }
