@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { prepareReportForPrint, releaseReportForPrint } from '@/lib/reportPrint';
 
 /**
  * Reader-side chrome for the shared report link: a read-progress line, a
@@ -56,6 +57,7 @@ export default function StylistBlueprintViewerChrome({
   const [currentPage, setCurrentPage] = useState<number>(outline[0]?.pageNumber ?? 1);
   const [pastCover, setPastCover] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [preparingPdf, setPreparingPdf] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; caption: string } | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const pillRef = useRef<HTMLButtonElement | null>(null);
@@ -247,9 +249,24 @@ export default function StylistBlueprintViewerChrome({
     window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'instant' });
   }, []);
 
-  const print = useCallback(() => {
+  const print = useCallback(async () => {
+    if (preparingPdf) return;
+    setPreparingPdf(true);
+    const restore = await prepareReportForPrint();
+    setPreparingPdf(false);
     setSheetOpen(false);
+    window.addEventListener('afterprint', restore, { once: true });
     window.setTimeout(() => window.print(), 80);
+  }, [preparingPdf]);
+
+  // The browser's own Print / Cmd+P cannot wait, but can at least start every image loading.
+  useEffect(() => {
+    let restore: (() => void) | null = null;
+    const before = () => { restore = releaseReportForPrint().restore; };
+    const after = () => { restore?.(); restore = null; };
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => { window.removeEventListener('beforeprint', before); window.removeEventListener('afterprint', after); };
   }, []);
 
   if (!total) return null;
@@ -688,11 +705,11 @@ export default function StylistBlueprintViewerChrome({
                 </svg>
                 Back to top
               </button>
-              <button type="button" className="bpv-foot-button" onClick={print}>
+              <button type="button" className="bpv-foot-button" onClick={() => { void print(); }} disabled={preparingPdf} aria-busy={preparingPdf}>
                 <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
                   <path d="M6 1.5v6M3.5 5L6 7.5 8.5 5M2 10.5h8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Save as PDF
+                {preparingPdf ? 'Preparing PDF…' : 'Save as PDF'}
               </button>
             </div>
           </div>
