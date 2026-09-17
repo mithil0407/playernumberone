@@ -144,6 +144,33 @@ export function getNextStylistBlueprintTextProgressStage(
   return next?.stage ?? null;
 }
 
+const TEXT_STAGE_LABELS: Record<string, string> = {
+  queued: 'Waiting to start',
+  classifying: 'Reading the client’s inputs',
+  generating_opening_pages: 'Writing the opening pages',
+  generating_diagnosis_pages: 'Writing the diagnosis pages',
+  generating_prescription_pages: 'Writing the style guide pages',
+  generating_application_pages: 'Writing the outfit pages',
+  generating_closing_pages: 'Writing the closing pages',
+  finalising: 'Finishing the report',
+};
+
+/** Stages written by the durable text job, as opposed to one-off image or outfit actions. */
+export function isStylistBlueprintTextStage(stage: string | null | undefined) {
+  return !stage || stage in TEXT_STAGE_LABELS;
+}
+
+export function stylistBlueprintTextStageLabel(stage: string | null | undefined) {
+  return (stage && TEXT_STAGE_LABELS[stage]) || 'Writing the report';
+}
+
+/** Steps: reading the inputs, then one per act. */
+export function getStylistBlueprintTextProgress(reportData: StylistBlueprintReportData | null | undefined) {
+  const total = ACT_STAGES.length + 1;
+  if (!reportData?.classification) return { done: 0, total };
+  return { done: 1 + getCompletedStylistBlueprintTextActs(reportData).length, total };
+}
+
 export async function runStylistBlueprintTextPipeline(
   reportId: string,
   submission: StylistIntakeSubmission,
