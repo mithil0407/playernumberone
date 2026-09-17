@@ -21,6 +21,12 @@ export async function middleware(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') ?? '';
   const isSearchBot = SEARCH_BOT_PATTERN.test(userAgent);
 
+  // Public report images set their own cache headers; the private no-store
+  // headers below would stop browsers and the CDN reusing image redirects.
+  if (pathname.startsWith('/api/stylist-blueprint/share/') && request.method === 'GET') {
+    return NextResponse.next();
+  }
+
   if (isStylistPrivatePath(pathname)) {
     const privateResponse = (response: NextResponse) => {
       for (const [key, value] of Object.entries(WORKSPACE_SECURITY_HEADERS)) response.headers.set(key, value);

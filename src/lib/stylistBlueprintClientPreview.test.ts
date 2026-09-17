@@ -46,3 +46,15 @@ test('printing keeps backgrounds and a desktop layout, and Save as PDF waits for
   const editor = readFileSync('src/app/stylist/admin/report/[reportId]/page.tsx', 'utf8');
   assert.match(editor, /const restore = await prepareReportForPrint\(\);[\s\S]*window\.print\(\);/);
 });
+
+test('client report images are served as cached reader-sized copies behind a loading cover', () => {
+  const delivery = readFileSync('src/lib/stylistBlueprintImageDelivery.ts', 'utf8');
+  assert.match(delivery, /\.resize\(\{ width: DISPLAY_WIDTH, withoutEnlargement: true \}\)[\s\S]*\.webp\(/);
+  assert.match(delivery, /cached\.expiresAt - Date\.now\(\) > MIN_REMAINING_MS/);
+  const route = readFileSync('src/app/api/stylist-blueprint/share/[shareToken]/image/route.ts', 'utf8');
+  // Cache lifetime can never outlast the signed URL, and unpublished reports are never publicly cached.
+  assert.match(route, /Math\.floor\(\(image\.expiresAt - Date\.now\(\)\) \/ 1000\) - 5 \* 60/);
+  assert.match(route, /source\.live && cacheSeconds > 0 \? `public/);
+  assert.match(page, /<StylistBlueprintReportIntro clientName=\{clientName\} \/>/);
+  assert.match(readFileSync('src/components/StylistBlueprintReportIntro.tsx', 'utf8'), /const MAX_WAIT_MS = 10_000;/);
+});
