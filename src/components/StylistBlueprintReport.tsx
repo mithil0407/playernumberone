@@ -965,12 +965,15 @@ function DiagnosisPage({
   data: StylistBlueprintReportData;
   imageUrls?: ResolvedStylistBlueprintImageUrls | null;
 }) {
-  const { onImageRegenerate } = useContext(EditableReportContext);
+  const { onImageRegenerate, onImageUpload } = useContext(EditableReportContext);
   const image = imageForPage(page, imageUrls, data);
   const secondary = secondaryImageForPage(page, imageUrls, data);
   const imageSlot = imageSlotForPage(page, data);
   const secondarySlot = secondaryImageSlotForPage(page, data);
-  const showSecondary = Boolean(secondary || (onImageRegenerate && secondarySlot));
+  // Empty image spots appear wherever the studio can fill them. Showing them only
+  // to admins (who can regenerate) left stylists blocked by a delivery check for
+  // an image they had no place to upload.
+  const showSecondary = Boolean(secondary || ((onImageRegenerate || onImageUpload) && secondarySlot));
   const statements = page.blocks.length ? page.blocks : [
     { label: 'What we saw', body: data.classification.body.proportion_directive },
     { label: 'What that means', body: sentenceList(data.classification.body.silhouette_rules) },
@@ -1867,9 +1870,9 @@ function NodeMap({ count = 12 }: { count?: number }) {
 }
 
 function ContinuationPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const { onImageRegenerate } = useContext(EditableReportContext);
+  const { onImageRegenerate, onImageUpload } = useContext(EditableReportContext);
   const image = imageForPage(page, imageUrls, data);
-  const showImage = Boolean(image || onImageRegenerate);
+  const showImage = Boolean(image || onImageRegenerate || onImageUpload);
   return (
     <PageFrame page={page} className="continuation-page">
       <div className={showImage ? 'continuation-layout' : 'continuation-inner'}>
