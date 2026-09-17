@@ -136,3 +136,23 @@ test('report desk prioritizes overdue work and provides a direct next action', (
   assert.equal(workspaceNextAction(review).label, 'Continue report');
   assert.equal(workspaceNextAction(overdue).target, 'client');
 });
+
+import { WORKSPACE_CATEGORIES, WORKSPACE_VIEWS } from './stylistWorkspaceQueueModel.ts';
+test('waiting clients split into recent and older than 30 days, and overdue reports are counted', () => {
+  const now = Date.parse('2026-09-17T12:00:00Z');
+  const completeUpload = { photo_paths: requiredPhotos, measurements: { shoulders: 38, bust: 91, waist: 72, hips: 98 } };
+  const items = [
+    workspaceQueueItem(queueRow({ id: 'recent', consultation_date: '2026-09-01T10:00:00Z' })),
+    workspaceQueueItem(queueRow({ id: 'old', consultation_date: '2026-03-01T10:00:00Z' })),
+    workspaceQueueItem(queueRow({ id: 'overdue', report_due_at: '2026-05-30T10:00:00Z', consultation_upload_links: completeUpload })),
+    workspaceQueueItem(queueRow({ id: 'delivered-late', status: 'delivered', report_due_at: '2026-05-30T10:00:00Z' })),
+  ];
+  assert.deepEqual(queryWorkspaceItems(items, { view: 'waiting' }, now).map(item => item.id), ['recent']);
+  assert.deepEqual(queryWorkspaceItems(items, { view: 'stale' }, now).map(item => item.id), ['old']);
+  const counts = workspaceCounts(items, now);
+  assert.equal(counts.needs_inputs, counts.waiting + counts.stale);
+  assert.equal(counts.overdue, 1);
+});
+test('every workspace view belongs to exactly one tab', () => {
+  for (const { key } of WORKSPACE_VIEWS) assert.equal(WORKSPACE_CATEGORIES.filter(tab => tab.views.includes(key)).length, 1, key);
+});

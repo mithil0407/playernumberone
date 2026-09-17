@@ -759,12 +759,18 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     if (!updatedS4Outfits) return null;
     setError('');
 
-    // Update local state — text and QA only, image_urls intentionally untouched
+    // Reflect invalidated photos immediately so edited text never retains a stale preview.
     setReport(prev => {
       if (!prev?.report_data) return prev;
       return {
         ...prev,
         error_message: null,
+        section_approvals: { ...prev.section_approvals, s4: false },
+        image_urls: prev.image_urls ? {
+          ...prev.image_urls,
+          outfitCards: prev.image_urls.outfitCards.map((path, index) =>
+            data.clearedOutfitNumbers?.includes(index + 1) ? null : path),
+        } : null,
         report_data: {
           ...prev.report_data,
           qa: qa ?? prev.report_data.qa,
@@ -804,6 +810,10 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
       if (!prev?.report_data) return prev;
       return {
         ...prev,
+        image_urls: prev.image_urls ? { ...prev.image_urls,
+          comboGridCards: { ...prev.image_urls.comboGridCards,
+            ...Object.fromEntries((data.clearedKinds ?? []).map((key: string) => [key, null])) },
+        } : null,
         report_data: {
           ...prev.report_data,
           sections: {
@@ -1779,9 +1789,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
             </div>
             <div className="flex flex-wrap gap-2">
               <ActionButton onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} disabled={!canEditActiveSection || isGenerating}>Edit Page Text</ActionButton>
-              <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="success"><Check size={14} /> {activeApproved ? 'Unapprove' : 'Approve'}</ActionButton>
-              <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success"><CheckCheck size={14} /> Approve and Next</ActionButton>
-              <ActionButton onClick={approveAll} disabled={isGenerating} tone="success"><CheckCheck size={14} /> Approve All</ActionButton>
+              <ActionButton onClick={approveAll} disabled={isGenerating} tone="ghost" title="Approve every page without reviewing each one."><CheckCheck size={14} /> Approve all</ActionButton>
+              <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="neutral"><Check size={14} /> {activeApproved ? 'Undo approval' : 'Approve'}</ActionButton>
+              <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success" size="lg"><CheckCheck size={15} /> Approve & next</ActionButton>
               <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={!ready ? 'Approve every visible page before sending.' : !qualityGatePassed ? 'Review the automated outfit findings, then confirm whether to send.' : 'Send the report email to the client.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
             </div>
           </div>

@@ -17,6 +17,7 @@
 /.next/
 /.next-audit/
 /.next-workspace-dev/
+/.next-security-check/
 /out/
 
 # production
@@ -41,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/.next-membership-preview/
+
+# Private customer report repair artifacts
+/tmp/man-report-audit/

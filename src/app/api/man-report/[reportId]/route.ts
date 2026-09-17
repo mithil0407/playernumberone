@@ -1,3 +1,4 @@
+import { invalidateChangedOutfitImages, missingOutfitImageNumbers } from '@/lib/manOutfitConsistency';
 import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
@@ -84,7 +85,7 @@ export async function PATCH(
 
   const { data: existingReport, error: existingError } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, sent_at, share_token, report_data, section_approvals, shopping_data, man_intake_submissions(customer_email)')
+    .select('id, status, sent_at, share_token, report_data, image_urls, section_approvals, shopping_data, man_intake_submissions(customer_email)')
     .eq('id', reportId)
     .single();
 
@@ -129,8 +130,30 @@ export async function PATCH(
     });
   }
 
+  if (update.report_data) {
+    const next = update.report_data as ReportData;
+    const previous = existingReport.report_data as ReportData;
+    if (next.sections?.s4_outfits !== previous.sections?.s4_outfits) {
+      update.image_urls = invalidateChangedOutfitImages(existingReport.image_urls,
+        previous.sections?.s4_outfits ?? '', next.sections?.s4_outfits ?? '');
+      update.section_approvals = { ...existingReport.section_approvals, ...body.section_approvals, s4: false };
+    }
+  }
+
+  const editedReport = update.report_data as ReportData | undefined;
+  if (editedReport?.sections?.s4_combo_grids !== undefined &&
+      editedReport.sections.s4_combo_grids !== existingReport.report_data?.sections?.s4_combo_grids) {
+    update.image_urls = { ...(update.image_urls ?? existingReport.image_urls ?? {}),
+      comboGridCards: { office: null, evening: null, relaxed: null } };
+  }
+
   if (body.status === 'sent') {
     const candidate = (update.report_data ?? existingReport.report_data) as ReportData | null;
+    const missing = missingOutfitImageNumbers(candidate?.sections?.s4_outfits ?? '',
+      (update.image_urls ?? existingReport.image_urls) as import('@/lib/manImageGenerator').ManReportImagePaths | null);
+    if (!candidate?.sections?.s4_outfits || missing.length) {
+      return NextResponse.json({ error: `Generate and review the current outfit photos before sending. Missing outfits: ${missing.join(', ')}` }, { status: 400 });
+    }
     if (candidate?.classification && candidate.sections?.s4_outfits) {
       const checked = withManReportSection4Qa(candidate);
       update.report_data = checked;
@@ -182,7 +205,7 @@ export async function PATCH(
   // garments that get regenerated or swapped. Re-approval after edits refetches
   // only slots whose descriptors actually changed; re-approval with fresh
   // links is a no-op.
-  const s4JustApproved = body.section_approvals?.s4 === true
+  const s4JustApproved = (update.section_approvals as Record<string, boolean> | undefined)?.s4 === true
     && (existingReport.section_approvals as Record<string, boolean> | null)?.s4 !== true;
   if (s4JustApproved) {
     const s4Text = ((update.report_data ?? existingReport.report_data) as ReportData | null)?.sections?.s4_outfits ?? '';

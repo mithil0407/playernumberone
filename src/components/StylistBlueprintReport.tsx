@@ -42,7 +42,12 @@ import {
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { createContext, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
-import { Check, Copy, Loader2, RefreshCw, Upload } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import type { ImageCropSource } from '@/components/ImageCropDialog';
+
+// Studio-only image editing. Clients never mount these, so they never download them.
+const ImageCropDialog = dynamic(() => import('@/components/ImageCropDialog'), { ssr: false });
+const ImageSlotStudioTools = dynamic(() => import('@/components/ImageSlotStudioTools'), { ssr: false });
 
 const SLATE = '#94A6AD';
 const SLATE_LIGHT = '#A0B2B9';
@@ -77,7 +82,7 @@ type EditableReportContextValue = {
    * a client view even by mistake — there is nothing for it to render.
    */
   imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
-  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | Promise<void>;
+  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | boolean | Promise<void | boolean>;
   uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
   reportData?: StylistBlueprintReportData;
   visibleTotalPages?: number;
@@ -223,31 +228,49 @@ function ImageSlotFrame({
 
   const prompt = imagePrompts?.[slotKey];
   const canUpload = Boolean(onImageUpload);
+  // Studio tools appear only when the report studio passes editing handlers; the client report passes none.
+  const isStudio = canUpload || canRegenerate || Boolean(prompt);
   const isUploading = uploadingImageSlot === slotKey;
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [cropSource, setCropSource] = useState<ImageCropSource | null>(null);
+  const [cropAspect, setCropAspect] = useState<number | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState('');
+  useEffect(() => {
+    if (!isStudio) return;
+    // The slot's children decide what is shown, so read the rendered image rather than threading URLs through every page.
+    const image = frameRef.current?.querySelector<HTMLImageElement>(':scope > img');
+    const next = image?.currentSrc || image?.src || '';
+    if (next !== currentImageUrl) setCurrentImageUrl(next);
+  }, [isStudio, children, currentImageUrl]);
 
-  const acceptFile = (file: File | null | undefined) => {
-    if (!file || !onImageUpload || disabled || uploadingImageSlot) return;
-    void onImageUpload(slotKey, file);
+  const uploadDisabledReason = uploadingImageSlot
+    ? isUploading ? 'Saving this photo…' : 'Wait for the other photo to finish saving.'
+    : disabled ? 'Wait for image generation to finish.' : '';
+  const regenerateDisabledReason = isRegenerating ? 'Creating a new image…' : disabled ? 'Wait for image generation to finish.' : '';
+
+  const openCropper = (source: ImageCropSource) => {
+    if (!onImageUpload || uploadDisabledReason) return;
+    const rect = frameRef.current?.getBoundingClientRect();
+    setCropAspect(rect && rect.width > 8 && rect.height > 8 ? rect.width / rect.height : null);
+    setCropSource(source);
   };
-
-  const copyPrompt = async () => {
-    if (!prompt) return;
-    try {
-      await navigator.clipboard.writeText(prompt);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      setCopied(false);
-    }
+  const acceptFile = (file: File | null | undefined) => {
+    if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)) return;
+    openCropper({ kind: 'file', file });
+  };
+  const uploadCropped = async (file: File) => {
+    if (!onImageUpload) return false;
+    if ((await onImageUpload(slotKey, file)) === false) return false;
+    setCropSource(null);
   };
 
   return (
     <div
-      className={`image-slot-frame ${className} ${dragging ? 'slot-dragging' : ''}`}
+      ref={frameRef}
+      data-image-slot={slotKey}
+      className={`image-slot-frame ${className} ${isStudio ? 'is-studio-slot' : ''} ${dragging ? 'slot-dragging' : ''}`}
       onDragOver={canUpload ? event => { event.preventDefault(); setDragging(true); } : undefined}
       onDragLeave={canUpload ? () => setDragging(false) : undefined}
       onDrop={canUpload ? event => {
@@ -257,57 +280,46 @@ function ImageSlotFrame({
       } : undefined}
     >
       {children}
-      {canRegenerate && (
-        <button
-          type="button"
-          className="image-regenerate-button"
-          aria-label={`Regenerate ${label}`}
-          title={`Regenerate ${label}`}
-          disabled={disabled}
-          onClick={event => {
-            event.preventDefault();
-            event.stopPropagation();
-            void onImageRegenerate?.(slotKey);
-          }}
-        >
-          {isRegenerating ? <Loader2 size={14} className="spin-icon" /> : <RefreshCw size={14} />}
-        </button>
+      {dragging && <div className="slot-drop-hint">Drop to {currentImageUrl ? 'replace' : 'add'} photo</div>}
+      {canUpload && (
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={event => { acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
+        />
       )}
-      {dragging && <div className="slot-drop-hint">Drop to replace this image</div>}
-      {(canUpload || prompt) && (
-        <div className="slot-tools">
-          {canUpload && (
-            <>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={event => { acceptFile(event.target.files?.[0]); event.currentTarget.value = ''; }}
-              />
-              <button type="button" className="slot-tool" onClick={() => inputRef.current?.click()} disabled={disabled || Boolean(uploadingImageSlot)}>
-                {isUploading ? <Loader2 size={12} className="spin-icon" /> : <Upload size={12} />}
-                {isUploading ? 'Uploading' : 'Upload'}
-              </button>
-            </>
-          )}
-          {prompt && (
-            <>
-              <button type="button" className="slot-tool" onClick={() => { void copyPrompt(); }}>
-                {copied ? <Check size={12} /> : <Copy size={12} />}
-                {copied ? 'Copied' : 'Copy prompt'}
-              </button>
-              <button type="button" className="slot-tool" onClick={() => setShowPrompt(value => !value)}>
-                {showPrompt ? 'Hide' : 'Prompt'}
-              </button>
-            </>
-          )}
-        </div>
+      {isStudio && (
+        <ImageSlotStudioTools
+          frameRef={frameRef}
+          label={label}
+          hasImage={Boolean(currentImageUrl)}
+          prompt={prompt}
+          canUpload={canUpload}
+          canRegenerate={canRegenerate}
+          isUploading={isUploading}
+          isRegenerating={isRegenerating}
+          uploadDisabledReason={uploadDisabledReason}
+          regenerateDisabledReason={regenerateDisabledReason}
+          onUpload={() => inputRef.current?.click()}
+          onCrop={() => currentImageUrl && openCropper({ kind: 'url', url: currentImageUrl })}
+          onRegenerate={() => { void onImageRegenerate?.(slotKey); }}
+        />
       )}
-      {prompt && showPrompt && (
-        <div className="slot-prompt">
-          <textarea readOnly value={prompt} rows={10} />
-        </div>
+      {cropSource && (
+        <ImageCropDialog
+          source={cropSource}
+          frameAspect={cropAspect}
+          title={cropSource.kind === 'url' ? 'Crop this image' : 'Crop before uploading'}
+          subtitle={`${label.charAt(0).toUpperCase()}${label.slice(1)} · drag to position, scroll or pinch to zoom`}
+          confirmLabel={cropSource.kind === 'url' ? 'Save crop' : 'Crop & upload'}
+          onCancel={() => setCropSource(null)}
+          onConfirm={uploadCropped}
+          onUseOriginal={uploadCropped}
+        />
       )}
     </div>
   );
@@ -1785,7 +1797,7 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
                       <path d="M3.2 5.5h9.6l-.7 7.3a1 1 0 0 1-1 .9H4.9a1 1 0 0 1-1-.9z" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
                       <path d="M5.6 5.5V4.6a2.4 2.4 0 0 1 4.8 0v.9" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                     </svg>
-                    <span>Shop this piece</span>
+                    <span>Shop</span>
                     <svg className="formula-shop-arrow" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
                       <path d="M3 9L9 3M9 3H4.2M9 3v4.8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -2004,7 +2016,7 @@ function PremiumReport({
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
   imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
-  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | Promise<void>;
+  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | boolean | Promise<void | boolean>;
   uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
 }) {
   const visiblePages = getVisibleStylistBlueprintPages(data, { hideContinuationPage, includeHidden: editable });
@@ -2069,7 +2081,7 @@ export default function StylistBlueprintReport({
   regeneratingImageSlot?: StylistBlueprintImageSlotKey | null;
   imageRegenerationDisabled?: boolean;
   imagePrompts?: Partial<Record<StylistBlueprintImageSlotKey, string>>;
-  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | Promise<void>;
+  onImageUpload?: (slotKey: StylistBlueprintImageSlotKey, file: File) => void | boolean | Promise<void | boolean>;
   uploadingImageSlot?: StylistBlueprintImageSlotKey | null;
 }) {
   if (!isVersionedStylistBlueprintReportData(data)) return <LegacyReport data={data} imageUrls={imageUrls} />;
@@ -2099,7 +2111,11 @@ function BlueprintStyles() {
       /* One typeface for the whole document. Manrope carries the display sizes
          at a tight -0.04em and still sets clean body copy, so the report reads
          as a single voice instead of a serif/sans/mono collage. */
+      /* Slides lay out by the report's own width, not the window's. In the
+         studio the report sits beside a 310px sidebar, so a laptop window gave
+         slides the desktop layout squeezed into ~700px. */
       .iconik-report {
+        container: iconik-report / inline-size;
         background: ${INK};
         color: ${INK};
         font-family: var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif;
@@ -2127,39 +2143,6 @@ function BlueprintStyles() {
         position: relative;
         overflow: hidden;
       }
-      /* Admin-only affordances: they render solely when the studio passes
-         imagePrompts / onImageUpload, which the client report never does. */
-      .slot-tools {
-        position: absolute;
-        left: 10px;
-        bottom: 10px;
-        z-index: 5;
-        display: flex;
-        gap: 6px;
-        opacity: 0;
-        transition: opacity 140ms ease;
-      }
-      .image-slot-frame:hover .slot-tools,
-      .image-slot-frame:focus-within .slot-tools {
-        opacity: 1;
-      }
-      .slot-tool {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        border-radius: 999px;
-        border: 1px solid rgba(244, 239, 229, 0.4);
-        background: rgba(44, 38, 34, 0.72);
-        color: ${IVORY};
-        font-size: 11px;
-        line-height: 1;
-        padding: 6px 10px;
-        cursor: pointer;
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-      }
-      .slot-tool:hover:not(:disabled) { background: rgba(44, 38, 34, 0.88); }
-      .slot-tool:disabled { opacity: 0.55; cursor: not-allowed; }
       .image-slot-frame.slot-dragging {
         outline: 2px dashed rgba(201, 169, 110, 0.9);
         outline-offset: -4px;
@@ -2177,53 +2160,6 @@ function BlueprintStyles() {
         letter-spacing: 0.12em;
         text-transform: uppercase;
         pointer-events: none;
-      }
-      .slot-prompt {
-        position: absolute;
-        inset: 8px;
-        z-index: 7;
-        border-radius: 12px;
-        overflow: hidden;
-      }
-      .slot-prompt textarea {
-        width: 100%;
-        height: 100%;
-        resize: none;
-        border: 1px solid rgba(244, 239, 229, 0.35);
-        border-radius: 12px;
-        background: rgba(44, 38, 34, 0.94);
-        color: ${IVORY};
-        font-size: 11px;
-        line-height: 1.55;
-        padding: 10px;
-      }
-      .image-regenerate-button {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 5;
-        width: 32px;
-        height: 32px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: 1px solid rgba(244, 239, 229, 0.45);
-        background: rgba(44, 38, 34, 0.62);
-        color: ${IVORY};
-        box-shadow: 0 8px 24px rgba(44, 38, 34, 0.2);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        cursor: pointer;
-        transition: opacity 140ms ease, transform 140ms ease, background 140ms ease;
-      }
-      .image-regenerate-button:hover:not(:disabled) {
-        background: rgba(44, 38, 34, 0.78);
-        transform: translateY(-1px);
-      }
-      .image-regenerate-button:disabled {
-        cursor: not-allowed;
-        opacity: 0.55;
       }
       .spin-icon {
         animation: iconik-spin 900ms linear infinite;
@@ -2587,7 +2523,7 @@ function BlueprintStyles() {
         margin: 0;
         /* Scales with the name's length so a long one never breaks to an
            orphaned initial the way "Dr Swathi V / S" did. */
-        font-size: clamp(46px, 7.6vw, 88px);
+        font-size: clamp(46px, 7.6cqi, 88px);
         font-weight: 550;
         letter-spacing: -0.045em;
         line-height: 0.94;
@@ -2598,7 +2534,7 @@ function BlueprintStyles() {
         display: flex;
         flex-direction: column;
         gap: 3px;
-        font-size: clamp(16px, 1.6vw, 20px);
+        font-size: clamp(16px, 1.6cqi, 20px);
         line-height: 1.28;
         opacity: 0.72;
       }
@@ -2720,7 +2656,7 @@ function BlueprintStyles() {
       .continuation-inner h2 span,
       .generic-inner h2 span {
         display: block;
-        font-size: clamp(34px, 5.4vw, 64px);
+        font-size: clamp(34px, 5.4cqi, 64px);
         overflow-wrap: break-word;
         /* Auto-hyphenation on display type ("Architec-tural") reads as a
            typesetting fault. It is enabled again below 900px, where a single
@@ -2728,7 +2664,7 @@ function BlueprintStyles() {
         hyphens: manual;
       }
       .summary-main h2 span {
-        font-size: clamp(42px, 6vw, 64px);
+        font-size: clamp(42px, 6cqi, 64px);
       }
       .dossier-cards {
         display: grid;
@@ -3071,7 +3007,25 @@ function BlueprintStyles() {
       }
       .proportion-inner h2 span {
         display: block;
-        font-size: clamp(48px, 7vw, 82px);
+        font-size: clamp(44px, 6.2cqi, 76px);
+      }
+      /* The subtitle ("Mastering the Petite 152cm Frame") ran at the title's
+         size and wrapped five lines deep; it now reads as a supporting line. */
+      .proportion-inner h2 span.display-it {
+        font-size: clamp(26px, 3.2cqi, 40px);
+        margin-top: 8px;
+        opacity: 0.85;
+      }
+      .proportion-inner .rule {
+        margin: 26px 0 22px;
+      }
+      /* Below full desktop width the headline sits as a band above the cards,
+         which then get the whole page instead of about half of it. */
+      @container iconik-report (max-width: 1100px) {
+        .proportion-inner {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 34px;
+        }
       }
       .proportion-card-grid {
         display: grid;
@@ -3112,10 +3066,10 @@ function BlueprintStyles() {
         align-items: start;
       }
       .palette-inner h2 span:first-child {
-        font-size: clamp(64px, 9vw, 92px);
+        font-size: clamp(64px, 9cqi, 92px);
       }
       .palette-inner h2 span:last-child {
-        font-size: clamp(28px, 4vw, 36px);
+        font-size: clamp(28px, 4cqi, 36px);
         opacity: 0.6;
       }
       .palette-intro {
@@ -3156,7 +3110,7 @@ function BlueprintStyles() {
       }
       .colour-drape-inner h2 span {
         display: block;
-        font-size: clamp(48px, 7vw, 78px);
+        font-size: clamp(48px, 7cqi, 78px);
       }
       .colour-drape-hero-frame {
         width: min(100%, 920px);
@@ -3212,6 +3166,7 @@ function BlueprintStyles() {
       .rule-layout {
         margin-top: 78px;
         display: block;
+        container: rule-layout / inline-size;
       }
       .rule-head {
         display: grid;
@@ -3226,10 +3181,10 @@ function BlueprintStyles() {
       /* Sized to sit on one or two lines across the band rather than the three
          to six the narrow column forced. */
       .rule-head h2 span {
-        font-size: clamp(30px, 3.4vw, 46px);
+        font-size: clamp(30px, 3.4cqi, 46px);
       }
       .rule-head h2 span.display-it {
-        font-size: clamp(22px, 2.4vw, 32px);
+        font-size: clamp(22px, 2.4cqi, 32px);
         margin-top: 6px;
         opacity: 0.85;
       }
@@ -3237,35 +3192,57 @@ function BlueprintStyles() {
         margin: 0 0 8px;
         max-width: 46ch;
       }
-      /* Two columns of card tiles rather than one stack of full-width rows.
-         Halving the number of rows is what lets a full guide page be taken in at
-         a glance instead of scrolled through. */
+      /* Rule cards size themselves from the width the rules get, so the proof
+         image stays in proportion to the copy beside it:
+           narrow  (< 460px): the proof fills the card width above the copy
+           medium  (460-839px): one column, proof beside the copy at ~34%
+           wide    (840px+): two columns, proof beside the copy at ~42%
+         A fixed 108px proof beside the copy left ~130px for text when the page
+         was narrower than the window, and cards ran 500px deep beside a thumbnail. */
       .rule-card-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 16px;
         align-items: start;
       }
       .rule-card-grid .premium-rule-card {
         display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 18px;
+        flex-direction: column;
+        gap: 14px;
         padding: 20px 22px;
       }
       .rule-card-copy {
         flex: 1 1 auto;
         min-width: 0;
       }
-      /* The proof stays beside the copy and keeps its portrait crop. It is a
-         full-body outfit: laid across the top of the card it would have to be
-         cropped to a landscape band, which cuts the outfit in half and loses the
-         one thing the proof is there to show. */
+      /* The proof is a full-body outfit, so it always keeps its portrait crop. */
       .rule-card-grid .premium-rule-card .rule-proof {
-        flex: 0 0 108px;
+        order: -1;
+        flex: 0 0 auto;
+        width: 100%;
         margin-top: 0;
         padding-top: 0;
         border-top: none;
+      }
+      @container rule-layout (min-width: 460px) {
+        .rule-card-grid .premium-rule-card {
+          flex-direction: row;
+          align-items: flex-start;
+          gap: 22px;
+        }
+        .rule-card-grid .premium-rule-card .rule-proof {
+          order: 1;
+          width: auto;
+          flex: 0 0 clamp(150px, 34%, 240px);
+        }
+      }
+      @container rule-layout (min-width: 840px) {
+        .rule-card-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .rule-card-grid .premium-rule-card .rule-proof {
+          flex-basis: clamp(140px, 42%, 220px);
+        }
       }
       .rule-card-grid .premium-rule-card h3 {
         max-width: none;
@@ -3317,7 +3294,7 @@ function BlueprintStyles() {
       }
       .visual-direction-copy h2 span {
         display: block;
-        font-size: clamp(44px, 7vw, 76px);
+        font-size: clamp(44px, 7cqi, 76px);
       }
       .visual-direction-copy p {
         font-size: 14px;
@@ -3372,7 +3349,7 @@ function BlueprintStyles() {
       }
       .hair-copy h2 span {
         display: block;
-        font-size: clamp(44px, 7vw, 76px);
+        font-size: clamp(44px, 7cqi, 76px);
       }
       .hair-copy p {
         font-size: 14px;
@@ -3478,8 +3455,13 @@ function BlueprintStyles() {
         font-size: 18px;
         opacity: 0.5;
       }
+      /* Sized from the copy column itself: at a report-wide size a 355px column
+         could not hold "Professional" and the title broke mid-word. */
+      .outfit-copy {
+        container: outfit-copy / inline-size;
+      }
       .outfit-copy h2 span {
-        font-size: clamp(42px, 6vw, 68px);
+        font-size: clamp(32px, 14.5cqi, 64px);
       }
       .outfit-quote {
         font-size: 17px;
@@ -3559,29 +3541,27 @@ function BlueprintStyles() {
         margin-bottom: 24px;
         text-transform: uppercase;
       }
+      /* The pieces read as a quiet shopping list under the look: hairline rows,
+         a small swatch, and a light "Shop" link beside the category. As cards
+         with a full-width ink button each piece took ~140px and every button
+         competed with the outfit image for attention. */
       .formula-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 14px;
-        /* Was align-items:start, which left a short card floating with a hole
-           beneath it while the card beside it ran on. Cards now fill their row,
-           so the grid reads as a set rather than as five loose tiles. */
-        align-items: stretch;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+        column-gap: 40px;
+        border-top: 1px solid rgba(44, 38, 34, 0.12);
       }
       .formula-card {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(44, 38, 34, 0.08);
-        border-radius: 16px;
-        padding: 20px 18px 22px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-      /* Pushes the shop link to the bottom edge of every card, so the buttons
-         line up across a row no matter how long the description runs. */
-      .formula-card .formula-shop {
-        margin-top: auto;
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        grid-template-areas: 'dot label shop' 'dot title title';
+        column-gap: 14px;
+        row-gap: 3px;
+        align-items: center;
+        /* Rows beside a two-line piece keep their content at the top edge. */
+        align-content: start;
+        padding: 14px 0 16px;
+        border-bottom: 1px solid rgba(44, 38, 34, 0.12);
       }
       .formula-head {
         display: flex;
@@ -3598,60 +3578,44 @@ function BlueprintStyles() {
         font-size: 12px;
         opacity: 0.55;
       }
-      /* The one thing on an outfit page she can act on, so it is set as a
-         real button rather than a text link: full card width, a 44px tap
-         target, ink on bone so it is the darkest object in the card. */
+      /* Still easy to find and tap, but light: an outlined pill that sits
+         beside the category instead of an ink bar under every piece. */
       .formula-shop {
-        display: flex;
+        grid-area: shop;
+        display: inline-flex;
         align-items: center;
-        gap: 9px;
-        width: 100%;
-        min-height: 44px;
-        margin-top: 16px;
-        padding: 11px 14px;
-        border-radius: 12px;
-        border: 1px solid ${INK};
-        background: ${INK};
-        color: ${IVORY};
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: -0.005em;
+        gap: 5px;
+        min-height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(44, 38, 34, 0.2);
+        background: transparent;
+        color: ${INK};
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0;
         text-decoration: none;
         white-space: nowrap;
-        transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
-      }
-      .formula-shop span {
-        flex: 1;
-        text-align: left;
-      }
-      .formula-shop svg {
-        flex: none;
+        transition: background 160ms ease, border-color 160ms ease;
       }
       .formula-shop-bag {
-        width: 15px;
-        height: 15px;
-        opacity: 0.9;
+        display: none;
       }
       .formula-shop-arrow {
-        width: 11px;
-        height: 11px;
-        opacity: 0.7;
-        transition: transform 180ms ease, opacity 180ms ease;
+        width: 10px;
+        height: 10px;
+        opacity: 0.6;
+        transition: transform 160ms ease, opacity 160ms ease;
       }
       .formula-shop:hover,
       .formula-shop:focus-visible {
-        background: #3B342F;
-        transform: translateY(-1px);
-        box-shadow: 0 10px 24px rgba(44, 38, 34, 0.18);
+        background: rgba(44, 38, 34, 0.06);
+        border-color: rgba(44, 38, 34, 0.45);
       }
       .formula-shop:hover .formula-shop-arrow,
       .formula-shop:focus-visible .formula-shop-arrow {
         transform: translate(1px, -1px);
         opacity: 1;
-      }
-      .formula-shop:active {
-        transform: translateY(0);
-        box-shadow: none;
       }
       .formula-shop:focus-visible {
         outline: 2px solid rgba(201, 169, 110, 0.9);
@@ -3662,15 +3626,26 @@ function BlueprintStyles() {
         .formula-shop { display: none; }
       }
       .formula-card .swatch-dot {
-        width: 32px;
-        height: 32px;
+        grid-area: dot;
+        align-self: start;
+        width: 22px;
+        height: 22px;
+        margin: 4px 0 0;
         display: block;
-        margin-bottom: 0;
+        /* Ivory and white swatches would otherwise vanish on the bone page. */
+        border-color: rgba(44, 38, 34, 0.2);
+      }
+      .formula-card .dossier-label {
+        grid-area: label;
+        margin: 0;
       }
       .formula-card h3 {
-        font-size: 17px;
-        line-height: 1.2;
-        margin: 8px 0;
+        grid-area: title;
+        font-size: 15px;
+        font-weight: 500;
+        line-height: 1.4;
+        letter-spacing: -0.01em;
+        margin: 0;
       }
       .formula-card p {
         font-size: 11px;
@@ -3806,10 +3781,10 @@ function BlueprintStyles() {
         margin-bottom: 28px;
       }
       .continuation-inner h2 span {
-        font-size: clamp(44px, 7vw, 64px);
+        font-size: clamp(44px, 7cqi, 64px);
       }
       .continuation-copy h2 span {
-        font-size: clamp(40px, 6vw, 58px);
+        font-size: clamp(40px, 6cqi, 58px);
       }
       .continuation-inner p {
         font-size: 15px;
@@ -3868,6 +3843,8 @@ function BlueprintStyles() {
         .iconik-report {
           padding: 0;
         }
+      }
+      @container iconik-report (max-width: 900px) {
         .iconik-page {
           border-radius: 0;
           margin-bottom: 0;
@@ -3935,7 +3912,7 @@ function BlueprintStyles() {
           margin-bottom: 24px;
         }
         .cover-name {
-          font-size: clamp(38px, 12.5vw, 60px);
+          font-size: clamp(38px, 12.5cqi, 60px);
         }
         .cover-tagline {
           margin-top: 22px;
@@ -3980,22 +3957,9 @@ function BlueprintStyles() {
           border-bottom: 1px solid rgba(44, 38, 34, 0.12);
           padding: 0 0 20px;
         }
-        /* On a phone the card is about 280px wide, so a proof beside the copy
-           left roughly sixteen characters a line. The proof moves above the
-           copy as a small portrait tile and the text gets the full width. */
-        .rule-card-grid .premium-rule-card {
-          flex-direction: column;
-          gap: 14px;
-        }
-        .rule-card-grid .premium-rule-card .rule-proof {
-          order: -1;
-          flex: 0 0 auto;
-          width: 132px;
-        }
         .dossier-cards,
         .transformation-grid,
         .reading-blocks,
-        .rule-card-grid,
         .proportion-card-grid,
         .face-visuals,
         .hair-card-grid,
@@ -4008,25 +3972,6 @@ function BlueprintStyles() {
         .premium-swatches {
           grid-template-columns: repeat(2, 1fr);
         }
-        /* One column on a phone: two abreast left each card about 130px of
-           text, which cut "Shop this piece" off mid-word. The swatch sits
-           beside the piece name so the card stays short. */
-        .formula-grid {
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
-        .formula-card {
-          display: grid;
-          grid-template-columns: 32px 1fr;
-          grid-template-areas: 'dot label' 'dot title' 'shop shop';
-          column-gap: 14px;
-          row-gap: 4px;
-          padding: 16px 16px 16px;
-        }
-        .formula-card .swatch-dot { grid-area: dot; margin-top: 2px; }
-        .formula-card .dossier-label { grid-area: label; }
-        .formula-card h3 { grid-area: title; margin: 2px 0 0; font-size: 16px; }
-        .formula-card .formula-shop { grid-area: shop; margin-top: 12px; }
         .palette-inner h2 {
           display: block;
         }
@@ -4076,7 +4021,7 @@ function BlueprintStyles() {
           page-break-after: always;
           box-shadow: none !important;
         }
-        .image-regenerate-button, .slot-tools, .slot-prompt, .cover-scroll-cue { display: none !important; }
+        .slot-studio-toolbar, .slot-studio-empty, .slot-studio-busy, .slot-studio-saved, .slot-drop-hint, .cover-scroll-cue { display: none !important; }
         .iconik-report-reveal .iconik-page, .iconik-report-reveal .iconik-page > * { opacity: 1 !important; transform: none !important; }
         .blueprint-deferred-shell { content-visibility: visible !important; contain-intrinsic-size: none !important; }
       }

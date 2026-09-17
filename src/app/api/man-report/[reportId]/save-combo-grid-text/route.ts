@@ -41,7 +41,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('man_reports')
-    .select('report_data, share_token')
+    .select('report_data, image_urls, share_token')
     .eq('id', reportId)
     .single();
 
@@ -66,10 +66,18 @@ export async function POST(
     },
   };
 
+  const clearedKinds = normalised.text === existingComboText ? [] : kind ? [kind] : [...COMBO_GRID_KINDS];
+  const imagePaths = report.image_urls ? {
+    ...report.image_urls,
+    comboGridCards: { ...report.image_urls.comboGridCards,
+      ...Object.fromEntries(clearedKinds.map(key => [key, null])) },
+  } : null;
+
   const { error: saveError } = await supabaseAdmin
     .from('man_reports')
     .update({
       report_data: nextReportData,
+      image_urls: imagePaths,
       updated_at: new Date().toISOString(),
     })
     .eq('id', reportId);
@@ -80,5 +88,5 @@ export async function POST(
 
   await revalidateManReportCache(reportId, report.share_token ?? null);
 
-  return NextResponse.json({ updatedComboGridText: normalised.text, kind });
+  return NextResponse.json({ updatedComboGridText: normalised.text, kind, clearedKinds });
 }

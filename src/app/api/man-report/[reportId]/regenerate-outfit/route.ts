@@ -1,3 +1,4 @@
+import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
@@ -24,6 +25,7 @@ function clearOutfitImageSlot(
   outfitCards[outfitNumber - 1] = null;
 
   return {
+    ...paths,
     hairstyleCards: [...(paths?.hairstyleCards ?? [])],
     beardCards: [...(paths?.beardCards ?? [])],
     eyewearCards: [...(paths?.eyewearCards ?? [])],
@@ -110,7 +112,7 @@ export async function POST(
     },
   });
 
-  const clearedImagePaths = clearOutfitImageSlot(imagePaths, outfitNumber);
+  const clearedImagePaths = clearOutfitImageSlot(invalidateChangedOutfitImages(imagePaths, currentS4, newS4), outfitNumber);
   const { error: saveErr } = await supabaseAdmin
     .from('man_reports')
     .update({
@@ -203,9 +205,8 @@ export async function POST(
   const newImagePaths = await mergeManReportImagePathsForReport(
     reportId,
     { outfitCards: outfitPatch },
-    {
-      report_data: nextReportData,
-    },
+    {},
+    newS4,
   );
 
   const resolved = await resolveManReportImageUrls(newImagePaths);

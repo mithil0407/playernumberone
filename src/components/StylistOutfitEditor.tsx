@@ -1,13 +1,16 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { ArrowRight, Check, Copy, ImagePlus, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, Copy, Crop, ImagePlus, Loader2, Plus, Trash2 } from 'lucide-react';
+import ImageCropDialog, { type ImageCropSource } from '@/components/ImageCropDialog';
 import type { BlueprintPage } from '@/lib/stylistBlueprintGenerator';
 import { outfitPieces, setOutfitPieces, outfitCopy, setOutfitCopy, OUTFIT_COPY_FIELDS, type OutfitPiece } from '@/lib/stylistOutfitEditor';
 
 const fieldClass = 'block w-full mt-1.5 rounded-xl border border-[#2C2622]/15 bg-[#FAF7F0] px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#9A7538] disabled:opacity-60';
-export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, getPrompt, getAlternatives, chooseAlternative, onApprove, imageUrl, busy, saving, hasUnsavedEdits, saveError }: {
+export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, getPrompt, getAlternatives, chooseAlternative, onApprove, imageUrl, busy, saving, hasUnsavedEdits, saveError, getCropAspect }: {
   saveError?: string;
+  /** Width ÷ height of the outfit image frame in the report, used as the default crop shape. */
+  getCropAspect?: () => number | null;
   page: BlueprintPage; onChange: (page: BlueprintPage) => void; onSave: () => Promise<boolean>;
   onUpload: (file: File) => Promise<boolean>; getPrompt: () => Promise<string>; onApprove: () => Promise<void>;
   imageUrl: string | null; busy: boolean; saving: boolean; hasUnsavedEdits: boolean;
@@ -19,6 +22,8 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [cropSource, setCropSource] = useState<ImageCropSource | null>(null);
+  const [cropAspect, setCropAspect] = useState<number | null>(null);
   const [alternatives, setAlternatives] = useState<Array<{ id: string; pieces: string[] }> | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const pieces = outfitPieces(page);
@@ -29,12 +34,29 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
     try { if (await onSave()) setStep('image'); else setError('Finish saving the outfit before continuing.'); }
     finally { setWorking(false); }
   };
-  const upload = async (file?: File) => {
-    if (!file || disabled || saving) return;
+  const openCropper = (source: ImageCropSource) => {
+    if (disabled || saving) return;
+    setError(''); setMessage('');
+    setCropAspect(getCropAspect?.() ?? null);
+    setCropSource(source);
+  };
+  const choose = (file?: File) => {
+    if (input.current) input.current.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { setError('Choose a JPG, PNG or WebP image.'); return; }
+    openCropper({ kind: 'file', file });
+  };
+  const upload = async (file: File) => {
+    if (disabled || saving) return false;
     setWorking(true); setError(''); setMessage('');
-    try { if (await onUpload(file)) setMessage('Image saved. Review the report, then approve this page.'); else setError('Image was not saved. Check the file and try again.'); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : 'Image upload failed'); }
-    finally { setWorking(false); if (input.current) input.current.value = ''; }
+    try {
+      const saved = await onUpload(file);
+      if (saved) { setMessage('Image saved. Review the report, then approve this page.'); setCropSource(null); }
+      return saved;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Image upload failed');
+      return false;
+    } finally { setWorking(false); }
   };
   const copyPrompt = async () => {
     setWorking(true); setError('');
@@ -85,15 +107,28 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
         <p role="status" className="text-center text-xs text-[#746D65] mt-2">{saving ? 'Saving your changes' : hasUnsavedEdits ? 'Changes waiting to save' : 'All changes saved'}</p>
       </div>
     </> : <>
-      <div onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); void upload(e.dataTransfer.files[0]); }} className={`rounded-2xl border-2 border-dashed p-5 text-center ${dragging ? 'border-[#9A7538] bg-[#EDE5D2]' : 'border-[#2C2622]/20'}`}>
+      <div onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files[0]); }} className={`rounded-2xl border-2 border-dashed p-5 text-center ${dragging ? 'border-[#9A7538] bg-[#EDE5D2]' : 'border-[#2C2622]/20'}`}>
         {imageUrl ? <img src={imageUrl} alt="Saved outfit image" className="max-h-72 mx-auto rounded-xl mb-4 object-contain" /> : <ImagePlus size={30} className="mx-auto mb-4 text-[#9A7538]" />}
-        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Upload outfit image" className="sr-only" onChange={e => void upload(e.target.files?.[0])} />
-        <button disabled={disabled || saving} onClick={() => input.current?.click()} className="rounded-xl px-5 py-3 text-sm bg-[#2C2622] text-[#F4EFE5] disabled:opacity-50">{working ? 'Working…' : imageUrl ? 'Replace image' : 'Choose image'}</button>
-        <p className="text-xs text-[#746D65] mt-3">Or drop it here · JPG, PNG or WebP · up to 8 MB</p>
+        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Upload outfit image" className="sr-only" onChange={e => choose(e.target.files?.[0])} />
+        <div className="flex flex-wrap justify-center gap-2">
+          <button disabled={disabled || saving} onClick={() => input.current?.click()} className="rounded-xl px-5 py-3 text-sm bg-[#2C2622] text-[#F4EFE5] disabled:opacity-50">{working ? 'Working…' : imageUrl ? 'Replace image' : 'Choose image'}</button>
+          {imageUrl && <button disabled={disabled || saving} onClick={() => openCropper({ kind: 'url', url: imageUrl })} className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm border border-[#2C2622]/15 bg-[#FAF7F0] disabled:opacity-50"><Crop size={15} /> Crop image</button>}
+        </div>
+        <p className="text-xs text-[#655E57] mt-3">Or drop it here · JPG, PNG or WebP · you can crop before it saves</p>
       </div>
       <button disabled={disabled || saving} onClick={() => void copyPrompt()} className="w-full flex justify-center gap-2 border border-[#2C2622]/15 rounded-xl px-4 py-3 text-sm disabled:opacity-50"><Copy size={15} /> Copy image prompt</button>
       <button disabled={disabled || saving || !imageUrl || hasUnsavedEdits} onClick={() => void onApprove()} className="w-full flex justify-center gap-2 rounded-xl px-4 py-3 text-sm bg-[#426B4E] text-white disabled:opacity-40"><Check size={15} /> Approve & next page</button>
       {!imageUrl && <p className="text-xs text-[#746D65]">Upload the matching image before approving this outfit.</p>}
     </>}
+    {cropSource && <ImageCropDialog
+      source={cropSource}
+      frameAspect={cropAspect}
+      title={cropSource.kind === 'url' ? 'Crop outfit image' : 'Crop before uploading'}
+      subtitle={`${page.title || 'Outfit image'} · drag to position, scroll or pinch to zoom`}
+      confirmLabel={cropSource.kind === 'url' ? 'Save crop' : 'Crop & upload'}
+      onCancel={() => setCropSource(null)}
+      onConfirm={upload}
+      onUseOriginal={upload}
+    />}
   </div>;
 }

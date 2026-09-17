@@ -1,4 +1,7 @@
 .next
 .next-audit
+.next-workspace-dev
+.next-security-check
 node_modules
 tsconfig.tsbuildinfo
+.next-membership-preview

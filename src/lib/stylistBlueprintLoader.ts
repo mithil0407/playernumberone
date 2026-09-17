@@ -104,7 +104,12 @@ export async function loadStylistBlueprintReportByIdFresh(reportId: string): Pro
   return null;
 }
 
-async function loadPublicByShareToken(shareToken: string): Promise<PublicStylistBlueprintReport | null> {
+/**
+ * The client-facing view of a report plus whether its share link is live. India
+ * consultation reports go live only once published; other reports are live as
+ * soon as they exist.
+ */
+async function loadClientReportByShareToken(shareToken: string, options: { requireLive?: boolean } = {}): Promise<{ report: PublicStylistBlueprintReport; live: boolean } | null> {
   const result = await supabaseAdmin
     .from('stylist_blueprint_reports')
     .select(PUBLIC_REPORT_SELECT_WITH_SOURCE)
@@ -116,8 +121,10 @@ async function loadPublicByShareToken(shareToken: string): Promise<PublicStylist
     const intake = Array.isArray(row.stylist_intake_responses)
       ? row.stylist_intake_responses[0]
       : row.stylist_intake_responses;
-    if (intake?.intake_source === 'india_consultation' && !row.published_at) return null;
-    return publicReport({ ...row, stylist_intake_responses: intake });
+    const live = !(intake?.intake_source === 'india_consultation' && !row.published_at);
+    // Skip resolving signed image URLs for a link that is about to 404.
+    if (!live && options.requireLive) return null;
+    return { report: await publicReport({ ...row, stylist_intake_responses: intake }), live };
   }
 
   if (isMissingIntakeSourceError(result.error)) {
@@ -128,11 +135,26 @@ async function loadPublicByShareToken(shareToken: string): Promise<PublicStylist
       .maybeSingle();
 
     if (!legacyResult.error && legacyResult.data) {
-      return publicReport(legacyResult.data as unknown as RawStylistBlueprintReport);
+      return { report: await publicReport(legacyResult.data as unknown as RawStylistBlueprintReport), live: true };
     }
   }
 
   return null;
+}
+
+async function loadPublicByShareToken(shareToken: string): Promise<PublicStylistBlueprintReport | null> {
+  const loaded = await loadClientReportByShareToken(shareToken, { requireLive: true });
+  return loaded?.live ? loaded.report : null;
+}
+
+/**
+ * The exact client view of a report, including one not yet published, for staff
+ * previewing it. Deliberately uncached: it must reflect the latest edits, and an
+ * unpublished report must never land in the public cache. Callers must check
+ * access with canAccessBlueprintReport before rendering it.
+ */
+export async function getStylistBlueprintClientPreviewByShareToken(shareToken: string) {
+  return loadClientReportByShareToken(shareToken);
 }
 
 export const getStylistBlueprintReportById = cache(async (reportId: string) => {

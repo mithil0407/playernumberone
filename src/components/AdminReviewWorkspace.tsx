@@ -80,6 +80,14 @@ export function TextArea({
   );
 }
 
+const PILL_TONES = {
+  success: { background: '#E3EDE3', color: '#3F6A4C' },
+  error: { background: '#F6E3DF', color: '#9A4039' },
+  gold: { background: '#F1E6CF', color: '#7A5A26' },
+  slate: { background: '#E2E8EA', color: '#3F5860' },
+  muted: { background: 'rgba(44,38,34,0.06)', color: '#655E57' },
+};
+
 export function Pill({
   children,
   tone = 'muted',
@@ -87,46 +95,51 @@ export function Pill({
   children: ReactNode;
   tone?: 'muted' | 'success' | 'error' | 'gold' | 'slate';
 }) {
-  const color = tone === 'success' ? reviewTheme.success
-    : tone === 'error' ? reviewTheme.error
-      : tone === 'gold' ? reviewTheme.gold
-        : tone === 'slate' ? reviewTheme.slate
-          : reviewTheme.muted;
   return (
-    <span className="rounded-full px-2.5 py-1 iconik-mono capitalize" style={{ fontSize: '10px', background: `${color}18`, color }}>
+    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 luxury-body font-medium whitespace-nowrap capitalize" style={{ fontSize: '11px', lineHeight: 1.2, ...PILL_TONES[tone] }}>
       {children}
     </span>
   );
 }
+
+// Primary is the one action a reviewer should take next; everything else stays quiet so it reads first.
+const BUTTON_TONES = {
+  primary: { background: reviewTheme.ink, color: reviewTheme.bg, border: `1px solid ${reviewTheme.ink}` },
+  success: { background: '#E3EDE3', color: '#3F6A4C', border: '1px solid rgba(66,107,78,0.28)' },
+  danger: { background: '#FBF1EE', color: '#9A4039', border: '1px solid rgba(154,64,57,0.28)' },
+  neutral: { background: reviewTheme.panel, color: reviewTheme.ink, border: '1px solid rgba(44,38,34,0.14)' },
+  ghost: { background: 'transparent', color: '#4F4943', border: '1px solid transparent' },
+};
 
 export function ActionButton({
   children,
   onClick,
   disabled,
   tone = 'neutral',
+  size = 'md',
   title,
+  ariaLabel,
+  className = '',
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  tone?: 'neutral' | 'primary' | 'success' | 'danger';
+  tone?: keyof typeof BUTTON_TONES;
+  size?: 'sm' | 'md' | 'lg';
   title?: string;
+  ariaLabel?: string;
+  className?: string;
 }) {
-  const styles = tone === 'primary'
-    ? { background: reviewTheme.slateDeep, color: reviewTheme.bg, border: `1px solid ${reviewTheme.slateDeep}` }
-    : tone === 'success'
-      ? { background: `${reviewTheme.success}18`, color: reviewTheme.success, border: `1px solid ${reviewTheme.success}30` }
-      : tone === 'danger'
-        ? { background: `${reviewTheme.error}12`, color: reviewTheme.error, border: `1px solid ${reviewTheme.error}25` }
-        : { background: reviewTheme.card, color: reviewTheme.muted, border: `1px solid ${reviewTheme.border}` };
-
+  const sizing = size === 'lg' ? 'px-5 py-3 text-sm font-medium' : size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm';
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-45 transition"
-      style={styles}
+      aria-label={ariaLabel}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl luxury-body whitespace-nowrap transition hover:brightness-[0.96] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:brightness-100 disabled:active:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9A7538] ${sizing} ${className}`}
+      style={BUTTON_TONES[tone]}
     >
       {children}
     </button>
