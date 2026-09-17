@@ -1427,8 +1427,24 @@ export async function resolveStylistBlueprintImageUrls(paths: StylistBlueprintIm
     }
   }
 
+  return mapStylistBlueprintImagePaths(paths, path => signedUrlMap.get(path) ?? null);
+}
+
+/** Every stored image path a report references. */
+export function isStylistBlueprintImagePath(paths: StylistBlueprintImagePaths | null | undefined, path: string) {
+  return Boolean(path) && collectPaths(paths).includes(path);
+}
+
+/** A short-lived URL for one stored report image. */
+export function signStylistBlueprintImagePath(path: string) {
+  return getSignedUrl(path);
+}
+
+/** Builds the resolved image structure the report renders, with URLs chosen by the caller. */
+export function mapStylistBlueprintImagePaths(paths: StylistBlueprintImagePaths | null | undefined, urlFor: (path: string) => string | null) {
+  if (!paths) return null;
   const resolved = normalise(paths);
-  const map = (path: string | null | undefined) => path ? signedUrlMap.get(path) ?? null : null;
+  const map = (path: string | null | undefined) => path ? urlFor(path) : null;
   return {
     cover: { portrait: map(resolved.cover.portrait) },
     diagnosis: Object.fromEntries(Object.entries(resolved.diagnosis).map(([key, value]) => [key, map(value)])),

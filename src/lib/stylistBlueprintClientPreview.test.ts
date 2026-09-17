@@ -20,3 +20,17 @@ test('the public (cached) loader still hides unpublished consultation reports', 
   assert.match(cached, /loadPublicByShareToken\(shareToken\)/);
   assert.doesNotMatch(cached, /getStylistBlueprintClientPreviewByShareToken|allowUnpublished/);
 });
+
+test('client report images use stable links that sign on request, never baked-in signed URLs', () => {
+  const publicReportFn = loader.slice(loader.indexOf('async function publicReport'), loader.indexOf('async function resolveRowImages'));
+  assert.match(publicReportFn, /mapStylistBlueprintImagePaths\(row\.image_urls, path => stylistBlueprintClientImageUrl\(row\.share_token, path\)\)/);
+  assert.doesNotMatch(publicReportFn, /resolveStylistBlueprintImageUrls/);
+  const route = readFileSync('src/app/api/stylist-blueprint/share/[shareToken]/image/route.ts', 'utf8');
+  assert.match(route, /isStylistBlueprintImagePath\(source\.imagePaths, path\)/);
+  assert.match(route, /if \(!source\.live && !\(await canAccessBlueprintReport\(source\.reportId\)\)\) return notFound\(\);/);
+});
+
+test('the client report sends its styles with the server HTML', () => {
+  assert.match(page, /<StyledJsxRegistry>/);
+  assert.match(readFileSync('src/components/StyledJsxRegistry.tsx', 'utf8'), /useServerInsertedHTML/);
+});
