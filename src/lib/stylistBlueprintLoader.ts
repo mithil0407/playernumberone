@@ -9,6 +9,7 @@ import {
   getStylistBlueprintShareCacheTag,
 } from './stylistBlueprintCache';
 import {
+  mapStylistBlueprintImagePaths,
   resolveStylistBlueprintImageUrls,
   type StylistBlueprintImagePaths,
   type ResolvedStylistBlueprintImageUrls,
@@ -48,6 +49,10 @@ type PublicStylistBlueprintReport = Pick<LoadedStylistBlueprintReport, 'id' | 's
   stylist_intake_responses: { intake_source?: string | null } | null;
 };
 
+export function stylistBlueprintClientImageUrl(shareToken: string, path: string) {
+  return `/api/stylist-blueprint/share/${encodeURIComponent(shareToken)}/image?p=${encodeURIComponent(path)}`;
+}
+
 async function publicReport(row: RawStylistBlueprintReport): Promise<PublicStylistBlueprintReport> {
   let data = row.report_data;
   if (isVersionedStylistBlueprintReportData(data)) {
@@ -58,7 +63,10 @@ async function publicReport(row: RawStylistBlueprintReport): Promise<PublicStyli
   }
   return {
     id: row.id, status: row.status, report_data: data,
-    image_urls: await resolveStylistBlueprintImageUrls(row.image_urls),
+    // Stable links that sign on request. The page is cached, and signed URLs
+    // baked into it expired after an hour, so a client opening her link later
+    // saw every image broken.
+    image_urls: mapStylistBlueprintImagePaths(row.image_urls, path => stylistBlueprintClientImageUrl(row.share_token, path)),
     progress_stage: null, error_message: null,
     stylist_intake_responses: row.stylist_intake_responses ? { intake_source: row.stylist_intake_responses.intake_source } : null,
   };
@@ -162,6 +170,28 @@ export const getStylistBlueprintReportById = cache(async (reportId: string) => {
     () => loadStylistBlueprintReportByIdFresh(reportId),
     ['stylist-blueprint-admin', reportId],
     { revalidate: STYLIST_BLUEPRINT_CACHE_SECONDS, tags: [getStylistBlueprintCacheTag(reportId)] },
+  );
+  return load();
+});
+
+async function loadClientImageSource(shareToken: string) {
+  const { data } = await supabaseAdmin
+    .from('stylist_blueprint_reports')
+    .select('id, image_urls, published_at, stylist_intake_responses(intake_source)')
+    .eq('share_token', shareToken)
+    .maybeSingle();
+  if (!data) return null;
+  const intake = Array.isArray(data.stylist_intake_responses) ? data.stylist_intake_responses[0] : data.stylist_intake_responses;
+  const live = !((intake as { intake_source?: string | null } | null)?.intake_source === 'india_consultation' && !data.published_at);
+  return { reportId: data.id as string, imagePaths: data.image_urls as StylistBlueprintImagePaths | null, live };
+}
+
+/** What the client image route needs, cached briefly because a report page requests dozens of images at once. */
+export const getStylistBlueprintClientImageSource = cache(async (shareToken: string) => {
+  const load = unstable_cache(
+    () => loadClientImageSource(shareToken),
+    ['stylist-blueprint-client-images-v1', shareToken],
+    { revalidate: STYLIST_BLUEPRINT_CACHE_SECONDS, tags: [getStylistBlueprintShareCacheTag(shareToken)] },
   );
   return load();
 });

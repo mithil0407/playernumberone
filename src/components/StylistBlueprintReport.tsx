@@ -2366,9 +2366,12 @@ function BlueprintStyles() {
         from { opacity: 0; transform: scaleX(0) translate3d(0, 4px, 0); }
         to { opacity: 1; transform: none; }
       }
+      /* The panel itself never fades: starting it at zero opacity showed a blank
+         ink screen with only the contents bar for the first second. The copy
+         inside still rises in. */
       @keyframes blueprint-panel {
-        from { opacity: 0; transform: scale(1.012); }
-        to { opacity: 1; transform: none; }
+        from { transform: scale(1.012); }
+        to { transform: none; }
       }
       @media (prefers-reduced-motion: no-preference) {
         .iconik-report:not(.iconik-report-editable) .cover-page {

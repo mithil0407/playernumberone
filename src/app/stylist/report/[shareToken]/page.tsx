@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import StylistBlueprintReport from '@/components/StylistBlueprintReport';
 import StylistBlueprintViewerChrome, { type BlueprintOutlineEntry } from '@/components/StylistBlueprintViewerChrome';
 import StylistBlueprintPreviewBanner from '@/components/StylistBlueprintPreviewBanner';
+import StyledJsxRegistry from '@/components/StyledJsxRegistry';
 import { getPublicStylistBlueprintByShareToken, getStylistBlueprintClientPreviewByShareToken } from '@/lib/stylistBlueprintLoader';
 import { canAccessBlueprintReport } from '@/lib/stylistWorkspaceAuth';
 import { isManualStylistBlueprintSubmission, isVersionedStylistBlueprintReportData } from '@/lib/stylistBlueprintGenerator';
@@ -171,6 +172,7 @@ export default async function StylistPublicReportPage({ params, searchParams }: 
         /* Room for the floating contents pill so it never covers the last line. */
         .blueprint-footer { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
       `}</style>
+      <StyledJsxRegistry>
       <div
         className="iconik-theme min-h-screen min-h-dvh"
         style={{ background: '#2C2622', paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -192,6 +194,7 @@ export default async function StylistPublicReportPage({ params, searchParams }: 
       </div>
       {outline.length > 0 && <StylistBlueprintViewerChrome outline={outline} clientName={clientName} />}
       {preview && <StylistBlueprintPreviewBanner live={preview.live} />}
+      </StyledJsxRegistry>
     </>
   );
 }
