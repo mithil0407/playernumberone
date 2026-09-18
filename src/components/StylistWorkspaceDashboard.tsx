@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { AlertTriangle, ArrowRight, ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, Search, Users } from 'lucide-react';
 import { WORKSPACE_CATEGORIES, WORKSPACE_STAGE_LABELS, WORKSPACE_VIEWS, isOverdue, queryWorkspaceItems, workspaceNextAction, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
 
 const C = { ink: '#2C2622', muted: '#655E57', card: '#EDE5D2', bg: '#F4EFE5', surface: '#FBF8F2', border: 'rgba(44,38,34,.12)', gold: '#9A7538', danger: '#9A4039' };
@@ -20,6 +20,11 @@ type Result = { snapshotItems?: WorkspaceQueueItem[]; items: WorkspaceQueueItem[
 function dateLabel(value: string | null) {
   return value ? new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'Not recorded';
 }
+/** A published report can be confirmed as delivered; anything earlier cannot. */
+function canMarkDelivered(item: WorkspaceQueueItem) {
+  return Boolean(item.report?.publishedAt) && item.bucket !== 'delivered';
+}
+
 function daysOverdue(item: WorkspaceQueueItem) {
   return Math.max(1, Math.floor((Date.now() - Date.parse(item.reportDueAt!)) / 86_400_000));
 }
@@ -66,6 +71,8 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     return { ...source, items: visible.slice((page - 1) * 24, page * 24), total: visible.length, page, limit: 24 };
   }, [source, view, debouncedSearch, page]);
   const [busy, setBusy] = useState(!initialResult);
+  const [deliveringId, setDeliveringId] = useState('');
+  const [deliveryNote, setDeliveryNote] = useState('');
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [updated, setUpdated] = useState<number | null>(null);
@@ -131,6 +138,31 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     })();
     return () => { sequence.current = requestId + 1; clearTimeout(timeout); abort.abort(); };
   }, [admin, stylistSlug, scope, serverFilters, refresh]);
+
+  // Stylists send the link from WhatsApp in another tab and often never come
+  // back to the report to confirm, so a published report can be marked
+  // delivered from its card here.
+  const markDelivered = async (item: WorkspaceQueueItem) => {
+    if (!item.report || deliveringId) return;
+    const name = item.clientName || 'this client';
+    if (!window.confirm(`Mark ${name}'s report as delivered? Do this once you have sent them the link.`)) return;
+    setDeliveringId(item.id);
+    setDeliveryNote('');
+    setError('');
+    try {
+      const response = await fetch(`/api/stylist-workspace/reports/${item.report.id}/delivery`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'confirm' }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not mark this report as delivered');
+      setDeliveryNote(`${name}'s report is marked delivered.`);
+      setRefresh(value => value + 1);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not mark this report as delivered');
+    } finally {
+      setDeliveringId('');
+    }
+  };
 
   const generating = Boolean(result?.counts.generating);
   useEffect(() => {
@@ -215,6 +247,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     </div>}
 
     {error && <div role="alert" className="rounded-xl p-4 mb-4 text-sm luxury-body" style={{ color: C.danger, background: '#F6E3DF' }}>{error} <button onClick={() => setRefresh(value => value + 1)} className="underline ml-2">Retry</button></div>}
+    {deliveryNote && <p role="status" className="rounded-xl p-3 mb-4 text-sm luxury-body" style={{ color: '#3F6A4C', background: '#E3EDE3' }}>{deliveryNote}</p>}
 
     {!result && busy && <div aria-hidden="true" className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="rounded-2xl h-44 animate-pulse" style={{ background: C.card }} />)}</div>}
 
@@ -247,8 +280,21 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
             </div>
             {item.report?.errorMessage && <p className="luxury-body text-xs line-clamp-2" style={{ color: C.danger }}>{item.report.errorMessage}</p>}
             {note && <p className="luxury-body text-xs" style={{ color: C.muted }}>{note}</p>}
-            <div className="flex items-center gap-4 mt-auto pt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-auto pt-1">
               <Link prefetch={false} href={primaryUrl} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl luxury-body text-sm" style={{ background: C.ink, color: C.bg }}>{nextAction.label}<ArrowRight size={14} /></Link>
+              {canMarkDelivered(item) && (
+                <button
+                  type="button"
+                  onClick={() => void markDelivered(item)}
+                  disabled={Boolean(deliveringId)}
+                  title="Already sent the link on WhatsApp? Mark it delivered without opening the report."
+                  className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl luxury-body text-sm disabled:opacity-50"
+                  style={{ background: '#E3EDE3', color: '#3F6A4C' }}
+                >
+                  {deliveringId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                  {deliveringId === item.id ? 'Marking…' : 'Mark delivered'}
+                </button>
+              )}
               {primaryUrl !== detailUrl && <Link prefetch={false} href={detailUrl} className="luxury-body text-xs underline underline-offset-4" style={{ color: C.muted }}>Client details</Link>}
             </div>
           </article>;
