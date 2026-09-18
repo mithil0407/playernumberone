@@ -156,3 +156,13 @@ test('waiting clients split into recent and older than 30 days, and overdue repo
 test('every workspace view belongs to exactly one tab', () => {
   for (const { key } of WORKSPACE_VIEWS) assert.equal(WORKSPACE_CATEGORIES.filter(tab => tab.views.includes(key)).length, 1, key);
 });
+
+import { readFileSync } from 'node:fs';
+test('a published report can be marked delivered from its dashboard card', () => {
+  const dashboard = readFileSync('src/components/StylistWorkspaceDashboard.tsx', 'utf8');
+  // Offered only once the client link works, and never for an already delivered report.
+  assert.match(dashboard, /function canMarkDelivered\(item: WorkspaceQueueItem\) \{\s*return Boolean\(item\.report\?\.publishedAt\) && item\.bucket !== 'delivered';/);
+  assert.match(dashboard, /body: JSON\.stringify\(\{ action: 'confirm' \}\)/);
+  assert.match(dashboard, /window\.confirm\(`Mark \$\{name\}'s report as delivered\?/);
+  assert.match(dashboard, /setRefresh\(value => value \+ 1\);/);
+});
