@@ -642,9 +642,11 @@ The outfit must clearly show this shape principle: ${proof.principle}`;
  * the studio Visuals panel unreadable. Identity, pose and background are all the
  * base needs to carry; what she wears comes from the outfit formula.
  */
-const WORN_OUTFIT_RENDER_BASE = `Using the reference images, create a full-body studio photograph of the same woman wearing the outfit below.
+export const STYLIST_WORN_OUTFIT_RENDER_BASE = `Using the reference images, create a full-body studio photograph of the same woman wearing the outfit below.
 
-Keep her original body proportions, weight, physique and natural body shape. Keep her face, skin tone and hairstyle. Do not slim, reshape, age or idealise her.
+Keep her original body proportions, weight, physique and natural body shape. Keep her face and skin tone. Do not slim, reshape, age or idealise her.
+
+Her own hair, same cut, length and colour, but blow-dried and styled for this shoot rather than as photographed: smooth, flyaways controlled. No new cut, fringe or added volume.
 
 She is smiling, straight on to camera in a slightly stylish standing pose, with soft natural flattering makeup.
 
@@ -677,7 +679,7 @@ function shortCoverageLine(reportData: StylistBlueprintReportData) {
 }
 
 function wornOutfitPrompt(reportData: StylistBlueprintReportData, page: BlueprintPage) {
-  return `${WORN_OUTFIT_RENDER_BASE}
+  return `${STYLIST_WORN_OUTFIT_RENDER_BASE}
 
 ${wornOutfitPromptDelta(reportData, page)}`;
 }
@@ -1090,10 +1092,10 @@ export function buildStylistBlueprintManualImagePrompt(
     outfit: 'manual-source-photo',
   });
   const prompt = plan.prompt;
-  // 28 of the 38 slots share WORN_OUTFIT_RENDER_BASE verbatim. Splitting it out
+  // 28 of the 38 slots share STYLIST_WORN_OUTFIT_RENDER_BASE verbatim. Splitting it out
   // lets the studio show the few lines that actually differ per slot and keep
   // the shared preamble collapsed, instead of 28 walls of identical text.
-  const sharedPreamble = prompt.startsWith(WORN_OUTFIT_RENDER_BASE) ? WORN_OUTFIT_RENDER_BASE : null;
+  const sharedPreamble = prompt.startsWith(STYLIST_WORN_OUTFIT_RENDER_BASE) ? STYLIST_WORN_OUTFIT_RENDER_BASE : null;
   const slotDetail = sharedPreamble ? prompt.slice(sharedPreamble.length).trim() : prompt;
   return { prompt, size: plan.size ?? '1024x1536', sharedPreamble, slotDetail };
 }
