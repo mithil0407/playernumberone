@@ -118,7 +118,8 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     if (stylistSlug) query.set('stylistSlug', stylistSlug);
     if (fresh) query.set('fresh', '1');
     const endpoint = admin ? '/api/stylist-workspace/admin/overview' : '/api/stylist-workspace/queue';
-    const timeout = setTimeout(() => abort.abort(new Error('Request timed out. Please retry.')), 25000);
+    const timedOut = new Error('Request timed out. Please retry.');
+    const timeout = setTimeout(() => abort.abort(timedOut), 25000);
     void (async () => {
       try {
         const response = await fetch(`${endpoint}?${query}`, { cache: 'no-store', signal: abort.signal });
@@ -130,13 +131,24 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
         if (!response.ok) throw new Error(data.error || 'Could not load clients');
         if (sequence.current === requestId) { setLoaded({ scope, data }); setUpdated(Date.now()); }
       } catch (caught) {
-        if (sequence.current === requestId && (!abort.signal.aborted || abort.signal.reason?.message?.includes('timed out'))) setError(abort.signal.aborted ? 'The connection is taking too long. Please retry.' : caught instanceof Error ? caught.message : 'Could not load clients');
+        // An abort is this effect's own doing — a filter change, an unmount, or
+        // StrictMode's double-invoke in dev. Only the timeout is worth showing;
+        // treating the rest as failures surfaced "signal is aborted without
+        // reason" on a dashboard that was loading perfectly well.
+        if (sequence.current !== requestId) return;
+        if (abort.signal.aborted) {
+          if (abort.signal.reason === timedOut) setError('The connection is taking too long. Please retry.');
+          return;
+        }
+        setError(caught instanceof Error ? caught.message : 'Could not load clients');
       } finally {
         clearTimeout(timeout);
         if (sequence.current === requestId) setBusy(false);
       }
     })();
-    return () => { sequence.current = requestId + 1; clearTimeout(timeout); abort.abort(); };
+    // Aborting with a reason keeps the rejection identifiable: a bare abort()
+    // rejects with "signal is aborted without reason", which reads as a crash.
+    return () => { sequence.current = requestId + 1; clearTimeout(timeout); abort.abort(new Error('Dashboard query superseded')); };
   }, [admin, stylistSlug, scope, serverFilters, refresh]);
 
   // Stylists send the link from WhatsApp in another tab and often never come

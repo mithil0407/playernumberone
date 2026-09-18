@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import sharp from 'sharp';
 import { isRetryableStylistGenerationError } from './stylistGenerationRetry.ts';
 import {
@@ -77,6 +77,8 @@ import {
   generateStylistOutfitScienceApplication,
   isScienceBlueprintReport,
   isStylistOutfitScienceHarnessEnabled,
+  outfitPaletteUsed,
+  outfitProseBlocks,
   type OutfitScienceEngineMetadata,
 } from './stylistOutfitScience.ts';
 
@@ -1148,6 +1150,30 @@ async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise
     });
     return JSON.parse(cleanJson(response.text ?? '{}'));
   });
+}
+
+/**
+ * A text-only JSON call tuned for a stylist waiting at the screen.
+ *
+ * The pipeline's own `callGeminiJSON` lets the model think as long as it wants,
+ * which is right for a report that generates once in the background and wrong
+ * for an edit someone is watching: on a pasted outfit the thinking, not the
+ * work, was most of a 14-second wait. Low thinking answers the same extraction
+ * in a fraction of that, and one retry rather than three keeps a bad minute
+ * from turning into a minute-long spinner.
+ */
+async function callGeminiJSONFast(prompt: string): Promise<unknown> {
+  return withRetry(async () => {
+    const response = await ai.models.generateContent({
+      model: STYLIST_BLUEPRINT_TEXT_MODEL,
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        httpOptions: { timeout: 30_000 },
+      },
+    });
+    return JSON.parse(cleanJson(response.text ?? '{}'));
+  }, 2);
 }
 
 async function callGeminiText(
@@ -6324,6 +6350,101 @@ Preserve admin edits exactly unless they break coverage, eyewear cadence, exact-
   if (!Object.keys(page).length) throw new Error('Outfit edit returned no page');
 
   return sanitiseEditedOutfitPage(page, existingPage, pageNumber);
+}
+
+/** Compact colour reference for the paste parser: name and hex, nothing else. */
+function outfitPaletteReference(reportData: StylistBlueprintReportData) {
+  return [...reportData.classification.colour.base_palette, ...reportData.classification.colour.accent_palette]
+    .map(colour => `${colour.name} ${colour.hex}`)
+    .join(', ');
+}
+
+/**
+ * The palette's own spelling for a colour the parser matched by hex, so the
+ * page reads "Charcoal" rather than echoing whatever case the stylist typed.
+ */
+function paletteColourName(reportData: StylistBlueprintReportData, hex: string, fallback: string) {
+  const match = [...reportData.classification.colour.base_palette, ...reportData.classification.colour.accent_palette]
+    .find(colour => isValidHex(colour.hex) && normaliseHex(colour.hex) === hex);
+  if (match?.name) return match.name;
+  return fallback ? fallback.charAt(0).toUpperCase() + fallback.slice(1) : fallback;
+}
+
+/**
+ * Read an outfit a stylist pasted in her own words back as the structured
+ * pieces an outfit page renders, and rebuild the page prose around them.
+ *
+ * Deliberately lean: no client photos, no classification dump, no outfit
+ * library. The stylist has already decided what the outfit is, so this only
+ * has to read it — and unlike the rest of the pipeline she is sitting at the
+ * screen waiting for it, so every part of the prompt has to earn its latency.
+ */
+export async function parseStylistBlueprintOutfitText(
+  reportData: StylistBlueprintReportData,
+  pageNumber: number,
+  text: string,
+): Promise<BlueprintPage> {
+  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
+  const outfitEnd = getStylistBlueprintOutfitEndPage(reportData);
+  if (pageNumber < outfitStart || pageNumber > outfitEnd) throw new Error(`Page ${pageNumber} is not an outfit page`);
+  const existingPage = reportData.pages.find(page => page.page_number === pageNumber);
+  if (!existingPage) throw new Error(`Missing outfit page ${pageNumber}`);
+  const outfitText = text.trim();
+  if (!outfitText) throw new Error('Paste the outfit first');
+
+  const prompt = `You read an outfit a stylist wrote and return it as structured data.
+Return ONLY valid JSON, no markdown.
+
+{"pieces":[{"slot":"","piece":"","colour_name":"","colour_hex":"#RRGGBB","palette_role":"lead|support|ground|accent","structural_notes":""}],"why":"","styling":""}
+
+Rules:
+- One entry per garment or accessory she named, in the order worn: base garment, bottom, layers, footwear, bag, jewellery.
+- "slot" is the category in one or two words: Top, Bottom, Dress, Saree, Layer, Footwear, Bag, Jewellery.
+- "piece" is the garment as she described it, cleaned into a single phrase. Keep her fabric, cut and detail words. Never invent details she did not write.
+- Add nothing she did not name, with one exception: if she named no footwear, no bag and no jewellery at all, add the one missing essential the look cannot be worn without, kept plain and neutral.
+- "colour_name" and "colour_hex": use the colour she wrote. Match it to the client palette below when one is clearly the same colour, otherwise give an accurate hex for the colour she named.
+- "palette_role": exactly one piece is "lead" — the garment the outfit is built around and the first thing someone sees, which is the top, dress, saree or statement layer, never the trousers, footwear or bag. Grounding neutrals are "ground", small pops are "accent", everything else is "support".
+- "structural_notes": one short line on fit or cut, only where she implied one. Empty string otherwise.
+- "why": one sentence, second person, on why this outfit works on this client. No garment list.
+- "styling": one sentence starting "How to wear it:" on the single move that makes it work.
+
+--- CLIENT PALETTE (name and hex) ---
+${outfitPaletteReference(reportData)}
+
+--- OUTFIT THE STYLIST WROTE ---
+${outfitText}`;
+
+  const raw = asRecord(await callGeminiJSONFast(prompt));
+  const pieces = (Array.isArray(raw.pieces) ? raw.pieces : []).map((itemRaw, index) => {
+    const item = asRecord(itemRaw);
+    const slot = asString(item.slot) || asString(item.category) || `Piece ${index + 1}`;
+    const piece = asString(item.piece) || asString(item.name);
+    const rawHex = asString(item.colour_hex);
+    const colourHex = isValidHex(rawHex) ? normaliseHex(rawHex) : '#2C2622';
+    const role = asString(item.palette_role);
+    return {
+      slot,
+      piece: sanitiseAccessoryPieceRealism(piece, slot) || piece,
+      colour_name: paletteColourName(reportData, colourHex, asString(item.colour_name)),
+      colour_hex: colourHex,
+      palette_role: (['lead', 'support', 'ground', 'accent'].includes(role) ? role : 'support') as BlueprintColourUse['role'],
+      structural_notes: asString(item.structural_notes) || asString(item.notes),
+    };
+  }).filter(item => Boolean(item.piece));
+
+  if (pieces.length < 4) throw new Error('That outfit is missing pieces. Include the garments, the footwear, and a bag or accessory.');
+  if (!pieces.some(item => item.palette_role === 'lead')) pieces[0].palette_role = 'lead';
+
+  return {
+    ...existingPage,
+    page_number: pageNumber,
+    page_type: 'outfit',
+    blocks: outfitProseBlocks(pieces, {
+      why: asString(raw.why, 'This outfit suits your proportions and the way you actually dress.'),
+      styling: asString(raw.styling, 'Keep the proportions clean and let one piece lead.'),
+    }),
+    palette_used: outfitPaletteUsed(pieces),
+  };
 }
 
 export async function generateStylistBlueprintReplacementOutfits(

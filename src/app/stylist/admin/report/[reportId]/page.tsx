@@ -2015,6 +2015,19 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               <StylistOutfitEditor key={activePageNumber} page={activePage} onChange={handlePageChange}
                 saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
                 imageUrl={report.image_urls?.application?.outfitFlatlays?.[activePageNumber - getStylistBlueprintOutfitStartPage(versioned)] ?? null}
+                onParse={async text => {
+                  // The parser reads the page from storage, so anything typed
+                  // into the cards has to be saved before it is used as the base.
+                  if (!(await saveChangedPagesRef.current())) throw new Error('Save the current outfit before pasting a new one.');
+                  const response = await fetch(`/api/stylist-blueprint/${reportId}/parse-outfit`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pageNumber: activePageNumber, text }),
+                  });
+                  const data = await response.json();
+                  if (!response.ok) throw new Error(data.error || 'Could not read that outfit');
+                  handlePageChange(data.page);
+                  return typeof data.prompt === 'string' ? data.prompt : null;
+                }}
                 getAlternatives={async () => {
                   if (!(await saveChangedPagesRef.current())) throw new Error('Save the current outfit before browsing alternatives.');
                   const response = await fetch(`/api/stylist-blueprint/${reportId}/outfit-options?page=${activePageNumber}`, { cache: 'no-store' });

@@ -10,6 +10,7 @@ import {
   scoreBandForTest,
   scoreColourPhysics,
   shortGarmentForTest,
+  outfitProseBlocks,
   scoreOutfitCandidatesBlind,
   selectOutfitPortfolio,
   scienceOutfitsToBlueprintPages,
@@ -319,6 +320,68 @@ export function runStylistOutfitScienceAssertions() {
   invariant(trimmed[1].endsWith('shoes'), `garment name must keep its head noun: "${trimmed[1]}"`);
   invariant(trimmed[2] === 'Gold studs', `a comma list must trim to the first piece: "${trimmed[2]}"`);
 }
+
+function runOutfitProseAssertions() {
+  const items = [
+    { slot: 'Top', piece: 'Ivory silk shirt with a relaxed placket', colour_name: 'Ivory', colour_hex: '#F2ECE1', palette_role: 'lead' as const, structural_notes: '' },
+    { slot: 'Bottom', piece: 'Charcoal wide-leg trousers', colour_name: 'Charcoal', colour_hex: '#3A3A3C', palette_role: 'ground' as const, structural_notes: '' },
+    { slot: 'Footwear', piece: 'Tan leather loafers', colour_name: 'Tan', colour_hex: '#A9784E', palette_role: 'support' as const, structural_notes: '' },
+    { slot: 'Bag', piece: 'Cognac structured tote', colour_name: 'Cognac', colour_hex: '#8C4A22', palette_role: 'accent' as const, structural_notes: '' },
+  ];
+  const copy = { why: 'This outfit lengthens your line.', styling: 'How to wear it: tuck the shirt at the front only.' };
+  const blocks = outfitProseBlocks(items, copy);
+
+  const formula = blocks.find(block => block.label === 'Formula');
+  invariant(formula?.items === items, 'the formula block must carry the pieces it was given');
+
+  // The renderer prints `reason` as a pull quote above `body`, so identical
+  // text there prints the same sentence twice on the page.
+  const why = blocks.find(block => block.label === 'Why it works');
+  invariant(Boolean(why?.reason) && Boolean(why?.body) && why!.reason !== why!.body, 'the why block must not print the same sentence twice');
+
+  // The reason this prose is derived rather than stored: change the lead piece
+  // and no block may still be describing the garment that used to be there.
+  const swapped = outfitProseBlocks(
+    items.map((item, index) => index === 0 ? { ...item, piece: 'Olive linen kurta with a straight hem' } : item),
+    copy,
+  );
+  const prose = swapped
+    .filter(block => block.label !== 'Formula' && block.label !== 'Why it works')
+    .map(block => `${block.body ?? ''} ${block.reason ?? ''}`)
+    .join(' ');
+  invariant(!/silk shirt/i.test(prose), `prose still names a garment the outfit no longer has: "${prose}"`);
+  invariant(/olive linen kurta/i.test(prose), `prose does not name the new lead garment: "${prose}"`);
+
+  // When the LEAD piece is the bottom, the breakdown still has a second
+  // garment to name — it used to match the bottom again and drop the sentence.
+  const bottomLed = outfitProseBlocks(
+    items.map(item => ({ ...item, palette_role: item.slot === 'Bottom' ? 'lead' as const : item.slot === 'Top' ? 'support' as const : item.palette_role })),
+    copy,
+  ).find(block => block.label === 'Role breakdown')?.body ?? '';
+  invariant(/wide-leg trousers lead/i.test(bottomLed), `a bottom-led outfit lost its lead sentence: "${bottomLed}"`);
+  invariant(/silk shirt/i.test(bottomLed), `a bottom-led outfit never names its other garment: "${bottomLed}"`);
+
+  // "what the trousers is doing here" — plural garments need a plural verb.
+  const dontBuy = outfitProseBlocks(
+    items.map(item => ({ ...item, palette_role: item.slot === 'Bottom' ? 'lead' as const : 'support' as const })),
+    copy,
+  ).find(block => block.label === 'Do not buy')?.body ?? '';
+  invariant(!/\btrousers is\b/i.test(dontBuy), `plural garment given a singular verb: "${dontBuy}"`);
+
+  // A one-piece look makes hero, anchor and finish collapse onto one item; the
+  // breakdown must name it once rather than printing the saree three times.
+  const onePiece = [
+    { slot: 'Saree', piece: 'Mocha satin-silk saree', colour_name: 'Mocha', colour_hex: '#6B4A38', palette_role: 'lead' as const, structural_notes: '' },
+    { slot: 'Footwear', piece: 'Nude block-heel sandals', colour_name: 'Nude', colour_hex: '#D8BBA4', palette_role: 'support' as const, structural_notes: '' },
+    { slot: 'Jewellery', piece: 'Gold studs', colour_name: 'Gold', colour_hex: '#C9A227', palette_role: 'accent' as const, structural_notes: '' },
+  ];
+  const breakdown = outfitProseBlocks(onePiece, copy).find(block => block.label === 'Role breakdown')?.body ?? '';
+  invariant((breakdown.match(/saree/gi) ?? []).length <= 1, `the role breakdown repeats a garment: "${breakdown}"`);
+}
+
+test('outfit page prose is derived from the pieces on the page', () => {
+  runOutfitProseAssertions();
+});
 
 test('outfit science invariants hold', () => {
   runStylistOutfitScienceAssertions();
