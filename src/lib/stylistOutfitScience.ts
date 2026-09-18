@@ -1396,53 +1396,81 @@ function whyThisWorksSentence(candidate: CandidateOutfit) {
   return `This outfit ${reasons.join(', and ')}.`;
 }
 
+/**
+ * The colours an outfit page shows as its palette strip, from its own pieces.
+ */
+export function outfitPaletteUsed(items: FormulaItem[]): BlueprintColourUse[] {
+  return items
+    .map(item => ({ name: item.colour_name, hex: item.colour_hex, role: item.palette_role }))
+    .filter((item, index, array) => array.findIndex(other => other.name === item.name && other.role === item.role) === index)
+    .slice(0, 5);
+}
+
+/**
+ * The four blocks an outfit page renders, rebuilt from the formula items.
+ *
+ * The role breakdown and the "do not buy" line name specific garments, so they
+ * are only true while they are derived from the items actually on the page.
+ * Everything that changes a formula — the science engine, a pasted outfit, a
+ * hand edit — rebuilds them through here, so the prose can never be left
+ * describing the outfit that used to be there.
+ */
+export function outfitProseBlocks(items: FormulaItem[], copy: { why: string; styling: string }): BlueprintBlock[] {
+  const hero = items.find(item => item.palette_role === 'lead') ?? items[0];
+  // A one-piece look genuinely has no second garment, but a look whose LEAD is
+  // the bottom does — and matching the bottom again just collapsed anchor onto
+  // hero and silently dropped the middle sentence. Look past the hero instead.
+  const core = items.filter(item => !/bag|footwear|shoe|belt|jewel|accessor/i.test(item.slot));
+  const anchor = core.find(item => item !== hero && /bottom|dress|outfit|saree|skirt|trouser|pant/i.test(item.slot))
+    ?? core.find(item => item !== hero)
+    ?? hero;
+  const finish = items.find(item => /bag|footwear|shoe|belt|jewel/i.test(item.slot)) ?? items.at(-1) ?? hero;
+  return [
+    {
+      label: 'Formula',
+      heading: 'The pieces',
+      body: `Built around the ${shortGarment(hero?.piece)}.`,
+      items,
+    },
+    {
+      // The renderer takes the pull quote from `reason` and the body copy from
+      // `body`, so these must say different things or the page prints twice.
+      label: 'Why it works',
+      heading: 'Why this works on you',
+      body: `${copy.why} ${copy.styling}`.trim(),
+      reason: copy.why,
+    },
+    {
+      label: 'Role breakdown',
+      heading: 'What each piece is doing',
+      // Hero and anchor are the same item for a one-piece look, so only name
+      // each garment once rather than printing the saree twice.
+      body: [
+        `The ${shortGarment(hero?.piece)} ${agrees(shortGarment(hero?.piece), 'leads', 'lead')}.`,
+        anchor && anchor !== hero ? `The ${shortGarment(anchor.piece)} ${agrees(shortGarment(anchor.piece), 'grounds', 'ground')} it.` : '',
+        finish && finish !== hero && finish !== anchor ? `The ${shortGarment(finish.piece)} ${agrees(shortGarment(finish.piece), 'finishes', 'finish')} it.` : '',
+      ].filter(Boolean).join(' '),
+    },
+    {
+      label: 'Do not buy',
+      heading: 'The version that breaks it',
+      body: `Skip the clingy version of this outfit, and skip it in a stiff fabric that will not drape. Both undo what the ${shortGarment(hero?.piece).toLowerCase()} ${agrees(shortGarment(hero?.piece), 'is', 'are')} doing here.`,
+    },
+  ];
+}
+
 function pageFromScienceOutfit(candidate: ScoredCandidateOutfit, pageNumber: number, displayIndex: number): BlueprintPage {
-  const hero = candidate.formula_items.find(item => item.palette_role === 'lead') ?? candidate.formula_items[0];
-  const anchor = candidate.formula_items.find(item => /bottom|dress|outfit/i.test(item.slot)) ?? candidate.formula_items[1] ?? hero;
-  const finish = candidate.formula_items.find(item => /bag|footwear|shoe|belt|jewel/i.test(item.slot)) ?? candidate.formula_items.at(-1) ?? hero;
   return {
     page_number: pageNumber,
     page_type: 'outfit',
     title: `Outfit ${displayIndex}`,
     subtitle: candidate.capsule,
-    blocks: [
-      {
-        label: 'Formula',
-        heading: 'The pieces',
-        body: `Built around the ${shortGarment(hero?.piece)}.`,
-        items: candidate.formula_items,
-      },
-      {
-        // The renderer takes the pull quote from `reason` and the body copy from
-        // `body`, so these must say different things or the page prints twice.
-        label: 'Why it works',
-        heading: 'Why this works on you',
-        body: `${whyThisWorksSentence(candidate)} ${stylingMoveSentence(candidate)}`,
-        reason: whyThisWorksSentence(candidate),
-      },
-      {
-        label: 'Role breakdown',
-        heading: 'What each piece is doing',
-        // Hero and anchor are the same item for a one-piece look, so only name
-        // each garment once rather than printing the saree twice.
-        body: [
-          `The ${shortGarment(hero?.piece)} ${agrees(shortGarment(hero?.piece), 'leads', 'lead')}.`,
-          anchor && anchor !== hero ? `The ${shortGarment(anchor.piece)} ${agrees(shortGarment(anchor.piece), 'grounds', 'ground')} it.` : '',
-          finish && finish !== hero && finish !== anchor ? `The ${shortGarment(finish.piece)} ${agrees(shortGarment(finish.piece), 'finishes', 'finish')} it.` : '',
-        ].filter(Boolean).join(' '),
-      },
-      {
-        label: 'Do not buy',
-        heading: 'The version that breaks it',
-        body: `Skip the clingy version of this outfit, and skip it in a stiff fabric that will not drape. Both undo what the ${shortGarment(hero?.piece).toLowerCase()} is doing here.`,
-      },
-    ],
+    blocks: outfitProseBlocks(candidate.formula_items, {
+      why: whyThisWorksSentence(candidate),
+      styling: stylingMoveSentence(candidate),
+    }),
     image_refs: [],
-    palette_used: candidate.formula_items.map(item => ({
-      name: item.colour_name,
-      hex: item.colour_hex,
-      role: item.palette_role,
-    })).filter((item, index, array) => array.findIndex(other => other.name === item.name && other.role === item.role) === index).slice(0, 5),
+    palette_used: outfitPaletteUsed(candidate.formula_items),
     library_refs: candidate.library_ref ? [candidate.library_ref] : undefined,
   };
 }
