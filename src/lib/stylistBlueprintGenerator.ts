@@ -5,7 +5,6 @@ import sharp from 'sharp';
 import { isRetryableStylistGenerationError } from './stylistGenerationRetry.ts';
 import {
   getParsedStylistOutfitLibrary,
-  getStylistOutfitLibraryPromptFromOutfits,
   isUsableStylistOutfitAnchor,
   type ParsedStylistOutfit,
 } from './stylistOutfitLibraryParser.ts';
@@ -575,13 +574,6 @@ async function loadOutfitLibraryContext(): Promise<OutfitLibraryContext> {
   return { outfits, blockedSignatures, negativeSignals };
 }
 
-function outfitLibraryPromptForContext(context: OutfitLibraryContext) {
-  if (!STYLIST_OUTFIT_LIBRARY_ENABLED || !context.outfits.length) {
-    return 'No parsed verified outfit anchors are available for this run. Do not invent library_refs, source ids, source outfit titles, or library_piece_logic. Use outfitlibrarywomen.md as the dominant catalog reference when attached: choose the closest complete catalog formula, then adapt minimally for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.';
-  }
-  return getStylistOutfitLibraryPromptFromOutfits(context.outfits);
-}
-
 function outfitGenerationSourceRules(context: OutfitLibraryContext) {
   if (!STYLIST_OUTFIT_LIBRARY_ENABLED || !context.outfits.length) {
     return `- No verified library anchor objects are attached for this run. Do not invent library_refs, source ids, source outfit titles, or library_piece_logic.
@@ -1139,6 +1131,27 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
   throw lastErr;
 }
 
+/**
+ * Thinking level for the report's own JSON calls.
+ *
+ * These calls fill a known schema against a brief that already spells out the
+ * rules, so a large share of an unbounded thinking budget went into
+ * re-deriving those instructions rather than into the writing — and thinking
+ * bills at the output rate. Low keeps the same structure for a fraction of the
+ * tokens.
+ *
+ * This is the one saving here that can move prose quality rather than only
+ * cost, so it stays tunable: GEMINI_STYLIST_THINKING_LEVEL=high (or medium)
+ * restores a longer think without a deploy. Generate one report each way and
+ * read the diagnosis and wardrobe-manual pages side by side before settling.
+ */
+const STYLIST_BLUEPRINT_THINKING_LEVEL: ThinkingLevel = ({
+  minimal: ThinkingLevel.MINIMAL,
+  low: ThinkingLevel.LOW,
+  medium: ThinkingLevel.MEDIUM,
+  high: ThinkingLevel.HIGH,
+} as const)[(process.env.GEMINI_STYLIST_THINKING_LEVEL || '').trim().toLowerCase()] ?? ThinkingLevel.LOW;
+
 async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise<unknown> {
   return withRetry(async () => {
     const imageParts = await Promise.all(imageUrls.slice(0, 4).map(fetchImagePart).filter(Boolean));
@@ -1146,7 +1159,10 @@ async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise
     const response = await ai.models.generateContent({
       model: STYLIST_BLUEPRINT_TEXT_MODEL,
       contents: [{ parts }],
-      config: { httpOptions: { timeout: GEMINI_TEXT_TIMEOUT_MS } },
+      config: {
+        thinkingConfig: { thinkingLevel: STYLIST_BLUEPRINT_THINKING_LEVEL },
+        httpOptions: { timeout: GEMINI_TEXT_TIMEOUT_MS },
+      },
     });
     return JSON.parse(cleanJson(response.text ?? '{}'));
   });
@@ -1155,12 +1171,12 @@ async function callGeminiJSON(prompt: string, imageUrls: string[] = []): Promise
 /**
  * A text-only JSON call tuned for a stylist waiting at the screen.
  *
- * The pipeline's own `callGeminiJSON` lets the model think as long as it wants,
- * which is right for a report that generates once in the background and wrong
- * for an edit someone is watching: on a pasted outfit the thinking, not the
- * work, was most of a 14-second wait. Low thinking answers the same extraction
- * in a fraction of that, and one retry rather than three keeps a bad minute
- * from turning into a minute-long spinner.
+ * On a pasted outfit the thinking, not the work, was most of a 14-second wait.
+ * This call pins LOW rather than reading GEMINI_STYLIST_THINKING_LEVEL —
+ * raising that knob buys prose quality on the report's pages, which is not
+ * what a structured extraction needs, and it would be paid for here in a
+ * slower spinner. The 30-second deadline and single retry are the same
+ * bargain: for someone watching, a bad minute should fail fast.
  */
 async function callGeminiJSONFast(prompt: string): Promise<unknown> {
   return withRetry(async () => {
@@ -1452,7 +1468,6 @@ function photoUrls(submission: StylistIntakeSubmission) {
 }
 
 export async function classifyStylistBlueprint(submission: StylistIntakeSubmission): Promise<StylistBlueprintClassification> {
-  const stylistOutfitLibrary = outfitLibraryPromptForContext(seedOutfitLibraryContext());
   const fallbackBase = [
     { name: 'Warm Ivory', hex: '#F5F0E8', usage: 'Base layers and clean negative space.' },
     { name: 'Soft Taupe', hex: '#B8A898', usage: 'Tailoring, trousers, and soft neutrals.' },
@@ -1511,9 +1526,6 @@ The 5 accent colours are smaller-dose feature colours used for a single knit, to
 
 --- STYLIST STYLING PRINCIPLES ---
 ${STYLIST_STYLING_PRINCIPLES}
-
---- STYLIST OUTFIT LIBRARY ---
-${stylistOutfitLibrary}
 
 --- INTAKE ---
 ${buildStylistBlueprintIntakeDigest(submission)}`;
@@ -6034,7 +6046,6 @@ export async function generateStylistBlueprintPages(
 ): Promise<BlueprintPage[] | { pages: BlueprintPage[]; outfit_engine: OutfitScienceEngineMetadata }> {
   const libraryContext = await loadOutfitLibraryContext();
   const culturalMode = getStylistOutfitCulturalMode(submission);
-  const stylistOutfitLibrary = outfitLibraryPromptForContext(libraryContext);
   const pageCount = getStylistBlueprintPageCount(reportData);
   const outfitCount = getStylistBlueprintOutfitCount(reportData);
   const outfitEndPage = getStylistBlueprintOutfitEndPage(reportData);
@@ -6097,7 +6108,33 @@ export async function generateStylistBlueprintPages(
     application: transformationPage ? `page ${transformationPage} and pages ${outfitSystemPage}-${outfitEndPage}` : `pages ${outfitSystemPage}-${outfitEndPage}`,
     closing: `pages ${matrixPage}-${continuationPage}`,
   };
-  const promptContext = `--- CURRENT CLASSIFICATION ---
+
+  /**
+   * Which calls actually look at the client's photos.
+   *
+   * Every attached photo is ~1,000 vision tokens, and four of them rode along
+   * on all nine calls whether or not the pages being written could use them.
+   * The diagnosis act reads her body, colouring and face directly. In the
+   * prescription act only the palette, drape, hair, eyewear and makeup pages
+   * do; the thirteen wardrobe-manual guides write from the classification, as
+   * does the whole closing act. The opening act summarises conclusions that
+   * were already drawn. Those calls now go text-only, which also drops a
+   * four-image fetch and resize from each one.
+   */
+  const faceDependentPages = [palettePage, colourDrapePage, hairstylePage, hairColourPage, eyeframePage, makeupPage]
+    .filter((page): page is number => typeof page === 'number');
+  const actReadsPhotos = act === 'diagnosis'
+    || (act === 'prescription'
+      && (!requestedPages?.length || requestedPages.some(page => faceDependentPages.includes(page))));
+  const promptPhotos = actReadsPhotos ? photoUrls(submission) : [];
+  // Ordered for prefix caching. Everything above `volatileContext` is identical
+  // across every act and every prescription batch of one report, so the provider
+  // can serve it from cache instead of re-reading it nine times. The two parts
+  // that do change per call — the pages written so far and which pages this call
+  // wants — are deliberately last. Do not move the page request back to the top:
+  // it sat on line 3 and broke the shared prefix on the very first line that
+  // mattered, so nothing after it could ever be cached.
+  const stableContext = `--- CURRENT CLASSIFICATION ---
 ${classificationContext}
 
 --- CURRENT ANALYSIS ---
@@ -6106,19 +6143,19 @@ ${stringify(reportData.analysis)}
 --- DETERMINISTIC OUTFIT DIVERSITY PLAN ---
 ${stringify(outfitPlansForHarnessPrompt(outfitDiversityPlan))}
 
---- EXISTING PAGES ---
-${stringify(reportData.pages)}
-
---- STYLIST OUTFIT LIBRARY ---
-${stylistOutfitLibrary}
-
 --- INTAKE ---
 ${intakeContext}`;
+
+  const volatileContext = `--- EXISTING PAGES ---
+${stringify(reportData.pages)}
+
+--- THIS REQUEST ---
+Generate ${requestedPages?.length ? `only pages ${requestedPages.join(', ')}` : ranges[act]} for the ${pageCount}-page Blueprint.`;
 
   const prompt = `You are ICONIK's premium women Style Blueprint writer.
 Return ONLY valid JSON: {"pages":[...]}.
 
-Generate ${requestedPages?.length ? `only pages ${requestedPages.join(', ')}` : ranges[act]} for the ${pageCount}-page Blueprint.
+Write only the pages named under "THIS REQUEST" at the end of this brief.
 Use structured data only. No markdown. No client name after page 1.
 Every recommendation must include one clear explanation, but do not duplicate the same sentence in both "body" and "reason".
 For rule/audit/fabric/avoidance pages, prefer item objects with clear fields: {"name":"","guidance":"","reason":""} or {"question":"","answer":"","reason":""}.
@@ -6200,9 +6237,11 @@ Closing:
 - ${getStylistBlueprintShoppingPlanPage(reportData) ? `Page ${getStylistBlueprintShoppingPlanPage(reportData)} must give an ordered 90-day shopping plan: foundation fixes, high-impact additions, optional upgrades, budget logic, and what not to buy yet.` : 'Keep the closing plan concise.'}
 - Page ${continuationPage} must adapt to whether the client selected/subscribed to ICONIK Edit if known.
 
-${promptContext}`;
+${stableContext}
 
-  const raw = asRecord(await callGeminiJSON(prompt, photoUrls(submission)));
+${volatileContext}`;
+
+  const raw = asRecord(await callGeminiJSON(prompt, promptPhotos));
   return normalisePages(raw.pages, act, reportData, libraryContext, requestedPages);
 }
 
