@@ -360,7 +360,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const qualityIssues = useMemo(() => {
     const issues = reviewData ? checkStudioReportQuality(reviewData) : [];
     for (const [group, count] of Object.entries(imageCounts ?? {})) {
-      if (count.done < count.total) issues.push({ level: 'error', message: `Upload ${count.total - count.done} missing ${group.replace(/_/g, ' ')} image${count.total - count.done === 1 ? '' : 's'}.` });
+      // A warning, not a blocker: the report reads fine with a placeholder in
+      // an image slot, and a stylist who has decided to ship without one should
+      // not have delivery held hostage to it.
+      if (count.done < count.total) issues.push({ level: 'warning', message: `Upload ${count.total - count.done} missing ${group.replace(/_/g, ' ')} image${count.total - count.done === 1 ? '' : 's'}.` });
     }
     return issues;
   }, [imageCounts, reviewData]);
@@ -1298,10 +1301,6 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       setBlockedError('Send report', 'Approve every page before sending.');
       return;
     }
-    if (!requiredImagesDone) {
-      setBlockedError('Send report', 'Generate missing images before sending.');
-      return;
-    }
     const blockReason = busyReason();
     if (blockReason) {
       setBlockedError('Send report', blockReason);
@@ -1448,8 +1447,6 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       ? qualityIssues.find(issue => issue.level === 'error')?.message ?? 'Resolve report quality checks before delivery.'
     : !allApproved
     ? 'Approve every page before sending.'
-    : !requiredImagesDone
-      ? 'Generate missing images before sending.'
       : currentBusyReason
         ? currentBusyReason
         : sending
