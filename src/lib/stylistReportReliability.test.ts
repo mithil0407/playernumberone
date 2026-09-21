@@ -69,3 +69,32 @@ test('uploading every visible image satisfies delivery without invisible legacy 
   assert.equal(hidden.application.total, 3);
   assert.equal(hidden.capsule_1.total, 4);
 });
+
+test('delivery only waits on the rule-example images the rules page actually shows', () => {
+  // A live report stalled here: its rules page carried three example outfits,
+  // the count demanded a fourth, and the stylist had no frame to upload it in.
+  const rulesPage = {
+    page_number: 12,
+    page_type: 'rules',
+    title: 'Rules for Perfect Fit',
+    blocks: [{
+      label: 'Fit',
+      items: [0, 1, 2].map(index => ({ guidance: `Rule ${index + 1}`, example_outfit: { image_slot: `application.silhouetteProofs.${index}` } })),
+    }],
+  };
+  const report = { ...draft(), pages: [...draft().pages, rulesPage] } as unknown as StylistBlueprintReportData;
+  const options = { hasFrontPhoto: true, hasSidePhoto: true, hasHeadshot: true, hasClientPhoto: true,
+    includeTransformationPreview: true, includeBeautyPages: true, includeClosingEditTeaser: false, reportData: report };
+
+  const paths = { application: {
+    transformationLooks: ['a.jpg', 'b.jpg', 'c.jpg'],
+    silhouetteProofs: ['d.jpg', 'e.jpg', 'f.jpg', null],
+  } } as unknown as StylistBlueprintImagePaths;
+  const counts = getStylistBlueprintImageCounts(paths, options);
+  assert.equal(counts.application.total, 6);
+  assert.equal(counts.application.done, 6);
+
+  // The proofs the page does show are still required.
+  const partial = { application: { transformationLooks: ['a.jpg', 'b.jpg', 'c.jpg'], silhouetteProofs: ['d.jpg', null, null, null] } };
+  assert.equal(getStylistBlueprintImageCounts(partial as unknown as StylistBlueprintImagePaths, options).application.done, 4);
+});

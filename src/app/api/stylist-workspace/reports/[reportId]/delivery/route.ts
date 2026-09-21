@@ -104,6 +104,9 @@ export async function POST(
       return NextResponse.json({ error: 'Approve every report page before publishing' }, { status: 400 });
     }
     const sourcePaths = (intake.source_photo_paths ?? {}) as Record<string, string>;
+    // Reported, never enforced. An empty image slot renders as a placeholder
+    // rather than a broken page, so it is the stylist's call whether to ship
+    // without it — blocking here only ever stranded finished reports.
     const imageCounts = getStylistBlueprintImageCounts(report.image_urls as StylistBlueprintImagePaths | null, {
       hasFrontPhoto: Boolean(sourcePaths.full_body_front),
       hasSidePhoto: Boolean(sourcePaths.full_body_side),
@@ -115,9 +118,7 @@ export async function POST(
       includeBeautyPages: Boolean(getStylistBlueprintHairColourPage(reportData)),
       reportData,
     });
-    if (!Object.values(imageCounts).every(group => group.done >= group.total)) {
-      return NextResponse.json({ error: 'Upload every required image before publishing', imageCounts }, { status: 400 });
-    }
+    const missingImages = Object.values(imageCounts).reduce((sum, group) => sum + Math.max(0, group.total - group.done), 0);
     const publishedAt = new Date().toISOString();
     const { data: published, error: publishError } = await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -130,6 +131,9 @@ export async function POST(
     if (!published) return NextResponse.json({ error: 'The report changed during publication. Review it again.' }, { status: 409 });
     await logStylistReportActivity({
       action: 'report_published', reportId, consultationId: intake.consultation_id, stylistId: identity?.stylistId,
+      // Recorded rather than enforced, so a report that shipped with empty
+      // image slots is still traceable afterwards.
+      ...(missingImages ? { metadata: { missingImages } } : {}),
     });
     await revalidateStylistBlueprintCache(reportId, report.share_token);
   }
