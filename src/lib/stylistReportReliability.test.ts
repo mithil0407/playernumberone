@@ -3,6 +3,16 @@ import test from 'node:test';
 import { isRetryableStylistGenerationError } from './stylistGenerationRetry.ts';
 import { assertStylistPageApprovals, assertStylistReportDraft } from './stylistReportValidation.ts';
 import { getStylistBlueprintImageCounts, STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS } from './stylistBlueprintImageGenerator.ts';
+import {
+  STYLIST_BLUEPRINT_VERSION,
+  getStylistBlueprintOutfitEndPage,
+  getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintOutfitSystemPage,
+  getStylistBlueprintPageCount,
+  getStylistBlueprintSectionLabel,
+  getStylistBlueprintWardrobeManualRange,
+  getVisibleStylistBlueprintPages,
+} from './stylistBlueprintSchema.ts';
 import type { StylistBlueprintImagePaths } from './stylistBlueprintImageGenerator.ts';
 import type { StylistBlueprintReportData } from './stylistBlueprintGenerator.ts';
 
@@ -38,6 +48,57 @@ test('incomplete checkpoints remain editable but malformed report objects are re
 test('page hiding and reordering cannot lose the cover or corrupt navigation', () => {
   assert.throws(() => assertStylistReportDraft({ ...draft(), studio: { ...draft().studio, hidden_page_numbers: [1] } }), /cover/);
   assert.throws(() => assertStylistReportDraft({ ...draft(), studio: { ...draft().studio, page_order: [1, 1] } }), /every page/);
+});
+
+type OrderableReport = Pick<StylistBlueprintReportData, 'version' | 'studio'> & { pages: Array<{ page_number: number }> };
+
+function allPages(pageOrder: number[] = []): OrderableReport {
+  return {
+    version: STYLIST_BLUEPRINT_VERSION,
+    studio: { analysis_confirmed: false, hidden_page_numbers: [], page_order: pageOrder },
+    pages: Array.from({ length: getStylistBlueprintPageCount(STYLIST_BLUEPRINT_VERSION) }, (_, index) => ({ page_number: index + 1 })),
+  };
+}
+
+test('the client reaches her outfits before the wardrobe manual, and loses no page doing it', () => {
+  const data = allPages();
+  const version = STYLIST_BLUEPRINT_VERSION;
+  const order = getVisibleStylistBlueprintPages(data, {}).map(page => page.page_number);
+  const manual = getStylistBlueprintWardrobeManualRange(version)!;
+
+  // Nothing is dropped or duplicated by the reorder.
+  assert.equal(order.length, getStylistBlueprintPageCount(version));
+  assert.equal(new Set(order).size, order.length);
+  assert.equal(order[0], 1, 'the cover still opens the report');
+
+  // Every outfit page reads before every page of the manual.
+  const lastOutfit = order.indexOf(getStylistBlueprintOutfitEndPage(version));
+  const firstManual = order.indexOf(manual.firstPage);
+  assert.ok(firstManual > lastOutfit, 'the manual must read after the outfits');
+  assert.equal(order.indexOf(getStylistBlueprintOutfitSystemPage(version)) + 1, order.indexOf(getStylistBlueprintOutfitStartPage(version)), 'the outfit system still introduces the outfits');
+
+  // The manual stays intact, and the closing pages stay last.
+  const manualSlice = order.slice(firstManual, firstManual + (manual.lastPage - manual.firstPage + 1));
+  assert.deepEqual(manualSlice, Array.from({ length: manual.lastPage - manual.firstPage + 1 }, (_, i) => manual.firstPage + i));
+  assert.equal(order.at(-1), getStylistBlueprintPageCount(version));
+});
+
+test('each contents section is one unbroken run once the manual moves', () => {
+  const data = allPages();
+  const seen: string[] = [];
+  for (const page of getVisibleStylistBlueprintPages(data, {})) {
+    const raw = getStylistBlueprintSectionLabel(page.page_number, STYLIST_BLUEPRINT_VERSION);
+    // The viewer folds the one-page transformation preview into the opening.
+    const label = raw === 'Three looks' ? 'Start here' : raw;
+    if (seen.at(-1) !== label) seen.push(label);
+  }
+  assert.equal(new Set(seen).size, seen.length, `a section is split across the report: ${seen.join(' > ')}`);
+  assert.deepEqual(seen, ['Start here', 'What we found', 'Your rules', 'Your outfits', 'Your wardrobe manual', 'Putting it to work']);
+});
+
+test('a stylist who reordered pages by hand keeps their order', () => {
+  const handOrder = [1, 3, 2, ...Array.from({ length: 52 }, (_, index) => index + 4)];
+  assert.deepEqual(getVisibleStylistBlueprintPages(allPages(handOrder), {}).map(page => page.page_number), handOrder);
 });
 
 test('truthy string approvals and nonexistent pages cannot bypass review', () => {

@@ -186,6 +186,51 @@ export function getStylistBlueprintStudioGuidePages(dataOrVersion?: Pick<Stylist
   return isStylistBlueprintStudio(dataOrVersion) ? STYLIST_BLUEPRINT_STUDIO_GUIDES : [];
 }
 
+/**
+ * The wardrobe manual: the fabric page plus the thirteen "for you" guides that
+ * run from Tops through the Shopping & Fit Checklist. These are dense reference
+ * pages with no generated image of their own, so they read after the outfits
+ * rather than standing between the client and the twenty looks she came for.
+ * Only the studio layout has them; earlier versions return null and keep their
+ * original single "Your rules" run.
+ */
+export function getStylistBlueprintWardrobeManualRange(dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
+  const guides = getStylistBlueprintStudioGuidePages(dataOrVersion);
+  const lastGuide = guides.at(-1)?.page;
+  if (!lastGuide) return null;
+  return { firstPage: getStylistBlueprintFabricPage(dataOrVersion), lastPage: lastGuide };
+}
+
+/**
+ * Reading order for the studio report — the order pages are shown in, which is
+ * no longer the order they are numbered in. The outfit system and the twenty
+ * outfits are lifted above the wardrobe manual so the client reaches the looks
+ * first and the manual becomes the reference section behind them.
+ *
+ * Page numbers are deliberately left alone: image slots, generation, repair and
+ * validation all address pages by number, so moving the reading order here keeps
+ * every one of those untouched. Derived from the page getters rather than
+ * written out, so it cannot drift if the layout gains a page.
+ */
+export function getStylistBlueprintReadingOrder(dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null): number[] | null {
+  const manual = getStylistBlueprintWardrobeManualRange(dataOrVersion);
+  if (!manual) return null;
+  const outfitSystemPage = getStylistBlueprintOutfitSystemPage(dataOrVersion);
+  const outfitEndPage = getStylistBlueprintOutfitEndPage(dataOrVersion);
+  const pageCount = getStylistBlueprintPageCount(dataOrVersion);
+  const range = (from: number, to: number) => Array.from({ length: Math.max(0, to - from + 1) }, (_, index) => from + index);
+  const order = [
+    ...range(1, manual.firstPage - 1),
+    ...range(outfitSystemPage, outfitEndPage),
+    ...range(manual.firstPage, manual.lastPage),
+    ...range(outfitEndPage + 1, pageCount),
+  ];
+  // A dropped or duplicated page here would silently lose pages from the report,
+  // so fall back to the numeric order rather than render an incomplete manual.
+  if (order.length !== pageCount || new Set(order).size !== pageCount) return null;
+  return order;
+}
+
 export function getStylistBlueprintContinuationPage(dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
   return getStylistBlueprintPageCount(dataOrVersion);
 }
@@ -221,9 +266,14 @@ export function isVersionedStylistBlueprintReportData(data: unknown): data is St
  * disagree about where a page lives.
  */
 export function getStylistBlueprintSectionLabel(pageNumber: number, dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
+  const manual = getStylistBlueprintWardrobeManualRange(dataOrVersion);
   if (pageNumber === getStylistBlueprintTransformationPage(dataOrVersion)) return 'Three looks';
   if (pageNumber <= getStylistBlueprintReadingGuidePage(dataOrVersion)) return 'Start here';
   if (pageNumber <= getStylistBlueprintAvoidancePage(dataOrVersion)) return 'What we found';
+  // The manual reads after the outfits, so it carries its own label. Without
+  // the split, 'Your rules' would appear twice in the contents sheet as two
+  // disconnected runs with the outfits wedged between them.
+  if (manual && pageNumber >= manual.firstPage && pageNumber <= manual.lastPage) return 'Your wardrobe manual';
   if (pageNumber <= (getStylistBlueprintStudioGuidePages(dataOrVersion).at(-1)?.page ?? getStylistBlueprintFabricPage(dataOrVersion))) return 'Your rules';
   if (pageNumber <= getStylistBlueprintOutfitEndPage(dataOrVersion)) return 'Your outfits';
   return 'Putting it to work';
@@ -241,7 +291,12 @@ export function getVisibleStylistBlueprintPages<T extends { page_number: number 
 ): T[] {
   const continuationPage = getStylistBlueprintContinuationPage(data);
   const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);
-  const order = data.studio?.page_order ?? [];
+  // A stylist who has reordered pages by hand wins. Anything else — no stored
+  // order, or the untouched 1..N identity order some studio actions write —
+  // reads in the layout's own order, which puts the outfits before the manual.
+  const storedOrder = data.studio?.page_order ?? [];
+  const stylistReordered = storedOrder.length > 0 && storedOrder.some((pageNumber, index) => pageNumber !== index + 1);
+  const order = stylistReordered ? storedOrder : getStylistBlueprintReadingOrder(data) ?? storedOrder;
   const orderIndex = new Map(order.map((pageNumber, index) => [pageNumber, index]));
   return [...data.pages]
     .filter(page => !options.hideContinuationPage || page.page_number !== continuationPage)
