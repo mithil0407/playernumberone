@@ -80,6 +80,7 @@ async function loadPublicReportByShareToken(shareToken: string): Promise<PublicL
     .from('man_reports')
     .select('id, status, report_data, image_urls, share_token, shopping_data, sent_at')
     .eq('share_token', shareToken)
+    .eq('report_kind', 'blueprint')
     .in('status', [...PUBLIC_VIEWABLE_STATUSES])
     .single();
 

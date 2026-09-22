@@ -74,9 +74,6 @@ function toIsoFromSeconds(value: unknown) {
     : null;
 }
 
-export function currentMonthStart(date = new Date()) {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)).toISOString().slice(0, 10);
-}
 
 export async function loadManEditReportContext(
   shareToken: string,
@@ -84,7 +81,7 @@ export async function loadManEditReportContext(
 ): Promise<ManEditReportContext | null> {
   const { data: report, error } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, share_token, report_data, image_urls, shopping_data, man_intake_submissions(*)')
+    .select('id, status, share_token, report_kind, report_data, image_urls, shopping_data, man_intake_submissions(*)')
     .eq('share_token', shareToken)
     .in('status', ['sent', 'draft_ready', 'in_review', 'approved'])
     .maybeSingle();
@@ -125,7 +122,9 @@ export async function loadManEditReportContext(
     };
   }
 
-  if (subscription?.id && !subscription.report_id) {
+  // Only a Blueprint may become the subscription's anchor report; opening an
+  // Edit issue must never repoint it.
+  if (subscription?.id && !subscription.report_id && report.report_kind !== 'edit') {
     await supabaseAdmin
       .from('man_edit_subscriptions')
       .update({ report_id: report.id })
@@ -891,54 +890,4 @@ function extractJson(text: string) {
   const cleaned = text.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
   const match = cleaned.match(/\{[\s\S]*\}/);
   return match ? match[0] : cleaned;
-}
-
-export async function generateManEditMonthlyDraft(context: ManEditReportContext, issueNumber: number) {
-  const { profile } = buildManEditProfile(context);
-  const prompt = `You are ICONIK's senior men's stylist. Create one monthly outfit recommendation edit for this paid Iconik Man Edit subscriber.
-
-Return ONLY valid JSON:
-{
-  "title": "string",
-  "subtitle": "string",
-  "monthLabel": "string",
-  "clientName": "string",
-  "diagnosis": "string",
-  "outfits": [
-    {
-      "title": "string",
-      "occasion": "string",
-      "formula": "string",
-      "colourLogic": "string",
-      "fitLogic": "string",
-      "shoppingNotes": "string"
-    }
-  ],
-  "paletteNotes": ["string", "string", "string"],
-  "avoidThisMonth": ["string", "string", "string"],
-  "stylistNote": "string"
-}
-
-Rules:
-- Generate exactly 6 outfits.
-- Use Indian shopping language and climate context when relevant.
-- Reflect the client's liked/disliked outfit feedback.
-- Do not recommend items that conflict with their body geometry, colours to avoid, or anti-preferences.
-- The edit must feel premium, direct, and immediately usable.
-
-Issue number: ${issueNumber}
-Profile:
-${JSON.stringify(profile, null, 2)}`;
-
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: [{ parts: [{ text: prompt }] }],
-  });
-
-  const raw = response.text ?? '';
-  try {
-    return JSON.parse(extractJson(raw)) as AnyRecord;
-  } catch {
-    throw new Error(`Gemini returned invalid monthly edit JSON: ${raw.slice(0, 300)}`);
-  }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasActiveManEdit, loadManEditReportContext, rebuildManEditProfile } from '@/lib/manEdit';
+import { listSentEditIssuesForBlueprint } from '@/lib/manEditIssueLoader';
 
 export async function GET(
   _request: NextRequest,
@@ -12,19 +13,21 @@ export async function GET(
     return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   }
 
-  if (hasActiveManEdit(context)) {
+  const active = hasActiveManEdit(context);
+  if (active) {
     await rebuildManEditProfile(context).catch(() => null);
   }
+  const issues = active ? await listSentEditIssuesForBlueprint(context.report.id) : [];
 
   return NextResponse.json({
-    active: hasActiveManEdit(context),
+    active,
     subscription: context.subscription ? {
       status: context.subscription.status,
       plan_type: context.subscription.plan_type,
       next_billing_at: context.subscription.next_billing_at,
     } : null,
     feedback: context.feedback,
-    recommendations: context.recommendations,
+    issues,
   }, {
     headers: { 'Cache-Control': 'private, max-age=30' },
   });

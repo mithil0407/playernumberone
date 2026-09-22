@@ -72,6 +72,7 @@ async function findPilotReportShareToken(config: IconikManWhatsappPilotConfig) {
     .from('man_reports')
     .select('share_token')
     .in('submission_id', submissionIds)
+    .eq('report_kind', 'blueprint')
     .in('status', ['sent', 'draft_ready', 'in_review', 'approved'])
     .order('created_at', { ascending: false })
     .limit(1);

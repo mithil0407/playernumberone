@@ -86,6 +86,7 @@ export async function GET(
         .from('man_reports')
         .select('id, status, progress_stage, share_token, generated_at, sent_at, error_message, section_approvals, created_at')
         .eq('submission_id', id)
+        .eq('report_kind', 'blueprint')
         .order('created_at', { ascending: false }),
     ]);
 

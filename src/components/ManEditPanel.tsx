@@ -23,32 +23,17 @@ interface ChatMessage {
   image_url?: string | null;
 }
 
-interface Recommendation {
-  id: string;
-  month_start: string;
-  issue_number: number;
-  page_data?: {
-    title?: string;
-    subtitle?: string;
-    diagnosis?: string;
-    outfits?: Array<{
-      title?: string;
-      occasion?: string;
-      formula?: string;
-      colourLogic?: string;
-      fitLogic?: string;
-      shoppingNotes?: string;
-    }>;
-    paletteNotes?: string[];
-    avoidThisMonth?: string[];
-    stylistNote?: string;
-  };
+interface EditIssueLink {
+  issueNumber: number;
+  shareToken: string;
+  title: string;
+  periodLabel: string;
 }
 
 interface StatusResponse {
   active: boolean;
   feedback: FeedbackRow[];
-  recommendations: Recommendation[];
+  issues?: EditIssueLink[];
 }
 
 interface ParsedOutfit {
@@ -320,31 +305,26 @@ export default function ManEditPanel({
           </div>
 
           <div className="border bg-white p-5" style={{ borderColor: BORDER, borderRadius: 8 }}>
-            <p className="text-[10px] uppercase font-bold mb-5" style={{ color: ACCENT, letterSpacing: '0.22em' }}>Monthly Recommendations</p>
-            {(status.recommendations ?? []).length === 0 ? (
+            <p className="text-[10px] uppercase font-bold mb-5" style={{ color: ACCENT, letterSpacing: '0.22em' }}>Your Monthly Edits</p>
+            {(status.issues ?? []).length === 0 ? (
               <div className="border p-5" style={{ borderColor: BORDER, background: SHELL, borderRadius: 8 }}>
-                <p className="font-serif text-2xl mb-2">Your first monthly edit is being prepared.</p>
-                <p className="text-sm leading-6" style={{ color: SOFT }}>Your likes, dislikes, and stylist chat will shape the next recommendation set.</p>
+                <p className="font-serif text-2xl mb-2">Your first Edit is being styled.</p>
+                <p className="text-sm leading-6" style={{ color: SOFT }}>Six new looks built from this Blueprint, shot on you, arriving by email. Your likes, dislikes and questions here shape every issue.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {status.recommendations.map(rec => (
-                  <div key={rec.id} className="border p-4" style={{ borderColor: BORDER, background: SHELL, borderRadius: 8 }}>
+              <div className="space-y-3">
+                {status.issues!.map(issue => (
+                  <a
+                    key={issue.shareToken}
+                    href={`/man/edit/${issue.shareToken}`}
+                    className="block border p-4 transition hover:opacity-80"
+                    style={{ borderColor: BORDER, background: SHELL, borderRadius: 8 }}
+                  >
                     <p className="text-[10px] uppercase font-bold mb-2" style={{ color: ACCENT, letterSpacing: '0.18em' }}>
-                      {new Date(rec.month_start).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                      Issue {String(issue.issueNumber).padStart(2, '0')} · {issue.periodLabel}
                     </p>
-                    <h3 className="font-serif text-2xl mb-2">{rec.page_data?.title ?? `Monthly Edit ${rec.issue_number}`}</h3>
-                    {rec.page_data?.diagnosis && <p className="text-sm leading-6 mb-4" style={{ color: SOFT }}>{rec.page_data.diagnosis}</p>}
-                    <div className="space-y-3">
-                      {(rec.page_data?.outfits ?? []).map((outfit, index) => (
-                        <div key={`${outfit.title}-${index}`} className="bg-white border p-3" style={{ borderColor: BORDER, borderRadius: 8 }}>
-                          <p className="text-[10px] uppercase font-bold mb-1" style={{ color: ACCENT, letterSpacing: '0.16em' }}>{outfit.occasion ?? `Look ${index + 1}`}</p>
-                          <p className="font-serif text-lg mb-1">{outfit.title}</p>
-                          <p className="text-sm leading-6" style={{ color: SOFT }}>{outfit.formula}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                    <p className="font-serif text-2xl leading-snug">{issue.title}</p>
+                  </a>
                 ))}
               </div>
             )}

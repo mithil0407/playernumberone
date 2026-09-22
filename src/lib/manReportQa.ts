@@ -45,6 +45,14 @@ export interface ManReportQaOptions {
   patternWaiver?: boolean;
   suitWaiver?: boolean;
   tieWaiver?: boolean;
+  /**
+   * 'edit' is a monthly Edit issue: six outfits chosen for the month, so the
+   * Blueprint's 20-outfit count, context split and portfolio quotas don't apply.
+   * Every per-outfit garment rule still does.
+   */
+  portfolio?: 'blueprint' | 'edit';
+  /** Judge climate rules for this date instead of today — an Edit dresses him for the coming month. */
+  climateDate?: Date;
 }
 
 interface ParsedQaOutfit {
@@ -380,9 +388,10 @@ export function validateManReportSection4(
   classification: ClassificationResult,
   options: ManReportQaOptions = {},
 ): ManReportQaResult {
-  options = { ...options, indianCasualRequired: requiresIndianCasual(classification) };
+  const isEditPortfolio = options.portfolio === 'edit';
+  options = { ...options, indianCasualRequired: !isEditPortfolio && requiresIndianCasual(classification) };
   const outfits = parseManReportOutfitsForQa(s4Text);
-  const climate = getManReportClimateProfile(classification);
+  const climate = getManReportClimateProfile(classification, options.climateDate);
   const issues: ManReportQaIssue[] = [];
   if (options.indianCasualRequired && outfits.filter(outfit =>
     /casual/i.test(outfit.context) && /\bkurta\b/i.test(outfit.fields.top)
@@ -400,11 +409,11 @@ export function validateManReportSection4(
   }
 
   const expectedTotal = Object.values(EXPECTED_CONTEXT_COUNTS).reduce((sum, count) => sum + count, 0);
-  if (outfits.length !== expectedTotal) {
+  if (!isEditPortfolio && outfits.length !== expectedTotal) {
     issues.push(issue('outfit_count', 'error', `Expected ${expectedTotal} parsed outfits, found ${outfits.length}.`));
   }
 
-  for (const [context, expected] of Object.entries(EXPECTED_CONTEXT_COUNTS)) {
+  for (const [context, expected] of isEditPortfolio ? [] : Object.entries(EXPECTED_CONTEXT_COUNTS)) {
     if ((contextCounts[context] ?? 0) !== expected) {
       issues.push(issue('context_split', 'error', `${context} should have ${expected} outfits, found ${contextCounts[context] ?? 0}.`));
     }
@@ -558,6 +567,8 @@ export function withManReportSection4Qa(reportData: ReportData): ReportData {
           patternWaiver: reportData.outfit_library?.selectionProfile?.patternWaiver,
           suitWaiver: reportData.outfit_library?.selectionProfile?.waivers?.includes('suits'),
           tieWaiver: reportData.outfit_library?.selectionProfile?.waivers?.includes('ties'),
+          portfolio: reportData.report_version === 'man_edit_v1' ? 'edit' : 'blueprint',
+          climateDate: reportData.edit?.periodStart ? new Date(reportData.edit.periodStart) : undefined,
         },
       ),
     },

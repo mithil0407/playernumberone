@@ -8,6 +8,7 @@ import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
 import type { ManIntakeSubmission } from './supabaseMan';
+import type { MAN_EDIT_ISSUE_VERSION, ManEditIssueContent } from './manEditIssueTypes';
 import {
   validateManReportSection4,
   type ManReportQaIssue,
@@ -573,7 +574,7 @@ export interface ManBlueprintV2Deliverables {
 }
 
 export interface ReportData {
-  report_version?: typeof MAN_BLUEPRINT_V2_VERSION | 'legacy';
+  report_version?: typeof MAN_BLUEPRINT_V2_VERSION | typeof MAN_EDIT_ISSUE_VERSION | 'legacy';
   classification: ClassificationResult;
   sections: ReportSections;
   diagnostics?: ManBlueprintV2Diagnostics;
@@ -593,6 +594,8 @@ export interface ReportData {
   qa?: {
     section4?: ManReportQaResult;
   };
+  /** Present only on monthly Edit issues (report_kind = 'edit'). */
+  edit?: ManEditIssueContent;
 }
 
 export function buildManBlueprintV2StructuredData(

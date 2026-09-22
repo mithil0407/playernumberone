@@ -1,4 +1,5 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { supabaseAdmin } from '@/lib/supabase';
 import PublicManReportExperience from '@/components/PublicManReportExperience';
 import { getPublicManReportByShareToken, type PublicLoadedManReport } from '@/lib/manReportLoader';
 import {
@@ -27,7 +28,18 @@ export default async function PublicReportPage({ params, searchParams }: PagePro
   const query = (await searchParams) ?? {};
   const result = await getReport(shareToken);
 
-  if (!result) notFound();
+  if (!result) {
+    // Edit issues share the report table and token format; send those links
+    // to the Edit page rather than a 404.
+    const { data: edit } = await supabaseAdmin
+      .from('man_reports')
+      .select('id')
+      .eq('share_token', shareToken)
+      .eq('report_kind', 'edit')
+      .maybeSingle();
+    if (edit) redirect(`/man/edit/${shareToken}`);
+    notFound();
+  }
 
   const useGoldCopy = process.env.NODE_ENV !== 'production'
     && shareToken === MAN_REPORT_GOLD_COPY_SAMPLE_TOKEN

@@ -64,6 +64,7 @@ export async function POST(
     .from('man_reports')
     .select('id, status')
     .eq('submission_id', submissionId)
+    .eq('report_kind', 'blueprint')
     .order('created_at', { ascending: false })
     .limit(1);
 
