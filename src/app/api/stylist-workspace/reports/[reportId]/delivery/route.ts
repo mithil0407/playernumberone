@@ -83,26 +83,32 @@ export async function POST(
     if (!isVersionedStylistBlueprintReportData(reportData)) {
       return NextResponse.json({ error: 'The report is not ready to publish' }, { status: 400 });
     }
-    if (report.status === 'generating' || report.status === 'error' || report.progress_stage) {
+    if (report.status === 'generating' || report.progress_stage) {
       return NextResponse.json({ error: 'Finish report generation before publishing' }, { status: 400 });
     }
+    // Everything below is reported, never enforced. The stylist is looking at
+    // the finished report and is the one who decides it is ready; a checklist
+    // that disagrees with her has been wrong often enough to strand reports
+    // that were fine. Each unmet check is recorded on the publish log instead,
+    // so a report that shipped incomplete is still traceable afterwards.
+    const publishWarnings: string[] = [];
     try {
       validateStylistBlueprintReport(reportData);
-      const issue = reportData.studio && checkStudioReportQuality(reportData).find(issue => issue.level === 'error');
-      if (issue) throw new Error(issue.message);
     } catch (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : 'Report quality checks failed' }, { status: 400 });
+      publishWarnings.push(error instanceof Error ? error.message : 'Report structure checks failed');
     }
-    if (reportData.studio && !reportData.studio.analysis_confirmed) {
-      return NextResponse.json({ error: 'Confirm the body, colour and face analysis before publishing' }, { status: 400 });
+    if (reportData.studio) {
+      for (const issue of checkStudioReportQuality(reportData)) {
+        if (issue.level === 'error') publishWarnings.push(issue.message);
+      }
+      if (!reportData.studio.analysis_confirmed) publishWarnings.push('Analysis was not confirmed');
     }
     const continuationPage = getStylistBlueprintContinuationPage(reportData);
     const hiddenPages = new Set(reportData.studio?.hidden_page_numbers ?? []);
     const visiblePages = reportData.pages.filter(page => page.page_number !== continuationPage && !hiddenPages.has(page.page_number));
     const approvals = report.section_approvals as Record<string, boolean> | null;
-    if (!visiblePages.every(page => approvals?.[`p${page.page_number}`] === true)) {
-      return NextResponse.json({ error: 'Approve every report page before publishing' }, { status: 400 });
-    }
+    const unapprovedPages = visiblePages.filter(page => approvals?.[`p${page.page_number}`] !== true).length;
+    if (unapprovedPages) publishWarnings.push(`${unapprovedPages} page${unapprovedPages === 1 ? '' : 's'} were not approved`);
     const sourcePaths = (intake.source_photo_paths ?? {}) as Record<string, string>;
     // Reported, never enforced. An empty image slot renders as a placeholder
     // rather than a broken page, so it is the stylist's call whether to ship
@@ -132,8 +138,10 @@ export async function POST(
     await logStylistReportActivity({
       action: 'report_published', reportId, consultationId: intake.consultation_id, stylistId: identity?.stylistId,
       // Recorded rather than enforced, so a report that shipped with empty
-      // image slots is still traceable afterwards.
-      ...(missingImages ? { metadata: { missingImages } } : {}),
+      // image slots or unmet checks is still traceable afterwards.
+      ...(missingImages || publishWarnings.length
+        ? { metadata: { ...(missingImages ? { missingImages } : {}), ...(publishWarnings.length ? { publishWarnings } : {}) } }
+        : {}),
     });
     await revalidateStylistBlueprintCache(reportId, report.share_token);
   }

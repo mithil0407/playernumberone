@@ -6,6 +6,7 @@ import { getStylistBlueprintImageCounts, STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS }
 import {
   STYLIST_BLUEPRINT_VERSION,
   getStylistBlueprintOutfitEndPage,
+  getStylistBlueprintMakeupPage,
   getStylistBlueprintOutfitStartPage,
   getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintPageCount,
@@ -76,6 +77,9 @@ test('the client reaches her outfits before the wardrobe manual, and loses no pa
   const firstManual = order.indexOf(manual.firstPage);
   assert.ok(firstManual > lastOutfit, 'the manual must read after the outfits');
   assert.equal(order.indexOf(getStylistBlueprintOutfitSystemPage(version)) + 1, order.indexOf(getStylistBlueprintOutfitStartPage(version)), 'the outfit system still introduces the outfits');
+  // Everyday Makeup is the last diagnosis page, so the outfits pick up straight
+  // from it rather than after fourteen pages of reference text.
+  assert.equal(order.indexOf(getStylistBlueprintMakeupPage(version)!) + 1, order.indexOf(getStylistBlueprintOutfitSystemPage(version)), 'the outfits read directly after the makeup page');
 
   // The manual stays intact, and the closing pages stay last.
   const manualSlice = order.slice(firstManual, firstManual + (manual.lastPage - manual.firstPage + 1));
