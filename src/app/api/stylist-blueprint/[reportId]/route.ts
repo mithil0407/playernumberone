@@ -7,13 +7,11 @@ import { sendStylistBlueprintReportEmail } from '@/lib/email';
 import { assertStylistReportDraft, assertStylistPageApprovals } from '@/lib/stylistReportValidation';
 import { checkStudioReportQuality } from '@/lib/stylistReportStudio';
 import { outfitPieces } from '@/lib/stylistOutfitEditor';
-import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
+import { type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
   getStylistBlueprintPageCount,
   getStylistBlueprintOutfitCount,
   getStylistBlueprintOutfitStartPage,
-  getStylistBlueprintHairColourPage,
-  getStylistBlueprintTransformationPage,
   getStylistBlueprintContinuationPage,
   isManualStylistBlueprintSubmission,
   getStylistOutfitCulturalMode,
@@ -299,15 +297,6 @@ export async function POST(
         if (!reportData.pages.filter(page => !hidden.has(page.page_number)).every(page => existingReport.section_approvals?.[`p${page.page_number}`] === true)) {
           throw new Error('Approve every visible page before sending');
         }
-        const photos = { ...(sourceIntake?.photo_urls ?? {}), ...(sourceIntake?.source_photo_paths ?? {}) } as Record<string, string>;
-        const imageCounts = getStylistBlueprintImageCounts(existingReport.image_urls as StylistBlueprintImagePaths, {
-          hasFrontPhoto: Boolean(photos.full_body_front), hasSidePhoto: Boolean(photos.full_body_side),
-          hasHeadshot: Boolean(photos.headshot), hasClientPhoto: Boolean(Object.values(photos).some(Boolean) || sourceIntake?.one_outfit_image_url),
-          outfitCount: getStylistBlueprintOutfitCount(reportData), includeClosingEditTeaser: !isManualStylistBlueprintSubmission(sourceIntake),
-          includeTransformationPreview: Boolean(getStylistBlueprintTransformationPage(reportData)),
-          includeBeautyPages: Boolean(getStylistBlueprintHairColourPage(reportData)), reportData,
-        });
-        if (Object.values(imageCounts).some(group => group.done < group.total)) throw new Error('Upload every required image before sending');
       } catch (error) {
         return NextResponse.json({ error: error instanceof Error ? error.message : 'Report quality checks failed' }, { status: 400 });
       }

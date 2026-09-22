@@ -360,7 +360,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const qualityIssues = useMemo(() => {
     const issues = reviewData ? checkStudioReportQuality(reviewData) : [];
     for (const [group, count] of Object.entries(imageCounts ?? {})) {
-      if (count.done < count.total) issues.push({ level: 'error', message: `Upload ${count.total - count.done} missing ${group.replace(/_/g, ' ')} image${count.total - count.done === 1 ? '' : 's'}.` });
+      // A warning, not a blocker: the report reads fine with a placeholder in
+      // an image slot, and a stylist who has decided to ship without one should
+      // not have delivery held hostage to it.
+      if (count.done < count.total) issues.push({ level: 'warning', message: `Upload ${count.total - count.done} missing ${group.replace(/_/g, ' ')} image${count.total - count.done === 1 ? '' : 's'}.` });
     }
     return issues;
   }, [imageCounts, reviewData]);
@@ -1288,23 +1291,21 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   };
 
   const sendToClient = async () => {
-    const blockingQualityIssue = qualityIssues.find(issue => issue.level === 'error');
-    if (isStudioReport && blockingQualityIssue) {
-      setBlockedError('Send report', blockingQualityIssue.message);
-      setStudioPanel('quality');
-      return;
-    }
-    if (!allApproved) {
-      setBlockedError('Send report', 'Approve every page before sending.');
-      return;
-    }
-    if (!requiredImagesDone) {
-      setBlockedError('Send report', 'Generate missing images before sending.');
-      return;
-    }
+    // Nothing below the busy check refuses the send. The stylist is looking at
+    // the finished report and is the one who decides it is ready; the checklist
+    // states its case once, in a confirm she can accept, and then gets out of
+    // the way. Held-back reports have cost more than incomplete ones.
     const blockReason = busyReason();
     if (blockReason) {
       setBlockedError('Send report', blockReason);
+      return;
+    }
+    const warnings = [
+      ...(isStudioReport ? qualityIssues.filter(issue => issue.level === 'error').map(issue => issue.message) : []),
+      ...(allApproved ? [] : [`${totalPageCount - approvedCount} page${totalPageCount - approvedCount === 1 ? '' : 's'} are not approved yet.`]),
+    ];
+    if (warnings.length && !window.confirm(`Publish and deliver anyway?\n\n${warnings.map(warning => `\u2022 ${warning}`).join('\n')}`)) {
+      if (isStudioReport && qualityIssues.some(issue => issue.level === 'error')) setStudioPanel('quality');
       return;
     }
     const saved = await saveChangedPages();
@@ -1442,19 +1443,21 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     || recipientEmail
     || report.stylist_intake_responses?.customer_phone
     || 'Client';
+  // Only what makes delivery impossible disables the button: nowhere to send
+  // the report, or another job already writing to it. Unapproved pages and
+  // quality issues are raised in the send confirm, not by greying this out.
   const sendDisabledReason = !usesWhatsAppDelivery && !recipientEmail
     ? 'No client email is attached to this intake. Use Copy Link instead.'
-    : isStudioReport && qualityIssues.some(issue => issue.level === 'error')
-      ? qualityIssues.find(issue => issue.level === 'error')?.message ?? 'Resolve report quality checks before delivery.'
+    : currentBusyReason
+      ? currentBusyReason
+      : sending
+        ? (isWorkspace ? 'Preparing WhatsApp delivery.' : 'Sending report email.')
+        : '';
+  const sendWarningReason = isStudioReport && qualityIssues.some(issue => issue.level === 'error')
+    ? qualityIssues.find(issue => issue.level === 'error')?.message ?? 'Report quality checks are unresolved.'
     : !allApproved
-    ? 'Approve every page before sending.'
-    : !requiredImagesDone
-      ? 'Generate missing images before sending.'
-      : currentBusyReason
-        ? currentBusyReason
-        : sending
-          ? (isWorkspace ? 'Preparing WhatsApp delivery.' : 'Sending report email.')
-          : '';
+      ? `${totalPageCount - approvedCount} page${totalPageCount - approvedCount === 1 ? '' : 's'} left to approve.`
+      : '';
   const activePageApproved = Boolean(report.section_approvals?.[`p${activePageNumber}`]);
   const activePageIndex = pages.findIndex(page => page.page_number === activePageNumber);
   const previousPage = activePageIndex > 0 ? pages[activePageIndex - 1] : null;
@@ -1929,8 +1932,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-              {!allApproved && <span className="hidden xl:inline luxury-body text-xs mr-2" style={{ color: '#655E57' }}>{totalPageCount - approvedCount} page{totalPageCount - approvedCount === 1 ? '' : 's'} left to approve</span>}
-              {allApproved && sendDisabledReason && !sending && <span className="hidden lg:inline luxury-body text-xs mr-2 max-w-[260px] truncate" title={sendDisabledReason} style={{ color: '#9A4039' }}>{sendDisabledReason}</span>}
+              {(sendDisabledReason || sendWarningReason) && !sending && <span className="hidden lg:inline luxury-body text-xs mr-2 max-w-[260px] truncate" title={sendDisabledReason || sendWarningReason} style={{ color: sendDisabledReason ? '#9A4039' : '#655E57' }}>{sendDisabledReason || sendWarningReason}</span>}
               {(!isWorkspace || hasUnsavedEdits) && (
                 <ActionButton onClick={saveChangedPages} disabled={Boolean(saveDisabledReason)} title={saveDisabledReason || 'Save inline report edits.'} tone="neutral">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {saving ? 'Saving…' : 'Save'}
@@ -1953,19 +1955,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   </div>
                 </>}
               </div>
-              {allApproved ? (
-                <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || (isWorkspace ? 'Publish and prepare WhatsApp delivery.' : 'Send the report email to the client.')} tone="primary" size="lg">
-                  {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {sending ? (usesWhatsAppDelivery ? 'Preparing…' : 'Sending…') : usesWhatsAppDelivery ? (report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send to client'}
-                </ActionButton>
-              ) : activePageApproved ? (
-                <ActionButton onClick={() => nextPageToReview && goToPage(nextPageToReview.page_number)} disabled={!nextPageToReview} tone="primary" size="lg" title="Go to the next page that still needs approval.">
+              {!allApproved && (activePageApproved ? (
+                <ActionButton onClick={() => nextPageToReview && goToPage(nextPageToReview.page_number)} disabled={!nextPageToReview} tone="neutral" size="lg" title="Go to the next page that still needs approval.">
                   Next to review <ChevronRight size={16} />
                 </ActionButton>
               ) : (
-                <ActionButton onClick={approveAndNext} disabled={Boolean(currentBusyReason)} title={currentBusyReason || autoSaveHint || 'Approve this page and move to the next page.'} tone="primary" size="lg">
+                <ActionButton onClick={approveAndNext} disabled={Boolean(currentBusyReason)} title={currentBusyReason || autoSaveHint || 'Approve this page and move to the next page.'} tone="neutral" size="lg">
                   <Check size={15} /> {nextPageToReview ? 'Approve & next' : 'Approve page'}
                 </ActionButton>
-              )}
+              ))}
+              <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || sendWarningReason || (isWorkspace ? 'Publish and prepare WhatsApp delivery.' : 'Send the report email to the client.')} tone="primary" size="lg">
+                {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {sending ? (usesWhatsAppDelivery ? 'Preparing…' : 'Sending…') : usesWhatsAppDelivery ? (report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send to client'}
+              </ActionButton>
             </div>
           </div>
         </footer>

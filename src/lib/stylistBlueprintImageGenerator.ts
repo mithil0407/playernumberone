@@ -1484,6 +1484,19 @@ export function getStylistBlueprintImageSlotPageNumber(slot: StylistBlueprintIma
   return null;
 }
 
+/**
+ * The rule-example slots this report actually shows. The rules page carries one
+ * example outfit per fit rule, and how many rules earn one varies by report, so
+ * counting a fixed four demanded images for frames that are never rendered —
+ * an upload the stylist had no way to make, holding delivery open for good.
+ */
+function silhouetteProofSlotIndexes(reportData: StylistBlueprintReportData) {
+  return new Set(silhouetteProofOutfits(reportData).map((proof, index) => {
+    const slotIndex = Number(proof.image_slot?.split('.').at(-1));
+    return Number.isInteger(slotIndex) ? slotIndex : index;
+  }));
+}
+
 export function getStylistBlueprintImageCounts(
   paths: StylistBlueprintImagePaths | null | undefined,
   options: {
@@ -1502,6 +1515,7 @@ export function getStylistBlueprintImageCounts(
   const outfitCount = options.outfitCount ?? 20;
   const capsuleSize = Math.ceil(outfitCount / 4);
   const hidden = new Set(options.reportData?.studio?.hidden_page_numbers ?? []);
+  const proofSlots = options.reportData ? silhouetteProofSlotIndexes(options.reportData) : null;
   const counts: Record<string, { done: number; total: number }> = Object.fromEntries(
     ['diagnosis', 'prescription', 'application', 'capsule_1', 'capsule_2', 'capsule_3', 'capsule_4', 'closing']
       .map(group => [group, { done: 0, total: 0 }]),
@@ -1519,6 +1533,7 @@ export function getStylistBlueprintImageCounts(
       if ((slot === 'prescription.hairColourDirections' || slot === 'prescription.makeupLook') && !options.includeBeautyPages) continue;
     }
     if (slot.startsWith('application.transformationLooks.') && (!options.hasClientPhoto || !options.includeTransformationPreview)) continue;
+    if (slot.startsWith('application.silhouetteProofs.') && proofSlots && !proofSlots.has(Number(slot.split('.').at(-1)))) continue;
     if (slot.startsWith('application.outfitFlatlays.')) {
       const index = Number(slot.split('.').at(-1));
       if (!options.hasClientPhoto || index >= outfitCount) continue;
