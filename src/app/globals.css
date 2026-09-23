@@ -2174,6 +2174,49 @@ body:has(.seo-editorial) {
   color: var(--root-carbon);
 }
 
+/* Offer topic + free-bonus sections added for the /offer-2699 family. */
+.root-concept-precision .root-topic-section {
+  background: linear-gradient(135deg, rgba(174,187,193,0.34), rgba(245,243,238,0.96)) !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-precision .root-bonus-section {
+  background: var(--root-bone) !important;
+  color: var(--root-carbon);
+}
+
+.root-concept-precision .root-topic-section .rounded-2xl,
+.root-concept-precision .root-bonus-section .rounded-2xl {
+  border: 1px solid var(--root-glass-border) !important;
+  border-radius: 28px !important;
+  background: var(--root-glass-surface) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--root-glass-shadow) !important;
+}
+
+.root-concept-precision .root-topic-section .rounded-2xl + .rounded-2xl {
+  background: rgba(255,255,255,0.78) !important;
+}
+
+.root-concept-precision .root-bonus-tag {
+  background: var(--root-oxblood) !important;
+  color: var(--root-bone) !important;
+  letter-spacing: 0.12em !important;
+}
+
+.root-concept-precision .root-hero-bonus {
+  background: rgba(106,31,43,0.08) !important;
+  color: var(--root-oxblood) !important;
+}
+
+.root-concept-precision .root-hero-bonus svg {
+  color: var(--root-oxblood) !important;
+}
+
+.root-concept-precision .root-price-list li,
+.root-concept-precision .root-price-list span {
+  color: var(--root-bone) !important;
+}
+
 /* Precision checkout: compact, calm, and readable at normal laptop widths. */
 .root-checkout-preview.root-concept-precision {
   background:

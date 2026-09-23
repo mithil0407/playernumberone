@@ -1,27 +1,33 @@
 import LandingPageContent from '../LandingPageContent';
 import { INDIA_OFFER_2699_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
+import { offerCheckoutHref } from '@/lib/offerTopics';
+import type { RootDesignVariant } from '@/lib/rootDesign';
 
 export default async function Offer2699Page({ searchParams }: { searchParams: Promise<{ scan?: string }> }) {
   const { scan = '' } = await searchParams;
+  const designVariant: RootDesignVariant = 'precision';
+
   return (
     <LandingPageContent
       variant="offer2699"
+      topic="general"
+      designVariant={designVariant}
       headline={
         <>
-          <span className="block sm:whitespace-nowrap">
+          <span className="block">
             <span className="text-luxury-accent">Stop Guessing</span> What Suits You.
           </span>
-          <span className="mt-1 block sm:mt-2 sm:whitespace-nowrap">
-            <span className="text-luxury-accent">Talk to a Stylist</span> Who&apos;ll Tell You.
+          <span className="mt-1 block sm:mt-2">
+            <span className="text-luxury-accent root-serif-moment">Talk to a Stylist</span><span className="root-headline-tail">Who&apos;ll Tell You.</span>
           </span>
         </>
       }
       subheadline={
         <>
-          30 minutes with your ICONIK stylist, then a personal Style Blueprint — <span className="font-semibold text-luxury-accent">20 complete outfits</span>, your <span className="font-semibold text-luxury-green">colour palette</span>, and exactly what to avoid. Built for your body, not a body type.
+          Talk to a real stylist for 30 minutes. Then get <span className="font-semibold text-luxury-accent">20 outfits</span> made for your body, plus the <span className="font-semibold text-luxury-green">colours</span> that suit your skin.
         </>
       }
-      checkoutHref={scan ? `/offer-2699/checkout?scan=${encodeURIComponent(scan)}` : '/offer-2699/checkout'}
+      checkoutHref={offerCheckoutHref('general', scan)}
       basePrice={INDIA_OFFER_2699_BLUEPRINT_PRICE}
     />
   );

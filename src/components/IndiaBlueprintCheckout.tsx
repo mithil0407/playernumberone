@@ -33,6 +33,7 @@ import {
   type IndiaBlueprintCheckoutSource,
 } from '@/lib/indiaBlueprintPricing';
 import type { RootDesignVariant } from '@/lib/rootDesign';
+import { OFFER_FREE_BONUSES } from '@/lib/offerTopics';
 
 interface RazorpayResponse {
   razorpay_payment_id: string;
@@ -79,18 +80,17 @@ const SMART_SHOPPER_PRICE = INDIA_BLUEPRINT_ADDON_PRICES.smartShopper;
 const formatINR = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
 const packageItems = [
-  '30-minute private video consultation',
-  '20 personalised outfits',
-  'Body-shape and concern-zone analysis',
-  'Personal colour palette',
-  'Hair and makeup guidance',
+  '30-minute video call with your stylist',
+  '20 outfits made for you',
+  'Body shape guide',
+  'Your colour palette',
 ];
 
 const trustItems = [
-  'Secure payment through Razorpay',
-  'UPI, cards, netbanking and wallets accepted',
-  'Add-ons are completely optional',
-  'Consultation scheduling details sent on WhatsApp',
+  'Safe payment by Razorpay',
+  'UPI, cards, net banking, wallets',
+  'We send your call booking on WhatsApp',
+  'Ready in 5 working days after your call',
 ];
 
 const testimonialScreenshots = [
@@ -105,9 +105,11 @@ interface IndiaBlueprintCheckoutProps {
   basePrice: number;
   funnelEntry: IndiaFunnelEntry;
   checkoutSource: IndiaBlueprintCheckoutSource;
-  backHref: '/' | '/offer-2699';
+  backHref: string;
   scanToken?: string;
   designVariant?: RootDesignVariant;
+  /** Topic landing pages carry their promise into the package summary. */
+  topicNote?: string;
 }
 
 export default function IndiaBlueprintCheckout({
@@ -117,6 +119,7 @@ export default function IndiaBlueprintCheckout({
   backHref,
   scanToken = '',
   designVariant,
+  topicNote,
 }: IndiaBlueprintCheckoutProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -357,7 +360,7 @@ export default function IndiaBlueprintCheckout({
       key: 'outfitpreview' as const,
       title: 'AI Outfit Preview',
       price: OUTFIT_PREVIEW_PRICE,
-      description: 'See how your recommended outfits could look on your body before you shop.',
+      description: 'See your outfits on your own body before you buy them.',
       selected: outfitPreview,
       badge: '87% also added this',
     },
@@ -365,17 +368,47 @@ export default function IndiaBlueprintCheckout({
       key: 'wardrobedetox' as const,
       title: 'Wardrobe Detox',
       price: WARDROBE_DETOX_PRICE,
-      description: 'We review your wardrobe and tell you what to keep, alter, donate and replace.',
+      description: 'We check your wardrobe and tell you what to keep, alter, give away and replace.',
       selected: wardrobeDetox,
     },
     {
       key: 'smartshopper' as const,
       title: "Smart Shopper's Guide",
       price: SMART_SHOPPER_PRICE,
-      description: 'Get a ready-to-shop guide matched to your body, lifestyle and budget.',
+      description: 'A ready shopping list for your body, lifestyle and budget.',
       selected: smartShopper,
     },
   ];
+
+  const packageContents = (
+    <>
+      <div className="mt-5 space-y-3">
+        {packageItems.map((item) => (
+          <div key={item} className="flex items-start gap-3 text-sm leading-5 text-[#2C2622]/75">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#6B7F87]" strokeWidth={2.5} />
+            <span>{item}</span>
+          </div>
+        ))}
+        {topicNote && (
+          <div className="flex items-start gap-3 text-sm font-semibold leading-5 text-[#2C2622]">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#6B7F87]" strokeWidth={2.5} />
+            <span>{topicNote}</span>
+          </div>
+        )}
+      </div>
+      <div className="root-checkout-bonuses mt-5 rounded-2xl border border-dashed border-[#54705d]/40 bg-[#54705d]/[0.06] p-4">
+        <div className="iconik-micro mb-3 text-[#54705d]">Free with your Blueprint</div>
+        <div className="space-y-2.5">
+          {OFFER_FREE_BONUSES.map((bonus) => (
+            <div key={bonus.title} className="flex items-center justify-between gap-3 text-sm leading-5 text-[#2C2622]/80">
+              <span>{bonus.title}</span>
+              <span className="shrink-0 text-xs font-bold tracking-[0.1em] text-[#54705d]">FREE</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className={`man-editorial min-h-screen bg-[#F8F3E9] ${designVariant ? `root-design-preview root-checkout-preview root-concept-${designVariant}` : ''}`}>
@@ -391,12 +424,167 @@ export default function IndiaBlueprintCheckout({
 
       <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
         <div className="mx-auto mb-8 max-w-2xl text-center">
-          <div className="iconik-micro mb-3 text-[#2C2622]/45">Secure One-Page Checkout</div>
-          <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Complete Your <span className="root-serif-moment">Personal Style Blueprint</span></h1>
-          <p className="mt-3 text-sm leading-6 text-[#2C2622]/60 sm:text-base">Enter your details, choose any optional add-ons, and pay securely—all on this page.</p>
+          <div className="iconik-micro mb-3 text-[#2C2622]/45">Secure Checkout</div>
+          <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Book Your <span className="root-serif-moment">Personal Style Blueprint</span></h1>
+          <p className="mt-3 text-sm leading-6 text-[#2C2622]/60 sm:text-base">Add your email and WhatsApp number, then pay. It takes about a minute.</p>
         </div>
 
-        <section aria-label="Client WhatsApp testimonials" className="mx-auto mb-6 max-w-2xl rounded-2xl border border-[#2C2622]/10 bg-white p-4 shadow-sm sm:p-5">
+        <form onSubmit={(event) => { event.preventDefault(); void processPayment(); }} noValidate>
+          <div className="grid items-start gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
+            <aside className="hidden rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8 lg:sticky lg:top-24 lg:block">
+              <div className="flex items-start justify-between gap-4 border-b border-[#2C2622]/10 pb-5">
+                <div>
+                  <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
+                  <h2 className="iconik-display text-2xl leading-tight text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
+                </div>
+                <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
+              </div>
+
+              {packageContents}
+
+              <div className="mt-6 rounded-2xl bg-[#F8F3E9] p-4 text-center">
+                <div className="iconik-display text-lg text-[#2C2622]">Trusted by {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients</div>
+                <p className="mt-1 text-xs text-[#2C2622]/55">Personal styling in {CLIENT_PROOF.countriesServed}+ countries</p>
+              </div>
+            </aside>
+
+            <div className="space-y-6">
+              <section className="rounded-2xl border border-[#2C2622]/10 bg-white p-5 shadow-sm lg:hidden">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
+                    <h2 className="iconik-display text-xl text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
+                  </div>
+                  <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
+                </div>
+                {packageContents}
+              </section>
+
+              <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
+                <div className="mb-6">
+                  <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Details</div>
+                  <h2 className="iconik-display text-2xl text-[#2C2622]">Where should we contact you?</h2>
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="offer-email" className="mb-2 block text-sm font-semibold text-[#2C2622]">Email</label>
+                    <input
+                      id="offer-email"
+                      type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => { setEmail(event.target.value); setEmailError(''); }}
+                      placeholder="you@example.com"
+                      className="w-full rounded-xl border border-[#2C2622]/20 bg-white px-4 py-3.5 text-base text-[#2C2622] outline-none transition focus:border-[#2C2622] focus:ring-2 focus:ring-[#2C2622]/10"
+                      aria-invalid={Boolean(emailError)}
+                      aria-describedby={emailError ? 'offer-email-error' : undefined}
+                    />
+                    {emailError && <p id="offer-email-error" className="mt-1.5 text-sm text-red-700">{emailError}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="offer-phone" className="mb-2 block text-sm font-semibold text-[#2C2622]">WhatsApp number</label>
+                    <input
+                      id="offer-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      maxLength={10}
+                      value={phone}
+                      onChange={(event) => {
+                        const value = event.target.value.replace(/\D/g, '').slice(0, 10);
+                        setPhone(value);
+                        setPhoneError('');
+                      }}
+                      placeholder="10-digit number"
+                      className="w-full rounded-xl border border-[#2C2622]/20 bg-white px-4 py-3.5 text-base text-[#2C2622] outline-none transition focus:border-[#2C2622] focus:ring-2 focus:ring-[#2C2622]/10"
+                      aria-invalid={Boolean(phoneError)}
+                      aria-describedby={phoneError ? 'offer-phone-error' : undefined}
+                    />
+                    {phoneError && <p id="offer-phone-error" className="mt-1.5 text-sm text-red-700">{phoneError}</p>}
+                  </div>
+                </div>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[#2C2622]/10 bg-[#F8F3E9]/60 p-3.5">
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(event) => setWhatsappOptIn(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#2C2622]"
+                  />
+                  <span className="text-xs leading-5 text-[#2C2622]/65">
+                    Send my order confirmation, call booking link and updates on WhatsApp. I can stop these any time.
+                  </span>
+                </label>
+                <p className="mt-3 text-xs leading-5 text-[#2C2622]/50">We keep your details private and use them only for your payment and your call. We always send a confirmation email.</p>
+              </section>
+
+              <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
+                <div className="mb-6">
+                  <div className="iconik-micro mb-2 text-[#2C2622]/45">Optional</div>
+                  <h2 className="iconik-display text-2xl text-[#2C2622]">Want to add more?</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#2C2622]/60">Your {formatINR(basePrice)} Blueprint is complete without these. Add one only if it helps you.</p>
+                </div>
+                <div className="space-y-3">
+                  {addonCards.map((addon) => (
+                    <label
+                      key={addon.key}
+                      className={`block cursor-pointer rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-[#2C2622] focus-within:ring-offset-2 sm:p-5 ${addon.selected ? 'border-[#2C2622] bg-[#F8F3E9]' : addon.badge ? 'border-[#A9874F]/45 bg-[#F8F3E9]/55 hover:border-[#A9874F]' : 'border-[#2C2622]/15 bg-white hover:border-[#2C2622]/35'}`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={addon.selected}
+                        onChange={(event) => handleAddonChange(addon.key, event.target.checked)}
+                      />
+                      <span className="flex items-start gap-3 sm:gap-4">
+                        <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${addon.selected ? 'border-[#2C2622] bg-[#2C2622]' : 'border-[#2C2622]/25 bg-white'}`}>
+                          {addon.selected && <Check className="h-4 w-4 text-[#F4EFE5]" strokeWidth={3} />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="iconik-display text-lg leading-tight text-[#2C2622]">{addon.title} · {formatINR(addon.price)}</span>
+                            {addon.badge && <span className="rounded-full bg-[#A9874F] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">{addon.badge}</span>}
+                          </span>
+                          <span className="mt-2 block text-sm leading-6 text-[#2C2622]/65">{addon.description}</span>
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
+                <div className="flex items-end justify-between gap-4 border-b border-[#2C2622]/10 pb-5">
+                  <div>
+                    <div className="text-sm text-[#2C2622]/55">Your total</div>
+                    <div className="mt-1 text-xs text-[#2C2622]/45">Hair, makeup, hair colour and glasses guides free</div>
+                  </div>
+                  <div className="iconik-display text-3xl text-[#2C2622]">{formatINR(totalAmount)}</div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#2C2622] px-5 py-4 text-center text-sm font-semibold text-[#F4EFE5] transition hover:bg-[#3d3430] focus:outline-none focus:ring-2 focus:ring-[#2C2622] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                >
+                  <Lock className="h-4 w-4 shrink-0" />
+                  {isProcessing ? 'Opening secure Razorpay payment…' : `Pay ${formatINR(totalAmount)} Securely`}
+                </button>
+
+                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                  {trustItems.map((item) => (
+                    <div key={item} className="flex items-start gap-1.5 text-[10px] leading-4 text-[#2C2622]/60 sm:text-[11px]">
+                      <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-[#6B7F87]" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+        </form>
+
+        <section aria-label="Client WhatsApp testimonials" className="mx-auto mt-8 max-w-2xl rounded-2xl border border-[#2C2622]/10 bg-white p-4 shadow-sm sm:p-5">
           <div className="grid grid-cols-[110px_1fr] items-center gap-4 sm:grid-cols-[130px_1fr] sm:gap-6">
             <div className="relative aspect-[9/16] overflow-hidden rounded-xl border border-[#2C2622]/10 bg-[#F8F3E9]" aria-live="polite">
               {testimonialScreenshots.map((testimonial, index) => (
@@ -437,168 +625,6 @@ export default function IndiaBlueprintCheckout({
             </div>
           </div>
         </section>
-
-        <form onSubmit={(event) => { event.preventDefault(); void processPayment(); }} noValidate>
-          <div className="grid items-start gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
-            <aside className="hidden rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8 lg:sticky lg:top-24 lg:block">
-              <div className="flex items-start justify-between gap-4 border-b border-[#2C2622]/10 pb-5">
-                <div>
-                  <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
-                  <h2 className="iconik-display text-2xl leading-tight text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
-                </div>
-                <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                {packageItems.map((item) => (
-                  <div key={item} className="flex items-start gap-3 text-sm leading-5 text-[#2C2622]/75">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#6B7F87]" strokeWidth={2.5} />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 rounded-2xl bg-[#F8F3E9] p-4 text-center">
-                <div className="iconik-display text-lg text-[#2C2622]">Trusted by {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients</div>
-                <p className="mt-1 text-xs text-[#2C2622]/55">Personal styling delivered across {CLIENT_PROOF.countriesServed}+ countries</p>
-              </div>
-            </aside>
-
-            <div className="space-y-6">
-              <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
-                <div className="mb-6">
-                  <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Details</div>
-                  <h2 className="iconik-display text-2xl text-[#2C2622]">Where should we contact you?</h2>
-                </div>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="offer-email" className="mb-2 block text-sm font-semibold text-[#2C2622]">Email Address</label>
-                    <input
-                      id="offer-email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(event) => { setEmail(event.target.value); setEmailError(''); }}
-                      className="w-full rounded-xl border border-[#2C2622]/20 bg-white px-4 py-3.5 text-base text-[#2C2622] outline-none transition focus:border-[#2C2622] focus:ring-2 focus:ring-[#2C2622]/10"
-                      aria-invalid={Boolean(emailError)}
-                      aria-describedby={emailError ? 'offer-email-error' : undefined}
-                    />
-                    {emailError && <p id="offer-email-error" className="mt-1.5 text-sm text-red-700">{emailError}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="offer-phone" className="mb-2 block text-sm font-semibold text-[#2C2622]">WhatsApp Number</label>
-                    <input
-                      id="offer-phone"
-                      type="tel"
-                      inputMode="numeric"
-                      autoComplete="tel"
-                      maxLength={10}
-                      value={phone}
-                      onChange={(event) => {
-                        const value = event.target.value.replace(/\D/g, '').slice(0, 10);
-                        setPhone(value);
-                        setPhoneError('');
-                      }}
-                      placeholder="10-digit number"
-                      className="w-full rounded-xl border border-[#2C2622]/20 bg-white px-4 py-3.5 text-base text-[#2C2622] outline-none transition focus:border-[#2C2622] focus:ring-2 focus:ring-[#2C2622]/10"
-                      aria-invalid={Boolean(phoneError)}
-                      aria-describedby={phoneError ? 'offer-phone-error' : undefined}
-                    />
-                    {phoneError && <p id="offer-phone-error" className="mt-1.5 text-sm text-red-700">{phoneError}</p>}
-                  </div>
-                </div>
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[#2C2622]/10 bg-[#F8F3E9]/60 p-3.5">
-                  <input
-                    type="checkbox"
-                    checked={whatsappOptIn}
-                    onChange={(event) => setWhatsappOptIn(event.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#2C2622]"
-                  />
-                  <span className="text-xs leading-5 text-[#2C2622]/65">
-                    Send my order confirmation, consultation booking link, and service updates on WhatsApp. I can opt out at any time.
-                  </span>
-                </label>
-                <p className="mt-3 text-xs leading-5 text-[#2C2622]/50">Your details are private and used only for payment and consultation coordination. Email confirmation is always sent.</p>
-              </section>
-
-              <section className="rounded-2xl border border-[#2C2622]/10 bg-white p-5 shadow-sm lg:hidden">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
-                    <h2 className="iconik-display text-xl text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
-                  </div>
-                  <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
-                </div>
-                <p className="mt-3 text-xs leading-5 text-[#2C2622]/60">20 personalised outfits · colour palette · 30-minute video consultation</p>
-              </section>
-
-              <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
-                <div className="mb-6">
-                  <div className="iconik-micro mb-2 text-[#2C2622]/45">Optional</div>
-                  <h2 className="iconik-display text-2xl text-[#2C2622]">Enhance Your Blueprint</h2>
-                  <p className="mt-2 text-sm leading-6 text-[#2C2622]/60">Your {formatINR(basePrice)} Blueprint is complete on its own. Add only what feels useful to you.</p>
-                </div>
-
-                <div className="space-y-3">
-                  {addonCards.map((addon) => (
-                    <label
-                      key={addon.key}
-                      className={`block cursor-pointer rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-[#2C2622] focus-within:ring-offset-2 sm:p-5 ${addon.selected ? 'border-[#2C2622] bg-[#F8F3E9]' : addon.badge ? 'border-[#A9874F]/45 bg-[#F8F3E9]/55 hover:border-[#A9874F]' : 'border-[#2C2622]/15 bg-white hover:border-[#2C2622]/35'}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={addon.selected}
-                        onChange={(event) => handleAddonChange(addon.key, event.target.checked)}
-                      />
-                      <span className="flex items-start gap-3 sm:gap-4">
-                        <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${addon.selected ? 'border-[#2C2622] bg-[#2C2622]' : 'border-[#2C2622]/25 bg-white'}`}>
-                          {addon.selected && <Check className="h-4 w-4 text-[#F4EFE5]" strokeWidth={3} />}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="iconik-display text-lg leading-tight text-[#2C2622]">{addon.title} · {formatINR(addon.price)}</span>
-                            {addon.badge && <span className="rounded-full bg-[#A9874F] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">{addon.badge}</span>}
-                          </span>
-                          <span className="mt-2 block text-sm leading-6 text-[#2C2622]/65">{addon.description}</span>
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </section>
-
-              <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
-                <div className="flex items-end justify-between gap-4 border-b border-[#2C2622]/10 pb-5">
-                  <div>
-                    <div className="text-sm text-[#2C2622]/55">Your total</div>
-                    <div className="mt-1 text-xs text-[#2C2622]/45">Includes selected add-ons</div>
-                  </div>
-                  <div className="iconik-display text-3xl text-[#2C2622]">{formatINR(totalAmount)}</div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#2C2622] px-5 py-4 text-center text-sm font-semibold text-[#F4EFE5] transition hover:bg-[#3d3430] focus:outline-none focus:ring-2 focus:ring-[#2C2622] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
-                >
-                  <Lock className="h-4 w-4 shrink-0" />
-                  {isProcessing ? 'Opening secure Razorpay payment…' : `Pay ${formatINR(totalAmount)} Securely`}
-                </button>
-
-                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
-                  {trustItems.map((item) => (
-                    <div key={item} className="flex items-start gap-1.5 text-[10px] leading-4 text-[#2C2622]/60 sm:text-[11px]">
-                      <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-[#6B7F87]" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          </div>
-        </form>
       </main>
     </div>
   );

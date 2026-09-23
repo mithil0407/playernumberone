@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { RootDesignVariant } from '@/lib/rootDesign';
+import { OFFER_FREE_BONUSES, OFFER_TOPICS, type OfferTopicKey } from '@/lib/offerTopics';
 
 interface LandingPageContentProps {
   headline: ReactNode;
@@ -51,6 +52,7 @@ interface LandingPageContentProps {
   displayBasePrice?: string;
   displayOriginalPrice?: string;
   designVariant?: RootDesignVariant;
+  topic?: OfferTopicKey;
 }
 
 interface TestimonialVideoCardProps {
@@ -189,8 +191,12 @@ export default function LandingPageContent({
   displayBasePrice,
   displayOriginalPrice,
   designVariant,
+  topic,
 }: LandingPageContentProps) {
   const isOffer2699 = variant === 'offer2699';
+  // Root and /offer-2699 share the general topic; /offer-2699/<topic> pages
+  // swap in their own pain points, promise, FAQs and closing line.
+  const topicContent = isOffer2699 ? OFFER_TOPICS[topic ?? 'general'] : undefined;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [showMobileCta, setShowMobileCta] = useState(false);
@@ -245,7 +251,16 @@ export default function LandingPageContent({
     return () => observer.disconnect();
   }, []);
 
-  const faqs = [
+  const offerFaqs = [
+    ...(topicContent?.faqs ?? []),
+    { question: 'What will I get?', answer: `A ${BLUEPRINT_OFFER.consultationMinutes}-minute video call with your stylist. Then your Blueprint: ${BLUEPRINT_OFFER.outfitFormulas} outfits made for you, your colour palette, and your body shape and face guides. The hairstyle, makeup, hair colour and glasses guides are free.` },
+    { question: 'Will this really help me?', answer: `Your stylist looks at your body, face, skin colour and lifestyle, then tells you exactly what to wear. ICONIK has styled ${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ women and men in ${CLIENT_PROOF.countriesServed}+ countries.` },
+    { question: 'What if I do not like the suggestions?', answer: 'On your call, you tell your stylist what you like and what you never wear. Your outfits are made around that. If your Blueprint does not match what you told us, we change it for free.' },
+    { question: 'Is it online?', answer: 'Yes. You talk to your stylist on a video call from home. Your Blueprint is ready in ' + BLUEPRINT_OFFER.deliveryWorkingDays + ' working days after the call.' },
+    { question: 'How do I pay? Can I get a refund?', answer: 'Pay by UPI, card, net banking or wallet through Razorpay. Refunds apply only in the cases listed in our Refund Policy.' },
+  ];
+
+  const defaultFaqs = [
     { question: 'Will this really help me look more elegant and confident?', answer: `Your Blueprint turns your proportions, colouring, facial architecture, lifestyle and preferences into specific styling decisions. ICONIK has worked with ${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ women and men across ${CLIENT_PROOF.countriesServed}+ countries.` },
     { question: "What if the style suggestions don't feel like me?", answer: "We work 1-on-1 with you to ensure the style feels authentically you. Your stylist will adapt all recommendations to match your personality and comfort level." },
     {
@@ -257,14 +272,16 @@ export default function LandingPageContent({
     { question: 'What if I want changes after delivery?', answer: `${BLUEPRINT_OFFER.revisionPromise} ${BLUEPRINT_OFFER.refundSummary}` },
   ];
 
+  const faqs = isOffer2699 ? offerFaqs : defaultFaqs;
+
   const blueprintItems = isOffer2699
     ? [
-        { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Private 30-Minute Stylist Consultation', desc: 'A private video call with your dedicated ICONIK stylist before your Blueprint is built. Your preferences, lifestyle, comfort and goals are understood by a human first.' },
-        { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: `${BLUEPRINT_OFFER.outfitFormulas} Complete Outfit Formulas`, desc: 'Complete Western and ethnic looks — clothing, footwear, bag and accessories — built for work, everyday dressing, family events and occasions.' },
-        { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Body Shape & Fit Guide', desc: 'The necklines, sleeves, lengths and silhouettes that work for your proportions, plus the cuts and shapes to avoid.' },
-        { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Personal Colour Palette', desc: '10 exact colours selected for your undertone and depth, plus 4 colours to avoid, with real shopping examples from Myntra and Ajio.' },
-        { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Face, Hair & Accessory Guide', desc: 'Necklines, earrings, collars, eyewear, hairstyles and finishing details chosen to complement your face.' },
-        { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Solutions for Your Styling Concerns', desc: 'Practical structures and cuts for concerns such as arms, tummy, height or bust — adapted to your comfort, not used to hide your body.' },
+        { icon: <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: '30-Minute Call With Your Stylist', desc: 'A private video call before your Blueprint is made. Your stylist learns about your life, your comfort and what you like.' },
+        { icon: <Gem className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: `${BLUEPRINT_OFFER.outfitFormulas} Complete Outfits`, desc: 'Indian and western looks — clothes, footwear, bag and jewellery — for work, daily wear, family functions and weddings.' },
+        { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Body Shape & Fit Guide', desc: 'The necklines, sleeves, lengths and shapes that suit your body, and the ones to avoid.' },
+        { icon: <Sparkles className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Your Colour Palette', desc: '10 colours that suit your skin and 4 to avoid, with real examples from Myntra and Ajio.' },
+        { icon: <Award className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Face & Jewellery Guide', desc: 'The necklines, earrings and collars that suit your face.' },
+        { icon: <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Help With the Parts You Worry About', desc: 'Arms, tummy, height or bust — cuts that make you feel comfortable and confident, not hidden.' },
       ]
     : [
         { icon: <Trophy className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#94A6AD' }} />, title: 'Geometric Silhouette Profile™', desc: 'Your exact shoulder-to-hip ratio, torso length, and vertical line mapped to silhouettes that create optical balance for your frame.' },
@@ -279,17 +296,17 @@ export default function LandingPageContent({
     {
       number: '01',
       title: 'Book Your Blueprint',
-      description: 'Pay securely and receive your consultation scheduling details on WhatsApp.',
+      description: 'Pay online. We send you a WhatsApp message to pick a time for your call.',
     },
     {
       number: '02',
       title: 'Talk to Your Stylist',
-      description: 'Spend 30 private minutes discussing your lifestyle, comfort, preferences, budget and concerns.',
+      description: 'A private 30-minute video call. Tell your stylist about your life, your budget, what you like and what worries you.',
     },
     {
       number: '03',
-      title: 'Receive Your Personal Style Blueprint',
-      description: `Your stylist builds your recommendations and delivers them within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days. Revisions within your original consultation scope are included.`,
+      title: 'Get Your Blueprint',
+      description: `Your stylist makes your Blueprint and sends it within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days. If something does not match what you told us, we change it for free.`,
     },
   ];
 
@@ -297,10 +314,10 @@ export default function LandingPageContent({
     { label: 'Private conversation with a real stylist', iconik: 'Yes', instant: 'No' },
     { label: 'Stylist hears your concerns in your own words', iconik: 'Yes', instant: 'No' },
     { label: 'Lifestyle, comfort and preferences discussed', iconik: 'Yes', instant: 'No' },
-    { label: 'Recommendations created after understanding you', iconik: 'Yes', instant: 'No' },
-    { label: 'Opportunity to ask questions directly', iconik: 'Yes', instant: 'No' },
-    { label: 'Human stylist accountable for the recommendations', iconik: 'Yes', instant: 'No' },
-    { label: 'Revisions based on your original consultation', iconik: 'Yes', instant: 'No' },
+    { label: 'Advice made after understanding you', iconik: 'Yes', instant: 'No' },
+    { label: 'You can ask questions directly', iconik: 'Yes', instant: 'No' },
+    { label: 'A real person responsible for your advice', iconik: 'Yes', instant: 'No' },
+    { label: 'Free changes if it misses what you asked for', iconik: 'Yes', instant: 'No' },
     { label: 'Delivered within minutes', iconik: 'No', instant: 'Yes' },
   ];
 
@@ -325,9 +342,9 @@ export default function LandingPageContent({
           )}
 
           {/* Headline */}
-          {isOffer2699 && (
+          {topicContent && (
             <div className="root-hero-eyebrow iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
-              SCIENTIFIC PERSONAL STYLING FOR INDIAN WOMEN
+              {topicContent.eyebrow.toUpperCase()}
             </div>
           )}
           <h1 className="iconik-display mb-5" style={{ fontSize: isOffer2699 ? 'clamp(30px, 8.2vw, 64px)' : 'clamp(32px, 7vw, 72px)', lineHeight: isOffer2699 ? 1.06 : 1, color: '#2C2622', letterSpacing: isOffer2699 ? '-0.025em' : undefined }}>
@@ -357,10 +374,21 @@ export default function LandingPageContent({
             <ArrowRight className="h-4 w-4 opacity-60" />
           </Link>
 
+          {isOffer2699 && (
+            <div className="mt-4">
+              <div className="root-hero-bonus inline-flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'rgba(154,125,74,0.12)', color: '#2C2622' }}>
+                <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: '#9a7d4a' }} />
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Hairstyle &amp; makeup guide included free</span>
+              </div>
+            </div>
+          )}
+
           <div className="root-hero-trust mt-4 flex items-center justify-center gap-2 flex-wrap">
             <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
             <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
-              Secure checkout · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included
+              {isOffer2699
+                ? `${CLIENT_PROOF.womenStyled.toLocaleString('en-IN')}+ women styled · Pay by UPI or card · Ready in ${BLUEPRINT_OFFER.deliveryWorkingDays} working days`
+                : `Secure checkout · ${BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included`}
             </span>
           </div>
 
@@ -390,6 +418,39 @@ export default function LandingPageContent({
 
         </div>
       </section>
+
+      {topicContent && (
+        <section className="root-topic-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
+          <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2 md:gap-8">
+            <div className="rounded-2xl p-7 md:p-9" style={{ background: '#fff', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <h2 className="iconik-display mb-6" style={{ fontSize: 'clamp(26px, 4vw, 36px)', color: '#2C2622', lineHeight: 1.15 }}>
+                {topicContent.painTitle}
+              </h2>
+              <ul className="space-y-4">
+                {topicContent.painPoints.map((point) => (
+                  <li key={point} className="flex items-start gap-3">
+                    <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: '#9a7d4a' }} />
+                    <span style={{ fontSize: '16px', lineHeight: 1.6, color: '#2C2622', opacity: 0.8 }}>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl p-7 md:p-9" style={{ background: '#EDE5D2', border: '1px solid rgba(44,38,34,0.08)' }}>
+              <h2 className="iconik-display mb-6" style={{ fontSize: 'clamp(26px, 4vw, 36px)', color: '#2C2622', lineHeight: 1.15 }}>
+                {topicContent.promiseTitle}
+              </h2>
+              <ul className="space-y-4">
+                {topicContent.promisePoints.map((point) => (
+                  <li key={point} className="flex items-start gap-3">
+                    <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" style={{ color: '#54705d' }} />
+                    <span style={{ fontSize: '16px', lineHeight: 1.6, color: '#2C2622', opacity: 0.8 }}>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
 
       {isOffer2699 && (
         <section className="root-process-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
@@ -425,7 +486,7 @@ export default function LandingPageContent({
               { num: `${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+`, label: 'Clients Styled' },
               { num: `${CLIENT_PROOF.countriesServed}+`, label: 'Countries Served' },
               { num: `${BLUEPRINT_OFFER.outfitFormulas}`, label: 'Outfit Formulas' },
-              { num: `${BLUEPRINT_OFFER.weeklyClientCapacity}`, label: 'Clients Per Week' },
+              { num: `${BLUEPRINT_OFFER.weeklyClientCapacity}`, label: isOffer2699 ? 'Places Each Week' : 'Clients Per Week' },
             ].map((s) => (
               <div key={s.label}>
                 <div className="iconik-display flex items-center justify-center gap-1.5" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>
@@ -488,7 +549,7 @@ export default function LandingPageContent({
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <div className="iconik-micro mb-3 opacity-45" style={{ color: '#2C2622' }}>Your Deliverable</div>
-            <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>What Your Blueprint Actually Looks Like</div>
+            <div className="iconik-display" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#2C2622' }}>{isOffer2699 ? 'See What You Will Get' : 'What Your Blueprint Actually Looks Like'}</div>
           </div>
 
           {/* Browser frame */}
@@ -516,14 +577,14 @@ export default function LandingPageContent({
                   </div>
                   <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', letterSpacing: '0.4em', fontWeight: 700 }}>Iconik <span style={{ color: '#9a7d4a' }}>Blueprint</span></span>
                 </div>
-                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622' }}>Pro Edition // 2025</span>
+                <span className="iconik-mono opacity-25" style={{ fontSize: '9px', color: '#2C2622' }}>Sample</span>
               </div>
 
               {/* Report header */}
               <div className="px-6 md:px-10 py-10" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#fff' }}>
                 <div className="flex items-center gap-3 mb-3" style={{ color: '#9a7d4a' }}>
                   <CheckCircle className="w-4 h-4" />
-                  <span className="iconik-mono" style={{ fontSize: '9px', letterSpacing: '0.4em', fontWeight: 700 }}>ANALYSIS VERIFIED</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', letterSpacing: '0.4em', fontWeight: 700 }}>CHECKED BY YOUR STYLIST</span>
                 </div>
                 <div className="iconik-display-it" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1 }}>The Lookbook</div>
                 <div className="flex flex-wrap gap-3 mt-4">
@@ -537,7 +598,7 @@ export default function LandingPageContent({
               <div style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                 <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 01 — GEOMETRIC SILHOUETTE PROFILE™</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 01 — YOUR BODY SHAPE</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
                 </div>
                 <div className="flex flex-col md:flex-row">
@@ -547,14 +608,14 @@ export default function LandingPageContent({
                   <div className="flex-1 p-6 md:p-10">
                     <div className="flex items-center gap-4 mb-6">
                       <span className="iconik-mono px-4 py-2" style={{ background: '#2C2622', color: '#9a7d4a', fontSize: '9px', letterSpacing: '0.2em', fontWeight: 700 }}>Hourglass</span>
-                      <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.4 }}>Your dominant body geometry</span>
+                      <span style={{ fontSize: '12px', color: '#2C2622', opacity: 0.4 }}>Your body shape</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       {[
-                        { label: 'Shoulder–Hip Balance', value: 'Symmetrical — balanced frame' },
-                        { label: 'Waist Definition', value: 'Naturally defined — visible curve' },
-                        { label: 'Torso Length', value: 'Average — standard proportions' },
-                        { label: 'Vertical Line', value: 'Elongated — good height ratio' },
+                        { label: 'Shoulders & Hips', value: 'Balanced — same width' },
+                        { label: 'Waist', value: 'Clear waist curve' },
+                        { label: 'Upper Body', value: 'Average length' },
+                        { label: 'Height Look', value: 'Looks tall for her height' },
                       ].map((row) => (
                         <div key={row.label}>
                           <span className="iconik-mono block mb-0.5" style={{ fontSize: '8px', color: '#9a7d4a', letterSpacing: '0.2em', fontWeight: 700 }}>{row.label}</span>
@@ -563,8 +624,8 @@ export default function LandingPageContent({
                       ))}
                     </div>
                     <div className="pl-5 py-1" style={{ borderLeft: '2px solid rgba(154,125,74,0.2)' }}>
-                      <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Styling Directive</p>
-                      <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;Celebrate the natural waist. Avoid boxy, shapeless silhouettes. Always define the middle — belted, wrap, or fitted waistbands are your friend.&rdquo;</p>
+                      <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Stylist&apos;s Tip</p>
+                      <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.55, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;Show your waist. Skip boxy, shapeless clothes. Belts, wrap styles and fitted waists work best for you.&rdquo;</p>
                     </div>
                   </div>
                 </div>
@@ -574,7 +635,7 @@ export default function LandingPageContent({
               <div style={{ background: '#faf9f6', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                 <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 02 — FACIAL ARCHITECTURE ANALYSIS™</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 02 — YOUR FACE SHAPE</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
                 </div>
                 <div className="flex flex-col md:flex-row" style={{ background: '#fff' }}>
@@ -622,7 +683,7 @@ export default function LandingPageContent({
               <div style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                 <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 03 — CHROMATIC HARMONY MAP™</span>
+                  <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 03 — YOUR COLOURS</span>
                   <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
                 </div>
                 <div className="p-6 md:p-10">
@@ -639,7 +700,7 @@ export default function LandingPageContent({
                       </div>
                     </div>
                     <div>
-                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Eliminate These 4</p>
+                      <p className="iconik-mono mb-5" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Skip These 4</p>
                       <div className="grid grid-cols-4 gap-2 mb-3">
                         {['#E8E8F0','#C8D8E8','#F0E8F8','#D0E8D0'].map((hex) => (
                           <div key={hex} className="aspect-square rounded-lg relative shadow-sm" style={{ background: hex, border: '2px solid rgba(239,68,68,0.3)' }}>
@@ -658,13 +719,13 @@ export default function LandingPageContent({
               {/* Section 04: Outfit teaser */}
               <div className="px-6 md:px-10 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(44,38,34,0.06)', background: '#faf9f6' }}>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
-                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {BLUEPRINT_OFFER.outfitFormulas} PERSONALISED OUTFIT FORMULAS</span>
+                <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.5em', fontWeight: 700 }}>SECTION 04 — YOUR {BLUEPRINT_OFFER.outfitFormulas} OUTFITS</span>
                 <div className="h-px flex-1" style={{ background: 'rgba(44,38,34,0.08)' }} />
               </div>
               {[
                 {
-                  category: 'Corporate',
-                  title: 'The Power Silhouette',
+                  category: 'Office',
+                  title: 'The Confident Office Look',
                   img: '/report-preview-1.webp',
                   items: [
                     { label: 'Top', value: 'Structured blazer in ivory — strong shoulders, nipped waist' },
@@ -673,11 +734,11 @@ export default function LandingPageContent({
                     { label: 'Handbag', value: 'Structured tote in cognac leather' },
                     { label: 'Jewelry', value: 'Gold bar earrings + thin watch — clean authority' },
                   ],
-                  rationale: 'The vertical line created by the blazer lapel draws the eye upward and visually lengthens the torso. Straight trousers maintain the hourglass definition without adding bulk at the hip.',
+                  rationale: 'The blazer draws the eye up and makes you look taller. Straight trousers keep your shape without adding bulk at the hips.',
                 },
                 {
-                  category: 'Occasion',
-                  title: 'The Festive Edit',
+                  category: 'Festive',
+                  title: 'The Festive Look',
                   img: '/report-preview-2.webp',
                   items: [
                     { label: 'Top', value: 'Draped kurta in deep teal silk — V-neck to elongate' },
@@ -686,7 +747,7 @@ export default function LandingPageContent({
                     { label: 'Handbag', value: 'Embroidered clutch in bronze' },
                     { label: 'Jewelry', value: 'Statement jhumkas + minimal neckpiece' },
                   ],
-                  rationale: 'A monochromatic head-to-toe in a deep tone creates a clean, unbroken vertical that flatters the hourglass by not interrupting the waist definition.',
+                  rationale: 'One deep colour from top to toe makes you look taller and slimmer, and keeps your waist in focus.',
                 },
               ].map((look, i) => (
                 <div key={i} style={{ background: '#fff', borderBottom: '1px solid rgba(44,38,34,0.06)' }}>
@@ -696,12 +757,12 @@ export default function LandingPageContent({
                     </div>
                     <div className="flex-1 p-6 md:p-10">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.4em', fontWeight: 700 }}>{look.category} Ensemble</span>
+                        <span className="iconik-mono" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.4em', fontWeight: 700 }}>{look.category} Look</span>
                       </div>
                       <div className="iconik-display-it mb-5" style={{ fontSize: 'clamp(22px, 3vw, 30px)', color: '#2C2622' }}>{look.title}</div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>Composition</p>
+                          <p className="iconik-mono mb-4" style={{ fontSize: '9px', color: '#2C2622', opacity: 0.35, letterSpacing: '0.3em', fontWeight: 700 }}>The Outfit</p>
                           <div className="space-y-3">
                             {look.items.map((item) => (
                               <div key={item.label}>
@@ -712,7 +773,7 @@ export default function LandingPageContent({
                           </div>
                         </div>
                         <div className="pl-5 py-1 self-start" style={{ borderLeft: '2px solid rgba(154,125,74,0.2)' }}>
-                          <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Stylist Rationale</p>
+                          <p className="iconik-mono mb-2" style={{ fontSize: '9px', color: '#9a7d4a', letterSpacing: '0.3em', fontWeight: 700, fontStyle: 'italic' }}>Why It Works</p>
                           <p style={{ fontSize: '12px', color: '#2C2622', opacity: 0.5, fontStyle: 'italic', lineHeight: 1.7, fontWeight: 300 }}>&ldquo;{look.rationale}&rdquo;</p>
                         </div>
                       </div>
@@ -769,6 +830,33 @@ export default function LandingPageContent({
       </section>
 
       {isOffer2699 && (
+        <section id="free-bonuses" className="root-bonus-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Free With Your Blueprint</div>
+              <h2 className="iconik-display" style={{ fontSize: 'clamp(32px, 6vw, 56px)', color: '#2C2622', lineHeight: 1.08 }}>
+                Your hair and makeup guides are free.
+              </h2>
+              <p className="mx-auto mt-5 max-w-xl" style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.62 }}>
+                Every Blueprint comes with these four guides at no extra cost. Your stylist makes them for your face and skin.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {OFFER_FREE_BONUSES.map((bonus) => (
+                <div key={bonus.title} className="root-bonus-card flex items-start gap-4 rounded-2xl p-6" style={{ background: '#fff', border: '1px solid rgba(44,38,34,0.08)' }}>
+                  <span className="root-bonus-tag shrink-0 rounded-full px-3 py-1" style={{ background: '#54705d', color: '#fff', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em' }}>FREE</span>
+                  <div>
+                    <h3 className="iconik-display mb-1" style={{ fontSize: '19px', color: '#2C2622' }}>{bonus.title}</h3>
+                    <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#2C2622', opacity: 0.65 }}>{bonus.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isOffer2699 && (
         <section id="comparison" className="root-comparison-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
           <div className="mx-auto max-w-5xl">
             <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -777,7 +865,7 @@ export default function LandingPageContent({
                 A real stylist changes everything.
               </h2>
               <p className="mx-auto mt-5 max-w-2xl" style={{ fontSize: '15px', lineHeight: 1.8, color: '#2C2622', opacity: 0.62 }}>
-                An instant report can process answers. A stylist can listen, ask follow-up questions and understand what will actually work in your life.
+                An app only reads your answers. A stylist listens, asks questions and understands your life.
               </p>
             </div>
 
@@ -813,7 +901,7 @@ export default function LandingPageContent({
               Instant reports are instant because nobody is looking at you. Yours takes five working days because a stylist does.
             </p>
             <p className="mx-auto mt-4 max-w-2xl text-center" style={{ color: '#2C2622', fontSize: '12px', lineHeight: 1.7, opacity: 0.5 }}>
-              Revisions are included when the delivered Blueprint does not reflect the needs, goals or preferences shared in your original consultation.
+              If your Blueprint does not match what you told your stylist on the call, we change it for free.
             </p>
           </div>
         </section>
@@ -824,15 +912,17 @@ export default function LandingPageContent({
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-micro mb-4 opacity-45" style={{ color: '#2C2622' }}>Client Stories</div>
-            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>What changed for three ICONIK clients</div>
+            <div className="iconik-display mb-3" style={{ fontSize: 'clamp(32px, 6vw, 60px)', color: '#2C2622' }}>{topic === 'sleeves' || topic === 'modest' ? 'What changed for our clients' : 'What changed for three ICONIK clients'}</div>
             <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55 }}>Their concerns were different. The advice had to fit their bodies, comfort and real lives.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className={`grid gap-8 ${topic === 'sleeves' || topic === 'modest' ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
             {[
               { name: 'Priya', age: '28', city: 'Mumbai', image: '/testimonial-priya.webp', concern: ['After my delivery, I felt conscious about my tummy and kept choosing loose tops.'], finding: ['Rectangle frame', 'Deep warm autumn undertone'], changed: ['Straight-cut kurtas instead of shapeless tops', 'Warmer, deeper colours near the face', 'Peplum and structured layers for occasions'], quote: 'Earlier I would change three or four times before going out. Now I know what to pick, and I still feel comfortable in it.', stars: 5 },
               { name: 'Ananya', age: '32', city: 'Delhi', image: '/testimonial-ananya.webp', concern: ['I felt conscious about my arms and wore full sleeves even in Delhi summer.'], finding: ['Inverted triangle frame', 'Cool neutral undertone'], changed: ['Cap and flutter sleeves that still felt comfortable', 'Raglan cuts to soften the shoulder line', 'More colour instead of wearing only black'], quote: 'I always thought covering my arms was the only option. The sleeve suggestions were practical, and the outfits still felt like me.', stars: 5 },
               { name: 'Shreya', age: '26', city: 'Bangalore', image: '/testimonial-shreya.webp', concern: ['On my petite frame, too much fabric made most outfits feel overwhelming.'], finding: ['Rectangle frame, short vertical line', 'Warm neutral undertone'], changed: ['Cleaner monochromatic combinations', 'Hem lengths that suited her height', 'Smaller accessories scaled to her frame'], quote: 'I used to save so many outfits and then buy nothing because I was confused. Now shopping feels much more straightforward.', stars: 4 },
-            ].map((c) => (
+            // Ananya's story is about moving to shorter sleeves, which contradicts
+            // the promise on the sleeves and modest pages.
+            ].filter((c) => !(c.name === 'Ananya' && (topic === 'sleeves' || topic === 'modest'))).map((c) => (
               <div key={c.name} className="root-client-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(44,38,34,0.08)' }}>
                 <div className="aspect-square overflow-hidden" style={{ background: 'rgba(237,229,210,0.5)' }}>
                   <Image src={c.image} alt={c.name} width={300} height={300} className="w-full h-full object-cover" loading="lazy" />
@@ -877,15 +967,38 @@ export default function LandingPageContent({
       </section>
 
       {/* ── Price ─────────────────────────────────────────────────────────── */}
-      <section className="root-price-section py-24 px-4 md:px-6 me-slate">
+      <section id="pricing" className="root-price-section py-24 px-4 md:px-6 me-slate">
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <p style={{ fontSize: '17px', lineHeight: 1.85, color: '#F4EFE5', opacity: 0.75, marginBottom: '32px', maxWidth: '520px', margin: '0 auto 32px' }}>
-            A styling session can end when the call does. Your {isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Blueprint'} remains as a practical reference for getting dressed, shopping, hair, eyewear and colour decisions.
+            {isOffer2699
+              ? 'The call ends in 30 minutes. Your Blueprint stays with you — open it every time you get dressed or go shopping.'
+              : 'A styling session can end when the call does. Your ICONIK Blueprint remains as a practical reference for getting dressed, shopping, hair, eyewear and colour decisions.'}
           </p>
           <div className="rounded-2xl p-10 mb-10 me-glass-light">
             <div className="iconik-micro mb-3 opacity-55" style={{ color: '#F4EFE5' }}>{isOffer2699 ? 'ICONIK Personal Style Blueprint' : 'ICONIK Style Consultation'}</div>
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(40px, 8vw, 72px)', color: '#F4EFE5' }}>{formattedBasePrice}</div>
-            <p style={{ fontSize: '16px', color: '#F4EFE5', opacity: 0.7, lineHeight: 1.8 }}>Yours forever. Built on your specific frame, face, and colour profile.</p>
+            <p style={{ fontSize: '16px', color: '#F4EFE5', opacity: 0.7, lineHeight: 1.8 }}>{isOffer2699 ? 'One-time payment. Yours to keep.' : 'Yours forever. Built on your specific frame, face, and colour profile.'}</p>
+            {isOffer2699 && (
+              <ul className="root-price-list mx-auto mt-8 max-w-sm space-y-3 text-left">
+                {[
+                  `${BLUEPRINT_OFFER.consultationMinutes}-minute video call with your stylist`,
+                  `${BLUEPRINT_OFFER.outfitFormulas} complete outfits made for you`,
+                  'Your colour palette',
+                  'Body shape and face guides',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3" style={{ color: '#F4EFE5', fontSize: '15px', lineHeight: 1.5 }}>
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+                {OFFER_FREE_BONUSES.map((bonus) => (
+                  <li key={bonus.title} className="flex items-start gap-3" style={{ color: '#F4EFE5', fontSize: '15px', lineHeight: 1.5 }}>
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />
+                    <span>{bonus.title} <span className="root-price-free ml-1 rounded-full px-2 py-0.5" style={{ background: 'rgba(244,239,229,0.16)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em' }}>FREE</span></span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <Link
             href={checkoutHref}
@@ -903,15 +1016,15 @@ export default function LandingPageContent({
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 48px)', color: '#2C2622' }}>Frequently Asked Questions</div>
-            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55, maxWidth: '380px', margin: '0 auto' }}>{isOffer2699 ? 'Everything you need to know about your Personal Style Blueprint.' : 'Everything you need to know about our consultations.'}</p>
+            <p style={{ fontSize: '15px', color: '#2C2622', opacity: 0.55, maxWidth: '380px', margin: '0 auto' }}>{isOffer2699 ? 'Quick answers before you book.' : 'Everything you need to know about our consultations.'}</p>
           </div>
           <div className="space-y-0">
             {faqs.map((faq, i) => (
-              <div key={i} className="cursor-pointer py-5" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                <div className="flex justify-between items-center gap-4">
-                  <div className="iconik-display" style={{ fontSize: '17px', color: '#2C2622', lineHeight: 1.4 }}>{faq.question}</div>
-                  <span className="iconik-mono flex-shrink-0 opacity-35" style={{ fontSize: '18px', color: '#2C2622' }}>{openFaq === i ? '−' : '+'}</span>
-                </div>
+              <div key={i} className="py-5" style={{ borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
+                <button type="button" className="flex w-full cursor-pointer justify-between items-center gap-4 text-left" aria-expanded={openFaq === i} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                  <span className="iconik-display" style={{ fontSize: '17px', color: '#2C2622', lineHeight: 1.4 }}>{faq.question}</span>
+                  <span aria-hidden="true" className="iconik-mono flex-shrink-0 opacity-35" style={{ fontSize: '18px', color: '#2C2622' }}>{openFaq === i ? '−' : '+'}</span>
+                </button>
                 {openFaq === i && (
                   <p style={{ fontSize: '14px', color: '#2C2622', opacity: 0.65, lineHeight: 1.8, marginTop: '12px' }}>{faq.answer}</p>
                 )}
@@ -925,14 +1038,16 @@ export default function LandingPageContent({
       <section className="root-final-section py-24 px-4 md:px-6 text-center me-slate relative">
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="iconik-display mb-3" style={{ fontSize: 'clamp(28px, 5vw, 52px)', color: '#F4EFE5', lineHeight: 1.1 }}>
-            {isOffer2699 ? (
-              'Stop Guessing What Flatters You.'
+            {topicContent ? (
+              topicContent.finalHeadline
             ) : (
               <>Ready to Discover Your <span className="iconik-display-it opacity-55">Signature Style?</span></>
             )}
           </div>
           <p style={{ fontSize: '17px', color: '#F4EFE5', opacity: 0.75, marginTop: '16px', marginBottom: '40px', lineHeight: 1.85 }}>
-            Get {BLUEPRINT_OFFER.outfitFormulas} personalised outfit formulas, your colour palette, hairstyle and eyewear guidance, plus a {BLUEPRINT_OFFER.consultationMinutes}-minute video consultation.
+            {isOffer2699
+              ? `A ${BLUEPRINT_OFFER.consultationMinutes}-minute call with your stylist, ${BLUEPRINT_OFFER.outfitFormulas} outfits made for you, and your colour palette. Hairstyle and makeup guides free.`
+              : `Get ${BLUEPRINT_OFFER.outfitFormulas} personalised outfit formulas, your colour palette, hairstyle and eyewear guidance, plus a ${BLUEPRINT_OFFER.consultationMinutes}-minute video consultation.`}
           </p>
           <Link
             href={checkoutHref}
@@ -1010,14 +1125,18 @@ export default function LandingPageContent({
         <div className="mx-auto flex max-w-sm items-center gap-3">
           <div className="shrink-0">
             <div className="iconik-display" style={{ fontSize: '17px', color: '#2C2622' }}>{formattedBasePrice}</div>
-            <div className="line-through" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</div>
+            {isOffer2699 ? (
+              <div style={{ fontSize: '10px', color: '#54705d', fontWeight: 600 }}>+ Free hair &amp; makeup</div>
+            ) : (
+              <div className="line-through" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.35 }}>{formattedOriginalPrice}</div>
+            )}
           </div>
           <Link
             href={checkoutHref}
             onClick={() => trackCTAClick('Mobile Sticky CTA', 'Mobile Sticky', basePrice, 'INR', contentCategory)}
             className="root-primary-action inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#2C2622] px-4 py-3 text-[#F4EFE5] transition-colors duration-300 hover:bg-[#3d3430]"
           >
-            <span className="iconik-display text-center" style={{ fontSize: '14px' }}>{isOffer2699 ? 'Get My Personal Style Blueprint' : 'Begin Your Transformation'}</span>
+            <span className="iconik-display text-center" style={{ fontSize: '14px' }}>{isOffer2699 ? 'Book My Stylist' : 'Begin Your Transformation'}</span>
           </Link>
         </div>
       </div>
