@@ -111,9 +111,13 @@ test('capsule is inferred from the garment vocabulary', async () => {
 });
 
 test('the ethnic office file loads as Professional, and closes that gap', async () => {
-  const { getParsedStylistOutfitLibrary, isUsableStylistOutfitAnchor, outfitCapsules } = await import('./stylistOutfitLibraryParser.ts');
+  const { getParsedStylistOutfitLibrary, isUsableStylistOutfitAnchor, outfitCapsules, parseOutfitLibrary } = await import('./stylistOutfitLibraryParser.ts');
+  const { readFileSync } = await import('node:fs');
   const usable = getParsedStylistOutfitLibrary().filter(isUsableStylistOutfitAnchor);
-  const officeEthnic = usable.filter(o => o.id.startsWith('ethnic-office'));
+  // The ethnic office looks live in their own "## Ethnic" section of the library.
+  const raw = readFileSync('outfitlibrary.md', 'utf-8');
+  const ethnicSection = raw.slice(raw.indexOf('\n## Ethnic\n'), raw.indexOf('\n## ', raw.indexOf('\n## Ethnic\n') + 1));
+  const officeEthnic = parseOutfitLibrary(ethnicSection).filter(isUsableStylistOutfitAnchor);
   assert.ok(officeEthnic.length >= 40, `only ${officeEthnic.length} ethnic office anchors loaded`);
   assert.ok(officeEthnic.every(o => outfitCapsules(o).includes('Professional')), 'office looks must be reachable from Professional');
   assert.ok(officeEthnic.every(o => o.notes?.length), 'every office look should keep its styling note');

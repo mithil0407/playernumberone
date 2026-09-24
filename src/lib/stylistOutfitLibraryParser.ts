@@ -4,7 +4,7 @@ import { join } from 'path';
 export interface ParsedStylistOutfit {
   id: string;
   title: string;
-  source: 'pinterest' | 'women' | 'root' | 'curated' | 'learned';
+  source: 'stylist' | 'pinterest' | 'women' | 'root' | 'curated' | 'learned';
   /**
    * Every capsule this look genuinely works for. A camel blazer over a tee and
    * jeans is both a relaxed office outfit and a weekend one, so it should be
@@ -126,33 +126,12 @@ const INLINE_LABELS = [
 
 const INLINE_LABEL_PATTERN = new RegExp(`(?:^|\\s)(${INLINE_LABELS.map(label => label.replace(/\s+/g, '\\s+')).join('|')}):\\s*`, 'gi');
 
-function readWomenLibraryFile(): string {
-  try {
-    return readFileSync(join(process.cwd(), 'outfitlibrarywomen.md'), 'utf-8');
-  } catch {
-    return '';
-  }
-}
+/** The one outfit library the women's Blueprint reads. */
+const OUTFIT_LIBRARY_FILE = 'outfitlibrary.md';
 
-function readUserLibraryFile(): string {
+function readOutfitLibraryFile(): string {
   try {
-    return readFileSync(join(process.cwd(), 'stylistoutfitlibrary.md'), 'utf-8');
-  } catch {
-    return '';
-  }
-}
-
-function readPinterestLibraryFile(): string {
-  try {
-    return readFileSync(join(process.cwd(), 'outfitlibrarypinterest.md'), 'utf-8');
-  } catch {
-    return '';
-  }
-}
-
-function readEthnicOfficeLibraryFile(): string {
-  try {
-    return readFileSync(join(process.cwd(), 'outfitlibraryethnicoffice.md'), 'utf-8');
+    return readFileSync(join(process.cwd(), OUTFIT_LIBRARY_FILE), 'utf-8');
   } catch {
     return '';
   }
@@ -176,13 +155,6 @@ function cleanText(value: string): string {
     .replace(/\s+/g, ' ')
     .replace(/\s+([.,;:])/g, '$1')
     .trim();
-}
-
-function splitRawOutfits(raw: string): string[] {
-  return raw
-    .split(/(?:\\_){20,}|_{20,}/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 }
 
 function normaliseLabel(rawLabel: string): string {
@@ -457,27 +429,6 @@ function orderFields(fields: Array<{ label: string; value: string }>): Array<{ l
     const bIndex = FIELD_PRIORITY.indexOf(b.label);
     return (aIndex === -1 ? FIELD_PRIORITY.length : aIndex) - (bIndex === -1 ? FIELD_PRIORITY.length : bIndex);
   });
-}
-
-function parseRawOutfitLibrary(raw: string): ParsedStylistOutfit[] {
-  const seen = new Set<string>();
-  const entries: ParsedStylistOutfit[] = [];
-
-  splitRawOutfits(raw).forEach((entry) => {
-    const parsed = parseEntry(entry, entries.length, 'root');
-    if (!parsed) return;
-
-    const signature = parsed.fields
-      .map((field) => `${field.label}:${field.value}`)
-      .join('|')
-      .toLowerCase();
-    if (seen.has(signature)) return;
-
-    seen.add(signature);
-    entries.push(parsed);
-  });
-
-  return entries;
 }
 
 function isWomenLibraryHeading(line: string) {
@@ -851,13 +802,57 @@ export function parsePinterestOutfitLibrary(raw: string, options: BoardParseOpti
   return entries;
 }
 
+// --- The single outfit library ----------------------------------------------
+// outfitlibrary.md holds every outfit in the board's one-line format. A `##`
+// heading names where the outfit came from, which sets its priority; a `###`
+// heading under it is the capsule. Sections not listed here (Needs fixing, or a
+// typo) are never read, so a half-written outfit cannot reach a client.
+
+const LIBRARY_SECTION_SOURCES: Record<string, ParsedStylistOutfit['source']> = {
+  'stylist picks': 'stylist',
+  'pinterest board': 'pinterest',
+  ethnic: 'pinterest',
+  'from the women library': 'women',
+};
+
+const LIBRARY_CAPSULES: ParsedStylistOutfit['capsule'][] = ['Professional', 'Social', 'Everyday', 'Occasion'];
+
+export function parseOutfitLibrary(raw: string): ParsedStylistOutfit[] {
+  const entries: ParsedStylistOutfit[] = [];
+  let source: ParsedStylistOutfit['source'] | undefined;
+  let capsule: ParsedStylistOutfit['capsule'] | undefined;
+  let chunk: string[] = [];
+
+  const flush = () => {
+    if (source && capsule && chunk.length) {
+      const sectionSource = source;
+      for (const outfit of parsePinterestOutfitLibrary(chunk.join('\n'), { idPrefix: 'lib', baseCapsule: capsule })) {
+        entries.push({ ...outfit, source: sectionSource, title: outfit.title.replace(/^Board look/, 'Library look') });
+      }
+    }
+    chunk = [];
+  };
+
+  for (const line of raw.split(/\r?\n/)) {
+    const section = line.match(/^##\s+(.+?)\s*$/);
+    if (section) {
+      flush();
+      source = LIBRARY_SECTION_SOURCES[section[1].toLowerCase()];
+      capsule = undefined;
+      continue;
+    }
+    const capsuleHeading = line.match(/^###\s+(.+?)\s*$/);
+    if (capsuleHeading) {
+      flush();
+      capsule = LIBRARY_CAPSULES.find(name => name.toLowerCase() === capsuleHeading[1].toLowerCase());
+      continue;
+    }
+    chunk.push(line);
+  }
+  flush();
+  return entries;
+}
+
 export function getParsedStylistOutfitLibrary(): ParsedStylistOutfit[] {
-  return [
-    // Human-described board outfits lead: they carry a real styling note.
-    ...parsePinterestOutfitLibrary(readPinterestLibraryFile()),
-    ...parsePinterestOutfitLibrary(readEthnicOfficeLibraryFile(), { idPrefix: 'ethnic-office', baseCapsule: 'Professional' }),
-    ...parseWomenOutfitLibrary(readWomenLibraryFile()),
-    ...parseRawOutfitLibrary(readUserLibraryFile()),
-    ...parseCuratedOutfitLibrary(readCuratedLibraryFile()),
-  ];
+  return parseOutfitLibrary(readOutfitLibraryFile());
 }

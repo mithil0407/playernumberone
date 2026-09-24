@@ -19,17 +19,14 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: {
     '/api/stylist-blueprint/**': [
-      './stylistoutfitlibrary.md',
-      './outfitlibrarywomen.md',
-      './outfitlibrarypinterest.md',
-      './outfitlibraryethnicoffice.md',
+      './outfitlibrary.md',
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
     ],
     '/api/stylist-workspace/**': [
-      './stylistoutfitlibrary.md', './outfitlibrarywomen.md',
-      './outfitlibrarypinterest.md', './outfitlibraryethnicoffice.md',
-      './src/lib/stylistOutfitLibrary.md', './src/lib/womenOutfitRecommendationSkill.md',
+      './outfitlibrary.md',
+      './src/lib/stylistOutfitLibrary.md',
+      './src/lib/womenOutfitRecommendationSkill.md',
     ],
   },
   async headers() {

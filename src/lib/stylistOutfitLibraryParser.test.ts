@@ -40,10 +40,11 @@ export function runStylistOutfitLibraryParserAssertions() {
   invariant(topInner.fields.some(field => field.label === 'Base Layer' && field.value.includes('Ivory silk blouse')), 'maps TOP INNER to Base Layer');
 
   const allParsed = getParsedStylistOutfitLibrary();
-  // Stylist-described board outfits lead: they are the only source that records
-  // how the look is actually worn, so they outrank the templated libraries.
-  invariant(allParsed[0]?.source === 'pinterest', 'stylist-described board outfits are prioritised first');
-  invariant(allParsed.some(entry => entry.source === 'women'), 'the women library is still loaded behind them');
+  // Stylist picks lead: they are the looks our stylists already recommend. The
+  // board follows, and the hand-picked women-library looks are loaded behind it.
+  invariant(allParsed[0]?.source === 'stylist', 'stylist-recommended outfits are prioritised first');
+  invariant(allParsed.some(entry => entry.source === 'pinterest'), 'the Pinterest board is loaded');
+  invariant(allParsed.some(entry => entry.source === 'women'), 'the hand-picked women library looks are loaded behind them');
 }
 
 test('outfit library parser invariants hold', () => {

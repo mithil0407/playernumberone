@@ -1142,6 +1142,7 @@ function uniqueCount(values: string[]) {
  */
 function anchorProvenanceBonus(candidate: CandidateOutfit) {
   switch (candidate.library_ref?.source) {
+    case 'stylist': return 2;
     case 'pinterest': return 1.5;
     case 'learned': return 1.2;
     case 'women': return 0.6;

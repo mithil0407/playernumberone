@@ -1,8 +1,13 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 import sharp from 'sharp';
 import { isRetryableStylistGenerationError } from './stylistGenerationRetry.ts';
+import {
+  FACE_SHAPE_HAIR_GUIDE,
+  faceShapeHairGuidePrompt,
+  normaliseFaceShape,
+  selectHairstyleDirections,
+  type HairstyleDirection,
+} from './stylistHairstyleGuide.ts';
 import {
   getParsedStylistOutfitLibrary,
   isUsableStylistOutfitAnchor,
@@ -295,14 +300,6 @@ const STYLIST_BLUEPRINT_OUTFIT_TEXT_MODEL = process.env.GEMINI_STYLIST_OUTFIT_MO
 const GEMINI_TEXT_TIMEOUT_MS = 75_000;
 const GEMINI_OUTFIT_TEXT_TIMEOUT_MS = Number(process.env.GEMINI_STYLIST_OUTFIT_TIMEOUT_MS || 150_000);
 
-function readWomenOutfitLibraryText(): string {
-  try {
-    return readFileSync(join(process.cwd(), 'outfitlibrarywomen.md'), 'utf-8').trim();
-  } catch {
-    return '';
-  }
-}
-
 // Detailed outfit generation should be anchored in parsed, verified outfit
 // skeletons. Feedback learning remains off unless explicitly re-enabled.
 const STYLIST_OUTFIT_LIBRARY_ENABLED = true;
@@ -368,6 +365,8 @@ export interface StylistBlueprintClassification {
   };
   face_hair_accessories: {
     face_shape: string;
+    /** What in the headshot the face shape was read from. */
+    face_shape_evidence?: string;
     face_direction: string;
     hair_direction: string;
     hair_colour_direction: string;
@@ -377,6 +376,8 @@ export interface StylistBlueprintClassification {
     eyewear_direction: string;
     approved_necklines: string[];
     hair_styles: string[];
+    /** The four hairstyles with the reason each suits her face shape. Absent on older reports. */
+    hair_style_directions?: HairstyleDirection[];
     eyewear_shapes: string[];
     earring_shapes: string[];
   };
@@ -467,7 +468,7 @@ export interface BlueprintColourUse {
 export interface BlueprintLibraryRef {
   id: string;
   title: string;
-  source: 'pinterest' | 'women' | 'root' | 'curated' | 'learned';
+  source: 'stylist' | 'pinterest' | 'women' | 'root' | 'curated' | 'learned';
   capsule: string;
   adaptation: string;
 }
@@ -577,7 +578,7 @@ async function loadOutfitLibraryContext(): Promise<OutfitLibraryContext> {
 function outfitGenerationSourceRules(context: OutfitLibraryContext) {
   if (!STYLIST_OUTFIT_LIBRARY_ENABLED || !context.outfits.length) {
     return `- No verified library anchor objects are attached for this run. Do not invent library_refs, source ids, source outfit titles, or library_piece_logic.
-- Use the attached markdown outfit library as the dominant prompt reference: choose the closest library-quality formula, then adapt minimally for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.
+- Build each outfit to the standard of a stylist-verified look: real garments, a clear styling line, and polished finishing, adapted for client coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes.
 - Use the basic page plan only for page number, capsule, max colours, and eyewear cadence, not as garment or colour authority.
 - Variation should come from the harness outcome, fabric, proportion, shoe type, bag shape, and realistic repeated wardrobe anchors, not from random colour novelty.`;
   }
@@ -1467,6 +1468,20 @@ function photoUrls(submission: StylistIntakeSubmission) {
   ].filter((url): url is string => typeof url === 'string' && Boolean(url));
 }
 
+/**
+ * Hairstyles come only from the guide for her face shape: the model's picks are
+ * kept when they are on that list, anything else is replaced in the guide's
+ * fixed order, and each carries the reason it suits her face.
+ */
+export function applyFaceShapeHairstyles(face: StylistBlueprintClassification['face_hair_accessories']) {
+  const shape = normaliseFaceShape(face.face_shape);
+  const directions = selectHairstyleDirections(face.face_shape, face.hair_styles);
+  if (shape) face.face_shape = FACE_SHAPE_HAIR_GUIDE[shape.primary].label;
+  face.hair_style_directions = directions;
+  face.hair_styles = directions.map(direction => direction.name);
+  if (!face.hair_direction.trim()) face.hair_direction = FACE_SHAPE_HAIR_GUIDE[shape?.primary ?? 'oval'].goal;
+}
+
 export async function classifyStylistBlueprint(submission: StylistIntakeSubmission): Promise<StylistBlueprintClassification> {
   const fallbackBase = [
     { name: 'Warm Ivory', hex: '#F5F0E8', usage: 'Base layers and clean negative space.' },
@@ -1504,13 +1519,21 @@ Required JSON shape:
     "avoid_colours":[""]
   },
   "face_hair_accessories": {
-    "face_shape":"","face_direction":"","hair_direction":"","hair_colour_direction":"","hair_colour_options":[""],"neckline_direction":"","jewellery_direction":"","eyewear_direction":"",
+    "face_shape":"","face_shape_evidence":"","face_direction":"","hair_direction":"","hair_colour_direction":"","hair_colour_options":[""],"neckline_direction":"","jewellery_direction":"","eyewear_direction":"",
     "approved_necklines":[""],"hair_styles":[""],"eyewear_shapes":[""],"earring_shapes":[""]
   },
   "makeup": {"style":"","everyday_direction":"","steps":[""],"colours":[""]},
   "taste": {"style_archetype":"","moodboard":"","signature_codes":[""],"anti_codes":[""],"shopping_filters":[""]},
   "fabrics": {"approved":[{"name":"","reason":""}],"avoid":[{"name":"","reason":""}]}
 }
+
+Face shape and hairstyle guidance (read from the headshot):
+- face_shape: exactly one of Oval, Round, Square, Heart, Oblong, Diamond, Triangle. Judge it with the signs below: compare the face's length to its width first, then the widths of forehead, cheekbones and jaw, then the jaw angle and chin. Full cheeks alone do not make a face Round; check the jaw angle and the length before choosing it. Do not default to Oval or Round.
+- face_shape_evidence: one short sentence naming what you saw, e.g. "length clearly exceeds width; forehead, cheekbones and jaw similar; soft jaw angle".
+- hair_direction: one sentence giving the goal for her face shape in plain words.
+- hair_styles: exactly 4 names copied word for word from her face shape's lists below: 2 from Cuts and 2 from Styles. Choose the ones that work with her hair texture and current length (from the headshot and hair context) and her lifestyle. Never choose anything listed under Avoid.
+
+${faceShapeHairGuidePrompt()}
 
 Hair colour and makeup guidance:
 - hair_colour_direction: one short paragraph on the best hair-colour/highlight direction for this client's depth, undertone, and existing hairstyle — classy, feminine, salon-achievable, and close enough to her natural depth to look expensive.
@@ -1561,6 +1584,7 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
     },
     face_hair_accessories: {
       face_shape: asString(face.face_shape, 'oval'),
+      face_shape_evidence: asString(face.face_shape_evidence),
       face_direction: asString(face.face_direction, 'Keep visual weight balanced around cheekbone level.'),
       hair_direction: asString(face.hair_direction, 'Soft structure and controlled movement around the face.'),
       hair_colour_direction: asString(face.hair_colour_direction, 'Stay close to your natural depth with soft, face-framing warmth.'),
@@ -1639,9 +1663,7 @@ ${buildStylistBlueprintIntakeDigest(submission)}`;
   if (!classification.face_hair_accessories.approved_necklines.length) {
     classification.face_hair_accessories.approved_necklines = ['Open collar', 'Soft V', 'High scoop', 'Modest square', 'Soft boat', 'Crew neck'];
   }
-  if (!classification.face_hair_accessories.hair_styles.length) {
-    classification.face_hair_accessories.hair_styles = ['Soft face-framing layers', 'Collarbone length', 'Low polished bun', 'Side-parted shoulder length'];
-  }
+  applyFaceShapeHairstyles(classification.face_hair_accessories);
   if (!classification.face_hair_accessories.eyewear_shapes.length) {
     classification.face_hair_accessories.eyewear_shapes = ['Soft rectangle', 'Subtle cat-eye', 'Rounded square', 'Light geometric'];
   }
@@ -2120,6 +2142,7 @@ function rankedLibraryPool(
   capsule: PlannedOutfit['capsule'],
 ) {
   const sourceScore = (source: ParsedStylistOutfit['source']) => {
+    if (source === 'stylist') return 5;
     if (source === 'women') return 4;
     if (source === 'root') return 3;
     if (source === 'curated') return 2;
@@ -2189,7 +2212,9 @@ function isEthnicLibraryAnchor(outfit: ParsedStylistOutfit) {
 }
 
 function librarySourceScore(source: ParsedStylistOutfit['source']) {
-  // Ranked by how much human judgement went into the record.
+  // Ranked by how much human judgement went into the record. Stylist picks are
+  // looks our own stylists already recommend, so they lead.
+  if (source === 'stylist') return 8;
   if (source === 'pinterest') return 6;
   if (source === 'learned') return 5;
   if (source === 'women') return 4;
@@ -3426,7 +3451,6 @@ function buildHarnessOnlyOutfitPrompt(
   replacementReason?: string,
   extraContext?: string,
 ) {
-  const womenOutfitLibrary = readWomenOutfitLibraryText();
   const hasTransformationPreview = plans.some(plan => plan.purpose === 'transformation_preview');
   const culturalMode = plans[0]?.cultural_mode ?? getStylistOutfitCulturalMode(submission);
   const singleReplacementContext = replacementOutfitContextPrompt(replacementContext ?? null, replacementReason);
@@ -3434,10 +3458,8 @@ function buildHarnessOnlyOutfitPrompt(
 
 ---
 
---- ICONIK WOMEN OUTFIT LIBRARY ---
-${womenOutfitLibrary
-  ? `Use this 200-outfit library as the dominant catalog source for outfit quality. For each detailed report outfit, start from the assigned library_reference and library_piece_logic in the plan record when present. Preserve that catalog skeleton's garment categories, silhouette relationship, styling line, finish, and accessory architecture, then make only minimal client-specific adaptations for coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes. Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set without grafting pieces from different library outfits. Do not mention source ids, entry numbers, source titles, "adapted from", or "library reference" in visible client-facing text. Do not add unnecessary detail to individual tops or formula items; simple, clean pieces are allowed when the complete outfit becomes elevated through proportion, colour relationship, texture, finishing, and accessories.${culturalMode === 'western_default' ? ' In western_default mode, ignore ethnic garment categories as usable skeletons unless a plan record explicitly assigns one; transfer only polish, colour logic, texture, proportion, and finishing detail intelligence when cultural guardrails require Western styling.' : ''}\n\n${womenOutfitLibrary}`
-  : 'The outfit library file outfitlibrarywomen.md was not available. Continue with the harness rules and client context only.'}
+--- ICONIK OUTFIT LIBRARY ---
+Each plan record's library_reference and library_piece_logic is a stylist-verified outfit chosen for this client from the ICONIK outfit library. Start every detailed outfit from its assigned skeleton: preserve its garment categories, silhouette relationship, styling line, finish, and accessory architecture, then make only the client-specific adaptations for coverage, fit, body geometry, undertone, occasion, cultural mode, climate, and explicit dislikes. Maintain visible colour diversity, layer/no-layer diversity, silhouette diversity, footwear/bag variety, and finishing-detail variety across the set without grafting pieces from different library outfits. Do not mention source ids, entry numbers, source titles, "adapted from", or "library reference" in visible client-facing text. Do not add unnecessary detail to individual tops or formula items; simple, clean pieces are allowed when the complete outfit becomes elevated through proportion, colour relationship, texture, finishing, and accessories.${culturalMode === 'western_default' ? ' In western_default mode, ignore ethnic garment categories as usable skeletons unless a plan record explicitly assigns one; transfer only polish, colour logic, texture, proportion, and finishing detail intelligence when cultural guardrails require Western styling.' : ''}
 
 ---
 
@@ -6213,7 +6235,7 @@ ${outfitColourSourceRules(libraryContext)}
 Prescription pages:
 - Page ${palettePage} should focus only on palette logic. Colour usage metadata may be structured in JSON, but visible client text should not depend on hex codes or "anchor/wearable" labels.
 ${colourDrapePage ? `- Page ${colourDrapePage} should be a minimal professional colour drape page. The generated image carries the comparison; keep text concise.` : ''}
-${hairstylePage ? `- Page ${hairstylePage} should provide exactly four hairstyle directions that correspond to the 2x2 generated hair image.` : ''}
+${hairstylePage ? `- Page ${hairstylePage} should present the four hairstyles in face_hair_accessories.hair_style_directions, in that order, because they match the 2x2 generated hair image. Open with one plain line naming her face shape and the goal from hair_direction. For each hairstyle, say in plain words why it suits her face shape (from its "why") and how to ask for it at the salon (cuts) or how to style it at home (styles). Do not suggest any other hairstyle. If hair_style_directions is missing, use hair_styles in order.` : ''}
 ${hairColourPage ? `- Page ${hairColourPage} (Hair Colour Direction) should provide exactly four hair-colour/highlight directions from face_hair_accessories.hair_colour_options that correspond to the 2x2 generated hair-colour image, plus a short intro from hair_colour_direction. Keep colours realistic, classy, feminine, salon-achievable, and compatible with the client's existing hairstyle/cut.` : ''}
 ${eyeframePage ? `- Page ${eyeframePage} should provide exactly four eyeframe/sunglass directions that correspond to the 2x2 generated eyewear image.` : ''}
 ${makeupPage ? `- Page ${makeupPage} (Makeup for Everyday Looks) should present a subtle natural everyday makeup look that matches the generated makeup image: a short intro from makeup.everyday_direction, exactly five ordered steps from makeup.steps, and the flattering everyday shades from makeup.colours. Keep it product-type only — no brands, no medical or clinical claims. Avoid glam, bridal, party makeup, heavy base, dramatic contour, smoky eyes, false lashes, glitter, and bold lipstick.` : ''}

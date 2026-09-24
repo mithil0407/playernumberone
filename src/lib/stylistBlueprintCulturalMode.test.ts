@@ -497,7 +497,7 @@ export function runStylistBlueprintCulturalModeAssertions() {
 
   const replacementPlan = buildReplacementPlan(replacementReport, replacementPage, '', undefined, 'western_default');
   invariant(replacementPlan.lead_colour.name !== 'Emerald', 'replacement plan avoids the replaced lead colour when alternatives exist');
-  invariant(replacementPlan.library_reference?.source === 'women', 'replacement plan selects women library anchors when available');
+  invariant(replacementPlan.library_reference?.source === 'stylist', 'replacement plan selects stylist-recommended anchors first');
   invariant(Boolean(replacementPlan.library_piece_logic?.length), 'replacement plan includes library_piece_logic for the harness');
 
   const libraryAnchoredReport = reportWithOutfitOverride();
@@ -528,7 +528,7 @@ export function runStylistBlueprintCulturalModeAssertions() {
     'vertical proof plan requires tonal top/bottom and an open longline layer',
   );
   invariant(proofPlans[0].layer_required && /longline|cardigan|blazer/i.test(proofPlans[0].layer_type ?? ''), 'vertical proof plan requires a longline open layer');
-  invariant(proofPlans[0].library_reference?.source === 'women', 'silhouette proof plans retain women library anchors');
+  invariant(proofPlans[0].library_reference?.source === 'stylist', 'silhouette proof plans anchor on stylist-recommended looks first');
   invariant(proofPlans[0].has_library_piece_logic, 'silhouette proof plans keep library piece logic for the harness');
 
   const usedProofLibraryRef = proofPlans[0].library_reference;

@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectOutfitPortfolio, type ScoredCandidateOutfit } from './stylistOutfitScience.ts';
-import { getParsedStylistOutfitLibrary, isUsableStylistOutfitAnchor } from './stylistOutfitLibraryParser.ts';
+import { getParsedStylistOutfitLibrary, isUsableStylistOutfitAnchor, parsePinterestOutfitLibrary } from './stylistOutfitLibraryParser.ts';
 
 test('reference pins explicitly marked as menswear are excluded from women recommendations', () => {
+  // The library no longer contains men's pins at all.
   const library = getParsedStylistOutfitLibrary();
-  const skipped = library.filter(item => /\(\s*menswear\b|men['’]s look/i.test(item.fields.map(field => field.value).join(' ')));
-  assert.ok(skipped.length > 0);
-  assert.ok(skipped.every(item => !isUsableStylistOutfitAnchor(item)));
+  const mens = library.filter(item => /\(\s*menswear\b|men['’]s look/i.test(item.fields.map(field => field.value).join(' ')));
+  assert.equal(mens.length, 0);
+
+  // And the anchor filter still rejects one if it is ever pasted back in.
+  const [pasted] = parsePinterestOutfitLibrary(
+    '**1.** *(Menswear)* Burgundy shirt / navy blazer / navy trousers / oxblood brogues / black belt, pocket square. *Men\'s look.*',
+  );
+  assert.ok(pasted && !isUsableStylistOutfitAnchor(pasted));
 });
 
 function look(id: string, layer: string | null, colour = 'Camel', score = 9): ScoredCandidateOutfit {
