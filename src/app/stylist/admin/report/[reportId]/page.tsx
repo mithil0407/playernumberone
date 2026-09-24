@@ -643,6 +643,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     try {
       const nextApprovals = { ...(report?.section_approvals ?? {}) };
       for (const pageNumber of dirtyPages) nextApprovals[`p${pageNumber}`] = false;
+      // The hair grid prompt is written from the saved hairstyles and face
+      // shape, so the prompt on screen is stale once either changes.
+      const hairPromptInputs = (data: unknown) => {
+        const face = isVersionedStylistBlueprintReportData(data) ? data.classification.face_hair_accessories : null;
+        return JSON.stringify([face?.face_shape, face?.hair_styles]);
+      };
+      const hairPromptChanged = hairPromptInputs(reportRef.current?.report_data) !== hairPromptInputs(draftData);
       const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -653,7 +660,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           expectedUpdatedAt: report?.updated_at,
         }),
       });
-      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[] }>(res);
+      const data = await readJsonBody<{ report?: Report; error?: string; invalidatedOutfitImages?: number[]; invalidatedHairImage?: boolean }>(res);
       if (!res.ok) {
         if (res.status === 409) setSaveConflict(true);
         throw new Error(responseErrorMessage(data, 'Failed to save report edits'));
@@ -679,6 +686,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         } };
         void fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' }).then(async response => { if (response.ok) setImageCounts((await response.json()).imageCounts ?? null); }).catch(() => {});
       }
+      if (savedReport?.image_urls?.prescription && data?.invalidatedHairImage) {
+        savedReport.image_urls = { ...savedReport.image_urls, prescription: { ...savedReport.image_urls.prescription, hairDirections: null } };
+        void fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' }).then(async response => { if (response.ok) setImageCounts((await response.json()).imageCounts ?? null); }).catch(() => {});
+      }
+      if (hairPromptChanged) void loadManualPrompts();
       reportRef.current = savedReport;
       setReport(savedReport);
       if (savedReport) draftSeedRef.current = `${reportId}:${savedReport.updated_at}`;

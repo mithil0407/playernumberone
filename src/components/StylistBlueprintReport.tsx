@@ -41,6 +41,7 @@ import {
   isVersionedStylistBlueprintReportData as isVersionedStylistBlueprintReportDataShared,
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
+import { reportHairstyles, withHairstyleEdit } from '@/lib/stylistHairstyleGuide';
 import { createContext, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
@@ -91,24 +92,32 @@ type EditableReportContextValue = {
 
 const EditableReportContext = createContext<EditableReportContextValue>({ editable: false });
 
-function EditableText({
+/**
+ * A caret-safe inline editor. `onCommit` receives the trimmed text whenever it
+ * differs from `value`; pages commit through `EditableText`, report-level data
+ * (the cover name, the hair page) through their own callback.
+ */
+function EditableNode({
   as,
   className,
   value,
   fallback = '',
-  page,
-  update,
+  pageNumber,
+  placeholder,
+  onCommit,
   children,
 }: {
   as?: ElementType;
   className?: string;
   value: string | undefined;
   fallback?: string;
-  page: BlueprintPage;
-  update: (value: string) => BlueprintPage;
+  pageNumber: number;
+  /** Shown while the field is empty; never saved. */
+  placeholder?: string;
+  onCommit: (value: string) => void;
   children?: ReactNode;
 }) {
-  const { editable, onPageChange } = useContext(EditableReportContext);
+  const { editable } = useContext(EditableReportContext);
   const Component = as ?? 'span';
   const elementRef = useRef<HTMLElement | null>(null);
   const commitTimerRef = useRef<number | undefined>(undefined);
@@ -140,7 +149,7 @@ function EditableText({
   const commit = (next: string) => {
     const trimmed = next.trim();
     if (trimmed === incomingRef.current) return;
-    onPageChange?.(update(trimmed));
+    onCommit(trimmed);
   };
 
   return (
@@ -148,7 +157,8 @@ function EditableText({
       ref={elementRef as Ref<HTMLElement>}
       className={className}
       contentEditable
-      data-page-number={page.page_number}
+      data-page-number={pageNumber}
+      data-placeholder={placeholder}
       suppressContentEditableWarning
       onInput={(event: FormEvent<HTMLElement>) => {
         const next = event.currentTarget.innerText;
@@ -165,6 +175,31 @@ function EditableText({
     >
       {initialRef.current}
     </Component>
+  );
+}
+
+function EditableText({
+  as,
+  className,
+  value,
+  fallback = '',
+  page,
+  update,
+  children,
+}: {
+  as?: ElementType;
+  className?: string;
+  value: string | undefined;
+  fallback?: string;
+  page: BlueprintPage;
+  update: (value: string) => BlueprintPage;
+  children?: ReactNode;
+}) {
+  const { onPageChange } = useContext(EditableReportContext);
+  return (
+    <EditableNode as={as} className={className} value={value} fallback={fallback} pageNumber={page.page_number} onCommit={next => onPageChange?.(update(next))}>
+      {children}
+    </EditableNode>
   );
 }
 
@@ -1289,24 +1324,44 @@ function VisualDirectionPage({
     },
   };
   const { image, slotKey, title, micro, label, intro, cards: sourceCards } = config[kind];
+  const { editable, onReportDataChange } = useContext(EditableReportContext);
+  // Hairstyles are edited in place: the names are also what the 2x2 grid prompt
+  // reads, so changing one here changes the image the stylist regenerates.
+  const hairstyles = kind === 'hair' ? reportHairstyles(face) : [];
+  const updateFace = (next: StylistBlueprintReportData['classification']['face_hair_accessories']) => onReportDataChange?.({
+    ...data,
+    classification: { ...data.classification, face_hair_accessories: next },
+  });
   return (
     <PageFrame page={page} className="visual-direction-page">
       <div className="visual-direction-inner">
         <div className="visual-direction-copy">
           <div className="micro faded">{micro}</div>
           <h2><span className="display">{title[0]}</span><span className="display-it">{title[1]}</span></h2>
-          <p>{intro}</p>
+          {kind === 'hair'
+            ? <EditableNode as="p" value={intro} pageNumber={page.page_number} placeholder="The goal for her face shape" onCommit={hair_direction => updateFace({ ...face, hair_direction })} />
+            : <p>{intro}</p>}
         </div>
         <ImageSlotFrame slotKey={slotKey} label={label} className="visual-direction-media">
           {image ? <ReportImage src={image} /> : <FaceGridFallback />}
         </ImageSlotFrame>
         <div className="visual-direction-cards">
-          {sourceCards.map((card, index) => (
-            <div key={`${card}-${index}`} className="visual-direction-card">
-              <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
-              <div className="direction-copy">{card}</div>
-            </div>
-          ))}
+          {hairstyles.length
+            ? hairstyles.map((hairstyle, index) => (
+              <div key={index} className="visual-direction-card">
+                <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
+                <EditableNode as="div" className="direction-name" value={hairstyle.name} pageNumber={page.page_number} placeholder="Hairstyle name" onCommit={name => { if (name) updateFace(withHairstyleEdit(face, index, { name })); }} />
+                {(hairstyle.why || editable) && (
+                  <EditableNode as="div" className="direction-why" value={hairstyle.why} pageNumber={page.page_number} placeholder="Why it suits her face shape" onCommit={why => updateFace(withHairstyleEdit(face, index, { why }))} />
+                )}
+              </div>
+            ))
+            : sourceCards.map((card, index) => (
+              <div key={`${card}-${index}`} className="visual-direction-card">
+                <div className="mono dossier-label">{String(index + 1).padStart(2, '0')}</div>
+                <div className="direction-copy">{card}</div>
+              </div>
+            ))}
         </div>
       </div>
     </PageFrame>
@@ -2808,6 +2863,21 @@ function BlueprintStyles() {
         font-size: 14px;
         line-height: 1.6;
         margin-top: 6px;
+      }
+      .direction-name {
+        font-size: 15px;
+        line-height: 1.45;
+        font-weight: 500;
+        margin-top: 6px;
+      }
+      .direction-why {
+        font-size: 13px;
+        line-height: 1.6;
+        opacity: 0.8;
+      }
+      .direction-name:empty::before, .direction-why:empty::before, .visual-direction-copy p:empty::before {
+        content: attr(data-placeholder);
+        opacity: 0.45;
       }
       .diagnosis-grid {
         margin-top: 80px;

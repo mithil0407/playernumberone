@@ -7,6 +7,7 @@ import { sendStylistBlueprintReportEmail } from '@/lib/email';
 import { assertStylistReportDraft, assertStylistPageApprovals } from '@/lib/stylistReportValidation';
 import { checkStudioReportQuality } from '@/lib/stylistReportStudio';
 import { outfitPieces } from '@/lib/stylistOutfitEditor';
+import { hairstyleNamesChanged } from '@/lib/stylistHairstyleGuide';
 import { type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
   getStylistBlueprintPageCount,
@@ -66,6 +67,7 @@ export async function PATCH(
   const allowedStatuses = new Set(['pending', 'generating', 'draft_ready', 'in_review', 'approved', 'sent', 'delivered', 'error']);
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   let invalidatedOutfitImages: number[] = [];
+  let invalidatedHairImage = false;
   const expectedRevision = body.expectedRevision;
   if (expectedRevision !== undefined && (!Number.isInteger(expectedRevision) || expectedRevision < 0)) {
     return NextResponse.json({ error: 'Invalid report revision' }, { status: 400 });
@@ -193,6 +195,19 @@ export async function PATCH(
     }
   }
 
+  // The hair grid shows the hairstyles named on the hair page. When a stylist
+  // renames one, the old grid no longer matches the page, so it is cleared the
+  // same way an edited outfit's image is, and regenerating it uses the new names.
+  if (patch.report_data && isVersionedStylistBlueprintReportData(currentRevisionRow.report_data)) {
+    const before = currentRevisionRow.report_data.classification?.face_hair_accessories;
+    const after = (patch.report_data as StylistBlueprintReportData).classification?.face_hair_accessories;
+    const paths = (patch.image_urls ?? currentRevisionRow.image_urls) as StylistBlueprintImagePaths | null;
+    if (paths?.prescription?.hairDirections && hairstyleNamesChanged(before, after)) {
+      patch.image_urls = { ...paths, prescription: { ...paths.prescription, hairDirections: null } };
+      invalidatedHairImage = true;
+    }
+  }
+
   const updateQuery = supabaseAdmin
     .from('stylist_blueprint_reports')
     .update(patch)
@@ -211,7 +226,7 @@ export async function PATCH(
   }
 
   await revalidateStylistBlueprintCache(reportId, data.share_token);
-  return NextResponse.json({ report: data, invalidatedOutfitImages });
+  return NextResponse.json({ report: data, invalidatedOutfitImages, invalidatedHairImage });
 }
 
 export async function POST(
