@@ -95,6 +95,14 @@ type PhotoUploadReceiptMap = Partial<Record<ManIntakePhotoKind, PhotoUploadRecei
 type PhotoFingerprintMap = Partial<Record<ManIntakePhotoKind, string>>;
 
 const MAN_INTAKE_DRAFT_KEY = 'iconik_man_intake_draft_v2';
+
+// `?photos=<sessionId>.<token>` lets the team pre-upload a client's photos
+// and send a link that opens the intake with those photos already attached.
+// The session's real expiry comes back from the status check.
+function readLinkedPhotoSession(value: string | null): ManIntakeUploadCredentials | null {
+    const match = value?.match(/^([0-9a-f-]{36})\.([A-Za-z0-9_-]{20,})$/i);
+    return match ? { id: match[1], token: match[2], expires_at: '' } : null;
+}
 const EMPTY_PHOTO_PROGRESS = (): PhotoUploadProgressMap => ({
     fullbody: { phase: 'idle', uploaded: 0, total: 0 },
     headshot: { phase: 'idle', uploaded: 0, total: 0 },
@@ -607,14 +615,23 @@ function ManIntakePageInner() {
         const restoreDraft = async () => {
             try {
                 const raw = localStorage.getItem(MAN_INTAKE_DRAFT_KEY) || sessionStorage.getItem(MAN_INTAKE_DRAFT_KEY);
-                if (!raw) return;
-                const draft = JSON.parse(raw) as {
+                const linkedSession = readLinkedPhotoSession(new URLSearchParams(window.location.search).get('photos'));
+                if (!raw && !linkedSession) return;
+                const draft = (raw ? JSON.parse(raw) : {}) as {
                     step?: number;
                     answers?: Partial<FormState>;
                     session?: ManIntakeUploadCredentials | null;
                     fingerprints?: PhotoFingerprintMap;
                     receipts?: PhotoUploadReceiptMap;
                 };
+                // A stylist-prepared link carries a server-side upload session
+                // holding photos we already have for this client. It wins over a
+                // local draft's session; the status check below rebuilds receipts.
+                if (linkedSession && draft.session?.id !== linkedSession.id) {
+                    draft.session = linkedSession;
+                    draft.receipts = {};
+                    draft.fingerprints = {};
+                }
                 if (draft.answers) {
                     setForm(current => ({
                         ...current,
