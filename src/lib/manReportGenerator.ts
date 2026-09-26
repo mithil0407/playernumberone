@@ -390,7 +390,7 @@ Mandatory v6.1 controls:
 - Elevation Mandate: every outfit needs 2-4 elevation moves from the v6.1 Elevation Move Bank, with at least one move from categories A-C. Basic Combo Ban entries are forbidden unless rescued by at least two visible elevation moves.
 - Use Elevated Colour Vocabulary whenever it fits the client's season and anti-preferences. At least 6 of the final 20 outfits must use a non-default colour as a primary top or layer outside plain white/navy/black/beige/grey.
 - Apply the mannequin test before accepting each outfit. ICONIK kill threshold: Smart Casual and Evening must score at least 8; Office/Formal and Relaxed Casual must score at least 7. Realism and Relevance must each score at least 7.
-- Portfolio diversity: no silhouette family more than twice inside a context or three times overall, at least 8 colour families, 5-7 patterned pieces unless explicitly waived, at least 6 footwear types, and at least 4 layer types where climate permits.
+- Portfolio diversity: no silhouette family more than twice inside a context or three times overall, at least 8 colour families, at most 7 patterned pieces (patterns are optional, none if the client rejects them), and a varied mix of footwear and layers where climate permits.
 - Consecutive visual diversity: adjacent outfits must not repeat the same or near-identical primary top colour family. White/ecru/ivory/cream/off-white/chalk/bone are one light-neutral family; stone/oatmeal/sand/beige are one pale-earth family. Do not repeat a visible layer colour family in consecutive looks either.
 - Indian / ethnic wear default OFF. Include it only if explicitly requested in the client’s own words.
 
@@ -580,8 +580,8 @@ export interface ReportData {
   diagnostics?: ManBlueprintV2Diagnostics;
   deliverables?: ManBlueprintV2Deliverables;
   outfit_library?: {
-    source: 'ICONIK_Mens_Library_100';
-    version?: typeof MAN_OUTFIT_LIBRARY_VERSION | 'legacy';
+    source: 'ICONIK_Mens_Library_100' | 'ICONIK_Mens_Library_Board';
+    version?: typeof MAN_OUTFIT_LIBRARY_VERSION | 'v2-9plus' | 'legacy';
     assignments: ManOutfitLibraryAssignment[];
     selectionProfile?: {
       archetypes: string[];
@@ -616,7 +616,7 @@ export function buildManBlueprintV2StructuredData(
   return {
     report_version: MAN_BLUEPRINT_V2_VERSION,
     outfit_library: {
-      source: 'ICONIK_Mens_Library_100',
+      source: 'ICONIK_Mens_Library_Board',
       version: MAN_OUTFIT_LIBRARY_VERSION,
       assignments,
       selectionProfile: {
@@ -1278,14 +1278,14 @@ V6.1 FINAL-OUTPUT OVERRIDE:
 - Every outfit must include 2-4 visible elevation moves from the v6.1 Elevation Move Bank, with at least one from categories A-C.
 - No mannequin-default outfit: do not output white shirt + navy/black trouser + black shoe, navy polo + beige chino + white sneaker, black polo + black/grey trouser, white tee + blue denim + white sneaker without an open layer, check shirt + blue denim + sneaker without styling, or navy blazer + white shirt + navy trouser + black shoe unless clearly rescued by at least two visible elevation moves.
 - At least 6 final outfits must use a non-default elevated colour as a primary top or layer outside plain white/navy/black/beige/grey.
-- Use at least 5 bottom types, 6 top types, 4 layer types, 6 shoe types, 8 colour families, and 5-7 patterned pieces unless the client explicitly rejects patterns.
+- Use a varied mix of bottoms, tops, layers and shoes, at least 8 colour families, and at most 7 patterned pieces (none if the client rejects patterns).
 - No satin, silk, or shiny fabric anywhere, including ties, pocket squares, and linings; ties are grenadine, knitted, or matte woven only.
 - CLIMATE REQUIREMENTS and the banned-descriptor list outrank the classification JSON and the skill examples. Never carry classification wording such as "architectural", "wool flannel", or "matte silk" into a garment line when those rules forbid it. In MONSOON, suede/nubuck shoes become smooth leather versions of the same shoe, and merino/wool/flannel become cotton, linen-cotton, or tropical-weight equivalents.
 - Adjacent visible layers must use different colour families: charcoal/grey/slate/slate grey are one grey family; navy/blue/slate blue/indigo/chambray/teal are one blue family.
 - Keep every assigned source look's footwear category and layer/no-layer decision exactly: adapt materials for climate within the category, and replace a climate-unsafe layer with a permitted equivalent instead of removing it.
-- Office / Formal is strict corporate formal: exactly 2 matched suits, 2 blazer separates, 2 shirt-and-tailored-trouser looks, at least 3 ties, and zero polos, tees, denim, sneakers, drawstrings, cargos, camp collars, or casual overshirts. Explicit suit/tie anti-preferences override only their matching quota: replace suit slots with climate-formal layers and omit ties without relaxing formality.
-- Evening must preserve its climate-aware statement-outerwear quota and may use at most 2 no-layer looks and 1 plain no-layer polo.
-- Relaxed Casual must remain exactly 2 Resort/Riviera + 2 Daily Old-Money + 1 Urban/Travel, with at most 2 plain tee-led and 2 open overshirt/utility looks.
+- Office / Formal is office-appropriate: follow each source look (blazer separates, shirt-and-trouser looks, or a suit where the source has one) with zero polos, tees, denim, sneakers, drawstrings, cargos, camp collars, or casual overshirts. Suits and ties are not required; add a tie only where the source has one or the client asks for ties.
+- Evening must read night-out; keep any statement outerwear its sources have, and avoid more than 1 plain no-layer polo.
+- Relaxed Casual follows its sources, with no fixed resort or old-money split; avoid more than 3 plain tee-led or 3 open overshirt/utility looks.
 - Use the exact header format: OUTFIT [NUMBER] — [CONTEXT NAME].
 - Use the exact field labels: TOP:, LAYER:, BOTTOM:, FOOTWEAR:, ACCESSORY:, OCCASION ANCHOR:.
 
@@ -1358,7 +1358,7 @@ Repair goal:
 - Keep the v6.1 Suit Exception: matched suits are allowed in Office/Formal and Evening when the inner shirt/knit creates clear depth contrast.
 - Apply the v6.1 Elevation Mandate while repairing: every outfit must include 2-4 visible elevation moves, with at least one from categories A-C.
 - Remove mannequin-default combinations unless you can visibly rescue them with at least two elevation moves. Prefer elevated colour words such as ecru, warm ivory, ink navy, espresso, stone, oatmeal, sage, tobacco, burgundy, and dark olive where they fit the client.
-- Enforce the v2-9plus portfolio: Formal 2 suits + 2 blazer separates + 2 shirt-led formals with at least 3 ties, except explicit suit/tie anti-preferences replace only those matching slots; climate-aware Evening statement outerwear; Relaxed 2 Resort/Riviera + 2 Daily Old-Money + 1 Urban/Travel; 5-7 patterns unless explicitly rejected.
+- Keep the library portfolio: each outfit stays recognisably its source look; Office stays office-appropriate with no suit or tie quota; at most 7 patterns, none if the client rejects them.
 - The tonal varsity exception permits only a matte, plain, tonal varsity jacket with no logos, patches, lettering, shine, or loud contrast.
 
 Blocking QA issues:

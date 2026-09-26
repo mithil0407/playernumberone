@@ -41,12 +41,16 @@ export function runManReportQaAssertions() {
   const qa = validateManReportSection4(invalidPortfolio(), classification, { enforceV2: true });
   const codes = new Set(qa.issues.map(item => item.code));
   invariant(codes.has('formal_context_purity'), 'rejects casual garments in strict Formal');
-  invariant(codes.has('formal_suit_quota'), 'requires two matched suits');
-  invariant(codes.has('formal_tie_quota'), 'requires at least three ties');
-  invariant(codes.has('evening_statement_quota'), 'requires climate-aware evening statement outerwear');
-  invariant(codes.has('relaxed_archetype_split'), 'requires relaxed 2/2/1 archetype coverage');
-  invariant(codes.has('silhouette_global_cap'), 'rejects repeated silhouette families');
-  invariant(codes.has('pattern_portfolio_quota'), 'requires 5-7 patterns');
+  // v3 dropped the suit, tie and resort/old-money quotas; variety is a warning, not a block.
+  invariant(!codes.has('formal_suit_quota') && !codes.has('formal_tie_quota') && !codes.has('relaxed_archetype_split'), 'no longer demands suits, ties or a fixed relaxed split');
+  const severity = (code: string) => qa.issues.find(item => item.code === code)?.severity;
+  invariant(severity('evening_statement_quota') === 'warning', 'suggests, but does not require, evening statement outerwear');
+  invariant(severity('silhouette_global_cap') === 'warning', 'warns on repeated silhouette families');
+  invariant(!codes.has('pattern_portfolio_quota'), 'accepts a portfolio with no patterns');
+  const busy = validateManReportSection4(Array.from({ length: 20 }, (_, index) => block(index + 1, index < 6 ? 'OFFICE / FORMAL' : index < 10 ? 'SMART CASUAL' : index < 15 ? 'EVENING WEAR' : 'RELAXED CASUAL', {
+    top: 'Blue-and-white Bengal stripe cotton shirt — spread collar — tucked',
+  })).join('\n\n'), classification, { enforceV2: true });
+  invariant(busy.issues.some(item => item.code === 'pattern_portfolio_quota' && item.severity === 'error'), 'still blocks more than 7 patterned pieces');
   invariant(codes.has('quality_floor'), 'blocks portfolios below the 9/10 quality floor');
   invariant(qa.quality?.passed === false, 'stores a failed independent quality evaluation');
 

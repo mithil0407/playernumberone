@@ -1,3 +1,4 @@
+import { usesManLibraryPortfolio } from '@/lib/manOutfitLibrary';
 import { invalidateChangedOutfitImages } from '@/lib/manOutfitConsistency';
 import {
   runClassification,
@@ -61,7 +62,7 @@ function section4NeedsQa(reportData: ReportData | null | undefined): boolean {
   return hasText(reportData?.sections?.s4_outfits) && (
     !reportData?.qa?.section4 ||
     section4HasBlockingQa(reportData.qa) ||
-    (reportData?.outfit_library?.version === 'v2-9plus' && !reportData.qa.section4.quality?.passed)
+    (usesManLibraryPortfolio(reportData?.outfit_library?.version) && !reportData.qa.section4.quality?.passed)
   );
 }
 

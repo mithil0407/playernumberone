@@ -42,7 +42,9 @@ test('explicit Indian Casual produces two real kurta sources and consistent prom
   const selected = selectManOutfitLibraryReferences(c, undefined, new Date('2026-09-14'));
   assert.equal(selected.filter(x => /kurta/i.test(x.top)).length, 2);
   assert.equal(selected.length, 20);
-  assert.match(formatManOutfitLibraryForPrompt(c), /2 Indian Casual kurta looks/);
+  // The board's own kurtas are used before any synthesised kurta.
+  assert.deepEqual(selected.filter(x => /kurta/i.test(x.top)).map(x => x.tier), ['board', 'board']);
+  assert.match(formatManOutfitLibraryForPrompt(c), /first 2 Relaxed Casual sources are everyday kurta looks/);
   assert.ok(validateManReportSection4(block(16), c).issues.some(x => x.code === 'missing_indian_casual'));
   assert.ok(!validateManReportSection4(`${block(16, 'Ivory cotton short kurta')}\n\n${block(17, 'Rust cotton kurta')}`, c).issues.some(x => x.code === 'missing_indian_casual'));
 });

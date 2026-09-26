@@ -9,7 +9,36 @@ export type ManOutfitLibraryContext =
   | 'Evening Wear'
   | 'Relaxed Casual';
 
-export const MAN_OUTFIT_LIBRARY_VERSION = 'v2-9plus' as const;
+// v3: the Iconik board looks are picked first and the core 100 fill any gap;
+// the fixed suit/tie/resort/old-money quotas are gone.
+export const MAN_OUTFIT_LIBRARY_VERSION = 'v3-board-first' as const;
+
+/** Silhouette families assigned to board looks by the conversion rules (see the board file header). */
+export type ManBoardSilhouette =
+  | 'suit'
+  | 'blazer-separates'
+  | 'blazer-denim'
+  | 'shirt-trousers'
+  | 'shirt-denim'
+  | 'shirt-layered'
+  | 'tee-layered'
+  | 'knit-layered'
+  | 'knit'
+  | 'polo'
+  | 'tee'
+  | 'tee-denim'
+  | 'shorts-set'
+  | 'statement-jacket'
+  | 'indian-formal';
+
+/** Library versions whose reports go through the outfit portfolio quality gate (v2 reports are still stored). */
+export const MAN_LIBRARY_PORTFOLIO_VERSIONS = ['v2-9plus', MAN_OUTFIT_LIBRARY_VERSION] as const;
+export function usesManLibraryPortfolio(version: string | null | undefined): boolean {
+  return (MAN_LIBRARY_PORTFOLIO_VERSIONS as readonly string[]).includes(version ?? '');
+}
+
+/** Board looks are ranked ahead of the core library. */
+export type ManOutfitLibraryTier = 'board' | 'core';
 
 export type ManOutfitArchetype =
   | 'corporate-suit'
@@ -28,7 +57,8 @@ export type ManOutfitArchetype =
   | 'resort-riviera'
   | 'daily-old-money'
   | 'urban-travel'
-  | 'indian-casual';
+  | 'indian-casual'
+  | ManBoardSilhouette;
 
 export type ManOutfitPatternFamily = 'solid' | 'stripe' | 'check' | 'jacquard' | 'print';
 
@@ -46,6 +76,10 @@ export interface ManOutfitLibraryEntry {
   bodyFit: string[];
   patternFamily: ManOutfitPatternFamily;
   tags: string[];
+  tier: ManOutfitLibraryTier;
+  /** Board looks only: styling notes (tuck, sleeves) and the pin they came from. */
+  styling?: string;
+  source?: string;
 }
 
 export interface ManOutfitLibraryAssignment {
@@ -65,8 +99,8 @@ const HEADER_CONTEXTS: Record<string, ManOutfitLibraryContext> = {
 
 const HOT_CLIMATE_RESTRICTED_PATTERN = /\b(turtleneck|roll[-\s]?neck|wool(?:-blend|\s+blend)?|flannel|heavy\s+knit|merino|corduroy|overcoat|puffer|scarf|thick\s+tweed|velvet)\b/i;
 const MONSOON_RESTRICTED_PATTERN = /\b(suede|nubuck|turtleneck|roll[-\s]?neck|wool(?:-blend|\s+blend)?|flannel|heavy\s+knit|merino|corduroy|overcoat|puffer|scarf|thick\s+tweed|velvet)\b/i;
-const PATTERNED_TOP_PATTERN = /\b(stripe|striped|gingham|check|checked|houndstooth|prince of wales|glen check)\b/i;
-const ANY_PATTERN_PATTERN = /\b(stripe|striped|gingham|check|checked|houndstooth|prince of wales|glen check|pinstripe|chalk-stripe|jacquard|paisley|geometric|print|pattern)\b/i;
+const PATTERNED_TOP_PATTERN = /\b(stripe|striped|gingham|check|checked|plaid|tartan|houndstooth|prince of wales|glen check)\b/i;
+const ANY_PATTERN_PATTERN = /\b(stripe|striped|gingham|check|checked|plaid|tartan|houndstooth|prince of wales|glen check|pinstripe|chalk-stripe|jacquard|paisley|geometric|print|pattern)\b/i;
 const FOOTWEAR_TYPE_RULES: Array<[string, RegExp]> = [
   ['oxford', /\boxford\b/i],
   ['derby', /\bderby\b/i],
@@ -99,7 +133,12 @@ export interface ManReportClimateProfile {
   promptGuidance: string;
 }
 
-function readLibraryFile(): string {
+// Literal paths so Vercel's file tracer bundles both files.
+function readBoardLibraryFile(): string {
+  return readFileSync(join(process.cwd(), 'src/lib/ICONIK_Mens_Library_Board.md'), 'utf-8');
+}
+
+function readCoreLibraryFile(): string {
   return readFileSync(join(process.cwd(), 'src/lib/ICONIK_Mens_Library_100.md'), 'utf-8');
 }
 
@@ -135,7 +174,7 @@ function archetypeForEntry(id: number, context: ManOutfitLibraryContext): ManOut
 function patternFamilyForText(text: string): ManOutfitPatternFamily {
   if (/jacquard|paisley|geometric/i.test(text)) return 'jacquard';
   if (/print|abstract/i.test(text)) return 'print';
-  if (/check|gingham|houndstooth|prince of wales|glen check/i.test(text)) return 'check';
+  if (/check|gingham|plaid|tartan|houndstooth|prince of wales|glen check/i.test(text)) return 'check';
   if (/stripe|pinstripe|chalk-stripe/i.test(text)) return 'stripe';
   return 'solid';
 }
@@ -176,7 +215,7 @@ function parseMetadataList(block: string, label: string): string[] {
   return getField(block, label).split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
 }
 
-export function parseManOutfitLibrary(raw: string): ManOutfitLibraryEntry[] {
+export function parseManOutfitLibrary(raw: string, tier: ManOutfitLibraryTier = 'core'): ManOutfitLibraryEntry[] {
   const matches = Array.from(raw.matchAll(/^\*\*OUTFIT\s+(\d+)\s+—\s+([^*\n]+)\*\*$/gim));
 
   return matches.flatMap((match, index) => {
@@ -201,6 +240,9 @@ export function parseManOutfitLibrary(raw: string): ManOutfitLibraryEntry[] {
       bodyFit: parseMetadataList(block, 'BODY_FIT'),
       patternFamily: 'solid',
       tags: parseMetadataList(block, 'TAGS'),
+      tier: getField(block, 'PRIORITY').toLowerCase() === 'board' ? 'board' : tier,
+      styling: getField(block, 'STYLING') || undefined,
+      source: getField(block, 'SOURCE') || undefined,
     };
 
     const reference = referenceText(entry);
@@ -221,7 +263,12 @@ export function parseManOutfitLibrary(raw: string): ManOutfitLibraryEntry[] {
 let cachedLibrary: ManOutfitLibraryEntry[] | null = null;
 
 export function getManOutfitLibrary(): ManOutfitLibraryEntry[] {
-  if (!cachedLibrary) cachedLibrary = parseManOutfitLibrary(readLibraryFile());
+  if (!cachedLibrary) {
+    cachedLibrary = [
+      ...parseManOutfitLibrary(readBoardLibraryFile(), 'board'),
+      ...parseManOutfitLibrary(readCoreLibraryFile(), 'core'),
+    ];
+  }
   return cachedLibrary;
 }
 
@@ -332,63 +379,16 @@ function clientFingerprint(classification: ClassificationResult): string {
   ].join('|').toLowerCase();
 }
 
-interface ReferenceSlot {
-  context: ManOutfitLibraryContext;
-  archetype: ManOutfitArchetype;
-  requirePattern?: boolean;
-  requireFootwearType?: string;
-  requireLayerType?: string;
-}
-
-function referenceSlots(climate: ManReportClimateProfile, suppressPatterns: boolean, suitWaiver: boolean): ReferenceSlot[] {
-  const patterned = (slot: ReferenceSlot): ReferenceSlot => suppressPatterns ? slot : { ...slot, requirePattern: true };
-  const evening: ReferenceSlot[] = climate.mode === 'hot' || climate.mode === 'monsoon'
-    ? [
-        { context: 'Evening Wear', archetype: 'statement-outerwear' },
-        { context: 'Evening Wear', archetype: 'tailored-dinner' },
-        suppressPatterns
-          ? { context: 'Evening Wear', archetype: 'tailored-dinner' }
-          : patterned({ context: 'Evening Wear', archetype: 'patterned-textured' }),
-        { context: 'Evening Wear', archetype: 'resort-evening' },
-        { context: 'Evening Wear', archetype: 'refined-denim-knit' },
-      ]
-    : [
-        { context: 'Evening Wear', archetype: 'statement-outerwear' },
-        { context: 'Evening Wear', archetype: 'statement-outerwear' },
-        { context: 'Evening Wear', archetype: 'tailored-dinner' },
-        suppressPatterns
-          ? { context: 'Evening Wear', archetype: 'tailored-dinner' }
-          : patterned({ context: 'Evening Wear', archetype: 'patterned-textured' }),
-        { context: 'Evening Wear', archetype: 'refined-denim-knit' },
-      ];
-
-  const formal: ReferenceSlot[] = suitWaiver
-    ? [
-        { context: 'Office / Formal', archetype: 'climate-formal-layer', requireFootwearType: 'oxford' },
-        patterned({ context: 'Office / Formal', archetype: 'climate-formal-layer', requireFootwearType: 'derby' }),
-      ]
-    : [
-        { context: 'Office / Formal', archetype: 'corporate-suit', requireFootwearType: 'oxford' },
-        patterned({ context: 'Office / Formal', archetype: 'corporate-suit', requireFootwearType: 'derby' }),
-      ];
-  return [
-    ...formal,
-    { context: 'Office / Formal', archetype: 'corporate-separates' },
-    { context: 'Office / Formal', archetype: 'corporate-separates' },
-    { context: 'Office / Formal', archetype: 'shirt-tie-formal' },
-    { context: 'Office / Formal', archetype: 'shirt-tie-formal' },
-    { context: 'Smart Casual', archetype: 'tailored-polo' },
-    { context: 'Smart Casual', archetype: 'shirt-chino' },
-    { context: 'Smart Casual', archetype: 'layered-smart' },
-    patterned({ context: 'Smart Casual', archetype: 'expressive-smart' }),
-    ...evening,
-    patterned({ context: 'Relaxed Casual', archetype: 'resort-riviera', requireFootwearType: 'espadrille' }),
-    patterned({ context: 'Relaxed Casual', archetype: 'resort-riviera', requireFootwearType: 'sandal' }),
-    { context: 'Relaxed Casual', archetype: 'daily-old-money' },
-    { context: 'Relaxed Casual', archetype: 'daily-old-money', requireLayerType: 'knit' },
-    { context: 'Relaxed Casual', archetype: 'urban-travel', requireFootwearType: 'sneaker', requireLayerType: 'utility' },
-  ];
-}
+// Outfits per occasion, in report order (Outfit 1-6 Office, 7-10 Smart, 11-15 Evening, 16-20 Relaxed).
+const CONTEXT_SPLIT: Array<[ManOutfitLibraryContext, number]> = [
+  ['Office / Formal', 6],
+  ['Smart Casual', 4],
+  ['Evening Wear', 5],
+  ['Relaxed Casual', 5],
+];
+const INDIAN_ARCHETYPES = new Set<ManOutfitArchetype>(['indian-casual', 'indian-formal']);
+/** Patterned looks are welcome but optional; past this many the portfolio gets busy. */
+const MAX_PATTERNED = 7;
 
 function explicitPatternAversion(classification: ClassificationResult): boolean {
   return /\b(no|avoid|dislike|hate)\b.{0,24}\b(pattern|print|stripe|check)/i.test(
@@ -467,34 +467,59 @@ function layerType(entry: ManOutfitLibraryEntry): string | null {
   return rule?.[0] ?? 'other';
 }
 
-function validateSelectedReferencePortfolio(selected: ManOutfitLibraryEntry[], suppressPatterns: boolean, suitWaiver: boolean): string[] {
+function validateSelectedReferencePortfolio(selected: ManOutfitLibraryEntry[]): string[] {
   const issues: string[] = [];
-  const byContext = (context: ManOutfitLibraryContext) => selected.filter(entry => entry.context === context);
-  const formal = byContext('Office / Formal');
-  const evening = byContext('Evening Wear');
-  const relaxed = byContext('Relaxed Casual');
-  if (!suitWaiver && formal.filter(entry => entry.archetype === 'corporate-suit').length !== 2) issues.push('Formal must contain exactly two matched suits.');
-  if (suitWaiver && formal.filter(entry => entry.archetype === 'climate-formal-layer').length !== 2) issues.push('Suit-waived Formal must contain exactly two climate-formal layers.');
-  if (formal.filter(entry => entry.archetype === 'corporate-separates').length !== 2) issues.push('Formal must contain exactly two blazer separates.');
-  if (formal.filter(entry => entry.archetype === 'shirt-tie-formal').length !== 2) issues.push('Formal must contain exactly two shirt-and-tie looks.');
-  if (formal.filter(entry => /\btie\b/i.test(entry.accessories)).length < 3) issues.push('Formal must contain ties in at least three references.');
-  if (relaxed.filter(entry => entry.archetype === 'resort-riviera').length !== 2 || relaxed.filter(entry => entry.archetype === 'daily-old-money').length !== 2 || relaxed.filter(entry => entry.archetype === 'urban-travel').length !== 1) issues.push('Relaxed Casual must use the 2 resort / 2 old-money / 1 urban-travel split.');
-  if (evening.filter(entry => entry.archetype === 'statement-outerwear').length < 1) issues.push('Evening must contain statement outerwear.');
-  for (const context of Object.keys(HEADER_CONTEXTS).map(key => HEADER_CONTEXTS[key]!)) {
+  for (const [context, count] of CONTEXT_SPLIT) {
+    const local = selected.filter(entry => entry.context === context);
+    if (local.length !== count) issues.push(`${context} needs ${count} looks; found ${local.length}.`);
     const counts = new Map<string, number>();
-    for (const entry of byContext(context)) counts.set(entry.silhouetteFamily, (counts.get(entry.silhouetteFamily) ?? 0) + 1);
-    if ([...counts.values()].some(count => count > 2)) issues.push(`${context} repeats a silhouette family more than twice.`);
+    for (const entry of local) counts.set(entry.silhouetteFamily, (counts.get(entry.silhouetteFamily) ?? 0) + 1);
+    if ([...counts.values()].some(value => value > 2)) issues.push(`${context} repeats a silhouette family more than twice.`);
   }
-  const globalSilhouettes = new Map<string, number>();
-  for (const entry of selected) globalSilhouettes.set(entry.silhouetteFamily, (globalSilhouettes.get(entry.silhouetteFamily) ?? 0) + 1);
-  if ([...globalSilhouettes.values()].some(count => count > 3)) issues.push('A silhouette family appears more than three times across the portfolio.');
-  const patterned = selected.filter(entry => entry.patternFamily !== 'solid').length;
-  if (!suppressPatterns && (patterned < 5 || patterned > 7)) issues.push(`Portfolio needs 5-7 patterned pieces; found ${patterned}.`);
-  if (new Set(selected.map(footwearType)).size < 6) issues.push('Portfolio needs at least six footwear types.');
-  if (new Set(selected.map(layerType).filter(Boolean)).size < 4) issues.push('Portfolio needs at least four layer types.');
+  const global = new Map<string, number>();
+  for (const entry of selected) global.set(entry.silhouetteFamily, (global.get(entry.silhouetteFamily) ?? 0) + 1);
+  if ([...global.values()].some(value => value > 3)) issues.push('A silhouette family appears more than three times across the portfolio.');
   return issues;
 }
 
+/** Nudges toward variety without forcing any garment: a new footwear or layer type, and a pattern or two. */
+function varietyBonus(entry: ManOutfitLibraryEntry, selected: ManOutfitLibraryEntry[], suppressPatterns: boolean): number {
+  let bonus = 0;
+  if (!selected.some(chosen => footwearType(chosen) === footwearType(entry))) bonus += 0.15;
+  const layer = layerType(entry);
+  if (layer && !selected.some(chosen => layerType(chosen) === layer)) bonus += 0.1;
+  const patterned = selected.filter(chosen => chosen.patternFamily !== 'solid').length;
+  if (!suppressPatterns && entry.patternFamily !== 'solid' && patterned < 3) bonus += 0.1;
+  return bonus;
+}
+
+function indianCasualFallback(source: ManOutfitLibraryEntry, first: boolean, suppressPatterns: boolean): ManOutfitLibraryEntry {
+  return {
+    ...source,
+    id: first ? 101 : 102,
+    archetype: 'indian-casual', silhouetteFamily: 'indian-casual',
+    top: first
+      ? `Warm ivory cotton short kurta — band collar — straight hem at upper thigh — side slits — full sleeves${suppressPatterns ? '' : ' — fine olive vertical stripes'}`
+      : `Muted rust cotton knee-length kurta — band collar — straight cut — side slits — full sleeves${suppressPatterns ? '' : ' — subtle tonal geometric print'}`,
+    bottom: first
+      ? 'Deep olive cotton straight-leg trousers — mid-rise — ankle length'
+      : 'Warm stone cotton straight-leg trousers — mid-rise — ankle length',
+    layer: 'No layer',
+    tags: [...source.tags, 'indian-casual', 'kurta'],
+  };
+}
+
+/**
+ * Picks the 20 source looks, one per report outfit, in report order.
+ *
+ * Board looks come first: a slot only reaches the core 100-look library when no
+ * board look fits it. Within a tier, looks are ranked by the client's style
+ * brief and body, with a small nudge toward new footwear, layers and a pattern
+ * or two. Hard limits: climate, anti-preferences, no silhouette family more
+ * than twice per occasion or three times overall, at most 7 patterned looks,
+ * and no two neighbouring looks in the same top or layer colour family where
+ * avoidable. Indian looks are used only for clients who asked for Indian casual.
+ */
 export function selectManOutfitLibraryReferences(
   classification: ClassificationResult,
   library = getManOutfitLibrary(),
@@ -505,64 +530,106 @@ export function selectManOutfitLibraryReferences(
   const climate = getManReportClimateProfile(classification, now);
   const suppressPatterns = explicitPatternAversion(classification);
   const waivers = getManOutfitSelectionWaivers(classification);
-  const suitWaiver = waivers.includes('suits');
+  const wantsIndianCasual = requiresIndianCasual(classification);
   const selected: ManOutfitLibraryEntry[] = [];
   let previousTopColourFamily: string | null = null;
   let previousLayerColourFamily: string | null = null;
 
-  for (const slot of referenceSlots(climate, suppressPatterns, suitWaiver)) {
-    const contextSilhouettes = new Map<string, number>();
-    for (const entry of selected.filter(candidate => candidate.context === slot.context)) {
-      contextSilhouettes.set(entry.silhouetteFamily, (contextSilhouettes.get(entry.silhouetteFamily) ?? 0) + 1);
+  for (const [context, count] of CONTEXT_SPLIT) {
+    for (let slot = 0; slot < count; slot += 1) {
+      const indianSlot = wantsIndianCasual && context === 'Relaxed Casual' && slot < 2;
+      const silhouetteCount = (family: string, scope: ManOutfitLibraryEntry[]) => scope.filter(entry => entry.silhouetteFamily === family).length;
+      const inContext = selected.filter(entry => entry.context === context);
+      const patternedSoFar = selected.filter(entry => entry.patternFamily !== 'solid').length;
+      const eligible = library
+        .filter(entry => entry.context === context)
+        .filter(entry => indianSlot ? entry.archetype === 'indian-casual' : !INDIAN_ARCHETYPES.has(entry.archetype))
+        .filter(entry => entry.climateModes.includes(climate.mode))
+        .filter(entry => !antiPreferenceConflict(entry, classification))
+        .filter(entry => !waivers.includes('ties') || !/\btie\b/i.test(entry.accessories))
+        .filter(entry => !waivers.includes('suits') || entry.silhouetteFamily !== 'suit')
+        .filter(entry => entry.patternFamily === 'solid' || (!suppressPatterns && patternedSoFar < MAX_PATTERNED))
+        .filter(entry => !selected.some(chosen => chosen.id === entry.id))
+        .filter(entry => silhouetteCount(entry.silhouetteFamily, inContext) < 2)
+        .filter(entry => silhouetteCount(entry.silhouetteFamily, selected) < 3);
+      // The board is the primary source; the core library only fills a slot the board cannot.
+      const tier = eligible.some(entry => entry.tier === 'board') ? eligible.filter(entry => entry.tier === 'board') : eligible;
+      const score = (entry: ManOutfitLibraryEntry) => semanticReferenceScore(entry, classification, fingerprint) + varietyBonus(entry, selected, suppressPatterns);
+      const ranked = tier.sort((a, b) => score(b) - score(a) || a.id - b.id);
+      const next = ranked.find(entry => {
+        const topFamily = getManOutfitPrimaryColourFamily(entry.top);
+        const layerFamily = /^no layer$/i.test(entry.layer) ? null : getManOutfitPrimaryColourFamily(entry.layer);
+        return topFamily !== previousTopColourFamily && (!layerFamily || layerFamily !== previousLayerColourFamily);
+      }) ?? ranked.find(entry => getManOutfitPrimaryColourFamily(entry.top) !== previousTopColourFamily) ?? ranked[0];
+
+      let chosen = next;
+      if (!chosen && indianSlot) {
+        // No library kurta fits (climate or anti-preferences): adapt the best Relaxed look instead.
+        const base = library.find(entry => entry.context === 'Relaxed Casual' && !INDIAN_ARCHETYPES.has(entry.archetype) && !selected.some(item => item.id === entry.id));
+        if (base) chosen = indianCasualFallback(base, slot === 0, suppressPatterns);
+      }
+      if (!chosen) throw new Error(`ICONIK library cannot fill a ${context} look for ${climate.label}.`);
+      selected.push(chosen);
+      previousTopColourFamily = getManOutfitPrimaryColourFamily(chosen.top);
+      previousLayerColourFamily = /^no layer$/i.test(chosen.layer) ? null : getManOutfitPrimaryColourFamily(chosen.layer);
     }
-    const ranked = library
-      .filter(entry => entry.context === slot.context)
-      .filter(entry => entry.archetype === slot.archetype)
-      .filter(entry => entry.climateModes.includes(climate.mode))
-      .filter(entry => !antiPreferenceConflict(entry, classification))
-      .filter(entry => !slot.requirePattern || entry.patternFamily !== 'solid')
-      .filter(entry => slot.requirePattern || entry.patternFamily === 'solid')
-      .filter(entry => !slot.requireFootwearType || footwearType(entry) === slot.requireFootwearType)
-      .filter(entry => !slot.requireLayerType || layerType(entry) === slot.requireLayerType)
-      .filter(entry => !selected.some(chosen => chosen.id === entry.id))
-      .filter(entry => (contextSilhouettes.get(entry.silhouetteFamily) ?? 0) < 2)
-      .sort((a, b) => semanticReferenceScore(b, classification, fingerprint) - semanticReferenceScore(a, classification, fingerprint) || a.id - b.id);
-    const next = ranked.find(entry => {
-      const topFamily = getManOutfitPrimaryColourFamily(entry.top);
-      const layerFamily = /^no layer$/i.test(entry.layer) ? null : getManOutfitPrimaryColourFamily(entry.layer);
-      return topFamily !== previousTopColourFamily && (!layerFamily || layerFamily !== previousLayerColourFamily);
-    }) ?? ranked.find(entry => getManOutfitPrimaryColourFamily(entry.top) !== previousTopColourFamily) ?? ranked[0];
-    if (!next) {
-      throw new Error(`ICONIK v2 library cannot satisfy ${slot.context} / ${slot.archetype}${slot.requirePattern ? ' patterned' : ''} for ${climate.label}.`);
-    }
-    selected.push(next);
-    previousTopColourFamily = getManOutfitPrimaryColourFamily(next.top);
-    previousLayerColourFamily = /^no layer$/i.test(next.layer) ? null : getManOutfitPrimaryColourFamily(next.layer);
   }
 
-  const portfolioIssues = validateSelectedReferencePortfolio(selected, suppressPatterns, suitWaiver);
-  if (portfolioIssues.length) throw new Error(`ICONIK v2 portfolio selection failed: ${portfolioIssues.join(' ')}`);
-  if (requiresIndianCasual(classification)) {
-    // Explicit intake preferences outrank the default Western casual portfolio.
-    // Preserve pattern/footwear diversity while replacing both resort slots.
-    for (const index of [15, 16]) {
-      const source = selected[index];
-      selected[index] = {
-        ...source,
-        id: index === 15 ? 101 : 102,
-        archetype: 'indian-casual', silhouetteFamily: 'indian-casual',
-        top: index === 15
-          ? `Warm ivory cotton short kurta — band collar — straight hem at upper thigh — side slits — full sleeves${suppressPatterns ? '' : ' — fine olive vertical stripes'}`
-          : `Muted rust cotton knee-length kurta — band collar — straight cut — side slits — full sleeves${suppressPatterns ? '' : ' — subtle tonal geometric print'}`,
-        bottom: index === 15
-          ? 'Deep olive cotton straight-leg trousers — mid-rise — ankle length'
-          : 'Warm stone cotton straight-leg trousers — mid-rise — ankle length',
-        layer: 'No layer',
-        tags: [...source.tags, 'indian-casual', 'kurta'],
-      };
-    }
-  }
+  const portfolioIssues = validateSelectedReferencePortfolio(selected);
+  if (portfolioIssues.length) throw new Error(`ICONIK portfolio selection failed: ${portfolioIssues.join(' ')}`);
   return selected;
+}
+
+/** How many board looks each occasion offers the monthly Edit writer (it picks 6). */
+const EDIT_SOURCES_PER_CONTEXT: Array<[ManOutfitLibraryContext, number]> = [
+  ['Office / Formal', 3],
+  ['Smart Casual', 4],
+  ['Evening Wear', 3],
+  ['Relaxed Casual', 4],
+];
+
+/**
+ * Board looks for a monthly Edit: suited to the client and the month's climate,
+ * and never one his Blueprint or an earlier issue already used (`exclude`).
+ * Same filters and ranking as the Blueprint; at most one look per silhouette
+ * family per occasion, so the writer gets a real choice.
+ */
+export function selectManEditBoardSources(
+  classification: ClassificationResult,
+  options: { now?: Date; exclude?: number[]; salt?: string } = {},
+  library = getManOutfitLibrary(),
+): ManOutfitLibraryEntry[] {
+  const now = options.now ?? new Date();
+  const exclude = new Set(options.exclude ?? []);
+  const fingerprint = `${clientFingerprint(classification)}|edit|${options.salt ?? now.toISOString().slice(0, 7)}`;
+  const climate = getManReportClimateProfile(classification, now);
+  const suppressPatterns = explicitPatternAversion(classification);
+  const waivers = getManOutfitSelectionWaivers(classification);
+  const wantsIndianCasual = requiresIndianCasual(classification);
+  const chosen: ManOutfitLibraryEntry[] = [];
+  for (const [context, count] of EDIT_SOURCES_PER_CONTEXT) {
+    const ranked = library
+      .filter(entry => entry.tier === 'board' && entry.context === context && !exclude.has(entry.id))
+      .filter(entry => wantsIndianCasual || !INDIAN_ARCHETYPES.has(entry.archetype))
+      .filter(entry => entry.climateModes.includes(climate.mode))
+      .filter(entry => !antiPreferenceConflict(entry, classification))
+      .filter(entry => !waivers.includes('ties') || !/\btie\b/i.test(entry.accessories))
+      .filter(entry => !waivers.includes('suits') || entry.silhouetteFamily !== 'suit')
+      .filter(entry => !suppressPatterns || entry.patternFamily === 'solid')
+      .sort((a, b) => semanticReferenceScore(b, classification, fingerprint) - semanticReferenceScore(a, classification, fingerprint) || a.id - b.id);
+    const local: ManOutfitLibraryEntry[] = [];
+    for (const entry of ranked) {
+      if (local.length >= count) break;
+      if (!local.some(item => item.silhouetteFamily === entry.silhouetteFamily)) local.push(entry);
+    }
+    // Too few distinct families: top up with the next-best looks regardless.
+    for (const entry of ranked) {
+      if (local.length >= count) break;
+      if (!local.includes(entry)) local.push(entry);
+    }
+    chosen.push(...local);
+  }
+  return chosen;
 }
 
 export function getManOutfitLibraryAssignments(
@@ -598,7 +665,8 @@ TOP: ${entry.top}
 LAYER: ${entry.layer}
 BOTTOM: ${entry.bottom}
 FOOTWEAR: ${entry.footwear}
-ACCESSORY: ${entry.accessories}`).join('\n\n');
+ACCESSORY: ${entry.accessories}${entry.styling ? `
+STYLING: ${entry.styling}` : ''}`).join('\n\n');
 
   return `# ICONIK MEN'S REFERENCE OUTFIT LIBRARY
 
@@ -609,15 +677,16 @@ REFERENCE LOCK — non-negotiable:
 - Preserve the assigned source look's core top, layer/no-layer decision, bottom silhouette, footwear category, and accessory/styling architecture. The source must remain visibly recognisable after adaptation.
 - Make only the client-specific tweaks required by the classification: colour season and undertone, climate, body geometry, fit directive, formality, anti-preferences, and explicit client notes. If a required tweak changes a garment, use the nearest real-garment equivalent — do not redesign the outfit.
 - This reference lock overrides any tendency to generate a generic outfit from the rules alone. The v6.1 rules still decide whether a source detail must be adapted or removed for safety.
-- Footwear category lock: keep every source's footwear category (Oxford, Derby, loafer, boot, chukka, sneaker, espadrille, sandal) exactly — the portfolio's minimum of 6 footwear types is deterministic and mandatory. Adapt the material, colour, or sole for climate within the category; never substitute a different category.
-- Layer lock: never delete a source layer. If a source layer is unsafe for the climate or the client's anti-preferences, replace it with a permitted equivalent layer of similar formality. Only sources whose LAYER reads "No layer" may be layerless — Evening has a hard maximum of 2 no-layer looks.
-- Never introduce satin, silk, or any shiny fabric anywhere, including ties, pocket squares, and linings. Ties must read grenadine, knitted, or matte woven.
+- Footwear category lock: keep every source's footwear category (Oxford, Derby, loafer, boot, chukka, sneaker, espadrille, sandal) exactly. Adapt the material, colour, or sole for climate within the category; never substitute a different category.
+- Where a source has a STYLING line (tucked or untucked, sleeves rolled, collar open, worn open), keep that styling.
+- Layer lock: never delete a source layer. If a source layer is unsafe for the climate or the client's anti-preferences, replace it with a permitted equivalent layer of similar formality. Only sources whose LAYER reads "No layer" may be layerless.
+- Never introduce satin, silk, or any shiny fabric anywhere, including ties, pocket squares, and linings. Ties are optional: add one only where the source has one or the client asks for ties, and then grenadine, knitted, or matte woven.
 - Consecutive visual variation is mandatory: Final Outfits 1–20 must not repeat the same or a near-identical primary top colour family in adjacent slots. Treat white, ecru, ivory, cream, off-white, chalk, and bone as one light-neutral family; stone, oatmeal, sand, and beige as one pale-earth family. Apply the same no-repeat principle to consecutive visible layers.
 - When the client's palette forces a recolour, the new top or layer colour must still land in a different colour family from both the previous and the next outfit's final top/layer. Check every recolour against each source's TOP COLOUR FAMILY line before finalising; do not default multiple adjacent tops into blue or another single family.
 
-Library version: ${MAN_OUTFIT_LIBRARY_VERSION}. The source library is Warm Autumn-led. Never copy its colours blindly: the client's classification always wins near the face and across the outfit. Current climate mode: ${climate.label} (${climate.mode.toUpperCase()}). ${climate.promptGuidance} Do not mention library look numbers, source references, or adaptation in the visible report.
+Library version: ${MAN_OUTFIT_LIBRARY_VERSION}. Most sources come from the Iconik board of real, current looks; keep their modern, relaxed proportions rather than making them older or more formal. The core library is Warm Autumn-led. Never copy its colours blindly: the client's classification always wins near the face and across the outfit. Current climate mode: ${climate.label} (${climate.mode.toUpperCase()}). ${climate.promptGuidance} Do not mention library look numbers, source references, or adaptation in the visible report.
 
-The required 6/4/5/5 context split is already mapped below. Preserve the assigned archetype and silhouette family as well as the core garments. Formal must remain strict corporate formal; Evening must read unmistakably night-out; ${requiresIndianCasual(classification) ? 'CLIENT PREFERENCE OVERRIDE: Relaxed Casual must contain 2 Indian Casual kurta looks + 2 Daily Old-Money + 1 Urban/Travel. This replaces every default Resort/Riviera split instruction. Everyday kurtas are mandatory; wedding sherwanis or a Western shirt renamed Indian do not qualify.' : 'Relaxed Casual must preserve its exact 2 Resort/Riviera + 2 Daily Old-Money + 1 Urban/Travel portfolio.'} Across the final 20 use 5-7 patterned pieces unless the client explicitly rejects patterns, at least 6 footwear types, and no silhouette family more than twice inside one context or three times overall. Keep all v6.1 diversity, garment-reality, climate, and QA rules.
+The 6/4/5/5 context split is already mapped below. Preserve each source's silhouette family as well as its core garments. Office / Formal stays office-appropriate (no tees, polos, denim or sneakers); suits and ties are not required. Evening must read night-out. ${requiresIndianCasual(classification) ? 'CLIENT PREFERENCE OVERRIDE: the first 2 Relaxed Casual sources are everyday kurta looks and must stay kurtas; wedding sherwanis or a Western shirt renamed Indian do not qualify.' : 'Relaxed Casual follows its sources; there is no fixed resort or old-money split.'} Patterns are optional: use at most 7 patterned pieces${explicitPatternAversion(classification) ? ', and none for this client' : ''}. No silhouette family more than twice inside one context or three times overall. Keep all v6.1 garment-reality, climate, and QA rules.
 
 ## SELECTED REFERENCES
 

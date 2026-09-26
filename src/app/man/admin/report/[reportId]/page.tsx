@@ -1175,7 +1175,8 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const approvals    = report?.section_approvals ?? { s0: false, s1: false, s2: false, s3: false, s4: false, s4g: false, s5s: false, s5g: false, s5: false, s6: false };
   const outfitQuality = report?.report_data?.qa?.section4?.quality;
   const outfitQaErrors = (report?.report_data?.qa?.section4?.issues ?? []).filter(item => item.severity === 'error');
-  const qualityGateRequired = report?.report_data?.outfit_library?.version === 'v2-9plus';
+  // v2-9plus and v3-board-first reports were picked from the library; inline because this page cannot load the library module.
+  const qualityGateRequired = ['v2-9plus', 'v3-board-first'].includes(report?.report_data?.outfit_library?.version ?? '');
   const qualityGatePassed = !qualityGateRequired || Boolean(outfitQuality?.passed);
   const ready        = allPagesApproved(approvals, slideMeta);
   const isGenerating = report?.status === 'generating';

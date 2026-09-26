@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
     ],
+    // The men's library is read at runtime by Blueprint generation and the monthly Edit.
+    '/api/man-report/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
+    '/api/man-edit/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
+    '/api/payment/**': ['./src/lib/ICONIK_Mens_Library_Board.md', './src/lib/ICONIK_Mens_Library_100.md'],
   },
   async headers() {
     return [

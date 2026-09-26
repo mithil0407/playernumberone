@@ -1,7 +1,7 @@
 import { requiresIndianCasual } from './manOutfitConsistency';
 import type { ClassificationResult, ReportData } from './manReportGenerator';
 import { inferOutfitContext, parseManOutfitsFromSection } from './manOutfitSection';
-import { getManOutfitPrimaryColourFamily, getManReportClimateProfile } from './manOutfitLibrary';
+import { getManOutfitPrimaryColourFamily, getManReportClimateProfile, usesManLibraryPortfolio } from './manOutfitLibrary';
 
 export interface ManReportQaIssue {
   code: string;
@@ -238,7 +238,7 @@ function countElevatedPrimaryColourOutfits(outfits: ParsedQaOutfit[]): number {
 }
 
 function isPatterned(outfit: ParsedQaOutfit): boolean {
-  return /\b(stripe|striped|gingham|check|checked|houndstooth|glen\s+check|pinstripe|chalk[-\s]?stripe|jacquard|paisley|geometric|abstract\s+print|patterned)\b/i.test(
+  return /\b(stripe|striped|gingham|check|checked|plaid|tartan|houndstooth|glen\s+check|pinstripe|chalk[-\s]?stripe|jacquard|paisley|geometric|abstract\s+print|patterned)\b/i.test(
     [outfit.fields.top, outfit.fields.layer, outfit.fields.bottom].join(' '),
   );
 }
@@ -251,9 +251,12 @@ function outfitSilhouetteFamily(outfit: ParsedQaOutfit): string {
   if (STATEMENT_EVENING_LAYER_PATTERN.test(outfit.fields.layer)) return `${prefix}:statement-jacket-column`;
   if (/overshirt|chore\s+jacket|utility\s+jacket|trucker\s+jacket/.test(outfit.fields.layer.toLowerCase())) return `${prefix}:open-utility-column`;
   if (/draped over (?:the )?shoulders/.test(text)) return `${prefix}:draped-knit-tailoring`;
+  if (!hasNoLayer(outfit) && /sweater|cardigan|knit|vest|zip/.test(outfit.fields.layer.toLowerCase())) return `${prefix}:knit-layered`;
   if (/\bshorts\b/.test(outfit.fields.bottom.toLowerCase())) return `${prefix}:resort-shorts`;
   if (/\bdenim|jeans\b/.test(outfit.fields.bottom.toLowerCase())) return `${prefix}:top-with-straight-denim`;
   if (/\bpolo\b/.test(outfit.fields.top.toLowerCase())) return `${prefix}:polo-tailored-bottom`;
+  if (/\b(tee|t-shirt|henley)\b/.test(outfit.fields.top.toLowerCase())) return `${prefix}:tee-tailored-bottom`;
+  if (/sweater|pullover|knit|turtleneck|roll[-\s]?neck/.test(outfit.fields.top.toLowerCase())) return `${prefix}:knit-tailored-bottom`;
   return `${prefix}:shirt-tailored-bottom`;
 }
 
@@ -278,13 +281,6 @@ function outfitLayerType(outfit: ParsedQaOutfit): string | null {
   return rules.find(([, pattern]) => pattern.test(text))?.[0] ?? 'other';
 }
 
-function relaxedArchetype(outfit: ParsedQaOutfit): 'resort' | 'old-money' | 'urban' {
-  const text = [outfit.fields.top, outfit.fields.layer, outfit.fields.bottom, outfit.fields.footwear].join(' ').toLowerCase();
-  if (/cargo|chore\s+jacket|utility\s+jacket|trucker\s+jacket|varsity|harrington|retro\s+runner/.test(text)) return 'urban';
-  if (/camp[-\s]?collar|terry[-\s]?cloth|espadrille|sandals?|drawstring|\bshorts\b|linen.*(?:trouser|shirt)/.test(text)) return 'resort';
-  return 'old-money';
-}
-
 function addV2PortfolioIssues(outfits: ParsedQaOutfit[], climateMode: ReturnType<typeof getManReportClimateProfile>['mode'], issues: ManReportQaIssue[], options: ManReportQaOptions) {
   const byContext = (context: string) => outfits.filter(outfit => outfit.context === context);
   const formal = byContext('Office / Formal');
@@ -296,56 +292,35 @@ function addV2PortfolioIssues(outfits: ParsedQaOutfit[], climateMode: ReturnType
       issues.push(issue('formal_context_purity', 'error', `Outfit ${outfit.number} contains a casual garment in strict Office / Formal.`));
     }
   }
-  const suitCount = formal.filter(outfit => /\bsuit\b/i.test(`${outfit.fields.layer} ${outfit.fields.bottom}`)).length;
-  const blazerCount = formal.filter(outfit => /\bblazer\b/i.test(outfit.fields.layer) && !/\bsuit\b/i.test(`${outfit.fields.layer} ${outfit.fields.bottom}`)).length;
-  const shirtLedCount = formal.filter(outfit => hasNoLayer(outfit) && /\bshirt\b/i.test(outfit.fields.top)).length;
-  const tieCount = formal.filter(outfit => /\btie\b/i.test(outfit.fields.accessory)).length;
-  if (!options.suitWaiver && suitCount !== 2) issues.push(issue('formal_suit_quota', 'error', `Strict Formal requires exactly 2 matched suits; found ${suitCount}.`));
-  if (blazerCount !== 2) issues.push(issue('formal_blazer_quota', 'error', `Strict Formal requires exactly 2 blazer-and-trouser looks; found ${blazerCount}.`));
-  if (shirtLedCount !== 2) issues.push(issue('formal_shirt_led_quota', 'error', `Strict Formal requires exactly 2 shirt-and-trouser looks; found ${shirtLedCount}.`));
-  if (!options.tieWaiver && tieCount < 3) issues.push(issue('formal_tie_quota', 'error', `Strict Formal requires ties in at least 3 looks; found ${tieCount}.`));
-
+  // v3: no suit, blazer, shirt-led or tie quotas, and no fixed Relaxed split. The
+  // shape of the portfolio comes from the board sources; these are nudges only.
   const statementCount = evening.filter(outfit => STATEMENT_EVENING_LAYER_PATTERN.test(outfit.fields.layer)).length;
-  const requiredStatements = climateMode === 'hot' || climateMode === 'monsoon' ? 1 : 2;
-  if (statementCount < requiredStatements) issues.push(issue('evening_statement_quota', 'error', `Evening requires ${requiredStatements} statement outerwear look${requiredStatements === 1 ? '' : 's'} in this climate; found ${statementCount}.`));
+  if (statementCount < 1) issues.push(issue('evening_statement_quota', 'warning', 'Evening has no statement outerwear look; consider one for a night-out feel.'));
   const noLayerEvening = evening.filter(hasNoLayer).length;
-  if (noLayerEvening > 2) issues.push(issue('evening_no_layer_cap', 'error', `Evening allows at most 2 no-layer looks; found ${noLayerEvening}.`));
+  if (noLayerEvening > 3) issues.push(issue('evening_no_layer_cap', 'warning', `Evening has ${noLayerEvening} no-layer looks; more than 3 can read flat.`));
   const plainPoloEvening = evening.filter(outfit => hasNoLayer(outfit) && /\bpolo\b/i.test(outfit.fields.top) && !isPatterned(outfit)).length;
-  if (plainPoloEvening > 1) issues.push(issue('evening_plain_polo_cap', 'error', `Evening allows at most 1 plain no-layer polo look; found ${plainPoloEvening}.`));
-
-  const relaxedCounts = relaxed.reduce<Record<string, number>>((acc, outfit) => {
-    const archetype = relaxedArchetype(outfit);
-    acc[archetype] = (acc[archetype] ?? 0) + 1;
-    return acc;
-  }, {});
-  if (!options.indianCasualRequired && (relaxedCounts.resort !== 2 || relaxedCounts['old-money'] !== 2 || relaxedCounts.urban !== 1)) {
-    issues.push(issue('relaxed_archetype_split', 'error', `Relaxed Casual must be 2 Resort/Riviera, 2 Daily Old-Money and 1 Urban/Travel; found ${relaxedCounts.resort ?? 0}/${relaxedCounts['old-money'] ?? 0}/${relaxedCounts.urban ?? 0}.`));
-  }
+  if (plainPoloEvening > 1) issues.push(issue('evening_plain_polo_cap', 'warning', `Evening has ${plainPoloEvening} plain no-layer polo looks.`));
   const relaxedPlainTees = relaxed.filter(outfit => /\b(tee|t-shirt)\b/i.test(outfit.fields.top) && !isPatterned(outfit)).length;
-  if (relaxedPlainTees > 2) issues.push(issue('relaxed_plain_tee_cap', 'error', `Relaxed Casual allows at most 2 plain tee-led looks; found ${relaxedPlainTees}.`));
+  if (relaxedPlainTees > 3) issues.push(issue('relaxed_plain_tee_cap', 'warning', `Relaxed Casual has ${relaxedPlainTees} plain tee-led looks.`));
   const relaxedOpenUtility = relaxed.filter(outfit => /overshirt|chore\s+jacket|utility\s+jacket|trucker\s+jacket/i.test(outfit.fields.layer)).length;
-  if (relaxedOpenUtility > 2) issues.push(issue('relaxed_open_layer_cap', 'error', `Relaxed Casual allows at most 2 open overshirt/utility silhouettes; found ${relaxedOpenUtility}.`));
+  if (relaxedOpenUtility > 3) issues.push(issue('relaxed_open_layer_cap', 'warning', `Relaxed Casual has ${relaxedOpenUtility} open overshirt/utility silhouettes.`));
 
+  // Variety is steered at selection time; here it only warns, because a blocking
+  // error sends Section 4 back to the model and loses the board sources.
   const silhouetteCounts = new Map<string, number>();
   for (const outfit of outfits) silhouetteCounts.set(outfitSilhouetteFamily(outfit), (silhouetteCounts.get(outfitSilhouetteFamily(outfit)) ?? 0) + 1);
-  for (const [family, count] of silhouetteCounts) if (count > 3) issues.push(issue('silhouette_global_cap', 'error', `${family} appears ${count} times; a silhouette family may appear at most 3 times.`));
+  for (const [family, count] of silhouetteCounts) if (count > 3) issues.push(issue('silhouette_global_cap', 'warning', `${family} appears ${count} times; aim for at most 3.`));
   for (const context of EXPECTED_CONTEXTS) {
     const local = new Map<string, number>();
     for (const outfit of byContext(context)) local.set(outfitSilhouetteFamily(outfit), (local.get(outfitSilhouetteFamily(outfit)) ?? 0) + 1);
-    for (const [family, count] of local) if (count > 2) issues.push(issue('silhouette_context_cap', 'error', `${context} repeats ${family} ${count} times; the context maximum is 2.`));
+    for (const [family, count] of local) if (count > 2) issues.push(issue('silhouette_context_cap', 'warning', `${context} repeats ${family} ${count} times; aim for at most 2.`));
   }
 
+  // Patterns are optional; only too many is a fault, or any at all for a client who rejects them.
   const patternCount = outfits.filter(isPatterned).length;
-  if (!options.patternWaiver && (patternCount < 5 || patternCount > 7)) issues.push(issue('pattern_portfolio_quota', 'error', `The v2 portfolio requires 5-7 patterned pieces; found ${patternCount}.`));
-  if (!options.patternWaiver) {
-    const minima: Array<[string, number]> = [['Office / Formal', 1], ['Smart Casual', 1], ['Evening Wear', 1], ['Relaxed Casual', 2]];
-    for (const [context, minimum] of minima) {
-      const count = byContext(context).filter(isPatterned).length;
-      if (count < minimum) issues.push(issue('pattern_context_quota', 'error', `${context} requires at least ${minimum} patterned look${minimum === 1 ? '' : 's'}; found ${count}.`));
-    }
-  }
-  if (new Set(outfits.map(outfitFootwearType)).size < 6) issues.push(issue('footwear_diversity', 'error', 'The v2 portfolio requires at least 6 footwear types.'));
-  if (new Set(outfits.map(outfitLayerType).filter(Boolean)).size < 4) issues.push(issue('layer_diversity', 'error', 'The v2 portfolio requires at least 4 layer types.'));
+  if (!options.patternWaiver && patternCount > 7) issues.push(issue('pattern_portfolio_quota', 'error', `The portfolio allows at most 7 patterned pieces; found ${patternCount}.`));
+  if (new Set(outfits.map(outfitFootwearType)).size < 4) issues.push(issue('footwear_diversity', 'warning', 'The portfolio uses fewer than 4 footwear types.'));
+  if (new Set(outfits.map(outfitLayerType).filter(Boolean)).size < 3) issues.push(issue('layer_diversity', 'warning', 'The portfolio uses fewer than 3 layer types.'));
 }
 
 function roundScore(value: number): number {
@@ -563,7 +538,7 @@ export function withManReportSection4Qa(reportData: ReportData): ReportData {
         reportData.sections?.s4_outfits ?? '',
         reportData.classification,
         {
-          enforceV2: reportData.outfit_library?.version === 'v2-9plus',
+          enforceV2: usesManLibraryPortfolio(reportData.outfit_library?.version),
           patternWaiver: reportData.outfit_library?.selectionProfile?.patternWaiver,
           suitWaiver: reportData.outfit_library?.selectionProfile?.waivers?.includes('suits'),
           tieWaiver: reportData.outfit_library?.selectionProfile?.waivers?.includes('ties'),
@@ -576,7 +551,7 @@ export function withManReportSection4Qa(reportData: ReportData): ReportData {
 }
 
 export function manReportOutfitQualityGatePassed(reportData: ReportData | null | undefined): boolean {
-  if (reportData?.outfit_library?.version !== 'v2-9plus') return true;
+  if (!reportData || !usesManLibraryPortfolio(reportData.outfit_library?.version)) return true;
   const section4 = reportData.qa?.section4;
   return Boolean(section4?.quality?.passed) && !(section4?.issues ?? []).some(item => item.severity === 'error');
 }

@@ -19,7 +19,7 @@ import { GoogleGenAI } from '@google/genai';
 import { supabaseAdmin } from '@/lib/supabase';
 import type { ClassificationResult, ReportData } from '@/lib/manReportGenerator';
 import type { ManIntakeSubmission } from '@/lib/supabaseMan';
-import { getManOutfitPrimaryColourFamily, getManReportClimateProfile } from '@/lib/manOutfitLibrary';
+import { getManOutfitPrimaryColourFamily, getManReportClimateProfile, selectManEditBoardSources, type ManOutfitLibraryEntry } from '@/lib/manOutfitLibrary';
 import { parseManOutfitsFromSection } from '@/lib/manOutfitSection';
 import { validateManReportSection4, type ManReportQaIssue } from '@/lib/manReportQa';
 import { generateAllOutfitImages, type ManReportImagePaths } from '@/lib/manImageGenerator';
@@ -364,6 +364,8 @@ interface DraftOutfit {
   accessories: string;
   occasionAnchor: string;
   reuses: string;
+  /** The board look (library id) this outfit was built from, when the writer names one. */
+  boardLook: number | null;
 }
 
 export interface WriterInput {
@@ -375,6 +377,20 @@ export interface WriterInput {
   previousIssues: Array<{ label: string; s4: string; piece: string }>;
   month: ReturnType<typeof describeEditMonth>;
   isLate: boolean;
+  /** Iconik board looks to build this issue from. */
+  boardSources: ManOutfitLibraryEntry[];
+}
+
+function formatBoardSources(sources: ManOutfitLibraryEntry[]): string {
+  return sources.map(entry => [
+    `B${entry.id} — ${entry.context.toUpperCase()}`,
+    `  TOP: ${entry.top}`,
+    `  LAYER: ${entry.layer}`,
+    `  BOTTOM: ${entry.bottom}`,
+    `  FOOTWEAR: ${entry.footwear}`,
+    `  ACCESSORIES: ${entry.accessories}`,
+    entry.styling ? `  STYLING: ${entry.styling}` : null,
+  ].filter(Boolean).join('\n')).join('\n\n');
 }
 
 function clip(text: unknown, max: number): string {
@@ -464,11 +480,16 @@ Disliked: ${dislikes.length ? dislikes.join('; ') : 'nothing recorded yet'}
 PREVIOUS EDIT ISSUES (never repeat an outfit or a piece of the month from these):
 ${previous}
 
-WRITE THIS ISSUE
-- Exactly ${MAN_EDIT_OUTFITS_PER_ISSUE} outfits.
+${input.boardSources.length ? `SOURCE LOOKS FROM THE ICONIK BOARD
+Real looks our stylists curated. Build this issue from them.
+${formatBoardSources(input.boardSources)}
+
+` : ''}WRITE THIS ISSUE
+- Exactly ${MAN_EDIT_OUTFITS_PER_ISSUE} outfits.${input.boardSources.length ? `
+- Build every outfit from a different board look above and put its number in "boardLook" (e.g. "B218"). Keep that look's garments, layer or no-layer decision, silhouette and styling (tuck, sleeves, collar) recognisable. Change colours only to fit his palette and fabrics only for the climate; never swap in a different garment type.` : ''}
 - Two for this month's moments (festive, family, weddings or travel — whatever the month really holds for him), two for his working week (match his real dressing context: office, client-facing, startup or work-from-home), two for his weekends.
 - Each outfit's context must be one of: ${OUTFIT_CONTEXTS.join(', ')}. Festive and wedding looks are usually EVENING WEAR or SMART CASUAL; Indian wear (kurta sets, bandhgalas, Nehru jackets) is welcome where the moment calls for it and his Blueprint allows it.
-- No outfit may repeat one of his 20 Blueprint outfits or an outfit from a previous issue. Build at least three of the six around pieces his Blueprint already told him to own, and say which in "reuses".
+- No outfit may repeat one of his 20 Blueprint outfits or an outfit from a previous issue. Where a look allows it, re-wear pieces his Blueprint already told him to own, and say which in "reuses".
 - One piece of the month: a single item worth buying now that unlocks at least two of these outfits.
 - Stay inside his palette, fit rules and dislikes. Everything must be a real garment he can buy in India this month.
 - Garment lines follow the Blueprint style: "[colour] [fabric] [garment] — [fit] — [styling]". Accessories include his eyewear direction where his Blueprint gives one.
@@ -501,7 +522,8 @@ Return ONLY valid JSON, no markdown:
       "footwear": "...",
       "accessories": "...",
       "occasionAnchor": "one or two sentences: why this works on him and when to wear it",
-      "reuses": "which Blueprint pieces this re-wears, or empty string"
+      "reuses": "which Blueprint pieces this re-wears, or empty string",
+      "boardLook": "the board look number it is built from, e.g. B218"
     }
   ],
   "pieceOfTheMonth": { "name": "garment line in the same style", "why": "two sentences", "outfitNumbers": [1, 4] },
@@ -526,6 +548,7 @@ function parseDraft(raw: string): { draft: EditDraftJson; outfits: DraftOutfit[]
       accessories: str(o.accessories),
       occasionAnchor: str(o.occasionAnchor),
       reuses: str(o.reuses),
+      boardLook: Number(str(o.boardLook).replace(/\D/g, '')) || null,
     };
   });
   return { draft, outfits };
@@ -646,6 +669,7 @@ export async function writeEditIssue(input: WriterInput): Promise<{ s4: string; 
                 .sort((a, b) => a - b),
             },
             closingNote: str(draft.closingNote),
+            boardSourceIds: outfits.map(outfit => outfit.boardLook).filter((id): id is number => id !== null && input.boardSources.some(entry => entry.id === id)),
           },
         };
       }
@@ -698,9 +722,10 @@ async function loadWriterInput(issue: AnyRecord, sub: EditSubscriptionRow): Prom
     .select('vote, outfit_label, outfit_key')
     .in('report_id', reportIds);
 
-  const previousIssues = (siblings ?? [])
+  const previousEditData = (siblings ?? [])
     .map(row => row.report_data as ReportData | null)
-    .filter((data): data is ReportData => Boolean(data?.edit))
+    .filter((data): data is ReportData => Boolean(data?.edit));
+  const previousIssues = previousEditData
     .map(data => ({
       label: data.edit!.periodLabel,
       s4: data.sections.s4_outfits,
@@ -709,6 +734,13 @@ async function loadWriterInput(issue: AnyRecord, sub: EditSubscriptionRow): Prom
 
   const classification = (blueprint.report_data as ReportData).classification;
   const month = describeEditMonth(targetMonthFor(previousIssues.map(item => item.label)), classification);
+
+  // Board looks his Blueprint or an earlier issue already used are not offered again.
+  const usedLookIds = [
+    ...((blueprint.report_data as ReportData).outfit_library?.assignments ?? []).map(item => item.libraryLookId),
+    ...previousEditData.flatMap(data => data.edit?.boardSourceIds ?? []),
+  ];
+  const boardSources = selectManEditBoardSources(classification, { now: month.date, exclude: usedLookIds, salt: sub.id });
 
   // "Late" = the client paid for this issue more than a fortnight ago.
   const subscribedAt = new Date(sub.created_at).getTime();
@@ -723,6 +755,7 @@ async function loadWriterInput(issue: AnyRecord, sub: EditSubscriptionRow): Prom
     previousIssues,
     month,
     isLate,
+    boardSources,
   };
 }
 

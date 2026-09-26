@@ -48,4 +48,6 @@ export interface ManEditIssueContent {
   blueprintShareToken: string | null;
   /** Shown once, on the first issue a client receives after a delay. */
   welcomeNote?: string;
+  /** Iconik board looks (library ids) this issue was built from; later issues skip them. */
+  boardSourceIds?: number[];
 }
