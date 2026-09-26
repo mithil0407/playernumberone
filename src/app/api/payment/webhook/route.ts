@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { addCustomerToSheet } from '@/lib/googleSheets';
@@ -27,6 +27,10 @@ import {
   rebuildManEditProfile,
   updateManEditSubscriptionFromWebhook,
 } from '@/lib/manEdit';
+import { createEditIssueDraft, runEditIssuePipeline } from '@/lib/manEditIssues';
+
+// Room for a monthly charge to write that month's Edit draft after the 200.
+export const maxDuration = 300;
 
 // Helper function to extract add-ons from Razorpay order notes
 async function getAddOnsFromRazorpayOrder(razorpayOrderId: string): Promise<string> {
@@ -953,6 +957,15 @@ async function handleManEditSubscriptionEvent(
         : new Date().toISOString(),
       attribution: attributionFromRow(dbSub),
       metadata: { webhook_event: event, paid_count: subscription.paid_count },
+    });
+
+    // Each paid month is owed an issue. Start its draft now; the stylist
+    // reviews and sends it. Blocked (no Blueprint yet, or an unsent draft
+    // still open) is fine — the daily /api/man-edit/cron sweep catches up.
+    after(async () => {
+      const draft = await createEditIssueDraft(String(dbSub.id));
+      if (draft.ok && draft.created) await runEditIssuePipeline(draft.reportId);
+      else if (!draft.ok) console.log(`Man Edit draft not started for ${dbSub.id}: ${draft.reason}`);
     });
   }
 

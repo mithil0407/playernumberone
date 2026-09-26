@@ -3,7 +3,8 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminAuthenticatedFromCookieValue, ADMIN_COOKIE } from '@/lib/adminAuth';
 import { cookies } from 'next/headers';
-import { sendMenBlueprintReportEmail } from '@/lib/emailMen';
+import { sendManEditIssueEmail, sendMenBlueprintReportEmail } from '@/lib/emailMen';
+import { linkEditSubscriptionsToBlueprint } from '@/lib/manEditIssues';
 import type { ReportData } from '@/lib/manReportGenerator';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { getAdminManReportById, loadAdminManReportByIdFresh } from '@/lib/manReportLoader';
@@ -85,7 +86,7 @@ export async function PATCH(
 
   const { data: existingReport, error: existingError } = await supabaseAdmin
     .from('man_reports')
-    .select('id, status, sent_at, share_token, report_data, image_urls, section_approvals, shopping_data, man_intake_submissions(customer_email)')
+    .select('id, status, sent_at, share_token, report_kind, edit_subscription_id, report_data, image_urls, section_approvals, shopping_data, man_intake_submissions(customer_email)')
     .eq('id', reportId)
     .single();
 
@@ -218,18 +219,30 @@ export async function PATCH(
 
   if (isFirstSend && recipientEmail) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';
-    const reportUrl = `${siteUrl}/man/report/${existingReport.share_token}`;
     const reportData = existingReport.report_data as ReportData | null;
     const classification = reportData?.classification;
+    const isEditIssue = existingReport.report_kind === 'edit';
 
-    const emailResult = await sendMenBlueprintReportEmail({
-      email: recipientEmail,
-      reportUrl,
-      silhouette: classification?.body?.silhouette_type,
-      faceShape: classification?.face?.face_shape,
-      season: classification?.colour?.season,
-      primaryBrief: classification?.style_brief?.primary_brief,
-    });
+    const emailResult = isEditIssue && reportData?.edit
+      ? await sendManEditIssueEmail({
+        email: recipientEmail,
+        firstName: reportData.edit.clientFirstName,
+        issueUrl: `${siteUrl}/man/edit/${existingReport.share_token}`,
+        issueNumber: reportData.edit.issueNumber,
+        periodLabel: reportData.edit.periodLabel,
+        title: reportData.edit.title,
+        dek: reportData.edit.dek,
+        occasions: reportData.edit.outfits.map(outfit => outfit.occasion).filter(Boolean),
+        pieceOfTheMonth: reportData.edit.pieceOfTheMonth?.name,
+      })
+      : await sendMenBlueprintReportEmail({
+        email: recipientEmail,
+        reportUrl: `${siteUrl}/man/report/${existingReport.share_token}`,
+        silhouette: classification?.body?.silhouette_type,
+        faceShape: classification?.face?.face_shape,
+        season: classification?.colour?.season,
+        primaryBrief: classification?.style_brief?.primary_brief,
+      });
 
     if (!emailResult.success) {
       await supabaseAdmin
@@ -249,6 +262,10 @@ export async function PATCH(
         { status: 500 }
       );
     }
+
+    // A subscriber who bought the Edit at checkout has no Blueprint to anchor
+    // it until now; link it the moment the Blueprint goes out.
+    if (!isEditIssue) await linkEditSubscriptionsToBlueprint(recipientEmail, reportId);
   }
 
   return NextResponse.json({ report: data });

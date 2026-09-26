@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         photo_fullbody_url,
         photo_headshot_url,
         created_at,
-        man_reports(id, status, progress_stage, share_token, generated_at, sent_at, error_message, created_at)
+        man_reports(id, status, progress_stage, share_token, generated_at, sent_at, error_message, created_at, report_kind)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -51,9 +51,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Each submission can have multiple report rows; pick the most recent one
+    // Each submission can have multiple report rows; pick the most recent
+    // Blueprint. Monthly Edit issues share the submission but aren't Blueprints.
     const submissions = (data ?? []).map(row => {
-      const reports = (row.man_reports as ManReportRow[] ?? [])
+      const reports = (row.man_reports as Array<ManReportRow & { report_kind?: string }> ?? [])
+        .filter(report => report.report_kind !== 'edit')
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       const latestReport = reports[0] ?? null;
       return { ...row, man_reports: undefined, latest_report: latestReport };

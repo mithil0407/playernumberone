@@ -81,4 +81,17 @@ export function runManReportQaAssertions() {
   }), classification);
   invariant(inventedLayer.issues.some(item => item.code === 'garment_reality_invented_detail' && item.message.includes('LAYER: "architectural"')),
     'still rejects banned descriptors on garment lines and names the term for repair');
+
+  // A monthly Edit issue is six looks, not a 20-outfit portfolio: the count,
+  // split and Indian-casual quota don't apply, but garment rules still do.
+  const editContexts = ['EVENING WEAR', 'SMART CASUAL', 'OFFICE / FORMAL', 'SMART CASUAL', 'RELAXED CASUAL', 'RELAXED CASUAL'];
+  const editIssue = `## THE ICONIK EDIT — ISSUE 1\n\n${editContexts.map((context, index) => block(index + 1, context)).join('\n\n')}`;
+  const editQa = validateManReportSection4(editIssue, classification, { portfolio: 'edit' });
+  invariant(editQa.outfitCount === 6, 'parses all six Edit looks under the issue heading');
+  invariant(!editQa.issues.some(item => ['outfit_count', 'context_split', 'missing_indian_casual'].includes(item.code)),
+    'does not hold an Edit issue to Blueprint portfolio counts');
+  const blueprintQa = validateManReportSection4(editIssue, classification);
+  invariant(blueprintQa.issues.some(item => item.code === 'outfit_count'), 'still requires 20 outfits for a Blueprint');
+  const editWithSilk = validateManReportSection4(`${editIssue}\n\n${block(7, 'OFFICE / FORMAL', { accessory: 'Burgundy silk knit tie' })}`, classification, { portfolio: 'edit' });
+  invariant(editWithSilk.issues.some(item => item.code === 'shiny_fabric'), 'still applies garment rules to Edit looks');
 }

@@ -324,3 +324,126 @@ export async function sendMenBlueprintReportEmail(data: {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
+
+// Sent when the stylist sends a monthly Iconik Edit issue.
+export async function sendManEditIssueEmail(data: {
+  email: string;
+  firstName: string;
+  issueUrl: string;
+  issueNumber: number;
+  periodLabel: string;
+  title: string;
+  dek?: string | null;
+  occasions: string[];
+  pieceOfTheMonth?: string | null;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const transporter = getTransporter();
+    const from        = process.env.GMAIL_USER!;
+    const siteUrl     = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://playernumberone.in';
+    // No guessing from the email handle: "Signup, your Edit is here" is worse than no name.
+    const firstName   = data.firstName?.trim() ?? '';
+    const issueLabel  = `Issue ${String(data.issueNumber).padStart(2, '0')} · ${data.periodLabel}`;
+    const occasions   = data.occasions.slice(0, 6);
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Iconik Edit is here</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f3ef;font-family:Georgia,'Times New Roman',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f3ef;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e8e4dc;">
+          <tr>
+            <td style="padding:22px 36px;background:#141414;text-align:center;">
+              <div style="font-size:11px;letter-spacing:0.34em;text-transform:uppercase;color:#9a7d4a;">The Iconik Edit</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:40px 36px 28px;">
+              <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#9a7d4a;margin-bottom:12px;">${htmlEscape(issueLabel)}</div>
+              <h1 style="margin:0 0 14px;font-size:32px;line-height:1.15;font-weight:400;color:#141414;">
+                ${firstName ? `${htmlEscape(firstName)},<br />` : ''}<em>${htmlEscape(data.title)}</em>
+              </h1>
+              ${data.dek ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.75;color:#4b4b4b;">${htmlEscape(data.dek)}</p>` : ''}
+
+              <div style="text-align:center;margin:0 0 28px;">
+                <a href="${htmlEscape(data.issueUrl)}"
+                   style="display:inline-block;background:#141414;color:#ffffff;text-decoration:none;padding:16px 34px;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;">
+                  Open This Month&apos;s Edit
+                </a>
+              </div>
+
+              ${occasions.length ? `
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;">
+                <tr>
+                  <td style="padding:0 0 10px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#9a7d4a;">
+                    Six looks, styled on you, for
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size:14px;line-height:1.8;color:#4b4b4b;">
+                    ${occasions.map(occasion => `• ${htmlEscape(occasion)}`).join('<br />')}
+                  </td>
+                </tr>
+              </table>` : ''}
+
+              ${data.pieceOfTheMonth ? `
+              <div style="padding:18px 20px;background:#141414;margin:0 0 26px;">
+                <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9a7d4a;margin-bottom:6px;">Piece of the month</div>
+                <p style="margin:0;font-size:14px;line-height:1.7;color:#f5f3ef;">${htmlEscape(data.pieceOfTheMonth)}</p>
+              </div>` : ''}
+
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#6b6b6b;">
+                Tap like or dislike on each look inside &mdash; next month&apos;s Edit is built from what you tell us. Questions? Just reply to this email.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:18px 36px;border-top:1px solid #e8e4dc;text-align:center;">
+              <div style="font-size:11px;letter-spacing:0.12em;color:#8a8a8a;">
+                The Iconik Edit · ${htmlEscape(siteUrl.replace(/^https?:\/\//, ''))}
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const text =
+      (firstName ? `${firstName},\n\n` : '') +
+      `The Iconik Edit — ${issueLabel}\n${data.title}\n\n` +
+      (data.dek ? `${data.dek}\n\n` : '') +
+      `Open this month's Edit:\n${data.issueUrl}\n\n` +
+      (occasions.length ? `Six looks, styled on you, for:\n${occasions.map(o => `- ${o}`).join('\n')}\n\n` : '') +
+      (data.pieceOfTheMonth ? `Piece of the month: ${data.pieceOfTheMonth}\n\n` : '') +
+      `Tap like or dislike on each look — next month's Edit is built from what you tell us.\n\n` +
+      `The Iconik Edit`;
+
+    const info = await transporter.sendMail({
+      from:    `"The Iconik Edit" <${from}>`,
+      to:      data.email,
+      subject: firstName
+        ? `${firstName}, your Iconik Edit for ${data.periodLabel} is here`
+        : `Your Iconik Edit for ${data.periodLabel} is here`,
+      text,
+      html,
+    });
+
+    console.log(`Man Edit issue email sent to ${data.email}. ID: ${info.messageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending Man Edit issue email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
