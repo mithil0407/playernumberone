@@ -3604,7 +3604,7 @@ function harnessParsedFormulaItem(slot: string, piece: string, parsed: ParsedHar
   const rawColour: PlannedOutfitColour = named
     ? { ...named, role }
     : { ...fallback, role };
-  const slotColour = safeColourForHarnessSlot(`${slot} ${piece}`, rawColour, plan);
+  const slotColour = safeColourForHarnessSlot(slot, piece, rawColour, plan);
   return {
     slot,
     piece: sanitiseHarnessPiece(piece, slot, plan, slotColour),
@@ -3838,6 +3838,93 @@ export function buildHarnessEverydayRealismRepairSummaryForTest() {
       finishing: travelRepair.finishing,
     },
   };
+}
+
+/**
+ * The formula items a parsed harness outfit becomes on the page, after the
+ * shoe/bag clamp. The shoe, bag and colour rules in between used to rewrite
+ * what the stylist wrote; this exposes that path to tests.
+ */
+export function buildHarnessFormulaItemsForTest(input: {
+  outfit: Partial<ParsedHarnessOutfit>;
+  capsule?: PlannedOutfit['capsule'];
+  heelPreferred?: boolean;
+  statedHeel?: string;
+  necklineRequired?: boolean;
+}) {
+  const necklineRequired = input.necklineRequired ?? true;
+  const coverageProfile: StylistCoverageProfile = {
+    neckline: necklineRequired,
+    arms: false,
+    legs: false,
+    opacity: false,
+    looseFit: false,
+    fullModesty: false,
+    reasons: [],
+    approvedNecklines: ['modest V-neckline', 'boat neck'],
+    bannedNecklines: ['plunging neckline'],
+  };
+  const plan: PlannedOutfit = {
+    outfit_number: 3,
+    page_number: 20,
+    cultural_mode: 'ethnic_allowed',
+    capsule: input.capsule ?? 'Occasion',
+    formula_direction: 'test formula',
+    texture_direction: 'matte crepe',
+    pattern_direction: 'clean solid',
+    pattern_required: false,
+    lead_colour: { name: 'Plum', hex: '#5E3A57', role: 'lead' },
+    support_colour: { name: 'Teal', hex: '#2C6E6A', role: 'support' },
+    ground_colour: { name: 'Muted Gold', hex: '#B08D3F', role: 'ground' },
+    finishing_required: false,
+    layer_required: true,
+    layer_type: 'cropped jacket',
+    coverage_requires_cover: false,
+    coverage_profile: coverageProfile,
+    ethnic_required: false,
+    footwear_preference: { heelPreferred: input.heelPreferred ?? false, statedHeel: input.statedHeel ?? '', sneakersWelcome: false },
+    banned_pieces: [],
+    styling_decision: {
+      outfit_message: 'test outfit',
+      body_strategy: 'test strategy',
+      colour_world: 'test colour world',
+      anchor_role: 'shirt_blouse',
+      anchor_piece: 'kurta',
+      silhouette_formula: 'kurta with trouser',
+      fabric_rules: 'matte crepe',
+      neckline_rules: {
+        coverage_required: necklineRequired,
+        approved: coverageProfile.approvedNecklines,
+        banned: coverageProfile.bannedNecklines,
+        instruction: 'keep neckline modest',
+      },
+      accessory_rules: 'minimal accessories',
+      mirror_test: ['clean line'],
+    },
+    eyewear_required: false,
+    max_visible_colours: 3,
+  };
+  const parsed: ParsedHarnessOutfit = {
+    outfitNumber: 3,
+    context: 'Occasion / Evening',
+    top: 'Plum matte crepe tunic, modest boat neck, 3/4 sleeves',
+    bottom: 'Aubergine satin-back crepe trousers',
+    layer: 'None',
+    footwear: 'Tan leather pointed-toe flats',
+    bag: 'Tan structured leather bag',
+    jewellery: 'Gold drop earrings',
+    finishing: 'None',
+    eyewear: 'None',
+    whyItWorks: 'Test.',
+    oneMove: 'Test move',
+    dnaCheck: '',
+    fourAxisScore: '',
+    realismCheck: '',
+    doNotBuy: '',
+    ...input.outfit,
+  };
+  return clampHarnessFormulaColours(formulaItemsFromParsedHarnessOutfit(parsed, plan), plan)
+    .map(item => ({ slot: item.slot, piece: item.piece, colour_name: item.colour_name }));
 }
 
 function pageTitleFromHarnessOutfit(parsed: ParsedHarnessOutfit, plan: PlannedOutfit) {
@@ -4537,8 +4624,10 @@ function paletteUsedFromItems(items: NormalisedFormulaItem[], fallback: Blueprin
 
 function clampHarnessFormulaColours(items: NormalisedFormulaItem[], plan: PlannedOutfit): NormalisedFormulaItem[] {
   return items.map((item) => {
-    if (/jewel|jewellery|jewelry|earring|necklace|bracelet|bangle/i.test(item.slot)) return item;
-    if (!isShoeOrBagSlot(`${item.slot} ${item.piece}`)) return item;
+    // The slot alone decides. Testing the piece text as well matched "collar
+    // lying flat" and "tied to the handle of the tote", so shirts and scarves
+    // were stripped of their colours and rewritten as if they were shoes.
+    if (!isShoeOrBagSlot(item.slot)) return item;
 
     const currentColour: PlannedOutfitColour = isValidHex(item.colour_hex)
       ? {
@@ -4547,10 +4636,10 @@ function clampHarnessFormulaColours(items: NormalisedFormulaItem[], plan: Planne
         role: item.palette_role,
       }
       : neutralLeatherFallbackColour(plan, 'ground');
-    const colour = isRealisticLeatherColour(currentColour)
+    const colour = isWearableShoeOrBagColour(currentColour)
       ? currentColour
       : neutralLeatherFallbackColour(plan, 'ground');
-    const piece = normalisePieceColourApplication(item.piece, item.slot, plan, colour);
+    const piece = shoeOrBagPieceForPlan(item.piece, item.slot, plan, colour);
     return {
       ...item,
       piece,
@@ -4946,6 +5035,50 @@ function isRealisticLeatherColour(colour: PlannedOutfitColour) {
   return colourLooksLeatherGround(colour) || colourLooksGreyNeutral(colour) || colourLooksNeutralLight(colour);
 }
 
+// Metallic leather is a real, widely sold finish for flats, sandals and
+// clutches. Treating it as a vivid colour turned "antique gold pointed-toe
+// flats" into "Soft Stone leather loafers" while the prose still said gold.
+function colourLooksMetallic(colour: PlannedOutfitColour) {
+  return /\b(gold|golden|champagne|silver|bronze|copper|pewter|metallic)\b/i.test(colour.name);
+}
+
+function isWearableShoeOrBagColour(colour: PlannedOutfitColour) {
+  return isRealisticLeatherColour(colour) || colourLooksMetallic(colour);
+}
+
+function sneakerAllowedForPlan(plan: PlannedOutfit, lowerPiece: string) {
+  const heel = plan.footwear_preference;
+  return (!heel.heelPreferred || heel.sneakersWelcome)
+    && (plan.capsule === 'Everyday' || (plan.capsule === 'Social' && /casual|denim|street|sneaker/.test(lowerPiece)));
+}
+
+/** A written shoe that ignores her stated heel, or a sneaker where the look cannot take one. */
+function footwearConflictsWithPlan(piece: string, slot: string, plan: PlannedOutfit) {
+  if (!/shoe|footwear/i.test(slot)) return false;
+  const lower = piece.toLowerCase();
+  if (plan.footwear_preference.heelPreferred && !/\b(heels?|heeled|pumps?|court|wedges?|kitten)\b/.test(lower)) return true;
+  return /sneaker|trainer|canvas|low-top|slip-on/.test(lower) && !sneakerAllowedForPlan(plan, lower);
+}
+
+/**
+ * A shoe or bag as the stylist wrote it, changed only where it breaks a rule.
+ *
+ * Every shoe and bag used to be replaced with a family template, so "gold
+ * metallic box clutch" shipped as "Charcoal Grey structured leather bag" and
+ * "tan pointed-toe flats" as "Tan leather loafers". The prose and the
+ * structural notes still described the original, so the card, the image, the
+ * Shop link and the text disagreed. The template now only stands in when the
+ * shoe contradicts her heel preference or the capsule's sneaker rule; an
+ * unwearable colour is swapped in place and the shape is kept.
+ */
+function shoeOrBagPieceForPlan(piece: string, slot: string, plan: PlannedOutfit, colour: PlannedOutfitColour) {
+  if (footwearConflictsWithPlan(piece, slot, plan)) return normalisePieceColourApplication(piece, slot, plan, colour);
+  const named = firstNamedColourFromText(piece);
+  if (!named || !isWearableShoeOrBagColour(colour) || isWearableShoeOrBagColour({ ...named, role: colour.role })) return piece;
+  const withoutName = piece.replace(new RegExp(escapeRegExp(colour.name), 'gi'), ' ');
+  return `${colour.name} ${stripColourWords(withoutName)}`.replace(/\s+/g, ' ').trim();
+}
+
 // A realistic neutral leather colour to fall back to so bags/shoes are never
 // forced into a vivid/accent colour (or a fake coloured trim).
 function neutralLeatherColourName(plan: PlannedOutfit): string {
@@ -4965,8 +5098,7 @@ function realisticFootwearFamily(colour: PlannedOutfitColour, plan: PlannedOutfi
   // A stated heel preference outranks the capsule default. Without this, shoes
   // were picked from capsule and colour alone and defaulted to loafers, so a
   // client who asked for a 1.2-2 inch heel got thirteen flat pairs out of twenty.
-  const sneakerAllowed = (!heel.heelPreferred || heel.sneakersWelcome)
-    && (plan.capsule === 'Everyday' || (plan.capsule === 'Social' && /casual|denim|street|sneaker/.test(lowerPiece)));
+  const sneakerAllowed = sneakerAllowedForPlan(plan, lowerPiece);
   const isSneaker = /sneaker|trainer|canvas|low-top|slip-on/.test(lowerPiece);
   const isWarmLeather = /(espresso|cocoa|chocolate|brown|tan|camel|cognac|taupe|burgundy|oxblood)/i.test(colourText(colour));
   const isDark = relativeLuminance(colour.hex) < 0.26 || /(black|ink|charcoal|espresso|cocoa|chocolate|navy)/i.test(colourText(colour));
@@ -5178,8 +5310,12 @@ function isShoeOrBagSlot(slot: string) {
   return /bag|tote|clutch|crossbody|handbag|shoe|footwear|sandal|heel|flat|loafer|pump|sneaker|mule|boot/i.test(slot);
 }
 
+// A slash between numbers is a fraction ("3/4 sleeves"), not a choice. Treating
+// it as one cut the piece at the slash and shipped "modest V-slit neckline, 3".
+const ALTERNATIVE_SLASH_RE = /(?<!\d)\/|\/(?!\d)/;
+
 function exactItemHasAlternativeLanguage(piece: string) {
-  return /\boptional\b|\band\/or\b|\/|\bor\b/i.test(piece);
+  return /\boptional\b|\band\/or\b|\bor\b/i.test(piece) || ALTERNATIVE_SLASH_RE.test(piece);
 }
 
 function neutralLeatherFallbackColour(plan: PlannedOutfit, role: BlueprintColourUse['role'] = 'ground'): PlannedOutfitColour {
@@ -5193,10 +5329,12 @@ function neutralLeatherFallbackColour(plan: PlannedOutfit, role: BlueprintColour
   return { name, hex: normaliseHex(hex), role };
 }
 
-function safeColourForHarnessSlot(slot: string, colour: PlannedOutfitColour, plan: PlannedOutfit): PlannedOutfitColour {
+// Only the slot says whether this is a shoe or bag: a shirt "with the collar
+// lying flat" is not footwear, and its colour must not be swapped for leather.
+function safeColourForHarnessSlot(slot: string, piece: string, colour: PlannedOutfitColour, plan: PlannedOutfit): PlannedOutfitColour {
   if (!isShoeOrBagSlot(slot)) return colour;
-  const isOccasionClutch = /clutch/i.test(slot) && plan.capsule === 'Occasion';
-  if (isOccasionClutch || isRealisticLeatherColour(colour)) return colour;
+  const isOccasionClutch = /clutch/i.test(`${slot} ${piece}`) && plan.capsule === 'Occasion';
+  if (isOccasionClutch || isWearableShoeOrBagColour(colour)) return colour;
   return neutralLeatherFallbackColour(plan, colour.role === 'lead' ? 'ground' : colour.role);
 }
 
@@ -5204,12 +5342,12 @@ function sanitiseHarnessPiece(piece: string, slot: string, plan: PlannedOutfit, 
   const exactPiece = exactItemHasAlternativeLanguage(piece)
     ? piece
       .replace(/\band\/or\b/gi, 'or')
-      .split(/\s+or\s+|\/|,\s*or\s*/i)[0]
+      .split(/\s+or\s+|(?<!\d)\/|\/(?!\d)|,\s*or\s*/i)[0]
       .trim()
     : piece;
   const noAccessoryTrim = applyFinishingDetailSafety(sanitiseAccessoryPieceRealism(exactPiece || piece, slot), slot);
-  if (isShoeOrBagSlot(`${slot} ${noAccessoryTrim}`) && !isRealisticLeatherColour(colour)) {
-    return normalisePieceColourApplication(noAccessoryTrim, slot, plan, colour);
+  if (isShoeOrBagSlot(slot)) {
+    return shoeOrBagPieceForPlan(noAccessoryTrim, slot, plan, colour);
   }
   return applyNecklineSafetyToPiece(noAccessoryTrim, slot, plan);
 }
@@ -5434,7 +5572,7 @@ function normaliseOutfitPage(page: BlueprintPage, plan: PlannedOutfit): Blueprin
       ? inferPrimarySlot(rawPiece, index === 0 ? 'Top' : initialSlot)
       : initialSlot;
     const rawColour = harnessColourForItem(asRecord(item), slot, rawPiece, plan);
-    const slotColour = safeColourForHarnessSlot(`${slot} ${rawPiece}`, rawColour, plan);
+    const slotColour = safeColourForHarnessSlot(slot, rawPiece, rawColour, plan);
     const normalisedPiece = enrichGarmentTextureAndPattern(
       sanitiseHarnessPiece(rawPiece, slot, plan, slotColour),
       slot,

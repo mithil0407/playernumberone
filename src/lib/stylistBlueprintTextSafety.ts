@@ -52,7 +52,7 @@ const COLOUR_MODIFIER_WORDS = [
 
 // Fabric-ish words (denim, chambray) are deliberately excluded so they survive as
 // garment/fabric descriptors rather than being stripped as colours.
-const COLOUR_NAME_WORDS = [
+export const COLOUR_NAME_WORDS = [
   'black', 'white', 'ivory', 'cream', 'off-white', 'offwhite', 'navy', 'blue', 'cobalt',
   'indigo', 'grey', 'gray', 'slate', 'charcoal', 'graphite', 'pewter', 'silver', 'brown',
   'tan', 'taupe', 'camel', 'cognac', 'espresso', 'cocoa', 'chocolate', 'mocha', 'beige',
@@ -145,8 +145,10 @@ export function applyNecklineSafetyToPiece(piece: string, slot: string, rules: N
   let next = piece
     .replace(UNSAFE_NECKLINE_RE, safeNeckline)
     // Only an unqualified "wrap" needs rewriting; one already carrying its
-    // neckline wording is left alone so repeat runs cannot stack the words.
-    .replace(/\bwrap\b(?!\s+neckline)/gi, (match, offset: number, whole: string) => (
+    // neckline wording ("wrap neckline", "wrap-style neckline") is left alone so
+    // repeat runs cannot stack the words. "wrap-style" used to become
+    // "secured wrap neckline-style neckline".
+    .replace(/\bwrap\b(?![-\s]*(?:style\s+)?neckline)/gi, (match, offset: number, whole: string) => (
       /\bsecured\s+$/i.test(whole.slice(0, offset)) ? match : 'secured wrap neckline'
     ))
     .replace(/\b(neckline|neck)\s+neckline\b/gi, '$1')
@@ -158,7 +160,10 @@ export function applyNecklineSafetyToPiece(piece: string, slot: string, rules: N
       // The source may already end in "shell", which would double it.
       .replace(/\bshell\s+shell\b/gi, 'shell');
   }
-  if (!new RegExp(`\\b(${SAFE_NECKLINES.map(escapeRegExp).join('|')}|collared|open collar|soft v|v neck|v-neck|crew|jewel|mock|mandarin|band collar|boat|bateau|soft scoop|modest square|secured wrap|wrap neckline)\\b`, 'i').test(next)) {
+  // A neckline the piece already states is kept. The list used to miss "high
+  // round neck", "spread collar" and "V-slit neckline", so those pieces gained a
+  // contradictory "with a modest V-neckline" on the end.
+  if (!new RegExp(`\\b(${SAFE_NECKLINES.map(escapeRegExp).join('|')}|collared|collar|open collar|soft v|v neck|v-neck|v-slit|slit neckline|crew|jewel|mock|mandarin|band collar|boat|bateau|soft scoop|modest square|round neck|high neck|high-neck|turtle-?neck|polo|henley|button stance|secured wrap|wrap neckline|wrap-style neckline)\\b`, 'i').test(next)) {
     next = `${next} with a ${safeNeckline}`;
   }
   return next;

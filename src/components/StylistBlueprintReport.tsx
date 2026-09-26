@@ -46,6 +46,7 @@ import { createContext, type ElementType, type FocusEvent, type FormEvent, type 
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
 import { reportPrintLayoutCss } from '@/lib/reportPrint';
+import { shoppingQueryForPiece, shoppingSearchUrl } from '@/lib/stylistShoppingQuery';
 
 // Studio-only image editing. Clients never mount these, so they never download them.
 const ImageCropDialog = dynamic(() => import('@/components/ImageCropDialog'), { ssr: false });
@@ -1687,47 +1688,6 @@ function OutfitSystemPage({ page, data, imageUrls }: { page: BlueprintPage; data
   );
 }
 
-/**
- * A Google Shopping search for one garment.
- *
- * This deliberately builds a *search*, not a deep link to a single product
- * page. A specific product URL cannot be produced reliably without a shopping
- * feed behind it: any hard-coded listing goes out of stock, gets re-slugged, or
- * is regional, and a paid report full of dead links is worse than none. A
- * well-formed query lands her on live, buyable results for the exact piece.
- *
- * The library writes descriptions for a stylist, not for a search box, so the
- * clause after the garment ("with a fine white border and a plain body") and our
- * own heel annotation ("1.2-2 inch") are stripped — both wreck the results.
- */
-function shoppingQuery(piece: string, colourName: string) {
-  const head = (piece ?? '')
-    .split(',')[0]
-    .split(/\s+(?:with|that|featuring|worn|in a|on a)\s+/i)[0];
-  const cleaned = head
-    .replace(/\b\d+(?:\.\d+)?\s*[-–]\s*\d+(?:\.\d+)?\s*inch(?:es)?\b/gi, ' ')
-    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!cleaned) return '';
-  const lead = (colourName ?? '').trim().split(/\s+/)[0] ?? '';
-  const alreadyNamesColour = lead
-    ? new RegExp(`\\b${lead.replace(/[^\p{L}\p{N}]/gu, '')}\\b`, 'iu').test(cleaned)
-    : true;
-  return `${alreadyNamesColour ? '' : `${colourName} `}${cleaned} women`.replace(/\s+/g, ' ').trim();
-}
-
-function shoppingUrl(query: string, country: string | undefined) {
-  // udm=28 is Google's current Shopping surface. The older tbm=shop still works
-  // but is served as a redirect to this, so we send the canonical form and skip
-  // the hop. If Google retires the parameter the link degrades to an ordinary
-  // search for the same garment rather than breaking.
-  const params = new URLSearchParams({ q: query, udm: '28', hl: 'en' });
-  // Scope to her market so prices and retailers are ones she can actually use.
-  if (/india/i.test(country ?? '')) params.set('gl', 'in');
-  return `https://www.google.com/search?${params.toString()}`;
-}
-
 function SwatchDot({ hex }: { hex: string }) {
   return <span className="swatch-dot" style={{ background: hex }} />;
 }
@@ -1833,7 +1793,15 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
           {(items.length ? items : page.blocks.slice(0, 5)).map((item, index) => {
             const colour = colourForFormulaItem(item, page, data, index);
             const pieceValue = getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`));
-            const query = shoppingQuery(pieceValue, colour.name);
+            // Only a colour set for this piece may shape the search. The swatch
+            // colour inferred for library outfits is a guess, and searching for it
+            // contradicted the colour the stylist wrote.
+            const assignedColour = isObject(item) && typeof item.colour_name === 'string' ? item.colour_name : '';
+            const query = shoppingQueryForPiece({
+              piece: pieceValue,
+              slot: getField(item, ['slot', 'category', 'label'], ''),
+              colourName: assignedColour,
+            });
             return (
               <div key={index} className="formula-card">
                 <SwatchDot hex={colour.hex} />
@@ -1846,7 +1814,7 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
                 {query && (
                   <a
                     className="formula-shop"
-                    href={shoppingUrl(query, data.classification.client.country)}
+                    href={shoppingSearchUrl(query, data.classification.client.country)}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Shop for ${query} on Google Shopping`}
