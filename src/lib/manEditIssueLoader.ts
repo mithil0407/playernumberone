@@ -23,6 +23,8 @@ export interface LoadedManEditIssue {
   sentAt: string | null;
   shareToken: string;
   s4Outfits: string;
+  /** His Blueprint classification: the outfit slides read his palette from it. */
+  classification: ReportData['classification'];
   edit: ManEditIssueContent;
   outfitImages: (string | null)[];
   shopping: ManShoppingState | null;
@@ -68,6 +70,7 @@ export async function loadManEditIssueByShareToken(shareToken: string): Promise<
     sentAt: row.sent_at,
     shareToken: row.share_token,
     s4Outfits: reportData.sections.s4_outfits,
+    classification: reportData.classification,
     edit: reportData.edit,
     outfitImages: images?.outfitCards ?? [],
     shopping: row.shopping_data as ManShoppingState | null,

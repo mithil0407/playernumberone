@@ -2,28 +2,19 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowDown, ArrowUpRight, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { parseManOutfitsFromSection, toOutfitTitleCase, type ParsedManOutfit } from '@/lib/manOutfitSection';
-import { hasPlaceholderOutfitValue } from '@/lib/manOutfitPlaceholders';
-import {
-  buildFallbackSearchUrl,
-  buildTrustedBrandSearch,
-  collectGarmentSlots,
-  isShoppingSlotCurrent,
-  type ManProductLink,
-  type ManShoppingSlotName,
-  type ManShoppingState,
-} from '@/lib/manShopping';
+import { ArrowUpRight, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { ManOutfitSlides, ManReportPageStyles, type ManReportSlideMeta } from '@/components/ManReport';
+import { parseManOutfitsFromSection, toOutfitTitleCase } from '@/lib/manOutfitSection';
+import { buildTrustedBrandSearch, type ManShoppingState } from '@/lib/manShopping';
+import type { ClassificationResult } from '@/lib/manReportGenerator';
 import type { ManEditIssueContent } from '@/lib/manEditIssueTypes';
 
 /* ────────────────────────────────────────────────────────────
-   The Iconik Edit — one monthly issue.
-
-   Built from the Blueprint's two materials: the cover is the
-   screening room (warm dark, brass, woven twill), the pages are
-   the printed manual (paper, ink, brass rules). It reads like an
-   issue of a magazine written for one man: a letter, six looks
-   shot on him, one piece worth buying, and a way to answer back.
+   The Iconik Edit — one monthly issue, presented as a short
+   Blueprint: the same slides, frames, running heads and outfit
+   pages as the report, in fewer pages. Cover, a letter from the
+   stylist, six looks shot on him, the piece of the month, and a
+   close that asks him to answer back.
    ──────────────────────────────────────────────────────────── */
 
 interface IssueSummary {
@@ -38,6 +29,7 @@ interface Props {
   status: string;
   edit: ManEditIssueContent;
   s4Outfits: string;
+  classification: ClassificationResult;
   outfitImages: (string | null)[];
   shopping: ManShoppingState | null;
   initialVotes: Record<string, 'like' | 'dislike'>;
@@ -45,19 +37,6 @@ interface Props {
 }
 
 type Vote = 'like' | 'dislike';
-
-const GARMENT_ROWS: Array<{ key: keyof ParsedManOutfit; label: string; slot?: ManShoppingSlotName }> = [
-  { key: 'top', label: 'Top', slot: 'top' },
-  { key: 'layer', label: 'Layer', slot: 'layer' },
-  { key: 'bottom', label: 'Bottom', slot: 'bottom' },
-  { key: 'footwear', label: 'Footwear', slot: 'footwear' },
-  { key: 'accessories', label: 'Finish' },
-];
-
-function isRealValue(value: string) {
-  return Boolean(value) && value !== '—' && !hasPlaceholderOutfitValue(value)
-    && !/^(?:none|no layer|n\/a)\.?$/i.test(value.trim());
-}
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
@@ -67,13 +46,51 @@ function outfitKey(issueNumber: number, outfitNumber: number) {
   return `edit-${issueNumber}-outfit-${outfitNumber}`;
 }
 
-function formatPrice(product: ManProductLink) {
-  if (!product.price) return '';
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: product.currency || 'INR',
-    maximumFractionDigits: 0,
-  }).format(product.price);
+/** Splits a title into the report's roman-then-italic headline, e.g. "Four decisions / shape the wardrobe." */
+function splitHeadline(title: string): [string, string] {
+  const clean = title.trim().replace(/\.$/, '');
+  const at = clean.search(/\s(?:and|for|with|in|of)\s|[:—–]\s?/i);
+  if (at > 8) return [clean.slice(0, at).trim(), `${clean.slice(at).replace(/^[:—–]\s*/, '').trim()}.`];
+  const words = clean.split(/\s+/);
+  const half = Math.ceil(words.length / 2);
+  return [words.slice(0, half).join(' '), `${words.slice(half).join(' ')}.`];
+}
+
+function Corners({ kicker, title, page, total }: { kicker: string; title: string; page: number; total: number }) {
+  return (
+    <>
+      <div className="grain" />
+      <div className="corner-tl">
+        <div className="man-mono corner-kicker">{kicker}</div>
+        <div className="man-small-caps corner-title">{title}</div>
+      </div>
+      <div className="corner-tr">
+        <div className="man-mono corner-kicker">{pad(page)} / {total}</div>
+      </div>
+    </>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="man-summary-metric">
+      <div className="man-small-caps faded">{label}</div>
+      <div className="display">{value}</div>
+    </div>
+  );
+}
+
+function slide(pageNumber: number, title: string, slideType: ManReportSlideMeta['slideType'], extra: Partial<ManReportSlideMeta> = {}): ManReportSlideMeta {
+  return {
+    pageNumber,
+    approvalKey: `edit-${slideType}-${pageNumber}`,
+    legacyPageNumber: pageNumber,
+    title,
+    group: slideType === 'outfit' ? 'Outfits' : 'Opening',
+    sectionKey: slideType === 'outfit' ? 's4' : 's0',
+    slideType,
+    ...extra,
+  };
 }
 
 export default function ManEditIssue({
@@ -81,6 +98,7 @@ export default function ManEditIssue({
   status,
   edit,
   s4Outfits,
+  classification,
   outfitImages,
   shopping,
   initialVotes,
@@ -88,23 +106,36 @@ export default function ManEditIssue({
 }: Props) {
   const outfits = useMemo(() => parseManOutfitsFromSection(s4Outfits), [s4Outfits]);
   const metaByNumber = useMemo(() => new Map(edit.outfits.map(item => [item.number, item])), [edit.outfits]);
+  const piece = edit.pieceOfTheMonth?.name ? edit.pieceOfTheMonth : null;
+  const issueLabel = `Issue ${pad(edit.issueNumber)}`;
+  const runningHead = `The Edit - ${issueLabel}`;
 
-  // Curated links only while the stored slot still matches this garment's
-  // current wording; otherwise fall back to a brand-filtered search.
-  const productsBySlot = useMemo(() => {
-    const map = new Map<string, ManProductLink[]>();
-    for (const garment of collectGarmentSlots(s4Outfits)) {
-      const slot = shopping?.slots?.[garment.key];
-      if (isShoppingSlotCurrent(slot, garment.hash) && slot!.selected.length) map.set(garment.key, slot!.selected);
+  // Page order: cover, letter, the looks, piece of the month, close. The outfit
+  // slides find their page by identity key, as they do in the Blueprint.
+  const slides = useMemo(() => {
+    const list: ManReportSlideMeta[] = [slide(1, 'Cover', 'cover'), slide(2, 'From your stylist', 'overview')];
+    for (const outfit of outfits) {
+      list.push(slide(list.length + 1, `Look ${pad(outfit.number)}`, 'outfit', { outfitNumber: outfit.number, outfitIdentityKey: outfit.identityKey }));
     }
-    return map;
-  }, [s4Outfits, shopping]);
+    if (piece) list.push(slide(list.length + 1, 'Piece of the month', 'overview'));
+    list.push(slide(list.length + 1, 'Until next month', 'overview'));
+    return list;
+  }, [outfits, piece]);
+  const totalPages = slides.length;
+  const piecePage = piece ? totalPages - 1 : 0;
+  const closePage = totalPages;
+
+  const occasions = useMemo(
+    () => Object.fromEntries(edit.outfits.filter(item => item.occasion).map(item => [item.number, item.occasion])),
+    [edit.outfits],
+  );
 
   const [votes, setVotes] = useState(initialVotes);
   const [voteError, setVoteError] = useState('');
-
-  const castVote = async (outfit: ParsedManOutfit, vote: Vote) => {
-    const key = outfitKey(edit.issueNumber, outfit.number);
+  const castVote = async (outfitNumber: number, vote: Vote) => {
+    const outfit = outfits.find(item => item.number === outfitNumber);
+    if (!outfit) return;
+    const key = outfitKey(edit.issueNumber, outfitNumber);
     const previous = votes[key];
     setVotes(current => ({ ...current, [key]: vote }));
     setVoteError('');
@@ -114,8 +145,8 @@ export default function ManEditIssue({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           outfit_key: key,
-          outfit_number: outfit.number,
-          outfit_label: `Edit ${edit.issueNumber} · ${metaByNumber.get(outfit.number)?.occasion || toOutfitTitleCase(outfit.context)} — ${outfit.top}`,
+          outfit_number: outfitNumber,
+          outfit_label: `Edit ${edit.issueNumber} · ${metaByNumber.get(outfitNumber)?.occasion || toOutfitTitleCase(outfit.context)} — ${outfit.top}`,
           vote,
         }),
       });
@@ -126,345 +157,254 @@ export default function ManEditIssue({
         if (previous) next[key] = previous; else delete next[key];
         return next;
       });
-      setVoteError('That didn’t save — try again in a moment.');
+      setVoteError('That didn’t save. Try again in a moment.');
     }
   };
 
-  const piece = edit.pieceOfTheMonth;
-  const coverImage = outfitImages[0] ?? null;
+  const [titleRoman, titleItalic] = splitHeadline(edit.title);
   const noteParagraphs = edit.stylistNote.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const [pieceName, ...pieceDetail] = (piece?.name ?? '').split(/\s+—\s+/);
 
   return (
-    <div className="ie">
+    <div className="man-edit-issue">
       {status !== 'sent' && (
-        <div className="ie-preview">Preview — this issue hasn’t been sent to the client yet</div>
+        <div className="man-edit-preview">Preview · this issue hasn’t been sent to the client yet</div>
       )}
 
-      {/* ── cover ───────────────────────────────────────── */}
-      <header className="ie-cover">
-        <div className="ie-cover-copy">
-          <span className="ie-mono ie-brass">The Iconik Edit</span>
-          <span className="ie-mono ie-issue">Issue {pad(edit.issueNumber)} · {edit.periodLabel}</span>
-          <h1 className="ie-title">{edit.title}</h1>
-          {edit.dek && <p className="ie-dek">{edit.dek}</p>}
-          <p className="ie-for ie-mono">Styled for {edit.clientFirstName || 'you'}</p>
-          {edit.monthMoments.length > 0 && (
-            <ul className="ie-moments">
-              {edit.monthMoments.map(moment => <li key={moment}>{moment}</li>)}
-            </ul>
-          )}
-          <a href="#letter" className="ie-down ie-mono">Read this month <ArrowDown size={13} /></a>
-        </div>
-        {coverImage && (
-          <div className="ie-cover-photo">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={coverImage} alt="Look 01, styled on you" />
+      <div className="iconik-report man-report overflow-x-hidden">
+        {/* ── Cover ─────────────────────────────────────────── */}
+        <section className="iconik-page man-page slate man-cover cover-page" data-blueprint-page-number={1}>
+          <div className="grain" />
+          <div className="corner-tl">
+            <div className="man-display man-wordmark">I C O N I K</div>
+            <div className="man-micro muted">The Iconik Edit</div>
           </div>
-        )}
-      </header>
-
-      <main className="ie-paper">
-        {/* ── letter ──────────────────────────────────────── */}
-        <section id="letter" className="ie-section ie-letter">
-          <span className="ie-mono ie-brass">From your stylist</span>
-          <div className="ie-letter-body">
-            {noteParagraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+          <div className="corner-tr" style={{ textAlign: 'right' }}>
+            <div className="man-micro muted">{issueLabel}</div>
+            <div className="man-micro muted" style={{ marginTop: 8 }}>{edit.periodLabel}</div>
           </div>
-          <p className="ie-sign">— ICONIK Styling</p>
+          <div className="man-cover-center">
+            <div className="man-cover-rule">
+              <span /><div className="man-micro">Your monthly Edit</div><span />
+            </div>
+            <h1 className="man-cover-heading">
+              <span className="man-display">The</span>
+              <span className="man-display-it">Edit</span>
+            </h1>
+            <div className="man-mono man-cover-number">{issueLabel} · {edit.periodLabel}</div>
+          </div>
+          <div className="corner-bl">
+            <div className="man-display-it man-cover-tag">{outfits.length} looks.</div>
+            <div className="man-display-it man-cover-tag">Shot on you.</div>
+          </div>
+          <div className="corner-br">
+            <div className="man-mono corner-kicker">01 / {totalPages}</div>
+          </div>
         </section>
 
-        {/* ── contents ────────────────────────────────────── */}
-        <nav className="ie-section ie-contents" aria-label="This issue">
-          <span className="ie-mono ie-brass">In this issue</span>
-          <ol>
-            {outfits.map(outfit => (
-              <li key={outfit.number}>
-                <a href={`#look-${outfit.number}`}>
-                  <span className="ie-mono">{pad(outfit.number)}</span>
-                  <span>{metaByNumber.get(outfit.number)?.occasion || toOutfitTitleCase(outfit.context)}</span>
-                </a>
-              </li>
-            ))}
-            {piece?.name && (
-              <li>
-                <a href="#piece">
-                  <span className="ie-mono">★</span>
-                  <span>Piece of the month</span>
-                </a>
-              </li>
-            )}
-          </ol>
-        </nav>
+        {/* ── The letter ───────────────────────────────────── */}
+        <section className="iconik-page man-page ivory" data-blueprint-page-number={2}>
+          <Corners kicker="The Edit" title="From your stylist" page={2} total={totalPages} />
+          <div className="man-page-inner">
+            <div className="man-summary-grid">
+              <aside className="man-summary-rail">
+                <div className="man-micro faded">Issue</div>
+                <div className="display man-rail-number">{pad(edit.issueNumber)}</div>
+                <Metric label="Month" value={edit.periodLabel.split(' ')[0] ?? edit.periodLabel} />
+                <Metric label="Looks" value={String(outfits.length)} />
+                <Metric label="Pages" value={String(totalPages)} />
+              </aside>
 
-        {/* ── the looks ───────────────────────────────────── */}
-        {outfits.map(outfit => {
-          const meta = metaByNumber.get(outfit.number);
-          const image = outfitImages[outfit.number - 1] ?? null;
-          const key = outfitKey(edit.issueNumber, outfit.number);
-          const vote = votes[key];
-          const usesPiece = piece?.outfitNumbers?.includes(outfit.number);
-          return (
-            <article key={outfit.number} id={`look-${outfit.number}`} className="ie-look">
-              <div className="ie-look-photo">
-                {image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={image} alt={`Look ${pad(outfit.number)}: ${meta?.occasion ?? outfit.context}`} loading={outfit.number > 1 ? 'lazy' : 'eager'} />
-                ) : (
-                  <div className="ie-look-photo-empty ie-mono">Photo on its way</div>
+              <div className="man-summary-main">
+                <div className="man-micro faded">This month</div>
+                <h2>
+                  <span className="display">{titleRoman}</span>
+                  <span className="display-it">{titleItalic}</span>
+                </h2>
+                {edit.dek && <p className="display-it man-edit-dek">{edit.dek}</p>}
+                <div className="rule" />
+                <div className="man-edit-letter">
+                  {noteParagraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                  <p className="display-it man-edit-sign">ICONIK Styling</p>
+                </div>
+                {edit.monthMoments.length > 0 && (
+                  <>
+                    <div className="rule man-palette-rule" />
+                    <div className="man-dossier-cards man-edit-moments">
+                      {edit.monthMoments.map((moment, index) => (
+                        <div key={moment} className="man-dossier-card">
+                          <div className="man-mono dossier-label">{pad(index + 1)} - THIS MONTH</div>
+                          <div className="display man-dossier-title">{moment}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="ie-look-copy">
-                <span className="ie-mono ie-brass">Look {pad(outfit.number)} · {toOutfitTitleCase(outfit.context)}</span>
-                <h2 className="ie-look-title">{meta?.occasion || toOutfitTitleCase(outfit.context)}</h2>
-                {isRealValue(outfit.whyItWorks) && <p className="ie-look-why">{outfit.whyItWorks}</p>}
-
-                <dl className="ie-spec">
-                  {GARMENT_ROWS.map(row => {
-                    const value = String(outfit[row.key] ?? '');
-                    if (!isRealValue(value)) return null;
-                    const products = row.slot ? productsBySlot.get(`${outfit.number}:${row.slot}`) : undefined;
-                    const trusted = row.slot && !products ? buildTrustedBrandSearch(value) : null;
-                    return (
-                      <div key={row.key}>
-                        <dt className="ie-mono">{row.label}</dt>
-                        <dd>
-                          {value}
-                          {products && (
-                            <span className="ie-products">
-                              {products.map(product => (
-                                <a key={product.url} href={product.url} target="_blank" rel="noopener noreferrer nofollow">
-                                  <span>{product.merchant || 'Shop'}</span>
-                                  {formatPrice(product) && <b>{formatPrice(product)}</b>}
-                                  <ArrowUpRight size={12} />
-                                </a>
-                              ))}
-                            </span>
-                          )}
-                          {trusted && (
-                            <span className="ie-shop">
-                              <a href={trusted.url} target="_blank" rel="noopener noreferrer nofollow">
-                                Shop this piece <ArrowUpRight size={12} />
-                              </a>
-                              <a className="ie-shop-wide" href={buildFallbackSearchUrl(value)} target="_blank" rel="noopener noreferrer nofollow">
-                                Broaden
-                              </a>
-                            </span>
-                          )}
-                        </dd>
-                      </div>
-                    );
-                  })}
-                </dl>
-
+        {/* ── The looks: the Blueprint's own outfit slides ─── */}
+        <ManOutfitSlides
+          cls={classification}
+          text={s4Outfits}
+          outfitImageUrls={outfitImages}
+          slideMeta={slides}
+          shopping={shopping}
+          runningHead={runningHead}
+          outfitOccasions={occasions}
+          renderOutfitExtras={outfit => {
+            const meta = metaByNumber.get(outfit.number);
+            const vote = votes[outfitKey(edit.issueNumber, outfit.number)];
+            const usesPiece = piece?.outfitNumbers?.includes(outfit.number);
+            return (
+              <div className="man-edit-verdict">
                 {(meta?.reuses || usesPiece) && (
-                  <div className="ie-tags">
-                    {meta?.reuses && <p><span className="ie-mono">From your Blueprint</span>{meta.reuses}</p>}
-                    {usesPiece && <p><span className="ie-mono">Piece of the month</span>{piece.name}</p>}
+                  <div className="man-edit-notes">
+                    {meta?.reuses && <p><span className="mono faded">From your Blueprint</span>{meta.reuses}</p>}
+                    {usesPiece && <p><span className="mono faded">Piece of the month</span>{pieceName}</p>}
                   </div>
                 )}
-
-                <div className="ie-vote" role="group" aria-label={`Your verdict on look ${pad(outfit.number)}`}>
-                  <span className="ie-mono">Your verdict</span>
-                  <button type="button" className={vote === 'like' ? 'on' : ''} aria-pressed={vote === 'like'} onClick={() => castVote(outfit, 'like')}>
-                    <ThumbsUp size={14} /> I’d wear this
+                <div className="man-edit-vote" role="group" aria-label={`Your verdict on look ${pad(outfit.number)}`}>
+                  <span className="mono faded">Your verdict</span>
+                  <button type="button" className={vote === 'like' ? 'on' : ''} aria-pressed={vote === 'like'} onClick={() => castVote(outfit.number, 'like')}>
+                    <ThumbsUp size={13} /> I’d wear this
                   </button>
-                  <button type="button" className={vote === 'dislike' ? 'on' : ''} aria-pressed={vote === 'dislike'} onClick={() => castVote(outfit, 'dislike')}>
-                    <ThumbsDown size={14} /> Not for me
+                  <button type="button" className={vote === 'dislike' ? 'on' : ''} aria-pressed={vote === 'dislike'} onClick={() => castVote(outfit.number, 'dislike')}>
+                    <ThumbsDown size={13} /> Not for me
                   </button>
                 </div>
+                {voteError && <p className="man-edit-vote-error" role="alert">{voteError}</p>}
               </div>
-            </article>
-          );
-        })}
-        {voteError && <p className="ie-vote-error" role="alert">{voteError}</p>}
+            );
+          }}
+        />
 
-        {/* ── piece of the month ─────────────────────────── */}
-        {piece?.name && (
-          <section id="piece" className="ie-piece">
-            <span className="ie-mono ie-brass">Piece of the month</span>
-            <h2>{piece.name}</h2>
-            {piece.why && <p>{piece.why}</p>}
-            {piece.outfitNumbers.length > 0 && (
-              <p className="ie-piece-in ie-mono">
-                Worn in {piece.outfitNumbers.map(n => (
-                  <a key={n} href={`#look-${n}`}>Look {pad(n)}</a>
-                ))}
-              </p>
-            )}
-            <a className="ie-piece-shop ie-mono" href={buildTrustedBrandSearch(piece.name).url} target="_blank" rel="noopener noreferrer nofollow">
-              Find it <ArrowUpRight size={13} />
-            </a>
+        {/* ── Piece of the month ───────────────────────────── */}
+        {piece && (
+          <section className="iconik-page man-page bone" data-blueprint-page-number={piecePage}>
+            <Corners kicker={runningHead} title="Piece of the month" page={piecePage} total={totalPages} />
+            <div className="man-page-inner">
+              <div className="man-summary-grid">
+                <aside className="man-summary-rail">
+                  <div className="man-micro faded">Buy now</div>
+                  <div className="display man-rail-number">01</div>
+                  {piece.outfitNumbers.length > 0 && <Metric label="Unlocks" value={`${piece.outfitNumbers.length} looks`} />}
+                </aside>
+                <div className="man-summary-main">
+                  <div className="man-micro faded">Piece of the month</div>
+                  <h2>
+                    <span className="display">{pieceName}</span>
+                    {pieceDetail.length > 0 && <span className="display-it">{pieceDetail.join(' — ')}.</span>}
+                  </h2>
+                  <div className="rule" />
+                  {piece.why && <p className="man-edit-piece-why">{piece.why}</p>}
+                  {piece.outfitNumbers.length > 0 && (
+                    <p className="mono faded man-edit-piece-in">Worn in {piece.outfitNumbers.map(n => `Look ${pad(n)}`).join(' · ')}</p>
+                  )}
+                  <a className="man-edit-cta" href={buildTrustedBrandSearch(piece.name).url} target="_blank" rel="noopener noreferrer nofollow">
+                    Find it <ArrowUpRight size={13} />
+                  </a>
+                </div>
+              </div>
+            </div>
           </section>
         )}
 
-        {/* ── close ──────────────────────────────────────── */}
-        <footer className="ie-section ie-close">
-          {edit.closingNote && <p className="ie-close-note">{edit.closingNote}</p>}
-          <p className="ie-close-reply">Questions about a look? Reply to the email this came in — it reaches your stylist.</p>
-          <div className="ie-close-links">
+        {/* ── Close ────────────────────────────────────────── */}
+        <section className="iconik-page man-page slate man-edit-close" data-blueprint-page-number={closePage}>
+          <Corners kicker={runningHead} title="Until next month" page={closePage} total={totalPages} />
+          <div className="man-page-inner">
+            <div className="man-micro muted">Until next month</div>
+            <h2>
+              <span className="display">Tell us what</span>
+              <span className="display-it">you’d wear.</span>
+            </h2>
+            <div className="rule" />
+            {edit.closingNote && <p className="man-edit-close-note">{edit.closingNote}</p>}
+            <p className="man-edit-close-reply">Questions about a look? Reply to the email this came in. It reaches your stylist.</p>
             {edit.blueprintShareToken && (
-              <Link href={`/man/report/${edit.blueprintShareToken}`} className="ie-mono">Your Blueprint <ArrowUpRight size={12} /></Link>
+              <Link href={`/man/report/${edit.blueprintShareToken}`} className="man-edit-cta man-edit-cta-light">
+                Your Blueprint <ArrowUpRight size={13} />
+              </Link>
+            )}
+            {otherIssues.length > 0 && (
+              <div className="man-edit-archive">
+                <div className="man-micro muted">Earlier issues</div>
+                <ul>
+                  {otherIssues.map(issue => (
+                    <li key={issue.shareToken}>
+                      <Link href={`/man/edit/${issue.shareToken}`}>
+                        <span className="man-mono">{pad(issue.issueNumber)} · {issue.periodLabel}</span>
+                        <span className="display-it">{issue.title}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
-          {otherIssues.length > 0 && (
-            <div className="ie-archive">
-              <span className="ie-mono ie-brass">Earlier issues</span>
-              <ul>
-                {otherIssues.map(issue => (
-                  <li key={issue.shareToken}>
-                    <Link href={`/man/edit/${issue.shareToken}`}>
-                      <span className="ie-mono">{pad(issue.issueNumber)} · {issue.periodLabel}</span>
-                      <span>{issue.title}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <p className="ie-mark ie-mono">I C O N I K</p>
-        </footer>
-      </main>
+          <div className="corner-bl">
+            <div className="man-display man-wordmark">I C O N I K</div>
+          </div>
+        </section>
+
+        <ManReportPageStyles />
+      </div>
 
       <style jsx global>{`
-        html:has(.ie), body:has(.ie) { background: #16120F; }
-
-        .ie {
-          --ink:#16120F; --ink-2:#1D1712;
-          --paper:#F1EADC; --paper-2:#E7DDC8;
-          --t-dark:#F2EADC; --t-dark-2:rgba(242,234,220,.72); --t-dark-3:rgba(242,234,220,.48);
-          --t-paper:#241D16; --t-paper-2:rgba(36,29,22,.74); --t-paper-3:rgba(36,29,22,.5);
-          --line:rgba(36,29,22,.16); --line-dark:rgba(242,234,220,.16);
-          --brass:#C9A06A; --brass-paper:#94713C;
-          --weave:rgba(242,234,220,.018);
-          min-height:100dvh; background:var(--ink); color:var(--t-dark);
-          font-family:var(--font-newsreader), Newsreader, Georgia, serif;
-          font-size:17px; line-height:1.62; font-weight:360;
-          -webkit-font-smoothing:antialiased; overflow-x:hidden;
+        html:has(.man-edit-issue), body:has(.man-edit-issue) { background: #1B1815; }
+        .man-edit-preview {
+          position: sticky; top: 0; z-index: 30; text-align: center; padding: 9px 16px;
+          background: #9A4B37; color: #F4EFE5; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
         }
-        .ie *, .ie *::before, .ie *::after { box-sizing:border-box; }
-        .ie a { color:inherit; }
-        .ie img { display:block; width:100%; height:100%; object-fit:cover; }
-        .ie a:focus-visible, .ie button:focus-visible { outline:2px solid var(--brass); outline-offset:3px; }
+        .man-edit-dek { font-size: 20px; line-height: 1.4; margin: 14px 0 22px; opacity: 0.75; }
+        .man-edit-letter { max-width: 640px; margin-top: 28px; }
+        .man-edit-letter p { font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+        .man-edit-letter .man-edit-sign { font-size: 17px; opacity: 0.7; margin-top: 8px; }
+        .man-edit-moments { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+        .man-edit-moments .man-dossier-title { font-size: 22px; line-height: 1.15; }
 
-        .ie-mono { font-family:var(--font-jetbrains-mono), ui-monospace, monospace; font-size:10px;
-          font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
-        .ie-brass { color:var(--brass); display:block; margin-bottom:14px; }
-        .ie-paper .ie-brass { color:var(--brass-paper); }
-
-        .ie-preview { position:sticky; top:0; z-index:5; padding:10px 16px; text-align:center;
-          background:#9E4A38; color:#fff; font-family:var(--font-jetbrains-mono), monospace;
-          font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
-
-        /* cover — the screening room */
-        .ie-cover { position:relative; display:grid; grid-template-columns:1fr; min-height:100dvh;
-          max-width:1180px; margin:0 auto; }
-        .ie-cover::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-          background-image:
-            repeating-linear-gradient(52deg, var(--weave) 0 1px, transparent 1px 4px),
-            repeating-linear-gradient(-52deg, var(--weave) 0 1px, transparent 1px 4px); }
-        .ie-cover > * { position:relative; z-index:1; }
-        .ie-cover-copy { display:flex; flex-direction:column; justify-content:flex-end;
-          padding:64px 20px 40px; }
-        .ie-issue { color:var(--t-dark-3); margin-bottom:28px; }
-        .ie-title { font-family:var(--font-fraunces), Georgia, serif; font-weight:350;
-          font-size:clamp(40px, 9vw, 76px); line-height:1.02; letter-spacing:-.02em; margin:0 0 20px; }
-        .ie-dek { font-size:19px; line-height:1.5; color:var(--t-dark-2); margin:0 0 24px; max-width:34ch; }
-        .ie-for { color:var(--t-dark-2); margin:0 0 22px; }
-        .ie-moments { display:flex; flex-wrap:wrap; gap:8px; list-style:none; padding:0; margin:0 0 36px; }
-        .ie-moments li { border:1px solid var(--line-dark); border-radius:999px; padding:6px 13px;
-          font-size:13px; color:var(--t-dark-2); }
-        .ie .ie-down { display:inline-flex; align-items:center; gap:8px; color:var(--brass); text-decoration:none; }
-        .ie-cover-photo { order:-1; height:58vh; min-height:360px; overflow:hidden; }
-        .ie-cover-photo::after { content:''; position:absolute; inset:0;
-          background:linear-gradient(180deg, rgba(22,18,15,0) 55%, var(--ink) 100%); }
-
-        /* the printed pages */
-        .ie-paper { background:var(--paper); color:var(--t-paper); }
-        .ie-section { max-width:720px; margin:0 auto; padding:64px 20px; }
-        .ie-letter-body p { font-size:19px; line-height:1.7; margin:0 0 18px; }
-        /* contain the drop cap: a one-line opening paragraph must not push it into the next */
-        .ie-letter-body p:first-child { display:flow-root; }
-        .ie-letter-body p:first-child::first-letter { font-family:var(--font-fraunces), Georgia, serif;
-          float:left; font-size:64px; line-height:.9; padding:6px 10px 0 0; color:var(--brass-paper); }
-        .ie-sign { font-style:italic; color:var(--t-paper-2); margin:8px 0 0; }
-
-        .ie-contents { border-top:1px solid var(--line); padding-top:40px; }
-        .ie-contents ol { list-style:none; padding:0; margin:0; }
-        .ie-contents li a { display:flex; gap:18px; align-items:baseline; padding:14px 0;
-          border-bottom:1px solid var(--line); text-decoration:none; font-size:18px; }
-        .ie-contents li a .ie-mono { color:var(--brass-paper); min-width:24px; }
-        .ie-contents li a:hover span:last-child { text-decoration:underline; text-underline-offset:4px; }
-
-        .ie-look { max-width:1080px; margin:0 auto; padding:48px 20px; display:grid; gap:28px;
-          border-top:1px solid var(--line); scroll-margin-top:24px; }
-        .ie-look-photo { aspect-ratio:2 / 3; background:var(--paper-2); overflow:hidden; }
-        .ie-look-photo-empty { display:flex; height:100%; align-items:center; justify-content:center;
-          color:var(--t-paper-3); }
-        .ie-look-title { font-family:var(--font-fraunces), Georgia, serif; font-weight:380;
-          font-size:clamp(30px, 6vw, 44px); line-height:1.08; letter-spacing:-.015em; margin:0 0 14px; }
-        .ie-look-why { font-size:18px; color:var(--t-paper-2); margin:0 0 26px; }
-
-        .ie-spec { margin:0 0 22px; border-top:1px solid var(--line); }
-        .ie-spec > div { display:grid; grid-template-columns:88px 1fr; gap:14px; padding:13px 0;
-          border-bottom:1px solid var(--line); }
-        .ie-spec dt { color:var(--t-paper-3); padding-top:4px; }
-        .ie-spec dd { margin:0; font-size:16px; line-height:1.5; }
-        .ie-shop, .ie-products { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; }
-        .ie-shop a, .ie-products a { display:inline-flex; align-items:center; gap:5px;
-          font-family:var(--font-jetbrains-mono), monospace; font-size:11px; letter-spacing:.06em;
-          color:var(--brass-paper); text-decoration:none; border-bottom:1px solid currentColor; padding-bottom:1px; }
-        .ie-products a b { font-weight:700; color:var(--t-paper); }
-        .ie-shop .ie-shop-wide { color:var(--t-paper-3); }
-
-        .ie-tags { display:grid; gap:10px; margin:0 0 24px; }
-        .ie-tags p { margin:0; font-size:15px; color:var(--t-paper-2); display:grid; gap:4px; }
-        .ie-tags .ie-mono { color:var(--brass-paper); font-size:9.5px; }
-
-        .ie-vote { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
-        .ie-vote > .ie-mono { width:100%; color:var(--t-paper-3); }
-        .ie-vote button { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px;
-          border:1px solid var(--line); border-radius:2px; background:transparent; color:var(--t-paper);
-          font-family:inherit; font-size:15px; cursor:pointer; transition:background .15s, border-color .15s; }
-        .ie-vote button:hover { border-color:var(--t-paper-3); }
-        .ie-vote button.on { background:var(--t-paper); border-color:var(--t-paper); color:var(--paper); }
-        .ie-vote-error { max-width:1080px; margin:0 auto; padding:0 20px 24px; color:#9E4A38; }
-
-        .ie-piece { background:var(--ink); color:var(--t-dark); padding:72px 20px; text-align:center; }
-        .ie-piece h2 { font-family:var(--font-fraunces), Georgia, serif; font-weight:350;
-          font-size:clamp(28px, 6vw, 44px); line-height:1.12; max-width:20ch; margin:0 auto 18px; }
-        .ie-piece p { max-width:52ch; margin:0 auto 18px; color:var(--t-dark-2); font-size:18px; }
-        .ie-piece .ie-brass { color:var(--brass); }
-        .ie-piece .ie-piece-in { display:flex; justify-content:center; flex-wrap:wrap; gap:12px;
-          color:var(--t-dark-3); font-size:10px; }
-        .ie-piece-in a { color:var(--brass); }
-        .ie-piece-shop { display:inline-flex; align-items:center; gap:8px; margin-top:10px; padding:15px 24px;
-          background:var(--t-dark); color:var(--ink) !important; text-decoration:none; border-radius:2px; }
-
-        .ie-close { text-align:center; }
-        .ie-close-note { font-family:var(--font-fraunces), Georgia, serif; font-size:22px; line-height:1.45;
-          margin:0 auto 18px; max-width:30ch; }
-        .ie-close-reply { color:var(--t-paper-2); margin:0 0 28px; }
-        .ie-close-links { display:flex; justify-content:center; gap:20px; margin-bottom:40px; }
-        .ie-close-links a { display:inline-flex; align-items:center; gap:6px; color:var(--brass-paper); text-decoration:none; }
-        .ie-archive { text-align:left; border-top:1px solid var(--line); padding-top:28px; }
-        .ie-archive ul { list-style:none; padding:0; margin:0; }
-        .ie-archive a { display:grid; gap:4px; padding:14px 0; border-bottom:1px solid var(--line); text-decoration:none; }
-        .ie-archive a .ie-mono { color:var(--t-paper-3); }
-        .ie-mark { margin:48px 0 0; color:var(--t-paper-3); letter-spacing:.4em; }
-
-        @media (min-width: 900px) {
-          .ie-cover { grid-template-columns:1.05fr 1fr; align-items:stretch; }
-          .ie-cover-copy { padding:96px 56px 72px; }
-          .ie-cover-photo { order:0; height:auto; min-height:100dvh; }
-          .ie-cover-photo::after { background:linear-gradient(90deg, var(--ink) 0%, rgba(22,18,15,0) 30%); }
-          .ie-section { padding:96px 20px; }
-          .ie-look { grid-template-columns:minmax(0, 440px) minmax(0, 1fr); gap:56px; padding:80px 32px; align-items:start; }
-          .ie-look:nth-of-type(even) .ie-look-photo { order:2; }
-          .ie-look-photo { position:sticky; top:32px; }
+        .man-edit-verdict { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(44,38,34,0.12); display: grid; gap: 12px; }
+        .man-edit-notes { display: grid; gap: 6px; }
+        .man-edit-notes p { margin: 0; font-size: 13px; line-height: 1.55; }
+        .man-edit-notes .mono { display: inline-block; min-width: 150px; margin-right: 10px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
+        .man-edit-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .man-edit-vote .mono { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; margin-right: 6px; }
+        .man-edit-vote button {
+          display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 16px; border-radius: 999px;
+          border: 1px solid rgba(44,38,34,0.22); background: transparent; color: #2C2622; font-size: 12px; cursor: pointer;
+          transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
-        @media (prefers-reduced-motion: reduce) {
-          html:has(.ie) { scroll-behavior:auto; }
+        .man-edit-vote button:hover { border-color: #2C2622; }
+        .man-edit-vote button.on { background: #2C2622; border-color: #2C2622; color: #F4EFE5; }
+        .man-edit-vote-error { margin: 0; font-size: 12px; color: #9A4B37; }
+
+        .man-edit-piece-why { font-size: 16px; line-height: 1.7; max-width: 620px; }
+        .man-edit-piece-in { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; margin: 18px 0 22px; }
+        .man-edit-cta {
+          display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 20px; border-radius: 999px;
+          background: #2C2622; color: #F4EFE5; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; text-decoration: none;
+        }
+        .man-edit-cta-light { background: #F4EFE5; color: #2C2622; }
+
+        .man-edit-close { display: flex; align-items: center; }
+        .man-edit-close .man-page-inner { max-width: 720px; }
+        .man-edit-close .rule { background: #F4EFE5; }
+        .man-edit-close-note { font-size: 18px; line-height: 1.6; margin: 0 0 14px; }
+        .man-edit-close-reply { font-size: 14px; line-height: 1.6; opacity: 0.72; margin: 0 0 26px; }
+        .man-edit-archive { margin-top: 34px; }
+        .man-edit-archive ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+        .man-edit-archive a { display: flex; gap: 16px; align-items: baseline; color: inherit; text-decoration: none; }
+        .man-edit-archive .man-mono { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.6; min-width: 140px; }
+
+        @media screen and (max-width: 640px) {
+          .man-edit-notes .mono { display: block; margin: 0 0 2px; min-width: 0; }
+          .man-edit-archive a { flex-direction: column; gap: 2px; }
+        }
+        @media print {
+          .man-edit-preview, .man-edit-vote { display: none !important; }
         }
       `}</style>
     </div>

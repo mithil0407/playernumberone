@@ -3031,7 +3031,12 @@ interface OutfitSwapApplyResult {
 
 function OutfitsSection({
   cls, text, outfitImageUrls, adminMode, onRegenerateOutfit, onSaveOutfitText, onDraftOutfitSwap, onApplyOutfitSwap, onCopyImagePrompt, onUploadManualImage, qaPassedOutfits, focusPageNumber, slideMeta, shopping, onSelectShoppingLink,
+  runningHead = 'Act III - Application', outfitOccasions, renderOutfitExtras,
 }: {
+  /** The monthly Edit reuses these slides with its own running head, occasions and verdict row. */
+  runningHead?: string;
+  outfitOccasions?: Record<number, string>;
+  renderOutfitExtras?: (outfit: { number: number; identityKey: string }) => React.ReactNode;
   cls: ClassificationResult;
   text: string;
   outfitImageUrls?: (string | null)[];
@@ -3398,6 +3403,12 @@ function OutfitsSection({
               </div>
               <div className="rule" />
               <div className="outfit-meta">
+                {outfitOccasions?.[outfit.number] && (
+                  <>
+                    <div className="mono faded">Occasion</div>
+                    <p>{outfitOccasions[outfit.number]}</p>
+                  </>
+                )}
                 <div className="mono faded">Category</div>
                 <p>{cat.name}</p>
                 {palette.length > 0 && (
@@ -3579,6 +3590,7 @@ function OutfitsSection({
               Trusted searches keep this piece&apos;s colour, fabric, garment and fit, then filter by category-relevant brands. Availability may change.
             </p>
           )}
+          {renderOutfitExtras?.(outfit)}
         </div>
       </div>
     );
@@ -3590,7 +3602,7 @@ function OutfitsSection({
         <section className="iconik-page man-page bone" data-blueprint-page-number={slideNumber('outfit_system') ?? undefined}>
           <div className="grain" />
           <div className="corner-tl">
-            <div className="man-mono corner-kicker">Act III - Application</div>
+            <div className="man-mono corner-kicker">{runningHead}</div>
             <div className="man-small-caps corner-title">Your Outfit Formulas</div>
           </div>
           <div className="corner-tr">
@@ -3668,7 +3680,7 @@ function OutfitsSection({
         <section key={outfit.identityKey} className="iconik-page man-page bone man-outfit-slide" data-blueprint-page-number={slideNumber('outfit', outfit) ?? undefined}>
           <div className="grain" />
           <div className="corner-tl">
-            <div className="man-mono corner-kicker">Act III - Application</div>
+            <div className="man-mono corner-kicker">{runningHead}</div>
             <div className="man-small-caps corner-title">{cat.name}</div>
           </div>
           <div className="corner-tr">
@@ -5648,6 +5660,19 @@ function ManReport({
       <ManBlueprintStyles />
       <style>{MAN_PRINT_LAYOUT_CSS}</style>
     </div>
+  );
+}
+
+/** The Blueprint's outfit slides, for the monthly Edit to present its looks exactly as the report does. */
+export { OutfitsSection as ManOutfitSlides };
+
+/** The report's screen and print styles, for pages built from its slide classes. */
+export function ManReportPageStyles() {
+  return (
+    <>
+      <ManBlueprintStyles />
+      <style>{MAN_PRINT_LAYOUT_CSS}</style>
+    </>
   );
 }
 

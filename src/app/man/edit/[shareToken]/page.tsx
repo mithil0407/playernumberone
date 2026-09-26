@@ -20,6 +20,7 @@ export default async function ManEditIssuePage({ params }: PageProps) {
       status={issue.status}
       edit={issue.edit}
       s4Outfits={issue.s4Outfits}
+      classification={issue.classification}
       outfitImages={issue.outfitImages}
       shopping={issue.shopping}
       initialVotes={issue.votes}
