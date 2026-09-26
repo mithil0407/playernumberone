@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut, Mail } from 'lucide-react';
+import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut, Mail, Printer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ManReport, { getManReportSlideMeta, type ManReportSlideMeta, type ShoppingSelectPayload } from '@/components/ManReport';
 import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
@@ -624,6 +624,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // The admin view carries edit controls, so the PDF comes from the client's view.
+  const printClientReport = () => {
+    if (!report) return;
+    window.open(`/man/report/${report.share_token}?opening=skip&print=1`, '_blank', 'noopener');
   };
 
   const logout = async () => {
@@ -1659,6 +1665,9 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
                 </ActionButton>
                 <ActionButton onClick={copyLink} title="Copy the public report link.">
                   {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}
+                </ActionButton>
+                <ActionButton onClick={printClientReport} title="Open the client's view in a new tab and save it as a PDF.">
+                  <Printer size={14} /> Print / PDF
                 </ActionButton>
               </div>
 

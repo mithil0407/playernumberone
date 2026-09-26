@@ -184,7 +184,8 @@ export default async function StylistPublicReportPage({ params, searchParams }: 
           deferPages
           hideContinuationPage={hideContinuationPage}
         />
-        <div className="blueprint-footer px-5 md:px-12 pt-12 text-center">
+        {/* Screen-only: its instructions are about the web page. */}
+        <div className="blueprint-footer print:hidden px-5 md:px-12 pt-12 text-center">
           <p className="blueprint-footer-mark">I C O N I K</p>
           <p className="blueprint-footer-note">Prepared privately for you · For your eyes only</p>
           <p className="blueprint-footer-shop">

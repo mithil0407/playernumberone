@@ -12,6 +12,7 @@ import ManEditPanel from '@/components/ManEditPanel';
 import ManReportOpeningSequence from '@/components/ManReportOpeningSequence';
 import ManReportMobileV2 from '@/components/ManReportMobileV2';
 import ManReportCinematicPrototype from '@/components/ManReportCinematicPrototype';
+import { installReportPrintFallback, prepareReportForPrint } from '@/lib/reportPrint';
 
 type ManReportProps = ComponentProps<typeof ManReport>;
 
@@ -67,11 +68,45 @@ export default function PublicManReportExperience({
 
   useEffect(() => {
     const query = window.matchMedia(MOBILE_QUERY);
-    const sync = () => setViewport({ isMobile: query.matches, viewportReady: true });
+    const printing = window.matchMedia('print');
+    const sync = () => {
+      // An A4 sheet is narrower than the breakpoint. Swapping to the phone
+      // report mid-print put its loading screen in the PDF, then blank sheets.
+      if (printing.matches) return;
+      setViewport({ isMobile: query.matches, viewportReady: true });
+    };
     sync();
     query.addEventListener('change', sync);
     return () => query.removeEventListener('change', sync);
   }, []);
+
+  const showsDesktopReport = viewportReady && !isMobile && !mobileV2 && !cinematic;
+  const [savingPdf, setSavingPdf] = useState(false);
+  const savingPdfRef = useRef(false);
+  const savePdf = useCallback(async () => {
+    if (savingPdfRef.current) return;
+    savingPdfRef.current = true;
+    setSavingPdf(true);
+    const restore = await prepareReportForPrint();
+    savingPdfRef.current = false;
+    setSavingPdf(false);
+    window.addEventListener('afterprint', restore, { once: true });
+    window.setTimeout(() => window.print(), 80);
+  }, []);
+
+  useEffect(() => {
+    if (!showsDesktopReport) return;
+    return installReportPrintFallback();
+  }, [showsDesktopReport]);
+
+  // ?print=1 is the admin's Print / PDF button: open, prepare and print once.
+  const autoPrinted = useRef(false);
+  useEffect(() => {
+    if (!showsDesktopReport || autoPrinted.current) return;
+    if (new URLSearchParams(window.location.search).get('print') !== '1') return;
+    autoPrinted.current = true;
+    void savePdf();
+  }, [showsDesktopReport, savePdf]);
 
   // The explicit prototype route can still force V2 at any width for review.
   if (mobileV2) {
@@ -118,7 +153,7 @@ export default function PublicManReportExperience({
   } else if (!isMobile) {
     reportExperience = (
       <>
-        <ManReport data={data} imageUrls={imageUrls} viewerMode="public" motionMode="standard" deferSections shopping={shopping} />
+        <ManReport data={data} imageUrls={imageUrls} viewerMode="public" motionMode="standard" deferSections shopping={shopping} onSavePdf={() => { void savePdf(); }} savingPdf={savingPdf} />
         <DeferredManEditPanel shareToken={shareToken} reportData={data} />
         <ConfidentialityFootnote />
       </>
@@ -1034,7 +1069,7 @@ function DeferredManEditPanel({
   }, [ready]);
 
   return (
-    <div ref={anchorRef} style={{ minHeight: 1 }}>
+    <div ref={anchorRef} className="man-print-hidden" style={{ minHeight: 1 }}>
       {ready && <ManEditPanel shareToken={shareToken} reportData={reportData} />}
     </div>
   );
@@ -1042,7 +1077,7 @@ function DeferredManEditPanel({
 
 function ConfidentialityFootnote() {
   return (
-    <div className="px-5 md:px-12 py-6 text-center" style={{ background: '#FBF8F4' }}>
+    <div className="man-print-hidden px-5 md:px-12 py-6 text-center" style={{ background: '#FBF8F4' }}>
       <p className="text-[10px] uppercase tracking-[0.22em]" style={{ color: '#5A524A' }}>For your eyes only</p>
     </div>
   );

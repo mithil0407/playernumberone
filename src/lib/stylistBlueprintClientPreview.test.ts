@@ -38,9 +38,15 @@ test('the client report sends its styles with the server HTML', () => {
 test('printing keeps backgrounds and a desktop layout, and Save as PDF waits for images', () => {
   const report = readFileSync('src/components/StylistBlueprintReport.tsx', 'utf8');
   const print = report.slice(report.lastIndexOf('@media print {'));
-  assert.match(print, /print-color-adjust: exact !important/);
-  assert.match(print, /\.iconik-report \{ padding: 0 !important; background: \$\{INK\} !important; zoom: 0\.72; \}/);
-  assert.match(print, /\.grain \{ display: none !important; \}/);
+  assert.match(print, /\.iconik-report \{ background: \$\{INK\} !important; \}/);
+  // Page geometry is shared with the men's report so the fitter can measure it on screen.
+  assert.match(report, /<style>\{STYLIST_PRINT_LAYOUT_CSS\}<\/style>/);
+  assert.match(report, /STYLIST_PRINT_HIDDEN = \[[\s\S]*'\.grain',[\s\S]*'\.formula-shop',/);
+  assert.match(report, /@media screen and \(max-width: 900px\)/);
+  const layout = readFileSync('src/lib/reportPrint.ts', 'utf8');
+  assert.match(layout, /@page \{ size: A4 portrait; margin: 0; \}/);
+  assert.match(layout, /print-color-adjust: exact !important/);
+  assert.match(layout, /const \{ images, refit, restore \} = releaseReportForPrint\(\);[\s\S]*refit\(\);/);
   const chrome = readFileSync('src/components/StylistBlueprintViewerChrome.tsx', 'utf8');
   assert.match(chrome, /const restore = await prepareReportForPrint\(\);[\s\S]*window\.print\(\)/);
   const editor = readFileSync('src/app/stylist/admin/report/[reportId]/page.tsx', 'utf8');

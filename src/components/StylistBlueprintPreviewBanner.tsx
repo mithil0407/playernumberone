@@ -18,7 +18,7 @@ export default function StylistBlueprintPreviewBanner({ live }: { live: boolean 
   return (
     <div
       role="status"
-      className="fixed left-1/2 top-3 z-[90] -translate-x-1/2 w-[min(640px,calc(100%-24px))] flex items-center gap-3 rounded-2xl px-4 py-2.5"
+      className="print:hidden fixed left-1/2 top-3 z-[90] -translate-x-1/2 w-[min(640px,calc(100%-24px))] flex items-center gap-3 rounded-2xl px-4 py-2.5"
       style={{ background: 'rgba(28,24,21,0.92)', color: '#F4EFE5', border: '1px solid rgba(244,239,229,0.18)', boxShadow: '0 12px 36px rgba(0,0,0,0.35)', backdropFilter: 'blur(12px)', fontFamily: 'var(--font-manrope), Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: live ? '#7FB08C' : '#C9A96E' }} aria-hidden="true" />

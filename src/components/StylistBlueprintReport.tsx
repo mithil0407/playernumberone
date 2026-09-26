@@ -45,6 +45,7 @@ import { reportHairstyles, withHairstyleEdit } from '@/lib/stylistHairstyleGuide
 import { createContext, type ElementType, type FocusEvent, type FormEvent, type ReactNode, type Ref, useContext, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
+import { reportPrintLayoutCss } from '@/lib/reportPrint';
 
 // Studio-only image editing. Clients never mount these, so they never download them.
 const ImageCropDialog = dynamic(() => import('@/components/ImageCropDialog'), { ssr: false });
@@ -2084,6 +2085,7 @@ function PremiumReport({
     <EditableReportContext.Provider value={{ editable, onPageChange, onReportDataChange, onImageRegenerate, regeneratingImageSlot, imageRegenerationDisabled, imagePrompts, onImageUpload, uploadingImageSlot, reportData: data, visibleTotalPages, visiblePageNumbers: visiblePages.map(page => page.page_number) }}>
       <article className={`iconik-report ${editable ? 'iconik-report-editable' : ''}`}>
         <BlueprintStyles />
+        <style>{STYLIST_PRINT_LAYOUT_CSS}</style>
         {pages.map(page => {
           let node: ReactNode;
           if (page.page_number === 1) node = <CoverPage page={page} data={data} />;
@@ -2162,6 +2164,16 @@ export default function StylistBlueprintReport({
     />
   );
 }
+
+// Hidden in print. They sit inside pages, so the page fitter hides them while measuring too.
+const STYLIST_PRINT_HIDDEN = [
+  '.slot-studio-toolbar', '.slot-studio-empty', '.slot-studio-busy', '.slot-studio-saved', '.slot-drop-hint', '.cover-scroll-cue',
+  // The paper-grain overlay is a screen texture; in a PDF it embeds an image
+  // per page (tens of MB) and prints as a dot screen.
+  '.grain',
+  '.formula-shop',
+];
+const STYLIST_PRINT_LAYOUT_CSS = reportPrintLayoutCss(STYLIST_PRINT_HIDDEN);
 
 function BlueprintStyles() {
   return (
@@ -3697,10 +3709,7 @@ function BlueprintStyles() {
         outline: 2px solid rgba(201, 169, 110, 0.9);
         outline-offset: 2px;
       }
-      /* A printed report cannot be clicked. */
-      @media print {
-        .formula-shop { display: none; }
-      }
+      /* A printed report cannot be clicked, so .formula-shop is in STYLIST_PRINT_HIDDEN. */
       .formula-card .swatch-dot {
         grid-area: dot;
         align-self: start;
@@ -3913,7 +3922,7 @@ function BlueprintStyles() {
         opacity: 0.7;
       }
 
-      @media (max-width: 900px) {
+      @media screen and (max-width: 900px) {
         .iconik-report {
           padding: 0;
         }
@@ -4084,36 +4093,19 @@ function BlueprintStyles() {
         }
       }
       @media print {
-        @page { size: A4 portrait; margin: 0; }
+        /* Page size, one-slide-per-sheet geometry and print-only hiding live in
+           reportPrintLayoutCss (rendered beside these styles), because the
+           page fitter has to measure the same layout on screen. */
         /* Browsers drop backgrounds unless "Background graphics" is ticked, which
            printed the cover and every slate page as white text on white. */
         html, body { background: ${INK} !important; }
-        .iconik-report, .iconik-report * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        /* Lay the report out at desktop width and scale it onto A4. At a true
-           210mm width every slide took the phone layout and ran over two or three
-           sheets. 0.72 gives ~1100 CSS px across and one A4 sheet per slide. */
-        .iconik-report { padding: 0 !important; background: ${INK} !important; zoom: 0.72; }
-        .iconik-page {
-          width: auto !important;
-          max-width: none !important;
-          min-height: 412.4mm !important;
-          margin: 0 !important;
-          border-radius: 0 !important;
-          break-after: page;
-          page-break-after: always;
-          box-shadow: none !important;
-        }
-        .cover-page { min-height: 412.4mm !important; }
+        .iconik-report { background: ${INK} !important; }
         /* A slide that is still taller than a sheet breaks between cards, never through one. */
         .glass, .glass-dark, .premium-rule-card, .proportion-card, .dossier-card, .formula-card,
         .image-slot-frame, .outfit-art, .flatlay-frame, .diagram-card, .capsule-card, h2, h3 {
           break-inside: avoid;
           page-break-inside: avoid;
         }
-        .slot-studio-toolbar, .slot-studio-empty, .slot-studio-busy, .slot-studio-saved, .slot-drop-hint, .cover-scroll-cue { display: none !important; }
-        /* The paper-grain overlay is a screen texture; in a PDF it embeds an image
-           per page (tens of MB) and prints as a dot screen. */
-        .grain { display: none !important; }
         .iconik-report-reveal .iconik-page, .iconik-report-reveal .iconik-page > * { opacity: 1 !important; transform: none !important; }
         .iconik-report:not(.iconik-report-editable) .cover-page, .iconik-report:not(.iconik-report-editable) .cover-page * { animation: none !important; }
         .blueprint-deferred-shell { content-visibility: visible !important; contain-intrinsic-size: none !important; }

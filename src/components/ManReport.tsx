@@ -4,13 +4,15 @@
 // Renders the full ICONIK Men's Blueprint report.
 // Design matches the embedded report preview on /man landing page exactly.
 
-import { Fragment, useState, useMemo, memo, useRef } from 'react';
+import { Fragment, useEffect, useState, useMemo, memo, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pencil, X, Loader2, AlertCircle, Copy, Upload, RotateCcw } from 'lucide-react';
+import { Pencil, X, Loader2, AlertCircle, Copy, Upload, RotateCcw, Download } from 'lucide-react';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, ManV2ImageTarget } from '@/lib/manImageGenerator';
 import { SPRING } from '@/lib/reportAnimations';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { REPORT_PRINT_EVENT, reportPrintLayoutCss } from '@/lib/reportPrint';
 import type { FaceImageKind } from '@/lib/manImageGenerator';
 import type { ManReportQaIssue } from '@/lib/manReportQa';
 import {
@@ -2068,7 +2070,7 @@ function SnapshotSection({ text }: { text?: string }) {
           className="rounded-3xl p-7 md:p-9"
           style={{ background: 'rgba(44,38,34,0.04)', border: `1px solid ${BORDER}` }}
         >
-          <p className="display-it" style={{ fontSize: 'clamp(22px, 3vw, 34px)', lineHeight: 1.32, color: INK }}>
+          <p className="display-it man-fluid" style={{ fontSize: 'clamp(22px, 3vw, 34px)', ['--man-fluid-max' as string]: '34px', lineHeight: 1.32, color: INK }}>
             {intro}
           </p>
           <div className="rule" style={{ margin: '28px 0' }} />
@@ -2198,7 +2200,7 @@ function V2DiagnosticSlide({
           <span className="display-it">{italic}</span>
         </h2>
         <div className="rule" style={{ marginBottom: 32 }} />
-        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-7 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] print:grid-cols-[1.15fr_0.85fr] gap-7 items-start">
           <EvidenceImage src={imageUrl} alt={imageAlt} fallback={fallback} onRedo={onRedoImage} />
           <div className={variant === 'slate' ? 'glass-dark rounded-3xl p-7' : 'rounded-3xl p-7'} style={variant === 'slate' ? undefined : { background: '#fff', border: `1px solid ${BORDER}` }}>
             <DataLabel>Verdict</DataLabel>
@@ -2439,7 +2441,7 @@ function V2FaceGridSlide({
           <span className="display-it">{italic}</span>
         </h2>
         <div className="rule" style={{ marginBottom: 32 }} />
-        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-7">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] print:grid-cols-[1.05fr_0.95fr] gap-7">
           <EvidenceImage
             src={imageOverride ?? imageUrl}
             alt={`${title} recommendation grid`}
@@ -2726,8 +2728,8 @@ function V2ShoppingIdentitySlide({ data, pageNumber, totalSlides }: { data: Repo
           <div className="glass-dark rounded-3xl p-7">
             <DataLabel>Identity close</DataLabel>
             <p
-              className="display-it"
-              style={{ fontSize: 'clamp(18px, 2.3vw, 24px)', lineHeight: 1.45 }}
+              className="display-it man-fluid"
+              style={{ fontSize: 'clamp(18px, 2.3vw, 24px)', ['--man-fluid-max' as string]: '24px', lineHeight: 1.45 }}
             >
               {identity}
             </p>
@@ -4710,8 +4712,8 @@ function IdentitySection({ text }: { text: string }) {
         <div className="glass-dark" style={{ padding: '32px 40px', maxWidth: 720 }}>
           <p className="dossier-label" style={{ marginBottom: 16 }}>Personal statement</p>
           <p
-            className="display-it"
-            style={{ fontSize: 'clamp(18px, 2.5vw, 26px)', lineHeight: 1.55, opacity: 0.85 }}
+            className="display-it man-fluid"
+            style={{ fontSize: 'clamp(18px, 2.5vw, 26px)', ['--man-fluid-max' as string]: '26px', lineHeight: 1.55, opacity: 0.85 }}
             dangerouslySetInnerHTML={{ __html: richify(body) }}
           />
         </div>
@@ -4733,6 +4735,9 @@ interface ManReportProps {
   deferSections?: boolean;
   /** Hides the built-in public sticky header (the mobile scroll shell renders its own nav). */
   suppressStickyHeader?: boolean;
+  /** Shows a Save as PDF button in the public sticky header. */
+  onSavePdf?: () => void;
+  savingPdf?: boolean;
   /** Renders editorial divider bands where a new chapter begins (mobile scroll experience, V2 only). */
   chapterMarkers?: boolean;
   adminMode?: boolean;
@@ -4820,7 +4825,20 @@ function DeferredSection({
     rootMargin: '1200px 0px',
   });
 
-  const shouldRender = !defer || hasIntersected;
+  const [printRequested, setPrintRequested] = useState(false);
+  // Printing needs every section mounted. flushSync so Cmd+P's beforeprint sees them.
+  useEffect(() => {
+    if (!defer || hasIntersected) return;
+    const mount = () => flushSync(() => setPrintRequested(true));
+    window.addEventListener(REPORT_PRINT_EVENT, mount);
+    window.addEventListener('beforeprint', mount);
+    return () => {
+      window.removeEventListener(REPORT_PRINT_EVENT, mount);
+      window.removeEventListener('beforeprint', mount);
+    };
+  }, [defer, hasIntersected]);
+
+  const shouldRender = !defer || hasIntersected || printRequested;
 
   if (!shouldRender) {
     return (
@@ -5037,6 +5055,8 @@ function ManReport({
   motionMode = 'standard',
   deferSections = false,
   suppressStickyHeader = false,
+  onSavePdf,
+  savingPdf = false,
   chapterMarkers = false,
   adminMode,
   onRegenerateOutfit,
@@ -5088,7 +5108,7 @@ function ManReport({
 
   const stickyHeader = (
     <div
-      className="sticky top-0 z-10 px-5 md:px-12 h-12 md:h-14 flex items-center justify-between"
+      className="man-sticky-nav sticky top-0 z-10 px-5 md:px-12 h-12 md:h-14 flex items-center justify-between"
       style={{
         background: 'rgba(244,239,229,0.94)',
         backdropFilter: 'blur(14px)',
@@ -5108,9 +5128,24 @@ function ManReport({
           Iconik <span style={{ color: SLATE_DEEP }}>Blueprint</span>
         </span>
       </div>
-      <span className="man-display-it" style={{ fontSize: 11, color: 'rgba(44,38,34,0.55)' }}>
-        {reportDate}
-      </span>
+      <div className="flex items-center gap-4">
+        <span className="man-display-it" style={{ fontSize: 11, color: 'rgba(44,38,34,0.55)' }}>
+          {reportDate}
+        </span>
+        {onSavePdf && (
+          <button
+            type="button"
+            onClick={onSavePdf}
+            disabled={savingPdf}
+            aria-busy={savingPdf}
+            className="man-mono inline-flex items-center gap-2 rounded-full px-3.5 h-8 disabled:opacity-60"
+            style={{ color: '#2C2622', border: '1px solid rgba(44,38,34,0.22)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase' }}
+          >
+            {savingPdf ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+            {savingPdf ? 'Preparing PDF…' : 'Save as PDF'}
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -5611,9 +5646,27 @@ function ManReport({
       </div>}
 
       <ManBlueprintStyles />
+      <style>{MAN_PRINT_LAYOUT_CSS}</style>
     </div>
   );
 }
+
+// Hidden in print; also hidden while the page fitter measures, since some sit inside pages.
+const MAN_PRINT_HIDDEN = [
+  '.man-sticky-nav', '.man-footer', '.man-chapter-band', '.man-print-hidden', '.man-opening-root',
+  // The dot-grid grain is a screen texture; with backgrounds on it made a 144MB PDF.
+  '.grain',
+];
+// Headings sized in vw, pinned to the size a desktop window shows (each clamp's maximum).
+const MAN_PRINT_PINNED: [string, string][] = [
+  ['.man-cover-heading .man-display-it', 'font-size: 108px !important;'],
+  ['.man-page h2 span', 'font-size: 72px !important;'],
+  ['.man-summary-main h2 span', 'font-size: 64px !important;'],
+  ['.reading-inner h2 span', 'font-size: 74px !important;'],
+  ['.man-outfit-title', 'font-size: 68px !important;'],
+  ['.man-fluid', 'font-size: var(--man-fluid-max) !important;'],
+];
+const MAN_PRINT_LAYOUT_CSS = reportPrintLayoutCss(MAN_PRINT_HIDDEN, MAN_PRINT_PINNED);
 
 function ManBlueprintStyles() {
   return (
@@ -6005,7 +6058,7 @@ function ManBlueprintStyles() {
       }
       .face-grid-edit-button:hover { border-color: ${ACCENT}; color: ${ACCENT_INK}; }
 
-      @media (max-width: 640px) {
+      @media screen and (max-width: 640px) {
         .linkedin-profile-mock { border-radius: 14px; }
         .linkedin-cover { height: 84px; }
         .linkedin-in-badge { right: 14px; top: 14px; width: 30px; height: 30px; font-size: 17px; }
@@ -6547,7 +6600,7 @@ function ManBlueprintStyles() {
       }
 
       /* ── Responsive ────────────────────────────────────────── */
-      @media (max-width: 900px) {
+      @media screen and (max-width: 900px) {
         .man-report,
         .man-report.iconik-report {
           padding: 0;
@@ -6702,6 +6755,22 @@ function ManBlueprintStyles() {
         .man-footer {
           padding: 34px 16px;
         }
+      }
+
+      /* One page per A4 sheet: geometry and hiding are in MAN_PRINT_LAYOUT_CSS. */
+      @media print {
+        /* Browsers drop backgrounds unless "Background graphics" is ticked, which
+           printed every slate page as white text on white. */
+        html, body { background: ${INK} !important; }
+        .man-report.iconik-report { background: ${INK} !important; }
+        .man-report *, .man-report *::before, .man-report *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+        /* Report images fade in on load; one still loading at print time stayed invisible. */
+        .man-report img { opacity: 1 !important; }
+        /* Section reveals start transparent and offset. */
+        .man-report .iconik-page-frame > div { opacity: 1 !important; transform: none !important; }
       }
     `}</style>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { prepareReportForPrint, releaseReportForPrint } from '@/lib/reportPrint';
+import { installReportPrintFallback, prepareReportForPrint } from '@/lib/reportPrint';
 
 /**
  * Reader-side chrome for the shared report link: a read-progress line, a
@@ -260,14 +260,7 @@ export default function StylistBlueprintViewerChrome({
   }, [preparingPdf]);
 
   // The browser's own Print / Cmd+P cannot wait, but can at least start every image loading.
-  useEffect(() => {
-    let restore: (() => void) | null = null;
-    const before = () => { restore = releaseReportForPrint().restore; };
-    const after = () => { restore?.(); restore = null; };
-    window.addEventListener('beforeprint', before);
-    window.addEventListener('afterprint', after);
-    return () => { window.removeEventListener('beforeprint', before); window.removeEventListener('afterprint', after); };
-  }, []);
+  useEffect(() => installReportPrintFallback(), []);
 
   if (!total) return null;
 
