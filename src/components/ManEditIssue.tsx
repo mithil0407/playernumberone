@@ -34,6 +34,8 @@ interface Props {
   shopping: ManShoppingState | null;
   initialVotes: Record<string, 'like' | 'dislike'>;
   otherIssues: IssueSummary[];
+  /** Shown inside the admin review page: no page background, no preview banner, verdict buttons inert. */
+  embedded?: boolean;
 }
 
 type Vote = 'like' | 'dislike';
@@ -103,6 +105,7 @@ export default function ManEditIssue({
   shopping,
   initialVotes,
   otherIssues,
+  embedded = false,
 }: Props) {
   const outfits = useMemo(() => parseManOutfitsFromSection(s4Outfits), [s4Outfits]);
   const metaByNumber = useMemo(() => new Map(edit.outfits.map(item => [item.number, item])), [edit.outfits]);
@@ -133,6 +136,8 @@ export default function ManEditIssue({
   const [votes, setVotes] = useState(initialVotes);
   const [voteError, setVoteError] = useState('');
   const castVote = async (outfitNumber: number, vote: Vote) => {
+    // The stylist previewing an issue must never vote on the client's behalf.
+    if (embedded) return;
     const outfit = outfits.find(item => item.number === outfitNumber);
     if (!outfit) return;
     const key = outfitKey(edit.issueNumber, outfitNumber);
@@ -167,7 +172,7 @@ export default function ManEditIssue({
 
   return (
     <div className="man-edit-issue">
-      {status !== 'sent' && (
+      {!embedded && status !== 'sent' && (
         <div className="man-edit-preview">Preview · this issue hasn’t been sent to the client yet</div>
       )}
 
@@ -268,10 +273,10 @@ export default function ManEditIssue({
                 )}
                 <div className="man-edit-vote" role="group" aria-label={`Your verdict on look ${pad(outfit.number)}`}>
                   <span className="mono faded">Your verdict</span>
-                  <button type="button" className={vote === 'like' ? 'on' : ''} aria-pressed={vote === 'like'} onClick={() => castVote(outfit.number, 'like')}>
+                  <button type="button" className={vote === 'like' ? 'on' : ''} aria-pressed={vote === 'like'} disabled={embedded} onClick={() => castVote(outfit.number, 'like')}>
                     <ThumbsUp size={13} /> I’d wear this
                   </button>
-                  <button type="button" className={vote === 'dislike' ? 'on' : ''} aria-pressed={vote === 'dislike'} onClick={() => castVote(outfit.number, 'dislike')}>
+                  <button type="button" className={vote === 'dislike' ? 'on' : ''} aria-pressed={vote === 'dislike'} disabled={embedded} onClick={() => castVote(outfit.number, 'dislike')}>
                     <ThumbsDown size={13} /> Not for me
                   </button>
                 </div>
@@ -353,8 +358,9 @@ export default function ManEditIssue({
         <ManReportPageStyles />
       </div>
 
+      {!embedded && <style>{'html:has(.man-edit-issue), body:has(.man-edit-issue) { background: #1B1815; }'}</style>}
+
       <style jsx global>{`
-        html:has(.man-edit-issue), body:has(.man-edit-issue) { background: #1B1815; }
         .man-edit-preview {
           position: sticky; top: 0; z-index: 30; text-align: center; padding: 9px 16px;
           background: #9A4B37; color: #F4EFE5; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
@@ -377,7 +383,8 @@ export default function ManEditIssue({
           border: 1px solid rgba(44,38,34,0.22); background: transparent; color: #2C2622; font-size: 12px; cursor: pointer;
           transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
-        .man-edit-vote button:hover { border-color: #2C2622; }
+        .man-edit-vote button:hover:not(:disabled) { border-color: #2C2622; }
+        .man-edit-vote button:disabled { cursor: default; }
         .man-edit-vote button.on { background: #2C2622; border-color: #2C2622; color: #F4EFE5; }
         .man-edit-vote-error { margin: 0; font-size: 12px; color: #9A4B37; }
 

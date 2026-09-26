@@ -2,7 +2,8 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Camera, CheckCircle2, ExternalLink, Loader2, RotateCcw, Save, Send, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, ExternalLink, Eye, Loader2, PencilLine, RotateCcw, Save, Send, Trash2, Upload } from 'lucide-react';
+import ManEditIssue from '@/components/ManEditIssue';
 import { extractOutfitBlock, parseManOutfitsFromSection, toOutfitTitleCase } from '@/lib/manOutfitSection';
 import type { ReportData } from '@/lib/manReportGenerator';
 import type { ManEditIssueContent } from '@/lib/manEditIssueTypes';
@@ -51,6 +52,8 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
   const [draft, setDraft] = useState<ManEditIssueContent | null>(null);
   const [outfitTexts, setOutfitTexts] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState('');
+  // Reviewing opens on exactly what the client will receive; editing is one click away.
+  const [view, setView] = useState<'preview' | 'edit'>('preview');
   const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const uploadTarget = useRef<number | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
@@ -190,7 +193,8 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-2" style={{ color: S.muted }}>
             The Iconik Edit · Issue {draft?.issueNumber ?? '—'}{draft?.periodLabel ? ` · ${draft.periodLabel}` : ''}
           </p>
-          <h1 className="text-2xl font-semibold" style={{ color: S.ink }}>{draft?.title || 'Writing this issue…'}</h1>
+          {/* The admin shell is cream, so the title is dark ink, not the panels' light ink. */}
+          <h1 className="text-2xl font-semibold" style={{ color: '#2C2622' }}>{draft?.title || 'Writing this issue…'}</h1>
           <p className="text-sm mt-1" style={{ color: S.muted }}>{report.man_intake_submissions?.customer_email}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -245,7 +249,53 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
         </button>
       )}
 
-      {draft && (
+      {outfits.length > 0 && draft && (
+        <div className="inline-flex rounded-lg p-1 mb-6" style={{ background: S.panel, border: `1px solid ${S.border}` }} role="tablist" aria-label="Review mode">
+          {([
+            ['preview', 'What he receives', Eye],
+            ['edit', 'Edit text & looks', PencilLine],
+          ] as const).map(([key, label, Icon]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => setView(key)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold"
+              style={view === key ? { background: S.gold, color: '#090909' } : { background: 'transparent', color: S.soft }}
+            >
+              <Icon size={13} /> {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === 'preview' && outfits.length > 0 && draft && report.report_data && (
+        <section className="mb-6">
+          <p className="text-xs mb-3" style={{ color: dirty ? S.error : S.muted }}>
+            {dirty
+              ? 'Showing your unsaved text changes. Save them in “Edit text & looks” before sending.'
+              : isSent
+                ? 'This is the issue on his link now.'
+                : 'This is exactly what he will receive. His like / dislike buttons are inactive here.'}
+          </p>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#1B1815' }}>
+            <ManEditIssue
+              embedded
+              shareToken={report.share_token}
+              status={report.status}
+              edit={draft}
+              s4Outfits={s4}
+              classification={report.report_data.classification}
+              outfitImages={images}
+              shopping={report.shopping_data}
+              initialVotes={{}}
+              otherIssues={[]}
+            />
+          </div>
+        </section>
+      )}
+
+      {view === 'edit' && draft && (
         <section className="rounded-xl border p-5 mb-6 space-y-4" style={{ background: S.panel, borderColor: S.border }}>
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: S.gold }}>Issue text</p>
@@ -284,7 +334,7 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
         </section>
       )}
 
-      {qaIssues.length > 0 && (
+      {view === 'edit' && qaIssues.length > 0 && (
         <section className="rounded-xl border p-5 mb-6" style={{ background: S.panel, borderColor: S.border }}>
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-3" style={{ color: S.gold }}>Outfit checks ({qaIssues.length})</p>
           <ul className="space-y-1.5">
@@ -298,7 +348,7 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
         </section>
       )}
 
-      <div className="space-y-5">
+      {view === 'edit' && <div className="space-y-5">
         {outfits.map(outfit => {
           const image = images[outfit.number - 1];
           const meta = draft?.outfits.find(item => item.number === outfit.number);
@@ -363,7 +413,7 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
             </article>
           );
         })}
-      </div>
+      </div>}
 
       {approved && report.shopping_data && (
         <p className="text-xs mt-6" style={{ color: report.shopping_data.status === 'error' ? S.error : S.muted }}>
