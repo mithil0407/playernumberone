@@ -315,11 +315,20 @@ export function getManReportSlideMeta(data: ReportData): ManReportSlideMeta[] {
       { title: 'Shopping + Identity Close', group: 'Closing', sectionKey: 's5s', slideType: 'shopping_identity' },
     );
 
-    return slides.map((slide, index) => {
-      const pageNumber = index + 1;
+    // Bald and closely shaved clients are beard-focused; a hairstyle grid has
+    // nothing to offer them, so the slide is left out of the report.
+    const hideHairstyleGrid = data.classification?.face?.grooming_focus === 'beard';
+
+    const visibleSlides = slides
+      .map((slide, index) => ({ slide, index }))
+      .filter(({ slide }) => !(hideHairstyleGrid && slide.slideType === 'hairstyle_grid'));
+
+    return visibleSlides.map(({ slide, index }, visibleIndex) => {
+      const pageNumber = visibleIndex + 1;
       // V2 previously contained Side Profile at page 9. Keep the old position
       // available so already-reviewed reports do not silently approve the wrong page.
-      const legacyPageNumber = pageNumber >= 9 ? pageNumber + 1 : pageNumber;
+      // Count from the full slide list so a hidden hairstyle grid does not shift it.
+      const legacyPageNumber = index + 1 >= 9 ? index + 2 : index + 1;
       return {
         ...slide,
         pageNumber,
