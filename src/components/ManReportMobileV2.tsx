@@ -548,6 +548,9 @@ export default function ManReportMobileV2({ shareToken, data, imageUrls, stylist
   const outfits = useMemo(() => parseOutfits(data), [data]);
   const combos = useMemo(() => parseCombos(data), [data]);
   const reduce = useReducedMotion();
+  // Bald and closely shaved clients are beard-focused and get no hairstyle
+  // grid, matching getManReportSlideMeta.
+  const beardFocused = c?.face?.grooming_focus === 'beard';
 
   const blueprintNo = useMemo(() => {
     const n = parseInt(shareToken.replace(/[^0-9a-f]/gi, '').slice(0, 5), 16);
@@ -940,9 +943,9 @@ export default function ManReportMobileV2({ shareToken, data, imageUrls, stylist
 
         <section id="ch-face" className="ch">
           <span className="eyebrow">Chapter · Face</span>
-          <h2 className="ch-title">Face, hair &amp; eyewear.</h2>
+          <h2 className="ch-title">{beardFocused ? <>Face, beard &amp; eyewear.</> : <>Face, hair &amp; eyewear.</>}</h2>
           <Figure src={imageUrls?.diagnostic?.faceGeometry} alt="Your face geometry" />
-          {imageUrls?.hairstyleCards?.[0] ? (
+          {imageUrls?.hairstyleCards?.[0] && !beardFocused ? (
             <><span className="fig-cap">Hairstyle directions</span><Figure src={imageUrls.hairstyleCards[0]} alt="Hairstyle options" ratio="1 / 1" /></>
           ) : null}
           {imageUrls?.beardCards?.[0] ? (

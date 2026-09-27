@@ -138,6 +138,20 @@ export function runManReportV2Assertions() {
   invariant(!slides.some(slide => slide.title === 'Side Profile'), 'side-profile slide is removed even when legacy data exists');
   invariant(slides.every((slide, index) => slide.pageNumber === index + 1), 'visible v2 page numbers stay contiguous');
   invariant(slides[8].legacyPageNumber === 10, 'the first slide after removed side profile maps to its old approval page');
+  invariant(slides.some(slide => slide.slideType === 'hairstyle_grid'), 'clients with hair keep the hairstyle grid');
+
+  const baldReport = report();
+  baldReport.classification.face.hair_presence = 'bald';
+  baldReport.classification.face.grooming_focus = 'beard';
+  const baldSlides = getManReportSlideMeta(baldReport);
+  invariant(baldSlides.length === 35, `beard-focused report drops one slide, got ${baldSlides.length}`);
+  invariant(!baldSlides.some(slide => slide.slideType === 'hairstyle_grid'), 'beard-focused clients get no hairstyle grid');
+  invariant(baldSlides[3].slideType === 'beard_grid', 'beard grid follows face shape when the hairstyle grid is hidden');
+  invariant(baldSlides.every((slide, index) => slide.pageNumber === index + 1), 'page numbers stay contiguous without the hairstyle grid');
+  invariant(
+    baldSlides.every(slide => slide.legacyPageNumber === slides.find(full => full.approvalKey === slide.approvalKey)?.legacyPageNumber),
+    'hiding the hairstyle grid does not shift legacy approval pages',
+  );
   invariant(slides[8].approvalKey === 'slide:frame_training', 'stable approval identity does not depend on page number');
   invariant(!slides.some(slide => slide.slideType === 'combo_grids'), 'combo grids are folded out of standalone v2 slide metadata');
   invariant(slides.filter(slide => slide.slideType === 'outfit').length === 20, 'v2 keeps 20 outfit slides');
