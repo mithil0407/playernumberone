@@ -34,3 +34,14 @@ test('identity rules explicitly prevent generic face replacement', () => {
   assert.match(rules, /Do not substitute a generic model/i);
   assert.match(rules, /full-body reference is authoritative only for body proportions/i);
 });
+
+test('bald and closely shaved clients get a scalp lock; clients with hair do not', () => {
+  for (const presence of ['bald', 'closely_shaved']) {
+    const rules = buildSourceLockedOutfitIdentityRules('stubble', presence);
+    assert.match(rules, /Scalp lock/);
+    assert.match(rules, /Never add scalp hair, a hairline, a haircut, or hair shadow/i);
+  }
+
+  assert.doesNotMatch(buildSourceLockedOutfitIdentityRules('stubble', 'full_hair'), /Scalp lock/);
+  assert.doesNotMatch(buildSourceLockedOutfitIdentityRules('stubble'), /Scalp lock/);
+});
