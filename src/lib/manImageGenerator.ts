@@ -449,6 +449,11 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
   const accessoryInstruction = outfit.accessories
     ? `\nAccessory rendering is mandatory: the accessories listed in the outfit specification must be visibly included where naturally visible (${outfit.accessories}). Do not omit them as optional styling hints.`
     : '';
+  // The image model sometimes drops the shoes and renders bare feet, so name
+  // the footwear again as a hard requirement, as the combo-grid prompts do.
+  const footwearInstruction = outfit.footwear
+    ? `\nFootwear rendering is mandatory: the client must visibly wear the specified footwear (${outfit.footwear}) on both feet, fully in frame. Never render the client barefoot, in socks only, or with the feet cropped out.`
+    : '\nFootwear rendering is mandatory: the client must visibly wear plain footwear suited to this outfit on both feet, fully in frame. Never render the client barefoot, in socks only, or with the feet cropped out.';
 
   const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
 
@@ -476,7 +481,7 @@ Assigned editorial pose:
 
 Compact outfit formula to render:
 ${garmentLines}${layerInstruction}
-${accessoryInstruction}
+${accessoryInstruction}${footwearInstruction}
 
 Garment rendering: Clothes should look pressed, tailored, and naturally worn on this body — not floating, not distorted. Colour accuracy is critical — match the described colours precisely. No logos or brand markings visible. Garments must fit this body type (${c.body.silhouette_type}): ${c.body.fit_directive}. If there is any conflict between the reference photos and the outfit specification, the outfit specification wins.
 

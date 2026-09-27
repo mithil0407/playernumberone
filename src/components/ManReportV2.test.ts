@@ -155,6 +155,8 @@ export function runManReportV2Assertions() {
   invariant(outfitPrompt.includes('must not hide the neckline'), 'outfit pose keeps fit and garment details visible');
   invariant(outfitPrompt.includes('no visible flooring or room'), 'outfit prompt enforces the light seamless studio background');
   invariant(outfitPrompt.includes('RGB 148, 166, 173'), 'outfit prompt locks the stylist-admin background colour');
+  invariant(outfitPrompt.includes('Footwear rendering is mandatory'), 'outfit prompt makes the listed footwear a hard requirement');
+  invariant(outfitPrompt.includes('Never render the client barefoot'), 'outfit prompt forbids bare feet');
 
   const comboPrompt = buildComboGridImagePromptForReport('office', report().sections, report().classification);
   invariant(comboPrompt.includes('different confident menswear pose in every column'), 'combination grid varies poses by column');
