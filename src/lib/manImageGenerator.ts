@@ -455,7 +455,7 @@ function buildOutfitPrompt(outfit: ParsedOutfit, c: ClassificationResult): strin
     ? `\nFootwear rendering is mandatory: the client must visibly wear the specified footwear (${outfit.footwear}) on both feet, fully in frame. Never render the client barefoot, in socks only, or with the feet cropped out.`
     : '\nFootwear rendering is mandatory: the client must visibly wear plain footwear suited to this outfit on both feet, fully in frame. Never render the client barefoot, in socks only, or with the feet cropped out.';
 
-  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence, c.face.hair_presence);
 
   return `Professional editorial fashion catalogue photography for the ICONIK men's Style Blueprint.
 
@@ -540,7 +540,7 @@ function buildComboGridPrompt(kind: ComboGridKind, outfits: ParsedOutfit[], c: C
     return `Column ${index + 1}: ${pieces}\nPose: ${outfitPoseDirection(index + 1)}`;
   }).join('\n');
 
-  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence, c.face.hair_presence);
 
   return `Create one customised editorial styling grid image for ICONIK.
 
@@ -584,7 +584,7 @@ function buildEditedComboGridPrompt(group: ParsedComboGridGroup, c: Classificati
     `Pose: ${outfitPoseDirection(index + 1)}`,
   ].join('\n')).join('\n\n');
 
-  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence);
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(c.face.facial_hair_presence, c.face.hair_presence);
 
   return `Create one customised editorial styling grid image for ICONIK.
 
@@ -724,7 +724,7 @@ function outfitSpecForDeliverable(sections: ReportSections, outfitNumber: number
 }
 
 function buildBeforeAfterComparisonPrompt(classification: ClassificationResult, sections: ReportSections): string {
-  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence);
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence, classification.face.hair_presence);
 
   return `Create one locked before/after transformation comparison for ICONIK as a single horizontal 4:3 image containing exactly two equal portrait 2:3 panels.
 
@@ -755,7 +755,7 @@ ${ABSOLUTE_NO_TEXT_RULE}`;
 
 function buildLinkedinHeadshotPrompt(classification: ClassificationResult): string {
   const best = classification.colour.primary_palette?.[0] ?? classification.colour.neutral_base_colours?.[0];
-  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence);
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence, classification.face.hair_presence);
   return `Create a professional LinkedIn headshot from the uploaded headshot. Preserve the client's exact identity, facial features, skin tone, and natural proportions. The result should look like the same photograph professionally lit and lightly groomed, not a makeover or a newly cast model.
 ${identityAndGroomingRules}
 
@@ -782,7 +782,7 @@ function buildSocialMediaInspirationPrompt(
     },
   ];
   const spec = specs[Math.max(0, Math.min(specs.length - 1, shotIndex))];
-  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence);
+  const identityAndGroomingRules = buildSourceLockedOutfitIdentityRules(classification.face.facial_hair_presence, classification.face.hair_presence);
   return `Create a realistic Instagram-ready social media style inspiration photo of the same client.
 
 Two reference photos are provided: full-body photo first, headshot second. Preserve identity, facial features, skin tone, and body proportions. Do not slim, age, or idealise. Use realistic lifestyle photography, not a fashion render.
