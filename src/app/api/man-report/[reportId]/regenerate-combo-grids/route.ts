@@ -28,8 +28,12 @@ function parseComboGridKind(value: unknown): ComboGridKind | null {
     : null;
 }
 
+// Start from every stored path: rebuilding the object field by field dropped the
+// diagnostic and deliverable images, so a grid redo wiped the before/after,
+// LinkedIn, social and diagnostic images from the report.
 function clearComboGridImageSlots(paths: ManReportImagePaths | null): ManReportImagePaths {
   return {
+    ...paths,
     hairstyleCards: [...(paths?.hairstyleCards ?? [])],
     beardCards: [...(paths?.beardCards ?? [])],
     eyewearCards: [...(paths?.eyewearCards ?? [])],
@@ -39,12 +43,12 @@ function clearComboGridImageSlots(paths: ManReportImagePaths | null): ManReportI
       evening: null,
       relaxed: null,
     },
-    ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
   };
 }
 
 function clearComboGridImageSlot(paths: ManReportImagePaths | null, kind: ComboGridKind): ManReportImagePaths {
   return {
+    ...paths,
     hairstyleCards: [...(paths?.hairstyleCards ?? [])],
     beardCards: [...(paths?.beardCards ?? [])],
     eyewearCards: [...(paths?.eyewearCards ?? [])],
@@ -55,7 +59,6 @@ function clearComboGridImageSlot(paths: ManReportImagePaths | null, kind: ComboG
       relaxed: paths?.comboGridCards?.relaxed ?? null,
       [kind]: null,
     },
-    ...(paths?.baseModel ? { baseModel: paths.baseModel } : {}),
   };
 }
 
