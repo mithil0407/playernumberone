@@ -34,11 +34,15 @@ import {
   Play,
   Pause,
   Volume2,
-  VolumeX
+  VolumeX,
+  UserRound,
+  Shirt,
+  RefreshCw,
 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import type { RootDesignVariant } from '@/lib/rootDesign';
-import { OFFER_FREE_BONUSES, OFFER_TOPICS, type OfferTopicKey } from '@/lib/offerTopics';
+import { OFFER_TOPICS, type OfferTopicKey } from '@/lib/offerTopics';
+import { BlueprintGallery, ClientMessagesStrip, FREE_CHANGES_PROMISE, OFFER_GUIDE_IMAGES, OfferSummaryBox } from '@/components/OfferShowcase';
 
 interface LandingPageContentProps {
   headline: ReactNode;
@@ -95,7 +99,7 @@ function TestimonialVideoCard({ src, poster, quote, name, rating, number, faceBl
   };
 
   return (
-    <figure className="root-video-card mx-auto w-full max-w-[360px] overflow-hidden rounded-3xl md:last:col-span-2 lg:last:col-span-1" style={{ border: '1px solid rgba(244,239,229,0.18)', background: '#171411', boxShadow: '0 28px 70px rgba(0,0,0,0.28)' }}>
+    <figure className="root-video-card mx-auto w-[78vw] max-w-[360px] shrink-0 snap-center overflow-hidden md:w-full md:shrink rounded-3xl md:last:col-span-2 lg:last:col-span-1" style={{ border: '1px solid rgba(244,239,229,0.18)', background: '#171411', boxShadow: '0 28px 70px rgba(0,0,0,0.28)' }}>
       <div className="relative">
         <video
           ref={videoRef}
@@ -255,9 +259,10 @@ export default function LandingPageContent({
     ...(topicContent?.faqs ?? []),
     { question: 'What will I get?', answer: `A ${BLUEPRINT_OFFER.consultationMinutes}-minute video call with your stylist. Then your Blueprint: ${BLUEPRINT_OFFER.outfitFormulas} outfits made for you, your colour palette, and your body shape and face guides. The hairstyle, makeup, hair colour and glasses guides are free.` },
     { question: 'Will this really help me?', answer: `Your stylist looks at your body, face, skin colour and lifestyle, then tells you exactly what to wear. ICONIK has styled ${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ women and men in ${CLIENT_PROOF.countriesServed}+ countries.` },
-    { question: 'What if I do not like the suggestions?', answer: 'On your call, you tell your stylist what you like and what you never wear. Your outfits are made around that. If your Blueprint does not match what you told us, we change it for free.' },
+    { question: 'What if I do not like the suggestions?', answer: `On your call, you tell your stylist what you like and what you never wear. Your outfits are made around that. ${FREE_CHANGES_PROMISE}` },
+    { question: 'How soon can I talk to my stylist?', answer: `After you pay, we send you a link to pick your call time. Calls happen ${BUSINESS_HOURS.display}.` },
     { question: 'Is it online?', answer: 'Yes. You talk to your stylist on a video call from home. Your Blueprint is ready in ' + BLUEPRINT_OFFER.deliveryWorkingDays + ' working days after the call.' },
-    { question: 'How do I pay? Can I get a refund?', answer: 'Pay by UPI, card, net banking or wallet through Razorpay. Refunds apply only in the cases listed in our Refund Policy.' },
+    { question: 'How do I pay? What if it is not right?', answer: `Pay by UPI, card, net banking or wallet through Razorpay. ${FREE_CHANGES_PROMISE} Refunds are covered in our Refund Policy.` },
   ];
 
   const defaultFaqs = [
@@ -383,16 +388,41 @@ export default function LandingPageContent({
             </div>
           )}
 
-          <div className="root-hero-trust mt-4 flex items-center justify-center gap-2 flex-wrap">
-            <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
-            <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
-              {isOffer2699
-                ? `${CLIENT_PROOF.womenStyled.toLocaleString('en-IN')}+ women styled · Pay by UPI or card · Ready in ${BLUEPRINT_OFFER.deliveryWorkingDays} working days`
-                : `Secure checkout · ${BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included`}
-            </span>
-          </div>
+          {isOffer2699 ? (
+            <>
+              <p className="offer-hero-proof mt-5">
+                <strong>{CLIENT_PROOF.womenStyled.toLocaleString('en-IN')}+ women styled</strong> in {CLIENT_PROOF.countriesServed}+ countries
+              </p>
+              <ul className="offer-hero-features mx-auto mt-5 grid max-w-md grid-cols-3">
+                {[
+                  { icon: <UserRound className="h-5 w-5" />, top: 'Real stylist', bottom: 'not an app' },
+                  { icon: <Shirt className="h-5 w-5" />, top: `${BLUEPRINT_OFFER.outfitFormulas} outfits`, bottom: 'for your body' },
+                  { icon: <RefreshCw className="h-5 w-5" />, top: 'Free changes', bottom: 'until it matches' },
+                ].map((feature) => (
+                  <li key={feature.top} className="flex flex-col items-center gap-1.5 px-2 text-center">
+                    <span className="offer-hero-feature-icon">{feature.icon}</span>
+                    <span className="offer-hero-feature-text"><strong>{feature.top}</strong><br />{feature.bottom}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <div className="root-hero-trust mt-4 flex items-center justify-center gap-2 flex-wrap">
+              <CheckCircle className="h-3.5 w-3.5" style={{ color: '#9a7d4a' }} />
+              <span className="iconik-mono" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.6 }}>
+                {`Secure checkout · ${BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery · In-scope revisions included`}
+              </span>
+            </div>
+          )}
+
+          {isOffer2699 && (
+            <div className="mt-9">
+              <BlueprintGallery />
+            </div>
+          )}
 
           {/* Client transformation preview */}
+          {!isOffer2699 && (
           <div className="root-hero-media max-w-sm mx-auto mt-9 mb-2">
             <div className="rounded-3xl p-4 md:p-6" style={{ background: 'rgba(237,229,210,0.5)', border: '1px solid rgba(44,38,34,0.08)' }}>
               <div className="relative mx-auto w-full max-w-[320px]">
@@ -415,9 +445,29 @@ export default function LandingPageContent({
               </div>
             </div>
           </div>
+          )}
 
         </div>
       </section>
+
+      {isOffer2699 && (
+        <section id="offer" className="root-offer-box-section px-4 py-16 md:px-6 md:py-20">
+          <OfferSummaryBox
+            formattedBasePrice={formattedBasePrice}
+            checkoutHref={checkoutHref}
+            topicNote={topicContent?.checkoutNote}
+            onCtaClick={() => trackCTAClick('Get My Style Blueprint', 'Offer Box', basePrice, 'INR', contentCategory)}
+          />
+        </section>
+      )}
+
+      {isOffer2699 && (
+        <section id="client-messages" className="root-messages-section px-4 py-16 md:px-6 md:py-20">
+          <div className="mx-auto max-w-5xl">
+            <ClientMessagesStrip hideSleevelessPhotos={topic === 'sleeves' || topic === 'modest'} />
+          </div>
+        </section>
+      )}
 
       {topicContent && (
         <section className="root-topic-section px-4 py-20 md:px-6 md:py-24" style={{ background: '#F8F3E9' }}>
@@ -447,6 +497,51 @@ export default function LandingPageContent({
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isOffer2699 && (
+        <section id="video-testimonials" className="root-video-testimonials px-4 py-20 md:px-6 md:py-24" style={{ background: '#2C2622' }}>
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
+              <div className="iconik-micro mb-5" style={{ color: '#D7B57A', opacity: 0.85 }}>Real Clients · Real Experiences</div>
+              <h2 className="iconik-display" style={{ color: '#F4EFE5', fontSize: 'clamp(36px, 6vw, 64px)', lineHeight: 1.05 }}>
+                Hear it in their own words.
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl" style={{ color: '#F4EFE5', fontSize: '16px', lineHeight: 1.8, opacity: 0.72 }}>
+                Three ICONIK clients on what changed for them. Swipe to see all three.
+              </p>
+            </div>
+
+            <div className="root-video-track -mx-4 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:gap-10 md:overflow-visible md:px-0 lg:grid-cols-3 lg:gap-8">
+              <TestimonialVideoCard
+                src="/testimonialvideo2.mp4"
+                poster="/testimonialvideo2-poster.jpg"
+                name="Tina"
+                rating={5}
+                number={1}
+                quote="Thanks to ICONIK’s stylists. They helped me get styled for my events. It was absolutely worth it."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo1.mp4"
+                poster="/testimonialvideo1-poster.jpg"
+                name="Priya"
+                rating={5}
+                number={2}
+                faceBlur={{ left: '40.5%', top: '32.3%', width: '22.5%', height: '20.3%' }}
+                quote="I was very insecure about my tummy. Thanks to ICONIK for actually suggesting outfits that helped me get my confidence back."
+              />
+              <TestimonialVideoCard
+                src="/testimonialvideo3.mp4"
+                poster="/testimonialvideo3-poster.jpg"
+                name="Gayathri"
+                rating={4}
+                number={3}
+                faceBlur={{ left: '28.5%', top: '34.3%', width: '23%', height: '18.5%' }}
+                quote="I found ICONIK on Instagram, and Jazz was very helpful in finding what actually suited me. It was a very good experience."
+              />
             </div>
           </div>
         </section>
@@ -498,51 +593,6 @@ export default function LandingPageContent({
           </div>
         </div>
       </section>
-
-      {isOffer2699 && (
-        <section id="video-testimonials" className="root-video-testimonials px-4 py-20 md:px-6 md:py-24" style={{ background: '#2C2622' }}>
-          <div className="mx-auto max-w-5xl">
-            <div className="mx-auto mb-12 max-w-2xl text-center md:mb-16">
-              <div className="iconik-micro mb-5" style={{ color: '#D7B57A', opacity: 0.85 }}>Real Clients · Real Experiences</div>
-              <h2 className="iconik-display" style={{ color: '#F4EFE5', fontSize: 'clamp(36px, 6vw, 64px)', lineHeight: 1.05 }}>
-                Hear it in their own words.
-              </h2>
-              <p className="mx-auto mt-6 max-w-xl" style={{ color: '#F4EFE5', fontSize: '16px', lineHeight: 1.8, opacity: 0.72 }}>
-                Three quick notes from ICONIK clients about what personal styling changed for them.
-              </p>
-            </div>
-
-            <div className="grid items-start gap-8 md:grid-cols-2 md:gap-10 lg:grid-cols-3 lg:gap-8">
-              <TestimonialVideoCard
-                src="/testimonialvideo2.mp4"
-                poster="/testimonialvideo2-poster.jpg"
-                name="Tina"
-                rating={5}
-                number={1}
-                quote="Thanks to ICONIK’s stylists. They helped me get styled for my events. It was absolutely worth it."
-              />
-              <TestimonialVideoCard
-                src="/testimonialvideo1.mp4"
-                poster="/testimonialvideo1-poster.jpg"
-                name="Priya"
-                rating={5}
-                number={2}
-                faceBlur={{ left: '40.5%', top: '32.3%', width: '22.5%', height: '20.3%' }}
-                quote="I was very insecure about my tummy. Thanks to ICONIK for actually suggesting outfits that helped me get my confidence back."
-              />
-              <TestimonialVideoCard
-                src="/testimonialvideo3.mp4"
-                poster="/testimonialvideo3-poster.jpg"
-                name="Gayathri"
-                rating={4}
-                number={3}
-                faceBlur={{ left: '28.5%', top: '34.3%', width: '23%', height: '18.5%' }}
-                quote="I found ICONIK on Instagram, and Jazz was very helpful in finding what actually suited me. It was a very good experience."
-              />
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ── SECTION 3: Report Preview ────────────────────────────────────── */}
       <section id="features" className="root-report-section py-24 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
@@ -841,17 +891,20 @@ export default function LandingPageContent({
                 Every Blueprint comes with these four guides at no extra cost. Your stylist makes them for your face and skin.
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {OFFER_FREE_BONUSES.map((bonus) => (
-                <div key={bonus.title} className="root-bonus-card flex items-start gap-4 rounded-2xl p-6" style={{ background: '#fff', border: '1px solid rgba(44,38,34,0.08)' }}>
-                  <span className="root-bonus-tag shrink-0 rounded-full px-3 py-1" style={{ background: '#54705d', color: '#fff', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em' }}>FREE</span>
-                  <div>
-                    <h3 className="iconik-display mb-1" style={{ fontSize: '19px', color: '#2C2622' }}>{bonus.title}</h3>
-                    <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#2C2622', opacity: 0.65 }}>{bonus.desc}</p>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+              {OFFER_GUIDE_IMAGES.map((guide) => (
+                <figure key={guide.title} className="offer-guide-card overflow-hidden">
+                  <div className="relative aspect-square">
+                    <Image src={guide.src} alt={`Free ${guide.title.toLowerCase()} booklet`} fill sizes="(max-width: 768px) 46vw, 240px" className="object-cover" loading="lazy" />
                   </div>
-                </div>
+                  <figcaption className="p-3 md:p-4">
+                    <h3 className="iconik-display" style={{ fontSize: '16px', color: '#2C2622' }}>{guide.title}</h3>
+                    <p className="mt-1" style={{ fontSize: '13px', lineHeight: 1.5, color: '#2C2622', opacity: 0.65 }}>{guide.desc}</p>
+                  </figcaption>
+                </figure>
               ))}
             </div>
+            <p className="mt-4 text-center" style={{ fontSize: '11px', color: '#2C2622', opacity: 0.45 }}>Sample pages shown on an illustrative model. Yours are made for your face and skin.</p>
           </div>
         </section>
       )}
@@ -991,12 +1044,10 @@ export default function LandingPageContent({
                     <span>{item}</span>
                   </li>
                 ))}
-                {OFFER_FREE_BONUSES.map((bonus) => (
-                  <li key={bonus.title} className="flex items-start gap-3" style={{ color: '#F4EFE5', fontSize: '15px', lineHeight: 1.5 }}>
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />
-                    <span>{bonus.title} <span className="root-price-free ml-1 rounded-full px-2 py-0.5" style={{ background: 'rgba(244,239,229,0.16)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em' }}>FREE</span></span>
-                  </li>
-                ))}
+                <li className="flex items-start gap-3" style={{ color: '#F4EFE5', fontSize: '15px', lineHeight: 1.5 }}>
+                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />
+                  <span>Hairstyle, makeup, hair colour and glasses guides <span className="root-price-free ml-1 rounded-full px-2 py-0.5" style={{ background: 'rgba(244,239,229,0.16)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em' }}>FREE</span></span>
+                </li>
               </ul>
             )}
           </div>
@@ -1008,6 +1059,11 @@ export default function LandingPageContent({
             <span className="iconik-display" style={{ fontSize: '16px', color: '#F4EFE5' }}>{isOffer2699 ? `Get My Personal Style Blueprint — ${formattedBasePrice}` : `Get Your Style Consultation — ${formattedBasePrice}`}</span>
             <ArrowRight className="h-4 w-4 opacity-60" style={{ color: '#F4EFE5' }} />
           </Link>
+          {isOffer2699 && (
+            <p className="offer-promise-line mx-auto mt-5 max-w-md" style={{ color: '#F4EFE5', fontSize: '13px', lineHeight: 1.6, opacity: 0.75 }}>
+              <strong>Free-changes promise:</strong> {FREE_CHANGES_PROMISE.charAt(0).toLowerCase() + FREE_CHANGES_PROMISE.slice(1)}
+            </p>
+          )}
         </div>
       </section>
 
@@ -1060,7 +1116,9 @@ export default function LandingPageContent({
           </Link>
           <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginTop: '16px' }}>
             <span className="iconik-mono opacity-50" style={{ fontSize: '11px', color: '#F4EFE5' }}>
-              {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients · {CLIENT_PROOF.countriesServed}+ countries · {BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery
+              {isOffer2699
+                ? `${CLIENT_PROOF.womenStyled.toLocaleString('en-IN')}+ women styled · Free changes until it matches · Ready in ${BLUEPRINT_OFFER.deliveryWorkingDays} working days`
+                : `${CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients · ${CLIENT_PROOF.countriesServed}+ countries · ${BLUEPRINT_OFFER.deliveryWorkingDays} working-day delivery`}
             </span>
           </div>
         </div>

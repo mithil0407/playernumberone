@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Lock, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Lock, ShieldCheck } from 'lucide-react';
 import { getAttributionPayload } from '@/lib/attribution';
 import { CLIENT_PROOF } from '@/lib/siteFacts';
+import { ClientMessagesStrip, FeaturedClientMessage, FREE_CHANGES_PROMISE } from '@/components/OfferShowcase';
 import {
   INDIA_BLUEPRINT_CONTENT_NAME,
   INDIA_BLUEPRINT_PRODUCT_ID,
@@ -93,14 +93,6 @@ const trustItems = [
   'Ready in 5 working days after your call',
 ];
 
-const testimonialScreenshots = [
-  { src: '/text1.webp', alt: 'WhatsApp feedback from an ICONIK client' },
-  { src: '/text2.webp', alt: 'WhatsApp feedback from an ICONIK client' },
-  { src: '/text3.webp', alt: 'WhatsApp feedback from an ICONIK client' },
-  { src: '/text4.webp', alt: 'WhatsApp feedback from an ICONIK client' },
-  { src: '/text5.webp', alt: 'WhatsApp feedback from an ICONIK client' },
-];
-
 interface IndiaBlueprintCheckoutProps {
   basePrice: number;
   funnelEntry: IndiaFunnelEntry;
@@ -132,7 +124,8 @@ export default function IndiaBlueprintCheckout({
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [showPayBar, setShowPayBar] = useState(false);
+  const payButtonRef = useRef<HTMLButtonElement>(null);
   const contentCategory = indiaFunnelCategoryFromEntry(funnelEntry);
   const storageKey = `iconik_${checkoutSource}`;
   const checkoutEventLocation = funnelEntry === 'root' ? 'Root Checkout' : 'Offer Checkout';
@@ -194,11 +187,28 @@ export default function IndiaBlueprintCheckout({
     document.body.appendChild(script);
   }, []);
 
+  useEffect(() => {
+    // The mobile pay bar appears once the real Pay button is out of view, so
+    // the price and the button are always one tap away.
+    const payButton = payButtonRef.current;
+    if (!payButton) return;
+    const observer = new IntersectionObserver(([entry]) => setShowPayBar(!entry.isIntersecting), { threshold: 0.2 });
+    observer.observe(payButton);
+    return () => observer.disconnect();
+  }, []);
+
   const validateDetails = useCallback(() => {
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     const validPhone = /^\d{10}$/.test(phone);
     setEmailError(validEmail ? '' : 'Enter a valid email address.');
     setPhoneError(validPhone ? '' : 'Enter a valid 10-digit WhatsApp number.');
+    if (!validEmail || !validPhone) {
+      // Paying from the sticky bar can leave the fields far above; bring the
+      // first one that needs fixing back into view.
+      const field = document.getElementById(validEmail ? 'offer-phone' : 'offer-email');
+      field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      field?.focus({ preventScroll: true });
+    }
     return validEmail && validPhone;
   }, [email, phone]);
 
@@ -422,7 +432,7 @@ export default function IndiaBlueprintCheckout({
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
+      <main className="mx-auto max-w-5xl px-4 pt-8 pb-28 sm:pt-12 lg:pb-12">
         <div className="mx-auto mb-8 max-w-2xl text-center">
           <div className="iconik-micro mb-3 text-[#2C2622]/45">Secure Checkout</div>
           <h1 className="iconik-display text-3xl leading-tight text-[#2C2622] sm:text-5xl">Book Your <span className="root-serif-moment">Personal Style Blueprint</span></h1>
@@ -442,23 +452,32 @@ export default function IndiaBlueprintCheckout({
 
               {packageContents}
 
-              <div className="mt-6 rounded-2xl bg-[#F8F3E9] p-4 text-center">
-                <div className="iconik-display text-lg text-[#2C2622]">Trusted by {CLIENT_PROOF.totalClients.toLocaleString('en-IN')}+ clients</div>
-                <p className="mt-1 text-xs text-[#2C2622]/55">Personal styling in {CLIENT_PROOF.countriesServed}+ countries</p>
+              <div className="checkout-featured-quote mt-6">
+                <div className="iconik-micro mb-3 text-[#54705d]">{CLIENT_PROOF.womenStyled.toLocaleString('en-IN')}+ women styled</div>
+                <FeaturedClientMessage />
               </div>
             </aside>
 
-            <div className="space-y-6">
-              <section className="rounded-2xl border border-[#2C2622]/10 bg-white p-5 shadow-sm lg:hidden">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="iconik-micro mb-2 text-[#2C2622]/45">Your Package</div>
-                    <h2 className="iconik-display text-xl text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
+            <div className="min-w-0 space-y-6">
+              {/* On phones the package folds to one line so the form starts on
+                  the first screen; the full list is one tap away. */}
+              <details className="checkout-package-mobile group rounded-2xl border border-[#2C2622]/10 bg-white p-5 shadow-sm lg:hidden">
+                <summary className="cursor-pointer list-none">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="iconik-micro mb-1.5 text-[#2C2622]/45">Your Package</div>
+                      <h2 className="iconik-display text-lg leading-tight text-[#2C2622]">ICONIK Personal Style Blueprint</h2>
+                    </div>
+                    <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
                   </div>
-                  <div className="iconik-display shrink-0 text-2xl text-[#2C2622]">{formatINR(basePrice)}</div>
-                </div>
+                  <p className="mt-2 text-sm leading-5 text-[#2C2622]/70">Stylist call · 20 outfits · your colours · <span className="font-semibold text-[#54705d]">4 free guides</span></p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#2C2622]/70">
+                    See what&apos;s included
+                    <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+                  </span>
+                </summary>
                 {packageContents}
-              </section>
+              </details>
 
               <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
                 <div className="mb-6">
@@ -553,6 +572,13 @@ export default function IndiaBlueprintCheckout({
                 </div>
               </section>
 
+              {/* Proof sits right before the total and Pay button, where doubt
+                  peaks, instead of splitting the form from the add-ons. Desktop
+                  shows one quote in the sticky package column instead. */}
+              <section aria-label="Client WhatsApp messages" className="checkout-proof rounded-3xl border border-[#2C2622]/10 bg-white p-5 shadow-sm sm:p-6 lg:hidden">
+                <ClientMessagesStrip compact />
+              </section>
+
               <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
                 <div className="flex items-end justify-between gap-4 border-b border-[#2C2622]/10 pb-5">
                   <div>
@@ -563,6 +589,7 @@ export default function IndiaBlueprintCheckout({
                 </div>
 
                 <button
+                  ref={payButtonRef}
                   type="submit"
                   disabled={isProcessing}
                   className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-[#2C2622] px-5 py-4 text-center text-sm font-semibold text-[#F4EFE5] transition hover:bg-[#3d3430] focus:outline-none focus:ring-2 focus:ring-[#2C2622] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
@@ -570,6 +597,11 @@ export default function IndiaBlueprintCheckout({
                   <Lock className="h-4 w-4 shrink-0" />
                   {isProcessing ? 'Opening secure Razorpay payment…' : `Pay ${formatINR(totalAmount)} Securely`}
                 </button>
+
+                <div className="mt-4 flex items-start gap-2.5 rounded-2xl bg-[#94A6AD]/15 p-3.5 text-xs leading-5 text-[#2C2622]/75">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#6A1F2B]" />
+                  <span><strong className="text-[#2C2622]">Free-changes promise.</strong> {FREE_CHANGES_PROMISE}</span>
+                </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
                   {trustItems.map((item) => (
@@ -579,53 +611,35 @@ export default function IndiaBlueprintCheckout({
                     </div>
                   ))}
                 </div>
+
               </section>
             </div>
           </div>
         </form>
-
-        <section aria-label="Client WhatsApp testimonials" className="mx-auto mt-8 max-w-2xl rounded-2xl border border-[#2C2622]/10 bg-white p-4 shadow-sm sm:p-5">
-          <div className="grid grid-cols-[110px_1fr] items-center gap-4 sm:grid-cols-[130px_1fr] sm:gap-6">
-            <div className="relative aspect-[9/16] overflow-hidden rounded-xl border border-[#2C2622]/10 bg-[#F8F3E9]" aria-live="polite">
-              {testimonialScreenshots.map((testimonial, index) => (
-                <div
-                  key={testimonial.src}
-                  className={`absolute inset-0 transition-opacity duration-500 ${index === currentTestimonial ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-                  aria-hidden={index !== currentTestimonial}
-                >
-                  <Image src={testimonial.src} alt={testimonial.alt} fill sizes="(max-width: 640px) 110px, 130px" className="object-cover" priority={index === 0} />
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <div className="iconik-micro mb-2 text-[#2C2622]/45">Client Messages</div>
-              <h2 className="iconik-display text-xl leading-tight text-[#2C2622] sm:text-2xl">What our clients sent us</h2>
-              <p className="mt-2 text-xs leading-5 text-[#2C2622]/60">WhatsApp feedback from women after working with ICONIK.</p>
-
-              <div className="mt-4 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setCurrentTestimonial((current) => (current - 1 + testimonialScreenshots.length) % testimonialScreenshots.length)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#2C2622]/15 text-[#2C2622] transition hover:border-[#2C2622]/35 hover:bg-[#F8F3E9] focus:outline-none focus:ring-2 focus:ring-[#2C2622] focus:ring-offset-2"
-                  aria-label="Previous client message"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="iconik-mono min-w-7 text-center text-[8px] text-[#2C2622]/50">{currentTestimonial + 1}/{testimonialScreenshots.length}</span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentTestimonial((current) => (current + 1) % testimonialScreenshots.length)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#2C2622]/15 text-[#2C2622] transition hover:border-[#2C2622]/35 hover:bg-[#F8F3E9] focus:outline-none focus:ring-2 focus:ring-[#2C2622] focus:ring-offset-2"
-                  aria-label="Next client message"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
+
+      <div
+        className={`checkout-pay-bar fixed inset-x-0 bottom-0 z-50 border-t border-[#2C2622]/10 bg-[#F8F3E9]/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-xl transition-all duration-300 lg:hidden ${showPayBar ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-full opacity-0'}`}
+        aria-hidden={!showPayBar}
+      >
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          <div className="shrink-0">
+            <div className="iconik-display text-lg leading-none text-[#2C2622]">{formatINR(totalAmount)}</div>
+            <div className="mt-1 text-[10px] font-semibold text-[#54705d]">+ 4 free guides</div>
+          </div>
+          <button
+            type="button"
+            tabIndex={showPayBar ? 0 : -1}
+            disabled={isProcessing}
+            onClick={() => void processPayment()}
+            className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#2C2622] px-4 py-3 text-sm font-semibold text-[#F4EFE5] disabled:opacity-60"
+          >
+            <Lock className="h-4 w-4 shrink-0" />
+            {isProcessing ? 'Opening payment…' : `Pay ${formatINR(totalAmount)} Securely`}
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }
