@@ -28,6 +28,7 @@ import {
   updateManEditSubscriptionFromWebhook,
 } from '@/lib/manEdit';
 import { createEditIssueDraft, runEditIssuePipeline } from '@/lib/manEditIssues';
+import { markCheckoutRecoveryConverted, markCheckoutRecoveryPaymentFailed } from '@/lib/checkoutRecovery';
 
 // Room for a monthly charge to write that month's Edit draft after the 200.
 export const maxDuration = 300;
@@ -377,6 +378,7 @@ async function handlePaymentCaptured(payment: RazorpayPayment) {
         console.error('Error updating order:', updateError);
       } else {
         console.log(`Order ${order_id} marked as completed`);
+        await markCheckoutRecoveryConverted(existingOrder.customers?.email, existingOrder.id);
 
         await recordRevenueEvent({
           eventKey: `orders:${existingOrder.id}:payment:${payment.id}`,
@@ -479,6 +481,7 @@ async function handlePaymentFailed(payment: RazorpayPayment) {
         .maybeSingle();
 
       if (failedOrder) {
+        await markCheckoutRecoveryPaymentFailed(failedOrder.id);
         const failedCustomer = Array.isArray(failedOrder.customers)
           ? failedOrder.customers[0]
           : failedOrder.customers;
@@ -671,6 +674,7 @@ async function handleOrderPaid(order: RazorpayOrder, payment: RazorpayPayment) {
         console.error('Error updating paid order:', updateError);
       } else {
         console.log(`Order ${order.id} marked as paid`);
+        await markCheckoutRecoveryConverted(existingOrder.customers?.email, existingOrder.id);
 
         await recordRevenueEvent({
           eventKey: `orders:${existingOrder.id}:payment:${payment.id}`,

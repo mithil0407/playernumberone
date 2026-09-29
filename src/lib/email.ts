@@ -120,7 +120,7 @@ export interface GlobeIntakeNotificationData {
   hair_type?: string;
 }
 
-function getTransporter() {
+export function getTransporter() {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
 

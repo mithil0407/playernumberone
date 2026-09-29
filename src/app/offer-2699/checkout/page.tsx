@@ -3,8 +3,8 @@ import { INDIA_OFFER_2699_BLUEPRINT_PRICE } from '@/lib/indiaBlueprintPricing';
 import { OFFER_TOPICS, parseOfferTopicKey } from '@/lib/offerTopics';
 import type { RootDesignVariant } from '@/lib/rootDesign';
 
-export default async function Offer2699CheckoutPage({ searchParams }: { searchParams: Promise<{ scan?: string; topic?: string }> }) {
-  const { scan = '', topic: topicParam } = await searchParams;
+export default async function Offer2699CheckoutPage({ searchParams }: { searchParams: Promise<{ scan?: string; topic?: string; restore?: string }> }) {
+  const { scan = '', topic: topicParam, restore } = await searchParams;
   const topic = OFFER_TOPICS[parseOfferTopicKey(topicParam) ?? 'general'];
   const designVariant: RootDesignVariant = 'precision';
 
@@ -17,6 +17,8 @@ export default async function Offer2699CheckoutPage({ searchParams }: { searchPa
       scanToken={scan}
       designVariant={designVariant}
       topicNote={topic.checkoutNote}
+      topicKey={topic.key}
+      restoreSavedCart={restore === '1'}
     />
   );
 }

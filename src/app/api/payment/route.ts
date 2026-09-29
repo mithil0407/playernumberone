@@ -10,6 +10,7 @@ import {
 import { indiaFunnelCategoryFromEntry } from '@/lib/metaTrackingContract';
 import Razorpay from 'razorpay';
 import { getStyleScanByToken } from '@/lib/styleScan';
+import { recordCheckoutLead } from '@/lib/checkoutRecovery';
 
 export async function POST(request: NextRequest) {
   try {
@@ -183,6 +184,22 @@ export async function POST(request: NextRequest) {
 
       if (updateIdError) {
         console.error('Failed to update order with Razorpay ID:', updateIdError);
+      }
+
+      // The payment window is about to open: if it is abandoned or fails, the
+      // recovery emails pick this lead up (recordCheckoutLead never throws).
+      if (indiaCheckoutSource && dbOrderId !== 'mock-order-id') {
+        await recordCheckoutLead({
+          email: customer_email,
+          phone: customer_phone,
+          whatsappOptIn: whatsappOptIn,
+          checkoutSource: indiaCheckoutSource,
+          topic: body.topic,
+          addons: add_ons,
+          stage: 'payment_opened',
+          orderId: dbOrderId,
+          attribution: incomingAttribution,
+        });
       }
 
       // OPTIMIZATION #3: Return minimal payload - only what frontend needs

@@ -102,6 +102,10 @@ interface IndiaBlueprintCheckoutProps {
   designVariant?: RootDesignVariant;
   /** Topic landing pages carry their promise into the package summary. */
   topicNote?: string;
+  /** Offer topic key, recorded so a recovery email links back to the same topic checkout. */
+  topicKey?: string;
+  /** Set when arriving from a recovery email: load the saved cart and prefill it. */
+  restoreSavedCart?: boolean;
 }
 
 export default function IndiaBlueprintCheckout({
@@ -112,6 +116,8 @@ export default function IndiaBlueprintCheckout({
   scanToken = '',
   designVariant,
   topicNote,
+  topicKey,
+  restoreSavedCart = false,
 }: IndiaBlueprintCheckoutProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -126,6 +132,7 @@ export default function IndiaBlueprintCheckout({
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [showPayBar, setShowPayBar] = useState(false);
   const payButtonRef = useRef<HTMLButtonElement>(null);
+  const lastCapturedLead = useRef('');
   const contentCategory = indiaFunnelCategoryFromEntry(funnelEntry);
   const storageKey = `iconik_${checkoutSource}`;
   const checkoutEventLocation = funnelEntry === 'root' ? 'Root Checkout' : 'Offer Checkout';
@@ -156,6 +163,54 @@ export default function IndiaBlueprintCheckout({
     }
 
   }, [basePrice, contentCategory, storageKey]);
+
+  useEffect(() => {
+    // Arriving from a recovery email: the saved cart outranks this tab's draft.
+    if (!restoreSavedCart || !hasRestoredDraft) return;
+    let cancelled = false;
+    fetch('/api/checkout-recovery/resume', { method: 'POST', cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const cart = data?.cart;
+        if (cancelled || !cart) return;
+        setEmail(String(cart.email || ''));
+        setPhone(String(cart.phone || ''));
+        setWhatsappOptIn(Boolean(cart.whatsappOptIn));
+        setOutfitPreview(Boolean(cart.outfitPreview));
+        setWardrobeDetox(Boolean(cart.wardrobeDetox));
+        setSmartShopper(Boolean(cart.smartShopper));
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [restoreSavedCart, hasRestoredDraft]);
+
+  useEffect(() => {
+    // Save the lead once the details are valid so a recovery email can reach
+    // people who leave before pressing Pay. Debounced, and only resent when
+    // something actually changed.
+    if (!hasRestoredDraft) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^[6-9]\d{9}$/.test(phone)) return;
+    const lead = {
+      email: email.trim(),
+      phone,
+      whatsapp_opt_in: whatsappOptIn,
+      checkout_source: checkoutSource,
+      topic: topicKey,
+      add_ons: { outfit_preview: outfitPreview, wardrobe_detox: wardrobeDetox, smart_shoppers_guide: smartShopper },
+    };
+    const signature = JSON.stringify(lead);
+    if (signature === lastCapturedLead.current) return;
+    const timer = window.setTimeout(() => {
+      lastCapturedLead.current = signature;
+      fetch('/api/checkout-recovery/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...lead, attribution: getAttributionPayload() }),
+        keepalive: true,
+      }).catch(() => undefined);
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [email, phone, whatsappOptIn, outfitPreview, wardrobeDetox, smartShopper, hasRestoredDraft, checkoutSource, topicKey]);
 
   useEffect(() => {
     if (!scanToken) return;
@@ -255,6 +310,7 @@ export default function IndiaBlueprintCheckout({
           whatsapp_opt_in: whatsappOptIn,
           amount: paymentAmount,
           checkout_source: checkoutSource,
+          topic: topicKey,
           // Recorded in the Razorpay order notes so the webhook can send the
           // server-side Purchase with the same content_category as the browser.
           funnel_entry: contentCategory,
@@ -363,7 +419,7 @@ export default function IndiaBlueprintCheckout({
       setIsProcessing(false);
       window.alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
     }
-  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, designVariant, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, validateDetails, wardrobeDetox, whatsappOptIn]);
+  }, [basePrice, checkoutEventLocation, checkoutSource, contentCategory, designVariant, email, outfitPreview, phone, razorpayLoaded, scanToken, smartShopper, storageKey, topicKey, validateDetails, wardrobeDetox, whatsappOptIn]);
 
   const addonCards = [
     {
@@ -534,7 +590,7 @@ export default function IndiaBlueprintCheckout({
                     Send my order confirmation, call booking link and updates on WhatsApp. I can stop these any time.
                   </span>
                 </label>
-                <p className="mt-3 text-xs leading-5 text-[#2C2622]/50">We keep your details private and use them only for your payment and your call. We always send a confirmation email.</p>
+                <p className="mt-3 text-xs leading-5 text-[#2C2622]/50">We keep your details private and use them only for your order: your payment, your call, and a reminder email if you don&apos;t finish checkout. We always send a confirmation email.</p>
               </section>
 
               <section className="rounded-3xl border border-[#2C2622]/10 bg-white p-6 shadow-sm sm:p-8">
