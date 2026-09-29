@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bodoni_Moda, Inter, Manrope, Playfair_Display, Fraunces, JetBrains_Mono, Newsreader } from "next/font/google";
 import Script from "next/script";
 import PublicAnalytics from "@/components/PublicAnalytics";
+import ClarityScript from "@/components/ClarityScript";
 import { INTERNAL_PAGE_VIEW_PATTERNS } from "@/lib/metaPageView";
 import MetaPixelProvider from "@/components/MetaPixelProvider";
 import { META_PIXEL_ID } from "@/lib/metaPixel";
@@ -338,6 +339,9 @@ export default function RootLayout({
 
         {/* Vercel Analytics */}
         <PublicAnalytics measurementIds={GA_MEASUREMENT_IDS} />
+
+        {/* Microsoft Clarity — sales landing + checkout pages only */}
+        <ClarityScript />
       </body>
     </html>
   );
