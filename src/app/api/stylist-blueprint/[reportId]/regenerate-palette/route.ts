@@ -28,7 +28,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, share_token, submission_id, section_approvals, progress_stage')
+    .select('id, report_data, share_token, submission_id, section_approvals, progress_stage, revision')
     .eq('id', reportId)
     .single();
 
@@ -92,8 +92,9 @@ export async function POST(
         report_data: nextReportData,
         section_approvals: nextApprovals,
         status: 'in_review',
-        published_at: null,
-        delivered_at: null,
+        // The client keeps reading the published snapshot; bumping the
+        // revision is what marks this as a change she has not been sent yet.
+        revision: Number(report.revision ?? 0) + 1,
         progress_stage: null,
         error_message: null,
         updated_at: new Date().toISOString(),

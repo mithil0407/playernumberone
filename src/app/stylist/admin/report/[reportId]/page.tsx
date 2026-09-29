@@ -31,6 +31,7 @@ import {
   Send,
   ThumbsDown,
   ThumbsUp,
+  Trash2,
   Undo2,
   WandSparkles,
   X,
@@ -46,6 +47,7 @@ import {
   getStylistBlueprintContinuationPage,
   getStylistBlueprintOutfitEndPage,
   getStylistBlueprintOutfitStartPage,
+  getStylistBlueprintOutfitSystemPage,
   getStylistBlueprintPageCount,
   getStylistBlueprintPalettePage,
   getStylistBlueprintRulesStartPage,
@@ -53,6 +55,19 @@ import {
 } from '@/lib/stylistBlueprintSchema';
 import type { ResolvedStylistBlueprintImageUrls, StylistBlueprintImageGroup, StylistBlueprintImageSlotKey } from '@/lib/stylistBlueprintImageGenerator';
 import { checkStudioReportQuality, moveStudioPage } from '@/lib/stylistReportStudio';
+import { hasUnpublishedChanges, publishedVersion } from '@/lib/stylistReportPublication';
+import StylistRevisionPanel from '@/components/StylistRevisionPanel';
+import type { StylistReportRevision } from '@/lib/stylistReportRevisions';
+import {
+  findRevisedOutfit,
+  isRevisedOutfitPageNumber,
+  orderedRevisedOutfits,
+  removeRevisedOutfit,
+  replaceRevisedOutfitPage,
+  revisedOutfitIssues,
+  revisedOutfitSlotIndex,
+  revisedOutfitSlotKey,
+} from '@/lib/stylistRevisedOutfits';
 import { prepareReportForPrint } from '@/lib/reportPrint';
 
 interface GenerationStatus {
@@ -77,6 +92,8 @@ interface Report {
   published_at?: string | null;
   delivered_at?: string | null;
   revision?: number;
+  published_revision?: number | null;
+  published_version?: number | null;
   stylist_intake_responses: { customer_email: string | null; customer_phone: string | null; full_name: string | null; intake_source?: string | null; consultation_id?: string | null } | null;
 }
 
@@ -129,6 +146,7 @@ function responseErrorMessage(data: unknown, fallback: string) {
 
 function pageGroup(pageNumber: number, data?: StylistBlueprintReportData | null) {
   if (!data) return 'Opening';
+  if (isRevisedOutfitPageNumber(pageNumber)) return 'Revised looks';
   if (pageNumber <= 4) return 'Opening';
   if (pageNumber <= 9) return 'Diagnosis';
   if (pageNumber < getStylistBlueprintOutfitStartPage(data)) return 'Style Guide';
@@ -189,7 +207,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const [generation, setGeneration] = useState<GenerationStatus | null>(null);
   const [resumeNote, setResumeNote] = useState('');
   const [copied, setCopied] = useState(false);
-  const [deliveryPrepared, setDeliveryPrepared] = useState<{ reportUrl: string; whatsappUrl: string; clientName?: string | null } | null>(null);
+  // The brief for an open revision, if the client has asked for changes.
+  const [revision, setRevision] = useState<StylistReportRevision | null>(null);
+  const [deliveryPrepared, setDeliveryPrepared] = useState<{ reportUrl: string; whatsappUrl: string; clientName?: string | null; publishedVersion?: number } | null>(null);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [error, setError] = useState('');
   const [imageCounts, setImageCounts] = useState<Record<string, { done: number; total: number }> | null>(null);
@@ -266,6 +286,37 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
   useEffect(() => { void load().catch(caught => { setError(caught instanceof Error ? caught.message : 'Could not load report'); setLoading(false); }); }, [load]);
 
+  // An open revision is the first thing the stylist needs to see here, so it
+  // loads alongside the report. A workspace without the revisions table yet
+  // simply has none.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(`/api/stylist-workspace/reports/${reportId}/revisions`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await readJsonBody<{ revisions?: StylistReportRevision[] }>(response);
+        if (!cancelled) setRevision(data?.revisions?.find(item => item.status === 'open') ?? null);
+      } catch { /* The report itself still works without the brief. */ }
+    })();
+    return () => { cancelled = true; };
+  }, [reportId]);
+
+  /** Ticking a change off the client's list. */
+  const toggleRevisionChange = useCallback(async (itemId: string, done: boolean) => {
+    if (!revision) return;
+    const scope = revision.scope.map(item => item.id === itemId ? { ...item, done } : item);
+    const response = await fetch(`/api/stylist-workspace/reports/${reportId}/revisions/${revision.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scope }),
+    });
+    const data = await readJsonBody<{ revision?: StylistReportRevision; error?: string }>(response);
+    if (!response.ok) {
+      setError(data?.error || 'Could not update the revision checklist');
+      return;
+    }
+    if (data?.revision) setRevision(data.revision);
+  }, [reportId, revision]);
+
   useEffect(() => {
     unsavedEditsRef.current = dirtyPages.size > 0 || reportDataDirty;
   }, [dirtyPages.size, reportDataDirty]);
@@ -338,9 +389,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     if (!reviewData) return rawPages;
     const continuationPage = getStylistBlueprintContinuationPage(reviewData);
     const orderIndex = new Map((reviewData.studio?.page_order ?? []).map((pageNumber, index) => [pageNumber, index]));
-    return rawPages
+    const layout = rawPages
       .filter(page => !hideContinuationPage || page.page_number !== continuationPage)
       .sort((a, b) => (orderIndex.get(a.page_number) ?? a.page_number) - (orderIndex.get(b.page_number) ?? b.page_number));
+    // Revised looks sit just before the outfits, where the client reads them.
+    const revised = orderedRevisedOutfits(reviewData).map(entry => entry.page);
+    const at = layout.findIndex(page => page.page_number === getStylistBlueprintOutfitSystemPage(reviewData) || page.page_number === getStylistBlueprintOutfitStartPage(reviewData));
+    return at < 0 ? [...layout, ...revised] : [...layout.slice(0, at), ...revised, ...layout.slice(at)];
   }, [hideContinuationPage, reviewData]);
   const pages = visiblePages;
   const activePage = pages.find(page => page.page_number === activePageNumber) ?? pages[0] ?? null;
@@ -354,11 +409,22 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     activePageNumber >= getStylistBlueprintOutfitStartPage(versioned) &&
     activePageNumber <= getStylistBlueprintOutfitEndPage(versioned),
   );
+  // A revised look uses the outfit editor, but none of the tools that rewrite
+  // a look in its layout slot (alternatives, regenerate, like/dislike).
+  const activeRevisedOutfit = reviewData && isRevisedOutfitPageNumber(activePageNumber) ? findRevisedOutfit(reviewData, activePageNumber) : null;
+  const activePageHasOutfitEditor = activePageIsOutfit || Boolean(activeRevisedOutfit);
+  const activeOutfitSlot = (activeRevisedOutfit
+    ? revisedOutfitSlotKey(activePageNumber)
+    : `application.outfitFlatlays.${activePageNumber - (versioned ? getStylistBlueprintOutfitStartPage(versioned) : 0)}`) as StylistBlueprintImageSlotKey;
   const activePageIsPalette = Boolean(versioned && activePageNumber === getStylistBlueprintPalettePage(versioned));
   const activeReportUsesScienceHarness = Boolean(versioned?.outfit_engine);
   const isStudioReport = versioned?.version === STYLIST_BLUEPRINT_VERSION;
+  const revisedWarnings = useMemo(() => reviewData
+    ? revisedOutfitIssues(reviewData, pageNumber => Boolean(report?.image_urls?.revision?.outfitFlatlays?.[revisedOutfitSlotIndex(pageNumber)]))
+    : [], [reviewData, report?.image_urls]);
   const qualityIssues = useMemo(() => {
     const issues = reviewData ? checkStudioReportQuality(reviewData) : [];
+    for (const message of revisedWarnings) issues.push({ level: 'warning', message });
     for (const [group, count] of Object.entries(imageCounts ?? {})) {
       // A warning, not a blocker: the report reads fine with a placeholder in
       // an image slot, and a stylist who has decided to ship without one should
@@ -366,7 +432,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       if (count.done < count.total) issues.push({ level: 'warning', message: `Upload ${count.total - count.done} missing ${group.replace(/_/g, ' ')} image${count.total - count.done === 1 ? '' : 's'}.` });
     }
     return issues;
-  }, [imageCounts, reviewData]);
+  }, [imageCounts, reviewData, revisedWarnings]);
   const hasUnsavedEdits = dirtyPages.size > 0 || reportDataDirty;
   const currentOutfitFeedback = outfitFeedbackByPage[activePageNumber] ?? null;
   const imageGroups = hideContinuationPage
@@ -476,6 +542,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     setSaveConflict(false);
     setDraftData(prev => {
       if (!prev) return prev;
+      if (isRevisedOutfitPageNumber(page.page_number)) return replaceRevisedOutfitPage(prev, page);
       return {
         ...prev,
         pages: prev.pages.map(item => item.page_number === page.page_number ? page : item),
@@ -589,6 +656,19 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
 
   // Image prompts sit inline on each image slot, so load them with the report.
   useEffect(() => { void loadManualPrompts(); }, [loadManualPrompts]);
+
+  // `?page=101` opens a page directly: starting a revision from the dashboard
+  // lands on the first new look with its editor open, not on the cover.
+  const deepLinkedRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkedRef.current || !reviewData) return;
+    deepLinkedRef.current = true;
+    const requested = Number(new URLSearchParams(window.location.search).get('page'));
+    if (!Number.isInteger(requested) || !visiblePages.some(page => page.page_number === requested)) return;
+    setActivePageNumber(requested);
+    setViewMode('page');
+    if (isRevisedOutfitPageNumber(requested)) setStudioPanel('outfit');
+  }, [reviewData, visiblePages]);
 
   // Keyed prompts so each image slot in the report can show its own, instead of
   // the stylist hunting for the matching entry in a sidebar list.
@@ -1314,6 +1394,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
     }
     const warnings = [
       ...(isStudioReport ? qualityIssues.filter(issue => issue.level === 'error').map(issue => issue.message) : []),
+      // A blank or imageless revised look is exactly what the client asked for, so it is worth one prompt.
+      ...revisedWarnings,
       ...(allApproved ? [] : [`${totalPageCount - approvedCount} page${totalPageCount - approvedCount === 1 ? '' : 's'} are not approved yet.`]),
     ];
     if (warnings.length && !window.confirm(`Publish and deliver anyway?\n\n${warnings.map(warning => `\u2022 ${warning}`).join('\n')}`)) {
@@ -1334,7 +1416,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         const deliveryData = await deliveryRes.json();
         if (!deliveryRes.ok) throw new Error(deliveryData.error || 'Could not prepare WhatsApp delivery');
         setDeliveryPrepared(deliveryData);
-        setReport(prev => prev ? { ...prev, status: 'approved', published_at: new Date().toISOString() } : prev);
+        setReport(prev => prev ? {
+          ...prev, status: 'approved', published_at: new Date().toISOString(),
+          published_revision: prev.revision, published_version: deliveryData.publishedVersion ?? prev.published_version,
+        } : prev);
         return;
       }
       const res = await fetch(`/api/stylist-blueprint/${reportId}`, {
@@ -1451,6 +1536,10 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const recipientEmail = report.stylist_intake_responses?.customer_email?.trim() ?? '';
   // Consultation reports stay private until published; the public page 404s before then.
   const clientLinkLive = Boolean(report.published_at) || report.stylist_intake_responses?.intake_source !== 'india_consultation';
+  // What the client can open right now, which is not the same as what is on
+  // screen: her copy was frozen at publish time and edits since then are ours.
+  const clientVersion = publishedVersion(report);
+  const editsAwaitingPublish = hasUnpublishedChanges(report);
   const clientDisplayName = report.stylist_intake_responses?.full_name
     || recipientEmail
     || report.stylist_intake_responses?.customer_phone
@@ -1479,6 +1568,18 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
   const goToPage = (pageNumber: number) => {
     setActivePageNumber(pageNumber);
     setViewMode('page');
+  };
+  /** Revised looks carry internal page numbers (101+); the stylist knows them by look. */
+  const navNumber = (pageNumber: number) => {
+    const entry = isRevisedOutfitPageNumber(pageNumber) && reviewData ? findRevisedOutfit(reviewData, pageNumber) : null;
+    return entry ? `L${entry.replaces}` : String(pageNumber);
+  };
+  const removeActiveRevisedOutfit = () => {
+    if (!activeRevisedOutfit || !versioned) return;
+    if (!window.confirm(`Remove the revised version of Look ${activeRevisedOutfit.replaces}? The original look stays in the report.`)) return;
+    const original = getStylistBlueprintOutfitStartPage(versioned) + activeRevisedOutfit.replaces - 1;
+    updateStudioData(data => removeRevisedOutfit(data, activePageNumber));
+    goToPage(original);
   };
   // One place for text generation status and its one recovery action.
   const generationState = generation?.state ?? (report.status === 'generating' || report.progress_stage ? 'waiting' : report.status === 'error' ? 'failed' : 'complete');
@@ -1535,7 +1636,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               {report.progress_stage ? stageLabel(report.progress_stage) : report.status.replace(/_/g, ' ')}
             </Pill>
             {isLegacyReport && <Pill tone="gold">28-page legacy</Pill>}
+            {clientVersion > 1 && <Pill tone="slate">Version {clientVersion} sent</Pill>}
           </div>
+          {clientVersion > 0 && <p className="luxury-body text-xs leading-5 mt-3" style={{ color: editsAwaitingPublish ? S.gold : S.muted }}>
+            {editsAwaitingPublish
+              ? `${clientDisplayName} is still reading the version you published on ${new Date(report.published_at!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}. Your edits reach her only when you publish the update.`
+              : `Published ${new Date(report.published_at!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}. This is what ${clientDisplayName} sees.`}
+          </p>}
           {versioned && <div className="mt-4">
             <div className="flex items-baseline justify-between luxury-body text-xs"><span style={{ color: S.ink }}>{approvedCount} of {totalPageCount} pages approved</span><span style={{ color: '#655E57' }}>{totalPageCount ? Math.round((approvedCount / totalPageCount) * 100) : 0}%</span></div>
             <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(44,38,34,0.08)' }}><div className="h-full rounded-full transition-all duration-500" style={{ width: `${totalPageCount ? (approvedCount / totalPageCount) * 100 : 0}%`, background: '#426B4E' }} /></div>
@@ -1544,7 +1651,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
         {versioned && (
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="space-y-4">
-              {['Opening', 'Diagnosis', 'Style Guide', 'Outfits', 'Closing'].map(group => {
+              {['Opening', 'Diagnosis', 'Style Guide', 'Revised looks', 'Outfits', 'Closing'].map(group => {
                 const groupPages = pages.filter(page => pageGroup(page.page_number, reviewData) === group);
                 if (!groupPages.length) return null;
                 const groupApproved = groupPages.filter(page => report.section_approvals?.[`p${page.page_number}`]).length;
@@ -1570,8 +1677,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                             color: active ? S.bg : hidden ? '#8A837B' : S.ink,
                           }}
                         >
-                          <span className="luxury-body text-[11px] tabular-nums" style={{ opacity: 0.6 }}>{page.page_number}</span>
-                          <span className="luxury-body text-[13px] truncate" style={{ textDecoration: hidden ? 'line-through' : undefined }}>{page.title}</span>
+                          <span className="luxury-body text-[11px] tabular-nums" style={{ opacity: 0.6 }}>{navNumber(page.page_number)}</span>
+                          <span className="luxury-body text-[13px] truncate" style={{ textDecoration: hidden ? 'line-through' : undefined }}>{page.title || (isRevisedOutfitPageNumber(page.page_number) ? 'Not written yet' : '')}</span>
                           {hidden
                             ? <EyeOff size={14} aria-label="Hidden from client" style={{ opacity: 0.6 }} />
                             : approved
@@ -1613,11 +1720,11 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               <div className="iconik-micro mb-1" style={{ color: '#655E57' }}>{isWorkspace ? clientDisplayName : 'Women Blueprint Report'}</div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>
-                  {viewMode === 'full' ? 'Full report' : activePage ? `Page ${activePage.page_number}: ${activePage.title || 'Untitled'}` : 'Report'}
+                  {viewMode === 'full' ? 'Full report' : activeRevisedOutfit ? `Revised Look ${activeRevisedOutfit.replaces}: ${activePage?.title || 'Untitled'}` : activePage ? `Page ${activePage.page_number}: ${activePage.title || 'Untitled'}` : 'Report'}
                 </h2>
                 {imageCounts && <Pill tone={requiredImagesDone ? 'success' : 'gold'}>Images {Object.values(imageCounts).reduce((sum, group) => sum + group.done, 0)}/{Object.values(imageCounts).reduce((sum, group) => sum + group.total, 0)}</Pill>}
               </div>
-              {isWorkspace && versioned && viewMode === 'page' && <p className="luxury-body text-xs mt-1.5" style={{ color: '#655E57' }}>{activePageIsOutfit ? 'Edit the pieces and wording, upload a matching image, then approve.' : 'Check the advice against the client’s inputs. Click any text to edit it.'}</p>}
+              {isWorkspace && versioned && viewMode === 'page' && <p className="luxury-body text-xs mt-1.5" style={{ color: '#655E57' }}>{activeRevisedOutfit ? `A new version of Look ${activeRevisedOutfit.replaces}. Write the outfit, add its image, then approve.` : activePageIsOutfit ? 'Edit the pieces and wording, upload a matching image, then approve.' : 'Check the advice against the client’s inputs. Click any text to edit it.'}</p>}
               {report.error_message && !showGenerationPanel && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
               {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
               {isLegacyReport && (
@@ -1627,8 +1734,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
               )}
             </div>
             <div className="admin-toolbar">
-              {isWorkspace && versioned && <select aria-label="Go to report page" value={activePageNumber} onChange={event => goToPage(Number(event.target.value))} className="workspace-mobile-only admin-toolbar-select luxury-body" style={{ background: S.panel, color: S.ink, border: `1px solid ${S.border}` }}>{pages.map(page => <option key={page.page_number} value={page.page_number}>{page.page_number} · {page.title}</option>)}</select>}
-              {isWorkspace && versioned && activePageIsOutfit && <ActionButton onClick={() => openStudioPanel('outfit')} tone="primary"><PanelRight size={14} /> Edit outfit & image</ActionButton>}
+              {isWorkspace && versioned && <select aria-label="Go to report page" value={activePageNumber} onChange={event => goToPage(Number(event.target.value))} className="workspace-mobile-only admin-toolbar-select luxury-body" style={{ background: S.panel, color: S.ink, border: `1px solid ${S.border}` }}>{pages.map(page => <option key={page.page_number} value={page.page_number}>{navNumber(page.page_number)} · {page.title || 'Revised look'}</option>)}</select>}
+              {isWorkspace && versioned && activePageHasOutfitEditor && <ActionButton onClick={() => openStudioPanel('outfit')} tone="primary"><PanelRight size={14} /> Edit outfit & image</ActionButton>}
               <div className={`admin-toolbar-group ${isWorkspace ? 'admin-toolbar-group-plain' : ''}`}>
                 {!isWorkspace && <span className="admin-toolbar-label">View</span>}
                 <ActionButton onClick={toggleReportView} tone={isWorkspace ? 'ghost' : viewMode === 'full' ? 'primary' : 'neutral'} title={viewTitle}>
@@ -1655,8 +1762,8 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   <ActionButton onClick={() => openStudioPanel('analysis')} tone={reviewData?.studio?.analysis_confirmed ? 'success' : 'neutral'} title="Review and confirm the automated analysis.">
                     <CheckCheck size={14} /> Analysis
                   </ActionButton>
-                  <ActionButton onClick={() => openStudioPanel(activePageIsOutfit ? 'outfit' : 'pages')} title="Edit the current module or outfit in a structured workspace.">
-                    <PanelRight size={14} /> {activePageIsOutfit ? 'Change outfit' : 'Page Tools'}
+                  <ActionButton onClick={() => openStudioPanel(activePageHasOutfitEditor ? 'outfit' : 'pages')} title="Edit the current module or outfit in a structured workspace.">
+                    <PanelRight size={14} /> {activePageHasOutfitEditor ? 'Change outfit' : 'Page Tools'}
                   </ActionButton>
                   <ActionButton onClick={() => openStudioPanel('quality')} tone={qualityIssues.some(issue => issue.level === 'error') ? 'danger' : 'success'} title="Run the report quality checks.">
                     <WandSparkles size={14} /> Quality {qualityIssues.length}
@@ -1851,6 +1958,13 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
           </div>
         </header>
 
+        {revision && reviewData && <StylistRevisionPanel
+          revision={revision}
+          outfitStartPage={getStylistBlueprintOutfitStartPage(reviewData)}
+          onGoToPage={goToPage}
+          onToggle={toggleRevisionChange}
+        />}
+
         {showGenerationPanel && (
           <section aria-live="polite" className="report-generation-panel mx-4 md:mx-8 mt-5 rounded-2xl border px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-3 luxury-body" style={{ background: generationStopped ? '#FBF1EE' : S.panel, borderColor: generationStopped ? 'rgba(154,64,57,0.25)' : S.border }}>
             <div className="flex items-start gap-3 min-w-0 flex-1 basis-[280px]">
@@ -1977,7 +2091,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                 </ActionButton>
               ))}
               <ActionButton onClick={sendToClient} disabled={Boolean(sendDisabledReason)} title={sendDisabledReason || sendWarningReason || (isWorkspace ? 'Publish and prepare WhatsApp delivery.' : 'Send the report email to the client.')} tone="primary" size="lg">
-                {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {sending ? (usesWhatsAppDelivery ? 'Preparing…' : 'Sending…') : usesWhatsAppDelivery ? (report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send to client'}
+                {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} {sending ? (usesWhatsAppDelivery ? 'Preparing…' : 'Sending…') : usesWhatsAppDelivery ? (editsAwaitingPublish ? 'Publish update' : report.status === 'delivered' ? 'Resend on WhatsApp' : 'Publish & deliver') : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send to client'}
               </ActionButton>
             </div>
           </div>
@@ -2027,7 +2141,9 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
             {studioPanel === 'outfit' && activePage && versioned && (
               <StylistOutfitEditor key={activePageNumber} page={activePage} onChange={handlePageChange}
                 saveError={error} onSave={() => saveChangedPagesRef.current()} busy={Boolean(currentBusyReason) && !saving} saving={saving} hasUnsavedEdits={hasUnsavedEdits}
-                imageUrl={report.image_urls?.application?.outfitFlatlays?.[activePageNumber - getStylistBlueprintOutfitStartPage(versioned)] ?? null}
+                imageUrl={activeRevisedOutfit
+                  ? report.image_urls?.revision?.outfitFlatlays?.[revisedOutfitSlotIndex(activePageNumber)] ?? null
+                  : report.image_urls?.application?.outfitFlatlays?.[activePageNumber - getStylistBlueprintOutfitStartPage(versioned)] ?? null}
                 onParse={async text => {
                   // The parser reads the page from storage, so anything typed
                   // into the cards has to be saved before it is used as the base.
@@ -2041,7 +2157,7 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   handlePageChange(data.page);
                   return typeof data.prompt === 'string' ? data.prompt : null;
                 }}
-                getAlternatives={async () => {
+                getAlternatives={activeRevisedOutfit ? undefined : async () => {
                   if (!(await saveChangedPagesRef.current())) throw new Error('Save the current outfit before browsing alternatives.');
                   const response = await fetch(`/api/stylist-blueprint/${reportId}/outfit-options?page=${activePageNumber}`, { cache: 'no-store' });
                   const data = await response.json();
@@ -2058,15 +2174,14 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   const status = await fetch(`/api/stylist-blueprint/status/${reportId}`, { cache: 'no-store' });
                   if (status.ok) setImageCounts((await status.json()).imageCounts ?? null);
                 }}
-                getCropAspect={() => measureImageSlotAspect(`application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}`)}
-                onUpload={file => uploadManualImage(`application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}` as StylistBlueprintImageSlotKey, file)}
+                getCropAspect={() => measureImageSlotAspect(activeOutfitSlot)}
+                onUpload={file => uploadManualImage(activeOutfitSlot, file)}
                 getPrompt={async () => {
                   if (!(await saveChangedPagesRef.current())) throw new Error('Save the outfit before copying its prompt.');
                   const response = await fetch(`/api/stylist-blueprint/${reportId}/assets`, { cache: 'no-store' });
                   const body = await response.json();
                   if (!response.ok) throw new Error(body.error || 'Could not load the image prompt');
-                  const slot = `application.outfitFlatlays.${activePageNumber - getStylistBlueprintOutfitStartPage(versioned)}`;
-                  const prompt = body.prompts?.find((item: ManualImagePrompt) => item.slotKey === slot)?.prompt;
+                  const prompt = body.prompts?.find((item: ManualImagePrompt) => item.slotKey === activeOutfitSlot)?.prompt;
                   if (!prompt) throw new Error('No image prompt is available for this outfit.');
                   return prompt;
                 }} onApprove={approveAndNext} />
@@ -2079,14 +2194,16 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
                   <div className="luxury-body mt-2" style={{ color: S.ink }}>Page {activePage.page_number}: {activePage.title}</div>
                   <div className="luxury-body text-xs mt-2" style={{ color: S.muted }}>Hidden pages stay editable here but are removed from the client link and PDF.</div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {activeRevisedOutfit ? <div className="grid grid-cols-1 gap-2">
+                  <ActionButton onClick={removeActiveRevisedOutfit} tone="danger" title="Delete this revised look. The original look stays in the report."><Trash2 size={14} /> Remove this revised look</ActionButton>
+                </div> : <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <ActionButton onClick={toggleActivePageVisibility} disabled={activePage.page_number === 1} title={activePage.page_number === 1 ? 'The cover must remain visible.' : 'Show or hide this page in the delivered report.'}>
                     {reviewData.studio?.hidden_page_numbers?.includes(activePage.page_number) ? <Eye size={14} /> : <EyeOff size={14} />}
                     {reviewData.studio?.hidden_page_numbers?.includes(activePage.page_number) ? 'Show' : 'Hide'}
                   </ActionButton>
                   <ActionButton onClick={() => updateStudioData(data => moveStudioPage(data, activePage.page_number, -1))} title="Move this page earlier in the report."><MoveUp size={14} /> Earlier</ActionButton>
                   <ActionButton onClick={() => updateStudioData(data => moveStudioPage(data, activePage.page_number, 1))} title="Move this page later in the report."><MoveDown size={14} /> Later</ActionButton>
-                </div>
+                </div>}
               </>
             )}
 
@@ -2116,10 +2233,12 @@ export default function StylistBlueprintAdminReportPage({ params }: { params: Pr
       {deliveryPrepared && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(44,38,34,.56)' }}>
           <div className="w-full max-w-lg rounded-3xl p-7 md:p-8" style={{ background: S.bg, border: `1px solid ${S.border}`, boxShadow: '0 24px 80px rgba(44,38,34,.24)' }}>
-            <div className="iconik-micro mb-2" style={{ color: S.gold }}>REPORT PUBLISHED</div>
-            <h3 className="iconik-display text-3xl" style={{ color: S.ink }}>Deliver on WhatsApp</h3>
+            <div className="iconik-micro mb-2" style={{ color: S.gold }}>{(deliveryPrepared.publishedVersion ?? 1) > 1 ? `UPDATE PUBLISHED · VERSION ${deliveryPrepared.publishedVersion}` : 'REPORT PUBLISHED'}</div>
+            <h3 className="iconik-display text-3xl" style={{ color: S.ink }}>{(deliveryPrepared.publishedVersion ?? 1) > 1 ? 'Send the update' : 'Deliver on WhatsApp'}</h3>
             <p className="luxury-body text-sm leading-6 mt-3" style={{ color: S.muted }}>
-              The private report link is ready{deliveryPrepared.clientName ? ` for ${deliveryPrepared.clientName}` : ''}. Open WhatsApp, send the prepared message, then return here to confirm delivery.
+              {(deliveryPrepared.publishedVersion ?? 1) > 1
+                ? `${deliveryPrepared.clientName || 'Your client'} can see the changes on the same link she already has. The prepared message tells her to open it again.`
+                : `The private report link is ready${deliveryPrepared.clientName ? ` for ${deliveryPrepared.clientName}` : ''}. Open WhatsApp, send the prepared message, then return here to confirm delivery.`}
             </p>
             <div className="rounded-2xl p-4 mt-5 break-all luxury-body text-xs" style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}>
               {deliveryPrepared.reportUrl}

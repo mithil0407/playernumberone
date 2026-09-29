@@ -14,6 +14,17 @@ export const STYLIST_BLUEPRINT_41_PAGE_COUNT = 41;
 export const STYLIST_BLUEPRINT_PAGE_COUNT = 55;
 export const STYLIST_BLUEPRINT_LEGACY_OUTFIT_COUNT = 12;
 export const STYLIST_BLUEPRINT_OUTFIT_COUNT = 20;
+/**
+ * Revised looks (see stylistRevisedOutfits.ts) are numbered from here, well
+ * clear of every layout, so a page number alone says which kind of page it is.
+ */
+export const REVISED_OUTFIT_FIRST_PAGE = 101;
+/** Image slots are a fixed array, so the total across every revision is capped. */
+export const MAX_REVISED_OUTFITS = 20;
+
+export function isRevisedOutfitPageNumber(pageNumber: number) {
+  return Number.isInteger(pageNumber) && pageNumber >= REVISED_OUTFIT_FIRST_PAGE && pageNumber < REVISED_OUTFIT_FIRST_PAGE + MAX_REVISED_OUTFITS;
+}
 
 function versionOf(dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
   return typeof dataOrVersion === 'string' ? dataOrVersion : dataOrVersion?.version;
@@ -266,6 +277,7 @@ export function isVersionedStylistBlueprintReportData(data: unknown): data is St
  * disagree about where a page lives.
  */
 export function getStylistBlueprintSectionLabel(pageNumber: number, dataOrVersion?: Pick<StylistBlueprintReportData, 'version'> | string | null) {
+  if (isRevisedOutfitPageNumber(pageNumber)) return 'Your revised looks';
   const manual = getStylistBlueprintWardrobeManualRange(dataOrVersion);
   if (pageNumber === getStylistBlueprintTransformationPage(dataOrVersion)) return 'Three looks';
   if (pageNumber <= getStylistBlueprintReadingGuidePage(dataOrVersion)) return 'Start here';
@@ -286,8 +298,38 @@ export function getStylistBlueprintSectionLabel(pageNumber: number, dataOrVersio
  * page counter in the corner and the contents sheet always agree.
  */
 export function getVisibleStylistBlueprintPages<T extends { page_number: number }>(
-  data: Pick<StylistBlueprintReportData, 'version' | 'studio'> & { pages: T[] },
+  data: Pick<StylistBlueprintReportData, 'version' | 'studio'> & { pages: T[]; revised_outfits?: Array<{ page: T; round: number; replaces: number }> },
   options: { hideContinuationPage?: boolean; includeHidden?: boolean } = {},
+): T[] {
+  const layoutPages = getVisibleLayoutPages(data, options);
+  // A revised look the stylist has not started is her work in progress, never
+  // something a reader sees — including on a link served before the published
+  // snapshot migration, where the reader gets the live row.
+  const revised = [...(Array.isArray(data.revised_outfits) ? data.revised_outfits : [])]
+    .filter(entry => options.includeHidden || hasWrittenPiece(entry.page))
+    .sort((a, b) => b.round - a.round || a.replaces - b.replaces || a.page.page_number - b.page.page_number)
+    .map(entry => entry.page);
+  if (!revised.length) return layoutPages;
+  // A client opens her link again to see what changed, so the revised looks
+  // lead the outfits section rather than trailing the report. With no outfit
+  // system page to anchor on, they go before the first outfit instead.
+  const anchors = [getStylistBlueprintOutfitSystemPage(data), getStylistBlueprintOutfitStartPage(data)];
+  const at = layoutPages.findIndex(page => anchors.includes(page.page_number));
+  const index = at < 0 ? layoutPages.length : at;
+  return [...layoutPages.slice(0, index), ...revised, ...layoutPages.slice(index)];
+}
+
+function hasWrittenPiece(page: unknown) {
+  const blocks = (page as { blocks?: Array<{ items?: unknown }> })?.blocks;
+  return (Array.isArray(blocks) ? blocks : []).some(block => Array.isArray(block?.items) && block.items.some(item => {
+    const piece = (item as { piece?: unknown } | null)?.piece;
+    return typeof piece === 'string' && piece.trim().length > 0;
+  }));
+}
+
+function getVisibleLayoutPages<T extends { page_number: number }>(
+  data: Pick<StylistBlueprintReportData, 'version' | 'studio'> & { pages: T[] },
+  options: { hideContinuationPage?: boolean; includeHidden?: boolean },
 ): T[] {
   const continuationPage = getStylistBlueprintContinuationPage(data);
   const hiddenPages = new Set(data.studio?.hidden_page_numbers ?? []);

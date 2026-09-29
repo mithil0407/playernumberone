@@ -10,10 +10,12 @@ import {
   validateStylistBlueprintReport,
 } from '@/lib/stylistBlueprintGenerator';
 import { checkStudioReportQuality } from '@/lib/stylistReportStudio';
+import { revisedOutfitIssues, revisedOutfitSlotIndex } from '@/lib/stylistRevisedOutfits';
 import { getStylistBlueprintImageCounts, type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import { canAccessBlueprintReport, getStylistWorkspaceIdentity, isAdminCookieAuthenticated, logStylistReportActivity } from '@/lib/stylistWorkspaceAuth';
 import { revalidateStylistBlueprintCache } from '@/lib/stylistBlueprintCache';
 import { buildWhatsappUrl, normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
+import { hasUnpublishedChanges } from '@/lib/stylistReportPublication';
 
 function siteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').replace(/\/$/, '');
@@ -33,7 +35,7 @@ export async function POST(
   if (!['prepare', 'confirm', 'copied', 'opened'].includes(action)) return NextResponse.json({ error: 'Invalid delivery action' }, { status: 400 });
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, status, progress_stage, updated_at, report_data, image_urls, share_token, section_approvals, published_at, submission_id, stylist_intake_responses(id, consultation_id, customer_phone, full_name, source_photo_paths, intake_source)')
+    .select('id, status, progress_stage, updated_at, revision, report_data, image_urls, share_token, section_approvals, published_at, published_revision, published_version, submission_id, stylist_intake_responses(id, consultation_id, customer_phone, full_name, source_photo_paths, intake_source)')
     .eq('id', reportId)
     .single();
   if (error || !report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
@@ -47,6 +49,11 @@ export async function POST(
 
   if (action === 'confirm') {
     if (!report.published_at) return NextResponse.json({ error: 'Publish the report first' }, { status: 400 });
+    // Marking delivered vouches for what the client can open. Unpublished edits
+    // are not in her copy yet, so publish them before confirming.
+    if (hasUnpublishedChanges(report)) {
+      return NextResponse.json({ error: 'You have changes that are not published yet. Publish the update, then mark it delivered.' }, { status: 409 });
+    }
     const now = new Date().toISOString();
     const { data: delivered, error: updateError } = await supabaseAdmin
       .from('stylist_blueprint_reports')
@@ -68,6 +75,10 @@ export async function POST(
     await revalidateStylistBlueprintCache(reportId, report.share_token);
     return NextResponse.json({ success: true, status: 'delivered', deliveredAt: now });
   }
+
+  // Which version the client is being pointed at, so the message can tell her
+  // whether this is her report or her updated report.
+  let deliveredVersion = Number(report.published_version ?? 0);
 
   if (action === 'copied' || action === 'opened') {
     await logStylistReportActivity({
@@ -109,6 +120,8 @@ export async function POST(
     const approvals = report.section_approvals as Record<string, boolean> | null;
     const unapprovedPages = visiblePages.filter(page => approvals?.[`p${page.page_number}`] !== true).length;
     if (unapprovedPages) publishWarnings.push(`${unapprovedPages} page${unapprovedPages === 1 ? '' : 's'} were not approved`);
+    const revisedImages = (report.image_urls as StylistBlueprintImagePaths | null)?.revision?.outfitFlatlays ?? [];
+    publishWarnings.push(...revisedOutfitIssues(reportData, pageNumber => Boolean(revisedImages[revisedOutfitSlotIndex(pageNumber)])));
     const sourcePaths = (intake.source_photo_paths ?? {}) as Record<string, string>;
     // Reported, never enforced. An empty image slot renders as a placeholder
     // rather than a broken page, so it is the stylist's call whether to ship
@@ -125,30 +138,61 @@ export async function POST(
       reportData,
     });
     const missingImages = Object.values(imageCounts).reduce((sum, group) => sum + Math.max(0, group.total - group.done), 0);
-    const publishedAt = new Date().toISOString();
-    const { data: published, error: publishError } = await supabaseAdmin
-      .from('stylist_blueprint_reports')
-      .update({ status: 'approved', published_at: publishedAt, updated_at: publishedAt })
-      .eq('id', reportId)
-      .eq('updated_at', report.updated_at)
-      .select('id')
-      .maybeSingle();
-    if (publishError) return NextResponse.json({ error: 'Could not publish report' }, { status: 500 });
-    if (!published) return NextResponse.json({ error: 'The report changed during publication. Review it again.' }, { status: 409 });
-    await logStylistReportActivity({
-      action: 'report_published', reportId, consultationId: intake.consultation_id, stylistId: identity?.stylistId,
-      // Recorded rather than enforced, so a report that shipped with empty
-      // image slots or unmet checks is still traceable afterwards.
-      ...(missingImages || publishWarnings.length
-        ? { metadata: { ...(missingImages ? { missingImages } : {}), ...(publishWarnings.length ? { publishWarnings } : {}) } }
-        : {}),
-    });
-    await revalidateStylistBlueprintCache(reportId, report.share_token);
+    // Resending an unchanged report is just another WhatsApp message: it must
+    // not bump the client's version number or undo a recorded delivery.
+    if (hasUnpublishedChanges(report) || !report.published_at) {
+      const publishedAt = new Date().toISOString();
+      const publishedVersion = deliveredVersion + 1;
+      const { data: published, error: publishError } = await supabaseAdmin
+        .from('stylist_blueprint_reports')
+        .update({
+          status: 'approved',
+          published_at: publishedAt,
+          updated_at: publishedAt,
+          // The exact copy the client reads from here on, frozen away from the
+          // stylist's draft so the next revision cannot disturb it.
+          published_report_data: reportData,
+          published_image_urls: report.image_urls,
+          published_revision: report.revision,
+          published_version: publishedVersion,
+        })
+        .eq('id', reportId)
+        .eq('updated_at', report.updated_at)
+        .select('id')
+        .maybeSingle();
+      if (publishError) return NextResponse.json({ error: 'Could not publish report' }, { status: 500 });
+      if (!published) return NextResponse.json({ error: 'The report changed during publication. Review it again.' }, { status: 409 });
+      await logStylistReportActivity({
+        action: publishedVersion > 1 ? 'report_revision_published' : 'report_published',
+        reportId,
+        consultationId: intake.consultation_id,
+        stylistId: identity?.stylistId,
+        // Recorded rather than enforced, so a report that shipped with empty
+        // image slots is still traceable afterwards.
+        metadata: { publishedVersion, ...(missingImages ? { missingImages } : {}), ...(publishWarnings.length ? { publishWarnings } : {}) },
+      });
+      await revalidateStylistBlueprintCache(reportId, report.share_token);
+      // Publishing is what answers a revision request, so it closes the brief.
+      // Bookkeeping must never fail a delivery: if this write cannot happen the
+      // report is still published and the stylist can still send the link.
+      const { error: revisionError } = await supabaseAdmin
+        .from('stylist_report_revisions')
+        .update({ status: 'published', published_version: publishedVersion, published_at: publishedAt, updated_at: publishedAt })
+        .eq('report_id', reportId)
+        .eq('status', 'open');
+      if (revisionError) console.error('[stylist-workspace] could not close revision request', revisionError);
+      deliveredVersion = publishedVersion;
+    }
   }
 
   const reportUrl = `${siteUrl()}/stylist/report/${report.share_token}`;
-  const message = `Hi ${intake.full_name || 'there'}, your personalised ICONIK Style Blueprint is ready. You can view it here: ${reportUrl}`;
+  const greeting = `Hi ${intake.full_name || 'there'}`;
+  // The link never changes across revisions, so an update has to say so —
+  // otherwise a client who already has the report sees nothing new to open.
+  const message = deliveredVersion > 1
+    ? `${greeting}, I have updated your ICONIK Style Blueprint with the changes you asked for. It is on the same link, so do open it again: ${reportUrl}`
+    : `${greeting}, your personalised ICONIK Style Blueprint is ready. You can view it here: ${reportUrl}`;
   const whatsappUrl = buildWhatsappUrl(intake.customer_phone || '', message);
   if (!whatsappUrl) return NextResponse.json({ error: 'A valid Indian mobile number is required' }, { status: 400 });
-  return NextResponse.json({ reportUrl, whatsappUrl, clientName: intake.full_name, published: true });
+  return NextResponse.json({ reportUrl, whatsappUrl, clientName: intake.full_name, published: true, publishedVersion: deliveredVersion });
 }

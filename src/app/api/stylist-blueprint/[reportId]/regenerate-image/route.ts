@@ -58,7 +58,7 @@ export async function POST(
   const { data: claimed, error: claimError } = await supabaseAdmin.from('stylist_blueprint_reports')
     .update({ progress_stage: `generating_image_${slotKey}`, updated_at: new Date().toISOString(),
       section_approvals: { ...(report.section_approvals ?? {}), ...(page ? { [`p${page}`]: false } : {}) },
-      revision: (report.revision ?? 1) + 1, published_at: null, delivered_at: null, status: 'in_review' })
+      revision: (report.revision ?? 1) + 1, status: 'in_review' })
     .eq('id', reportId).eq('updated_at', report.updated_at).select('id').maybeSingle();
   if (claimError) return NextResponse.json({ error: 'Could not start image generation' }, { status: 500 });
   if (!claimed) return NextResponse.json({ error: 'The report changed. Reload before generating.' }, { status: 409 });

@@ -31,7 +31,7 @@ interface PageProps {
 async function loadReportForViewer(shareToken: string, wantsPreview: boolean) {
   if (wantsPreview) {
     const loaded = await getStylistBlueprintClientPreviewByShareToken(shareToken);
-    if (loaded && await canAccessBlueprintReport(loaded.report.id)) return { report: loaded.report, preview: { live: loaded.live } };
+    if (loaded && await canAccessBlueprintReport(loaded.report.id)) return { report: loaded.report, preview: { live: loaded.live, publishedVersion: loaded.publishedVersion, hasUnpublishedChanges: loaded.hasUnpublishedChanges } };
   }
   const report = await getPublicStylistBlueprintByShareToken(shareToken);
   return report ? { report, preview: null } : null;
@@ -195,7 +195,7 @@ export default async function StylistPublicReportPage({ params, searchParams }: 
         </div>
       </div>
       {outline.length > 0 && <StylistBlueprintViewerChrome outline={outline} clientName={clientName} />}
-      {preview && <StylistBlueprintPreviewBanner live={preview.live} />}
+      {preview && <StylistBlueprintPreviewBanner live={preview.live} publishedVersion={preview.publishedVersion} hasUnpublishedChanges={preview.hasUnpublishedChanges} />}
       <StylistBlueprintReportIntro clientName={clientName} />
       </StyledJsxRegistry>
     </>

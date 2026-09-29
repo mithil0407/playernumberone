@@ -524,6 +524,23 @@ export interface StylistBlueprintReportData {
   pages: BlueprintPage[];
   outfit_engine?: OutfitScienceEngineMetadata;
   studio?: StylistReportStudioMetadata;
+  /**
+   * Looks a stylist wrote after delivery, in answer to a client revision. Kept
+   * out of `pages` so the fixed page layout — and everything that validates,
+   * generates or repairs it by page number — never sees them.
+   * See stylistRevisedOutfits.ts.
+   */
+  revised_outfits?: StylistRevisedOutfit[];
+}
+
+export interface StylistRevisedOutfit {
+  /** An ordinary outfit page, numbered from REVISED_OUTFIT_FIRST_PAGE. */
+  page: BlueprintPage;
+  /** The original look it answers, counted from 1 as the client counts them. */
+  replaces: number;
+  /** 1 for the first revision the client asked for, 2 for the next. */
+  round: number;
+  created_at: string;
 }
 
 type AnyRecord = Record<string, unknown>;

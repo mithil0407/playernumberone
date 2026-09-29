@@ -1,4 +1,4 @@
-import { getStylistBlueprintPageCount, isVersionedStylistBlueprintReportData } from './stylistBlueprintSchema.ts';
+import { getStylistBlueprintPageCount, isRevisedOutfitPageNumber, isVersionedStylistBlueprintReportData } from './stylistBlueprintSchema.ts';
 import type { StylistBlueprintReportData } from './stylistBlueprintGenerator.ts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -47,7 +47,7 @@ export function assertStylistReportDraft(value: unknown): asserts value is Styli
 
 export function assertStylistPageApprovals(value: unknown, count: number): asserts value is Record<string, boolean> {
   if (!isRecord(value) || Object.entries(value).some(([key, approved]) =>
-    !/^p[1-9]\d*$/.test(key) || Number(key.slice(1)) > count || typeof approved !== 'boolean')) {
+    !/^p[1-9]\d*$/.test(key) || (Number(key.slice(1)) > count && !isRevisedOutfitPageNumber(Number(key.slice(1)))) || typeof approved !== 'boolean')) {
     throw new Error('Page approvals must contain valid page numbers and boolean values');
   }
 }

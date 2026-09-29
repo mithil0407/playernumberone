@@ -66,7 +66,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, image_urls, share_token, submission_id, progress_stage')
+    .select('id, report_data, image_urls, share_token, submission_id, progress_stage, revision')
     .eq('id', reportId)
     .single();
 
@@ -115,6 +115,8 @@ export async function POST(
     .update({
       report_data: nextReportData,
       image_urls: clearSilhouetteProofImageSlots(report.image_urls as StylistBlueprintImagePaths | null),
+      // Marks this as a change the client has not been sent; her published copy is untouched.
+      revision: Number(report.revision ?? 0) + 1,
       updated_at: new Date().toISOString(),
       error_message: null,
     })

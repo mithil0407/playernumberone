@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { AlertTriangle, ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, Search, Users } from 'lucide-react';
-import { WORKSPACE_CATEGORIES, WORKSPACE_STAGE_LABELS, WORKSPACE_VIEWS, isOverdue, queryWorkspaceItems, workspaceNextAction, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
+import { AlertTriangle, ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, MessageSquarePlus, Search, Users } from 'lucide-react';
+import { WORKSPACE_CATEGORIES, WORKSPACE_STAGE_LABELS, WORKSPACE_VIEWS, isOverdue, queryWorkspaceItems, workspaceDue, workspaceNextAction, type WorkspaceQueueItem } from '@/lib/stylistWorkspaceQueueModel';
+import StylistRevisionRequestDialog, { type RevisionCreated } from '@/components/StylistRevisionRequestDialog';
 
 const C = { ink: '#2C2622', muted: '#655E57', card: '#EDE5D2', bg: '#F4EFE5', surface: '#FBF8F2', border: 'rgba(44,38,34,.12)', gold: '#9A7538', danger: '#9A4039' };
 const STAGE_STYLE: Record<string, { bg: string; fg: string }> = {
   needs_attention: { bg: '#F6E3DF', fg: '#9A4039' }, ready_to_deliver: { bg: '#E3EDE3', fg: '#426B4E' },
   ready: { bg: '#F1E6CF', fg: '#7A5A26' }, needs_review: { bg: '#E2E8EA', fg: '#3F5860' },
   generating: { bg: '#E2E8EA', fg: '#3F5860' }, needs_inputs: { bg: '#EDE5D2', fg: '#655E57' }, delivered: { bg: 'transparent', fg: '#655E57' },
+  revision_requested: { bg: '#F6E8DF', fg: '#8A5A2B' },
 };
 // Delivered, stale and browse-everything lists are for looking things up, so they use compact rows.
 const ROW_VIEWS = new Set(['delivered', 'stale', 'all', 'recent', 'forms', 'photos', 'today']);
@@ -20,13 +22,24 @@ type Result = { snapshotItems?: WorkspaceQueueItem[]; items: WorkspaceQueueItem[
 function dateLabel(value: string | null) {
   return value ? new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'Not recorded';
 }
-/** A published report can be confirmed as delivered; anything earlier cannot. */
+/**
+ * A published report can be confirmed as delivered; anything earlier cannot.
+ * Unpublished edits are not in the client's copy yet, so a report mid-revision
+ * is not deliverable either — publishing it comes first.
+ */
 function canMarkDelivered(item: WorkspaceQueueItem) {
-  return Boolean(item.report?.publishedAt) && item.bucket !== 'delivered';
+  return Boolean(item.report?.publishedAt) && !item.report?.hasUnpublishedChanges && item.bucket !== 'delivered';
+}
+/**
+ * A client can only ask for changes to a report she already has. An open
+ * revision does not hide the button: a second ask joins the same brief.
+ */
+function canRequestRevision(item: WorkspaceQueueItem) {
+  return Boolean(item.report?.publishedAt);
 }
 
 function daysOverdue(item: WorkspaceQueueItem) {
-  return Math.max(1, Math.floor((Date.now() - Date.parse(item.reportDueAt!)) / 86_400_000));
+  return Math.max(1, Math.floor((Date.now() - Date.parse(workspaceDue(item)!.at)) / 86_400_000));
 }
 function waitingFor(item: WorkspaceQueueItem) {
   const photos = Object.entries(item.readiness.photos).filter(([key, present]) => key !== 'one_outfit' && !present).length;
@@ -42,12 +55,14 @@ function StagePill({ item }: { item: WorkspaceQueueItem }) {
   </span>;
 }
 function DueLabel({ item }: { item: WorkspaceQueueItem }) {
-  if (!item.reportDueAt || item.bucket === 'delivered') return null;
+  const due = workspaceDue(item);
+  if (!due || item.bucket === 'delivered') return null;
+  const what = due.kind === 'revision' ? 'Revision' : 'Report';
   if (isOverdue(item)) {
     const days = daysOverdue(item);
-    return <span className="inline-flex items-center gap-1 luxury-body text-xs font-medium whitespace-nowrap" style={{ color: C.danger }}><AlertTriangle size={13} aria-hidden="true" /> Overdue {days} day{days > 1 ? 's' : ''}</span>;
+    return <span className="inline-flex items-center gap-1 luxury-body text-xs font-medium whitespace-nowrap" style={{ color: C.danger }}><AlertTriangle size={13} aria-hidden="true" /> {what} overdue {days} day{days > 1 ? 's' : ''}</span>;
   }
-  return <span className="luxury-body text-xs whitespace-nowrap" style={{ color: C.muted }}>Due {dateLabel(item.reportDueAt)}</span>;
+  return <span className="luxury-body text-xs whitespace-nowrap" style={{ color: C.muted }}>{due.kind === 'revision' ? 'Revision due' : 'Due'} {dateLabel(due.at)}</span>;
 }
 
 export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, initialResult }: { admin?: boolean; stylistSlug?: string; initialResult?: Result }) {
@@ -73,6 +88,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
   const [busy, setBusy] = useState(!initialResult);
   const [deliveringId, setDeliveringId] = useState('');
   const [deliveryNote, setDeliveryNote] = useState('');
+  const [revisionFor, setRevisionFor] = useState<WorkspaceQueueItem | null>(null);
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [updated, setUpdated] = useState<number | null>(null);
@@ -176,6 +192,20 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
     }
   };
 
+  // A revision is recorded against the report the client already has, and each
+  // look she wants changed becomes a blank page there, ready to write.
+  const revisionCreated = (item: WorkspaceQueueItem, result: RevisionCreated) => {
+    if (result.open) {
+      const base = admin ? `/stylist/admin/report/${item.report!.id}` : `/stylist/${stylistSlug}/reports/${item.report!.id}`;
+      window.location.href = result.firstPage ? `${base}?page=${result.firstPage}` : base;
+      return;
+    }
+    const added = result.addedLooks.length;
+    setRevisionFor(null);
+    setDeliveryNote(`Saved. ${item.clientName || 'This client'}'s revision is in your To do${added ? `, with ${added} new look${added > 1 ? 's' : ''} to write` : ''}.`);
+    setRefresh(value => value + 1);
+  };
+
   const generating = Boolean(result?.counts.generating);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -275,7 +305,17 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
             <div className="justify-self-end md:justify-self-start"><StagePill item={item} /></div>
             <p className="col-span-2 md:col-span-1 luxury-body text-xs whitespace-nowrap" style={{ color: C.muted }}>Consultation {dateLabel(item.consultationDate)}</p>
             <div className="hidden md:block"><DueLabel item={item} /></div>
-            <span className="hidden md:inline-flex justify-end items-center gap-1 luxury-body text-xs font-medium whitespace-nowrap group-hover:underline">{nextAction.label} <ArrowRight size={13} /></span>
+            {canRequestRevision(item)
+              ? <button
+                  type="button"
+                  onClick={event => { event.preventDefault(); event.stopPropagation(); setRevisionFor(item); }}
+                  title="The client wants some looks changed. Choose them and write the new versions."
+                  className="hidden md:inline-flex justify-self-end items-center gap-1.5 rounded-xl px-3 py-2 luxury-body text-xs whitespace-nowrap"
+                  style={{ background: C.card, color: C.ink }}
+                >
+                  <MessageSquarePlus size={13} /> Revise report
+                </button>
+              : <span className="hidden md:inline-flex justify-end items-center gap-1 luxury-body text-xs font-medium whitespace-nowrap group-hover:underline">{nextAction.label} <ArrowRight size={13} /></span>}
           </Link>;
         })}
       </section>
@@ -283,6 +323,7 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
         {result.items.map(item => {
           const { detailUrl, primaryUrl, nextAction } = links(item);
           const overdue = isOverdue(item);
+          const revision = item.revision;
           const note = item.bucket === 'needs_inputs' ? waitingFor(item) : item.bucket === 'generating' ? 'Being prepared. You can work on another client meanwhile.' : '';
           return <article key={item.id} className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: C.surface, border: `1px solid ${overdue || item.bucket === 'needs_attention' ? 'rgba(154,64,57,.45)' : C.border}` }}>
             <div className="flex items-center justify-between gap-3"><StagePill item={item} /><DueLabel item={item} /></div>
@@ -291,6 +332,13 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
               <p className="luxury-body text-xs mt-1" style={{ color: C.muted }}>{[stylistName(item), `Consultation ${dateLabel(item.consultationDate)}`, item.clientPhone].filter(Boolean).join(' · ')}</p>
             </div>
             {item.report?.errorMessage && <p className="luxury-body text-xs line-clamp-2" style={{ color: C.danger }}>{item.report.errorMessage}</p>}
+            {revision && <div className="rounded-xl px-3 py-2.5" style={{ background: C.card }}>
+              <p className="luxury-body text-xs leading-5" style={{ color: C.ink }}>
+                “{revision.changes[0] ?? 'Changes requested'}”
+                {revision.changes.length > 1 && <span style={{ color: C.muted }}> +{revision.changes.length - 1} more</span>}
+              </p>
+              {revision.total > 0 && <p className="luxury-body text-[11px] mt-1" style={{ color: C.muted }}>{revision.done} of {revision.total} done</p>}
+            </div>}
             {note && <p className="luxury-body text-xs" style={{ color: C.muted }}>{note}</p>}
             <div className="flex flex-wrap items-center gap-2 mt-auto pt-1">
               <Link prefetch={false} href={primaryUrl} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl luxury-body text-sm" style={{ background: C.ink, color: C.bg }}>{nextAction.label}<ArrowRight size={14} /></Link>
@@ -307,6 +355,15 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
                   {deliveringId === item.id ? 'Marking…' : 'Mark delivered'}
                 </button>
               )}
+              {canRequestRevision(item) && <button
+                type="button"
+                onClick={() => setRevisionFor(item)}
+                title="The client wants some looks changed. Choose them and write the new versions."
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl luxury-body text-sm"
+                style={{ background: C.card, color: C.ink }}
+              >
+                <MessageSquarePlus size={14} /> Revise report
+              </button>}
               {primaryUrl !== detailUrl && <Link prefetch={false} href={detailUrl} className="luxury-body text-xs underline underline-offset-4" style={{ color: C.muted }}>Client details</Link>}
             </div>
           </article>;
@@ -324,6 +381,13 @@ export default function StylistWorkspaceDashboard({ admin = false, stylistSlug, 
           ? <><p className="iconik-display text-2xl">You’re all caught up</p><p className="luxury-body text-sm mt-2" style={{ color: C.muted }}>No reports need you right now.{counts.waiting ? ` ${counts.waiting} client${counts.waiting > 1 ? 's are' : ' is'} still sending photos or measurements.` : ''}</p></>
           : <p className="iconik-display text-2xl">{category.key === 'waiting' ? 'No recent clients are waiting' : 'No clients here yet'}</p>}
     </div>}
+
+    {revisionFor?.report && <StylistRevisionRequestDialog
+      reportId={revisionFor.report.id}
+      clientName={revisionFor.clientName || 'your client'}
+      onClose={() => setRevisionFor(null)}
+      onDone={result => revisionCreated(revisionFor, result)}
+    />}
 
     {result && totalPages > 1 && <div className="flex items-center justify-between gap-4 mt-5 luxury-body text-sm">
       <p style={{ color: C.muted }}>Page {page} of {totalPages} · {result.total} clients</p>

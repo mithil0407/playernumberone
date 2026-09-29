@@ -28,6 +28,14 @@ import {
   type StylistBlueprintReportData,
   type StylistIntakeSubmission,
 } from './stylistBlueprintGenerator.ts';
+import {
+  MAX_REVISED_OUTFITS,
+  REVISED_OUTFIT_FIRST_PAGE,
+  findRevisedOutfit,
+  revisedOutfitSlotIndexFromKey,
+  withRevisedOutfitInPlace,
+  type RevisedOutfitSlotKey,
+} from './stylistRevisedOutfits.ts';
 
 const BUCKET = 'stylist-blueprint-images';
 const SIGNED_URL_TTL = 60 * 60;
@@ -100,7 +108,12 @@ export const STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS = [
   'closing.editTeaser',
 ] as const;
 
-export type StylistBlueprintImageSlotKey = typeof STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS[number];
+/**
+ * Every image a report can show. The revised-look slots are not listed in
+ * STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS: a report has none until a stylist
+ * writes one, so they never count towards a report's required images.
+ */
+export type StylistBlueprintImageSlotKey = typeof STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS[number] | RevisedOutfitSlotKey;
 
 export interface StylistBlueprintImagePaths {
   cover?: { portrait?: string | null };
@@ -141,6 +154,10 @@ export interface StylistBlueprintImagePaths {
   closing?: {
     combinationMatrix?: string | null;
     editTeaser?: string | null;
+  };
+  /** Images for revised looks, indexed by page number - 101. */
+  revision?: {
+    outfitFlatlays?: (string | null)[];
   };
   bodyGeometryCard?: string | null;
   colourPaletteCard?: string | null;
@@ -190,6 +207,9 @@ type MutablePaths = {
   closing: {
     combinationMatrix: string | null;
     editTeaser: string | null;
+  };
+  revision: {
+    outfitFlatlays: (string | null)[];
   };
 };
 
@@ -241,6 +261,7 @@ function emptyPaths(): MutablePaths {
       outfitDetails: Array.from({ length: 20 }, () => null),
     },
     closing: { combinationMatrix: null, editTeaser: null },
+    revision: { outfitFlatlays: Array.from({ length: MAX_REVISED_OUTFITS }, () => null) },
   };
 }
 
@@ -258,6 +279,9 @@ function normalise(paths: StylistBlueprintImagePaths | null | undefined): Mutabl
       outfitDetails: Array.from({ length: 20 }, (_, index) => paths?.application?.outfitDetails?.[index] ?? null),
     },
     closing: { ...base.closing, ...(paths?.closing ?? {}) },
+    revision: {
+      outfitFlatlays: Array.from({ length: MAX_REVISED_OUTFITS }, (_, index) => paths?.revision?.outfitFlatlays?.[index] ?? null),
+    },
   };
 }
 
@@ -834,7 +858,8 @@ function transformationLookPageForSlot(reportData: StylistBlueprintReportData, i
 }
 
 export function isStylistBlueprintImageSlotKey(value: unknown): value is StylistBlueprintImageSlotKey {
-  return typeof value === 'string' && (STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS as readonly string[]).includes(value);
+  return typeof value === 'string'
+    && ((STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS as readonly string[]).includes(value) || revisedOutfitSlotIndexFromKey(value) !== null);
 }
 
 function singleSlotProgressStage(slotKey: StylistBlueprintImageSlotKey) {
@@ -1020,6 +1045,28 @@ function buildSingleSlotPlan(
     };
   }
 
+  const revisedIndex = revisedOutfitSlotIndexFromKey(slotKey);
+  if (revisedIndex !== null) {
+    // Prompted exactly as the look it replaces would be, so a revised image
+    // matches the rest of the report.
+    const entry = findRevisedOutfit(reportData, REVISED_OUTFIT_FIRST_PAGE + revisedIndex);
+    if (!entry) throw new Error('This revised look no longer exists');
+    const inPlace = withRevisedOutfitInPlace(reportData, entry);
+    const page = inPlace.data.pages.find(item => item.page_number === inPlace.pageNumber);
+    if (!page) throw new Error('Missing the original look for this revised look');
+    const clientSource = photos.front || photos.side || photos.headshot || null;
+    if (!clientSource) throw new Error('No client photo found for outfit image generation');
+    return {
+      fileName: regeneratedFileName(`revised-outfit-${revisedIndex + 1}-client`),
+      prompt: wornOutfitPrompt(inPlace.data, page),
+      sourceUrl: clientSource,
+      extraSourceUrl: photos.headshot && photos.headshot !== clientSource ? photos.headshot : null,
+      size: '1024x1536',
+      getCurrent: paths => paths.revision.outfitFlatlays[revisedIndex],
+      setCurrent: (paths, path) => { paths.revision.outfitFlatlays[revisedIndex] = path; },
+    };
+  }
+
   if (slotKey === 'closing.editTeaser') {
     const clientSource = photos.front || photos.side || photos.headshot || null;
     if (!clientSource) throw new Error('No client photo found for closing teaser image generation');
@@ -1122,7 +1169,9 @@ export async function uploadStylistBlueprintManualImage(input: {
   const approvals = { ...(current.section_approvals as Record<string, boolean> ?? {}) };
   if (input.pageNumber) approvals[`p${input.pageNumber}`] = false;
   const { data: saved, error } = await supabaseAdmin.from('stylist_blueprint_reports').update({
-    image_urls: paths, section_approvals: approvals, published_at: null, delivered_at: null,
+    // Never published_at/delivered_at: the client reads the published snapshot,
+    // so a new image is a draft change and must not take her link down.
+    image_urls: paths, section_approvals: approvals,
     status: 'in_review', revision: Number(current.revision ?? 0) + 1, updated_at: new Date().toISOString(),
   }).eq('id', input.reportId).eq('updated_at', current.updated_at).select('id').maybeSingle();
   if (error) throw new Error(`Could not save uploaded image: ${error.message}`);
@@ -1398,6 +1447,7 @@ function collectPaths(paths: StylistBlueprintImagePaths | null | undefined): str
     ...normalised.application.outfitFlatlays,
     normalised.closing.combinationMatrix,
     normalised.closing.editTeaser,
+    ...normalised.revision.outfitFlatlays,
     paths?.bodyGeometryCard,
     paths?.colourPaletteCard,
     paths?.faceHairAccessoryCard,
@@ -1460,6 +1510,9 @@ export function mapStylistBlueprintImagePaths(paths: StylistBlueprintImagePaths 
       combinationMatrix: map(resolved.closing.combinationMatrix),
       editTeaser: map(resolved.closing.editTeaser),
     },
+    revision: {
+      outfitFlatlays: resolved.revision.outfitFlatlays.map(map),
+    },
     bodyGeometryCard: map(paths.bodyGeometryCard),
     colourPaletteCard: map(paths.colourPaletteCard),
     faceHairAccessoryCard: map(paths.faceHairAccessoryCard),
@@ -1481,6 +1534,8 @@ export function getStylistBlueprintImageSlotPageNumber(slot: StylistBlueprintIma
   if (slot.startsWith('application.silhouetteProofs.')) return getStylistBlueprintRulesStartPage(data);
   if (slot.startsWith('application.outfitFlatlays.')) return getStylistBlueprintOutfitStartPage(data) + Number(slot.split('.').at(-1));
   if (slot === 'closing.editTeaser') return getStylistBlueprintContinuationPage(data);
+  const revisedIndex = revisedOutfitSlotIndexFromKey(slot);
+  if (revisedIndex !== null) return REVISED_OUTFIT_FIRST_PAGE + revisedIndex;
   return null;
 }
 

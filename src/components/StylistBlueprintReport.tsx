@@ -46,6 +46,7 @@ import { createContext, type ElementType, type FocusEvent, type FormEvent, type 
 import dynamic from 'next/dynamic';
 import type { ImageCropSource } from '@/components/ImageCropDialog';
 import { reportPrintLayoutCss } from '@/lib/reportPrint';
+import { findRevisedOutfit, isBlankRevisedOutfit, latestRevisionOf, revisedOutfitSlotIndex, revisedOutfitSlotKey } from '@/lib/stylistRevisedOutfits';
 import { shoppingQueryForPiece, shoppingSearchUrl } from '@/lib/stylistShoppingQuery';
 
 // Studio-only image editing. Clients never mount these, so they never download them.
@@ -185,6 +186,7 @@ function EditableText({
   className,
   value,
   fallback = '',
+  placeholder,
   page,
   update,
   children,
@@ -193,13 +195,15 @@ function EditableText({
   className?: string;
   value: string | undefined;
   fallback?: string;
+  /** Shown in the studio while the field is empty, so a blank field can still be found and clicked. */
+  placeholder?: string;
   page: BlueprintPage;
   update: (value: string) => BlueprintPage;
   children?: ReactNode;
 }) {
   const { onPageChange } = useContext(EditableReportContext);
   return (
-    <EditableNode as={as} className={className} value={value} fallback={fallback} pageNumber={page.page_number} onCommit={next => onPageChange?.(update(next))}>
+    <EditableNode as={as} className={className} value={value} fallback={fallback} placeholder={placeholder} pageNumber={page.page_number} onCommit={next => onPageChange?.(update(next))}>
       {children}
     </EditableNode>
   );
@@ -1725,8 +1729,12 @@ function paletteForOutfitPage(page: BlueprintPage, data: StylistBlueprintReportD
 }
 
 function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: StylistBlueprintReportData; imageUrls?: ResolvedStylistBlueprintImageUrls | null }) {
-  const image = imageForPage(page, imageUrls, data);
-  const detail = secondaryImageForPage(page, imageUrls, data);
+  const { editable } = useContext(EditableReportContext);
+  // A revised look is drawn exactly like the look it replaces; only its
+  // numbering, its image slot and its label differ.
+  const revised = findRevisedOutfit(data, page.page_number);
+  const image = revised ? imageUrls?.revision?.outfitFlatlays?.[revisedOutfitSlotIndex(page.page_number)] ?? null : imageForPage(page, imageUrls, data);
+  const detail = revised ? null : secondaryImageForPage(page, imageUrls, data);
   const reasoning = page.blocks.find(block => block.reason || /reason|why|works/i.test(`${block.label} ${block.heading}`));
   // The pull-quote and the Logic row must never render the same string: pick the
   // quote first, then give Logic whatever text the quote did not take.
@@ -1741,20 +1749,29 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
     : logicRaw;
   const logicText = logicTrimmed || logicRaw;
   const formula = formulaItemsForOutfit(page);
-  const items = formula.items;
+  // An unfinished revised look must not show the client empty piece cards.
+  const items = revised && !editable ? formula.items.filter(item => getField(item, ['piece', 'name'])) : formula.items;
   const palette = paletteForOutfitPage(page, data, items);
-  const outfitNumber = page.page_number - getStylistBlueprintOutfitStartPage(data) + 1;
-  const imageSlot = imageSlotForPage(page, data);
-  const formulaPieceCount = (items.length ? items : page.blocks.slice(0, 5)).length;
+  const outfitNumber = revised ? revised.replaces : page.page_number - getStylistBlueprintOutfitStartPage(data) + 1;
+  const imageSlot = revised ? revisedOutfitSlotKey(page.page_number) : imageSlotForPage(page, data);
+  const formulaPieceCount = (items.length || revised ? items : page.blocks.slice(0, 5)).length;
+  // Only a published revision reaches the client's copy, so the marker shows
+  // on her report once the new look is actually there to find.
+  const latest = revised ? null : latestRevisionOf(data, outfitNumber);
+  const revisedLater = latest && !isBlankRevisedOutfit(latest) ? latest : null;
+  const lookLabel = `No. ${String(outfitNumber).padStart(2, '0')}`;
   return (
-    <PageFrame page={page} className="outfit-page">
+    <PageFrame page={page} className={`outfit-page${revised ? ' revised-outfit-page' : ''}`}>
       <div className="outfit-hero">
         <div className="outfit-copy">
-          <div className="display-it outfit-no">No. {String(outfitNumber).padStart(2, '0')}</div>
+          <div className="display-it outfit-no">{revised ? `Revised ${lookLabel}` : lookLabel}</div>
+          {revisedLater && <div className="mono outfit-revised-note">Revised · your new version is in Your revised looks</div>}
           <h2>
             <EditableText
               page={page}
               value={page.title}
+              fallback={revised && !editable ? `Your new look ${outfitNumber}` : ''}
+              placeholder={revised ? 'Name this look' : undefined}
               update={value => ({ ...page, title: value })}
               className="display"
             />
@@ -1773,7 +1790,7 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
         <div className="outfit-art">
           <div className="flatlay-frame">
             <div className="grain" />
-            <div className="mono figure-label">Composition - {String(outfitNumber).padStart(2, '0')}</div>
+            <div className="mono figure-label">{revised ? 'Revised composition' : 'Composition'} - {String(outfitNumber).padStart(2, '0')}</div>
             {imageSlot && (
               <ImageSlotFrame slotKey={imageSlot} label={`outfit ${outfitNumber} image`} className="flatlay-media">
                 {image ? <ReportImage src={image} /> : <OutfitFallback palette={palette.map(colour => colour.hex)} />}
@@ -1790,9 +1807,11 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
           <div className="formula-hint">Each piece opens a live shopping search in your colour.</div>
         </div>
         <div className="formula-grid">
-          {(items.length ? items : page.blocks.slice(0, 5)).map((item, index) => {
+          {(items.length || revised ? items : page.blocks.slice(0, 5)).map((item, index) => {
             const colour = colourForFormulaItem(item, page, data, index);
-            const pieceValue = getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`));
+            const pieceValue = revised
+              ? getField(item, ['piece', 'name'])
+              : getField(item, ['piece', 'name', 'heading', 'rule'], getField(item, ['body'], `Piece ${index + 1}`));
             // Only a colour set for this piece may shape the search. The swatch
             // colour inferred for library outfits is a guess, and searching for it
             // contradicted the colour the stylist wrote.
@@ -1808,7 +1827,7 @@ function OutfitPage({ page, data, imageUrls }: { page: BlueprintPage; data: Styl
                 <div className="mono dossier-label">{String(index + 1).padStart(2, '0')} - {getField(item, ['slot', 'category', 'label'], 'piece')}</div>
                 <h3 className="display">
                   {formula.editable
-                    ? <EditableText page={page} value={pieceValue} update={value => updateItem(page, formula.blockIndex, index, { piece: value })} />
+                    ? <EditableText page={page} value={pieceValue} placeholder={revised ? 'Write this piece' : undefined} update={value => updateItem(page, formula.blockIndex, index, { piece: value })} />
                     : pieceValue}
                 </h3>
                 {query && (
@@ -3510,6 +3529,22 @@ function BlueprintStyles() {
       .outfit-no {
         font-size: 18px;
         opacity: 0.5;
+      }
+      .revised-outfit-page .outfit-no {
+        opacity: 0.85;
+        color: #9A7538;
+      }
+      .outfit-revised-note {
+        margin-top: 8px;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #9A7538;
+      }
+      .revised-outfit-page [contenteditable][data-placeholder]:empty::before {
+        content: attr(data-placeholder);
+        opacity: 0.35;
+        font-style: italic;
       }
       /* Sized from the copy column itself: at a report-wide size a 355px column
          could not hold "Professional" and the title broke mid-word. */

@@ -160,8 +160,9 @@ test('every workspace view belongs to exactly one tab', () => {
 import { readFileSync } from 'node:fs';
 test('a published report can be marked delivered from its dashboard card', () => {
   const dashboard = readFileSync('src/components/StylistWorkspaceDashboard.tsx', 'utf8');
-  // Offered only once the client link works, and never for an already delivered report.
-  assert.match(dashboard, /function canMarkDelivered\(item: WorkspaceQueueItem\) \{\s*return Boolean\(item\.report\?\.publishedAt\) && item\.bucket !== 'delivered';/);
+  // Offered only once the client link works, never for an already delivered
+  // report, and never while edits the client cannot see are still unpublished.
+  assert.match(dashboard, /function canMarkDelivered\(item: WorkspaceQueueItem\) \{\s*return Boolean\(item\.report\?\.publishedAt\) && !item\.report\?\.hasUnpublishedChanges && item\.bucket !== 'delivered';/);
   assert.match(dashboard, /body: JSON\.stringify\(\{ action: 'confirm' \}\)/);
   assert.match(dashboard, /window\.confirm\(`Mark \$\{name\}'s report as delivered\?/);
   assert.match(dashboard, /setRefresh\(value => value \+ 1\);/);

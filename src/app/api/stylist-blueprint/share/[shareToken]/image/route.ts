@@ -15,10 +15,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const notFound = () => new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'private, no-store' } });
 
   const source = await getStylistBlueprintClientImageSource(shareToken);
-  // Only paths this report actually references can be signed.
-  if (!source || !isStylistBlueprintImagePath(source.imagePaths, path)) return notFound();
+  if (!source) return notFound();
+  // Only paths this report actually references can be signed. A path the
+  // published copy references is client-visible; one that exists only in the
+  // stylist's draft belongs to a revision in progress and stays staff-only.
+  const published = isStylistBlueprintImagePath(source.imagePaths, path);
+  const draftOnly = !published && isStylistBlueprintImagePath(source.draftImagePaths, path);
+  if (!published && !draftOnly) return notFound();
   // Before publishing, only the report's stylist or an admin (client preview) may load images.
-  if (!source.live && !(await canAccessBlueprintReport(source.reportId))) return notFound();
+  if ((!source.live || draftOnly) && !(await canAccessBlueprintReport(source.reportId))) return notFound();
 
   const image = await getStylistBlueprintDisplayImage(path);
   if (!image) return notFound();
@@ -29,7 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   return NextResponse.redirect(image.url, {
     status: 302,
     headers: {
-      'Cache-Control': source.live && cacheSeconds > 0 ? `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}` : 'private, no-store',
+      'Cache-Control': source.live && published && cacheSeconds > 0 ? `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}` : 'private, no-store',
       'Referrer-Policy': 'no-referrer',
     },
   });

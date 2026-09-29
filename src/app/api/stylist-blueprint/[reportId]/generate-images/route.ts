@@ -22,7 +22,7 @@ export async function POST(
 
   const { data: report, error } = await supabaseAdmin
     .from('stylist_blueprint_reports')
-    .select('id, report_data, share_token, submission_id, status, progress_stage, image_urls')
+    .select('id, report_data, share_token, submission_id, status, progress_stage, image_urls, revision')
     .eq('id', reportId)
     .single();
 
@@ -41,6 +41,12 @@ export async function POST(
 
     const resolvedSubmission = submission ? await resolveConsultationIntakePhotos(submission) : null;
     if (body.planOnly === true) return NextResponse.json({ slots: planStylistBlueprintImageGeneration(report.report_data as StylistBlueprintReportData, report.image_urls, resolvedSubmission, group, force) });
+    // New images on a delivered report are a draft change until published; the
+    // revision bump is what lets the studio offer "Publish update" for them.
+    await supabaseAdmin
+      .from('stylist_blueprint_reports')
+      .update({ revision: Number(report.revision ?? 0) + 1, updated_at: new Date().toISOString() })
+      .eq('id', reportId);
     const imagePaths = await generateStylistBlueprintImages(
       reportId,
       report.report_data as StylistBlueprintReportData,

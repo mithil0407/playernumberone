@@ -1,6 +1,8 @@
 import { consultationReadiness, type ConsultationReadiness } from './stylistConsultationReadiness.ts';
+import { hasUnpublishedChanges, publishedVersion } from './stylistReportPublication.ts';
+import { revisionProgress, type RevisionScopeItem } from './stylistReportRevisions.ts';
 
-export type WorkspaceView = 'recent' | 'all' | 'forms' | 'photos' | 'reports' | 'ready' | 'today' | 'needs_inputs' | 'waiting' | 'stale' | 'generating' | 'needs_review' | 'ready_to_deliver' | 'delivered' | 'needs_attention';
+export type WorkspaceView = 'recent' | 'all' | 'forms' | 'photos' | 'reports' | 'ready' | 'today' | 'needs_inputs' | 'waiting' | 'stale' | 'generating' | 'needs_review' | 'ready_to_deliver' | 'delivered' | 'needs_attention' | 'revision_requested';
 export const WORKSPACE_VIEWS: Array<{ key: WorkspaceView; label: string }> = [
   { key: 'reports', label: 'To do' },
   { key: 'recent', label: 'Recent consultations' }, { key: 'photos', label: 'Photos received' },
@@ -10,11 +12,12 @@ export const WORKSPACE_VIEWS: Array<{ key: WorkspaceView; label: string }> = [
   { key: 'stale', label: 'Older than 30 days' }, { key: 'generating', label: 'Generating' },
   { key: 'needs_review', label: 'In review' }, { key: 'ready_to_deliver', label: 'Ready to deliver' },
   { key: 'delivered', label: 'Delivered' }, { key: 'needs_attention', label: 'Needs attention' },
+  { key: 'revision_requested', label: 'Revision requested' },
 ];
 
 /** The four tabs a stylist sees. Every view key resolves to exactly one tab. */
 export const WORKSPACE_CATEGORIES: Array<{ key: WorkspaceView; label: string; views: WorkspaceView[] }> = [
-  { key: 'reports', label: 'To do', views: ['reports', 'ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'] },
+  { key: 'reports', label: 'To do', views: ['reports', 'ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention', 'revision_requested'] },
   { key: 'waiting', label: 'Waiting on client', views: ['waiting', 'stale', 'needs_inputs'] },
   { key: 'delivered', label: 'Delivered', views: ['delivered'] },
   { key: 'all', label: 'All clients', views: ['all', 'recent', 'forms', 'photos', 'today'] },
@@ -24,6 +27,7 @@ export const WORKSPACE_CATEGORIES: Array<{ key: WorkspaceView; label: string; vi
 export const WORKSPACE_STAGE_LABELS: Record<string, string> = {
   ready: 'Ready to start', generating: 'Generating', needs_review: 'In review', ready_to_deliver: 'Ready to deliver',
   needs_attention: 'Needs attention', needs_inputs: 'Waiting on client', delivered: 'Delivered',
+  revision_requested: 'Revision requested',
 };
 
 /** Clients who have not sent inputs this long after their consultation are unlikely to be active work. */
@@ -35,13 +39,35 @@ export function isStaleWaiting(item: WorkspaceQueueItem, now = Date.now()) {
   return Number.isFinite(since) && since < now - STALE_INPUT_DAYS * 86_400_000;
 }
 
-export function isOverdue(item: WorkspaceQueueItem, now = Date.now()) {
-  return item.bucket !== 'delivered' && Boolean(item.reportDueAt && Date.parse(item.reportDueAt) < now);
+/**
+ * The date this card is judged by. An open revision brings its own short clock;
+ * the consultation's due date is a promise about the first delivery only.
+ */
+export function workspaceDue(item: WorkspaceQueueItem) {
+  if (item.revision?.dueAt) return { at: item.revision.dueAt, kind: 'revision' as const };
+  return item.reportDueAt ? { at: item.reportDueAt, kind: 'report' as const } : null;
 }
 
+/**
+ * Once a report is published the client has it, so later work on it — a revision
+ * she asked for — is not the original deadline running late and must not paint
+ * her card red. The revision's own due date takes over instead.
+ */
+export function isOverdue(item: WorkspaceQueueItem, now = Date.now()) {
+  const due = workspaceDue(item);
+  if (!due) return false;
+  if (due.kind === 'report' && (item.bucket === 'delivered' || item.report?.publishedAt)) return false;
+  return Date.parse(due.at) < now;
+}
+
+export interface QueueRevision {
+  id: string; status: string; due_at: string | null; created_at: string; scope: RevisionScopeItem[] | null;
+}
 export interface QueueReport {
   id: string; status: string; progress_stage: string | null; error_message: string | null;
   published_at: string | null; delivered_at: string | null; created_at: string; updated_at: string;
+  revision?: number | null; published_revision?: number | null; published_version?: number | null;
+  stylist_report_revisions?: QueueRevision[] | null;
 }
 export interface QueueRow {
   id: string; stylist_id: string | null; client_name: string; client_phone: string;
@@ -52,9 +78,12 @@ export interface QueueRow {
   stylist_intake_responses: Array<{ id: string; stylist_blueprint_reports: QueueReport[] }>;
 }
 
-export function workspaceBucket(input: { consultationStatus: string; readiness: ConsultationReadiness; reportStatus?: string | null; reportProgress?: string | null }) {
+export function workspaceBucket(input: { consultationStatus: string; readiness: ConsultationReadiness; reportStatus?: string | null; reportProgress?: string | null; openRevision?: boolean }) {
   if (input.reportStatus === 'error' || input.consultationStatus === 'stalled') return 'needs_attention';
   if (input.reportStatus === 'generating' || input.reportProgress) return 'generating';
+  // A client waiting on a change she asked for outranks how the report itself
+  // reads: delivered, or back in review because the stylist has started on it.
+  if (input.openRevision) return 'revision_requested';
   if (input.reportStatus === 'delivered' || input.reportStatus === 'sent') return 'delivered';
   if (input.reportStatus === 'approved') return 'ready_to_deliver';
   if (input.reportStatus === 'draft_ready' || input.reportStatus === 'in_review') return 'needs_review';
@@ -71,19 +100,38 @@ export function workspaceQueueItem(row: QueueRow) {
   // only have source/order metadata and must not be labelled as filled forms.
   const formCompleted = [row.form_occupation, row.form_body_shape, row.form_reason].some(value => value != null);
   const photoCount = Object.values(readiness.photos).filter(Boolean).length;
+  // The brief the stylist is working to right now. Only one can be open.
+  const openRevision = (report?.stylist_report_revisions ?? []).find(item => item.status === 'open') ?? null;
+  const changes = openRevision?.scope ?? [];
   return {
     id: row.id, stylistId: row.stylist_id, clientName: row.client_name, clientPhone: row.client_phone,
     consultationDate: row.consultation_date, createdAt: row.created_at, reportDueAt: row.report_due_at,
     deliveredAt: row.delivered_at, consultationStatus: row.status, formCompleted,
     updatedAt: report?.updated_at ?? row.updated_at, photosSubmitted: photoCount > 0, photoCount,
     uploadSubmittedAt: upload?.submitted_at ?? null, readiness,
-    bucket: workspaceBucket({ consultationStatus: row.status, readiness, reportStatus: report?.status, reportProgress: report?.progress_stage }),
-    report: report ? { id: report.id, status: report.status, progressStage: report.progress_stage, errorMessage: report.error_message, publishedAt: report.published_at, deliveredAt: report.delivered_at } : null,
+    bucket: workspaceBucket({ consultationStatus: row.status, readiness, reportStatus: report?.status, reportProgress: report?.progress_stage, openRevision: Boolean(openRevision) }),
+    revision: openRevision ? {
+      id: openRevision.id, dueAt: openRevision.due_at, requestedAt: openRevision.created_at,
+      changes: changes.map(item => item.label), ...revisionProgress({ scope: changes }),
+    } : null,
+    report: report ? {
+      id: report.id, status: report.status, progressStage: report.progress_stage, errorMessage: report.error_message,
+      publishedAt: report.published_at, deliveredAt: report.delivered_at,
+      publishedVersion: publishedVersion(report), hasUnpublishedChanges: hasUnpublishedChanges(report),
+    } : null,
   };
 }
 export type WorkspaceQueueItem = ReturnType<typeof workspaceQueueItem>;
 
 export function workspaceNextAction(item: WorkspaceQueueItem) {
+  if (item.bucket === 'revision_requested') {
+    const started = item.revision!.done > 0 || item.report?.hasUnpublishedChanges;
+    return {
+      label: started ? 'Continue revision' : 'Start revision',
+      hint: 'Work through what the client asked for, then publish the update.',
+      target: 'report' as const, step: 2,
+    };
+  }
   switch (item.bucket) {
     case 'needs_review': return { label: 'Continue report', hint: 'Review the advice, finish outfit images, and approve each page.', target: 'report' as const, step: 2 };
     case 'ready_to_deliver': return { label: 'Deliver report', hint: 'Your reviewed report is ready for the client.', target: 'report' as const, step: 3 };
@@ -159,11 +207,12 @@ export function matchesWorkspaceView(item: WorkspaceQueueItem, view: string, now
   if (!view || view === 'all') return true;
   if (view === 'forms') return item.formCompleted;
   if (view === 'photos') return item.photosSubmitted;
-  if (view === 'reports') return ['ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention'].includes(item.bucket);
+  if (view === 'reports') return ['ready', 'generating', 'needs_review', 'ready_to_deliver', 'needs_attention', 'revision_requested'].includes(item.bucket);
   if (view === 'waiting') return item.bucket === 'needs_inputs' && !isStaleWaiting(item, now);
   if (view === 'stale') return isStaleWaiting(item, now);
   if (view !== 'today') return item.bucket === view;
-  return item.bucket !== 'delivered' && Boolean(item.reportDueAt) && Date.parse(item.reportDueAt!) <= indiaDayEnd(now);
+  const due = workspaceDue(item);
+  return item.bucket !== 'delivered' && Boolean(due) && Date.parse(due!.at) <= indiaDayEnd(now);
 }
 
 export function workspaceCounts(items: WorkspaceQueueItem[], now = Date.now()) {
@@ -179,7 +228,8 @@ export function queryWorkspaceItems(items: WorkspaceQueueItem[], options: { view
     .filter(item => !search || item.clientName?.toLowerCase().includes(search) || item.clientPhone?.toLowerCase().includes(search))
     .filter(item => {
       if (!options.due) return true;
-      const due = item.reportDueAt ? Date.parse(item.reportDueAt) : null;
+      const dueAt = workspaceDue(item)?.at;
+      const due = dueAt ? Date.parse(dueAt) : null;
       if (options.due === 'none') return due === null;
       if (due === null) return false;
       if (options.due === 'overdue') return due < now;
@@ -191,12 +241,12 @@ export function queryWorkspaceItems(items: WorkspaceQueueItem[], options: { view
       if (options.view === 'reports') {
         const overdue = (item: WorkspaceQueueItem) => Boolean(item.reportDueAt && Date.parse(item.reportDueAt) <= now);
         if (overdue(a) !== overdue(b)) return overdue(a) ? -1 : 1;
-        const priority: Record<string, number> = { needs_attention: 0, ready_to_deliver: 1, needs_review: 2, ready: 3, generating: 4 };
+        const priority: Record<string, number> = { needs_attention: 0, ready_to_deliver: 1, revision_requested: 2, needs_review: 3, ready: 4, generating: 5 };
         const difference = (priority[a.bucket] ?? 5) - (priority[b.bucket] ?? 5);
         if (difference) return difference;
         if (a.reportDueAt && b.reportDueAt && a.reportDueAt !== b.reportDueAt) return Date.parse(a.reportDueAt) - Date.parse(b.reportDueAt);
       }
-      if (options.view === 'today') return Date.parse(a.reportDueAt!) - Date.parse(b.reportDueAt!);
+      if (options.view === 'today') return Date.parse(workspaceDue(a)!.at) - Date.parse(workspaceDue(b)!.at);
       const date = (item: WorkspaceQueueItem) => options.view === 'photos'
         ? item.uploadSubmittedAt || item.updatedAt
         : options.view === 'recent' ? item.consultationDate || item.createdAt : item.createdAt;

@@ -13,6 +13,7 @@ import {
   buildStylistBlueprintManualImagePrompt,
   type StylistBlueprintImageSlotKey,
 } from '@/lib/stylistBlueprintImageGenerator';
+import { findRevisedOutfit, isRevisedOutfitPageNumber, withRevisedOutfitInPlace } from '@/lib/stylistRevisedOutfits';
 
 export const maxDuration = 60;
 
@@ -57,17 +58,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'A v1 Blueprint report is required to edit outfits' }, { status: 400 });
   }
 
-  const reportData = report.report_data as StylistBlueprintReportData;
-  const outfitStart = getStylistBlueprintOutfitStartPage(reportData);
-  if (!Number.isInteger(pageNumber) || pageNumber < outfitStart || pageNumber > getStylistBlueprintOutfitEndPage(reportData)) {
+  const storedData = report.report_data as StylistBlueprintReportData;
+  const outfitStart = getStylistBlueprintOutfitStartPage(storedData);
+  // A revised look is read, validated and prompted as if it stood in the place
+  // of the look it replaces, so it is held to exactly the same standard.
+  const revised = isRevisedOutfitPageNumber(pageNumber) ? findRevisedOutfit(storedData, pageNumber) : null;
+  if (isRevisedOutfitPageNumber(pageNumber) && !revised) {
+    return NextResponse.json({ error: 'This revised look no longer exists. Reload the report.' }, { status: 404 });
+  }
+  const inPlace = revised ? withRevisedOutfitInPlace(storedData, revised) : { data: storedData, pageNumber };
+  const reportData = inPlace.data;
+  const layoutPage = inPlace.pageNumber;
+  if (!Number.isInteger(layoutPage) || layoutPage < outfitStart || layoutPage > getStylistBlueprintOutfitEndPage(reportData)) {
     return NextResponse.json({ error: 'Open an outfit page first.' }, { status: 400 });
   }
 
   try {
-    const page = await parseStylistBlueprintOutfitText(reportData, pageNumber, text);
+    const parsed = await parseStylistBlueprintOutfitText(reportData, layoutPage, text);
     const nextData: StylistBlueprintReportData = {
       ...reportData,
-      pages: reportData.pages.map(item => item.page_number === pageNumber ? page : item),
+      pages: reportData.pages.map(item => item.page_number === layoutPage ? parsed : item),
     };
 
     // The same validator guards every save. Catching it here means a thin
@@ -76,12 +86,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     try {
       validateStylistBlueprintReport(nextData);
     } catch (invalid) {
-      return NextResponse.json({ error: readableValidationError(invalid, pageNumber) }, { status: 422 });
+      return NextResponse.json({ error: readableValidationError(invalid, layoutPage) }, { status: 422 });
     }
 
     // Built from the parsed page rather than from storage, so the prompt on
     // screen is the outfit she is looking at — no save round trip in between.
-    const slotKey = `application.outfitFlatlays.${pageNumber - outfitStart}` as StylistBlueprintImageSlotKey;
+    const slotKey = `application.outfitFlatlays.${layoutPage - outfitStart}` as StylistBlueprintImageSlotKey;
     let prompt: string | null = null;
     try {
       prompt = buildStylistBlueprintManualImagePrompt(slotKey, nextData).prompt;
@@ -89,6 +99,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       prompt = null;
     }
 
+    const page = revised ? { ...parsed, page_number: pageNumber } : parsed;
     return NextResponse.json({ page, prompt });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Could not read that outfit';

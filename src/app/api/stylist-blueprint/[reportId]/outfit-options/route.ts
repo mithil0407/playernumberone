@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     image_urls: { ...images, application: { ...images.application, outfitFlatlays: ids.map((_, i) => i === index ? null : images.application?.outfitFlatlays?.[i] ?? null),
       outfitDetails: ids.map((_, i) => i === index ? null : images.application?.outfitDetails?.[i] ?? null) } },
     section_approvals: { ...report.section_approvals, [`p${page.page_number}`]: false }, revision: report.revision + 1,
-    published_at: null, delivered_at: null, status: 'in_review', updated_at: new Date().toISOString(),
+    status: 'in_review', updated_at: new Date().toISOString(),
   }).eq('id', reportId).eq('updated_at', report.updated_at).select('id').maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not save this outfit. Please retry.' }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'The report changed. Reload and choose again.' }, { status: 409 });

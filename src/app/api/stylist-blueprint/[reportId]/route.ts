@@ -8,6 +8,7 @@ import { assertStylistReportDraft, assertStylistPageApprovals } from '@/lib/styl
 import { checkStudioReportQuality } from '@/lib/stylistReportStudio';
 import { outfitPieces } from '@/lib/stylistOutfitEditor';
 import { hairstyleNamesChanged } from '@/lib/stylistHairstyleGuide';
+import { assertRevisedOutfits, findRevisedOutfit, revisedOutfits } from '@/lib/stylistRevisedOutfits';
 import { type StylistBlueprintImagePaths } from '@/lib/stylistBlueprintImageGenerator';
 import {
   getStylistBlueprintPageCount,
@@ -99,6 +100,7 @@ export async function PATCH(
     }
     if (body.report_data !== undefined) {
       assertStylistReportDraft(body.report_data);
+      assertRevisedOutfits(body.report_data.revised_outfits, body.report_data);
       if (body.report_data.pages.length === getStylistBlueprintPageCount(body.report_data)) validateStylistBlueprintReport(body.report_data);
       const previous = currentRevisionRow.report_data as StylistBlueprintReportData | null;
       if (previous?.pages?.some(page => !body.report_data.pages.some((next: BlueprintPage) => next.page_number === page.page_number))) {
@@ -118,21 +120,23 @@ export async function PATCH(
   if (body.page_approvals) {
     patch.section_approvals = body.page_approvals;
     if (Object.values(body.page_approvals as Record<string, unknown>).some(value => value === false)) {
-      patch.published_at = null;
-      patch.delivered_at = null;
       patch.status = 'in_review';
     }
   }
   if (body.report_data) {
     patch.report_data = body.report_data;
-    patch.published_at = null;
-    patch.delivered_at = null;
+    // published_at and delivered_at describe the copy the client already has.
+    // An edit creates an unpublished draft alongside it; it does not retract
+    // what was delivered, and must never take her link down mid-revision.
     patch.status = 'in_review';
     const previous = currentRevisionRow.report_data as StylistBlueprintReportData | null;
     const approvals = { ...(patch.section_approvals as Record<string, boolean> ?? currentRevisionRow.section_approvals ?? {}) };
     const analysisChanged = JSON.stringify(previous?.analysis) !== JSON.stringify(body.report_data.analysis);
     for (const page of body.report_data.pages as BlueprintPage[]) {
       if (analysisChanged || JSON.stringify(previous?.pages?.find(p => p.page_number === page.page_number)) !== JSON.stringify(page)) approvals[`p${page.page_number}`] = false;
+    }
+    for (const entry of revisedOutfits(body.report_data)) {
+      if (JSON.stringify(findRevisedOutfit(previous, entry.page.page_number)) !== JSON.stringify(entry)) approvals[`p${entry.page.page_number}`] = false;
     }
     if (analysisChanged && body.report_data.studio) body.report_data.studio.analysis_confirmed = false;
     patch.section_approvals = approvals;
@@ -164,8 +168,6 @@ export async function PATCH(
       return NextResponse.json({ error: message }, { status: 400 });
     }
     patch.report_data = nextData;
-    patch.published_at = null;
-    patch.delivered_at = null;
     patch.status = 'in_review';
     patch.section_approvals = {
       ...((existing?.section_approvals as Record<string, boolean> | null) ?? {}),

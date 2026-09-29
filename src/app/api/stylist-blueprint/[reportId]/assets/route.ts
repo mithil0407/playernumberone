@@ -26,12 +26,18 @@ import {
   isVersionedStylistBlueprintReportData,
   type StylistBlueprintReportData,
 } from '@/lib/stylistBlueprintGenerator';
+import { REVISED_OUTFIT_FIRST_PAGE, findRevisedOutfit, revisedOutfitSlotIndexFromKey, revisedOutfitSlotKey, revisedOutfits } from '@/lib/stylistRevisedOutfits';
 
 export const maxDuration = 60;
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
-function labelForSlot(slot: StylistBlueprintImageSlotKey) {
+function labelForSlot(slot: StylistBlueprintImageSlotKey, data: StylistBlueprintReportData) {
+  const revisedIndex = revisedOutfitSlotIndexFromKey(slot);
+  if (revisedIndex !== null) {
+    const entry = findRevisedOutfit(data, REVISED_OUTFIT_FIRST_PAGE + revisedIndex);
+    return entry ? `Revised look for Look ${entry.replaces}` : 'Revised look';
+  }
   const index = Number(slot.split('.').at(-1));
   if (slot.startsWith('application.outfitFlatlays.') && Number.isInteger(index)) return `Outfit ${index + 1}`;
   if (slot.startsWith('application.transformationLooks.') && Number.isInteger(index)) return `Transformation look ${index + 1}`;
@@ -64,6 +70,8 @@ function pageForSlot(slot: StylistBlueprintImageSlotKey, data: StylistBlueprintR
   if (slot.startsWith('application.silhouetteProofs.')) return getStylistBlueprintRulesStartPage(data);
   if (slot.startsWith('application.outfitFlatlays.')) return getStylistBlueprintOutfitStartPage(data) + Number(slot.split('.').at(-1));
   if (slot === 'closing.editTeaser') return getStylistBlueprintContinuationPage(data);
+  const revisedIndex = revisedOutfitSlotIndexFromKey(slot);
+  if (revisedIndex !== null) return REVISED_OUTFIT_FIRST_PAGE + revisedIndex;
   return null;
 }
 
@@ -83,10 +91,14 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ report
   const report = await loadReport(reportId);
   if (!report) return NextResponse.json({ error: 'Report not found' }, { status: 404 });
   const resolved = await resolveStylistBlueprintImageUrls(report.image_urls as StylistBlueprintImagePaths | null);
-  const prompts = STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS.flatMap(slotKey => {
+  const slots: StylistBlueprintImageSlotKey[] = [
+    ...STYLIST_BLUEPRINT_VISIBLE_IMAGE_SLOTS,
+    ...revisedOutfits(report.report_data).map(entry => revisedOutfitSlotKey(entry.page.page_number)),
+  ];
+  const prompts = slots.flatMap(slotKey => {
     try {
       const plan = buildStylistBlueprintManualImagePrompt(slotKey, report.report_data);
-      return [{ slotKey, label: labelForSlot(slotKey), ...plan, currentUrl: currentImageForSlot(resolved, slotKey) }];
+      return [{ slotKey, label: labelForSlot(slotKey, report.report_data), ...plan, currentUrl: currentImageForSlot(resolved, slotKey) }];
     } catch {
       return [];
     }

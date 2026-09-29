@@ -23,11 +23,15 @@ test('the public (cached) loader still hides unpublished consultation reports', 
 
 test('client report images use stable links that sign on request, never baked-in signed URLs', () => {
   const publicReportFn = loader.slice(loader.indexOf('async function publicReport'), loader.indexOf('async function resolveRowImages'));
-  assert.match(publicReportFn, /mapStylistBlueprintImagePaths\(row\.image_urls, path => stylistBlueprintClientImageUrl\(row\.share_token, path\)\)/);
+  assert.match(publicReportFn, /mapStylistBlueprintImagePaths\(viewed\.image_urls, path => stylistBlueprintClientImageUrl\(row\.share_token, path\)\)/);
   assert.doesNotMatch(publicReportFn, /resolveStylistBlueprintImageUrls/);
   const route = readFileSync('src/app/api/stylist-blueprint/share/[shareToken]/image/route.ts', 'utf8');
-  assert.match(route, /isStylistBlueprintImagePath\(source\.imagePaths, path\)/);
-  assert.match(route, /if \(!source\.live && !\(await canAccessBlueprintReport\(source\.reportId\)\)\) return notFound\(\);/);
+  assert.match(route, /const published = isStylistBlueprintImagePath\(source\.imagePaths, path\);/);
+  assert.match(route, /const draftOnly = !published && isStylistBlueprintImagePath\(source\.draftImagePaths, path\);/);
+  assert.match(route, /if \(!published && !draftOnly\) return notFound\(\);/);
+  // An unpublished report, and any image that exists only in the stylist's
+  // draft of a published one, are staff-only.
+  assert.match(route, /if \(\(!source\.live \|\| draftOnly\) && !\(await canAccessBlueprintReport\(source\.reportId\)\)\) return notFound\(\);/);
 });
 
 test('the client report sends its styles with the server HTML', () => {
@@ -60,7 +64,7 @@ test('client report images are served as cached reader-sized copies behind a loa
   const route = readFileSync('src/app/api/stylist-blueprint/share/[shareToken]/image/route.ts', 'utf8');
   // Cache lifetime can never outlast the signed URL, and unpublished reports are never publicly cached.
   assert.match(route, /Math\.floor\(\(image\.expiresAt - Date\.now\(\)\) \/ 1000\) - 5 \* 60/);
-  assert.match(route, /source\.live && cacheSeconds > 0 \? `public/);
+  assert.match(route, /source\.live && published && cacheSeconds > 0 \? `public/);
   assert.match(page, /<StylistBlueprintReportIntro clientName=\{clientName\} \/>/);
   assert.match(readFileSync('src/components/StylistBlueprintReportIntro.tsx', 'utf8'), /const MAX_WAIT_MS = 10_000;/);
 });

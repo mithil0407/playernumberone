@@ -16,7 +16,8 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
   /** Applies a pasted outfit to the page and hands back its image prompt. */
   onParse: (text: string) => Promise<string | null>;
   imageUrl: string | null; busy: boolean; saving: boolean; hasUnsavedEdits: boolean;
-  getAlternatives: () => Promise<Array<{ id: string; pieces: string[] }>>;
+  /** Absent for a revised look, which has no library slot to draw alternatives from. */
+  getAlternatives?: () => Promise<Array<{ id: string; pieces: string[] }>>;
   chooseAlternative: (id: string) => Promise<void>;
 }) {
   const [step, setStep] = useState<'outfit' | 'image'>('outfit');
@@ -129,7 +130,7 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
           {working ? 'Reading the outfit…' : 'Use this outfit'}
         </button>
       </div>
-      <div className="rounded-2xl border border-[#2C2622]/10 bg-[#EDE5D2]/60 p-4">
+      {getAlternatives && <div className="rounded-2xl border border-[#2C2622]/10 bg-[#EDE5D2]/60 p-4">
         <p className="text-sm font-medium">Want a different look?</p>
         <p className="text-xs leading-5 text-[#746D65] mt-1">Choose another suitable outfit, or edit the pieces below yourself.</p>
         <button disabled={disabled || saving} onClick={async () => { setWorking(true); setError(''); try { setAlternatives(await getAlternatives()); } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not load choices'); } finally { setWorking(false); } }} className="text-sm underline mt-3 disabled:opacity-50">Browse alternative looks</button>
@@ -144,7 +145,7 @@ export default function StylistOutfitEditor({ page, onChange, onSave, onUpload, 
             <span className="text-xs font-medium">Look {index + 1} · Use this outfit →</span><span className="block text-xs leading-5 text-[#746D65] mt-2">{option.pieces.slice(0, 4).join(' · ')}</span>
           </button>)}
         </div>}
-      </div>
+      </div>}
       <fieldset disabled={disabled} className="space-y-5">
         <label className="block text-xs font-medium">Outfit title<input className={fieldClass} value={page.title} onChange={e => update({ ...page, title: e.target.value })} /></label>
         <label className="block text-xs font-medium">Occasion<input className={fieldClass} value={page.subtitle ?? ''} onChange={e => update({ ...page, subtitle: e.target.value })} /></label>
