@@ -131,6 +131,23 @@ export function installReportPrintFallback() {
   };
 }
 
+/** The global the server-side PDF renderer calls to lay the report out for print. */
+export const REPORT_PDF_HOOK = '__iconikPrepareReportPdf';
+
+/**
+ * Lets the server-side PDF renderer (src/lib/reportPdf.ts) run the same
+ * preparation as the "Save as PDF" button, so the downloaded PDF and a desktop
+ * print come out identical. Returns a cleanup.
+ */
+export function installReportPdfHook() {
+  const target = window as unknown as Record<string, unknown>;
+  target[REPORT_PDF_HOOK] = async (timeoutMs?: number) => {
+    await prepareReportForPrint(timeoutMs);
+    return document.querySelectorAll(PAGE_SELECTOR).length;
+  };
+  return () => { delete target[REPORT_PDF_HOOK]; };
+}
+
 /**
  * The page geometry shared by both reports. Emitted twice: for printing, and
  * under PRINT_MEASURE_CLASS so fitReportPagesForPrint measures the same layout.

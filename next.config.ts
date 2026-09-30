@@ -17,11 +17,16 @@ const nextConfig: NextConfig = {
   },
   compress: true,
   poweredByHeader: false,
+  // Headless Chrome for report PDFs; its compressed binary is read from disk at runtime.
+  serverExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
   outputFileTracingIncludes: {
     '/api/stylist-blueprint/**': [
       './outfitlibrary.md',
       './src/lib/stylistOutfitLibrary.md',
       './src/lib/womenOutfitRecommendationSkill.md',
+    ],
+    '/api/stylist-blueprint/share/[shareToken]/pdf': [
+      './node_modules/@sparticuz/chromium/bin/**',
     ],
     '/api/stylist-workspace/**': [
       './outfitlibrary.md',

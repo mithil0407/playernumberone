@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { installReportPrintFallback, prepareReportForPrint } from '@/lib/reportPrint';
+import { installReportPdfHook, installReportPrintFallback, prepareReportForPrint } from '@/lib/reportPrint';
 
 /**
  * Reader-side chrome for the shared report link: a read-progress line, a
@@ -49,15 +49,22 @@ function pageElement(pageNumber: number) {
 export default function StylistBlueprintViewerChrome({
   outline,
   clientName,
+  pdfUrl,
 }: {
   outline: BlueprintOutlineEntry[];
   clientName: string;
+  /**
+   * The server-rendered PDF of this report. Without it (a stylist's unpublished
+   * preview), "Save as PDF" falls back to the browser's print.
+   */
+  pdfUrl?: string;
 }) {
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState<number>(outline[0]?.pageNumber ?? 1);
   const [pastCover, setPastCover] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [preparingPdf, setPreparingPdf] = useState(false);
+  const [pdfFailed, setPdfFailed] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; caption: string } | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const pillRef = useRef<HTMLButtonElement | null>(null);
@@ -252,15 +259,34 @@ export default function StylistBlueprintViewerChrome({
   const print = useCallback(async () => {
     if (preparingPdf) return;
     setPreparingPdf(true);
+    if (pdfUrl) {
+      // Phone browsers print the report badly (or not at all, in WhatsApp and
+      // Instagram), so readers download the PDF the server renders instead. The
+      // first download of a version renders it, which takes a little while.
+      setPdfFailed(false);
+      try {
+        const response = await fetch(`${pdfUrl}?format=json`, { cache: 'no-store' });
+        const body = await response.json().catch(() => null) as { url?: string } | null;
+        if (!response.ok || !body?.url) throw new Error('PDF not ready');
+        setSheetOpen(false);
+        window.location.assign(body.url);
+      } catch {
+        setPdfFailed(true);
+      } finally {
+        setPreparingPdf(false);
+      }
+      return;
+    }
     const restore = await prepareReportForPrint();
     setPreparingPdf(false);
     setSheetOpen(false);
     window.addEventListener('afterprint', restore, { once: true });
     window.setTimeout(() => window.print(), 80);
-  }, [preparingPdf]);
+  }, [preparingPdf, pdfUrl]);
 
   // The browser's own Print / Cmd+P cannot wait, but can at least start every image loading.
   useEffect(() => installReportPrintFallback(), []);
+  useEffect(() => installReportPdfHook(), []);
 
   if (!total) return null;
 
@@ -702,7 +728,7 @@ export default function StylistBlueprintViewerChrome({
                 <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
                   <path d="M6 1.5v6M3.5 5L6 7.5 8.5 5M2 10.5h8" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                {preparingPdf ? 'Preparing PDF…' : 'Save as PDF'}
+                {preparingPdf ? 'Preparing PDF…' : pdfFailed ? 'PDF failed · Try again' : 'Save as PDF'}
               </button>
             </div>
           </div>

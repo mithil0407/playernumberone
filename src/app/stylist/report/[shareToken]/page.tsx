@@ -194,7 +194,7 @@ export default async function StylistPublicReportPage({ params, searchParams }: 
           </p>
         </div>
       </div>
-      {outline.length > 0 && <StylistBlueprintViewerChrome outline={outline} clientName={clientName} />}
+      {outline.length > 0 && <StylistBlueprintViewerChrome outline={outline} clientName={clientName} pdfUrl={preview ? undefined : `/api/stylist-blueprint/share/${encodeURIComponent(shareToken)}/pdf`} />}
       {preview && <StylistBlueprintPreviewBanner live={preview.live} publishedVersion={preview.publishedVersion} hasUnpublishedChanges={preview.hasUnpublishedChanges} />}
       <StylistBlueprintReportIntro clientName={clientName} />
       </StyledJsxRegistry>
