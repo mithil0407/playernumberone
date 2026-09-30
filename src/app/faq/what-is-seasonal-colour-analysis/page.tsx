@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "What Is Seasonal Colour Analysis and Why Doesn't It Work for Indian Women? — Iconik",
-  description: "What is seasonal colour analysis (Spring, Summer, Autumn, Winter)? Why was it developed, how it works, and why it produces unreliable results for Indian and South Asian women.",
+  title: "What Is Seasonal Colour Analysis? Indian Skin Guide — Iconik",
+  description: "What seasonal colour analysis is, where the Spring, Summer, Autumn and Winter system came from, and why it often misreads Indian and South Asian skin.",
   keywords: "what is seasonal colour analysis India, seasonal colour analysis Indian women, spring summer autumn winter colour analysis India, does seasonal colour analysis work Indian skin, seasonal analysis vs CHM India",
   alternates: { canonical: "https://www.iconik.pro/faq/what-is-seasonal-colour-analysis" },
   openGraph: {
-    title: "What Is Seasonal Colour Analysis and Why Doesn't It Work for Indian Women? — Iconik",
+    title: "What Is Seasonal Colour Analysis? Indian Skin Guide — Iconik",
     description: "What seasonal colour analysis is, why it was developed, and why it fails for Indian skin tones.",
     url: "https://www.iconik.pro/faq/what-is-seasonal-colour-analysis",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Seasonal colour analysis India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Seasonal colour analysis India — Iconik" }],
   },
 };
 

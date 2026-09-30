@@ -6,7 +6,7 @@ import { faqLinks, methodologyLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Online Personal Stylist India",
   description:
-    "What an online personal stylist in India can do well, what the process looks like, and how Iconik's Style Blueprint fits into that category.",
+    "How an online personal stylist works in India: a 30-minute video call, then a Blueprint with 20 outfits, colours and face-shape advice. ₹2,699.",
   path: "/online-personal-stylist-india",
 });
 

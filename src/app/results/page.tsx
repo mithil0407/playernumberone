@@ -6,7 +6,7 @@ import { faqLinks, styleGuideLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Iconik Results",
   description:
-    "The kinds of results clients typically look for from an Iconik Style Blueprint: clearer shopping, better outfit decisions, and stronger visual consistency.",
+    "What an ICONIK Style Blueprint helps you change: clearer shopping decisions, fewer wasted purchases and outfits that suit your body and colouring.",
   path: "/results",
 });
 

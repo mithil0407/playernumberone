@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Postpartum Fashion India: Dressing Your Body After Baby — Iconik",
-  description: "How to dress confidently in the postpartum period. Practical Indian and western outfit formulas for new mothers — breastfeeding-compatible styles, body changes, and rebuilding your wardrobe.",
+  title: "Postpartum Fashion India: Dressing After Baby — Iconik",
+  description: "How to dress after having a baby: Indian and western outfit formulas for new mothers, breastfeeding-friendly styles, and rebuilding your wardrobe.",
   keywords: "postpartum fashion India, dressing after pregnancy India, new mother outfit India, post baby body clothes India, maternity to postpartum fashion Indian women",
   alternates: { canonical: "https://www.iconik.pro/style-guides/postpartum-fashion-india" },
   openGraph: {
-    title: "Postpartum Fashion India: Dressing Your Body After Baby — Iconik",
+    title: "Postpartum Fashion India: Dressing After Baby — Iconik",
     description: "Practical postpartum styling for Indian mothers — breastfeeding-compatible, body-specific, and rebuilding your wardrobe after baby.",
     url: "https://www.iconik.pro/style-guides/postpartum-fashion-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Postpartum fashion India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Postpartum fashion India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function PostpartumFashionPage() {
         "headline": "Postpartum Fashion India: Dressing Your Body After Baby",
         "description": "Practical postpartum fashion guide for Indian women — body-specific, breastfeeding-compatible styling.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/postpartum-fashion-india" },
       },
       {

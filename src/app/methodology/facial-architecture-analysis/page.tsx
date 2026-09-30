@@ -18,7 +18,7 @@ const canonical = `${SITE_URL}${path}`;
 export const metadata: Metadata = buildMetadata({
   title: "Facial Architecture Analysis: ICONIK's Styling Method",
   description:
-    "Learn how ICONIK compares face length, forehead, cheekbone and jaw relationships, then tests necklines, eyewear, earrings and hair direction without rigid face-shape rules.",
+    "How ICONIK compares face length, forehead, cheekbones and jaw, then tests necklines, eyewear, earrings and hair direction without rigid face-shape rules.",
   path,
   type: "article",
   keywords: [
@@ -34,7 +34,7 @@ export const metadata: Metadata = buildMetadata({
     height: 630,
     alt: "Facial architecture analysis showing forehead, cheekbone, jaw and length relationships",
   },
-  publishedTime: "2025-01-01",
+  publishedTime: "2026-03-21",
   modifiedTime: "2026-07-24",
   authors: ["/about#founder"],
 });
@@ -82,7 +82,7 @@ const jsonLd = {
         sameAs: FOUNDERS[0].linkedIn,
       },
       publisher: { "@type": "Organization", name: "ICONIK LLP", url: SITE_URL },
-      datePublished: "2025-01-01",
+      datePublished: "2026-03-21",
       dateModified: "2026-07-24",
       mainEntityOfPage: canonical,
       about: [

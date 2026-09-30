@@ -23,12 +23,12 @@ import {
 const path = "/colour-analysis/seasonal-colour-analysis-india";
 const title = "Seasonal Colour Analysis for Indian Skin: Does It Work?";
 const description =
-  "A balanced guide to Spring, Summer, Autumn and Winter colour analysis for Indian skin—what remains useful, where simplified quizzes fail, and how to test your result.";
+  "Spring, Summer, Autumn and Winter colour analysis on Indian skin: what stays useful, where simple quizzes fail, and how to test your own result.";
 const published = "2025-04-01";
 const modified = "2026-07-24";
 
 export const metadata: Metadata = buildArticleMetadata({
-  title,
+  title: "Seasonal Colour Analysis for Indian Skin",
   description,
   path,
   datePublished: published,

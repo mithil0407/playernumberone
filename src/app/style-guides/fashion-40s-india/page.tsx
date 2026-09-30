@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Fashion for Women in Their 40s India: Dressing with Authority — Iconik",
-  description: "How Indian women in their 40s can dress to project authority, confidence, and contemporary style. Body-type-specific formulas, what to stop avoiding, and building a wardrobe that reflects where you are now.",
+  title: "Fashion for Women in Their 40s in India — Iconik",
+  description: "How Indian women in their 40s can dress with confidence and current style: formulas by body type, what to stop avoiding, and a wardrobe for now.",
   keywords: "fashion for women 40s India, style guide Indian women 40s, how to dress 40s India, what to wear in your 40s Indian women, Indian women fashion after 40",
   alternates: { canonical: "https://www.iconik.pro/style-guides/fashion-40s-india" },
   openGraph: {
-    title: "Fashion for Women in Their 40s India: Dressing with Authority — Iconik",
+    title: "Fashion for Women in Their 40s in India — Iconik",
     description: "Style for Indian women in their 40s — body-specific formulas, authority dressing, and what to stop avoiding.",
     url: "https://www.iconik.pro/style-guides/fashion-40s-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Fashion for women in 40s India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Fashion for women in 40s India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function Fashion40sIndiaPage() {
         "headline": "Fashion for Women in Their 40s India: Dressing with Authority",
         "description": "Style guide for Indian women in their 40s — authority dressing, body-specific formulas, what to stop avoiding.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/fashion-40s-india" },
       },
       {

@@ -23,12 +23,12 @@ import {
 const path = "/style-guides/capsule-wardrobe-india";
 const title = "Capsule Wardrobe for Indian Women: A Practical System";
 const description =
-  "Build an Indian capsule wardrobe around your actual calendar, climate and laundry cycle, with ethnic and western pieces that mix across work, everyday and occasion dressing.";
-const published = "2025-01-01";
+  "Build an Indian capsule wardrobe around your calendar, climate and laundry cycle, with ethnic and western pieces that mix across work and occasions.";
+const published = "2026-03-21";
 const modified = "2026-07-24";
 
 export const metadata: Metadata = buildArticleMetadata({
-  title,
+  title: "Capsule Wardrobe for Indian Women",
   description,
   path,
   datePublished: published,

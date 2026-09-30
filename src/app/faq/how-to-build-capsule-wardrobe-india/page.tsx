@@ -4,7 +4,7 @@ import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "How to Build a Capsule Wardrobe in India — Iconik",
-  description: "Step-by-step guide to building a capsule wardrobe in India — how many pieces you need, which categories to cover, how to choose colours, and how to include Indian ethnic wear.",
+  description: "How to build a capsule wardrobe in India, step by step: how many pieces you need, which categories to cover, choosing colours and adding ethnic wear.",
   keywords: "capsule wardrobe India, how to build capsule wardrobe India, capsule wardrobe Indian women, minimalist wardrobe India, capsule wardrobe ethnic wear India, how many clothes capsule wardrobe India",
   alternates: { canonical: "https://www.iconik.pro/faq/how-to-build-capsule-wardrobe-india" },
   openGraph: {

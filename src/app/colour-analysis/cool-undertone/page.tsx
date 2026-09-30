@@ -4,14 +4,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Cool Undertone Colour Guide for Indian Women — Iconik",
-  description: "Cool undertone Indian women look best in jewel tones — navy, emerald, fuchsia, burgundy. Complete guide covering identification tests, saree colours, colours to avoid, and Chromatic Harmony Mapping™.",
+  description: "Cool undertone Indian skin suits jewel tones such as navy, emerald, fuchsia and burgundy. How to confirm it, saree colours and what to avoid.",
   keywords: "cool undertone colours Indian women, best colours cool undertone India, pink undertone India, cool skin tone palette India, jewel tones Indian women",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/cool-undertone" },
   openGraph: {
     title: "Cool Undertone Colour Guide for Indian Women — Iconik",
     description: "The exact colours that flatter a cool, pink, or rosy undertone — calibrated for Indian skin.",
     url: "https://www.iconik.pro/colour-analysis/cool-undertone",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Cool undertone colour guide — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Cool undertone colour guide — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -59,7 +59,7 @@ export default function CoolUndertonePage() {
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-19",
         "dateModified": new Date().toISOString().split("T")[0],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/cool-undertone" },
       },

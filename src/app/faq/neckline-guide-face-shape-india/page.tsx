@@ -4,7 +4,7 @@ import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Best Necklines for Every Face Shape — Indian Women's Guide",
-  description: "The best necklines for every face shape — round, oval, heart, square, oblong, and diamond. Complete guide for Indian women covering blouse necklines, kurta necklines, and Western wear. Iconik's Facial Architecture Analysis™.",
+  description: "The best necklines for round, oval, heart, square, oblong and diamond faces, covering blouse necklines, kurta necklines and western tops.",
   keywords: "best neckline for face shape India, neckline guide face shape Indian women, blouse neckline face shape, neckline for round face India, neckline for heart face shape India, neckline for square face India",
   alternates: { canonical: "https://www.iconik.pro/faq/neckline-guide-face-shape-india" },
   openGraph: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     type: "article",
     siteName: "Iconik",
     locale: "en_IN",
-    publishedTime: "2025-01-01",
+    publishedTime: "2026-03-23",
     modifiedTime: "2026-07-24",
     images: [{ url: "/images/seo/neckline-face-shape-guide-iconik-og.webp", width: 1200, height: 630, alt: "V-neck, boat, scoop and square neckline directions mapped to Indian face architecture — Iconik" }],
   },
@@ -40,7 +40,7 @@ const jsonLd = {
         "name": "Iconik",
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
-      "datePublished": "2025-01-01",
+      "datePublished": "2026-03-23",
       "dateModified": "2026-07-24",
       "image": "https://www.iconik.pro/images/seo/neckline-face-shape-guide-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/faq/neckline-guide-face-shape-india",

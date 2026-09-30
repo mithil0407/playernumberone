@@ -5,6 +5,14 @@ export const SITE_NAME = "Iconik";
 export const SITE_URL = "https://www.iconik.pro";
 export const PRIVACY_EMAIL = "privacy@iconik.pro";
 export const OG_IMAGE_URL = `${SITE_URL}/og-image.webp`;
+export const LOGO_URL = `${SITE_URL}/iconik-logo.png`;
+
+// "Iconik" is shared with unrelated companies (iconik.io media software ranks
+// first for the bare name), so the Organization schema names the business and
+// says what it is not.
+export const ORGANIZATION_ALTERNATE_NAMES = ["ICONIK", "ICONIK Styling", "Iconik personal styling"];
+export const ORGANIZATION_DISAMBIGUATION =
+  "ICONIK is an Indian personal styling service for women and men, reachable at iconik.pro. It is not related to iconik.io media management software.";
 
 type BuildMetadataOptions = {
   title: string;
@@ -60,7 +68,7 @@ export function buildMetadata({
     : {
         url: OG_IMAGE_URL,
         width: 1200,
-        height: 630,
+        height: 800,
         alt: fullTitle,
       };
 

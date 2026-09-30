@@ -3,18 +3,18 @@ import Link from "next/link";
 import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
-  title: "Rectangle Body Shape: How to Create Curves with Clothing — Iconik",
-  description: "Complete rectangle body shape guide for Indian women. How to create the appearance of a defined waist and curves using Indian garments, western wear, and Geometric Silhouette Profiling™.",
+  title: "Rectangle Body Shape: Create Curves with Clothes — Iconik",
+  description: "Rectangle body shape guide for Indian women: how to define a waist and add curves with Indian garments, western wear and the right cuts.",
   keywords: "rectangle body shape India, how to dress rectangle body type India, straight body shape Indian women, rectangular silhouette India, create curves rectangle body India",
   alternates: { canonical: "https://www.iconik.pro/body-type-styling/rectangle-body-shape-india" },
   openGraph: {
-    title: "Rectangle Body Shape: How to Create Curves with Clothing — Iconik",
+    title: "Rectangle Body Shape: Create Curves with Clothes — Iconik",
     description: "Exact Indian garment formulas for the rectangle body shape — how to create a defined waist and curves without shapewear.",
     url: "https://www.iconik.pro/body-type-styling/rectangle-body-shape-india",
     type: "article",
     siteName: "Iconik",
     locale: "en_IN",
-    publishedTime: "2025-01-01",
+    publishedTime: "2026-03-21",
     modifiedTime: "2026-07-24",
     images: [{
       url: "/images/seo/rectangle-body-shape-placement-iconik-og.webp",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rectangle Body Shape: How to Create Curves with Clothing — Iconik",
+    title: "Rectangle Body Shape: Create Curves with Clothes — Iconik",
     description: "Exact Indian garment formulas for the rectangle body shape — how to create a defined waist and curves without shapewear.",
     images: ["/images/seo/rectangle-body-shape-placement-iconik-og.webp"],
   },
@@ -59,8 +59,8 @@ export default function RectangleBodyShapeIndiaPage() {
         "headline": "Rectangle Body Shape: How to Create Curves with Clothing",
         "description": "Complete rectangle body shape guide for Indian women — creating waist definition and curves using Indian garments and Geometric Silhouette Profiling™.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "dateModified": "2026-07-24",
         "image": "https://www.iconik.pro/images/seo/rectangle-body-shape-placement-iconik.webp",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/rectangle-body-shape-india" },

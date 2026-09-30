@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Personal Stylist in Kochi — Iconik Style Blueprint",
     description: "Science-backed personal styling for Kochi women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-kochi",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Kochi — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Kochi — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

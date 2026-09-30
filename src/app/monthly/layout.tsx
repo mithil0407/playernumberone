@@ -3,7 +3,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata = buildMetadata({
   title: "Iconik Monthly Styling",
   description:
-    "A tiered ongoing styling offer for clients who want regular support, outfit guidance, and stylist access.",
+    "Monthly styling support from ICONIK: regular outfit guidance, seasonal updates and stylist access, with plans for different levels of help.",
   path: "/monthly",
 });
 

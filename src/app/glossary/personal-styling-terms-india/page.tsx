@@ -6,7 +6,7 @@ import { bodyTypeLinks, colourAnalysisLinks, methodologyLinks } from "@/lib/seoC
 export const metadata: Metadata = buildMetadata({
   title: "Personal Styling Terms India",
   description:
-    "A glossary of common personal styling terms used on Iconik, including silhouette, undertone, capsule wardrobe, and related concepts.",
+    "Plain definitions of the personal styling terms used in India: undertone, silhouette, capsule wardrobe, colour depth and more, with examples.",
   path: "/glossary/personal-styling-terms-india",
 });
 

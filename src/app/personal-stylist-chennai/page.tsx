@@ -3,14 +3,14 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Chennai — Iconik Style Blueprint",
-  description: "Online personal styling for Chennai women. Science-backed Style Blueprint — body analysis, colour palette calibrated for South Indian skin tones, and 20 outfit formulas. Delivered within 5 working days after consultation.",
+  description: "Online personal stylist for Chennai women: body analysis, a colour palette for South Indian skin tones and 20 outfit formulas in your Style Blueprint.",
   keywords: "personal stylist Chennai, online styling Chennai, style consultation Chennai, wardrobe advice Chennai women, body type styling Chennai",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-chennai" },
   openGraph: {
     title: "Personal Stylist in Chennai — Iconik Style Blueprint",
     description: "Science-backed personal styling for Chennai women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-chennai",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Chennai — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Chennai — Iconik" }],
   },
 };
 

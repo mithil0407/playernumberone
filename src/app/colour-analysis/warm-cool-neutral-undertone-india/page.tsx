@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Warm vs Cool vs Neutral Undertone for Indian Women — Iconik",
-  description: "Understand the difference between warm, cool, and neutral undertones for Indian women. Which colours suit each undertone, how to identify yours, and how Chromatic Harmony Mapping™ works.",
+  description: "The difference between warm, cool and neutral undertones for Indian women: which colours suit each, how to identify yours, and common mistakes.",
   keywords: "warm vs cool undertone India, neutral undertone Indian skin, undertone guide Indian women, warm undertone colours India, cool undertone Indian skin tone",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/warm-cool-neutral-undertone-india" },
   openGraph: {
     title: "Warm vs Cool vs Neutral Undertone for Indian Women — Iconik",
     description: "The definitive undertone comparison guide for Indian women — what each means, which colours work, and the science behind Chromatic Harmony Mapping™.",
     url: "https://www.iconik.pro/colour-analysis/warm-cool-neutral-undertone-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Warm vs cool vs neutral undertone guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Warm vs cool vs neutral undertone guide for Indian women — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -54,7 +54,7 @@ export default function WarmCoolNeutralUndertonePage() {
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-21",
         "dateModified": new Date().toISOString().split("T")[0],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/warm-cool-neutral-undertone-india" },
       },

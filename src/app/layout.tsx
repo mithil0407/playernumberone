@@ -18,6 +18,7 @@ import {
   SUPPORT_EMAIL,
   SUPPORT_WHATSAPP_E164,
 } from "@/lib/siteFacts";
+import { LOGO_URL, ORGANIZATION_ALTERNATE_NAMES, ORGANIZATION_DISAMBIGUATION } from "@/lib/seo";
 import "./globals.css";
 
 const GA_MEASUREMENT_IDS = Array.from(new Set([
@@ -55,6 +56,8 @@ const fraunces = Fraunces({
 const newsreader = Newsreader({
   subsets: ["latin"],
   display: 'swap',
+  // Only the private report pages use it; don't preload it on public pages.
+  preload: false,
   variable: '--font-newsreader',
   fallback: ['Georgia', 'serif'],
   axes: ['opsz'],
@@ -102,7 +105,7 @@ export const metadata: Metadata = {
       {
         url: "/og-image.webp",
         width: 1200,
-        height: 630,
+        height: 800,
         alt: "Iconik — Scientific Personal Styling for Indian Women",
       },
     ],
@@ -283,11 +286,15 @@ export default function RootLayout({
                   "@type": "Organization",
                   "@id": "https://www.iconik.pro/#organization",
                   "name": "Iconik",
+                  "alternateName": ORGANIZATION_ALTERNATE_NAMES,
+                  "disambiguatingDescription": ORGANIZATION_DISAMBIGUATION,
                   "legalName": LEGAL_ENTITY_NAME,
                   "url": "https://www.iconik.pro",
                   "logo": {
                     "@type": "ImageObject",
-                    "url": "https://www.iconik.pro/og-image.webp",
+                    "url": LOGO_URL,
+                    "width": 512,
+                    "height": 512,
                   },
                   "description": `Scientific personal styling for women and men. ICONIK has served ${CLIENT_PROOF.totalClients.toLocaleString("en-IN")}+ clients across ${CLIENT_PROOF.countriesServed}+ countries with personalised colour, silhouette, facial-architecture and outfit guidance.`,
                   "founder": FOUNDERS.map((founder) => ({

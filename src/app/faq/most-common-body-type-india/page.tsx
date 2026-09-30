@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "What Is the Most Common Body Type in India? — Iconik",
-  description: "What is the most common female body type among Indian women? Data on Indian body proportions, the pear vs apple distribution, and why it matters for how you dress.",
+  description: "What is the most common body type among Indian women? What proportion data suggests about pear and apple shapes, and why it matters for dressing.",
   keywords: "most common body type India, Indian women body type statistics, body type distribution India, what body type are most Indian women, common body shape Indian women",
   alternates: { canonical: "https://www.iconik.pro/faq/most-common-body-type-india" },
   openGraph: {
     title: "What Is the Most Common Body Type in India? — Iconik",
     description: "The most common female body type among Indian women — and why it matters for how you dress.",
     url: "https://www.iconik.pro/faq/most-common-body-type-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Most common body type India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Most common body type India — Iconik" }],
   },
 };
 

@@ -23,12 +23,12 @@ import {
 const path = "/colour-analysis/indian-skin-tones";
 const title = "Colour Analysis for Indian Skin: What Needs Adapting";
 const description =
-  "Learn how to apply colour analysis across Indian skin depths and undertones without assuming dark hair means Autumn or Winter, or that one palette suits every Indian complexion.";
-const published = "2025-01-01";
+  "How to apply colour analysis across Indian skin depths and undertones without assuming dark hair means Autumn, or that one palette suits everyone.";
+const published = "2026-03-19";
 const modified = "2026-07-24";
 
 export const metadata: Metadata = buildArticleMetadata({
-  title,
+  title: "Colour Analysis for Indian Skin: What to Adapt",
   description,
   path,
   datePublished: published,

@@ -6,7 +6,7 @@ import { bodyTypeLinks, colourAnalysisLinks, methodologyLinks, styleGuideLinks }
 export const metadata: Metadata = buildMetadata({
   title: "Style Guides for Indian Women",
   description:
-    "A hub for Iconik's practical style guides covering office wear, capsule wardrobes, postpartum dressing, weddings, and more.",
+    "Practical style guides for Indian women: office wear, capsule wardrobes, wedding and Diwali outfits, postpartum dressing, sarees, kurtis and more.",
   path: "/style-guides",
 });
 

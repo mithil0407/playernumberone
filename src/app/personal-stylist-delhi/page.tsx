@@ -3,14 +3,14 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Delhi — Iconik Style Blueprint",
-  description: "Online personal styling for Delhi women. Science-backed Style Blueprint covering body analysis, colour palette, and 20 outfit formulas. Tailored to Delhi's professional and social scene. Delivered within 5 working days after consultation.",
+  description: "Online personal stylist for Delhi women: a Style Blueprint with body analysis, your colour palette and 20 outfit formulas, delivered in 5 working days.",
   keywords: "personal stylist Delhi, online styling Delhi, style consultation Delhi NCR, wardrobe consultation Delhi women",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-delhi" },
   openGraph: {
     title: "Personal Stylist in Delhi — Iconik Style Blueprint",
     description: "Science-backed personal styling for Delhi women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-delhi",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Delhi — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Delhi — Iconik" }],
   },
 };
 

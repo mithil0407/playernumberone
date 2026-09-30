@@ -25,9 +25,9 @@ const silhouetteQuizHref =
   "/tools/silhouette-scan?source=seo_modest_professional_article&article_id=modest_professional_fashion_india&content_cluster=work_occasion_dressing&audience=women&hook_type=coverage_through_design";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Modest Office Wear for Indian Women: 12 Polished Formulas",
+  title: "Modest Office Wear for Indian Women: 12 Formulas",
   description:
-    "Modest professional outfit formulas for Indian offices: ethnic and western options, summer fabrics, sleeves, dupattas, fit and authority without unnecessary bulk.",
+    "Modest office outfit formulas for Indian workplaces: ethnic and western options, summer fabrics, sleeves, dupattas and fit that looks polished.",
   path,
   type: "article",
   keywords: [

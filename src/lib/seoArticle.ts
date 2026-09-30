@@ -21,7 +21,7 @@ function openGraphPath(article: SeoArticleRecord) {
 export function buildSeoArticleMetadata(article: SeoArticleRecord) {
   const ogPath = openGraphPath(article);
   return buildArticleMetadata({
-    title: article.title,
+    title: article.seoTitle ?? article.title,
     description: article.description,
     path: article.path,
     keywords: article.keywords,

@@ -6,10 +6,10 @@ import { buildArticleMetadata } from "@/lib/seo";
 import { FOUNDERS } from "@/lib/siteFacts";
 
 export const metadata: Metadata = buildArticleMetadata({
-  title: "Colour Analysis for Indian Skin Tones: A Practical Guide",
+  title: "Colour Analysis for Indian Skin Tones",
   description: "Learn how undertone, depth and contrast affect colour choices for Indian skin tones, with reliable at-home observations and links to ICONIK's colour method.",
   path: "/colour-analysis",
-  datePublished: "2025-01-01",
+  datePublished: "2026-03-19",
   dateModified: "2026-07-24",
   authorPath: "/about#jasmine-rana",
   keywords: [
@@ -81,7 +81,7 @@ export default function ColourAnalysisPage() {
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-19",
         "dateModified": "2026-07-24",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis" },
       },

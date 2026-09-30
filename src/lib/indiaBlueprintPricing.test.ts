@@ -29,7 +29,9 @@ test('routes each landing page to its matching checkout and tracking entry', asy
   const rootCheckout = await readFile(new URL('../app/checkout/page.tsx', import.meta.url), 'utf8');
   const offerCheckout = await readFile(new URL('../app/offer-2699/checkout/page.tsx', import.meta.url), 'utf8');
 
-  assert.match(rootLanding, /checkoutHref=\{scan \? `\/checkout\?scan=/);
+  assert.match(rootLanding, /checkoutHref="\/checkout"/);
+  assert.match(rootLanding, /forwardScanToCheckout/);
+  assert.doesNotMatch(rootLanding, /searchParams/);
   assert.match(rootLanding, /INDIA_ROOT_BLUEPRINT_PRICE/);
   assert.match(rootLanding, /variant="offer2699"/);
   assert.match(rootLanding, /trackingEntry="root"/);

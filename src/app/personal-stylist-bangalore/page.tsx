@@ -3,14 +3,14 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Bangalore — Iconik Style Blueprint",
-  description: "Online personal styling for Bangalore women. Science-backed Style Blueprint tailored to Bangalore's tech-meets-global work culture. Body analysis, colour palette, and 20 outfit formulas delivered within 5 working days after consultation.",
+  description: "Online personal stylist for Bangalore women: body analysis, your colour palette and 20 outfit formulas for work and weekends, in 5 working days.",
   keywords: "personal stylist Bangalore, online styling Bangalore, style consultation Bangalore, wardrobe advice Bangalore women",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-bangalore" },
   openGraph: {
     title: "Personal Stylist in Bangalore — Iconik Style Blueprint",
     description: "Science-backed personal styling for Bangalore women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-bangalore",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Bangalore — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Bangalore — Iconik" }],
   },
 };
 

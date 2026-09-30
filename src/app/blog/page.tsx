@@ -3,11 +3,11 @@ import Link from "next/link";
 import { bodyTypeLinks, colourAnalysisLinks, methodologyLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = {
-  title: "Iconik Style Blog — Body Type, Colour Analysis & Personal Styling",
+  title: "Iconik Style Blog: Body Type and Colour Guides",
   description: "Science-backed styling guides for Indian women. Deep dives into body type styling, colour analysis, proprietary methodologies, and real client transformations.",
   alternates: { canonical: "https://www.iconik.pro/blog" },
   openGraph: {
-    title: "Iconik Style Blog — Body Type, Colour Analysis & Personal Styling",
+    title: "Iconik Style Blog: Body Type and Colour Guides",
     description: "Science-backed styling guides for Indian women.",
     url: "https://www.iconik.pro/blog",
     type: "website",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     images: [{
       url: "/og-image.webp",
       width: 1200,
-      height: 630,
+      height: 800,
       alt: "Iconik styling guides for Indian women",
     }],
   },

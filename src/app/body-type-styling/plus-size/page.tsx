@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Plus Size Indian Women's Style Guide — Iconik",
-  description: "A science-backed plus-size styling guide for Indian women. Discover the silhouettes, fabrics, and Indian garment choices that celebrate your frame with confidence and elegance.",
+  description: "Plus-size styling for Indian women: the silhouettes, fabrics and Indian garments that suit a fuller frame, with outfit formulas for work and occasions.",
   keywords: "plus size styling guide Indian women, plus size fashion India, plus size outfits India, how to dress plus size Indian women, plus size salwar kameez, plus size saree styling India",
   alternates: { canonical: "https://www.iconik.pro/body-type-styling/plus-size" },
   openGraph: {
     title: "Plus Size Indian Women's Style Guide — Iconik",
     description: "Science-backed plus-size styling for Indian women — silhouettes, fabrics, and garments that celebrate your frame.",
     url: "https://www.iconik.pro/body-type-styling/plus-size",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Plus size styling guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Plus size styling guide for Indian women — Iconik" }],
   },
 };
 
@@ -41,8 +41,8 @@ export default function PlusSizeBodyTypePage() {
         "@type": "Article",
         "headline": "Plus Size Indian Women's Style Guide",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-19",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/plus-size" },
       },
       {

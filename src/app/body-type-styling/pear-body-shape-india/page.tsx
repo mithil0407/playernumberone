@@ -23,8 +23,8 @@ import {
 const path = "/body-type-styling/pear-body-shape-india";
 const title = "Pear Body Shape Styling for Indian Women";
 const description =
-  "A practical pear-shape guide for kurtas, sarees, salwar suits, trousers and dresses—focused on fit, proportion and personal preference rather than hiding the hips.";
-const published = "2025-01-01";
+  "A pear-shape guide for kurtas, sarees, salwar suits, trousers and dresses, focused on fit, proportion and personal preference rather than hiding hips.";
+const published = "2026-03-21";
 const modified = "2026-07-24";
 
 export const metadata: Metadata = buildArticleMetadata({

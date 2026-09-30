@@ -4,7 +4,7 @@ import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Does Black Make You Look Slimmer? The Honest Answer — Iconik",
-  description: "Does wearing black make you look thinner? The honest answer — what black actually does optically, when it works, and what works better than black for looking slimmer.",
+  description: "Does black make you look slimmer? What black actually does optically, when it works, and which colours and outfit tricks work better than black.",
   keywords: "does black make you look slimmer India, does wearing black make you look thinner, black clothing slimming India, does black make you look slim, slimming colour India",
   alternates: { canonical: "https://www.iconik.pro/faq/does-black-make-you-look-slimmer" },
   openGraph: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     type: "article",
     siteName: "Iconik",
     locale: "en_IN",
-    publishedTime: "2025-01-01",
+    publishedTime: "2026-03-21",
     modifiedTime: "2026-07-24",
     images: [{ url: "/images/seo/black-slimming-vertical-line-iconik-og.webp", width: 1200, height: 630, alt: "Same Indian woman comparing a broken black outfit line with a continuous deep-tone outfit — Iconik" }],
   },

@@ -13,8 +13,11 @@ const CLIENT_PUBLIC = [
   '/iconik-club/client/auth/callback',
 ];
 
+// Crawlers skip the geo redirect so the India homepage is what gets indexed.
+// AI answer engines crawl mostly from US data centres; without them here they
+// only ever saw /globe and described ICONIK from the global offer.
 const SEARCH_BOT_PATTERN =
-  /(Googlebot|Google-InspectionTool|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|facebookexternalhit|LinkedInBot|Twitterbot)/i;
+  /(Googlebot|Google-InspectionTool|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|facebookexternalhit|LinkedInBot|Twitterbot|OAI-SearchBot|ChatGPT-User|GPTBot|PerplexityBot|Perplexity-User|ClaudeBot|Claude-User|Claude-SearchBot|Applebot|Amazonbot|MistralAI-User)/i;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

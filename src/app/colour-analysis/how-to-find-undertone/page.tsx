@@ -23,8 +23,8 @@ import {
 const path = "/colour-analysis/how-to-find-undertone";
 const title = "How to Find Your Undertone at Home";
 const description =
-  "Use a controlled fabric-drape test to compare warm, cool and neutral colour directions on Indian skin, and learn why vein, paper and jewellery tests are only supporting clues.";
-const published = "2025-01-01";
+  "Use a fabric-drape test to compare warm, cool and neutral colours on Indian skin, and learn why vein, paper and jewellery tests are only clues.";
+const published = "2026-03-21";
 const modified = "2026-07-24";
 
 export const metadata: Metadata = buildArticleMetadata({

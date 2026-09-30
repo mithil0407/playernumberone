@@ -6,7 +6,7 @@ import { faqLinks, styleGuideLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Capsule Wardrobe Service India",
   description:
-    "What a capsule wardrobe service in India should do, and how Iconik's Blueprint can act as the foundation for a smaller, more coherent wardrobe.",
+    "Capsule wardrobe service in India: build a smaller wardrobe of pieces that mix, starting from the body shape and colour palette in your Style Blueprint.",
   path: "/capsule-wardrobe-service-india",
 });
 

@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Salwar Kameez for Every Body Type: The Complete Fit Guide — Iconik",
-  description: "Which salwar kameez silhouette flatters your body type? Apple, pear, rectangle, hourglass, and inverted triangle formulas for kurta length, salwar style, neckline, and dupatta placement.",
+  title: "Salwar Kameez for Every Body Type: Fit Guide — Iconik",
+  description: "Which salwar kameez suits your body type? Kurta length, salwar style, neckline and dupatta placement for apple, pear, rectangle and hourglass shapes.",
   keywords: "salwar kameez body type India, best salwar kameez for apple shape, salwar suit for pear body, how to choose salwar kameez body type India, kurta for body type Indian women",
   alternates: { canonical: "https://www.iconik.pro/style-guides/salwar-kameez-body-type" },
   openGraph: {
-    title: "Salwar Kameez for Every Body Type: The Complete Fit Guide — Iconik",
+    title: "Salwar Kameez for Every Body Type: Fit Guide — Iconik",
     description: "Body-type-specific salwar kameez formulas — kurta length, silhouette, salwar style, and neckline for all 5 Indian body types.",
     url: "https://www.iconik.pro/style-guides/salwar-kameez-body-type",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Salwar kameez body type India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Salwar kameez body type India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function SalwarKameezBodyTypePage() {
         "headline": "Salwar Kameez for Every Body Type: The Complete Fit Guide",
         "description": "Body-type-specific salwar kameez formulas for all 5 Indian female silhouettes.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/salwar-kameez-body-type" },
       },
       {

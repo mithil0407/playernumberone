@@ -7,7 +7,7 @@ import type { RootDesignVariant } from '@/lib/rootDesign';
 export const metadata: Metadata = buildMetadata({
   title: "Scientific Personal Styling for Indian Women",
   description:
-    "Iconik's Style Blueprint for Indian women: body analysis, colour mapping, and outfit formulas delivered online.",
+    "Talk to an ICONIK stylist for 30 minutes, then get your Style Blueprint: 20 outfits, your colour palette and what to avoid. ₹2,699, delivered online.",
   path: "/",
   locale: "en_IN",
   keywords: [
@@ -19,8 +19,10 @@ export const metadata: Metadata = buildMetadata({
   ],
 });
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ scan?: string }> }) {
-  const { scan = '' } = await searchParams;
+// Static on purpose: reading the query string on the server made the homepage
+// dynamic, which streamed its title and canonical into <body> for crawlers and
+// bypassed the edge cache. The style-scan token is forwarded to checkout in the browser.
+export default function Home() {
   const designVariant: RootDesignVariant = 'precision';
 
   return (
@@ -43,7 +45,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ s
           30 minutes with your ICONIK stylist, then a personal Style Blueprint — <span className="font-semibold text-luxury-accent">20 complete outfits</span>, your <span className="font-semibold text-luxury-green">colour palette</span>, and exactly what to avoid. Built for your body, not a body type.
         </>
       }
-      checkoutHref={scan ? `/checkout?scan=${encodeURIComponent(scan)}` : '/checkout'}
+      checkoutHref="/checkout"
+      forwardScanToCheckout
       basePrice={INDIA_ROOT_BLUEPRINT_PRICE}
     />
   );

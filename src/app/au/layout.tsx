@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     description: "Science-backed personal styling for Indian women in Australia. Style Blueprint in 48 hours.",
     url: "https://www.iconik.pro/au",
     locale: "en_AU",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist for Indian women in Australia — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist for Indian women in Australia — Iconik" }],
   },
 };
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { faqLinks } from "@/lib/seoContent";
+import { aboutIconikLinks, faqLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = {
   title: "FAQ — Iconik Style Blueprint",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     images: [{
       url: "/og-image.webp",
       width: 1200,
-      height: 630,
+      height: 800,
       alt: "Iconik Style Blueprint frequently asked questions",
     }],
   },
@@ -172,7 +172,7 @@ export default function FAQPage() {
           <section className="mt-14">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Related FAQ Guides</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              {faqLinks.map((link) => (
+              {[...faqLinks, ...aboutIconikLinks].map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}

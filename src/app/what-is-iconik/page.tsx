@@ -6,7 +6,7 @@ import { methodologyLinks, comparisonLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "What Is Iconik",
   description:
-    "An entity page explaining what Iconik is, what it sells, and how it positions itself within personal styling.",
+    "ICONIK is an online personal styling service for Indian women and men. What the ₹2,699 Style Blueprint includes and how the styling method works.",
   path: "/what-is-iconik",
 });
 

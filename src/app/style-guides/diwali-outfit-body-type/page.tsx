@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Diwali Outfit by Body Type: What to Wear for the Festival of Lights — Iconik",
-  description: "What to wear for Diwali based on your body type. Lehenga, saree, Anarkali, and sharara formulas for apple, pear, rectangle, hourglass, and inverted triangle silhouettes.",
+  title: "Diwali Outfits by Body Type: What to Wear — Iconik",
+  description: "What to wear for Diwali for your body type: lehenga, saree, anarkali and sharara formulas for apple, pear, rectangle, hourglass and inverted triangle.",
   keywords: "Diwali outfit body type India, what to wear Diwali Indian women, Diwali dress Indian women 2025, Diwali outfit ideas India, Diwali fashion Indian women body type",
   alternates: { canonical: "https://www.iconik.pro/style-guides/diwali-outfit-body-type" },
   openGraph: {
-    title: "Diwali Outfit by Body Type: What to Wear for the Festival of Lights — Iconik",
+    title: "Diwali Outfits by Body Type: What to Wear — Iconik",
     description: "Body-type-specific Diwali outfit formulas — lehenga, saree, Anarkali, and sharara for every silhouette.",
     url: "https://www.iconik.pro/style-guides/diwali-outfit-body-type",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Diwali outfit by body type India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Diwali outfit by body type India — Iconik" }],
   },
 };
 
@@ -42,8 +42,9 @@ export default function DiwaliOutfitBodyTypePage() {
         "headline": "Diwali Outfit by Body Type: What to Wear for the Festival of Lights",
         "description": "Body-type-specific Diwali outfit formulas for Indian women.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
+        "dateModified": "2026-09-30",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/diwali-outfit-body-type" },
       },
       {
@@ -89,6 +90,18 @@ export default function DiwaliOutfitBodyTypePage() {
               Diwali is the year&apos;s most photographed festival — and the outfit formulas that flatter every day are the same ones that create the best Diwali photographs. This guide maps the full range of Diwali-appropriate Indian garments — lehenga, saree, Anarkali, sharara, indo-western — to your specific body type, so you look your best at every light-lit celebration.
             </p>
           </header>
+
+          {/* Seasonal block: update the dates and booking deadline each year. */}
+          <section className="mb-12 rounded-xl border border-gray-200 bg-gray-50 p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Planning Your Diwali 2026 Outfits</h2>
+            <p className="text-gray-600 leading-relaxed mb-3">
+              Diwali falls on Sunday 8 November 2026, with celebrations running from Dhanteras on 6 November to Bhai Dooj on 10 November. If you need several festive looks across those days, plan them together: one statement outfit for Lakshmi Puja, and lighter pieces for visits and card parties that reuse the same jewellery and dupattas.
+            </p>
+            <p className="text-gray-600 leading-relaxed">
+              Want outfits chosen for your own body and colouring? Have your ICONIK consultation by Friday 30 October and your Style Blueprint arrives within 5 working days, before Diwali.{" "}
+              <Link href="/" className="font-semibold text-gray-900 underline underline-offset-4">Get your Style Blueprint</Link>
+            </p>
+          </section>
 
           <section className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Apple Body Type: Diwali Outfit Formula</h2>

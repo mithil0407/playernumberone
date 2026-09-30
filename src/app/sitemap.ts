@@ -26,6 +26,9 @@ const verifiedLastModified: Record<string, string> = {
   "/style-guides/modest-professional-fashion-india": "2026-07-11",
   "/personal-stylist-mumbai": "2026-07-24",
   "/faq/how-much-does-personal-stylist-cost-india": "2026-07-11",
+  "/style-guides/diwali-outfit-body-type": "2026-09-30",
+  "/pricing": "2026-09-30",
+  "/personal-stylist-india": "2026-09-30",
 };
 
 export default function sitemap(): MetadataRoute.Sitemap {

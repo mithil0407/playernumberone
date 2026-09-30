@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Am I Warm or Cool Undertone? 3 Tests for Indian Skin — Iconik",
-  description: "How to tell if you have a warm or cool undertone — 3 reliable at-home tests for Indian women. Why the vein test works, what the paper test reveals, and how to interpret results for Indian skin.",
+  title: "Am I Warm or Cool Undertone? Tests for Indian Skin — Iconik",
+  description: "How to tell if your undertone is warm or cool: three at-home tests for Indian skin, what each one shows, and how to read your results.",
   keywords: "am I warm or cool undertone India, how to find undertone Indian skin, warm vs cool undertone test India, skin undertone test Indian women, how to tell undertone Indian skin",
   alternates: { canonical: "https://www.iconik.pro/faq/warm-or-cool-undertone" },
   openGraph: {
-    title: "Am I Warm or Cool Undertone? 3 Tests for Indian Skin — Iconik",
+    title: "Am I Warm or Cool Undertone? Tests for Indian Skin — Iconik",
     description: "3 reliable tests to determine warm vs cool undertone for Indian women — with Indian skin-specific guidance.",
     url: "https://www.iconik.pro/faq/warm-or-cool-undertone",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Warm or cool undertone India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Warm or cool undertone India — Iconik" }],
   },
 };
 

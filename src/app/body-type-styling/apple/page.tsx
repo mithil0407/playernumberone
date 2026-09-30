@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Apple Body Shape Styling Guide for Indian Women — Iconik",
     description: "Exact cuts, silhouettes, and Indian garment recommendations for the apple body type.",
     url: "https://www.iconik.pro/body-type-styling/apple",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Apple body shape styling guide — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Apple body shape styling guide — Iconik" }],
   },
 };
 
@@ -43,8 +43,8 @@ export default function AppleBodyTypePage() {
         "headline": "Apple Body Shape Styling Guide for Indian Women",
         "description": "Complete apple body shape styling guide for Indian women using Geometric Silhouette Profiling™.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-19",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/apple" },
       },
       {

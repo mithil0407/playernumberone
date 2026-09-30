@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import ServiceInfoPage from "@/components/ServiceInfoPage";
 import { buildMetadata } from "@/lib/seo";
-import { faqLinks, methodologyLinks } from "@/lib/seoContent";
+import { aboutIconikLinks, faqLinks, methodologyLinks } from "@/lib/seoContent";
 
 export const metadata: Metadata = buildMetadata({
   title: "How Iconik Works",
   description:
-    "A clear explanation of the Iconik process: intake, stylist consultation, analysis, and delivery of the Style Blueprint.",
+    "How ICONIK works: share two photos and your goals, have a 30-minute video consultation, then receive your Style Blueprint within 5 working days.",
   path: "/how-it-works",
 });
 
@@ -43,7 +43,7 @@ export default function HowItWorksPage() {
           ],
         },
       ]}
-      relatedLinks={[...faqLinks, ...methodologyLinks].slice(0, 4)}
+      relatedLinks={[...aboutIconikLinks.slice(0, 2), ...faqLinks.slice(0, 1), ...methodologyLinks.slice(0, 1)]}
       ctaTitle="Ready for the full process?"
       ctaDescription="Start with the Blueprint and get the structured version of personal styling rather than another round of guesswork."
     />

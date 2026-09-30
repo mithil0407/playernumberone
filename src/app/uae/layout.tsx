@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     description: "Science-backed personal styling for Indian women in the UAE. Get your Style Blueprint in 48 hours. AED 349.",
     url: "https://www.iconik.pro/uae",
     locale: "en_AE",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist for Indian women in Dubai — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist for Indian women in Dubai — Iconik" }],
   },
 };
 

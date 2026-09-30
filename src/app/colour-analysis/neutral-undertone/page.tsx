@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Neutral Undertone: Colour Guide for Indian Women — Iconik",
-  description: "Neutral undertone is a balance of warm and cool — the most versatile undertone. Complete colour guide for neutral undertone Indian women, including identification tests and best colours.",
+  description: "Neutral undertone balances warm and cool, so it suits the widest range of colours. How Indian women can confirm it, and the best colours to wear.",
   keywords: "neutral undertone Indian women, neutral undertone colours India, neutral skin tone palette India, warm cool neutral undertone India, neutral undertone guide Indian skin",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/neutral-undertone" },
   openGraph: {
     title: "Neutral Undertone: Colour Guide for Indian Women — Iconik",
     description: "Neutral undertone is a balance of warm and cool. Complete colour guide and identification tests for Indian women.",
     url: "https://www.iconik.pro/colour-analysis/neutral-undertone",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Neutral undertone colour guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Neutral undertone colour guide for Indian women — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

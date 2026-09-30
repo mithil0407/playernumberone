@@ -44,6 +44,19 @@ import type { RootDesignVariant } from '@/lib/rootDesign';
 import { OFFER_TOPICS, type OfferTopicKey } from '@/lib/offerTopics';
 import { BlueprintGallery, ClientMessagesStrip, FREE_CHANGES_PROMISE, OFFER_GUIDE_IMAGES, OfferSummaryBox } from '@/components/OfferShowcase';
 
+// Crawlable links from the landing pages (including the homepage) to the
+// guide hubs and service pages; the sales variant hides the larger hub section.
+const FOOTER_GUIDE_LINKS = [
+  { label: 'Colour Analysis Guides', href: '/colour-analysis' },
+  { label: 'Body Type Styling', href: '/body-type-styling' },
+  { label: 'Style Guides', href: '/style-guides' },
+  { label: 'Online Personal Stylist', href: '/online-personal-stylist-india' },
+  { label: 'Colour Analysis India', href: '/colour-analysis-india' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'How It Works', href: '/how-it-works' },
+  { label: 'Blog', href: '/blog' },
+];
+
 interface LandingPageContentProps {
   headline: ReactNode;
   subheadline: ReactNode;
@@ -51,6 +64,8 @@ interface LandingPageContentProps {
   trackingEntry?: IndiaFunnelEntry;
   headlineClassName?: string;
   checkoutHref?: string;
+  /** Carry a `?scan=` token from this page's URL onto the checkout link. */
+  forwardScanToCheckout?: boolean;
   basePrice?: number;
   originalPrice?: number;
   displayBasePrice?: string;
@@ -189,7 +204,8 @@ export default function LandingPageContent({
   subheadline,
   variant = 'default',
   trackingEntry,
-  checkoutHref = BLUEPRINT_OFFER.checkoutPath,
+  checkoutHref: baseCheckoutHref = BLUEPRINT_OFFER.checkoutPath,
+  forwardScanToCheckout = false,
   basePrice = BLUEPRINT_OFFER.currentPriceInr,
   originalPrice = BLUEPRINT_OFFER.referencePriceInr,
   displayBasePrice,
@@ -205,6 +221,18 @@ export default function LandingPageContent({
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [showMobileCta, setShowMobileCta] = useState(false);
   const heroCtaRef = useRef<HTMLAnchorElement>(null);
+  const [checkoutHref, setCheckoutHref] = useState(baseCheckoutHref);
+
+  useEffect(() => {
+    if (!forwardScanToCheckout) {
+      setCheckoutHref(baseCheckoutHref);
+      return;
+    }
+    const scan = new URLSearchParams(window.location.search).get('scan');
+    setCheckoutHref(scan
+      ? `${baseCheckoutHref}${baseCheckoutHref.includes('?') ? '&' : '?'}scan=${encodeURIComponent(scan)}`
+      : baseCheckoutHref);
+  }, [baseCheckoutHref, forwardScanToCheckout]);
 
   const formattedBasePrice = displayBasePrice ?? `₹${basePrice.toLocaleString('en-IN')}`;
   const formattedOriginalPrice = displayOriginalPrice ?? `₹${originalPrice.toLocaleString('en-IN')}`;
@@ -1141,36 +1169,44 @@ export default function LandingPageContent({
             {/* Brand */}
             <div className="md:max-w-xs">
               <span className="iconik-display block mb-4" style={{ fontSize: '20px', letterSpacing: '0.08em', color: '#2C2622' }}>ICONIK</span>
-              <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6, lineHeight: 1.75 }}>
+              <p style={{ fontSize: '13px', color: '#2C2622', opacity: 0.8, lineHeight: 1.75 }}>
                 Discover your signature style, boost your confidence, and embrace your elegant, authentic self.
               </p>
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="block mt-3 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>{SUPPORT_EMAIL}</a>
-              <a href={SUPPORT_WHATSAPP_URL} className="block mt-1 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.5 }}>WhatsApp {SUPPORT_WHATSAPP_DISPLAY}</a>
-              <p className="mt-2" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.45 }}>{BUSINESS_HOURS.display}</p>
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="block mt-2 py-1 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.8 }}>{SUPPORT_EMAIL}</a>
+              <a href={SUPPORT_WHATSAPP_URL} className="block py-1 hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.8 }}>WhatsApp {SUPPORT_WHATSAPP_DISPLAY}</a>
+              <p className="mt-2" style={{ fontSize: '12px', color: '#2C2622', opacity: 0.75 }}>{BUSINESS_HOURS.display}</p>
             </div>
             {/* Links */}
             <div className="flex flex-wrap gap-x-12 gap-y-6">
               <div>
-                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.2em', fontWeight: 700 }}>NAVIGATE</div>
+                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.2em', fontWeight: 700 }}>NAVIGATE</div>
                 <div className="space-y-2">
                   {['features', 'testimonials', 'pricing', 'faq'].map((anchor) => (
-                    <a key={anchor} href={`#${anchor}`} className="block hover:opacity-100 transition-opacity capitalize" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6 }}>{anchor.charAt(0).toUpperCase() + anchor.slice(1)}</a>
+                    <a key={anchor} href={`#${anchor}`} className="block hover:opacity-100 transition-opacity capitalize" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.8 }}>{anchor.charAt(0).toUpperCase() + anchor.slice(1)}</a>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.4, letterSpacing: '0.2em', fontWeight: 700 }}>LEGAL</div>
+                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.2em', fontWeight: 700 }}>GUIDES</div>
+                <div className="space-y-2">
+                  {FOOTER_GUIDE_LINKS.map((link) => (
+                    <Link key={link.href} href={link.href} className="block hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.8 }}>{link.label}</Link>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="iconik-mono mb-3" style={{ fontSize: '10px', color: '#2C2622', opacity: 0.7, letterSpacing: '0.2em', fontWeight: 700 }}>LEGAL</div>
                 <div className="space-y-2">
                   {[{ label: 'Privacy Policy', href: '/privacy-policy' }, { label: 'Refund Policy', href: '/refund-policy' }, { label: 'Terms of Service', href: '/terms' }, { label: 'About Us', href: '/about' }, { label: 'Contact', href: '/contact' }].map((link) => (
-                    <Link key={link.href} href={link.href} className="block hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.6 }}>{link.label}</Link>
+                    <Link key={link.href} href={link.href} className="block hover:opacity-100 transition-opacity" style={{ fontSize: '13px', color: '#2C2622', opacity: 0.8 }}>{link.label}</Link>
                   ))}
                 </div>
               </div>
             </div>
           </div>
           <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(44,38,34,0.08)' }}>
-            <p className="iconik-micro opacity-35" style={{ color: '#2C2622' }}>© {new Date().getFullYear()} ICONIK. All rights reserved. Scientific personal styling for Indian women.</p>
-            <p className="iconik-micro opacity-25 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: {LEGAL_ENTITY_NAME} · Results may vary.</p>
+            <p className="iconik-micro opacity-70" style={{ color: '#2C2622' }}>© {new Date().getFullYear()} ICONIK. All rights reserved. Scientific personal styling for Indian women.</p>
+            <p className="iconik-micro opacity-60 mt-1" style={{ color: '#2C2622' }}>Business Legal Name: {LEGAL_ENTITY_NAME} · Results may vary.</p>
           </div>
         </div>
       </footer>

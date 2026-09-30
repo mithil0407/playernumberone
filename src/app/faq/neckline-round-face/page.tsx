@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Best Neckline for a Round Face: Complete Guide for Indian Women — Iconik",
-  description: "Which neckline flatters a round face? The V-neck principle, which Indian necklines elongate a round face, and why face shape analysis matters for blouses and kurtas.",
+  title: "Best Neckline for a Round Face: Indian Guide — Iconik",
+  description: "Which necklines flatter a round face? Why V-necks work, which Indian blouse and kurta necklines lengthen a round face, and which ones to avoid.",
   keywords: "best neckline for round face India, neckline for round face Indian women, V neck round face India, kurta neckline round face, saree blouse neckline round face India",
   alternates: { canonical: "https://www.iconik.pro/faq/neckline-round-face" },
   openGraph: {
-    title: "Best Neckline for a Round Face: Complete Guide for Indian Women — Iconik",
+    title: "Best Neckline for a Round Face: Indian Guide — Iconik",
     description: "Which necklines flatter a round face — V-neck principle, Indian garment necklines, and face shape analysis explained.",
     url: "https://www.iconik.pro/faq/neckline-round-face",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Neckline for round face India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Neckline for round face India — Iconik" }],
   },
 };
 

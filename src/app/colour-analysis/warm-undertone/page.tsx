@@ -4,14 +4,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Warm Undertone: Best Colours for Indian Women — Iconik",
-  description: "Warm undertone Indian women look best in earthy, golden tones — terracotta, mustard, olive, burnt orange. Complete guide covering identification, saree colours, colours to avoid, and Chromatic Harmony Mapping™.",
+  description: "Warm undertone Indian skin suits earthy, golden colours such as terracotta, mustard, olive and rust. How to confirm it, saree colours and what to avoid.",
   keywords: "warm undertone colours Indian women, best colours warm undertone India, warm skin tone palette India, golden undertone colour guide India",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/warm-undertone" },
   openGraph: {
     title: "Warm Undertone Colour Guide for Indian Women — Iconik",
     description: "The exact colours that flatter a warm, golden, or peachy undertone — calibrated for Indian skin.",
     url: "https://www.iconik.pro/colour-analysis/warm-undertone",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Warm undertone colour guide — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Warm undertone colour guide — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -55,7 +55,7 @@ export default function WarmUndertonePage() {
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-19",
         "dateModified": new Date().toISOString().split("T")[0],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/warm-undertone" },
       },

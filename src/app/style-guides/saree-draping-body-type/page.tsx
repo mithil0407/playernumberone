@@ -3,19 +3,19 @@ import Link from "next/link";
 import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
-  title: "Saree Draping for Your Body Type: The Complete Guide — Iconik",
-  description: "How to drape a saree to flatter every body type. Apple, pear, rectangle, hourglass, and inverted triangle saree draping techniques — pallu placement, petticoat height, and blouse guidance.",
+  title: "Saree Draping for Your Body Type — Iconik",
+  description: "How to drape a saree for apple, pear, rectangle, hourglass and inverted triangle shapes: pallu placement, petticoat height and blouse guidance.",
   keywords: "saree draping body type India, how to drape saree for apple shape, saree for pear body, saree draping guide Indian women, how to wear saree to look slim India",
   alternates: { canonical: "https://www.iconik.pro/style-guides/saree-draping-body-type" },
   openGraph: {
-    title: "Saree Draping for Your Body Type: The Complete Guide — Iconik",
+    title: "Saree Draping for Your Body Type — Iconik",
     description: "Body-type-specific saree draping techniques for all 5 silhouettes — pallu, blouse, and petticoat guidance.",
     url: "https://www.iconik.pro/style-guides/saree-draping-body-type",
     images: [{ url: "/images/seo/saree-drape-direction-body-balance-iconik-og.webp", width: 1200, height: 630, alt: "Same Indian woman comparing horizontal and vertical saree pallu direction — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Saree Draping for Your Body Type: The Complete Guide — Iconik",
+    title: "Saree Draping for Your Body Type — Iconik",
     description: "Pallu direction, pleat volume and border placement change saree balance while the body remains the same.",
     images: ["/images/seo/saree-drape-direction-body-balance-iconik-og.webp"],
   },
@@ -49,8 +49,8 @@ export default function SareeDrapingBodyTypePage() {
         "headline": "Saree Draping for Your Body Type: The Complete Guide",
         "description": "Body-type-specific saree draping guide for all 5 Indian female silhouettes.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "dateModified": "2026-07-24",
         "image": "https://www.iconik.pro/images/seo/saree-drape-direction-body-balance-iconik.webp",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/saree-draping-body-type" },

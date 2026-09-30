@@ -23,8 +23,8 @@ import {
 const path = "/style-guides/kurti-length-guide";
 const title = "Kurti Length Guide: Choose the Hem by Proportion";
 const description =
-  "Choose short, hip, knee, calf or ankle-length kurtis using body landmarks, torso-to-leg proportion, bottom width and outfit context—not rigid height or body-type rules.";
-const published = "2025-01-01";
+  "Choose short, hip, knee, calf or ankle-length kurtis using body landmarks, torso-to-leg proportion and bottom width, not rigid height rules.";
+const published = "2026-03-21";
 const modified = "2026-07-24";
 
 export const metadata: Metadata = buildArticleMetadata({

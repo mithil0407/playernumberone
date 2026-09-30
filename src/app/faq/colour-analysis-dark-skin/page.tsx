@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Colour Analysis for Dark Skin: Does It Work for Deep Indian Skin Tones? — Iconik",
-  description: "Does colour analysis work for dark-skinned Indian women? How undertone identification differs for deeper melanin, why seasonal analysis fails dark skin, and what CHM™ does differently.",
+  title: "Colour Analysis for Dark Indian Skin: Does It Work? — Iconik",
+  description: "Does colour analysis work for dark Indian skin? How undertone reads differently on deeper skin, where seasonal systems fail, and what works instead.",
   keywords: "colour analysis dark skin India, colour analysis deep skin tone India, colour analysis for dark Indian women, does colour analysis work dark skin, undertone dark skin India",
   alternates: { canonical: "https://www.iconik.pro/faq/colour-analysis-dark-skin" },
   openGraph: {
-    title: "Colour Analysis for Dark Skin: Does It Work for Deep Indian Skin Tones? — Iconik",
+    title: "Colour Analysis for Dark Indian Skin: Does It Work? — Iconik",
     description: "How colour analysis works for darker Indian skin tones — why standard seasonal analysis fails and what CHM™ does instead.",
     url: "https://www.iconik.pro/faq/colour-analysis-dark-skin",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour analysis dark skin India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Colour analysis dark skin India — Iconik" }],
   },
 };
 

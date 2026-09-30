@@ -38,7 +38,7 @@ const growthTracking = {
 export const metadata: Metadata = buildMetadata({
   title: "Online Personal Stylist in Mumbai for Women",
   description:
-    "A transparent guide to ICONIK's online personal styling for Mumbai women: what the ₹2,699 Blueprint includes, how it works, and how it handles humidity, commutes, work and occasion wear.",
+    "Online personal stylist for Mumbai women: what the ₹2,699 Blueprint includes, how it works, and how it plans for humidity, commutes, work and occasions.",
   path,
   keywords: [
     "personal stylist Mumbai",

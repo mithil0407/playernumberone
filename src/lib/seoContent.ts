@@ -491,6 +491,57 @@ export const hubPaths = [
   "/glossary/personal-styling-terms-india",
 ];
 
+export const serviceLinks: SeoLink[] = [
+  {
+    href: "/online-personal-stylist-india",
+    title: "Online Personal Stylist India",
+    description: "How a video consultation and a written Style Blueprint work together.",
+  },
+  {
+    href: "/colour-analysis-india",
+    title: "Colour Analysis India",
+    description: "Find your undertone and the colours that suit Indian skin tones.",
+  },
+  {
+    href: "/body-shape-consultation-india",
+    title: "Body Shape Consultation India",
+    description: "Proportion analysis that turns into cuts, lengths and outfit formulas.",
+  },
+  {
+    href: "/wardrobe-audit-india",
+    title: "Wardrobe Audit India",
+    description: "Decide what to keep, restyle or replace in the wardrobe you already own.",
+  },
+  {
+    href: "/capsule-wardrobe-service-india",
+    title: "Capsule Wardrobe Service India",
+    description: "A smaller wardrobe of pieces that work together, built on your Blueprint.",
+  },
+  {
+    href: "/personal-shopper-vs-personal-stylist-india",
+    title: "Personal Shopper vs Personal Stylist",
+    description: "Which kind of help fits your problem, and what each one costs.",
+  },
+];
+
+export const aboutIconikLinks: SeoLink[] = [
+  {
+    href: "/what-is-iconik",
+    title: "What Is Iconik",
+    description: "The service, the Style Blueprint and the method behind it.",
+  },
+  {
+    href: "/who-is-iconik-for",
+    title: "Who Is Iconik For",
+    description: "The wardrobe problems Iconik helps with, and when it is not the right fit.",
+  },
+  {
+    href: "/glossary/personal-styling-terms-india",
+    title: "Personal Styling Glossary",
+    description: "Plain definitions of undertone, silhouette, capsule and other styling terms.",
+  },
+];
+
 export const blogLinks: SeoLink[] = [
   {
     href: "/blog/is-personal-stylist-worth-it-india",

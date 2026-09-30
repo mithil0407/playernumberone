@@ -32,6 +32,8 @@ export type SeoArticleRecord = {
   cluster: SeoArticleCluster;
   eyebrow: string;
   title: string;
+  /** Shorter search-result title, when the on-page headline runs past 60 characters with the brand suffix. */
+  seoTitle?: string;
   description: string;
   heroSummary?: string;
   keywords: string[];
@@ -60,6 +62,7 @@ const records = {
     cluster: "body-type",
     eyebrow: "Silhouette Intelligence · Proportion",
     title: "How to Look Taller in Clothes: A Practical Proportion Guide for Indian Women",
+    seoTitle: "How to Look Taller in Clothes: Proportion Guide",
     description:
       "Use rise, garment length, colour continuity, shoulder fit, and vertical fall to look taller—without changing your body or relying on heels.",
     heroSummary:
@@ -132,6 +135,7 @@ const records = {
     cluster: "style-guide",
     eyebrow: "Wardrobe Intelligence · Work",
     title: "Office Wear for Indian Women: The Complete Professional Style Guide",
+    seoTitle: "Office Wear for Indian Women: Style Guide",
     description:
       "Body-specific office outfit formulas, climate-aware fabrics, Indian and western workwear, and a practical 10-piece professional wardrobe.",
     heroSummary:
@@ -143,7 +147,7 @@ const records = {
       "corporate outfit Indian women",
       "what to wear work India",
     ],
-    datePublished: "2025-01-01",
+    datePublished: "2026-07-13",
     dateModified: "2026-07-24",
     reviewer: "Jasmine Rana, Co-Founder and Head Stylist",
     readingTime: "10 minute read",
@@ -245,6 +249,7 @@ const records = {
     cluster: "body-type",
     eyebrow: "Silhouette Intelligence · Apple",
     title: "What Is an Apple Body Shape? Complete Indian Women's Guide",
+    seoTitle: "Apple Body Shape: Styling Guide for Indian Women",
     description:
       "Identify an apple silhouette and use Indian garment formulas, structured drape, neckline direction, and clean vertical lines to dress it intentionally.",
     heroSummary:
@@ -256,7 +261,7 @@ const records = {
       "apple body shape kurta India",
       "apple body shape saree",
     ],
-    datePublished: "2025-01-01",
+    datePublished: "2026-07-13",
     dateModified: "2026-07-24",
     reviewer: "Jasmine Rana, Co-Founder and Head Stylist",
     readingTime: "9 minute read",
@@ -301,6 +306,7 @@ const records = {
     cluster: "colour-analysis",
     eyebrow: "Chromatic Intelligence · Sarees",
     title: "Saree Colours by Undertone: The Complete Indian Guide",
+    seoTitle: "Saree Colours by Undertone: Indian Guide",
     description:
       "Choose saree body colours, borders, and zari for warm, cool, or neutral Indian undertones—including bridal and occasion palettes.",
     heroSummary:

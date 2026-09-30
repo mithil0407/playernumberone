@@ -6,7 +6,7 @@ import { colourAnalysisLinks, methodologyLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Colour Analysis India",
   description:
-    "A service-intent page for colour analysis in India, including undertones, palette logic, and how Iconik approaches Indian skin tones.",
+    "Online colour analysis for Indian skin: find your undertone and the 10 colours that suit you, in a ₹2,699 Style Blueprint with a stylist.",
   path: "/colour-analysis-india",
 });
 

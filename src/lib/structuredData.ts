@@ -1,4 +1,12 @@
-import { absoluteUrl, OG_IMAGE_URL, SITE_NAME, SITE_URL } from "@/lib/seo";
+import {
+  absoluteUrl,
+  LOGO_URL,
+  OG_IMAGE_URL,
+  ORGANIZATION_ALTERNATE_NAMES,
+  ORGANIZATION_DISAMBIGUATION,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/seo";
 import {
   ACTIVE_PUBLIC_MARKETS,
   BLUEPRINT_OFFER,
@@ -22,11 +30,15 @@ export const organizationNode = {
   "@type": "Organization",
   "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
+  alternateName: ORGANIZATION_ALTERNATE_NAMES,
+  disambiguatingDescription: ORGANIZATION_DISAMBIGUATION,
   legalName: LEGAL_ENTITY_NAME,
   url: SITE_URL,
   logo: {
     "@type": "ImageObject",
-    url: OG_IMAGE_URL,
+    url: LOGO_URL,
+    width: 512,
+    height: 512,
   },
   founder: [{ "@id": founderPerson["@id"] }],
   areaServed: ACTIVE_PUBLIC_MARKETS,
@@ -63,7 +75,7 @@ export function articleNode({
   title,
   description,
   path,
-  datePublished = "2025-01-01",
+  datePublished = "2026-06-04",
   dateModified = "2026-06-04",
   images,
   reviewedBy = founderPerson,

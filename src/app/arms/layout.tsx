@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "How to Dress Heavy Arms — Iconik Style Guide",
     description: "Exactly which sleeves, cuts, and fabrics work for heavier arms — backed by Geometric Silhouette Profiling™.",
     url: "https://www.iconik.pro/arms",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Arm styling guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Arm styling guide for Indian women — Iconik" }],
   },
 };
 

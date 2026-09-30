@@ -26,7 +26,7 @@ const glowTestHref =
   "/tools/glow-test?source=seo_dark_skin_article&article_id=dark_skin_colour_guide_india&content_cluster=colour_intelligence&audience=women&hook_type=depth_contrast_undertone";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Best Clothing Colours for Dark Indian Skin by Undertone",
+  title: "Best Clothing Colours for Dark Indian Skin",
   description:
     "A practical clothing-colour guide for deep Indian skin: warm, cool, neutral and olive undertones, contrast, whites, pastels, jewellery and Indian occasion wear.",
   path,

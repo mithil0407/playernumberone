@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Iconik vs Styling Apps: Why Generic AI Styling Fails Indian Women — Iconik",
-  description: "How Iconik's methodology compares to generic AI styling apps. Why algorithmic outfit recommendations miss the variables that matter for Indian women — undertone, body type, cultural context.",
+  title: "Iconik vs AI Styling Apps for Indian Women",
+  description: "How ICONIK compares with AI styling apps, and why generic outfit suggestions miss undertone, body proportions and cultural context for Indian women.",
   keywords: "Iconik vs styling apps India, personal styling app India comparison, AI stylist India, best styling service India, styling app vs professional stylist India",
   alternates: { canonical: "https://www.iconik.pro/vs/iconik-vs-styling-apps" },
   openGraph: {
-    title: "Iconik vs Styling Apps: Why Generic AI Styling Fails Indian Women — Iconik",
+    title: "Iconik vs AI Styling Apps for Indian Women",
     description: "Why generic styling apps fail Indian women — and what a methodology-based approach delivers instead.",
     url: "https://www.iconik.pro/vs/iconik-vs-styling-apps",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Iconik vs styling apps India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Iconik vs styling apps India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function IconikVsStylingAppsPage() {
         "headline": "Iconik vs Styling Apps: Why Generic AI Styling Fails Indian Women",
         "description": "Comparison of Iconik's methodology vs generic styling apps for Indian women.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/vs/iconik-vs-styling-apps" },
       },
       {

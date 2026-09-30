@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Online vs In-Person Styling: Which Is Better for Indian Women? — Iconik",
+  title: "Online vs In-Person Styling for Indian Women — Iconik",
   description: "Online styling vs in-person personal styling — what each delivers, where each falls short, and which is right for Indian women. An honest comparison.",
   keywords: "online personal stylist India vs in-person, online styling India comparison, personal stylist online India, in-person vs online styling India, best way to get styled India",
   alternates: { canonical: "https://www.iconik.pro/vs/online-vs-inperson-styling" },
   openGraph: {
-    title: "Online vs In-Person Styling: Which Is Better for Indian Women? — Iconik",
+    title: "Online vs In-Person Styling for Indian Women — Iconik",
     description: "An honest comparison of online and in-person personal styling for Indian women — what each delivers and what each cannot.",
     url: "https://www.iconik.pro/vs/online-vs-inperson-styling",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Online vs in-person styling India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Online vs in-person styling India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function OnlineVsInpersonStylingPage() {
         "headline": "Online vs In-Person Styling: Which Is Better for Indian Women?",
         "description": "Honest comparison of online and in-person personal styling for Indian women.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/vs/online-vs-inperson-styling" },
       },
       {

@@ -4,7 +4,7 @@ import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "How to Dress for a Job Interview in India — Complete Guide",
-  description: "What to wear to a job interview in India — by industry and dress code. Corporate, startup, government, and creative sector interview outfits for Indian women. Indian and Western wear options.",
+  description: "What to wear to a job interview in India by industry: corporate, startup, government and creative roles, with Indian and western outfit options.",
   keywords: "what to wear job interview India, interview outfit Indian women, how to dress for interview India, job interview clothes India, interview dress code India women",
   alternates: { canonical: "https://www.iconik.pro/faq/how-to-dress-for-job-interview-india" },
   openGraph: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     type: "article",
     siteName: "Iconik",
     locale: "en_IN",
-    publishedTime: "2025-01-01",
+    publishedTime: "2026-03-23",
     modifiedTime: "2026-07-24",
     images: [{ url: "/images/seo/job-interview-dress-code-india-iconik-og.webp", width: 1200, height: 630, alt: "Job interview outfit formulas for corporate, government, startup and creative roles in India — Iconik" }],
   },
@@ -40,7 +40,7 @@ const jsonLd = {
         "name": "Iconik",
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
-      "datePublished": "2025-01-01",
+      "datePublished": "2026-03-23",
       "dateModified": "2026-07-24",
       "image": "https://www.iconik.pro/images/seo/job-interview-dress-code-india-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/faq/how-to-dress-for-job-interview-india",

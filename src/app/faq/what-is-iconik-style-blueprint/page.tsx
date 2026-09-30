@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "What Is the Iconik Style Blueprint? — Iconik",
-  description: "What is the Iconik Style Blueprint? What it includes, how it's built, what you receive, and how to use it. A complete explanation of Iconik's signature styling service.",
+  description: "What the ICONIK Style Blueprint includes, how it is built from your consultation, what you receive, and how to use it when you shop and get dressed.",
   keywords: "what is Iconik Style Blueprint, Iconik style blueprint explained, Iconik styling service India, what does Iconik include, personal styling India blueprint",
   alternates: { canonical: "https://www.iconik.pro/faq/what-is-iconik-style-blueprint" },
   openGraph: {
     title: "What Is the Iconik Style Blueprint? — Iconik",
     description: "What the Iconik Style Blueprint includes, how it's built, and how to use it — a complete explanation.",
     url: "https://www.iconik.pro/faq/what-is-iconik-style-blueprint",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "What is Iconik Style Blueprint — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "What is Iconik Style Blueprint — Iconik" }],
   },
 };
 

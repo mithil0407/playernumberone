@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Hourglass Body Shape Styling for Indian Women — Iconik",
     description: "How to dress an hourglass figure in both western and Indian ethnic wear — sarees, kurtas, and lehengas included.",
     url: "https://www.iconik.pro/body-type-styling/hourglass-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Hourglass body shape styling — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Hourglass body shape styling — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

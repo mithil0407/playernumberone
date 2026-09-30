@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How to Dress for a Short Torso: Proportion Guide for Indian Women — Iconik",
-  description: "Complete guide to dressing a short torso for Indian women. Which cuts elongate the torso, which Indian garments to choose, and how Geometric Silhouette Profiling™ handles torso-length styling.",
+  title: "How to Dress a Short Torso: Indian Women's Guide — Iconik",
+  description: "How to dress a short torso: cuts that lengthen the torso, the best Indian garments and kurta lengths, and how to balance a longer leg line.",
   keywords: "short torso styling India, how to dress short torso Indian women, petite torso fashion India, elongate short torso clothes India, short waist styling Indian women",
   alternates: { canonical: "https://www.iconik.pro/body-type-styling/short-torso-styling" },
   openGraph: {
-    title: "How to Dress for a Short Torso: Proportion Guide for Indian Women — Iconik",
+    title: "How to Dress a Short Torso: Indian Women's Guide — Iconik",
     description: "Exact cuts and Indian garment formulas to elongate a short torso — without heels or shapewear.",
     url: "https://www.iconik.pro/body-type-styling/short-torso-styling",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Short torso styling guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Short torso styling guide for Indian women — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function ShortTorsoStylingPage() {
         "headline": "How to Dress for a Short Torso: Proportion Guide for Indian Women",
         "description": "Proportion guide for short torso dressing — Indian garment formulas using Geometric Silhouette Profiling™.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/short-torso-styling" },
       },
       {

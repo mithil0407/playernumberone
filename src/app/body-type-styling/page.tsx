@@ -10,7 +10,7 @@ export const metadata: Metadata = buildArticleMetadata({
   title: "How to Dress for Your Body Type in India",
   description: "A practical, size-inclusive guide to proportion, garment shape and Indian-wear choices using ICONIK's Geometric Silhouette Profiling framework.",
   path: "/body-type-styling",
-  datePublished: "2025-01-01",
+  datePublished: "2026-03-19",
   dateModified: "2026-07-24",
   authorPath: "/about#jasmine-rana",
   keywords: [
@@ -106,9 +106,9 @@ export default function BodyTypeStylingPage() {
         "publisher": {
           "@type": "Organization",
           "name": "Iconik",
-          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" },
+          "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" },
         },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-19",
         "dateModified": "2026-07-24",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling" },
       },

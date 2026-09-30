@@ -6,7 +6,7 @@ import { comparisonLinks, faqLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Personal Shopper vs Personal Stylist India",
   description:
-    "A comparison page explaining the difference between a personal shopper and a personal stylist in India, and when each makes sense.",
+    "Personal shopper or personal stylist? What each one does in India, how they differ, and which kind of help fits your wardrobe problem.",
   path: "/personal-shopper-vs-personal-stylist-india",
 });
 

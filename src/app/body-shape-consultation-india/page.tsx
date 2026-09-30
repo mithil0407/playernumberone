@@ -6,7 +6,7 @@ import { bodyTypeLinks, methodologyLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Body Shape Consultation India",
   description:
-    "A page for users looking for body shape or silhouette consultation in India, with an explanation of how Iconik approaches proportion analysis.",
+    "Body shape consultation online in India: find your proportions and the cuts, lengths and Indian outfits that suit them, in a ₹2,699 Style Blueprint.",
   path: "/body-shape-consultation-india",
 });
 

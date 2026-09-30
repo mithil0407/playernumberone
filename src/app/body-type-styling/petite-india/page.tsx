@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Petite Body Type Styling for Indian Women — Iconik",
-  description: "Styling guide for petite Indian women — how to elongate proportions, look taller, and dress a petite frame in both western wear and Indian ethnic wear including sarees and kurtas.",
+  description: "Styling for petite Indian women: how to lengthen your proportions and dress a petite frame in western wear, sarees, kurtas and occasion outfits.",
   keywords: "petite body type India, petite styling Indian women, how to look taller Indian women, petite frame styling India, petite saree style India, petite kurta style India, fashion for short women India",
   alternates: { canonical: "https://www.iconik.pro/body-type-styling/petite-india" },
   openGraph: {
     title: "Petite Body Type Styling for Indian Women — Iconik",
     description: "How to elongate proportions and dress a petite frame in western and Indian ethnic wear — including sarees, kurtas, and lehengas.",
     url: "https://www.iconik.pro/body-type-styling/petite-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Petite body type styling for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Petite body type styling for Indian women — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

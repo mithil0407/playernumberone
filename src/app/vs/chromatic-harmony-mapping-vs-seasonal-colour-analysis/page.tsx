@@ -3,8 +3,8 @@ import Link from "next/link";
 import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
-  title: "Chromatic Harmony Mapping vs Seasonal Colour Analysis — Iconik",
-  description: "How Chromatic Harmony Mapping™ compares to Seasonal Colour Analysis — methodology, accuracy for Indian skin tones, key differences, and which system produces better results for Indian women.",
+  title: "Chromatic Harmony Mapping vs Seasonal Colours — Iconik",
+  description: "How Chromatic Harmony Mapping™ compares with seasonal colour analysis: method, accuracy on Indian skin tones, and which gives better results.",
   keywords: "chromatic harmony mapping vs seasonal colour analysis, CHM vs seasonal colour analysis India, colour analysis Indian women comparison, seasonal colour analysis Indian skin, best colour analysis Indian women",
   alternates: { canonical: "https://www.iconik.pro/vs/chromatic-harmony-mapping-vs-seasonal-colour-analysis" },
   openGraph: {

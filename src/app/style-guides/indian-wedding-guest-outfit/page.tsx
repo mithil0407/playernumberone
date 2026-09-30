@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Indian Wedding Guest Outfit Guide: What to Wear by Body Type — Iconik",
-  description: "What to wear as a wedding guest in India — body-type-specific outfit formulas for Indian weddings. Lehenga, saree, Anarkali, and indo-western options for every silhouette and occasion type.",
+  title: "Indian Wedding Guest Outfit Guide by Body Type — Iconik",
+  description: "What to wear as an Indian wedding guest for your body type: lehenga, saree, anarkali and indo-western formulas for mehendi, sangeet and reception.",
   keywords: "Indian wedding guest outfit, what to wear Indian wedding, wedding guest dress India, outfit for Indian wedding female, Indian wedding guest attire body type",
   alternates: { canonical: "https://www.iconik.pro/style-guides/indian-wedding-guest-outfit" },
   openGraph: {
-    title: "Indian Wedding Guest Outfit Guide: What to Wear by Body Type — Iconik",
+    title: "Indian Wedding Guest Outfit Guide by Body Type — Iconik",
     description: "Body-type-specific wedding guest outfit formulas for Indian weddings — lehenga, saree, Anarkali, and indo-western options.",
     url: "https://www.iconik.pro/style-guides/indian-wedding-guest-outfit",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Indian wedding guest outfit guide — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Indian wedding guest outfit guide — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function IndianWeddingGuestOutfitPage() {
         "headline": "Indian Wedding Guest Outfit Guide: What to Wear by Body Type",
         "description": "Body-type-specific wedding guest outfit formulas for Indian weddings — lehenga, saree, Anarkali, and indo-western options.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/indian-wedding-guest-outfit" },
       },
       {

@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Best Colours for Fair Skin Tone: Indian Women's Guide — Iconik",
-  description: "Which colours work best for fair-skinned Indian women? How undertone determines your palette (not skin depth), and Chromatic Harmony Mapping™ for light Indian skin tones.",
+  title: "Best Colours for Fair Indian Skin by Undertone — Iconik",
+  description: "Which colours suit fair Indian skin? Why your undertone, not skin depth, decides your palette, and how colour mapping works for light Indian skin.",
   keywords: "best colours for fair skin India, colours for fair Indian women, what to wear fair skin India, colour guide fair skin Indian women, fashion for light complexion India",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/best-colours-fair-skin-india" },
   openGraph: {
-    title: "Best Colours for Fair Skin Tone: Indian Women's Guide — Iconik",
+    title: "Best Colours for Fair Indian Skin by Undertone — Iconik",
     description: "Why undertone — not skin depth — determines your colour palette. Complete guide for fair Indian women.",
     url: "https://www.iconik.pro/colour-analysis/best-colours-fair-skin-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Best colours for fair skin India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Best colours for fair skin India — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best Colours for Fair Skin Tone: Indian Women's Guide — Iconik",
+    title: "Best Colours for Fair Indian Skin by Undertone — Iconik",
     description: "Why undertone — not skin depth — determines your colour palette. Complete guide for fair Indian women.",
     images: ["/og-image.webp"],
   },
@@ -54,7 +54,7 @@ export default function BestColoursFairSkinPage() {
           "name": "Iconik",
           "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
         },
-        "datePublished": "2025-01-01",
+        "datePublished": "2026-03-21",
         "dateModified": new Date().toISOString().split("T")[0],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/colour-analysis/best-colours-fair-skin-india" },
       },

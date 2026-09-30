@@ -3,14 +3,14 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Hyderabad — Iconik Style Blueprint",
-  description: "Online personal styling for Hyderabad women. Science-backed Style Blueprint — body analysis, colour palette, and 20 outfit formulas. Delivered within 5 working days after consultation.",
+  description: "Online personal stylist for Hyderabad women: a Style Blueprint with body analysis, your colour palette and 20 outfit formulas, in 5 working days.",
   keywords: "personal stylist Hyderabad, online styling Hyderabad, style consultation Hyderabad, wardrobe advice Hyderabad women",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-hyderabad" },
   openGraph: {
     title: "Personal Stylist in Hyderabad — Iconik Style Blueprint",
     description: "Science-backed personal styling for Hyderabad women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-hyderabad",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Hyderabad — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Hyderabad — Iconik" }],
   },
 };
 

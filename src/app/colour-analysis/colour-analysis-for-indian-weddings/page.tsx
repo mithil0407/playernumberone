@@ -4,7 +4,7 @@ import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "Colour Analysis for Indian Weddings: Complete Guide — Iconik",
-  description: "How undertone determines your best colours for Indian wedding occasions — bridal wear, mehendi, haldi, sangeet, reception, and wedding guest outfits. Complete guide by undertone.",
+  description: "How your undertone decides your best colours for Indian weddings: bridal wear, mehendi, haldi, sangeet, reception and wedding-guest outfits.",
   keywords: "colour analysis Indian wedding, best colours Indian wedding undertone, bridal lehenga colour by undertone, wedding guest outfit colours India, mehendi outfit colour undertone, sangeet outfit colour India",
   alternates: { canonical: "https://www.iconik.pro/colour-analysis/colour-analysis-for-indian-weddings" },
   openGraph: {

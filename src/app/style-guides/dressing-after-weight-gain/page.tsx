@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Dressing After Weight Gain: Style That Works for Your Body Now — Iconik",
-  description: "How to dress confidently after weight gain. Body-neutral styling principles for Indian women — what fits your current shape, what to stop avoiding, and how to build a wardrobe that works now.",
+  title: "Dressing After Weight Gain: Clothes That Fit Now — Iconik",
+  description: "How to dress after weight gain: body-neutral styling for Indian women, what fits your current shape, and how to build a wardrobe that works now.",
   keywords: "dressing after weight gain India, plus size fashion Indian women, style after weight gain, how to dress heavier body India, fashion after gaining weight Indian women",
   alternates: { canonical: "https://www.iconik.pro/style-guides/dressing-after-weight-gain" },
   openGraph: {
-    title: "Dressing After Weight Gain: Style That Works for Your Body Now — Iconik",
+    title: "Dressing After Weight Gain: Clothes That Fit Now — Iconik",
     description: "Body-neutral styling for Indian women after weight gain — current-body formulas, not aspirational ones.",
     url: "https://www.iconik.pro/style-guides/dressing-after-weight-gain",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Dressing after weight gain India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Dressing after weight gain India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function DressingAfterWeightGainPage() {
         "headline": "Dressing After Weight Gain: Style That Works for Your Body Now",
         "description": "Body-neutral styling guide for Indian women after weight gain — current-body wardrobe formulas.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/style-guides/dressing-after-weight-gain" },
       },
       {

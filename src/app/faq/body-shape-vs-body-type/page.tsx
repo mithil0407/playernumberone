@@ -3,14 +3,14 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Body Shape vs Body Type: What's the Difference? — Iconik",
-  description: "What is the difference between body shape and body type? Are they the same thing? How each term is used in fashion and styling, and which framework produces more useful dressing guidance.",
+  description: "Body shape and body type mean different things. What each term means in styling, how they are used, and which gives more useful advice on what to wear.",
   keywords: "body shape vs body type difference, what is body type vs body shape, body type vs body shape India, body shape body type same thing, difference body shape body type fashion",
   alternates: { canonical: "https://www.iconik.pro/faq/body-shape-vs-body-type" },
   openGraph: {
     title: "Body Shape vs Body Type: What's the Difference? — Iconik",
     description: "The difference between body shape and body type — and which produces more useful dressing guidance for Indian women.",
     url: "https://www.iconik.pro/faq/body-shape-vs-body-type",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Body shape vs body type India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Body shape vs body type India — Iconik" }],
   },
 };
 

@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Is a Personal Stylist Worth It in India? An Honest Answer — Iconik",
-  description: "Is hiring a personal stylist worth the cost for Indian women? What you actually get, what changes after styling, and who it makes sense for. An honest assessment.",
+  title: "Is a Personal Stylist Worth It in India? — Iconik",
+  description: "Is a personal stylist worth the cost in India? What you actually get, what changes afterwards, and who it makes sense for. An honest assessment.",
   keywords: "is personal stylist worth it India, personal stylist cost India, should I hire personal stylist India, personal stylist for women India, worth hiring stylist India",
   alternates: { canonical: "https://www.iconik.pro/blog/is-personal-stylist-worth-it-india" },
   openGraph: {
-    title: "Is a Personal Stylist Worth It in India? An Honest Answer — Iconik",
+    title: "Is a Personal Stylist Worth It in India? — Iconik",
     description: "What a personal stylist actually delivers for Indian women, what it costs, and whether it is worth it for your situation.",
     url: "https://www.iconik.pro/blog/is-personal-stylist-worth-it-india",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Is personal stylist worth it India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Is personal stylist worth it India — Iconik" }],
   },
 };
 
@@ -41,9 +41,11 @@ export default function IsPersonalStylistWorthItPage() {
         "@type": "Article",
         "headline": "Is a Personal Stylist Worth It in India? An Honest Answer",
         "description": "What a personal stylist delivers, what it costs, and who it makes sense for — an honest assessment for Indian women.",
-        "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "author": { "@type": "Organization", "@id": "https://www.iconik.pro/#organization", "name": "Iconik" },
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
+        "dateModified": "2026-07-24",
+        "image": ["https://www.iconik.pro/og-image.webp"],
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/blog/is-personal-stylist-worth-it-india" },
       },
       {

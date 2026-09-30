@@ -3,14 +3,14 @@ import CityLandingPage from "@/components/CityLandingPage";
 
 export const metadata: Metadata = {
   title: "Personal Stylist in Pune — Iconik Style Blueprint",
-  description: "Online personal styling for Pune women. Iconik's science-backed Style Blueprint — body analysis, colour palette, and 20 outfit formulas tailored to Pune's tech-professional and social lifestyle. Delivered within 5 working days after consultation.",
+  description: "Online personal stylist for Pune women: a Style Blueprint with body analysis, your colour palette and 20 outfit formulas, delivered in 5 working days.",
   keywords: "personal stylist Pune, online personal styling Pune, style consultation Pune, body type analysis Pune, wardrobe consultation Pune, personal stylist Baner Pune, personal stylist Koregaon Park",
   alternates: { canonical: "https://www.iconik.pro/personal-stylist-pune" },
   openGraph: {
     title: "Personal Stylist in Pune — Iconik Style Blueprint",
     description: "Science-backed personal styling for Pune women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-pune",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Pune — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Pune — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

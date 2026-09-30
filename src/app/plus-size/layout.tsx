@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Plus Size Styling Guide for Indian Women — Iconik",
     description: "Science-backed silhouettes, colours, and cuts for plus-size Indian women. Personalised Blueprint within 5 working days after the consultation.",
     url: "https://www.iconik.pro/plus-size",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Plus size styling guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Plus size styling guide for Indian women — Iconik" }],
   },
 };
 

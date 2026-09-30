@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Modest Fashion for Indian Women — Iconik",
     description: "Science-backed modest styling — office, ethnic, and everyday looks tailored to your silhouette and colour palette.",
     url: "https://www.iconik.pro/modest",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Modest fashion guide for Indian women — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Modest fashion guide for Indian women — Iconik" }],
   },
 };
 

@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Inverted Triangle Body Type: Styling Guide for Indian Women — Iconik",
-  description: "How to dress an inverted triangle body shape. Balance broad shoulders with the right cuts, necklines, and silhouettes — including sarees, kurtas, and ethnic wear for Indian women.",
+  title: "Inverted Triangle Body Shape: Indian Styling Guide — Iconik",
+  description: "How to dress an inverted triangle body shape: balance broad shoulders with the right cuts, necklines and silhouettes in sarees, kurtas and western wear.",
   keywords: "inverted triangle body type India, inverted triangle body shape Indian women, how to dress inverted triangle India, broad shoulders styling India, inverted triangle saree style, inverted triangle ethnic wear India",
   alternates: { canonical: "https://www.iconik.pro/body-type-styling/inverted-triangle" },
   openGraph: {
-    title: "Inverted Triangle Body Type: Styling Guide for Indian Women — Iconik",
+    title: "Inverted Triangle Body Shape: Indian Styling Guide — Iconik",
     description: "How to dress an inverted triangle body shape. Balance broad shoulders and create curves with the right silhouettes and ethnic wear.",
     url: "https://www.iconik.pro/body-type-styling/inverted-triangle",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Inverted triangle body type styling guide — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Inverted triangle body type styling guide — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Inverted Triangle Body Type: Styling Guide for Indian Women — Iconik",
+    title: "Inverted Triangle Body Shape: Indian Styling Guide — Iconik",
     description: "How to dress an inverted triangle body shape. Balance broad shoulders and create curves with the right silhouettes and ethnic wear.",
     images: ["/og-image.webp"],
   },

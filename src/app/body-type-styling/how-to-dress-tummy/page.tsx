@@ -17,11 +17,11 @@ import { BLUEPRINT_OFFER, FOUNDERS } from "@/lib/siteFacts";
 const path = "/body-type-styling/how-to-dress-tummy";
 
 export const metadata: Metadata = buildArticleMetadata({
-  title: "How to Dress If You Have a Tummy: Fit & Proportion Guide",
+  title: "How to Dress If You Have a Tummy",
   description:
-    "A practical Indian styling guide for a fuller tummy: choose waist placement, top length, fabric, trousers, kurtas, sarees and occasion wear by proportion—not rigid hiding rules.",
+    "How to dress a fuller tummy: waist placement, top length, fabric, trousers, kurtas, sarees and occasion wear chosen by proportion, not hiding rules.",
   path,
-  datePublished: "2025-01-01",
+  datePublished: "2026-03-21",
   dateModified: "2026-07-24",
   authorPath: "/about#jasmine-rana",
   image: {
@@ -102,7 +102,7 @@ export default function HowToDressTummyPage() {
           name: "ICONIK LLP",
           url: "https://www.iconik.pro",
         },
-        datePublished: "2025-01-01",
+        datePublished: "2026-03-21",
         dateModified: "2026-07-24",
         image: `https://www.iconik.pro/images/seo/tummy-fit-vertical-system-iconik.webp`,
         mainEntityOfPage: {

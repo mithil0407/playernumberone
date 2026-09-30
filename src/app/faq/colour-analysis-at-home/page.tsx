@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Can I Do Colour Analysis at Home? What Works and What Doesn't — Iconik",
-  description: "Can colour analysis be done at home? What the at-home vein test and paper test actually tell you, what they miss, and where professional analysis adds precision for Indian women.",
+  title: "Can You Do Colour Analysis at Home? — Iconik",
+  description: "Can you do colour analysis at home? What vein and paper tests actually show, what they miss, and when a professional analysis is worth it.",
   keywords: "colour analysis at home India, DIY colour analysis Indian women, how to do colour analysis at home India, undertone test at home India, free colour analysis Indian women",
   alternates: { canonical: "https://www.iconik.pro/faq/colour-analysis-at-home" },
   openGraph: {
-    title: "Can I Do Colour Analysis at Home? What Works and What Doesn't — Iconik",
+    title: "Can You Do Colour Analysis at Home? — Iconik",
     description: "What at-home colour analysis can and cannot tell you — and where professional analysis adds precision for Indian skin.",
     url: "https://www.iconik.pro/faq/colour-analysis-at-home",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Colour analysis at home India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Colour analysis at home India — Iconik" }],
   },
 };
 

@@ -35,7 +35,7 @@ const jsonLd = {
         "name": "Iconik",
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
-      "datePublished": "2025-01-01",
+      "datePublished": "2026-03-23",
       "dateModified": "2026-07-24",
       "image": "https://www.iconik.pro/images/seo/rectangle-body-shape-placement-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/body-type-styling/rectangle-india",

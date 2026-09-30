@@ -32,7 +32,7 @@ const glowTestHref =
   "/tools/glow-test?source=seo_dusky_skin_article&article_id=best_colours_dusky_skin&content_cluster=colour_intelligence&audience=women&hook_type=undertone_not_depth&visual_id=dusky_skin_drape_test&visual_variant=article_4x5";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Dusky Skin Tone: Meaning, Undertones & 16 Best Colours",
+  title: "Dusky Skin Tone: Meaning, Undertones & Best Colours",
   description:
     "What does dusky skin tone mean? Learn how warm, cool, and neutral undertones change the colours, pastels, whites, and jewellery that suit dusky Indian skin.",
   path,

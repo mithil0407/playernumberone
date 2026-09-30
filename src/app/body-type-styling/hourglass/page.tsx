@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Hourglass Body Shape Styling Guide for Indian Women — Iconik",
     description: "Celebrate your waist definition with the right cuts and Indian garments.",
     url: "https://www.iconik.pro/body-type-styling/hourglass",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Hourglass body shape styling guide — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Hourglass body shape styling guide — Iconik" }],
   },
 };
 
@@ -37,8 +37,8 @@ export default function HourglassBodyTypePage() {
         "@type": "Article",
         "headline": "Hourglass Body Shape Styling Guide for Indian Women",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-19",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/body-type-styling/hourglass" },
       },
       {

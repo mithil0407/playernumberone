@@ -6,7 +6,7 @@ import { bodyTypeLinks, styleGuideLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Wardrobe Audit India",
   description:
-    "What a wardrobe audit in India should cover, who it is useful for, and how Iconik's Blueprint can function as a better first step.",
+    "Wardrobe audit in India: what to keep, restyle or replace, and how an ICONIK Style Blueprint gives you clear rules for judging every piece you own.",
   path: "/wardrobe-audit-india",
 });
 

@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Style Blueprint vs Style Quiz: What's the Difference? — Iconik",
-  description: "Why a style quiz gives you a personality label but a Style Blueprint gives you a dressing framework. The difference between self-reported quiz outputs and measurement-based body and colour analysis.",
+  title: "Style Blueprint vs Style Quiz: The Difference — Iconik",
+  description: "What a style quiz tells you, what a Style Blueprint adds, and why measured body and colour analysis gives you more useful rules for dressing.",
   keywords: "style quiz vs style blueprint India, style quiz India, what is style blueprint, Iconik style blueprint explained, personal style analysis India",
   alternates: { canonical: "https://www.iconik.pro/vs/style-blueprint-vs-quiz" },
   openGraph: {
-    title: "Style Blueprint vs Style Quiz: What's the Difference? — Iconik",
+    title: "Style Blueprint vs Style Quiz: The Difference — Iconik",
     description: "Why a style quiz gives you a personality label and a Style Blueprint gives you a dressing framework — the distinction explained.",
     url: "https://www.iconik.pro/vs/style-blueprint-vs-quiz",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Style Blueprint vs style quiz India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Style Blueprint vs style quiz India — Iconik" }],
   },
 };
 
@@ -42,8 +42,8 @@ export default function StyleBlueprintVsQuizPage() {
         "headline": "Style Blueprint vs Style Quiz: What's the Difference?",
         "description": "The difference between a personality-based style quiz and a measurement-based Style Blueprint for Indian women.",
         "author": { "@type": "Organization", "name": "Iconik Styling Team" },
-        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/og-image.webp" } },
-        "datePublished": "2025-01-01",
+        "publisher": { "@type": "Organization", "name": "Iconik", "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/iconik-logo.png" } },
+        "datePublished": "2026-03-21",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.iconik.pro/vs/style-blueprint-vs-quiz" },
       },
       {

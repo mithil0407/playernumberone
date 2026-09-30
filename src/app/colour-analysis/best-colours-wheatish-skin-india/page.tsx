@@ -26,7 +26,7 @@ const glowTestHref =
   "/tools/glow-test?source=seo_wheatish_skin_article&article_id=best_colours_wheatish_skin_india&content_cluster=colour_intelligence&audience=women&hook_type=wheatish_meaning_undertone";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Wheatish Skin Tone: Meaning, Undertones and Best Colours",
+  title: "Wheatish Skin Tone: Meaning and Best Colours",
   description:
     "What does wheatish skin tone mean? Find clothing colours for warm, cool, neutral and olive wheatish Indian skin, including pastels, whites and jewellery.",
   path,

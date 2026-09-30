@@ -2,51 +2,69 @@ import type { Metadata } from "next";
 import ServiceInfoPage from "@/components/ServiceInfoPage";
 import { buildMetadata } from "@/lib/seo";
 import { faqLinks } from "@/lib/seoContent";
+import { BLUEPRINT_OFFER } from "@/lib/siteFacts";
 
 export const metadata: Metadata = buildMetadata({
   title: "Iconik Pricing",
   description:
-    "A pricing explainer for Iconik's Style Blueprint, what is included, and how the service compares to common personal styling alternatives.",
+    "The ICONIK Style Blueprint costs ₹2,699: a 30-minute stylist consultation, 20 outfit formulas, your colour palette and face-shape guidance.",
   path: "/pricing",
 });
+
+const price = `₹${BLUEPRINT_OFFER.currentPriceInr.toLocaleString("en-IN")}`;
 
 export default function PricingPage() {
   return (
     <ServiceInfoPage
       title="Iconik Pricing"
-      summary="Pricing matters most when it is tied to scope. A useful pricing page should make clear what the service is, what is included, and what problem the buyer is actually paying to solve."
+      summary={`The ICONIK Style Blueprint costs ${price}, paid once. It includes a ${BLUEPRINT_OFFER.consultationMinutes}-minute video consultation with your stylist and a written Blueprint with ${BLUEPRINT_OFFER.outfitFormulas} outfit formulas, your colour palette and your body and face-shape guides, delivered within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after the consultation.`}
       breadcrumbs={[
         { name: "Home", href: "/" },
         { name: "Pricing", href: "/pricing" },
       ]}
-      entityNote="Iconik's core India offer is the Style Blueprint: a one-time, analysis-led styling service designed to create foundational clarity before more shopping or subscription spend."
+      entityNote={`${price} is the price for clients in India. Clients outside India can book the same Blueprint through the global page, and there is a separate Blueprint for men.`}
       sections={[
         {
-          title: "What the Core Offer Includes",
+          title: `What ${price} Includes`,
           bullets: [
-            "Silhouette and proportion analysis",
-            "Colour guidance based on undertone and harmony",
-            "Face-shape direction for necklines and accessories",
-            "Outfit formulas and a what-to-avoid guide",
+            `A ${BLUEPRINT_OFFER.consultationMinutes}-minute video consultation with your ICONIK stylist`,
+            `${BLUEPRINT_OFFER.outfitFormulas} complete outfit formulas built for your body, colouring and lifestyle`,
+            "Your colour palette, based on your undertone and depth",
+            "Your body shape guide: the cuts, lengths and silhouettes that suit you, and what to avoid",
+            "Your face-shape guide for necklines, earrings and eyewear",
+            "Free hairstyle, makeup, hair colour and glasses guides",
           ],
         },
         {
-          title: "Why This Pricing Position Exists",
+          title: "Delivery, Revisions and Refunds",
           paragraphs: [
-            "Iconik sits between generic styling apps and high-touch in-person styling. The offer is priced as a one-time strategic framework rather than a long-term retainer.",
-            "For many users, that is the most efficient purchase because it fixes the underlying decision problem before they spend more on clothes.",
+            `Your Blueprint arrives within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after your consultation.`,
+            BLUEPRINT_OFFER.revisionPromise,
+            BLUEPRINT_OFFER.refundSummary,
+          ],
+        },
+        {
+          title: "Other Markets and Services",
+          bullets: [
+            "Outside India: the global Blueprint is priced in US dollars on the global page.",
+            "For men: the ICONIK Blueprint for men has its own consultation and outfit set.",
           ],
         },
         {
           title: "When a Blueprint Is the Better Buy",
           paragraphs: [
-            "If your main problem is uncertainty, not item scarcity, the best first purchase is clarity. Once your framework is clear, shopping becomes cheaper and faster.",
+            "If your main problem is not knowing what suits you, rather than not owning enough clothes, the best first purchase is clarity. Once you know your cuts and colours, shopping becomes faster and you waste less on pieces you never wear.",
           ],
         },
       ]}
-      relatedLinks={faqLinks}
-      ctaTitle="Want the current market-specific offer?"
-      ctaDescription="See the checkout flow for your market or start with the main India service page if you want the quickest path."
+      relatedLinks={[
+        { href: "/globe", title: "Global Blueprint", description: "The same Blueprint for clients outside India, priced in US dollars." },
+        { href: "/man", title: "ICONIK for Men", description: "Personal styling for Indian men, with outfits, colours, fit and grooming." },
+        { href: "/refund-policy", title: "Refund Policy", description: "The cancellation and refund cases in full." },
+        ...faqLinks.slice(0, 3),
+      ]}
+      ctaTitle={`Get your Style Blueprint for ${price}`}
+      ctaDescription={`Book your ${BLUEPRINT_OFFER.consultationMinutes}-minute consultation and receive your Blueprint within ${BLUEPRINT_OFFER.deliveryWorkingDays} working days after it.`}
     />
   );
 }

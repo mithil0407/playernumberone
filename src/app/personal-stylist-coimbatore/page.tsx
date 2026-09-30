@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Personal Stylist in Coimbatore — Iconik Style Blueprint",
     description: "Science-backed personal styling for Coimbatore women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-coimbatore",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Coimbatore — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Coimbatore — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

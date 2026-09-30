@@ -4,7 +4,7 @@ import { SeoTeachingVisual } from "@/components/seo/SeoEditorial";
 
 export const metadata: Metadata = {
   title: "What Colours Make You Look Slimmer? — India Guide",
-  description: "What colours make you look slimmer? The complete India guide — dark colours, vertical effects, monochromatic dressing, and how undertone affects whether slimming colours actually work for your skin.",
+  description: "Which colours make you look slimmer? Dark shades, vertical lines and single-colour outfits, and how your undertone changes which slimming colours work.",
   keywords: "what colours make you look slimmer India, slimming colours Indian women, colours to look thin India, dark colours to look slim, how to look slimmer with clothes India",
   alternates: { canonical: "https://www.iconik.pro/faq/what-colours-make-you-look-slimmer-india" },
   openGraph: {
@@ -35,7 +35,7 @@ const jsonLd = {
         "name": "Iconik",
         "logo": { "@type": "ImageObject", "url": "https://www.iconik.pro/logopayment.webp" },
       },
-      "datePublished": "2025-01-01",
+      "datePublished": "2026-03-23",
       "dateModified": "2026-07-24",
       "image": "https://www.iconik.pro/images/seo/colours-look-slimmer-monochromatic-iconik.webp",
       "mainEntityOfPage": "https://www.iconik.pro/faq/what-colours-make-you-look-slimmer-india",

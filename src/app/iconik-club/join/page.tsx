@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, Shield, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -47,8 +46,6 @@ type SampleItem = {
 };
 
 function JoinPageContent() {
-  const searchParams = useSearchParams();
-
   const [name,  setName]  = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -69,14 +66,18 @@ function JoinPageContent() {
     return () => { if (script.parentNode) script.parentNode.removeChild(script); };
   }, []);
 
+  // Read the prefill from the URL after mount rather than via useSearchParams,
+  // which forced the whole page behind a Suspense fallback and left crawlers
+  // with an empty "Loading…" shell.
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
     const pName  = searchParams.get('name');
     const pEmail = searchParams.get('email');
     const pPhone = searchParams.get('phone');
     if (pName)  setName(pName);
     if (pEmail) setEmail(pEmail);
     if (pPhone) setPhone(pPhone);
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     fetch('/api/iconik-club/items/sample')
@@ -475,16 +476,5 @@ function JoinPageContent() {
 }
 
 export default function IconikClubJoinPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-luxury-warm-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-full border-t-2 border-r-2 border-luxury-accent animate-spin mx-auto mb-4" />
-          <p className="luxury-body text-sm text-luxury-charcoal/70">Loading…</p>
-        </div>
-      </div>
-    }>
-      <JoinPageContent />
-    </Suspense>
-  );
+  return <JoinPageContent />;
 }

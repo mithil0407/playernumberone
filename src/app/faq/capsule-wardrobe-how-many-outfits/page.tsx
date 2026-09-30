@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "How Many Outfits Can a Capsule Wardrobe Make? — Iconik",
     description: "The honest maths of capsule wardrobe outfit count — and why the '300 outfits from 33 pieces' claim is misleading.",
     url: "https://www.iconik.pro/faq/capsule-wardrobe-how-many-outfits",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Capsule wardrobe outfit count India — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Capsule wardrobe outfit count India — Iconik" }],
   },
 };
 

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "Personal Stylist in Kolkata — Iconik Style Blueprint",
     description: "Science-backed personal styling for Kolkata women. Blueprint delivered within 5 working days after consultation.",
     url: "https://www.iconik.pro/personal-stylist-kolkata",
-    images: [{ url: "/og-image.webp", width: 1200, height: 630, alt: "Personal stylist in Kolkata — Iconik" }],
+    images: [{ url: "/og-image.webp", width: 1200, height: 800, alt: "Personal stylist in Kolkata — Iconik" }],
   },
   twitter: {
     card: "summary_large_image",

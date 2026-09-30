@@ -3,7 +3,7 @@ import { buildMetadata } from "@/lib/seo";
 export const metadata = buildMetadata({
   title: "Iconik Global Blueprint",
   description:
-    "A global styling funnel for international clients who want Iconik's blueprint-led styling process.",
+    "Online personal styling for women outside India: a 30-minute video consultation, then a Style Blueprint with 20 outfits and your colour palette. $97.",
   path: "/globe",
 });
 

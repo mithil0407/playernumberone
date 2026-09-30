@@ -6,7 +6,7 @@ import { faqLinks, styleGuideLinks } from "@/lib/seoContent";
 export const metadata: Metadata = buildMetadata({
   title: "Who Is Iconik For",
   description:
-    "A decision page for users trying to understand whether Iconik is the right fit for their wardrobe goals, body concerns, and styling stage.",
+    "Is ICONIK right for you? Who the Style Blueprint helps most, the wardrobe problems it solves, and when a different kind of styling help fits better.",
   path: "/who-is-iconik-for",
 });
 

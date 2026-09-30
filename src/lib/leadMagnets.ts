@@ -157,7 +157,7 @@ export const leadMagnetDefinitions: LeadMagnetDefinition[] = [
     pillar: "Geometric Silhouette Profiling",
     physicalAction: "Measure height, natural waist-to-floor, and inseam.",
     h1: "Am I long-waisted or long-legged?",
-    seoTitle: "Long-Waisted or Long-Legged Test: Free Proportion Code",
+    seoTitle: "Long-Waisted or Long-Legged? Free Proportion Test",
     description: "Use three guided measurements to learn whether you are long-waisted, balanced, or long-legged and what rise, tuck, and crop lengths work best.",
     primaryKeyword: "long waisted or short waisted test",
     secondaryKeywords: ["how to find my body proportions", "what rise jeans for my body"],
