@@ -123,7 +123,7 @@ export type BuildArticleMetadataOptions = Omit<
 > & {
   datePublished: string;
   dateModified: string;
-  authorPath?: string;
+  authorPath?: string | null;
 };
 
 export function buildArticleMetadata({
@@ -137,7 +137,7 @@ export function buildArticleMetadata({
     type: "article",
     publishedTime: datePublished,
     modifiedTime: dateModified,
-    authors: [authorPath],
+    authors: authorPath ? [authorPath] : undefined,
   });
 }
 
