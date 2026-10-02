@@ -145,8 +145,10 @@ export default function RegisteredSeoArticle({
           <>
             <InstagramReelsForArticle articlePath={article.path} />
             <SeoFaqSection faqs={faqs} />
-            <SeoAuthorReview>
-              Iconik guidance combines proportion, colour relationships, garment construction, and the practical realities of Indian wardrobes. Recommendations are reviewed before publication and updated when the underlying guidance changes.
+            <SeoAuthorReview reviewed={Boolean(article.reviewer)}>
+              {article.reviewer
+                ? "Iconik guidance combines proportion, colour relationships, garment construction, and the practical realities of Indian wardrobes. Recommendations are reviewed before publication and updated when the underlying guidance changes."
+                : "Stylist review pending. This guide is attributed to Jasmine Rana, Co-Founder and Head Stylist; a reviewer credit will be added after approval."}
             </SeoAuthorReview>
             <SeoRelatedGuides links={article.related} />
             {beforeFooter}
