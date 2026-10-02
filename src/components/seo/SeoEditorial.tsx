@@ -223,20 +223,18 @@ export function SeoAuthorReview({
   name = FOUNDERS[0].name,
   role = FOUNDERS[0].title,
   profileHref = FOUNDERS[0].linkedIn,
-  reviewed = true,
   children,
 }: {
   name?: string;
   role?: string;
   profileHref?: string;
-  reviewed?: boolean;
   children?: ReactNode;
 }) {
   return (
     <aside className="seo-author-review">
       <div aria-hidden="true" className="seo-author-monogram">{name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2)}</div>
       <div>
-        <p className="seo-eyebrow">{reviewed ? "Expert review" : "Article author"}</p>
+        <p className="seo-eyebrow">Expert review</p>
         <h2>{name}</h2>
         <p className="seo-author-role">{role}</p>
         {children && <div className="seo-author-copy">{children}</div>}

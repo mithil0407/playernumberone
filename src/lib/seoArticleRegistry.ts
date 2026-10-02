@@ -66,7 +66,7 @@ const records = {
     description:
       "Choose a Diwali outfit by body type with practical saree, kurta, lehenga and fusion formulas, plus fabric, fit and occasion checks for Indian celebrations.",
     heroSummary:
-      "A Diwali outfit should work for the celebration you are attending and the proportions you enjoy creating. Use garment lines, fabric and fit to make a considered choice.",
+      "A Diwali outfit by body type should work for the celebration you are attending and the proportions you enjoy creating. Use garment lines, fabric and fit to make a considered choice.",
     keywords: [
       "Diwali outfit by body type",
       "Diwali outfits for Indian women",
@@ -86,6 +86,7 @@ const records = {
       { href: "#choose-occasion", label: "Choose the celebration" },
       { href: "#shape-choice", label: "Use shape as a guide" },
       { href: "#garment-formulas", label: "Try garment formulas" },
+      { href: "#library-looks", label: "Choose complete outfits" },
       { href: "#fabric-climate", label: "Choose fabric for climate" },
       { href: "#colour-and-fusion", label: "Add colour and fusion" },
       { href: "#shop-and-check", label: "Shop and check the fit" },
@@ -100,11 +101,11 @@ const records = {
       src: "/seo/style-guides/diwali-outfit-body-type.webp",
       ogSrc: "/seo/style-guides/diwali-outfit-body-type-og.webp",
       isComposed: true,
-      alt: "Illustration of four Indian women wearing a saree, kurta set, lehenga and festive tailoring for different Diwali settings.",
+      alt: "Illustrated card compares four festive fabrics and asks whether an outfit suits sitting, travel and a secure hem.",
       width: 1600,
       height: 2000,
-      title: "One Festival, Many Outfit Lines",
-      disclosure: "Illustration. Fictional people, not ICONIK clients.",
+      title: "Choose the Event Before the Outfit",
+      disclosure: "Illustration: choose fabric and silhouette after checking the event, movement and hem security.",
     },
     growth: {
       contentCluster: "indian_occasion_wear",

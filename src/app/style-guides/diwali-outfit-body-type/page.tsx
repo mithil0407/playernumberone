@@ -83,17 +83,17 @@ export default function DiwaliOutfitBodyTypePage() {
           <table>
             <thead><tr><th>Plan</th><th>Easy starting outfit</th><th>Check before leaving</th></tr></thead>
             <tbody>
-              <tr><td>Home puja</td><td>Saree or kurta set with a secure pallu or dupatta</td><td>Sit on the floor; keep loose hems clear of lamps</td></tr>
-              <tr><td>Visits across town</td><td>Light salwar suit, straight kurta set or soft anarkali</td><td>Walk, climb stairs and sit in a car</td></tr>
-              <tr><td>Evening dinner</td><td>Lehenga, dressy saree, sharara or fusion separates</td><td>Try the full outfit after dinner, including footwear</td></tr>
-              <tr><td>Office party</td><td>Festive jacket, blouse or kurta with tailored trousers</td><td>Match the invitation and your workplace</td></tr>
+              <tr><td>Home puja</td><td>Mustard silk kurta, trousers and tissue dupatta</td><td>Sit on the floor; keep loose hems clear of lamps</td></tr>
+              <tr><td>Visits across town</td><td>Rust block-print kurta and white palazzos</td><td>Walk, climb stairs and sit in a car</td></tr>
+              <tr><td>Evening dinner</td><td>Sea-green kurta and sharara or a pre-draped satin saree</td><td>Try the full outfit after dinner, including footwear</td></tr>
+              <tr><td>Office party</td><td>Red tailored suit or blue waistcoat and cream trousers</td><td>Match the invitation and your workplace</td></tr>
             </tbody>
           </table>
         </div>
         <p>
           If you need one outfit for several stops, begin with a comfortable base and change one
-          element: jewellery, dupatta, jacket or footwear. A neatly finished kurta and trousers
-          can feel relaxed for a home visit and more polished with an embroidered layer for dinner.
+          element: jewellery, dupatta, jacket or footwear. The mustard silk kurta set below uses
+          a tissue dupatta for shine while keeping the base easy to move in.
         </p>
       </section>
 
@@ -117,11 +117,11 @@ export default function DiwaliOutfitBodyTypePage() {
           <p>Where does this outfit widen, narrow, and stop? Then ask whether those points make the complete look feel intentional to you.</p>
         </SeoInsightCard>
         <SeoTeachingVisual
-          src="/images/seo/diwali-outfit-fabric-line-comparison-iconik.webp"
-          alt="Illustration of one Indian woman in two festive kurta sets showing how fabric volume and dupatta direction alter the outfit line."
-          caption="Illustration: changing fabric volume and dupatta direction changes the outline on the same body; neither version is a rule."
-          width={900}
-          height={1350}
+          src="/images/seo/diwali-four-point-fit-check-iconik.webp"
+          alt="Illustrated four-point garment check marking shoulder, waist, hem and movement, with stand, sit, walk and reach tests."
+          caption="Illustration: check shoulder, waist, hem and movement in the complete outfit before relying on a shape label."
+          width={1000}
+          height={1500}
         />
       </section>
 
@@ -140,46 +140,67 @@ export default function DiwaliOutfitBodyTypePage() {
           like that shape. Compare a narrow pallu, a diagonal fall and an open shoulder drape in
           the same mirror and light. For more detail, use the <a href="/style-guides/saree-draping-body-type">saree draping guide</a>.
         </p>
-        <SeoTeachingVisual
-          src="/images/seo/diwali-saree-pallu-directions-iconik.webp"
-          alt="Illustration comparing three pallu directions on the same Indian woman to show how vertical, diagonal and open drapes change visual emphasis."
-          caption="Illustration: compare pallu direction on the same saree before changing fabric or blouse; the line often matters more than the shape label."
-          width={1200}
-          height={800}
-        />
         <h3>Kurta or salwar: shoulder + hem + bottom width</h3>
         <p>
-          A straight kurta with a clean shoulder and side slits is easy to restyle. Try it with
-          straight trousers for one continuous line, or a sharara for movement and greater width
-          below. A shorter kurta exposes more of a wide bottom; a longer hem makes the kurta the
-          main shape. If the dupatta is heavily worked, let it be the focal point and keep the
-          kurta surface calmer. The <a href="/style-guides/salwar-kameez-body-type">salwar kameez guide</a> explores these pairings.
-        </p>
-        <h3>Lehenga or anarkali: waistband + flare + movement</h3>
-        <p>
-          On a lehenga, check the waistband while standing and sitting. A simple skirt with a
-          detailed blouse moves attention upward; a quieter blouse with a patterned skirt moves
-          it lower. For an anarkali, look at where the flare begins and whether the hem clears
-          your shoes. Neither garment belongs to one shape. If you like a full skirt, wear it;
-          adjust the blouse and dupatta until the outfit feels balanced to you.
-        </p>
-        <p>
-          Try two complete outfits before making a decision. For a family visit, pair a rust
-          straight kurta with cream trousers, a light dupatta falling from one shoulder, small
-          earrings and flat juttis. Change the colour to one that suits your wardrobe; the useful
-          part is the controlled line and easy movement. For an evening dinner, try a plain
-          lehenga skirt with a richly worked blouse and a dupatta pinned at one shoulder. This
-          directs the eye toward the face while allowing the skirt to move. If you prefer the
-          skirt as the statement, reverse the embroidery placement. Photograph both versions
-          at the same distance instead of judging them from separate product photographs.
+          The rust block-print straight kurta below uses white palazzos, while the mustard silk
+          kurta uses matching straight trousers and a tissue dupatta. Compare the two outlines:
+          the first gives width below the kurta hem; the second reads as a tonal column. The
+          sea-green kurta and sharara set adds still more movement at the leg. Check how the
+          kurta hem meets each bottom and let the dupatta be the focal point when it carries
+          the most shine. The <a href="/style-guides/salwar-kameez-body-type">salwar kameez guide</a> explores the garment relationships.
         </p>
         <SeoTeachingVisual
-          src="/images/seo/diwali-outfit-formula-flatlay-iconik.webp"
-          alt="Illustrated flat lay of a saree, kurta set and lehenga showing three practical Diwali garment formulas with matching fabrics."
-          caption="Three starting formulas: saree plus fitted blouse, kurta plus trousers and dupatta, or lehenga plus a deliberate blouse contrast."
-          width={1200}
-          height={800}
+          src="/images/seo/diwali-repeat-accent-diagram-iconik.webp"
+          alt="Illustrated ivory kurta set with blue-gold dupatta border repeated in matching juttis, demonstrating one controlled colour accent."
+          caption="Repeat the blue-and-gold dupatta border in the juttis to connect this ivory library look."
+          width={1000}
+          height={1500}
         />
+        <h3>Lehenga or anarkali: waistband + flare + movement</h3>
+        <p>
+          On a lehenga, check the waistband while standing and sitting, and make sure the skirt
+          clears your shoes and any lamps nearby. For an anarkali, look at where the flare begins
+          and whether the hem lets you climb stairs. Neither garment belongs to one shape. If
+          you already own one, take a full-length photograph and assess its shoulder, waist and
+          hem before replacing it.
+        </p>
+        <p>
+          Photograph the options at the same distance rather than judging separate product
+          pictures. The library-backed formulas below show how the top, bottom, layer, shoes
+          and accessories work together. When a library look has no bag or jewellery specified,
+          keep that element unassigned rather than inventing a matching piece.
+        </p>
+      </section>
+
+      <section id="library-looks">
+        <h2>Which complete outfit formulas can you use this Diwali?</h2>
+        <p>
+          These are selected from ICONIK&apos;s curated outfit library. They are starting
+          combinations, subject to the fit, comfort and dress expectations of your event.
+        </p>
+        <SeoTeachingVisual
+          src="/images/seo/diwali-ethnic-outfit-map-iconik.webp"
+          alt="Three labelled flat-lay formulas show rust kurta for visits, mustard silk suit for puja and sea-green sharara for dinner."
+          caption="Three library looks step from a printed visiting outfit to a silk puja set and a tonal dinner sharara."
+          width={1000}
+          height={1500}
+        />
+        <ol>
+          <li><strong>For a relaxed visit:</strong> a rust-and-pink block-print straight kurta over white palazzos, with no layer, gold flat juttis, a tan mini crossbody and jhumkas. The tassel ties lead the eye to the neckline while the plain bottom lets the print stand out.</li>
+          <li><strong>For a home puja:</strong> an ivory embroidered kurta and ivory straight trousers, with a blue-and-gold bordered dupatta over one shoulder, matching embellished juttis and green glass bangles. The dupatta border repeats in the shoes, so the contrast feels considered.</li>
+          <li><strong>For a dressier family gathering:</strong> a mustard silk straight kurta and matching trousers, a gold tissue dupatta with zari border over one shoulder, gold flat juttis and minimal accessories. The tissue is the single shiny layer; check its fall near lamps.</li>
+          <li><strong>For an evening dinner:</strong> a sea-green embroidered kurta with matching sharara trousers, a net dupatta pinned at one shoulder, cream juttis and a gold choker. The full tonal set keeps the flare deliberate, while the pinned dupatta stays in place.</li>
+          <li><strong>For a party with movement:</strong> a royal-blue embellished sleeveless kurta and matching straight trousers, a blue net dupatta over one shoulder, silver heeled sandals and an embellished potli. The scalloped neckline repeats at the hem; test the heel and dupatta together before leaving.</li>
+          <li><strong>For a saree option:</strong> a blush-pink pre-draped satin saree with a gold sequinned short-sleeve jacket over the blouse, embellished heels and no bag specified. The cropped worked layer adds texture above a fluid drape; check that the pallu stays secure when seated.</li>
+          <li><strong>For a corporate Diwali party:</strong> a nude-blush satin blouse, red tailored blazer and matching wide-leg trousers, nude pumps and no bag specified. The suit reads as one continuous red column; the blouse softens the contrast near the face.</li>
+          <li><strong>For a quieter fusion look:</strong> a blue sleeveless peplum waistcoat worn as the top, cream wide-leg trousers, no layer, blue pointed pumps, a white top-handle bag, gold necklace and sunglasses. Matching the shoes to the top ties the two halves together.</li>
+        </ol>
+        <p>
+          The saree and sharara options offer more drape and movement; the kurta sets are easier
+          to repeat across visits. The western looks suit a party whose dress code welcomes
+          them. None is assigned to one body shape: use the garment checkpoints above to
+          adjust fit and visual balance by preference.
+        </p>
       </section>
 
       <section id="fabric-climate">
@@ -202,6 +223,13 @@ export default function DiwaliOutfitBodyTypePage() {
           stand easily. For travel, test the outfit in a chair and with your bag. Beadwork and net
           can catch on jewellery or seating; run a hand over the surface and inspect the lining.
         </p>
+        <SeoTeachingVisual
+          src="/images/seo/diwali-fabric-fall-teaching-card-iconik.webp"
+          alt="Illustrated fabric card compares cotton silk, organza, crepe and tissue, prompting a waist-and-shoulder drape check."
+          caption="Illustration: hold fabric at waist and shoulder to see whether it stands away, falls close and feels comfortable."
+          width={1000}
+          height={1500}
+        />
       </section>
 
       <section id="colour-and-fusion">
@@ -213,19 +241,19 @@ export default function DiwaliOutfitBodyTypePage() {
           Our <a href="/colour-analysis/how-to-find-undertone">undertone guide</a> shows how to compare fabric drapes at home.
         </p>
         <p>
-          A western or fusion outfit can be festive without trying to imitate a lehenga: pair a
-          tailored waistcoat with wide-leg trousers and gold earrings, or a satin skirt with a
-          blouse and a soft Indian dupatta. Keep one focal point. If the jacket is embroidered,
-          choose simpler jewellery; if the clothing is plain, bring attention to the face with
-          earrings or a necklace. Follow your host&apos;s dress expectations when a puja is part of
-          the event.
+          The library&apos;s red trouser suit uses a nude-blush blouse beneath a tailored blazer;
+          its matching wide-leg trousers carry the red line down to the nude pumps. Another library
+          look buttons a blue peplum waistcoat as the top, pairs it with cream wide-leg trousers,
+          and repeats the blue in pointed pumps. These are options for a party or office event
+          whose dress code welcomes western wear. Follow your host&apos;s expectations when a
+          puja is part of the event.
         </p>
         <SeoTeachingVisual
-          src="/images/seo/diwali-outfit-shape-options-iconik.webp"
-          alt="Illustration of four Indian women in lehenga, anarkali, kurta set and festive tailoring showing varied proportions and styling preferences."
-          caption="Illustration: festive dressing can use Indian wear or tailored separates across a wide range of skin depths and body proportions."
-          width={1200}
-          height={800}
+          src="/images/seo/diwali-party-outfit-map-iconik.webp"
+          alt="Three labelled flat lays show a red trouser suit, blue waistcoat outfit and blush pre-draped saree for parties."
+          caption="Three library looks offer distinct party directions: a tailored red column, matched blue accents or a worked jacket over satin drape."
+          width={1000}
+          height={1500}
         />
       </section>
 
