@@ -2,19 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Loader2, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react';
-
-const S = {
-  bg: '#090909',
-  panel: '#0f0f0f',
-  row: '#141414',
-  border: '#1e1e1e',
-  ink: '#f0ebe0',
-  muted: '#6b5f4a',
-  gold: '#c9a96e',
-  success: '#5A8B6A',
-  error: '#C4645A',
-};
+import { ArrowRight, ExternalLink, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react';
+import { Avatar, Button, Pill, Segmented, clientDisplayName, type PillTone } from '@/components/manAdmin/ui';
 
 interface IssueRow {
   id: string;
@@ -52,10 +41,11 @@ function formatDate(value: string | null) {
   return value ? new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
 }
 
-function issueTone(issue: IssueRow) {
-  if (issue.status === 'sent') return S.success;
-  if (issue.status === 'error' || issue.stalled) return S.error;
-  return S.gold;
+function issueTone(issue: IssueRow): PillTone {
+  if (issue.status === 'sent') return 'green';
+  if (issue.status === 'error' || issue.stalled) return 'red';
+  if (issue.progress_stage) return 'blue';
+  return 'accent';
 }
 
 function issueLabel(issue: IssueRow) {
@@ -137,161 +127,129 @@ export default function ManEditAdminPage() {
 
   return (
     <div>
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-7">
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-2" style={{ color: S.muted }}>Iconik Man</p>
-          <h1 className="text-2xl font-semibold" style={{ color: S.ink }}>The Iconik Edit</h1>
-          <p className="text-sm mt-1" style={{ color: S.muted }}>One issue per paid month. Drafts start automatically on each charge; nothing is sent until you review it.</p>
+          <div className="ma-eyebrow mb-2">Monthly subscription</div>
+          <h1 className="ma-title">The ICONIK <em>Edit</em></h1>
+          <p className="ma-muted mt-2 text-[15px]">
+            {stats.active} active
+            {stats.owed > 0 && <> · <span style={{ color: 'var(--ma-accent)', fontWeight: 600 }}>{stats.owed} issue{stats.owed === 1 ? '' : 's'} owed</span></>}
+            {stats.review > 0 && <> · {stats.review} to review</>}
+            {' · '}{stats.sent} sent
+          </p>
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm self-start" style={{ background: S.panel, color: S.muted, border: `1px solid ${S.border}` }}>
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="relative block w-full sm:w-64">
+            <Search size={15} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 ma-faint" />
+            <input
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Search email"
+              className="ma-input"
+              style={{ borderRadius: 999, paddingLeft: 40 }}
+            />
+          </label>
+          <Button iconOnly icon={<RefreshCw size={15} />} onClick={() => void load()} aria-label="Refresh" title="Refresh" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-7">
-        {[
-          ['Active subscribers', stats.active],
-          ['Issues owed', stats.owed],
-          ['Ready to review', stats.review],
-          ['Issues sent', stats.sent],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border p-4" style={{ background: S.panel, borderColor: S.border }}>
-            <p className="text-2xl font-semibold" style={{ color: S.ink }}>{value}</p>
-            <p className="text-[10px] uppercase tracking-[0.18em]" style={{ color: S.muted }}>{label}</p>
-          </div>
-        ))}
-      </div>
-
-      {message && <p className="text-sm mb-4" style={{ color: S.gold }}>{message}</p>}
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: S.muted }} />
-          <input
-            value={search}
-            onChange={event => setSearch(event.target.value)}
-            placeholder="Search email"
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm outline-none"
-            style={{ background: S.panel, border: `1px solid ${S.border}`, color: S.ink }}
-          />
-        </div>
-        <select
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Segmented
           value={status}
-          onChange={event => setStatus(event.target.value)}
-          className="px-4 py-2.5 rounded-lg text-sm outline-none"
-          style={{ background: S.panel, border: `1px solid ${S.border}`, color: S.ink }}
-        >
-          <option value="active">Active</option>
-          <option value="">All statuses</option>
-          <option value="pending">Pending (never paid)</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="paused">Paused</option>
-        </select>
+          onChange={setStatus}
+          options={[
+            { value: 'active', label: 'Active' },
+            { value: 'pending', label: 'Never paid' },
+            { value: 'paused', label: 'Paused' },
+            { value: 'cancelled', label: 'Cancelled' },
+            { value: '', label: 'All' },
+          ]}
+        />
+        <p className="ma-faint text-[13px]">Drafts start on each charge. Nothing is sent until you review it.</p>
       </div>
 
-      <div className="rounded-xl border overflow-x-auto" style={{ background: S.panel, borderColor: S.border }}>
-        <table className="w-full min-w-[860px]">
-          <thead>
-            <tr style={{ background: '#111' }}>
-              {['Subscriber', 'Blueprint', 'Paid / owed', 'Issues', 'Next'].map(head => (
-                <th key={head} className="text-left px-4 py-3 text-[10px] uppercase tracking-[0.18em]" style={{ color: S.muted }}>{head}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading && rows.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-sm" style={{ color: S.muted }}>Loading...</td></tr>
-            ) : rows.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-sm" style={{ color: S.muted }}>No subscribers match.</td></tr>
-            ) : rows.map(row => {
-              const ent = row.entitlement;
-              const open = ent?.issues.find(issue => issue.status !== 'sent');
-              return (
-                <tr key={row.id} className="border-t align-top" style={{ borderColor: S.border }}>
-                  <td className="px-4 py-4">
-                    <p className="text-sm font-medium" style={{ color: S.ink }}>{row.customer_name || row.customer_email}</p>
-                    <p className="text-xs mt-1" style={{ color: S.muted }}>{row.customer_email}</p>
-                    <p className="text-xs mt-1 capitalize" style={{ color: row.status === 'active' ? S.success : S.muted }}>
-                      {row.status}{row.next_billing_at && row.status === 'active' ? ` · renews ${formatDate(row.next_billing_at)}` : ''}
-                    </p>
-                  </td>
-                  <td className="px-4 py-4">
-                    {ent?.blueprint ? (
-                      <a
-                        href={`/man/report/${ent.blueprint.share_token}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-xs"
-                        style={{ color: S.gold }}
-                      >
-                        Sent {formatDate(ent.blueprint.sent_at)} <ExternalLink size={11} />
-                      </a>
-                    ) : (
-                      <p className="text-xs" style={{ color: row.status === 'active' ? S.error : S.muted }}>
-                        {row.status === 'active' ? 'No sent Blueprint' : '—'}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    {ent ? (
+      {message && <div className="mb-4 rounded-2xl px-5 py-3 text-[14px]" style={{ background: 'var(--ma-accent-soft)', color: 'var(--ma-accent)' }}>{message}</div>}
+
+      <div className="ma-card overflow-hidden">
+        {loading && rows.length === 0 ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="ma-row" style={{ gridTemplateColumns: '1fr' }}>
+              <div className="flex items-center gap-3">
+                <div className="ma-skeleton h-[38px] w-[38px] rounded-full" />
+                <div className="flex-1 space-y-2"><div className="ma-skeleton h-3.5 w-48" /><div className="ma-skeleton h-3 w-32" /></div>
+              </div>
+            </div>
+          ))
+        ) : rows.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <div className="ma-h2">No subscribers here</div>
+            <p className="ma-muted mt-1 text-sm">Try another filter.</p>
+          </div>
+        ) : rows.map(row => {
+          const ent = row.entitlement;
+          const open = ent?.issues.find(issue => issue.status !== 'sent');
+          const name = row.customer_name?.trim().includes(' ') ? row.customer_name.trim() : clientDisplayName(row.customer_email);
+          return (
+            <div key={row.id} className="ma-row items-start" style={{ gridTemplateColumns: 'minmax(0,1.3fr) minmax(0,1.6fr) auto' }}>
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar name={name} />
+                <div className="min-w-0">
+                  <div className="truncate text-[15px]" style={{ fontWeight: 600 }}>{name}</div>
+                  <div className="ma-faint truncate text-[13px]">
+                    {row.status === 'active' && row.next_billing_at ? `Renews ${formatDate(row.next_billing_at)}` : row.status.replace(/^\w/, char => char.toUpperCase())}
+                    {ent ? ` · ${ent.paidCharges} paid` : ''}
+                    {ent?.blueprint?.share_token && (
                       <>
-                        <p className="text-sm" style={{ color: S.ink }}>{ent.paidCharges} paid</p>
-                        <p className="text-xs mt-1" style={{ color: ent.owed > 0 ? S.error : S.muted }}>{ent.owed} owed</p>
+                        {' · '}
+                        <a href={`/man/report/${ent.blueprint.share_token}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 underline-offset-2 hover:underline">
+                          Blueprint <ExternalLink size={11} />
+                        </a>
                       </>
-                    ) : <p className="text-xs" style={{ color: S.muted }}>—</p>}
-                  </td>
-                  <td className="px-4 py-4">
-                    {ent?.issues.length ? (
-                      <ul className="space-y-2">
-                        {ent.issues.map(issue => (
-                          <li key={issue.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <Link href={`/man/admin/edit/${issue.id}`} className="text-sm hover:underline" style={{ color: S.ink }}>
-                              #{issue.edit_issue_number} {issue.title || issue.periodLabel || ''}
-                            </Link>
-                            <span className="text-xs inline-flex items-center gap-1" style={{ color: issueTone(issue) }}>
-                              {issue.progress_stage && !issue.stalled && <Loader2 size={11} className="animate-spin" />}
-                              {issueLabel(issue)}
-                            </span>
-                            {(issue.stalled || issue.status === 'error') && (
-                              <button
-                                disabled={Boolean(busy)}
-                                onClick={() => resume(issue)}
-                                className="inline-flex items-center gap-1 text-xs underline disabled:opacity-40"
-                                style={{ color: S.gold }}
-                              >
-                                <RotateCcw size={11} /> Resume
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : <p className="text-xs" style={{ color: S.muted }}>None yet</p>}
-                  </td>
-                  <td className="px-4 py-4">
-                    {row.status !== 'active' || !ent ? null : ent.blockedReason ? (
-                      <p className="text-xs max-w-[180px]" style={{ color: S.muted }}>{ent.blockedReason}</p>
-                    ) : open ? (
-                      <Link href={`/man/admin/edit/${open.id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: '#1e1a14', color: S.gold }}>
-                        Review #{open.edit_issue_number}
-                      </Link>
-                    ) : (
-                      <button
-                        disabled={Boolean(busy)}
-                        onClick={() => createIssue(row, ent.owed <= 0)}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs disabled:opacity-40"
-                        style={{ background: ent.owed > 0 ? S.gold : '#1e1a14', color: ent.owed > 0 ? '#090909' : S.gold }}
-                        title={ent.owed > 0 ? undefined : 'Every paid month already has an issue — this makes an extra one'}
-                      >
-                        {busy === row.id ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-                        {ent.owed > 0 ? `Create Issue ${ent.nextIssueNumber}` : `Extra Issue ${ent.nextIssueNumber}`}
-                      </button>
                     )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    {!ent?.blueprint && row.status === 'active' && <span style={{ color: 'var(--ma-red)' }}> · No sent Blueprint</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5 pt-1.5">
+                {ent?.issues.length ? ent.issues.map(issue => (
+                  <span key={issue.id} className="inline-flex items-center gap-1">
+                    <Link href={`/man/admin/edit/${issue.id}`} title={issue.title || issue.periodLabel || undefined}>
+                      <Pill tone={issueTone(issue)} live={Boolean(issue.progress_stage && !issue.stalled)} dot={!(issue.progress_stage && !issue.stalled)}>
+                        #{issue.edit_issue_number} · {issueLabel(issue)}
+                      </Pill>
+                    </Link>
+                    {(issue.stalled || issue.status === 'error') && (
+                      <Button size="sm" variant="ghost" iconOnly icon={<RotateCcw size={13} />} disabled={Boolean(busy)} loading={busy === issue.id} onClick={() => resume(issue)} aria-label="Resume" title="Resume" />
+                    )}
+                  </span>
+                )) : <span className="ma-faint text-[13px]">No issues yet</span>}
+              </div>
+
+              <div className="flex justify-end">
+                {row.status !== 'active' || !ent ? null : ent.blockedReason ? (
+                  <p className="ma-faint max-w-[200px] text-right text-[12px]">{ent.blockedReason}</p>
+                ) : open ? (
+                  <Link href={`/man/admin/edit/${open.id}`} className="ma-btn ma-btn--dark ma-btn--sm">
+                    Review #{open.edit_issue_number} <ArrowRight size={13} />
+                  </Link>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant={ent.owed > 0 ? 'primary' : 'secondary'}
+                    icon={<Plus size={13} />}
+                    loading={busy === row.id}
+                    disabled={Boolean(busy)}
+                    onClick={() => createIssue(row, ent.owed <= 0)}
+                    title={ent.owed > 0 ? undefined : 'Every paid month already has an issue — this makes an extra one'}
+                  >
+                    {ent.owed > 0 ? `Create issue ${ent.nextIssueNumber}` : `Extra issue ${ent.nextIssueNumber}`}
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
