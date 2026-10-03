@@ -7,7 +7,9 @@
 import { Fragment, useEffect, useState, useMemo, memo, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pencil, X, Loader2, AlertCircle, Copy, Upload, RotateCcw, Download } from 'lucide-react';
+import { Pencil, X, Loader2, AlertCircle, Copy, Upload, RotateCcw, Download, RefreshCw, ImagePlus } from 'lucide-react';
+import { Button as AdminButton, Sheet as AdminSheet } from '@/components/manAdmin/ui';
+import OutfitEditor from '@/components/manAdmin/OutfitEditor';
 import type { ReportData, ClassificationResult } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, ManV2ImageTarget } from '@/lib/manImageGenerator';
 import { SPRING } from '@/lib/reportAnimations';
@@ -3444,28 +3446,26 @@ function OutfitsSection({
               </div>
               {(canSwap || canRequestEdit) && (
                 <div className="mt-7 flex flex-wrap items-center gap-2">
-                  {canSwap && (
-                    <motion.button
-                      onClick={() => startSwap(outfit)}
-                      disabled={isOutfitOperationBusy}
-                      className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                      style={{ background: ACCENT, color: '#fff' }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={SPRING}
-                    >
-                      Reject / Swap
-                    </motion.button>
-                  )}
                   {canRequestEdit && (
                     <button
+                      type="button"
                       onClick={() => startEdit(outfit)}
                       disabled={isOutfitOperationBusy || !canEdit}
-                      className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                      style={{ background: SHELL, color: INK_SOFT, border: `1px solid ${BORDER}` }}
-                      title={editDisabledReason || 'Advanced edit'}
+                      className="ma-btn ma-btn--dark ma-btn--sm"
+                      title={editDisabledReason || 'Edit the pieces of this outfit'}
                     >
-                      Advanced edit
+                      <Pencil size={13} /> Edit outfit
+                    </button>
+                  )}
+                  {canSwap && (
+                    <button
+                      type="button"
+                      onClick={() => startSwap(outfit)}
+                      disabled={isOutfitOperationBusy}
+                      className="ma-btn ma-btn--secondary ma-btn--sm"
+                      title="Replace this outfit from a reference image or your own description"
+                    >
+                      <RefreshCw size={13} /> Replace
                     </button>
                   )}
                   {canRequestEdit && editDisabledReason && !isOutfitOperationBusy && (
@@ -3701,341 +3701,193 @@ function OutfitsSection({
         </section>
       ) : null))}
 
-      <AnimatePresence>
-        {swapNumber && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{ background: 'rgba(27,24,21,0.58)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-          >
-            <motion.div
-              className="w-full max-w-5xl rounded-3xl overflow-hidden flex flex-col"
-              style={{ background: IVORY, maxHeight: '90vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
-              initial={{ opacity: 0, y: 16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.98 }}
-              transition={SPRING}
+      <AdminSheet
+        open={swapNumber !== null}
+        onClose={closeSwap}
+        width={1000}
+        eyebrow={`Replace outfit ${swapNumber ?? ''}`}
+        title="Describe or show the outfit you want instead"
+        footer={(
+          <>
+            <span className="ma-faint mr-auto text-[12px]">Nothing changes until you apply. Applying also makes the new outfit image.</span>
+            <AdminButton variant="ghost" onClick={closeSwap} disabled={draftingSwap || applyingSwap}>Cancel</AdminButton>
+            <AdminButton
+              variant={swapDraft ? 'secondary' : 'dark'}
+              loading={draftingSwap}
+              disabled={applyingSwap || (!swapReason && !swapNotes && !swapInspirationText && !swapImageFile)}
+              onClick={handleDraftSwap}
             >
-              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
-                    Reject / Swap outfit {swapNumber}
-                  </p>
-                  <p className="text-xl leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
-                    Copy your text or image into the report before changing anything.
-                  </p>
-                </div>
-                <button
-                  onClick={closeSwap}
-                  disabled={draftingSwap || applyingSwap}
-                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
-                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div className="p-6 flex-1 min-h-0 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <div className="space-y-4">
-                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
-                    <DataLabel>Rejection reason</DataLabel>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {['Too basic', 'Wrong vibe', 'Bad colour', 'Too formal', 'Too casual', 'Not wearable'].map(reason => (
-                        <button
-                          key={reason}
-                          onClick={() => {
-                            setSwapReason(reason);
-                            setSwapDraft(null);
-                          }}
-                          className="px-3 py-1.5 rounded-full text-[11px] font-medium"
-                          style={{
-                            background: swapReason === reason ? ACCENT : SHELL,
-                            color: swapReason === reason ? '#fff' : INK_SOFT,
-                            border: `1px solid ${swapReason === reason ? ACCENT : BORDER}`,
-                          }}
-                        >
-                          {reason}
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      value={swapReason}
-                      onChange={e => {
-                        setSwapReason(e.target.value);
-                        setSwapDraft(null);
-                      }}
-                      placeholder="Custom reason"
-                      className="w-full rounded-xl px-3 py-2 text-[12px] outline-none"
-                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
-                    />
-                  </div>
-
-                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
-                    <DataLabel>Inspiration image</DataLabel>
-                    <label
-                      className="block rounded-2xl overflow-hidden cursor-pointer"
-                      style={{ background: SHELL, border: `1px dashed ${ACCENT}66`, aspectRatio: '4/3' }}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => handleSwapImageChange(e.target.files?.[0] ?? null)}
-                      />
-                      {swapImagePreview ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={swapImagePreview} alt="Outfit inspiration" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="h-full flex items-center justify-center px-5 text-center">
-                          <span className="text-[12px]" style={{ color: INK_SOFT }}>Upload a screenshot or reference outfit</span>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-
-                  <div className="rounded-2xl p-4" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
-                    <DataLabel>Inspiration text / notes</DataLabel>
-                    <textarea
-                      value={swapInspirationText}
-                      onChange={e => {
-                        setSwapInspirationText(e.target.value);
-                        setSwapDraft(null);
-                      }}
-                      placeholder="Paste the exact outfit to apply. The system will preserve the garments, colours, fit, styling, footwear, and accessories as literally as possible."
-                      className="w-full min-h-[120px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
-                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
-                    />
-                    <textarea
-                      value={swapNotes}
-                      onChange={e => {
-                        setSwapNotes(e.target.value);
-                        setSwapDraft(null);
-                      }}
-                      placeholder="Internal notes, optional"
-                      className="w-full mt-3 min-h-[80px] rounded-xl px-3 py-2 text-[12px] leading-relaxed outline-none resize-none"
-                      style={{ background: IVORY, border: `1px solid ${BORDER}`, color: INK }}
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-2xl p-4 min-h-[420px]" style={{ background: '#fff', border: `1px solid ${BORDER}` }}>
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <DataLabel>Replacement preview</DataLabel>
-                    {swapDraft && (
-                      <span className="text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: SAGE }}>
-                        Replacement ready
-                      </span>
-                    )}
-                  </div>
-
-                  {swapError && (
-                    <div className="flex items-start gap-2 rounded-xl px-3 py-2 mb-4" style={{ background: '#fff2f2', color: OXBLOOD }}>
-                      <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-                      <p className="text-[11px] leading-relaxed">{swapError}</p>
-                    </div>
-                  )}
-
-                  {draftingSwap ? (
-                    <div className="h-full min-h-[300px] flex flex-col items-center justify-center gap-3">
-                      <Loader2 size={22} className="animate-spin" style={{ color: ACCENT }} />
-                      <p className="text-[12px]" style={{ color: INK_SOFT }}>Drafting replacement…</p>
-                    </div>
-                  ) : swapDraft?.parsedPreview ? (
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-2xl leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
-                          {swapDraft.parsedPreview.label}
-                        </p>
-                        <p className="text-[11px] mt-1" style={{ color: INK_SOFT }}>
-                          {swapDraft.parsedPreview.context} · Outfit {swapDraft.parsedPreview.number}
-                        </p>
-                      </div>
-                      {[
-                        ['Top', swapDraft.parsedPreview.top],
-                        ['Bottom', swapDraft.parsedPreview.bottom],
-                        ['Layer', swapDraft.parsedPreview.layer],
-                        ['Footwear', swapDraft.parsedPreview.footwear],
-                        ['Accessories', swapDraft.parsedPreview.accessories],
-                        ['Occasion', swapDraft.parsedPreview.whyItWorks],
-                      ].map(([label, value]) => value && value !== '—' ? (
-                        <div key={label}>
-                          <DataLabel>{label}</DataLabel>
-                          <p className="text-[12px] leading-relaxed" style={{ color: INK }}>{value}</p>
-                        </div>
-                      ) : null)}
-                      {swapDraft.blockingIssues.length > 0 && (
-                        <div className="rounded-xl px-3 py-2" style={{ background: '#fff2f2', color: OXBLOOD }}>
-                          <p className="text-[11px] font-medium mb-1">Blocking QA issue</p>
-                          {swapDraft.blockingIssues.slice(0, 3).map((issue, index) => (
-                            <p key={`${issue.code}-${index}`} className="text-[11px] leading-relaxed">{issue.message}</p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-full min-h-[300px] flex items-center justify-center px-6 text-center">
-                      <p className="text-[12px] leading-relaxed" style={{ color: INK_SOFT }}>
-                        Add inspiration and generate a replacement. The report will not change until you apply it.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
-                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  Apply commits only after the copied outfit image is generated successfully.
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={closeSwap}
-                    disabled={draftingSwap || applyingSwap}
-                    className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
-                  >
-                    Cancel
-                  </button>
-                  <motion.button
-                    onClick={handleDraftSwap}
-                    disabled={draftingSwap || applyingSwap || (!swapReason && !swapNotes && !swapInspirationText && !swapImageFile)}
-                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
-                    whileHover={!draftingSwap && !applyingSwap ? { scale: 1.02 } : undefined}
-                    whileTap={!draftingSwap && !applyingSwap ? { scale: 0.98 } : undefined}
-                    transition={SPRING}
-                  >
-                    {draftingSwap ? <><Loader2 size={13} className="animate-spin" /> Extracting…</> : 'Extract outfit'}
-                  </motion.button>
-                  <motion.button
-                    onClick={handleApplySwap}
-                    disabled={applyingSwap || draftingSwap || !swapDraft || swapDraft.blockingIssues.length > 0}
-                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: ACCENT, color: '#fff' }}
-                    whileHover={!applyingSwap ? { scale: 1.02 } : undefined}
-                    whileTap={!applyingSwap ? { scale: 0.98 } : undefined}
-                    transition={SPRING}
-                  >
-                    {applyingSwap ? <><Loader2 size={13} className="animate-spin" /> Applying + generating image…</> : 'Apply copied outfit'}
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
+              {swapDraft ? 'Draft again' : 'Draft replacement'}
+            </AdminButton>
+            <AdminButton
+              variant="primary"
+              loading={applyingSwap}
+              disabled={draftingSwap || !swapDraft || swapDraft.blockingIssues.length > 0}
+              onClick={handleApplySwap}
+            >
+              {applyingSwap ? 'Applying and making image…' : 'Apply replacement'}
+            </AdminButton>
+          </>
         )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {editingTarget && editingOutfit && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{ background: 'rgba(27,24,21,0.58)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-          >
-            <motion.div
-              className="w-full max-w-3xl rounded-3xl overflow-hidden flex flex-col"
-              style={{ background: IVORY, maxHeight: '86vh', boxShadow: '0 35px 110px -45px rgba(0,0,0,0.55)' }}
-              initial={{ opacity: 0, y: 16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.98 }}
-              transition={SPRING}
-            >
-              <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                <div>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] mb-1" style={{ color: ACCENT_INK }}>
-                    Edit outfit {editingTarget.number}
-                  </p>
-                  <p className="text-xl leading-tight" style={{ fontFamily: SERIF, color: INK, fontWeight: 350 }}>
-                    {editingOutfit.label}
-                  </p>
-                </div>
-                <button
-                  onClick={() => cancelEdit()}
-                  disabled={isOutfitOperationBusy}
-                  className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
-                  style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
-                >
-                  <X size={14} />
-                </button>
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-5">
+            <div>
+              <span className="ma-label">What&apos;s wrong with the current one?</span>
+              <div className="mb-2.5 flex flex-wrap gap-1.5">
+                {['Too basic', 'Wrong vibe', 'Bad colour', 'Too formal', 'Too casual', 'Not wearable'].map(reason => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => { setSwapReason(reason); setSwapDraft(null); }}
+                    className={`ma-pill ${swapReason === reason ? 'ma-pill--accent' : ''}`}
+                    style={{ height: 30, padding: '0 13px', fontSize: 13, cursor: 'pointer', boxShadow: swapReason === reason ? 'inset 0 0 0 1px var(--ma-accent)' : undefined }}
+                  >
+                    {reason}
+                  </button>
+                ))}
               </div>
+              <input
+                value={swapReason}
+                onChange={e => { setSwapReason(e.target.value); setSwapDraft(null); }}
+                placeholder="Or write your own reason"
+                className="ma-input"
+              />
+            </div>
 
-              <div className="p-6 flex-1 min-h-0 flex flex-col gap-3">
-                {editError && (
-                  <div className="flex items-start gap-2 rounded-xl px-3 py-2" style={{ background: '#fff2f2', color: OXBLOOD }}>
-                    <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-                    <p className="text-[11px] leading-relaxed">{editError}</p>
+            <div>
+              <span className="ma-label">Paste the outfit you want</span>
+              <textarea
+                value={swapInspirationText}
+                onChange={e => { setSwapInspirationText(e.target.value); setSwapDraft(null); }}
+                placeholder="e.g. Ecru linen shirt, open collar, sleeves rolled, tucked into navy pleated trousers, brown suede loafers, tan woven belt. Pieces, colours and fit are kept as literally as possible."
+                className="ma-textarea"
+                style={{ minHeight: 120 }}
+              />
+            </div>
+
+            <div>
+              <span className="ma-label">Or a reference image</span>
+              <label
+                className="block cursor-pointer overflow-hidden rounded-2xl"
+                style={{ background: 'var(--ma-surface-2)', border: '1px dashed var(--ma-line)', aspectRatio: swapImagePreview ? undefined : '16 / 7' }}
+              >
+                <input type="file" accept="image/*" className="hidden" onChange={e => handleSwapImageChange(e.target.files?.[0] ?? null)} />
+                {swapImagePreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={swapImagePreview} alt="Outfit reference" className="max-h-64 w-full object-contain" />
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-1.5 px-5 text-center">
+                    <ImagePlus size={20} className="ma-faint" />
+                    <span className="ma-faint text-[13px]">Screenshot or Pinterest look</span>
                   </div>
                 )}
-                <textarea
-                  value={editText}
-                  disabled={isOutfitOperationBusy}
-                  onChange={e => {
-                    setEditText(e.target.value);
-                    if (editError) setEditError(null);
-                  }}
-                  className="font-mono text-[12px] rounded-2xl p-4 resize-none leading-relaxed focus:outline-none flex-1 min-h-[420px]"
-                  style={{ background: '#fff', border: `1px solid ${BORDER}`, color: INK }}
-                  spellCheck={false}
-                />
-              </div>
+              </label>
+            </div>
 
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-6 py-4" style={{ borderTop: `1px solid ${BORDER}` }}>
-                <p className="text-[11px] leading-relaxed" style={{ color: INK_SOFT }}>
-                  {onSaveOutfitText
-                    ? 'Save text clears the photo if garments change. Save + regenerate creates the matching photo.'
-                    : 'Saves this outfit text first, then regenerates only this outfit image.'
-                  }
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => cancelEdit()}
-                    disabled={isOutfitOperationBusy}
-                    className="px-4 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: '#fff', color: INK_SOFT, border: `1px solid ${BORDER}` }}
-                  >
-                    Cancel
-                  </button>
-                  {onSaveOutfitText && (
-                    <motion.button
-                      onClick={handleSaveTextOnly}
-                      disabled={isOutfitOperationBusy || !editText.trim()}
-                      className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                      style={{ background: SHELL, color: INK, border: `1px solid ${BORDER}` }}
-                      whileHover={!isOutfitOperationBusy ? { scale: 1.02 } : undefined}
-                      whileTap={!isOutfitOperationBusy ? { scale: 0.98 } : undefined}
-                      transition={SPRING}
-                    >
-                      {savingText
-                        ? <><Loader2 size={13} className="animate-spin" /> Saving…</>
-                        : 'Save text only'
-                      }
-                    </motion.button>
-                  )}
-                  <motion.button
-                    onClick={handleRegenerate}
-                    disabled={isOutfitOperationBusy || !editText.trim()}
-                    className="flex items-center justify-center gap-2 px-5 py-2 rounded-full text-[12px] font-medium disabled:opacity-40"
-                    style={{ background: ACCENT, color: '#fff' }}
-                    whileHover={!isOutfitOperationBusy ? { scale: 1.02 } : undefined}
-                    whileTap={!isOutfitOperationBusy ? { scale: 0.98 } : undefined}
-                    transition={SPRING}
-                  >
-                    {regenerating
-                      ? <><Loader2 size={13} className="animate-spin" /> Saving + regenerating…</>
-                      : 'Save + regenerate image'
-                    }
-                  </motion.button>
-                </div>
+            <div>
+              <span className="ma-label">Internal note <span className="ma-faint" style={{ fontWeight: 400 }}>· optional, never shown to the client</span></span>
+              <input
+                value={swapNotes}
+                onChange={e => { setSwapNotes(e.target.value); setSwapDraft(null); }}
+                placeholder="Why you changed it"
+                className="ma-input"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-[22px] p-5" style={{ background: 'var(--ma-surface-2)', border: '1px solid var(--ma-line-2)', minHeight: 420 }}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <span className="ma-eyebrow">Replacement</span>
+              {swapDraft && swapDraft.blockingIssues.length === 0 && <span className="ma-pill ma-pill--green"><span className="ma-pill__dot" />Ready to apply</span>}
+            </div>
+
+            {swapError && (
+              <div className="mb-4 rounded-xl px-3.5 py-2.5 text-[13px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>{swapError}</div>
+            )}
+
+            {draftingSwap ? (
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-3">
+                <Loader2 size={22} className="animate-spin" style={{ color: 'var(--ma-accent)' }} />
+                <p className="ma-faint text-[13px]">Drafting the replacement…</p>
               </div>
-            </motion.div>
-          </motion.div>
+            ) : swapDraft?.parsedPreview ? (
+              <div>
+                <p className="ma-serif text-[24px] leading-tight" style={{ color: 'var(--ma-ink)' }}>{swapDraft.parsedPreview.label}</p>
+                <p className="ma-faint mt-1 text-[12px]">{swapDraft.parsedPreview.context} · Outfit {swapDraft.parsedPreview.number}</p>
+                <dl className="mt-5 space-y-3">
+                  {[
+                    ['Top', swapDraft.parsedPreview.top],
+                    ['Layer', swapDraft.parsedPreview.layer],
+                    ['Bottom', swapDraft.parsedPreview.bottom],
+                    ['Footwear', swapDraft.parsedPreview.footwear],
+                    ['Accessories', swapDraft.parsedPreview.accessories],
+                    ['Occasion', swapDraft.parsedPreview.whyItWorks],
+                  ].map(([label, value]) => value && value !== '—' ? (
+                    <div key={label}>
+                      <dt className="ma-faint text-[12px]">{label}</dt>
+                      <dd className="text-[14px] leading-relaxed">{value}</dd>
+                    </div>
+                  ) : null)}
+                </dl>
+                {swapDraft.blockingIssues.length > 0 && (
+                  <div className="mt-5 rounded-xl px-3.5 py-2.5 text-[13px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>
+                    <p className="mb-1 font-semibold">Fix before applying</p>
+                    {swapDraft.blockingIssues.slice(0, 3).map((issue, index) => (
+                      <p key={`${issue.code}-${index}`}>{issue.message}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex min-h-[320px] items-center justify-center px-8 text-center">
+                <p className="ma-faint text-[14px] leading-relaxed">Give a reason, paste an outfit or add a reference, then draft. You&apos;ll see the new outfit here before anything changes.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </AdminSheet>
+
+      <AdminSheet
+        open={Boolean(editingTarget && editingOutfit)}
+        onClose={() => cancelEdit()}
+        width={940}
+        eyebrow={editingTarget ? `Edit outfit ${editingTarget.number}` : 'Edit outfit'}
+        title={editingOutfit?.label ?? ''}
+        footer={(
+          <>
+            <span className="ma-faint mr-auto text-[12px]">
+              {onSaveOutfitText ? 'Saving text alone clears this photo if the pieces changed.' : 'Saves the text, then remakes only this outfit image.'}
+            </span>
+            <AdminButton variant="ghost" onClick={() => cancelEdit()} disabled={isOutfitOperationBusy}>Cancel</AdminButton>
+            {onSaveOutfitText && (
+              <AdminButton variant="secondary" loading={savingText} disabled={isOutfitOperationBusy || !editText.trim()} onClick={handleSaveTextOnly}>
+                Save text only
+              </AdminButton>
+            )}
+            <AdminButton variant="primary" loading={regenerating} disabled={isOutfitOperationBusy || !editText.trim()} onClick={handleRegenerate}>
+              {regenerating ? 'Saving and making image…' : 'Save and remake image'}
+            </AdminButton>
+          </>
         )}
-      </AnimatePresence>
+      >
+        {editError && (
+          <div className="mb-4 rounded-xl px-3.5 py-2.5 text-[13px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>{editError}</div>
+        )}
+        {editingOutfit && (
+          <OutfitEditor
+            value={editText}
+            disabled={isOutfitOperationBusy}
+            onChange={next => { setEditText(next); if (editError) setEditError(null); }}
+            imageUrl={brokenOutfitImages[editingOutfit.identityKey] ? null : imageOverrides[editingOutfit.identityKey] ?? outfitImageUrls?.[editingOutfit.number - 1] ?? null}
+            palette={[
+              ...(cls.colour.primary_palette ?? []),
+              ...(cls.colour.neutral_base_colours ?? []),
+              ...(cls.colour.accent_colours ?? []),
+            ].slice(0, 12)}
+          />
+        )}
+      </AdminSheet>
     </>
   );
 }

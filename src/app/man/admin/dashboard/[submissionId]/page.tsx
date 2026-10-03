@@ -3,8 +3,8 @@
 import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowLeft, CheckCircle, ExternalLink, Loader2, Upload, Zap } from 'lucide-react';
-import { reviewTheme as S } from '@/components/AdminReviewWorkspace';
+import { ArrowLeft, Check, ExternalLink, Loader2, RotateCcw, Sparkles, Upload } from 'lucide-react';
+import { Avatar, Button, ReportStatusPill, clientDisplayName } from '@/components/manAdmin/ui';
 
 interface ManReport {
   id: string;
@@ -16,6 +16,7 @@ interface ManReport {
   error_message: string | null;
   section_approvals: Record<string, boolean> | null;
   created_at: string;
+  updated_at?: string | null;
 }
 
 interface ManSubmission {
@@ -58,12 +59,12 @@ interface ManSubmission {
 }
 
 function fmt(value: string | null | undefined) {
-  if (!value) return '-';
+  if (!value) return null;
   return value.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 }
 
 function fmtMulti(value: string | null | undefined) {
-  if (!value) return '-';
+  if (!value) return null;
   try {
     const parsed = JSON.parse(value);
     if (Array.isArray(parsed)) return parsed.map(item => fmt(String(item))).join(', ');
@@ -73,60 +74,33 @@ function fmtMulti(value: string | null | undefined) {
   return value.split(',').map(item => fmt(item.trim())).join(', ');
 }
 
-function stageLabel(stage: string | null) {
-  return stage ? stage.replace(/_/g, ' ') : 'Generating report';
+function getMissingPhotoLabels(submission: Pick<ManSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
+  return [
+    submission.photo_fullbody_url ? null : 'full body photo',
+    submission.photo_headshot_url ? null : 'headshot photo',
+  ].filter(Boolean) as string[];
 }
 
-function statusTone(status: string): 'muted' | 'success' | 'error' | 'gold' | 'slate' {
-  if (status === 'sent' || status === 'approved') return 'success';
-  if (status === 'error') return 'error';
-  if (status === 'generating' || status === 'draft_ready') return 'gold';
-  if (status === 'in_review') return 'slate';
-  return 'muted';
-}
-
-function toneColor(tone: ReturnType<typeof statusTone>) {
-  if (tone === 'success') return S.success;
-  if (tone === 'error') return S.error;
-  if (tone === 'gold') return S.gold;
-  if (tone === 'slate') return S.slate;
-  return S.muted;
-}
-
-function DataRow({ label, value }: { label: string; value: string }) {
+/** Only answered questions are shown; empty answers are noise when styling. */
+function AnswerGroup({ title, rows }: { title: string; rows: Array<[string, string | null]> }) {
+  const answered = rows.filter(([, value]) => value);
+  if (answered.length === 0) return null;
   return (
-    <div className="grid md:grid-cols-[180px_1fr] gap-3 py-2.5 border-b" style={{ borderColor: S.rowBorder }}>
-      <span className="iconik-micro" style={{ color: S.muted }}>{label}</span>
-      <span className="luxury-body text-sm whitespace-pre-wrap" style={{ color: S.ink, fontWeight: 300 }}>{value}</span>
+    <div className="ma-card ma-card--flat p-6">
+      <div className="ma-eyebrow mb-3">{title}</div>
+      <dl>
+        {answered.map(([label, value]) => (
+          <div key={label} className="grid gap-1 py-2.5 sm:grid-cols-[170px_1fr] sm:gap-4" style={{ borderTop: '1px solid var(--ma-line-2)' }}>
+            <dt className="ma-faint text-[13px]">{label}</dt>
+            <dd className="text-[14px] whitespace-pre-wrap">{value}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border p-6" style={{ background: S.card, borderColor: S.border }}>
-      <div className="iconik-micro mb-5" style={{ color: S.muted }}>{title}</div>
-      {children}
-    </div>
-  );
-}
-
-function ContextCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border p-4" style={{ background: S.bg, borderColor: S.rowBorder }}>
-      <p className="iconik-micro mb-2" style={{ color: S.muted }}>{label}</p>
-      <p className="luxury-body text-sm leading-6" style={{ color: S.ink, fontWeight: 300 }}>{value}</p>
-    </div>
-  );
-}
-
-function PhotoUploadCard({
-  label,
-  field,
-  url,
-  submissionId,
-  onUploaded,
-}: {
+function PhotoCard({ label, field, url, submissionId, onUploaded }: {
   label: string;
   field: 'photo_headshot' | 'photo_fullbody';
   url: string | null;
@@ -141,22 +115,15 @@ function PhotoUploadCard({
     if (!file) return;
     setUploading(true);
     setError('');
-
     try {
       const formData = new FormData();
       formData.append(field, file);
-
-      const res = await fetch(`/api/man-admin/submissions/${submissionId}`, {
-        method: 'PATCH',
-        body: formData,
-      });
+      const res = await fetch(`/api/man-admin/submissions/${submissionId}`, { method: 'PATCH', body: formData });
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error ?? 'Photo upload failed');
         return;
       }
-
       onUploaded(data.submission);
     } catch {
       setError('Photo upload failed. Please try again.');
@@ -169,165 +136,52 @@ function PhotoUploadCard({
 
   return (
     <div
-      className="rounded-2xl border overflow-hidden"
-      style={{ background: S.card, borderColor: dragging ? S.gold : S.border }}
-      onDragEnter={event => {
-        event.preventDefault();
-        setDragging(true);
+      className="group relative overflow-hidden rounded-[22px]"
+      style={{
+        aspectRatio: '3 / 4',
+        background: dragging ? 'var(--ma-accent-soft)' : 'var(--ma-surface)',
+        border: `1px ${url ? 'solid' : 'dashed'} ${dragging ? 'var(--ma-accent)' : 'var(--ma-line)'}`,
       }}
-      onDragOver={event => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'copy';
-      }}
-      onDragLeave={event => {
-        event.preventDefault();
-        setDragging(false);
-      }}
+      onDragEnter={event => { event.preventDefault(); setDragging(true); }}
+      onDragOver={event => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }}
+      onDragLeave={event => { event.preventDefault(); setDragging(false); }}
       onDrop={event => {
         event.preventDefault();
         setDragging(false);
         void uploadFile(event.dataTransfer.files?.[0] ?? null);
       }}
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b" style={{ borderColor: S.rowBorder }}>
-        <div className="flex items-center gap-2">
-          <p className="iconik-micro" style={{ color: S.muted }}>{label}</p>
-          {url && <CheckCircle size={13} style={{ color: S.success }} />}
-        </div>
-        <label
-          htmlFor={inputId}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs luxury-body cursor-pointer transition"
-          style={{ background: S.bg, color: S.muted, border: `1px solid ${S.border}` }}
-        >
-          {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
-          {url ? 'Replace' : 'Upload'}
-        </label>
-        <input
-          id={inputId}
-          type="file"
-          accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
-          className="hidden"
-          disabled={uploading}
-          onChange={event => {
-            void uploadFile(event.target.files?.[0] ?? null);
-            event.currentTarget.value = '';
-          }}
-        />
-      </div>
-
+      <input
+        id={inputId}
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
+        className="hidden"
+        disabled={uploading}
+        onChange={event => {
+          void uploadFile(event.target.files?.[0] ?? null);
+          event.currentTarget.value = '';
+        }}
+      />
       {url ? (
-        <img src={url} alt={label} className="w-full object-cover" style={{ maxHeight: 320 }} />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={label} className="h-full w-full object-cover" />
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-3" style={{ background: 'linear-gradient(transparent, rgba(17,19,21,0.55))' }}>
+            <span className="text-[13px] font-semibold text-white">{label}</span>
+            <label htmlFor={inputId} className="ma-btn ma-btn--secondary ma-btn--sm cursor-pointer">
+              {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+              Replace
+            </label>
+          </div>
+        </>
       ) : (
-        <label
-          htmlFor={inputId}
-          className="h-48 flex flex-col items-center justify-center gap-3 text-sm cursor-pointer luxury-body"
-          style={{ color: dragging ? S.gold : S.muted, background: dragging ? `${S.gold}10` : S.bg }}
-        >
-          {uploading ? <Loader2 size={22} className="animate-spin" /> : <Upload size={22} />}
-          <span>{uploading ? 'Uploading...' : dragging ? 'Release to upload' : 'Drag and drop or click to upload'}</span>
+        <label htmlFor={inputId} className="flex h-full cursor-pointer flex-col items-center justify-center gap-3 p-6 text-center">
+          {uploading ? <Loader2 size={22} className="animate-spin ma-faint" /> : <Upload size={22} className="ma-faint" />}
+          <span className="text-[14px] font-semibold">{label}</span>
+          <span className="ma-faint text-[13px]">{uploading ? 'Uploading…' : dragging ? 'Release to upload' : 'Drop a photo or click'}</span>
         </label>
       )}
-
-      {error && (
-        <p className="m-3 rounded-xl px-3 py-2 text-xs luxury-body" style={{ color: S.error, background: `${S.error}12`, border: `1px solid ${S.error}25` }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function getMissingPhotoLabels(submission: Pick<ManSubmission, 'photo_fullbody_url' | 'photo_headshot_url'>) {
-  return [
-    submission.photo_fullbody_url ? null : 'full body photo',
-    submission.photo_headshot_url ? null : 'headshot photo',
-  ].filter(Boolean) as string[];
-}
-
-function ReportStatusBanner({ report, onGenerate, generating, canGenerate, missingPhotoText }: {
-  report: ManReport | null;
-  onGenerate: () => void;
-  generating: boolean;
-  canGenerate: boolean;
-  missingPhotoText: string;
-}) {
-  if (!report) {
-    return (
-      <div className="rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ background: S.card, borderColor: S.border }}>
-        <div>
-          <p className="luxury-body text-sm" style={{ color: S.ink, fontWeight: 500 }}>No report generated yet</p>
-          <p className="luxury-body text-xs mt-0.5" style={{ color: S.muted, fontWeight: 300 }}>Trigger the AI pipeline to create a draft.</p>
-          {!canGenerate && <p className="luxury-body text-xs mt-2" style={{ color: S.error }}>{missingPhotoText}</p>}
-        </div>
-        <button
-          onClick={onGenerate}
-          disabled={generating || !canGenerate}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
-          style={{ background: S.slateDeep, color: S.bg }}
-          title={!canGenerate ? missingPhotoText : undefined}
-        >
-          {generating ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-          {generating ? 'Starting...' : 'Generate Report'}
-        </button>
-      </div>
-    );
-  }
-
-  const tone = statusTone(report.status);
-  const color = toneColor(tone);
-  const canRetry = ['error', 'pending'].includes(report.status);
-
-  return (
-    <div className="rounded-2xl border p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4" style={{ background: `${color}10`, borderColor: `${color}28` }}>
-      <div className="flex items-start gap-3">
-        {report.status === 'generating' && <Loader2 size={16} className="animate-spin mt-0.5 flex-shrink-0" style={{ color }} />}
-        {report.status === 'error' && <AlertCircle size={16} className="mt-0.5 flex-shrink-0" style={{ color }} />}
-        <div>
-          <p className="luxury-body text-sm capitalize" style={{ color, fontWeight: 500 }}>
-            {report.status === 'generating' ? `${stageLabel(report.progress_stage)}...` : report.status.replace(/_/g, ' ')}
-          </p>
-          {report.error_message && <p className="luxury-body text-xs mt-0.5" style={{ color: S.error }}>{report.error_message}</p>}
-          {report.generated_at && (
-            <p className="iconik-mono mt-1" style={{ fontSize: '10px', color: S.muted }}>
-              Generated {new Date(report.generated_at).toLocaleString()}
-            </p>
-          )}
-          {!canGenerate && canRetry && <p className="luxury-body text-xs mt-2" style={{ color: S.error }}>{missingPhotoText}</p>}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {['generating', 'draft_ready', 'in_review', 'approved', 'sent'].includes(report.status) && (
-          <Link
-            href={`/man/admin/report/${report.id}`}
-            className="px-4 py-2 rounded-xl text-sm luxury-body transition"
-            style={{ background: S.ink, color: S.bg }}
-          >
-            Open Report
-          </Link>
-        )}
-        {report.status === 'sent' && (
-          <Link
-            href={`/man/report/${report.share_token}`}
-            target="_blank"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm luxury-body transition"
-            style={{ background: S.card, color: S.muted, border: `1px solid ${S.border}` }}
-          >
-            Client Link <ExternalLink size={12} />
-          </Link>
-        )}
-        {canRetry && (
-          <button
-            onClick={onGenerate}
-            disabled={generating || !canGenerate}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm luxury-body disabled:opacity-50 transition"
-            style={{ background: S.slateDeep, color: S.bg }}
-            title={!canGenerate ? missingPhotoText : undefined}
-          >
-            {generating ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
-            {generating ? 'Starting...' : 'Retry'}
-          </button>
-        )}
-      </div>
+      {error && <p className="absolute inset-x-3 top-3 rounded-xl px-3 py-2 text-[12px]" style={{ background: 'var(--ma-surface)', color: 'var(--ma-red)' }}>{error}</p>}
     </div>
   );
 }
@@ -394,131 +248,156 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
 
   if (loading && !submission) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <Loader2 className="animate-spin" style={{ color: S.muted }} />
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="animate-spin ma-faint" />
       </div>
     );
   }
 
   if (!submission) {
-    return <p className="luxury-body" style={{ color: S.muted }}>Submission not found.</p>;
+    return <p className="ma-muted">Submission not found.</p>;
   }
 
   const latestReport = reports[0] ?? null;
   const missingPhotos = getMissingPhotoLabels(submission);
   const canGenerate = missingPhotos.length === 0;
-  const missingPhotoText = missingPhotos.length
-    ? `Upload ${missingPhotos.join(' and ')} before generating this report.`
-    : '';
-  const clientLabel = submission.customer_email || submission.customer_phone || 'Man blueprint client';
+  const name = clientDisplayName(submission.customer_email, submission.customer_phone);
+  const canRetry = latestReport && ['error', 'pending'].includes(latestReport.status);
+  const reportOpenable = latestReport && ['generating', 'draft_ready', 'in_review', 'approved', 'sent'].includes(latestReport.status);
+
+  const snapshot: Array<[string, string | null]> = [
+    ['Colour season', fmt(submission.derived_colour_season)],
+    ['Face', fmt(submission.face_shape)],
+    ['Body', fmt(submission.body_shape)],
+    ['Height', fmt(submission.height_category)],
+    ['Fit', fmt(submission.fit_preference)],
+    ['Location', fmt(submission.location_tier)],
+  ];
+  const clientWords = [submission.style_anti_pref_note, submission.free_text_note].filter(Boolean) as string[];
 
   return (
-    <div className="max-w-5xl">
-      <Link href="/man/admin/dashboard" className="inline-flex items-center gap-2 text-sm mb-6 luxury-body transition" style={{ color: S.muted }}>
-        <ArrowLeft size={14} /> Back to submissions
+    <div className="mx-auto max-w-[1080px]">
+      <Link href="/man/admin/dashboard" className="ma-btn ma-btn--ghost ma-btn--sm -ml-3 mb-6">
+        <ArrowLeft size={14} /> Clients
       </Link>
 
-      <div className="mb-6">
-        <div className="iconik-micro mb-2" style={{ color: S.muted }}>Man Blueprint Intake</div>
-        <h1 className="iconik-display" style={{ fontSize: '26px', color: S.ink }}>{clientLabel}</h1>
-        <p className="luxury-body text-sm mt-1" style={{ color: S.muted, fontWeight: 300 }}>
-          Submitted {new Date(submission.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-        </p>
-      </div>
-
-      <div className="mb-6">
-        <ReportStatusBanner
-          report={latestReport}
-          onGenerate={handleGenerate}
-          generating={generating}
-          canGenerate={canGenerate}
-          missingPhotoText={missingPhotoText}
-        />
-        {genError && (
-          <p className="luxury-body text-sm mt-3 rounded-xl px-4 py-2" style={{ color: S.error, background: `${S.error}12`, border: `1px solid ${S.error}25` }}>
-            {genError}
-          </p>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <Section title="Review Context">
-          <div className="grid md:grid-cols-4 gap-3">
-            <ContextCard label="Primary goal" value={fmt(submission.primary_goal)} />
-            <ContextCard label="Location" value={fmt(submission.location_tier)} />
-            <ContextCard label="Body" value={fmt(submission.body_shape)} />
-            <ContextCard label="Colour" value={fmt(submission.derived_colour_season)} />
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <Avatar name={name} src={submission.photo_headshot_url} size={56} />
+          <div className="min-w-0">
+            <h1 className="ma-title" style={{ fontSize: 28 }}>{name}</h1>
+            <p className="ma-faint mt-1 truncate text-[14px]">
+              {[submission.customer_email, submission.customer_phone].filter(Boolean).join(' · ')}
+              {' · '}Submitted {new Date(submission.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
           </div>
-        </Section>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {latestReport && <ReportStatusPill report={latestReport} />}
+          {latestReport?.status === 'sent' && (
+            <Button size="sm" icon={<ExternalLink size={13} />} onClick={() => window.open(`/man/report/${latestReport.share_token}`, '_blank')}>Client link</Button>
+          )}
+          {reportOpenable && (
+            <Button variant="dark" onClick={() => router.push(`/man/admin/report/${latestReport.id}`)}>Open report</Button>
+          )}
+          {!latestReport && (
+            <Button variant="primary" icon={<Sparkles size={15} />} loading={generating} disabled={!canGenerate} onClick={handleGenerate}>
+              Generate Blueprint
+            </Button>
+          )}
+          {canRetry && (
+            <Button variant="primary" icon={<RotateCcw size={15} />} loading={generating} disabled={!canGenerate} onClick={handleGenerate}>
+              Retry generation
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <PhotoUploadCard
-          label="Headshot"
-          field="photo_headshot"
-          url={submission.photo_headshot_url}
-          submissionId={submission.id}
-          onUploaded={next => setSubmission(next)}
-        />
-        <PhotoUploadCard
-          label="Full Body"
-          field="photo_fullbody"
-          url={submission.photo_fullbody_url}
-          submissionId={submission.id}
-          onUploaded={next => setSubmission(next)}
-        />
+      {(genError || (!canGenerate && (!latestReport || canRetry)) || latestReport?.error_message) && (
+        <div className="mb-6 rounded-2xl px-5 py-3.5 text-[14px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>
+          {genError || latestReport?.error_message || `Upload the ${missingPhotos.join(' and ')} to generate this Blueprint.`}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+        <div className="grid grid-cols-2 gap-4 self-start">
+          <PhotoCard label="Headshot" field="photo_headshot" url={submission.photo_headshot_url} submissionId={submission.id} onUploaded={setSubmission} />
+          <PhotoCard label="Full body" field="photo_fullbody" url={submission.photo_fullbody_url} submissionId={submission.id} onUploaded={setSubmission} />
+        </div>
+
+        <div className="space-y-4">
+          <div className="ma-card p-6">
+            <div className="ma-eyebrow mb-4">At a glance</div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+              {snapshot.filter(([, value]) => value).map(([label, value]) => (
+                <div key={label}>
+                  <div className="ma-faint text-[12px]">{label}</div>
+                  <div className="mt-0.5 text-[15px]" style={{ fontWeight: 600 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            {submission.primary_goal && (
+              <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--ma-line-2)' }}>
+                <div className="ma-faint text-[12px]">Goal</div>
+                <div className="mt-0.5 text-[15px]">{fmt(submission.primary_goal)}</div>
+              </div>
+            )}
+          </div>
+
+          {clientWords.length > 0 && (
+            <div className="ma-card p-6" style={{ background: 'var(--ma-accent-soft)', borderColor: 'transparent', boxShadow: 'none' }}>
+              <div className="ma-eyebrow mb-3" style={{ color: 'var(--ma-accent)' }}>In his words</div>
+              {clientWords.map(note => (
+                <p key={note} className="ma-serif text-[19px] leading-snug" style={{ color: 'var(--ma-ink)' }}>&ldquo;{note}&rdquo;</p>
+              ))}
+            </div>
+          )}
+
+          {latestReport?.generated_at && (
+            <p className="ma-faint flex items-center gap-1.5 text-[13px]">
+              <Check size={13} /> Generated {new Date(latestReport.generated_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <Section title="Contact">
-          <DataRow label="Email" value={submission.customer_email ?? '-'} />
-          <DataRow label="Phone" value={submission.customer_phone ?? '-'} />
-          <DataRow label="Location" value={fmt(submission.location_tier)} />
-        </Section>
-
-        <Section title="Section 1 - Basics">
-          <DataRow label="Primary Goal" value={fmt(submission.primary_goal)} />
-          <DataRow label="Style Relationship" value={fmt(submission.style_relationship)} />
-          <DataRow label="Dressing Context" value={fmtMulti(submission.dressing_context)} />
-          <DataRow label="Wardrobe" value={fmtMulti(submission.wardrobe_composition)} />
-        </Section>
-
-        <Section title="Section 2 - Body">
-          <DataRow label="Height" value={fmt(submission.height_category)} />
-          <DataRow label="Body Shape" value={fmt(submission.body_shape)} />
-          <DataRow label="Fat Storage" value={fmt(submission.fat_storage_zone)} />
-          <DataRow label="Highlight Zone" value={fmt(submission.highlight_zone)} />
-          <DataRow label="Minimise Zone" value={fmt(submission.minimise_zone)} />
-          <DataRow label="Fit Preference" value={fmt(submission.fit_preference)} />
-        </Section>
-
-        <Section title="Section 3 - Colour">
-          <DataRow label="Skin Tone" value={fmt(submission.skin_tone)} />
-          <DataRow label="Undertone" value={fmt(submission.vein_undertone)} />
-          <DataRow label="White Test" value={fmt(submission.white_test)} />
-          <DataRow label="Hair Colour" value={fmt(submission.hair_colour)} />
-          <DataRow label="Eye Colour" value={fmt(submission.eye_colour)} />
-          <DataRow label="Colour Season" value={fmt(submission.derived_colour_season)} />
-        </Section>
-
-        <Section title="Section 4 - Face">
-          <DataRow label="Face Shape" value={fmt(submission.face_shape)} />
-          <DataRow label="Feature Type" value={fmt(submission.facial_feature_type)} />
-        </Section>
-
-        <Section title="Section 5 - Style Identity">
-          <DataRow label="Style Goal" value={fmt(submission.primary_style_goal)} />
-          <DataRow label="Branch Answer" value={fmt(submission.branch_answer)} />
-          <DataRow label="Style Tribes" value={fmtMulti(submission.style_tribes)} />
-          <DataRow label="Structure" value={fmt(submission.style_pole_structure)} />
-          <DataRow label="Expression" value={fmt(submission.style_pole_expression)} />
-          <DataRow label="Tone" value={fmt(submission.style_pole_tone)} />
-          <DataRow label="Register" value={fmt(submission.style_pole_register)} />
-          <DataRow label="Style Blocker" value={fmt(submission.style_blocker)} />
-          <DataRow label="Anti-Pref" value={fmt(submission.style_anti_pref)} />
-          {submission.style_anti_pref_note && <DataRow label="Anti-Pref Note" value={submission.style_anti_pref_note} />}
-          {submission.free_text_note && <DataRow label="Free Note" value={submission.free_text_note} />}
-        </Section>
+      <div className="mt-10 mb-4 ma-h2">All answers</div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AnswerGroup title="Life and wardrobe" rows={[
+          ['Primary goal', fmt(submission.primary_goal)],
+          ['Style relationship', fmt(submission.style_relationship)],
+          ['Dressing context', fmtMulti(submission.dressing_context)],
+          ['Wardrobe', fmtMulti(submission.wardrobe_composition)],
+        ]} />
+        <AnswerGroup title="Body" rows={[
+          ['Height', fmt(submission.height_category)],
+          ['Body shape', fmt(submission.body_shape)],
+          ['Carries weight', fmt(submission.fat_storage_zone)],
+          ['Wants to highlight', fmt(submission.highlight_zone)],
+          ['Wants to minimise', fmt(submission.minimise_zone)],
+          ['Fit preference', fmt(submission.fit_preference)],
+        ]} />
+        <AnswerGroup title="Colour" rows={[
+          ['Skin tone', fmt(submission.skin_tone)],
+          ['Undertone', fmt(submission.vein_undertone)],
+          ['White test', fmt(submission.white_test)],
+          ['Hair colour', fmt(submission.hair_colour)],
+          ['Eye colour', fmt(submission.eye_colour)],
+          ['Colour season', fmt(submission.derived_colour_season)],
+          ['Face shape', fmt(submission.face_shape)],
+          ['Feature type', fmt(submission.facial_feature_type)],
+        ]} />
+        <AnswerGroup title="Style identity" rows={[
+          ['Style goal', fmt(submission.primary_style_goal)],
+          ['Branch answer', fmt(submission.branch_answer)],
+          ['Style tribes', fmtMulti(submission.style_tribes)],
+          ['Structure', fmt(submission.style_pole_structure)],
+          ['Expression', fmt(submission.style_pole_expression)],
+          ['Tone', fmt(submission.style_pole_tone)],
+          ['Register', fmt(submission.style_pole_register)],
+          ['Holding him back', fmt(submission.style_blocker)],
+          ['Won’t wear', fmt(submission.style_anti_pref)],
+        ]} />
       </div>
     </div>
   );

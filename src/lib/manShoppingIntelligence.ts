@@ -7,6 +7,7 @@
 // The pipeline never dies because of this module.
 
 import { GoogleGenAI } from '@google/genai';
+import { manGenerateText } from './manAi';
 import type { ApifyShoppingItem } from './apifyShoppingClient';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
@@ -69,11 +70,14 @@ function cleanJson(text: string): string {
 
 async function callGeminiJSON(prompt: string): Promise<unknown> {
   return withRetry(async () => {
-    const response = await ai.models.generateContent({
-      model: SHOPPING_TEXT_MODEL,
-      contents: [{ parts: [{ text: prompt }] }],
+    const text = await manGenerateText({ label: 'shopping queries', prompt }, async () => {
+      const response = await ai.models.generateContent({
+        model: SHOPPING_TEXT_MODEL,
+        contents: [{ parts: [{ text: prompt }] }],
+      });
+      return response.text ?? '';
     });
-    return JSON.parse(cleanJson(response.text ?? ''));
+    return JSON.parse(cleanJson(text));
   });
 }
 
