@@ -1,7 +1,8 @@
 import 'server-only';
 
 import sharp from 'sharp';
-import type { Browser, HTTPRequest } from 'puppeteer-core';
+import type { HTTPRequest } from 'puppeteer-core';
+import { launchHeadlessBrowser } from './headlessBrowser';
 import { REPORT_PDF_HOOK } from './reportPrint';
 
 /**
@@ -23,28 +24,6 @@ const PAPER = '#F4EFE5';
 const IMAGE_TYPES = /^image\/(webp|png|jpeg|avif)/;
 /** How long the page may spend waiting for its images before printing what it has. */
 const IMAGE_WAIT_MS = 90_000;
-
-const LOCAL_CHROME_PATHS = [
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-];
-
-async function launchBrowser(): Promise<Browser> {
-  const puppeteer = (await import('puppeteer-core')).default;
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    const chromium = (await import('@sparticuz/chromium')).default;
-    return puppeteer.launch({
-      args: await puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
-      executablePath: await chromium.executablePath(),
-      headless: 'shell',
-    });
-  }
-  const { existsSync } = await import('node:fs');
-  const executablePath = process.env.CHROME_EXECUTABLE_PATH || LOCAL_CHROME_PATHS.find(path => existsSync(path));
-  if (!executablePath) throw new Error('No local Chrome found for PDF rendering; set CHROME_EXECUTABLE_PATH');
-  return puppeteer.launch({ executablePath, headless: true });
-}
 
 /**
  * Only the report's own origin, its image storage and web fonts are loaded.
@@ -85,7 +64,7 @@ async function handleRequest(request: HTTPRequest, origin: string) {
 /** Renders `url` (a report page on `origin`) to an A4, one-slide-per-sheet PDF. */
 export async function renderReportPdf(url: string): Promise<Buffer> {
   const origin = new URL(url).origin;
-  const browser = await launchBrowser();
+  const browser = await launchHeadlessBrowser('PDF rendering');
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });

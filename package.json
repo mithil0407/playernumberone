@@ -12,6 +12,7 @@
     "test:man-image-identity": "node --experimental-strip-types --test src/lib/manOutfitImageIdentity.test.ts",
     "test:meta-pixel": "node --experimental-strip-types --test src/lib/metaPageView.test.ts src/lib/metaTrackingContract.test.ts src/lib/indiaBlueprintPricing.test.ts src/lib/clarity.test.ts",
     "test:whatsapp": "node --experimental-strip-types --test src/lib/whatsapp.test.ts",
+    "test:agent": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/agentMemoryTree.test.ts src/lib/agentConversation.test.ts",
     "test:checkout-recovery": "node --experimental-strip-types --test src/lib/checkoutRecovery.test.ts",
     "verify:meta-tracking": "node --experimental-strip-types --conditions=react-server --env-file=.env.local scripts/verify-meta-tracking.ts",
     "test:stylist-workspace": "node --experimental-strip-types --import ./scripts/node-test-hooks.mjs --test src/lib/stylist*.test.ts",
@@ -25,6 +26,7 @@
     "smoke:stylist-reports": "node --env-file=.env.local scripts/smoke-stylist-reports.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@calcom/embed-react": "^1.5.3",
     "@google/genai": "^1.45.0",
     "@headlessui/react": "^2.2.7",

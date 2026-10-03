@@ -1,4 +1,5 @@
 import { normalizeIndianWhatsappNumber } from './indiaPhone.ts';
+import { buildWhatsappReactionPayload, buildWhatsappTypingPayload } from './agentWhatsapp.ts';
 import {
   buildWhatsappPilotImagePayload,
   buildWhatsappPilotTextPayload,
@@ -147,6 +148,15 @@ export async function sendWhatsAppImageMessage(to: string, imageUrl: string, cap
 
 export async function markWhatsAppMessageRead(messageId: string) {
   return sendWhatsappPayload(buildWhatsappReadReceiptPayload(messageId));
+}
+
+/** Marks the message read and shows "typing…" until we reply (or ~25 seconds pass). */
+export async function showWhatsAppTypingIndicator(messageId: string) {
+  return sendWhatsappPayload(buildWhatsappTypingPayload(messageId));
+}
+
+export async function sendWhatsAppReaction(to: string, messageId: string, emoji: string) {
+  return sendWhatsappPayload(buildWhatsappReactionPayload(to, messageId, emoji));
 }
 
 export async function downloadWhatsAppImage(mediaId: string): Promise<{

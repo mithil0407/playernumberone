@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse, after } from 'next/server';
+import { handleAgentInbound, isAgentEnabledFor } from '@/lib/agentRuntime';
 import { processIconikManWhatsappPilotMessage } from '@/lib/manWhatsappPilotAgent';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
       app_secret_configured: Boolean(process.env.WHATSAPP_APP_SECRET),
       verify_token_configured: Boolean(expectedToken),
       iconik_man_pilot_configured: Boolean(getIconikManWhatsappPilotConfig()),
+      iconik_agent_enabled: process.env.ICONIK_AGENT_ENABLED === '1',
     });
   }
 
@@ -101,13 +103,20 @@ export async function POST(request: NextRequest) {
 
   if (messages.length > 0) {
     after(async () => {
-      for (const message of messages) {
+      // The ICONIK agent handles messages in parallel: each stores itself, then
+      // the newest one in a burst answers them all. Numbers the agent doesn't
+      // serve (rollout list, or no finished report) fall back to the Man pilot.
+      await Promise.all(messages.map(async message => {
         try {
+          if (isAgentEnabledFor(message.from)) {
+            const outcome = await handleAgentInbound(message);
+            if (outcome !== 'not_client') return;
+          }
           await processIconikManWhatsappPilotMessage(message);
         } catch (error) {
-          console.error('[man whatsapp pilot] inbound message failed:', message.id, error);
+          console.error('[whatsapp] inbound message failed:', message.id, error);
         }
-      }
+      }));
     });
   }
 
