@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { manGenerateText } from './manAi';
 import type { ClassificationResult } from './manReportGenerator';
 import {
   extractOutfitBlock,
@@ -131,13 +132,19 @@ export async function generateOutfitSwapDraft(input: OutfitSwapDraftInput): Prom
       : []),
   ];
 
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: [{ parts }],
-    config: { maxOutputTokens: 8192 },
-  });
+  const responseText = await manGenerateText(
+    { label: 'outfit swap', prompt, images: input.inspirationImage ? [input.inspirationImage] : undefined },
+    async () => {
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [{ parts }],
+        config: { maxOutputTokens: 8192 },
+      });
+      return response.text ?? '';
+    },
+  );
 
-  const rawCandidate = stripFences(response.text ?? '');
+  const rawCandidate = stripFences(responseText);
   const candidateBlock = normaliseOutfitHeader(rawCandidate, input.outfitNumber, context);
   const parsedCandidate = parseManOutfitBlock(candidateBlock);
 

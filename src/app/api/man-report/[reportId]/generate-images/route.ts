@@ -27,6 +27,7 @@ import type { ManIntakeSubmission } from '@/lib/supabaseMan';
 import { revalidateManReportCache } from '@/lib/manReportCache';
 import { withManReportSection4Qa } from '@/lib/manReportQa';
 import { normaliseSequentialManOutfitNumbers } from '@/lib/manOutfitSection';
+import { manImageSoftDeadlineMs } from '@/lib/manAi';
 
 const ALLOWED_IMAGE_MODELS = ['gemini-3.1-flash-image-preview', 'gemini-2.5-flash-image'];
 const STALE_MS = 10 * 60 * 1000; // 10 minutes — if pipeline hasn't written in this long, it's dead
@@ -91,7 +92,7 @@ function getMissingImageSummary(paths: ManReportImagePaths, expectedOutfitCount:
     missingDeliverables ? `${missingDeliverables} deliverable` : null,
   ].filter(Boolean);
 
-  return `Image generation incomplete: ${parts.join(', ')} image${parts.length === 1 ? '' : 's'} still missing. Retry missing images when Gemini capacity is available.`;
+  return `Image generation incomplete: ${parts.join(', ')} image${parts.length === 1 ? '' : 's'} still missing. Retry to fill the missing images.`;
 }
 
 async function runImagePipeline(
@@ -105,7 +106,7 @@ async function runImagePipeline(
   generateV2Assets: boolean,
 ) {
   try {
-    const softDeadlineMs = Date.now() + 260_000;
+    const softDeadlineMs = manImageSoftDeadlineMs();
     const latestImageUrls = (await getStoredManReportImagePaths(reportId)) ?? existingImageUrls ?? null;
 
     // ── Hairstyle + eyewear ───────────────────────────────────────────────────
