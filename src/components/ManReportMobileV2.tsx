@@ -17,6 +17,7 @@ import {
   Download,
   Eye,
   Grid3x3,
+  Loader2,
   Palette,
   Ruler,
   Scissors,
@@ -299,6 +300,40 @@ function DrapeReveal({ src, wrongName, rightName, verdict }: {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── PDF download ─────────────────────────────────────────── */
+
+/**
+ * Phone browsers print the Blueprint badly (WhatsApp and Instagram not at all),
+ * so the PDF is rendered on the server and downloaded. The first download of a
+ * version renders it, which takes a little while.
+ */
+function PdfDownload({ shareToken }: { shareToken: string }) {
+  const [state, setState] = useState<'idle' | 'preparing' | 'failed'>('idle');
+  const download = useCallback(async () => {
+    if (state === 'preparing') return;
+    setState('preparing');
+    try {
+      const response = await fetch(`/api/man-report/share/${encodeURIComponent(shareToken)}/pdf?format=json`, { cache: 'no-store' });
+      const body = await response.json().catch(() => null) as { url?: string } | null;
+      if (!response.ok || !body?.url) throw new Error('PDF not ready');
+      window.location.assign(body.url);
+      setState('idle');
+    } catch {
+      setState('failed');
+    }
+  }, [shareToken, state]);
+
+  return (
+    <div className="pdf-download">
+      <button type="button" className="btn-line" onClick={download} disabled={state === 'preparing'} aria-busy={state === 'preparing'}>
+        {state === 'preparing' ? <><Loader2 size={14} className="pdf-spin" /> Preparing your PDF…</> : <><Download size={14} /> Download as PDF</>}
+      </button>
+      {state === 'preparing' ? <p className="pdf-note">This can take up to a minute the first time. Keep this page open.</p> : null}
+      {state === 'failed' ? <p className="pdf-note pdf-note-error">We couldn&apos;t prepare the PDF just now. Please tap to try again.</p> : null}
     </div>
   );
 }
@@ -810,6 +845,7 @@ export default function ManReportMobileV2({ shareToken, data, imageUrls, stylist
           <button type="button" className="btn-solid" onClick={finishReveal}>
             Open the Reference <ArrowUpRight size={15} />
           </button>
+          <div className="door-pdf"><PdfDownload shareToken={shareToken} /></div>
           <p className="door-sig">{reviewSignature} · {dateLabel}</p>
         </section>
 
@@ -1016,6 +1052,7 @@ export default function ManReportMobileV2({ shareToken, data, imageUrls, stylist
             <span>{reviewSignature}</span>
             <b>Blueprint No. {blueprintNo} · {dateLabel}</b>
           </div>
+          <PdfDownload shareToken={shareToken} />
           <button type="button" className="btn-line" onClick={() => { setMode('cover'); window.scrollTo({ top: 0 }); }}>
             <ArrowLeft size={14} /> Replay the reveal
           </button>
@@ -1481,6 +1518,15 @@ function Styles() {
         text-decoration:underline; text-underline-offset:3px; }
 
       .ch-close { padding-bottom:120px; }
+      .door-pdf { margin-top:14px; }
+      .door-pdf .btn-line { color:#241D16; border-color:rgba(36,29,22,.34); }
+      .door-pdf .pdf-note { color:rgba(36,29,22,.62); }
+      .pdf-download { margin-bottom:14px; }
+      .pdf-download .btn-line:disabled { opacity:.7; }
+      .pdf-note { margin:10px 0 0; font-size:12px; line-height:1.5; color:var(--t3); }
+      .pdf-note-error { color:var(--alarm); }
+      .pdf-spin { animation: pdf-spin 900ms linear infinite; }
+      @keyframes pdf-spin { to { transform: rotate(360deg); } }
       .close-line { font-family:var(--font-fraunces), Fraunces, Georgia, serif; font-weight:300;
         font-style:italic; font-size:25px; line-height:1.36; letter-spacing:-.025em;
         color:var(--t1); margin:0 0 30px; }

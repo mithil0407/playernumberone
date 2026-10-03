@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
     '/api/stylist-blueprint/share/[shareToken]/pdf': [
       './node_modules/@sparticuz/chromium/bin/**',
     ],
+    '/api/man-report/share/[shareToken]/pdf': [
+      './node_modules/@sparticuz/chromium/bin/**',
+    ],
     '/api/stylist-workspace/**': [
       './outfitlibrary.md',
       './src/lib/stylistOutfitLibrary.md',

@@ -12,7 +12,7 @@ import ManEditPanel from '@/components/ManEditPanel';
 import ManReportOpeningSequence from '@/components/ManReportOpeningSequence';
 import ManReportMobileV2 from '@/components/ManReportMobileV2';
 import ManReportCinematicPrototype from '@/components/ManReportCinematicPrototype';
-import { installReportPrintFallback, prepareReportForPrint } from '@/lib/reportPrint';
+import { installReportPdfHook, installReportPrintFallback, prepareReportForPrint } from '@/lib/reportPrint';
 
 type ManReportProps = ComponentProps<typeof ManReport>;
 
@@ -97,6 +97,13 @@ export default function PublicManReportExperience({
   useEffect(() => {
     if (!showsDesktopReport) return;
     return installReportPrintFallback();
+  }, [showsDesktopReport]);
+
+  // The server-side PDF renderer (see /api/man-report/share/[shareToken]/pdf) loads this
+  // page at desktop width and calls the hook to lay the report out for print.
+  useEffect(() => {
+    if (!showsDesktopReport) return;
+    return installReportPdfHook();
   }, [showsDesktopReport]);
 
   // ?print=1 is the admin's Print / PDF button: open, prepare and print once.
