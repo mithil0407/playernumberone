@@ -166,6 +166,7 @@ export default function SalwarKameezBodyTypePage() {
               <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
               <li>→ <Link href="/style-guides/kurti-length-guide" className="underline hover:opacity-70">Kurti Length Guide by Body Type</Link></li>
               <li>→ <Link href="/style-guides/saree-draping-body-type" className="underline hover:opacity-70">Saree Draping by Body Type</Link></li>
+              <li>→ <Link href="/style-guides/diwali-outfit-body-type" className="underline hover:opacity-70">Diwali Outfit by Body Type</Link></li>
               <li>→ <Link href="/style-guides/office-wear-indian-women" className="underline hover:opacity-70">Office Wear for Indian Women</Link></li>
             </ul>
           </section>

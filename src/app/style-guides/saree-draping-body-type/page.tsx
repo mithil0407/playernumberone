@@ -205,6 +205,7 @@ export default function SareeDrapingBodyTypePage() {
               <li>→ <Link href="/body-type-styling" className="underline hover:opacity-70">Body Type Styling — Full Hub</Link></li>
               <li>→ <Link href="/style-guides/indian-wedding-guest-outfit" className="underline hover:opacity-70">Indian Wedding Guest Outfit Guide</Link></li>
               <li>→ <Link href="/style-guides/salwar-kameez-body-type" className="underline hover:opacity-70">Salwar Kameez by Body Type</Link></li>
+              <li>→ <Link href="/style-guides/diwali-outfit-body-type" className="underline hover:opacity-70">Diwali Outfit by Body Type</Link></li>
               <li>→ <Link href="/colour-analysis" className="underline hover:opacity-70">Colour Analysis for Indian Skin Tones</Link></li>
             </ul>
           </section>

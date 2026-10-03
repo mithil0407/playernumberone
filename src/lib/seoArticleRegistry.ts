@@ -56,6 +56,66 @@ export type SeoArticleRecord = {
 };
 
 const records = {
+  "/style-guides/diwali-outfit-body-type": {
+    path: "/style-guides/diwali-outfit-body-type",
+    articleId: "diwali_outfit_body_type",
+    cluster: "style-guide",
+    eyebrow: "Indian Wardrobe · Diwali",
+    title: "Diwali Outfit by Body Type: Indian Women's Guide",
+    seoTitle: "Diwali Outfit by Body Type: Indian Guide",
+    description:
+      "Choose a Diwali outfit by body type with practical saree, kurta, lehenga and fusion formulas, plus fabric, fit and occasion checks for Indian celebrations.",
+    heroSummary:
+      "A Diwali outfit by body type should work for the celebration you are attending and the proportions you enjoy creating. Use garment lines, fabric and fit to make a considered choice.",
+    keywords: [
+      "Diwali outfit by body type",
+      "Diwali outfits for Indian women",
+      "Diwali saree by body shape",
+      "Diwali kurta and lehenga ideas",
+    ],
+    datePublished: "2026-03-21",
+    dateModified: "2026-10-03",
+    reviewer: "",
+    readingTime: "10 minute read",
+    breadcrumbs: [
+      { href: "/", label: "Home" },
+      { href: "/style-guides", label: "Style Guides" },
+      { label: "Diwali Outfit by Body Type" },
+    ],
+    tableOfContents: [
+      { href: "#choose-occasion", label: "Choose the celebration" },
+      { href: "#shape-choice", label: "Use shape as a guide" },
+      { href: "#garment-formulas", label: "Try garment formulas" },
+      { href: "#library-looks", label: "Choose complete outfits" },
+      { href: "#fabric-climate", label: "Choose fabric for climate" },
+      { href: "#colour-and-fusion", label: "Add colour and fusion" },
+      { href: "#shop-and-check", label: "Shop and check the fit" },
+    ],
+    related: [
+      { href: "/style-guides/saree-draping-body-type", title: "Saree Draping by Body Type", description: "Adjust pleats, pallu and blouse fit around your preferred line." },
+      { href: "/style-guides/salwar-kameez-body-type", title: "Salwar Kameez by Body Type", description: "Choose kurta hems, bottom width and dupatta direction." },
+      { href: "/style-guides/indian-wedding-guest-outfit", title: "Indian Wedding Guest Outfits", description: "Adapt occasion dressing to a different festive setting." },
+    ],
+    visual: {
+      variant: "editorial",
+      src: "/seo/style-guides/diwali-outfit-body-type.webp",
+      ogSrc: "/seo/style-guides/diwali-outfit-body-type-og.webp",
+      isComposed: true,
+      alt: "Illustrated card compares four festive fabrics and asks whether an outfit suits sitting, travel and a secure hem.",
+      width: 1600,
+      height: 2000,
+      title: "Choose the Event Before the Outfit",
+      disclosure: "Illustration: choose fabric and silhouette after checking the event, movement and hem security.",
+    },
+    growth: {
+      contentCluster: "indian_occasion_wear",
+      audience: "women",
+      hookType: "diwali_outfit_formula",
+      visualId: "diwali_outfit_lines",
+      visualVariant: "article_4x5",
+      contentSource: "seo_diwali_outfit_article",
+    },
+  },
   "/body-type-styling/how-to-look-taller-clothing": {
     path: "/body-type-styling/how-to-look-taller-clothing",
     articleId: "how_to_look_taller_clothing",
