@@ -18,7 +18,7 @@
 
 | Date | Type | Page | PR |
 | --- | --- | --- | --- |
-| 2026-10-03 | Refresh | `/style-guides/diwali-outfit-body-type` | Pending PR |
+| 2026-10-03 | Refresh | `/style-guides/diwali-outfit-body-type` | [#3](https://github.com/mithil0407/playernumberone/pull/3) |
 
 ## REFRESH QUEUE
 
