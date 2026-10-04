@@ -17,9 +17,13 @@ export async function GET(request: NextRequest) {
   const from   = (page - 1) * limit;
   const to     = from + limit - 1;
   const search = searchParams.get('search')?.trim() ?? '';
-  const status = searchParams.get('status') ?? ''; // report status filter
+  // Bucket filter (todo | working | review | sent | failed) or a raw report status.
+  const status = searchParams.get('status') ?? '';
 
   try {
+    // The whole Man intake list is a few hundred rows, so filter and count
+    // in memory: the buckets depend on each submission's latest report, which
+    // a paginated SQL query can't filter on.
     let query = supabaseAdmin
       .from('man_intake_submissions')
       .select(`
@@ -34,17 +38,17 @@ export async function GET(request: NextRequest) {
         photo_fullbody_url,
         photo_headshot_url,
         created_at,
-        man_reports(id, status, progress_stage, share_token, generated_at, sent_at, error_message, created_at, report_kind)
-      `, { count: 'exact' })
+        man_reports(id, status, progress_stage, share_token, generated_at, sent_at, error_message, created_at, updated_at, report_kind)
+      `)
       .order('created_at', { ascending: false })
-      .range(from, to);
+      .range(0, 4999);
 
     if (search) {
       const safeSearch = search.replace(/[(),]/g, ' ');
       query = query.or(`customer_email.ilike.%${safeSearch}%,customer_phone.ilike.%${safeSearch}%`);
     }
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
       console.error('man-admin submissions list error:', error);
@@ -61,19 +65,43 @@ export async function GET(request: NextRequest) {
       return { ...row, man_reports: undefined, latest_report: latestReport };
     });
 
-    // Filter by report status after the JOIN (simpler than a complex SQL filter)
+    const counts: Record<ManSubmissionBucket, number> = { todo: 0, working: 0, review: 0, sent: 0, failed: 0 };
+    for (const submission of submissions) counts[submissionBucket(submission.latest_report)]++;
+
     const filtered = status
       ? submissions.filter(s => {
+          if (isBucket(status)) return submissionBucket(s.latest_report) === status;
           if (status === 'none') return !s.latest_report;
           return s.latest_report?.status === status;
         })
       : submissions;
 
-    return NextResponse.json({ submissions: filtered, total: count ?? 0, page, limit });
+    return NextResponse.json({
+      submissions: filtered.slice(from, to + 1),
+      total: filtered.length,
+      allTotal: submissions.length,
+      counts,
+      page,
+      limit,
+    });
   } catch (err) {
     console.error('man-admin submissions API error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+type ManSubmissionBucket = 'todo' | 'working' | 'review' | 'sent' | 'failed';
+
+function isBucket(value: string): value is ManSubmissionBucket {
+  return value === 'todo' || value === 'working' || value === 'review' || value === 'sent' || value === 'failed';
+}
+
+function submissionBucket(report: Pick<ManReportRow, 'status'> | null): ManSubmissionBucket {
+  if (!report) return 'todo';
+  if (report.status === 'generating' || report.status === 'pending') return 'working';
+  if (report.status === 'sent') return 'sent';
+  if (report.status === 'error') return 'failed';
+  return 'review';
 }
 
 interface ManReportRow {
@@ -85,4 +113,5 @@ interface ManReportRow {
   sent_at: string | null;
   error_message: string | null;
   created_at: string;
+  updated_at: string | null;
 }

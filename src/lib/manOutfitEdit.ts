@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { manGenerateText } from './manAi';
 import type { ClassificationResult } from './manReportGenerator';
 import {
   extractOutfitBlock,
@@ -209,12 +210,14 @@ export async function enrichManOutfitEdit(input: EnrichManOutfitEditInput): Prom
 
   let responseText = '';
   try {
-    const response = await ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ parts: [{ text: prompt }] }],
-      config: { maxOutputTokens: 2048 },
+    responseText = await manGenerateText({ label: 'outfit edit polish', prompt }, async () => {
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [{ parts: [{ text: prompt }] }],
+        config: { maxOutputTokens: 2048 },
+      });
+      return response.text ?? '';
     });
-    responseText = response.text ?? '';
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return fallbackToDeterministicBlock(message);

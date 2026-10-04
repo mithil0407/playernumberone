@@ -2,23 +2,20 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Camera, CheckCircle2, ExternalLink, Eye, Loader2, PencilLine, RotateCcw, Save, Send, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, ExternalLink, Loader2, RotateCcw, Save, Send, Trash2, Upload } from 'lucide-react';
 import ManEditIssue from '@/components/ManEditIssue';
+import OutfitEditor from '@/components/manAdmin/OutfitEditor';
+import { Button, Segmented } from '@/components/manAdmin/ui';
 import { extractOutfitBlock, parseManOutfitsFromSection, toOutfitTitleCase } from '@/lib/manOutfitSection';
 import type { ReportData } from '@/lib/manReportGenerator';
 import type { ManEditIssueContent } from '@/lib/manEditIssueTypes';
 import type { ManShoppingState } from '@/lib/manShopping';
 
 const S = {
-  panel: '#0f0f0f',
-  row: '#141414',
-  border: '#1e1e1e',
-  ink: '#f0ebe0',
-  muted: '#6b5f4a',
-  soft: '#a39880',
-  gold: '#c9a96e',
-  success: '#5A8B6A',
-  error: '#C4645A',
+  muted: 'var(--ma-ink-3)',
+  soft: 'var(--ma-ink-2)',
+  success: 'var(--ma-green)',
+  error: 'var(--ma-red)',
 };
 
 interface IssueReport {
@@ -35,12 +32,10 @@ interface IssueReport {
   man_intake_submissions: { customer_email: string } | null;
 }
 
-const inputStyle = { background: S.row, border: `1px solid ${S.border}`, color: S.ink };
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] uppercase tracking-[0.18em] mb-1.5" style={{ color: S.muted }}>{label}</span>
+      <span className="ma-label">{label}</span>
       {children}
     </label>
   );
@@ -184,88 +179,72 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
         }}
       />
 
-      <Link href="/man/admin/edit" className="inline-flex items-center gap-2 text-xs mb-5" style={{ color: S.muted }}>
-        <ArrowLeft size={13} /> All subscribers
+      <Link href="/man/admin/edit" className="ma-btn ma-btn--ghost ma-btn--sm -ml-3 mb-6">
+        <ArrowLeft size={14} /> Subscribers
       </Link>
 
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-2" style={{ color: S.muted }}>
-            The Iconik Edit · Issue {draft?.issueNumber ?? '—'}{draft?.periodLabel ? ` · ${draft.periodLabel}` : ''}
-          </p>
-          {/* The admin shell is cream, so the title is dark ink, not the panels' light ink. */}
-          <h1 className="text-2xl font-semibold" style={{ color: '#2C2622' }}>{draft?.title || 'Writing this issue…'}</h1>
-          <p className="text-sm mt-1" style={{ color: S.muted }}>{report.man_intake_submissions?.customer_email}</p>
+          <div className="ma-eyebrow mb-2">
+            The ICONIK Edit · Issue {draft?.issueNumber ?? '—'}{draft?.periodLabel ? ` · ${draft.periodLabel}` : ''}
+          </div>
+          <h1 className="ma-title" style={{ fontSize: 28 }}>{draft?.title || 'Writing this issue…'}</h1>
+          <p className="ma-faint mt-1.5 text-[14px]">{report.man_intake_submissions?.customer_email}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`/man/edit/${report.share_token}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: S.panel, border: `1px solid ${S.border}`, color: S.soft }}>
+          <a href={`/man/edit/${report.share_token}`} target="_blank" rel="noreferrer" className="ma-btn ma-btn--secondary ma-btn--sm">
             <ExternalLink size={13} /> Client view
           </a>
           {!isSent && (
             <>
-              <button onClick={discard} disabled={Boolean(busy) || working} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs disabled:opacity-40" style={{ background: S.panel, border: `1px solid ${S.border}`, color: S.error }}>
-                <Trash2 size={13} /> Discard
-              </button>
-              <button onClick={approveLooks} disabled={Boolean(busy) || working || approved || !outfits.length} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs disabled:opacity-40" style={{ background: '#142018', color: S.success }}>
-                {busy === 'approve' ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+              <Button size="sm" variant="ghost" icon={<Trash2 size={13} />} onClick={discard} disabled={Boolean(busy) || working}>Discard</Button>
+              <Button size="sm" variant={approved ? 'ghost' : 'secondary'} icon={<CheckCircle2 size={13} />} loading={busy === 'approve'} onClick={approveLooks} disabled={Boolean(busy) || working || approved || !outfits.length}>
                 {approved ? 'Looks approved' : 'Approve looks'}
-              </button>
-              <button onClick={send} disabled={Boolean(busy) || working || dirty || missingPhotos.length > 0 || !outfits.length} title={dirty ? 'Save your text changes first' : missingPhotos.length ? 'Every look needs a photo before sending' : undefined} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold disabled:opacity-40" style={{ background: S.gold, color: '#090909' }}>
-                {busy === 'send' ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+              </Button>
+              <Button size="sm" variant="primary" icon={<Send size={13} />} loading={busy === 'send'} onClick={send} disabled={Boolean(busy) || working || dirty || missingPhotos.length > 0 || !outfits.length} title={dirty ? 'Save your text changes first' : missingPhotos.length ? 'Every look needs a photo before sending' : undefined}>
                 Send to client
-              </button>
+              </Button>
             </>
           )}
         </div>
       </div>
 
       {isSent && (
-        <p className="text-sm mb-5 rounded-lg px-4 py-3" style={{ background: '#142018', color: S.success }}>
+        <p className="text-sm mb-5 rounded-2xl px-5 py-3" style={{ background: 'var(--ma-green-soft)', color: S.success }}>
           Sent {report.sent_at ? new Date(report.sent_at).toLocaleString('en-IN') : ''}. Changes now go live on the client’s link immediately.
         </p>
       )}
       {working && (
-        <p className="text-sm mb-5 rounded-lg px-4 py-3 inline-flex items-center gap-2" style={{ background: '#1e1a14', color: S.gold }}>
+        <p className="text-sm mb-5 rounded-2xl px-5 py-3 flex items-center gap-2" style={{ background: 'var(--ma-blue-soft)', color: 'var(--ma-blue)' }}>
           <Loader2 size={14} className="animate-spin" />
           {report.progress_stage === 'generating_images' ? `Shooting the looks on him — ${outfits.length - missingPhotos.length} of ${outfits.length} done.` : 'Writing the issue from his Blueprint…'}
         </p>
       )}
       {report.error_message && !working && (
-        <p className="text-sm mb-5 rounded-lg px-4 py-3" style={{ background: '#241412', color: S.error }}>{report.error_message}</p>
+        <p className="text-sm mb-5 rounded-2xl px-5 py-3" style={{ background: 'var(--ma-red-soft)', color: S.error }}>{report.error_message}</p>
       )}
       {notice && (
         <p className="text-sm mb-5" style={{ color: notice.tone === 'ok' ? S.success : S.error }}>{notice.text}</p>
       )}
 
       {!working && missingPhotos.length > 0 && outfits.length > 0 && !isSent && (
-        <button onClick={renderMissing} disabled={Boolean(busy)} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs mb-6 disabled:opacity-40" style={{ background: '#1e1a14', color: S.gold }}>
-          {busy === 'render' ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
-          Render missing photos ({missingPhotos.join(', ')})
-        </button>
+        <Button className="mb-6" size="sm" variant="dark" icon={<Camera size={13} />} loading={busy === 'render'} onClick={renderMissing} disabled={Boolean(busy)}>
+          Make missing photos ({missingPhotos.join(', ')})
+        </Button>
       )}
       {!working && !outfits.length && report.status === 'error' && (
-        <button onClick={renderMissing} disabled={Boolean(busy)} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs mb-6 disabled:opacity-40" style={{ background: '#1e1a14', color: S.gold }}>
-          <RotateCcw size={13} /> Try writing it again
-        </button>
+        <Button className="mb-6" size="sm" variant="dark" icon={<RotateCcw size={13} />} onClick={renderMissing} disabled={Boolean(busy)}>
+          Try writing it again
+        </Button>
       )}
 
       {outfits.length > 0 && draft && (
-        <div className="inline-flex rounded-lg p-1 mb-6" style={{ background: S.panel, border: `1px solid ${S.border}` }} role="tablist" aria-label="Review mode">
-          {([
-            ['preview', 'What he receives', Eye],
-            ['edit', 'Edit text & looks', PencilLine],
-          ] as const).map(([key, label, Icon]) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={view === key}
-              onClick={() => setView(key)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-xs font-semibold"
-              style={view === key ? { background: S.gold, color: '#090909' } : { background: 'transparent', color: S.soft }}
-            >
-              <Icon size={13} /> {label}
-            </button>
-          ))}
+        <div className="mb-6">
+          <Segmented
+            value={view}
+            onChange={setView}
+            options={[{ value: 'preview', label: 'What he receives' }, { value: 'edit', label: 'Edit text and looks' }]}
+          />
         </div>
       )}
 
@@ -278,7 +257,7 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
                 ? 'This is the issue on his link now.'
                 : 'This is exactly what he will receive. His like / dislike buttons are inactive here.'}
           </p>
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#1B1815' }}>
+          <div className="overflow-hidden rounded-[28px]" style={{ background: '#1B1815', boxShadow: 'var(--ma-shadow-sm)' }}>
             <ManEditIssue
               embedded
               shareToken={report.share_token}
@@ -296,47 +275,45 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
       )}
 
       {view === 'edit' && draft && (
-        <section className="rounded-xl border p-5 mb-6 space-y-4" style={{ background: S.panel, borderColor: S.border }}>
+        <section className="ma-card mb-6 space-y-4 p-6">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: S.gold }}>Issue text</p>
-            <button onClick={saveText} disabled={!dirty || Boolean(busy)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs disabled:opacity-40" style={{ background: '#1e1a14', color: S.gold }}>
-              {busy === 'save' ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save text
-            </button>
+            <div className="ma-h2">Issue text</div>
+            <Button size="sm" variant="dark" icon={<Save size={13} />} loading={busy === 'save'} onClick={saveText} disabled={!dirty || Boolean(busy)}>Save text</Button>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <Field label="Client first name (blank = none)">
-              <input value={draft.clientFirstName} onChange={e => setDraft({ ...draft, clientFirstName: e.target.value })} placeholder="We don't collect names — add it if you know it" className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+              <input value={draft.clientFirstName} onChange={e => setDraft({ ...draft, clientFirstName: e.target.value })} placeholder="We don't collect names — add it if you know it" className="ma-input" />
             </Field>
             <Field label="Title">
-              <input value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+              <input value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} className="ma-input" />
             </Field>
             <Field label="Month moments (comma separated)">
-              <input value={draft.monthMoments.join(', ')} onChange={e => setDraft({ ...draft, monthMoments: e.target.value.split(',').map(v => v.trim()).filter(Boolean) })} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+              <input value={draft.monthMoments.join(', ')} onChange={e => setDraft({ ...draft, monthMoments: e.target.value.split(',').map(v => v.trim()).filter(Boolean) })} className="ma-input" />
             </Field>
           </div>
           <Field label="Line under the title">
-            <input value={draft.dek} onChange={e => setDraft({ ...draft, dek: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+            <input value={draft.dek} onChange={e => setDraft({ ...draft, dek: e.target.value })} className="ma-input" />
           </Field>
           <Field label="Stylist's letter">
-            <textarea value={draft.stylistNote} onChange={e => setDraft({ ...draft, stylistNote: e.target.value })} rows={7} className="w-full rounded-lg px-3 py-2 text-sm outline-none leading-6" style={inputStyle} />
+            <textarea value={draft.stylistNote} onChange={e => setDraft({ ...draft, stylistNote: e.target.value })} rows={7} className="ma-textarea" />
           </Field>
           <div className="grid md:grid-cols-2 gap-4">
             <Field label="Piece of the month">
-              <input value={draft.pieceOfTheMonth.name} onChange={e => setDraft({ ...draft, pieceOfTheMonth: { ...draft.pieceOfTheMonth, name: e.target.value } })} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+              <input value={draft.pieceOfTheMonth.name} onChange={e => setDraft({ ...draft, pieceOfTheMonth: { ...draft.pieceOfTheMonth, name: e.target.value } })} className="ma-input" />
             </Field>
             <Field label="Why this piece">
-              <input value={draft.pieceOfTheMonth.why} onChange={e => setDraft({ ...draft, pieceOfTheMonth: { ...draft.pieceOfTheMonth, why: e.target.value } })} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+              <input value={draft.pieceOfTheMonth.why} onChange={e => setDraft({ ...draft, pieceOfTheMonth: { ...draft.pieceOfTheMonth, why: e.target.value } })} className="ma-input" />
             </Field>
           </div>
           <Field label="Closing note">
-            <textarea value={draft.closingNote} onChange={e => setDraft({ ...draft, closingNote: e.target.value })} rows={2} className="w-full rounded-lg px-3 py-2 text-sm outline-none leading-6" style={inputStyle} />
+            <textarea value={draft.closingNote} onChange={e => setDraft({ ...draft, closingNote: e.target.value })} rows={2} className="ma-textarea" />
           </Field>
         </section>
       )}
 
       {view === 'edit' && qaIssues.length > 0 && (
-        <section className="rounded-xl border p-5 mb-6" style={{ background: S.panel, borderColor: S.border }}>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] mb-3" style={{ color: S.gold }}>Outfit checks ({qaIssues.length})</p>
+        <section className="ma-card ma-card--flat mb-6 p-6">
+          <div className="ma-h2 mb-3">Outfit checks · {qaIssues.length}</div>
           <ul className="space-y-1.5">
             {qaIssues.map((issue, index) => (
               <li key={index} className="text-sm" style={{ color: issue.severity === 'error' ? S.error : S.soft }}>
@@ -344,7 +321,7 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
               </li>
             ))}
           </ul>
-          <p className="text-xs mt-3" style={{ color: S.muted }}>Advisory — fix a look by editing its text and pressing “Save & reshoot”.</p>
+          <p className="ma-faint mt-3 text-[13px]">Advisory. Fix a look by editing its pieces and pressing “Save and reshoot”.</p>
         </section>
       )}
 
@@ -355,59 +332,47 @@ export default function ManEditIssueReviewPage({ params }: { params: Promise<{ r
           const key = `outfit-${outfit.number}`;
           const textChanged = (outfitTexts[outfit.number] ?? '') !== (extractOutfitBlock(s4, outfit.number) ?? '');
           return (
-            <article key={outfit.number} className="rounded-xl border grid md:grid-cols-[240px_1fr] gap-5 p-5" style={{ background: S.panel, borderColor: S.border }}>
+            <article key={outfit.number} className="ma-card grid gap-6 p-6 md:grid-cols-[220px_1fr]">
               <div>
-                <div className="rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: '2 / 3', background: S.row }}>
+                <div className="flex items-center justify-center overflow-hidden rounded-[20px]" style={{ aspectRatio: '2 / 3', background: '#94a6ad' }}>
                   {busy === key ? (
-                    <Loader2 size={20} className="animate-spin" style={{ color: S.gold }} />
+                    <Loader2 size={20} className="animate-spin text-white" />
                   ) : image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={image} alt={`Look ${outfit.number}`} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-xs" style={{ color: S.muted }}>No photo yet</span>
+                    <span className="text-xs text-white/80">No photo yet</span>
                   )}
                 </div>
                 {!isSent && (
-                  <button
-                    onClick={() => { uploadTarget.current = outfit.number; fileInput.current?.click(); }}
-                    disabled={Boolean(busy) || working}
-                    className="mt-2 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs disabled:opacity-40"
-                    style={{ background: S.row, border: `1px solid ${S.border}`, color: S.soft }}
-                  >
-                    <Upload size={13} /> Upload a photo instead
-                  </button>
+                  <Button className="mt-3 w-full" size="sm" variant="ghost" icon={<Upload size={13} />} onClick={() => { uploadTarget.current = outfit.number; fileInput.current?.click(); }} disabled={Boolean(busy) || working}>
+                    Upload a photo instead
+                  </Button>
                 )}
               </div>
               <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: S.gold }}>
+                <div className="ma-eyebrow" style={{ color: 'var(--ma-accent)' }}>
                   Look {String(outfit.number).padStart(2, '0')} · {toOutfitTitleCase(outfit.context)}
-                </p>
+                </div>
                 {draft && meta && (
                   <Field label="Occasion (shown as the look's title)">
-                    <input value={meta.occasion} onChange={e => setOutfitMeta(outfit.number, e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle} />
+                    <input value={meta.occasion} onChange={e => setOutfitMeta(outfit.number, e.target.value)} className="ma-input" />
                   </Field>
                 )}
                 {meta?.reuses && <p className="text-xs" style={{ color: S.soft }}>Re-wears from Blueprint: {meta.reuses}</p>}
-                <Field label="Outfit (same format as the Blueprint)">
-                  <textarea
+                <div>
+                  <span className="ma-label">Pieces</span>
+                  <OutfitEditor
                     value={outfitTexts[outfit.number] ?? ''}
-                    onChange={e => setOutfitTexts(current => ({ ...current, [outfit.number]: e.target.value }))}
-                    rows={8}
-                    readOnly={isSent}
-                    className="w-full rounded-lg px-3 py-2 text-xs outline-none leading-5 font-mono"
-                    style={inputStyle}
+                    disabled={isSent}
+                    onChange={next => setOutfitTexts(current => ({ ...current, [outfit.number]: next }))}
+                    hideImage
                   />
-                </Field>
+                </div>
                 {!isSent && (
-                  <button
-                    onClick={() => reshoot(outfit.number)}
-                    disabled={Boolean(busy) || working}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs disabled:opacity-40"
-                    style={{ background: '#1e1a14', color: S.gold }}
-                  >
-                    {busy === key ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
-                    {textChanged ? 'Save & reshoot' : 'Reshoot photo'}
-                  </button>
+                  <Button size="sm" variant={textChanged ? 'primary' : 'secondary'} icon={<Camera size={13} />} loading={busy === key} onClick={() => reshoot(outfit.number)} disabled={Boolean(busy) || working}>
+                    {textChanged ? 'Save and reshoot' : 'Reshoot photo'}
+                  </Button>
                 )}
               </div>
             </article>

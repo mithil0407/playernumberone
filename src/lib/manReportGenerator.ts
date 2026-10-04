@@ -7,6 +7,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
+import { manGenerateText } from './manAi';
 import type { ManIntakeSubmission } from './supabaseMan';
 import type { MAN_EDIT_ISSUE_VERSION, ManEditIssueContent } from './manEditIssueTypes';
 import {
@@ -1039,11 +1040,13 @@ async function withTextRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelay
 async function callGeminiJSON(systemPrompt: string, userPrompt: string): Promise<unknown> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
   return withTextRetry(async () => {
-    const response = await ai.models.generateContent({
-      model: MAN_REPORT_TEXT_MODEL,
-      contents: [{ parts: [{ text: combined }] }],
+    const text = await manGenerateText({ label: 'man-report json', prompt: combined }, async () => {
+      const response = await ai.models.generateContent({
+        model: MAN_REPORT_TEXT_MODEL,
+        contents: [{ parts: [{ text: combined }] }],
+      });
+      return response.text ?? '';
     });
-    const text    = response.text ?? '';
     const cleaned = cleanJson(text);
     return JSON.parse(cleaned);
   });
@@ -1051,14 +1054,14 @@ async function callGeminiJSON(systemPrompt: string, userPrompt: string): Promise
 
 async function callGeminiText(systemPrompt: string, userPrompt: string, maxOutputTokens?: number): Promise<string> {
   const combined = `${systemPrompt}\n\n---\n\n${userPrompt}`;
-  return withTextRetry(async () => {
+  return withTextRetry(() => manGenerateText({ label: 'man-report text', prompt: combined }, async () => {
     const response = await ai.models.generateContent({
       model: MAN_REPORT_TEXT_MODEL,
       contents: [{ parts: [{ text: combined }] }],
       ...(maxOutputTokens ? { config: { maxOutputTokens } } : {}),
     });
     return response.text ?? '';
-  });
+  }));
 }
 
 function cleanMimeType(contentType: string | null): string {
@@ -1138,13 +1141,7 @@ export async function runGroomingImageClassification(
 
   try {
     const image = await fetchImageForGemini(imageUrl);
-    const response = await ai.models.generateContent({
-      model: MAN_REPORT_TEXT_MODEL,
-      contents: [{
-        parts: [
-          { inlineData: { mimeType: image.mimeType, data: image.data } },
-          {
-            text: `Inspect only the visible grooming state of the man in this image.
+    const groomingPrompt = `Inspect only the visible grooming state of the man in this image.
 Return ONLY valid JSON with this exact shape:
 {
   "hair_presence": "full_hair | thinning_or_receding | closely_shaved | bald | unclear",
@@ -1159,12 +1156,20 @@ Definitions:
 - "thinning_or_receding": visible recession or low density but some scalp hair remains styleable.
 - "full_hair": enough scalp hair exists to recommend normal hairstyles.
 
-Do not identify the person. Do not infer age, ethnicity, attractiveness, or sensitive traits. Keep evidence to one short visual sentence.`,
-          },
-        ],
-      }],
+Do not identify the person. Do not infer age, ethnicity, attractiveness, or sensitive traits. Keep evidence to one short visual sentence.`;
+    const text = await manGenerateText({ label: 'grooming check', prompt: groomingPrompt, images: [image] }, async () => {
+      const response = await ai.models.generateContent({
+        model: MAN_REPORT_TEXT_MODEL,
+        contents: [{
+          parts: [
+            { inlineData: { mimeType: image.mimeType, data: image.data } },
+            { text: groomingPrompt },
+          ],
+        }],
+      });
+      return response.text ?? '';
     });
-    const cleaned = cleanJson(response.text ?? '');
+    const cleaned = cleanJson(text);
     return normaliseGroomingImageProfile(JSON.parse(cleaned));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { manGenerateText } from './manAi';
 import type { ClassificationResult } from './manReportGenerator';
 import type { FaceImageKind } from './manImageGenerator';
 
@@ -177,13 +178,19 @@ export async function generateFaceStyleSwapDraft(
       : []),
   ];
 
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: [{ parts }],
-    config: { maxOutputTokens: 1024 },
-  });
+  const responseText = await manGenerateText(
+    { label: 'face style swap', prompt, images: input.inspirationImage ? [input.inspirationImage] : undefined },
+    async () => {
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [{ parts }],
+        config: { maxOutputTokens: 1024 },
+      });
+      return response.text ?? '';
+    },
+  );
 
-  const candidateStyle = cleanCandidateStyle(response.text ?? '');
+  const candidateStyle = cleanCandidateStyle(responseText);
   if (!candidateStyle) {
     throw new Error('AI did not return a replacement style');
   }

@@ -13,6 +13,7 @@ import { randomUUID } from 'node:crypto';
 
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
+import { manGenerateImage, manImageSoftDeadlineMs } from './manAi';
 import { supabaseAdmin } from './supabase';
 import type { ClassificationResult, ReportSections } from './manReportGenerator';
 import type { ManIntakeSubmission } from './supabaseMan';
@@ -797,7 +798,7 @@ Composition: natural portrait or full-body lifestyle crop suitable for a premium
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Gemini image edit call
+// Image edit call: ChatGPT via Codex locally, Gemini as fallback (see manAi)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function callGeminiImageEdit(
@@ -807,48 +808,51 @@ async function callGeminiImageEdit(
   model: string = MODEL,
   extraImage?: { data: string; mimeType: string }, // optional second reference image (e.g. hairstyle headshot)
 ): Promise<string> {
-  const primaryBytes = Buffer.byteLength(imageBase64, 'base64');
-  const extraBytes = extraImage ? Buffer.byteLength(extraImage.data, 'base64') : 0;
-  const parts: object[] = [
-    { inlineData: { mimeType, data: imageBase64 } },
-    ...(extraImage ? [{ inlineData: { mimeType: extraImage.mimeType, data: extraImage.data } }] : []),
-    { text: prompt },
-  ];
+  const referenceImages = [{ data: imageBase64, mimeType }, ...(extraImage ? [extraImage] : [])];
+  return manGenerateImage({ label: 'man image', prompt, images: referenceImages }, async () => {
+    const primaryBytes = Buffer.byteLength(imageBase64, 'base64');
+    const extraBytes = extraImage ? Buffer.byteLength(extraImage.data, 'base64') : 0;
+    const parts: object[] = [
+      { inlineData: { mimeType, data: imageBase64 } },
+      ...(extraImage ? [{ inlineData: { mimeType: extraImage.mimeType, data: extraImage.data } }] : []),
+      { text: prompt },
+    ];
 
-  console.log(`[callGeminiImageEdit] Calling model=${model}, mimeType=${mimeType}, bytes=${primaryBytes}, hasExtraImage=${!!extraImage}, extraBytes=${extraBytes}`);
+    console.log(`[callGeminiImageEdit] Calling model=${model}, mimeType=${mimeType}, bytes=${primaryBytes}, hasExtraImage=${!!extraImage}, extraBytes=${extraBytes}`);
 
-  let response;
-  try {
-    response = await ai.models.generateContent({
-      model,
-      contents: [{ parts }],
-      config: {
-        responseModalities: ['IMAGE'],
-        httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
-      },
-    });
-  } catch (err) {
-    const errorLike = err as { code?: unknown; status?: unknown; message?: unknown };
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[callGeminiImageEdit] Gemini request failed. model=${model} mimeType=${mimeType} bytes=${primaryBytes} code=${String(errorLike.code ?? 'unknown')} status=${String(errorLike.status ?? 'unknown')} message="${message.slice(0, 500)}"`);
-    throw err;
-  }
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model,
+        contents: [{ parts }],
+        config: {
+          responseModalities: ['IMAGE'],
+          httpOptions: { timeout: GEMINI_IMAGE_TIMEOUT_MS },
+        },
+      });
+    } catch (err) {
+      const errorLike = err as { code?: unknown; status?: unknown; message?: unknown };
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[callGeminiImageEdit] Gemini request failed. model=${model} mimeType=${mimeType} bytes=${primaryBytes} code=${String(errorLike.code ?? 'unknown')} status=${String(errorLike.status ?? 'unknown')} message="${message.slice(0, 500)}"`);
+      throw err;
+    }
 
-  const allParts = response.candidates?.[0]?.content?.parts ?? [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const imagePart = allParts.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
-
-  if (!imagePart?.inlineData?.data) {
-    // Capture any text the model returned — often explains a refusal or safety block
+    const allParts = response.candidates?.[0]?.content?.parts ?? [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const textPart = allParts.find((p: any) => typeof p.text === 'string');
-    const modelText = textPart?.text?.slice(0, 500) ?? '(no text in response)';
-    const finishReason = response.candidates?.[0]?.finishReason ?? 'unknown';
-    console.error(`[callGeminiImageEdit] No image returned. model=${model} finishReason=${finishReason} modelText="${modelText}"`);
-    throw new Error(`Gemini returned no image data (model=${model}, finishReason=${finishReason}): ${modelText}`);
-  }
+    const imagePart = allParts.find((p: any) => p.inlineData?.mimeType?.startsWith('image/'));
 
-  return imagePart.inlineData.data as string; // base64
+    if (!imagePart?.inlineData?.data) {
+      // Capture any text the model returned — often explains a refusal or safety block
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const textPart = allParts.find((p: any) => typeof p.text === 'string');
+      const modelText = textPart?.text?.slice(0, 500) ?? '(no text in response)';
+      const finishReason = response.candidates?.[0]?.finishReason ?? 'unknown';
+      console.error(`[callGeminiImageEdit] No image returned. model=${model} finishReason=${finishReason} modelText="${modelText}"`);
+      throw new Error(`Gemini returned no image data (model=${model}, finishReason=${finishReason}): ${modelText}`);
+    }
+
+    return imagePart.inlineData.data as string; // base64
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1234,7 +1238,7 @@ export async function generateAllOutfitImages(
   _eyewearPaths:  (string | null)[],   // preserved by merge-safe writes at route level
   imageModel:     string = MODEL,
   existingOutfitPaths: (string | null)[] = [], // already-generated slots — skip on resume
-  softDeadlineMs: number = Date.now() + 260_000,
+  softDeadlineMs: number = manImageSoftDeadlineMs(),
 ): Promise<(string | null)[]> {
   const outfits = parseOutfitsFromSection(sections.s4_outfits);
 
@@ -1427,7 +1431,7 @@ export async function generateManBlueprintV2Images(
   sections: ReportSections,
   imageModel: string = MODEL,
   existingPaths: ManReportImagePaths | null = null,
-  softDeadlineMs: number = Date.now() + 260_000,
+  softDeadlineMs: number = manImageSoftDeadlineMs(),
 ): Promise<Pick<ManReportImagePaths, 'diagnostic' | 'deliverables'>> {
   const current = normaliseImagePaths(existingPaths);
   const diagnostic = { ...(current.diagnostic ?? {}) };

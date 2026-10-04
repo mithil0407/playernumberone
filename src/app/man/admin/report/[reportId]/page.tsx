@@ -3,10 +3,9 @@
 import { useEffect, useState, use, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Send, Loader2, Copy, CheckCheck, X, Zap, Ban, RotateCcw, ImageIcon, LayoutDashboard, LogOut, Mail, Printer } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Ban, Check, CheckCheck, ChevronDown, ChevronUp, Copy, ExternalLink, ImageIcon, Loader2, Pencil, Printer, RotateCcw, Send, ShoppingBag, Trash2, Undo2, Zap } from 'lucide-react';
 import ManReport, { getManReportSlideMeta, type ManReportSlideMeta, type ShoppingSelectPayload } from '@/components/ManReport';
-import { ActionButton, Pill, reviewTheme as S } from '@/components/AdminReviewWorkspace';
+import { Avatar, Button, OverflowMenu, Pill, Segmented, Sheet, clientDisplayName, reportStatusMeta } from '@/components/manAdmin/ui';
 import type { ReportData, ReportSections } from '@/lib/manReportGenerator';
 import type { ResolvedImageUrls, FaceImageKind, ManV2ImageTarget } from '@/lib/manImageGenerator';
 import type { ComboGridKind } from '@/lib/manComboGridSection';
@@ -260,6 +259,14 @@ function withOutfitSectionFlag(next: SectionApprovals, slides: ManReportSlideMet
   return { ...next, s4: outfitSlides.every(slide => pageApproved(next, slide)) };
 }
 
+/** "Outfit 02: OFFICE / FORMAL" → "Outfit 2 · Office / Formal" */
+function sidebarTitle(title: string): string {
+  const outfit = title.match(/^Outfit (\d+):\s*(.+)$/);
+  if (!outfit) return title;
+  const context = outfit[2].toLowerCase().replace(/(^|[\s/])(\w)/g, (_, lead: string, char: string) => lead + char.toUpperCase());
+  return `Outfit ${Number(outfit[1])} · ${context}`;
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function AdminReportPage({ params }: { params: Promise<{ reportId: string }> }) {
@@ -281,11 +288,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const [retrying, setRetrying]             = useState(false);
   const [redoingOutfits, setRedoingOutfits] = useState(false);
   const [rejecting, setRejecting]           = useState(false);
-  const [confirmingReject, setConfirmingReject] = useState(false);
-  const [confirmingRedoOutfits, setConfirmingRedoOutfits] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
   const [imageGenerationPending, setImageGenerationPending] = useState(false);
-  const [imageModel, setImageModel]         = useState<'gemini-3.1-flash-image-preview' | 'gemini-2.5-flash-image'>('gemini-3.1-flash-image-preview');
+  // Only used when Gemini is the fallback; Man generation runs on ChatGPT via Codex locally.
+  const imageModel = 'gemini-3.1-flash-image-preview';
+  const [issuesOpen, setIssuesOpen]         = useState(false);
+  const [confirmAction, setConfirmAction]   = useState<'redo' | 'reject' | null>(null);
+  const [aiEngine, setAiEngine]             = useState<{ engine: 'codex' | 'gemini'; note: string | null } | null>(null);
   const [elapsedSecs, setElapsedSecs]       = useState(0);
   const [imageProgressNow, setImageProgressNow] = useState(() => Date.now());
   const latestStatusUpdatedAtRef = useRef<string | null>(null);
@@ -330,6 +339,13 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   }, [reportId]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    fetch('/api/man-report/ai-engine', { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (data?.engine) setAiEngine(data); })
+      .catch(() => {});
+  }, []);
 
   // Poll lightweight status only while text or image generation is in flight.
   useEffect(() => {
@@ -630,11 +646,6 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const printClientReport = () => {
     if (!report) return;
     window.open(`/man/report/${report.share_token}?opening=skip&print=1`, '_blank', 'noopener');
-  };
-
-  const logout = async () => {
-    await fetch('/api/iconik-club/admin/logout', { method: 'POST' });
-    window.location.href = '/man/admin/login';
   };
 
   const copyImagePrompt = useCallback(async (target: ManualImageTarget): Promise<string | null> => {
@@ -1210,14 +1221,12 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     ].filter(Boolean).length,
   };
   const activeGroomingDone = imageCounts.hairstyleDone;
-  const activeGroomingLabel = 'hairstyle grid';
   const v2ImageDone = imageCounts.diagnosticDone + imageCounts.deliverableDone;
   const imageDoneTotal = imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone + imageCounts.outfitDone + imageCounts.comboGridDone + (requiresV2Images ? v2ImageDone : 0);
   const imageExpectedTotal = expectedOutfitCount + (requiresV2Images ? 15 : 6);
   const hasImageAttempt = imageDoneTotal > 0 ||
     Boolean(report?.error_message?.startsWith('Image generation'));
   const imageButtonLabel = hasImageAttempt ? 'Retry Missing Images' : 'Generate Images';
-  const imageProgressText = `${activeGroomingDone}/1 ${activeGroomingLabel} · ${imageCounts.beardDone}/1 beard grid · ${imageCounts.eyewearDone}/1 eyewear grid · ${imageCounts.outfitDone}/${expectedOutfitCount} outfits · ${imageCounts.comboGridDone}/3 grids${requiresV2Images ? ` · ${imageCounts.diagnosticDone}/3 diagnostics · ${imageCounts.deliverableDone}/6 deliverables` : ''}`;
   const hasPartialText = !!report?.report_data?.classification ||
     Object.values(report?.report_data?.sections ?? {}).some(value => typeof value === 'string' && value.trim().length > 0);
 
@@ -1240,7 +1249,6 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     const submissionId = report.submission_id;
     if (!submissionId) { setError('Missing submission ID — cannot retry.'); return; }
     setRejecting(true);
-    setConfirmingReject(false);
     setError('');
     try {
       await fetch(`/api/man-report/${reportId}`, {
@@ -1359,7 +1367,6 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
         return;
       }
 
-      setConfirmingRedoOutfits(false);
       setReport(prev => {
         if (!prev?.report_data) return prev;
 
@@ -1492,23 +1499,40 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
     handleGenerateImages,
   ]);
 
+  // ── Keyboard: J/K move between pages, A approves and moves on, E edits ──
+  const shortcutRef = useRef<{ next: () => void; prev: () => void; approve: () => void; edit: () => void } | null>(null);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return;
+      if (document.querySelector('.ma-sheet-backdrop, [role="dialog"]')) return;
+      const actions = shortcutRef.current;
+      if (!actions) return;
+      if (event.key === 'j' || event.key === 'ArrowDown') { event.preventDefault(); actions.next(); }
+      else if (event.key === 'k' || event.key === 'ArrowUp') { event.preventDefault(); actions.prev(); }
+      else if (event.key === 'a') { event.preventDefault(); actions.approve(); }
+      else if (event.key === 'e') { event.preventDefault(); actions.edit(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // ── Loading / error states ─────────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={22} className="animate-spin" style={{ color: '#c9a96e' }} />
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 size={22} className="animate-spin ma-faint" />
       </div>
     );
   }
 
   if (!report) {
     return (
-      <div className="text-center py-20">
-        <p style={{ color: '#6b5f4a' }}>Report not found.</p>
-        <Link href="/man/admin/dashboard" className="text-sm mt-4 inline-block" style={{ color: '#c9a96e' }}>
-          ← Back to dashboard
-        </Link>
+      <div className="py-24 text-center">
+        <p className="ma-muted">Report not found.</p>
+        <Link href="/man/admin/dashboard" className="ma-btn ma-btn--secondary mt-5">Back to clients</Link>
       </div>
     );
   }
@@ -1525,422 +1549,338 @@ export default function AdminReportPage({ params }: { params: Promise<{ reportId
   const activeApproved = pageApproved(approvals, activeSlide);
   const canEditActiveSection = Boolean(activeSlideSection && report.report_data?.sections?.[SECTION_FIELD_MAP[activeSlideSection as SectionKey]] !== undefined);
   const intakeHref = report.submission_id ? `/man/admin/dashboard/${report.submission_id}` : '/man/admin/dashboard';
-  const selectedSlideTitle = viewMode === 'full'
+  const clientEmail = report.man_intake_submissions?.customer_email ?? null;
+  const clientName = clientDisplayName(clientEmail, report.man_intake_submissions?.customer_phone);
+  const statusMeta = reportStatusMeta(report);
+  const isSent = report.status === 'sent' || Boolean(report.sent_at);
+  const canReworkReport = ['draft_ready', 'in_review', 'approved', 'sent'].includes(report.status) && Boolean(report.report_data);
+  const busyWithJob = isGenerating || Boolean(report.progress_stage);
+  const showGenerateImages = !isGenerating && Boolean(report.report_data) && !hasAllImages && !report.progress_stage;
+  const qaFindings = qualityGateRequired && !qualityGatePassed
+    ? [
+      ...(outfitQuality?.failedCriteria ?? []).filter(item => item !== 'Deterministic outfit QA has blocking errors.'),
+      ...outfitQaErrors.filter(item => item.code !== 'quality_floor').map(item => item.message),
+    ]
+    : [];
+  const linksNeedAttention = Boolean(shoppingSummary && !shoppingSummary.inFlight && (shoppingSummary.error || shoppingSummary.staleCount > 0));
+  const approvalPct = totalApprovalPages ? Math.round((approvedCount / totalApprovalPages) * 100) : 0;
+  const pageTitle = viewMode === 'full'
     ? 'Full report'
-    : activeSlide
-      ? 'Page ' + activeSlide.pageNumber + ': ' + activeSlide.title
-      : 'Report';
+    : activeSlide ? sidebarTitle(activeSlide.title) : 'Report';
+
+  const goToPage = (pageNumber: number) => {
+    const slide = slideMeta.find(item => item.pageNumber === pageNumber);
+    if (!slide) return;
+    setActivePageNumber(slide.pageNumber);
+    setActiveSection(slide.sectionKey as SectionKey);
+    setViewMode('page');
+    document.getElementById(`ma-page-${slide.pageNumber}`)?.scrollIntoView({ block: 'nearest' });
+  };
+  const activeIndex = slideMeta.findIndex(slide => slide.pageNumber === activePageNumber);
+  shortcutRef.current = safeData ? {
+    next: () => goToPage(slideMeta[Math.min(slideMeta.length - 1, activeIndex + 1)]?.pageNumber ?? activePageNumber),
+    prev: () => goToPage(slideMeta[Math.max(0, activeIndex - 1)]?.pageNumber ?? activePageNumber),
+    approve: () => { if (activeSlide && !isGenerating) void approveAndNext(); },
+    edit: () => { if (canEditActiveSection && !isGenerating && activeSlideSection) startEdit(activeSlideSection as SectionKey); },
+  } : null;
+
+  const missingImageParts = [
+    imageCounts.outfitDone < expectedOutfitCount ? `${expectedOutfitCount - imageCounts.outfitDone} outfit` : null,
+    imageCounts.comboGridDone < 3 ? `${3 - imageCounts.comboGridDone} grid` : null,
+    imageCounts.hairstyleDone + imageCounts.beardDone + imageCounts.eyewearDone < 3 ? `${3 - imageCounts.hairstyleDone - imageCounts.beardDone - imageCounts.eyewearDone} face` : null,
+    requiresV2Images && imageCounts.diagnosticDone < 3 ? `${3 - imageCounts.diagnosticDone} diagnostic` : null,
+    requiresV2Images && imageCounts.deliverableDone < 6 ? `${6 - imageCounts.deliverableDone} deliverable` : null,
+  ].filter(Boolean);
 
   return (
-    <div className="min-h-screen man-admin-review" style={{ background: S.bg, color: S.ink }}>
-      <aside className="fixed left-0 top-0 bottom-0 z-30 w-[310px] border-r flex flex-col" style={{ background: S.card, borderColor: S.border }}>
-        <div className="px-6 py-5 border-b" style={{ borderColor: S.border }}>
-          <div className="iconik-display" style={{ fontSize: '13px', letterSpacing: '0.32em', color: S.ink }}>I C O N I K</div>
-          <div className="iconik-micro mt-1.5" style={{ color: S.muted }}>Man - Review</div>
-        </div>
-        <div className="px-4 py-3 border-b space-y-1" style={{ borderColor: S.border }}>
-          <Link href="/man/admin/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
-            <LayoutDashboard size={15} /> Blueprints
+    <div className="ma-report min-h-screen">
+      {/* ── Sidebar: who, how far, which page ─────────────────────────────── */}
+      <aside className="ma-report__aside">
+        <div className="px-5 pt-5 pb-4">
+          <Link href="/man/admin/dashboard" className="ma-btn ma-btn--ghost ma-btn--sm -ml-2.5">
+            <ArrowLeft size={14} /> Clients
           </Link>
-          <Link href="/man/admin/edit" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
-            <Mail size={15} /> ICONIK Edit
-          </Link>
-        </div>
-        <div className="px-5 py-4 border-b" style={{ borderColor: S.border }}>
-          <Link href={intakeHref} className="inline-flex items-center gap-2 text-sm luxury-body mb-3" style={{ color: S.muted }}>
-            <ArrowLeft size={14} /> Back to intake
-          </Link>
-          <h1 className="iconik-display truncate" style={{ fontSize: '22px', color: S.ink }}>
-            {report.man_intake_submissions?.customer_email || 'Client'}
-          </h1>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <Pill tone={isError ? 'error' : report.status === 'sent' ? 'success' : isGenerating ? 'gold' : 'slate'}>
-              {report.progress_stage ? (STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')) : report.status.replace(/_/g, ' ')}
-            </Pill>
-            <Pill tone={ready ? 'success' : 'muted'}>Approved {approvedCount}/{totalApprovalPages}</Pill>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="iconik-micro mb-3" style={{ color: S.muted }}>Review Queue</div>
-          <div className="space-y-4">
-            {(['Opening', 'Diagnosis', 'Prescription', 'Outfits', 'Closing'] as const).map(group => {
-              const groupSlides = slideMeta.filter(slide => slide.group === group);
-              if (groupSlides.length === 0) return null;
-              return (
-                <div key={group}>
-                  <p className="iconik-mono mb-1.5" style={{ fontSize: '10px', color: S.muted }}>{group}</p>
-                  <div className="space-y-1">
-                    {groupSlides.map((slide: ManReportSlideMeta) => {
-                      const active = activePageNumber === slide.pageNumber;
-                      const approved = pageApproved(approvals, slide);
-                      return (
-                        <button
-                          key={slide.pageNumber + '-' + slide.title}
-                          onClick={() => {
-                            setActivePageNumber(slide.pageNumber);
-                            setActiveSection(slide.sectionKey as SectionKey);
-                            setViewMode('page');
-                          }}
-                          className="w-full grid grid-cols-[1fr_auto] items-center gap-2 rounded-xl px-3 py-2.5 text-left transition"
-                          style={{
-                            background: active ? S.ink : 'transparent',
-                            color: active ? S.bg : S.muted,
-                            border: '1px solid ' + (active ? S.ink : S.border),
-                          }}
-                        >
-                          <span className="iconik-mono truncate" style={{ fontSize: '11px' }}>{String(slide.pageNumber).padStart(2, '0')} - {slide.title}</span>
-                          <span className="rounded-full px-2 py-0.5 iconik-micro" style={{ background: approved ? S.success + '18' : S.bg, color: approved ? S.success : S.muted }}>
-                            {approved ? 'OK' : 'Open'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 rounded-2xl border p-4 space-y-2" style={{ background: S.bg, borderColor: S.border }}>
-            <div className="iconik-micro" style={{ color: S.muted }}>Images</div>
-            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Hairstyle</span><Pill tone={imageCounts.hairstyleDone >= 1 ? 'success' : 'gold'}>{imageCounts.hairstyleDone}/1</Pill></div>
-            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Beard</span><Pill tone={imageCounts.beardDone >= 1 ? 'success' : 'gold'}>{imageCounts.beardDone}/1</Pill></div>
-            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Eyewear</span><Pill tone={imageCounts.eyewearDone >= 1 ? 'success' : 'gold'}>{imageCounts.eyewearDone}/1</Pill></div>
-            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Outfits</span><Pill tone={imageCounts.outfitDone >= expectedOutfitCount ? 'success' : 'gold'}>{imageCounts.outfitDone}/{expectedOutfitCount}</Pill></div>
-            <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Grids</span><Pill tone={imageCounts.comboGridDone >= 3 ? 'success' : 'gold'}>{imageCounts.comboGridDone}/3</Pill></div>
-            {requiresV2Images && <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Diagnostics</span><Pill tone={imageCounts.diagnosticDone >= 3 ? 'success' : 'gold'}>{imageCounts.diagnosticDone}/3</Pill></div>}
-            {requiresV2Images && <div className="flex items-center justify-between gap-3"><span className="iconik-mono" style={{ fontSize: '10px', color: S.muted }}>Deliverables</span><Pill tone={imageCounts.deliverableDone >= 6 ? 'success' : 'gold'}>{imageCounts.deliverableDone}/6</Pill></div>}
-          </div>
-        </div>
-        <div className="px-4 py-4 border-t" style={{ borderColor: S.border }}>
-          <button onClick={logout} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm luxury-body" style={{ color: S.muted }}>
-            <LogOut size={14} /> Sign out
-          </button>
-        </div>
-      </aside>
-
-      <main className="min-h-screen pl-[310px]">
-        <header className="sticky top-0 z-20 border-b px-8 py-4 backdrop-blur" style={{ background: 'rgba(244,239,229,0.92)', borderColor: S.border }}>
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-            <div>
-              <div className="iconik-micro mb-1" style={{ color: S.muted }}>Men Blueprint Report</div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="luxury-body text-lg" style={{ color: S.ink, fontWeight: 500 }}>{selectedSlideTitle}</h2>
-                <Pill tone={hasAllImages ? 'success' : 'gold'}>Images {imageDoneTotal}/{imageExpectedTotal}</Pill>
-                {qualityGateRequired && <Pill tone={qualityGatePassed ? 'success' : 'gold'}>Outfit Quality {outfitQuality?.overallScore?.toFixed(1) ?? 'Pending'}/10</Pill>}
-                {shoppingSummary && (shoppingSummary.hasState || shoppingSummary.inFlight) && (
-                  <Pill tone={
-                    shoppingSummary.inFlight ? 'gold'
-                    : shoppingSummary.error ? 'error'
-                    : shoppingSummary.staleCount > 0 || shoppingSummary.flaggedCount > 0 ? 'gold'
-                    : 'success'
-                  }>
-                    {shoppingSummary.inFlight
-                      ? 'Links fetching…'
-                      : shoppingSummary.error
-                        ? 'Links failed'
-                        : `Links ${shoppingSummary.doneCount}/${shoppingSummary.total}${shoppingSummary.flaggedCount > 0 ? ` · ${shoppingSummary.flaggedCount} flagged` : ''}`}
-                  </Pill>
-                )}
-                {isGenerating && <Pill tone={isStuck ? 'error' : 'gold'}>{isStuck ? 'Stuck ' + elapsedLabel : 'Live ' + elapsedLabel}</Pill>}
-              </div>
-              {report.error_message && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{report.error_message}</p>}
-              {error && <p className="luxury-body text-sm mt-2" style={{ color: S.error }}>{error}</p>}
-              {qualityGateRequired && !qualityGatePassed && outfitQuality?.failedCriteria?.length ? (
-                <div className="luxury-body text-xs mt-2 space-y-1" style={{ color: S.gold }}>
-                  <p>{outfitQuality.failedCriteria.filter(item => item !== 'Deterministic outfit QA has blocking errors.').join(' ')}</p>
-                  {outfitQaErrors.filter(item => item.code !== 'quality_floor').length > 0 && (
-                    <p>{outfitQaErrors.filter(item => item.code !== 'quality_floor').map(item => item.message).join(' ')}</p>
-                  )}
-                  <p>Review the flagged outfits. Once every page is approved, Send will ask for confirmation instead of blocking the report.</p>
-                </div>
-              ) : null}
-              {!isGenerating && report.progress_stage && <p className="luxury-body text-xs mt-2" style={{ color: isImageStuck ? S.gold : S.muted }}>{STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')} · {imageProgressText}</p>}
+          <Link href={intakeHref} className="mt-4 flex items-center gap-3" title="Open intake answers">
+            <Avatar name={clientName} size={44} />
+            <div className="min-w-0">
+              <div className="truncate text-[16px]" style={{ fontWeight: 600 }}>{clientName}</div>
+              <div className="ma-faint truncate text-[12px]">{clientEmail ?? 'Intake answers'}</div>
             </div>
-            <div className="admin-toolbar">
-              <div className="admin-toolbar-group">
-                <span className="admin-toolbar-label">View</span>
-                <ActionButton onClick={() => setViewMode(viewMode === 'full' ? 'page' : 'full')} tone={viewMode === 'full' ? 'primary' : 'neutral'} title={viewMode === 'full' ? 'Switch to focused page review.' : 'Show the full report.'}>
-                  {viewMode === 'full' ? `Page View · ${activePageNumber}` : 'Full Report'}
-                </ActionButton>
-                <ActionButton onClick={copyLink} title="Copy the public report link.">
-                  {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy Link'}
-                </ActionButton>
-                <ActionButton onClick={printClientReport} title="Open the client's view in a new tab and save it as a PDF.">
-                  <Printer size={14} /> Print / PDF
-                </ActionButton>
-              </div>
-
-              <div className="admin-toolbar-group">
-                <span className="admin-toolbar-label">Report</span>
-                {isError && (
-                  <ActionButton onClick={handleRetry} disabled={retrying} tone="primary" title="Resume or retry text generation.">
-                    {retrying ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />} {hasPartialText ? 'Resume' : 'Retry'}
-                  </ActionButton>
-                )}
-                {isStuck && (
-                  <ActionButton onClick={() => handleTerminate()} disabled={terminating} tone="danger" title="Cancel the stuck generation job.">
-                    {terminating ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />} Cancel
-                  </ActionButton>
-                )}
-                {['draft_ready', 'in_review', 'approved', 'sent'].includes(report.status) && report.report_data && (confirmingRedoOutfits ? (
-                  <>
-                    <ActionButton onClick={() => setConfirmingRedoOutfits(false)} disabled={redoingOutfits}>Cancel Redo</ActionButton>
-                    <ActionButton
-                      onClick={() => { void handleRedoAllOutfits(); }}
-                      disabled={redoingOutfits || isGenerating || Boolean(report.progress_stage)}
-                      tone="primary"
-                      title="Regenerate all 20 outfit recommendations and clear outfit-dependent images."
-                    >
-                      {redoingOutfits ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Redo
-                    </ActionButton>
-                  </>
-                ) : (
-                  <ActionButton
-                    onClick={() => setConfirmingRedoOutfits(true)}
-                    disabled={redoingOutfits || isGenerating || Boolean(report.progress_stage)}
-                    title="Regenerate only the outfit recommendation text using the current v6.1 system."
-                  >
-                    <RotateCcw size={14} /> Redo All Outfits
-                  </ActionButton>
-                ))}
-                {shoppingSummary && !shoppingSummary.inFlight && (shoppingSummary.error || shoppingSummary.staleCount > 0) && (
-                  <ActionButton
-                    onClick={() => { void fetchShoppingLinks(); }}
-                    title="Fetch shopping links for garments that have none or whose text changed."
-                  >
-                    <Zap size={14} /> {shoppingSummary.error ? 'Retry Links' : 'Fetch Links'}
-                  </ActionButton>
-                )}
-                {['draft_ready', 'in_review', 'approved'].includes(report.status) && (confirmingReject ? (
-                  <>
-                    <ActionButton onClick={() => setConfirmingReject(false)}>Cancel Reject</ActionButton>
-                    <ActionButton onClick={handleRejectAndRetry} disabled={rejecting} tone="danger" title="Discard this report and generate a new one.">
-                      {rejecting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Retry
-                    </ActionButton>
-                  </>
-                ) : (
-                  <ActionButton onClick={() => setConfirmingReject(true)} tone="danger" title="Discard this report and generate a new one.">
-                    <RotateCcw size={14} /> Reject & Retry
-                  </ActionButton>
-                ))}
-              </div>
-
-              <div className="admin-toolbar-group">
-                <span className="admin-toolbar-label">Images</span>
-                <select
-                  value={imageModel}
-                  onChange={event => setImageModel(event.target.value as typeof imageModel)}
-                  disabled={isGenerating || generatingImages || Boolean(report.progress_stage)}
-                  className="admin-toolbar-select luxury-body"
-                  style={{ background: S.card, color: S.ink, border: '1px solid ' + S.border }}
-                  title="Choose the image model for man report image generation."
-                >
-                  <option value="gemini-3.1-flash-image-preview">3.1 Preview</option>
-                  <option value="gemini-2.5-flash-image">2.5 Flash</option>
-                </select>
-                {!isGenerating && report.report_data && !hasAllImages && !report.progress_stage && (
-                  <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages || !qualityGatePassed} title={qualityGatePassed ? 'Generate missing report images.' : 'Outfit quality must pass 9/10 before image generation.'}>
-                    {generatingImages ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />} {imageButtonLabel}
-                  </ActionButton>
-                )}
-                {isImageStuck && !isGenerating && (
-                  <ActionButton onClick={() => { void handleGenerateImages(); }} disabled={generatingImages} tone="primary" title="Restart the stuck image generation job.">
-                    {generatingImages ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Restart Images
-                  </ActionButton>
-                )}
-              </div>
-            </div>
+          </Link>
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            <Pill tone={statusMeta.tone} live={statusMeta.live} dot={!statusMeta.live}>{statusMeta.label}</Pill>
+            {aiEngine && (
+              <Pill tone={aiEngine.engine === 'codex' ? 'accent' : 'neutral'} title={aiEngine.note ?? (aiEngine.engine === 'codex' ? 'Text and images use your ChatGPT login via Codex. Gemini is the fallback.' : 'Codex is not available on this server, so Gemini is used.')}>
+                {aiEngine.engine === 'codex' ? 'ChatGPT' : 'Gemini'}
+              </Pill>
+            )}
           </div>
-        </header>
-
-        <div className="px-8 py-8 pb-28">
-          {!safeData ? (
-            <div className="p-10 luxury-body" style={{ color: S.muted }}>{report.status === 'generating' ? (STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating...') : 'No report data yet.'}</div>
-          ) : (
-            <div className="mx-auto max-w-[1120px] rounded-2xl overflow-hidden" style={{ background: S.ink }}>
-              <ManReport
-                data={safeData}
-                imageUrls={report.image_urls}
-                viewerMode="admin"
-                motionMode="reduced"
-                deferSections={viewMode === 'full'}
-                focusPageNumber={viewMode === 'page' ? activePageNumber : undefined}
-                onRegenerateFaceImage={regenerateFaceImage}
-                onRegenerateV2Image={regenerateV2Image}
-                onDraftFaceStyleSwap={draftFaceStyleSwap}
-                onApplyFaceStyleSwap={applyFaceStyleSwap}
-                onRegenerateOutfit={regenerateOutfit}
-                onSaveOutfitText={saveOutfitText}
-                onSaveComboGridText={saveComboGridText}
-                onRegenerateComboGrid={regenerateComboGrid}
-                onDraftOutfitSwap={draftOutfitSwap}
-                onApplyOutfitSwap={applyOutfitSwap}
-                onRetryMissingImages={handleGenerateImages}
-                onCopyImagePrompt={copyImagePrompt}
-                onUploadManualImage={uploadManualImage}
-                shopping={report.shopping_data}
-                onSelectShoppingLink={selectShoppingLink}
-              />
+          {safeData && (
+            <div className="mt-4">
+              <div className="flex items-baseline justify-between text-[12px]">
+                <span className="ma-faint">Reviewed</span>
+                <span className="ma-num" style={{ fontWeight: 600 }}>{approvedCount} / {totalApprovalPages}</span>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full" style={{ background: 'rgba(17,19,21,0.07)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${approvalPct}%`, background: ready ? 'var(--ma-green)' : 'var(--ma-accent)' }} />
+              </div>
             </div>
           )}
         </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 pb-4" aria-label="Report pages">
+          {(['Opening', 'Diagnosis', 'Prescription', 'Outfits', 'Closing'] as const).map(group => {
+            const groupSlides = slideMeta.filter(slide => slide.group === group);
+            if (groupSlides.length === 0) return null;
+            return (
+              <div key={group} className="mt-3">
+                <div className="ma-eyebrow px-2.5 pb-1.5">{group}</div>
+                {groupSlides.map((slide: ManReportSlideMeta) => {
+                  const active = viewMode === 'page' && activePageNumber === slide.pageNumber;
+                  const approved = pageApproved(approvals, slide);
+                  return (
+                    <button
+                      key={slide.pageNumber + '-' + slide.title}
+                      id={`ma-page-${slide.pageNumber}`}
+                      type="button"
+                      onClick={() => goToPage(slide.pageNumber)}
+                      className="ma-report__page"
+                      data-active={active}
+                    >
+                      <span className="ma-num ma-faint w-5 shrink-0 text-right text-[11px]">{slide.pageNumber}</span>
+                      <span className="min-w-0 flex-1 truncate">{sidebarTitle(slide.title)}</span>
+                      {approved
+                        ? <Check size={14} style={{ color: 'var(--ma-green)' }} aria-label="Approved" />
+                        : <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'rgba(17,19,21,0.18)' }} aria-label="Not reviewed" />}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* ── Top bar: what you're looking at + the few actions that matter ─── */}
+      <header className="ma-report__top ma-glass">
+        <div className="flex min-w-0 items-center gap-3">
+          <h1 className="truncate text-[17px]" style={{ fontWeight: 600, letterSpacing: '-0.015em' }}>{pageTitle}</h1>
+          {viewMode === 'page' && activeSlide && (
+            <span className="ma-faint shrink-0 text-[13px] ma-num">Page {activeSlide.pageNumber} of {slideMeta.length}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {safeData && (
+            <Segmented<'page' | 'full'>
+              value={viewMode}
+              onChange={setViewMode}
+              options={[{ value: 'page', label: 'Page' }, { value: 'full', label: 'Full report' }]}
+            />
+          )}
+          {qaFindings.length > 0 && (
+            <Button size="sm" variant="ghost" onClick={() => setIssuesOpen(true)} title="Automated outfit checks">
+              <span className="ma-pill ma-pill--amber">{qaFindings.length} outfit {qaFindings.length === 1 ? 'note' : 'notes'}</span>
+            </Button>
+          )}
+          {showGenerateImages && (
+            <Button
+              size="sm"
+              variant={isSent ? 'secondary' : 'dark'}
+              icon={<ImageIcon size={14} />}
+              loading={generatingImages}
+              disabled={!qualityGatePassed}
+              title={qualityGatePassed ? `Missing: ${missingImageParts.join(', ')}` : 'Outfit quality must pass before images.'}
+              onClick={() => { void handleGenerateImages(); }}
+            >
+              {imageButtonLabel === 'Generate Images' ? 'Generate images' : `Fill ${imageExpectedTotal - imageDoneTotal} images`}
+            </Button>
+          )}
+          {isImageStuck && !isGenerating && (
+            <Button size="sm" variant="dark" icon={<RotateCcw size={14} />} loading={generatingImages} onClick={() => { void handleGenerateImages(); }}>
+              Restart images
+            </Button>
+          )}
+          <OverflowMenu
+            items={[
+              { label: copied ? 'Copied' : 'Copy client link', icon: copied ? <Check size={15} /> : <Copy size={15} />, onSelect: copyLink },
+              { label: 'Open client view', hint: 'What the client sees', icon: <ExternalLink size={15} />, onSelect: () => window.open(`/man/report/${report.share_token}?opening=skip`, '_blank', 'noopener') },
+              { label: 'Download PDF', icon: <Printer size={15} />, onSelect: printClientReport },
+              ...(linksNeedAttention ? [{ label: shoppingSummary?.error ? 'Retry shopping links' : 'Fetch shopping links', icon: <ShoppingBag size={15} />, onSelect: () => { void fetchShoppingLinks(); } }] : []),
+              ...(canReworkReport ? [{ label: 'Rewrite all 20 outfits', hint: 'Clears outfit images', icon: <RotateCcw size={15} />, disabled: redoingOutfits || busyWithJob, onSelect: () => setConfirmAction('redo') }] : []),
+              ...(['draft_ready', 'in_review', 'approved'].includes(report.status) ? [{ label: 'Discard and regenerate', hint: 'Starts a fresh report', icon: <Trash2 size={15} />, danger: true, onSelect: () => setConfirmAction('reject') }] : []),
+              ...(isStuck ? [{ label: 'Cancel stuck generation', icon: <Ban size={15} />, danger: true, disabled: terminating, onSelect: () => { void handleTerminate(); } }] : []),
+            ]}
+          />
+        </div>
+      </header>
+
+      <main className="ma-report__main">
+        {(report.error_message || error) && (
+          <div className="mx-auto mb-5 flex max-w-[1120px] items-start justify-between gap-4 rounded-2xl px-5 py-3.5 text-[14px]" style={{ background: 'var(--ma-red-soft)', color: 'var(--ma-red)' }}>
+            <span>{error || report.error_message}</span>
+            {isError && (
+              <Button size="sm" variant="danger" icon={<Zap size={13} />} loading={retrying} onClick={handleRetry}>{hasPartialText ? 'Resume' : 'Retry'}</Button>
+            )}
+          </div>
+        )}
+
+        {!isGenerating && report.progress_stage && (
+          <div className="mx-auto mb-5 flex max-w-[1120px] items-center gap-3 rounded-2xl px-5 py-3 text-[14px]" style={{ background: isImageStuck ? 'var(--ma-amber-soft)' : 'var(--ma-blue-soft)', color: isImageStuck ? 'var(--ma-amber)' : 'var(--ma-blue)' }}>
+            {!isImageStuck && <Loader2 size={15} className="animate-spin" />}
+            <span>{STAGE_LABELS[report.progress_stage] ?? report.progress_stage.replace(/_/g, ' ')}</span>
+            <span className="ma-num opacity-80">· {imageDoneTotal} of {imageExpectedTotal} images</span>
+          </div>
+        )}
+
+        {!safeData ? (
+          <div className="mx-auto mt-16 max-w-md text-center">
+            {isGenerating ? (
+              <div className="ma-card px-8 py-10">
+                <Loader2 size={26} className="mx-auto animate-spin" style={{ color: 'var(--ma-accent)' }} />
+                <div className="ma-h2 mt-5">{STAGE_LABELS[report.progress_stage ?? ''] ?? 'Generating…'}</div>
+                <p className="ma-faint mt-1 text-[14px] ma-num">{isStuck ? `No progress for ${elapsedLabel}` : `Running for ${elapsedLabel}`}</p>
+                {isStuck && <Button className="mt-5" variant="danger" size="sm" icon={<Ban size={13} />} loading={terminating} onClick={() => { void handleTerminate(); }}>Cancel</Button>}
+              </div>
+            ) : (
+              <p className="ma-muted">No report text yet.</p>
+            )}
+          </div>
+        ) : (
+          <div className="mx-auto max-w-[1120px] overflow-hidden rounded-[28px]" style={{ background: '#111315', boxShadow: 'var(--ma-shadow-sm)' }}>
+            <ManReport
+              data={safeData}
+              imageUrls={report.image_urls}
+              viewerMode="admin"
+              motionMode="reduced"
+              deferSections={viewMode === 'full'}
+              focusPageNumber={viewMode === 'page' ? activePageNumber : undefined}
+              onRegenerateFaceImage={regenerateFaceImage}
+              onRegenerateV2Image={regenerateV2Image}
+              onDraftFaceStyleSwap={draftFaceStyleSwap}
+              onApplyFaceStyleSwap={applyFaceStyleSwap}
+              onRegenerateOutfit={regenerateOutfit}
+              onSaveOutfitText={saveOutfitText}
+              onSaveComboGridText={saveComboGridText}
+              onRegenerateComboGrid={regenerateComboGrid}
+              onDraftOutfitSwap={draftOutfitSwap}
+              onApplyOutfitSwap={applyOutfitSwap}
+              onRetryMissingImages={handleGenerateImages}
+              onCopyImagePrompt={copyImagePrompt}
+              onUploadManualImage={uploadManualImage}
+              shopping={report.shopping_data}
+              onSelectShoppingLink={selectShoppingLink}
+            />
+          </div>
+        )}
       </main>
 
+      {/* ── Review dock ─────────────────────────────────────────────────────── */}
       {safeData && (
-        <footer className="fixed bottom-0 left-[310px] right-0 z-30 border-t px-8 py-3 backdrop-blur" style={{ background: 'rgba(244,239,229,0.96)', borderColor: S.border, paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Pill tone={activeApproved ? 'success' : 'gold'}>{activeSlide ? 'Page ' + activeSlide.pageNumber : 'Page'} {activeApproved ? 'approved' : 'open'}</Pill>
-              <span className="luxury-body text-xs" style={{ color: S.muted }}>
-                {activeSlide ? 'Click report text to review, or edit this page text from the original section source.' : 'Select a report page to review.'}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <ActionButton onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} disabled={!canEditActiveSection || isGenerating}>Edit Page Text</ActionButton>
-              <ActionButton onClick={approveAll} disabled={isGenerating} tone="ghost" title="Approve every page without reviewing each one."><CheckCheck size={14} /> Approve all</ActionButton>
-              <ActionButton onClick={() => togglePageApproval(activeSlide)} disabled={!activeSlide || isGenerating} tone="neutral"><Check size={14} /> {activeApproved ? 'Undo approval' : 'Approve'}</ActionButton>
-              <ActionButton onClick={approveAndNext} disabled={!activeSlide || isGenerating} tone="success" size="lg"><CheckCheck size={15} /> Approve & next</ActionButton>
-              <ActionButton onClick={sendToClient} disabled={!ready || sending || isGenerating} title={!ready ? 'Approve every visible page before sending.' : !qualityGatePassed ? 'Review the automated outfit findings, then confirm whether to send.' : 'Send the report email to the client.'} tone="primary">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {sending ? 'Sending...' : report.status === 'sent' || report.sent_at ? 'Resend' : 'Send'}</ActionButton>
-            </div>
+        <div className="ma-report__dock">
+          <div className="ma-report__dock-inner">
+            {viewMode === 'page' && activeSlide ? (
+              <>
+                <Button size="sm" variant="ghost" iconOnly icon={<ChevronUp size={16} />} aria-label="Previous page (K)" title="Previous page  K" disabled={activeIndex <= 0} onClick={() => shortcutRef.current?.prev()} />
+                <Button size="sm" variant="ghost" iconOnly icon={<ChevronDown size={16} />} aria-label="Next page (J)" title="Next page  J" disabled={activeIndex >= slideMeta.length - 1} onClick={() => shortcutRef.current?.next()} />
+                <span className="mx-1 h-5 w-px" style={{ background: 'var(--ma-line)' }} />
+                <Button size="sm" variant="ghost" icon={<Pencil size={14} />} disabled={!canEditActiveSection || isGenerating} onClick={() => activeSlideSection && startEdit(activeSlideSection as SectionKey)} title="Edit this page's text  E">
+                  Edit text
+                </Button>
+                {activeApproved ? (
+                  <Button size="sm" variant="ghost" icon={<Undo2 size={14} />} disabled={isGenerating} onClick={() => togglePageApproval(activeSlide)}>Unapprove</Button>
+                ) : (
+                  <Button size="sm" variant="success" icon={<Check size={14} />} disabled={isGenerating} onClick={approveAndNext} title="Approve and go to the next page  A">
+                    Approve <span className="ma-kbd" style={{ background: 'rgba(255,255,255,0.16)', borderColor: 'transparent', color: '#fff' }}>A</span>
+                  </Button>
+                )}
+              </>
+            ) : (
+              <span className="ma-faint px-2 text-[13px]">Pick a page on the left, or press <span className="ma-kbd">J</span> to start reviewing</span>
+            )}
+            <span className="mx-1 h-5 w-px" style={{ background: 'var(--ma-line)' }} />
+            {!ready && (
+              <Button size="sm" variant="ghost" icon={<CheckCheck size={14} />} disabled={isGenerating} onClick={approveAll} title="Mark every page reviewed">
+                Approve all
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="primary"
+              icon={<Send size={14} />}
+              loading={sending}
+              disabled={!ready || isGenerating}
+              onClick={sendToClient}
+              title={!ready ? `Review all ${totalApprovalPages} pages first (${approvedCount} done).` : 'Email the report to the client.'}
+            >
+              {isSent ? 'Resend' : 'Send to client'}
+            </Button>
           </div>
-        </footer>
+        </div>
       )}
 
-      <style jsx global>{`
-        .admin-toolbar {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 10px;
-        }
-        .admin-toolbar-group {
-          display: flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 8px;
-          min-height: 44px;
-          padding: 6px;
-          border: 1px solid ${S.border};
-          border-radius: 16px;
-          background: rgba(237, 229, 210, 0.46);
-        }
-        .admin-toolbar-label {
-          padding: 0 4px;
-          color: ${S.muted};
-          font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          white-space: nowrap;
-        }
-        .admin-toolbar-select {
-          min-height: 40px;
-          border-radius: 12px;
-          padding: 8px 12px;
-          font-size: 14px;
-          outline: none;
-        }
-        .admin-toolbar-select:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-        }
-        .admin-toolbar button {
-          min-height: 40px;
-          white-space: nowrap;
-        }
-        .iconik-report .iconik-page {
-          scroll-margin-top: 122px;
-        }
-        @media (max-width: 1280px) {
-          .admin-toolbar {
-            justify-content: flex-start;
-          }
-          .admin-toolbar-group {
-            flex: 1 1 100%;
-            justify-content: flex-start;
-          }
-        }
-        @media (max-width: 1000px) {
-          .man-admin-review aside.fixed { position: relative; width: 100%; height: auto; }
-          .man-admin-review main.min-h-screen { padding-left: 0; }
-          .man-admin-review footer.fixed { left: 0; }
-          .admin-toolbar {
-            align-items: stretch;
-          }
-          .admin-toolbar-group {
-            align-items: stretch;
-          }
-          .admin-toolbar button,
-          .admin-toolbar-select {
-            width: 100%;
-            justify-content: center;
-          }
-        }
-        @media (max-width: 640px) {
-          .man-admin-review header.sticky,
-          .man-admin-review main > div,
-          .man-admin-review footer.fixed { padding-left: 1rem; padding-right: 1rem; }
-        }
-      `}</style>
+      {/* ── Outfit QA notes ─────────────────────────────────────────────────── */}
+      <Sheet
+        open={issuesOpen}
+        onClose={() => setIssuesOpen(false)}
+        eyebrow="Automated outfit check"
+        title={`Scored ${outfitQuality?.overallScore?.toFixed(1) ?? '—'} / 10`}
+        footer={<Button variant="dark" onClick={() => setIssuesOpen(false)}>Done</Button>}
+      >
+        <p className="ma-muted mb-4 text-[14px]">These are suggestions, not blockers. Fix the outfits you agree with; you can still send once every page is reviewed.</p>
+        <ul className="space-y-2">
+          {qaFindings.map(item => (
+            <li key={item} className="rounded-2xl px-4 py-3 text-[14px]" style={{ background: 'var(--ma-surface-2)', border: '1px solid var(--ma-line-2)' }}>{item}</li>
+          ))}
+        </ul>
+      </Sheet>
 
-      {/* ── Inline section editor modal ───────────────────────────────────── */}
-      <AnimatePresence>
-      {editingSection && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(44,38,34,0.45)' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-        >
-          <motion.div
-            className="rounded-2xl border w-full max-w-2xl mx-4 flex flex-col"
-            style={{ background: S.card, borderColor: S.border, maxHeight: '80vh' }}
-            initial={{ scale: 0.96, opacity: 0, y: 12 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.96, opacity: 0, y: 12 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-          >
-            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: S.border }}>
-              <p className="text-sm font-medium luxury-body" style={{ color: S.ink }}>
-                Edit - {SECTIONS.find(s => s.key === editingSection)?.label}
-              </p>
-              <button onClick={() => setEditingSection(null)} style={{ color: S.muted }}>
-                <X size={16} />
-              </button>
-            </div>
-            <textarea
-              value={editText}
-              onChange={e => setEditText(e.target.value)}
-              className="flex-1 p-5 text-sm font-light outline-none resize-none min-h-[400px] luxury-body"
-              style={{ background: S.bg, color: S.ink, lineHeight: 1.7 }}
-            />
-            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t" style={{ borderColor: S.border }}>
-              <button
-                onClick={() => setEditingSection(null)}
-                className="px-4 py-2 rounded-lg text-sm transition-opacity hover:opacity-70"
-                style={{ color: S.muted }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveEdit}
-                disabled={saving}
-                className="px-5 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-opacity disabled:opacity-60"
-                style={{ background: S.slateDeep, color: S.bg }}
-              >
-                {saving && <Loader2 size={13} className="animate-spin" />}
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-      </AnimatePresence>
+      {/* ── Confirmations ───────────────────────────────────────────────────── */}
+      <Sheet
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        width={480}
+        title={confirmAction === 'redo' ? 'Rewrite all 20 outfits?' : 'Discard this report?'}
+        footer={(
+          <>
+            <Button variant="ghost" onClick={() => setConfirmAction(null)}>Cancel</Button>
+            {confirmAction === 'redo' ? (
+              <Button variant="dark" loading={redoingOutfits} onClick={async () => { await handleRedoAllOutfits(); setConfirmAction(null); }}>Rewrite outfits</Button>
+            ) : (
+              <Button variant="danger" loading={rejecting} onClick={async () => { await handleRejectAndRetry(); setConfirmAction(null); }}>Discard and regenerate</Button>
+            )}
+          </>
+        )}
+      >
+        <p className="ma-muted text-[15px] leading-relaxed">
+          {confirmAction === 'redo'
+            ? 'All outfit text is written again from the current outfit system. Outfit images, grids and before/after shots will need to be regenerated. Your other pages stay as they are.'
+            : 'This report is thrown away and a new one is generated from the intake. Any edits on this report are lost.'}
+        </p>
+      </Sheet>
+
+      {/* ── Page text editor ───────────────────────────────────────────────── */}
+      <Sheet
+        open={editingSection !== null}
+        onClose={() => setEditingSection(null)}
+        width={820}
+        eyebrow="Edit page text"
+        title={SECTIONS.find(s => s.key === editingSection)?.label ?? ''}
+        footer={(
+          <>
+            <span className="ma-faint mr-auto text-[12px]">Saved text replaces this section for the client.</span>
+            <Button variant="ghost" onClick={() => setEditingSection(null)}>Cancel</Button>
+            <Button variant="dark" loading={saving} onClick={saveEdit}>Save</Button>
+          </>
+        )}
+      >
+        <textarea
+          value={editText}
+          onChange={e => setEditText(e.target.value)}
+          className="ma-textarea"
+          style={{ minHeight: '56vh', fontSize: 15, lineHeight: 1.7 }}
+          autoFocus
+        />
+      </Sheet>
     </div>
   );
 }
