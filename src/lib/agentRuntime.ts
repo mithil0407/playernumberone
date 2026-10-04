@@ -30,9 +30,18 @@ import {
 import { dueNudgeStage, indiaDateString, isValidEventDate } from '@/lib/agentEvents';
 import { dispatchAgentWorker } from '@/lib/agentJobs';
 import { AGENT_TEXT_MODEL, agentOpenAI, withAgentUsage } from '@/lib/agentLlm';
-import { FREE_LIMITS, asksForColourAnalysis, forwardableInvite, isOverDailyMessageCap, parseInviteCode } from '@/lib/agentGrowth';
+import {
+  FREE_LIMITS,
+  SELFIE_RECEIVED_MESSAGE,
+  asksForColourAnalysis,
+  forwardableInvite,
+  isOpenerMessage,
+  isOverDailyMessageCap,
+  parseInviteCode,
+  selfieAskMessage,
+} from '@/lib/agentGrowth';
 import { parseColourAnalysis } from '@/lib/agentColourCard';
-import { renderColourCard } from '@/lib/agentProductCards';
+import { prewarmCardBrowser, renderColourCard } from '@/lib/agentProductCards';
 import {
   chargeShoppingRun,
   creditBalance,
@@ -76,6 +85,7 @@ import {
   recentLookActivity,
   recordOutboundMessage,
   saveClientEvent,
+  sentRecently,
   startTurn,
   turnShouldWait,
   unansweredInboundMessages,
@@ -205,6 +215,17 @@ function asServedClient(client: AgentClient, team: boolean): AgentClient {
     : client;
 }
 
+/** A free client who hasn't had their Colour Card yet: the first wow is still ahead. */
+function awaitingColourCard(client: AgentClient) {
+  const profile = client.lite_profile ?? {};
+  return client.tier === 'free' && !profile.colour_card_at
+    && !(Array.isArray(profile.best_colours) && profile.best_colours.length);
+}
+
+// Messages that usually need no reply beyond the emoji ("thanks!"): no "typing…"
+// for these, or it would hang on screen with nothing coming.
+const LIKELY_NO_REPLY = /^(?:ok(?:ay)?|k+|thanks+|thank you|thx|ty|tysm|cool|great|nice|done|sure|👍|🙏|❤️|😊|🙂)[\s!.]*$/i;
+
 async function storeInboundImage(clientId: string, mediaId: string) {
   const downloaded = await downloadWhatsAppImage(mediaId);
   const extension = downloaded.mimeType.split('/')[1] || 'jpg';
@@ -292,7 +313,16 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
     // The reaction first: sending anything hides "typing…", so it goes up after.
     const ack = pickAckReaction({ text: message.text, hasImage: hasPhoto });
     const reacted = await sendWhatsAppReaction(servedClient.phone, message.id, ack).catch(() => null);
-    typing.start();
+    // The selfie for the Colour Card: say straight away that the reading has started.
+    if (hasPhoto && awaitingColourCard(servedClient) && !await sentRecently(servedClient.id, 'selfie_received', 3 * 60_000)) {
+      const sent = await sendWhatsAppTextMessage(servedClient.phone, SELFIE_RECEIVED_MESSAGE).catch(() => null);
+      if (sent?.success) {
+        await recordOutboundMessage({
+          clientId: servedClient.id, content: SELFIE_RECEIVED_MESSAGE, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'selfie_received' },
+        });
+      }
+    }
+    if (hasPhoto || !LIKELY_NO_REPLY.test(message.text)) typing.start();
     if (reacted?.success) {
       await recordOutboundMessage({ clientId: servedClient.id, kind: 'reaction', content: ack, metadata: { reacted_to: message.id } });
     } else {
@@ -335,8 +365,6 @@ interface TurnState {
   searchCount: number;
   interimSent: number;
   runCharged: boolean;
-  /** Messages sent after the reply bubbles (e.g. the friend invite after a Colour Card). */
-  afterReply: Array<{ text: string; metadata: Record<string, unknown> }>;
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
@@ -360,6 +388,16 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
       parameters: {
         type: 'object', additionalProperties: false, required: ['emoji'],
         properties: { emoji: { type: 'string', description: 'A single emoji.' } },
+      },
+    },
+    {
+      type: 'function',
+      name: 'forget',
+      description: 'The client asked you to forget something: archives the closest matching memories so you never use them again. Tell them what you forgot.',
+      strict: true,
+      parameters: {
+        type: 'object', additionalProperties: false, required: ['what'],
+        properties: { what: { type: 'string', description: 'What to forget, in their words.' } },
       },
     },
     {
@@ -500,11 +538,11 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
     tools.push({
       type: 'function',
       name: 'send_colour_card',
-      description: "Deliver the free colour analysis: saves their colour profile and sends their personal ICONIK Colour Card image (season, undertone, best colours, neutrals, colours to avoid, metal). Call once you have read a clear selfie.",
+      description: "Deliver the free colour analysis: saves their colour profile and sends their personal ICONIK Colour Card image (season, undertone, best colours, neutrals, colours to avoid, metal), then your wow message, their forwardable invite and your next-step question. Call it in your FIRST response once you have read a clear selfie — before anything else.",
       strict: true,
       parameters: {
         type: 'object', additionalProperties: false,
-        required: ['first_name', 'season', 'undertone', 'depth', 'contrast', 'best_colours', 'neutrals', 'avoid_colours', 'metal', 'caption'],
+        required: ['first_name', 'season', 'undertone', 'depth', 'contrast', 'best_colours', 'neutrals', 'avoid_colours', 'metal', 'caption', 'wow', 'next_step'],
         properties: {
           first_name: { type: ['string', 'null'] },
           season: { type: 'string', description: 'Seasonal colour family, e.g. "Deep Autumn", "Soft Summer", "Bright Winter".' },
@@ -516,6 +554,8 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
           avoid_colours: swatchList('3 colours to keep away from the face.'),
           metal: { type: ['string', 'null'], enum: ['gold', 'silver', 'both', null] },
           caption: { type: 'string', description: 'Short caption under the card, e.g. "Riya, you\'re a Deep Autumn 🍂".' },
+          wow: { type: 'string', description: 'Sent right after the card (max 60 words): what you saw in their photo (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them, and the swap that does the same job but lights them up.' },
+          next_step: { type: 'string', description: 'The last message, a question they will want to answer (max 30 words). Default: invite them to send a photo of something in their wardrobe they are unsure about, and you will tell them if it is their colour. If they mentioned an occasion, offer to plan their look for it instead.' },
         },
       },
     });
@@ -569,9 +609,29 @@ async function sendText(state: TurnState, text: string, metadata: Record<string,
   }).catch(error => console.warn('[agent] could not record a sent message:', error)));
 }
 
+/**
+ * Sends bubbles one after another like a person typing: "typing…", then a pause
+ * that suits the bubble's length (counted from when the previous send started).
+ */
+async function sendPaced(
+  state: TurnState,
+  messages: Array<{ text: string; metadata?: Record<string, unknown> }>,
+  options: { firstImmediately?: boolean; previousSendStartedAt?: number } = {},
+) {
+  let previousStartedAt = options.previousSendStartedAt ?? Date.now();
+  for (const [index, message] of messages.entries()) {
+    if (index > 0 || !options.firstImmediately) {
+      state.typing.show();
+      await sleep(remainingTypingDelayMs(message.text, previousStartedAt));
+    }
+    previousStartedAt = Date.now();
+    await sendText(state, message.text, message.metadata ?? {});
+  }
+}
+
 /** Tools that message the client or spend money: a superseded turn must not start them. */
 const SIDE_EFFECT_TOOLS = new Set([
-  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'show_outfit_image',
+  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'show_outfit_image', 'forget',
 ]);
 
 class TurnSuperseded extends Error {}
@@ -600,6 +660,18 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         await recordOutboundMessage({ clientId: state.client.id, kind: 'reaction', content: emoji, turnId: state.turnId });
       }
       return sent.success ? 'Reacted.' : 'Reaction failed.';
+    }
+    case 'forget': {
+      const matches = searchMemories(state.nodes, String(args.what ?? ''), 3);
+      if (!matches.length) return 'Nothing like that is in memory.';
+      await applyMemoryOperations({
+        clientId: state.client.id,
+        nodes: state.nodes,
+        operations: matches.map(node => ({ op: 'archive' as const, nodeId: node.id })),
+      });
+      const forgotten = new Set(matches.map(node => node.id));
+      state.nodes = state.nodes.filter(node => !forgotten.has(node.id));
+      return `Forgot:\n${matches.map(node => `- ${node.content}`).join('\n')}`;
     }
     case 'recall_memory': {
       const found = searchMemories(state.nodes, String(args.query ?? ''));
@@ -765,16 +837,19 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       state.client = { ...state.client, lite_profile: profile, first_name: firstName };
 
       const dateLabel = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(new Date());
-      const imageUrl = await renderColourCard(state.client.id, analysis, dateLabel).catch(error => {
+      const rendered = await renderColourCard(state.client.id, analysis, dateLabel).catch(error => {
         console.error('[agent] colour card render failed:', error);
         return null;
       });
       const caption = String(args.caption ?? '').trim().slice(0, 200) || `${firstName ? `${firstName}, you're` : "You're"} a ${analysis.season} 🎨`;
-      const sent = imageUrl ? await sendWhatsAppImageInOrder(state.client.phone, imageUrl, caption) : null;
-      if (imageUrl && sent?.success) {
+      const sent = rendered?.signedUrl
+        ? await sendWhatsAppImageInOrder(state.client.phone, rendered.signedUrl, caption, rendered.bytes)
+        : null;
+      const cardSentAt = Date.now();
+      if (rendered?.signedUrl && sent?.success) {
         state.committed = true;
         await recordOutboundMessage({
-          clientId: state.client.id, kind: 'image', content: caption, imageUrl, whatsappMessageId: sent.messageId ?? null,
+          clientId: state.client.id, kind: 'image', content: caption, imageUrl: rendered.signedUrl, whatsappMessageId: sent.messageId ?? null,
           turnId: state.turnId, metadata: { type: 'colour_card', season: analysis.season },
         });
       } else {
@@ -785,21 +860,27 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       const delivered = { ...profile, colour_card_at: new Date().toISOString(), colour_card_for: state.newestPhotoWhatsappId };
       await supabaseAdmin.from('agent_clients').update({ lite_profile: delivered }).eq('id', state.client.id);
       state.client = { ...state.client, lite_profile: delivered };
-      state.interimSent += 1;
-      state.typing.bump();
 
-      // Right after the wow, the forwardable invite: friends want theirs, and each one earns more hunts.
+      // Straight after the card, without waiting for another model call: the wow,
+      // the forwardable invite while they're excited, and the question last so
+      // it's the thing they answer.
       const invite = await ensureInviteCode(state.client).catch(() => null);
+      const wow = String(args.wow ?? '').trim().slice(0, 700);
+      const nextStep = String(args.next_step ?? '').trim().slice(0, 300);
+      const followUps: Array<{ text: string; metadata?: Record<string, unknown> }> = [];
+      if (wow) followUps.push({ text: wow, metadata: { type: 'colour_wow' } });
       if (invite && invite.remaining > 0) {
-        state.afterReply.push(
+        followUps.push(
           { text: `Your friends will want theirs 😄 Forward this — every friend who joins gets you +${FREE_LIMITS.referralBonus} more product hunts (and them too).`, metadata: { type: 'invite_intro' } },
           { text: forwardableInvite({ code: invite.code, link: invite.link, inviterName: firstName, season: analysis.season }), metadata: { type: 'invite', code: invite.code } },
         );
       }
-      return `Colour Card sent and profile saved (no need to call save_style_profile). Now reply in exactly 2 short bubbles, separated by a blank line:
-1) The wow: what you saw (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them and the swap that does the same job but lights them up.
-2) The hook that makes them want more: one irresistible next step — e.g. "Want me to find 3 pieces in your power colour under ₹2,000?" or a look for something coming up. Make it a question.
-Do not mention invites or codes: the forwardable invite is sent automatically right after your reply.`;
+      if (nextStep) followUps.push({ text: nextStep, metadata: { type: 'colour_next_step' } });
+      await sendPaced(state, followUps, { previousSendStartedAt: cardSentAt });
+      state.interimSent += 1 + followUps.length;
+      // Everything is sent; no "typing…" left hanging while the model wraps up.
+      await state.typing.stop();
+      return `Colour Card, your wow message${invite && invite.remaining > 0 ? ', their forwardable invite' : ''} and your next-step question are all sent, and the profile is saved. Reply exactly ${NO_REPLY_SENTINEL} unless they asked something else in these messages that still needs an answer.`;
     }
     case 'save_style_profile': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report is the profile.';
@@ -921,6 +1002,29 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
   const latestPending = pending[pending.length - 1];
   const latestWhatsappId = latestPending.whatsapp_message_id ?? '';
   const newestPhoto = [...pending].reverse().find(message => message.kind === 'image' && message.image_url);
+  const awaitingCard = awaitingColourCard(client);
+
+  // The first message on the free colour flow (the campaign link's text, an
+  // invite code, a hello): ask for the selfie at once, without a model call.
+  if (awaitingCard && pending.every(message => message.kind === 'text' && isOpenerMessage(message.content))
+    && await isFirstConversation(client.id)) {
+    const turnId = await startTurn(client.id, pending.map(message => message.id), 'instant');
+    await options.typing?.stop();
+    const ask = selfieAskMessage(client.first_name);
+    const sent = await sendWhatsAppTextMessage(client.phone, ask);
+    if (sent.success) {
+      await recordOutboundMessage({ clientId: client.id, content: ask, whatsappMessageId: sent.messageId ?? null, turnId, metadata: { type: 'selfie_ask' } });
+    }
+    await markMessagesAnswered(pending.map(message => message.id), turnId);
+    await finishTurn(turnId, sent.success ? 'completed' : 'failed', {
+      toolCalls: [{ name: 'instant_selfie_ask', ok: sent.success, summary: sent.error ?? 'sent' }],
+      error: sent.success ? null : sent.error ?? 'send failed',
+    });
+    return sent.success ? 'replied' as const : 'failed' as const;
+  }
+  // The selfie is in: start the card renderer now, while the model reads it.
+  if (awaitingCard && newestPhoto) prewarmCardBrowser();
+
   const turnId = await startTurn(client.id, pending.map(message => message.id), AGENT_TEXT_MODEL);
 
   const typing = options.typing ?? new TypingKeepalive(latestWhatsappId);
@@ -940,7 +1044,6 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     searchCount: 0,
     interimSent: 0,
     runCharged: false,
-    afterReply: [],
     toolLog: [],
   };
 
@@ -1033,31 +1136,16 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     if (await supersededBeforeSending()) throw new TurnSuperseded();
 
     // Until the Colour Card, every reply is one ask: one bubble.
-    const liteProfile = state.client.lite_profile ?? {};
-    const awaitingColourCard = state.client.tier === 'free' && !liteProfile.colour_card_at
-      && !(Array.isArray(liteProfile.best_colours) && liteProfile.best_colours.length);
-    const bubbles = reply.trim() === NO_REPLY_SENTINEL ? [] : splitIntoBubbles(reply, awaitingColourCard ? 1 : MAX_REPLY_BUBBLES);
+    const bubbles = reply.trim() === NO_REPLY_SENTINEL
+      ? []
+      : splitIntoBubbles(reply, awaitingColourCard(state.client) ? 1 : MAX_REPLY_BUBBLES);
     if (!bubbles.length && reply.trim() !== NO_REPLY_SENTINEL && !state.interimSent) {
       bubbles.push('Sorry — I lost my train of thought there. Can you send that again?');
     }
-    const outgoing = [
-      ...bubbles.map(text => ({ text, metadata: {} as Record<string, unknown>, followUp: false })),
-      ...state.afterReply.map(extra => ({ ...extra, followUp: true })),
-    ];
     // The timer stops so no stray "typing…" lands after the last bubble; between
     // bubbles it is shown by hand, for a pause that suits the next bubble's length.
     await typing.stop();
-    let previousSendStartedAt = 0;
-    for (const [index, message] of outgoing.entries()) {
-      if (index > 0) {
-        typing.show();
-        await sleep(remainingTypingDelayMs(message.text, previousSendStartedAt));
-      }
-      previousSendStartedAt = Date.now();
-      const sending = sendText(state, message.text, message.metadata);
-      if (message.followUp) await sending.catch(error => console.warn('[agent] follow-up not sent:', error));
-      else await sending;
-    }
+    await sendPaced(state, bubbles.map(text => ({ text })), { firstImmediately: true });
 
     await Promise.all(state.recordings);
     await markMessagesAnswered(pending.map(message => message.id), turnId);

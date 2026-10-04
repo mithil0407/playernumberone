@@ -221,13 +221,27 @@ export async function markMessagesAnswered(messageIds: string[], turnId: string)
     .in('id', messageIds);
 }
 
+/** True until ICONIK has said something (the instant emoji reactions don't count). */
 export async function isFirstConversation(clientId: string) {
   const { count } = await supabaseAdmin
     .from('agent_messages')
     .select('id', { count: 'exact', head: true })
     .eq('client_id', clientId)
-    .eq('direction', 'outbound');
+    .eq('direction', 'outbound')
+    .neq('kind', 'reaction');
   return !count;
+}
+
+/** Whether a message of this metadata type went to the client within the last `withinMs`. */
+export async function sentRecently(clientId: string, type: string, withinMs: number) {
+  const { count } = await supabaseAdmin
+    .from('agent_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('client_id', clientId)
+    .eq('direction', 'outbound')
+    .contains('metadata', { type })
+    .gte('created_at', new Date(Date.now() - withinMs).toISOString());
+  return Boolean(count);
 }
 
 // ── Turns ──

@@ -147,17 +147,35 @@ bubbles, reactions, the 24h window, Look URL safety and tracking, and the prompt
 
 ## Free tier (invite-only), referrals and analytics
 
-People without a Blueprint can use the agent for free, by invite. It feeds the
-Blueprint rather than replacing it: the free agent knows only what it sees in a
-selfie and is told, and mentions (once per conversation, when it matters) that
-the Blueprint's body/face/colour analysis would sharpen its advice.
+People without a Blueprint can use the agent for free, by invite or through the
+colour-analysis campaign. The goal for now is many users who come back every
+day; money comes later (brand partnerships and product recommendations). The
+free agent knows only what it sees and is told.
 
 - **Entry** (`handleAgentInbound`): existing client → Blueprint customer (report
   match; with the free tier on, every Blueprint customer is served) → invite code
   in the message (`ICK-XXXXXX`) → enrolled free; otherwise waitlisted (one reply
   per day). `ICONIK_AGENT_FREE_OPEN=1` skips invites.
-- **Onboarding**: selfie in daylight + menswear/womenswear + name; the agent reads
-  undertone/depth/contrast and saves a lite profile with `save_style_profile`.
+- **Onboarding — the colour flow, built for time to first wow**:
+  1. The opener (the campaign link's text, an invite code, a hello) gets the
+     selfie ask instantly, with no model call (`isOpenerMessage`,
+     `selfieAskMessage`). A real question still goes to the model.
+  2. The selfie gets 👀 and "Got it 📸 reading your undertone…" straight away;
+     the card renderer's Chrome starts warming up (`prewarmCardBrowser`) while
+     the model reads the photo. The name isn't waited for.
+  3. One model call: `send_colour_card` carries the analysis plus the wow and
+     the next step, and sends card → wow → forwardable invite → next-step
+     question, paced like typing, without a second model call. The default
+     next step is a wardrobe check (cheap, and it starts the wardrobe memory)
+     rather than a paid product hunt.
+- **Everyday help** (prompt): wardrobe check, outfit check, screenshot to shop,
+  group colours (family/friends for an occasion, each invited to their own
+  card), beauty and accessories in their palette; most replies end with one easy
+  next step. "Forget …" archives memories (`forget`). Upcoming moments (Diwali,
+  wedding season, yearly dates — `upcomingMoments` in `agentGrowth.ts`; add each
+  year's lunar festival dates there) feed the prompt and the next-day follow-up.
+- **Growth before revenue**: the free agent mentions the Blueprint only when
+  someone asks for that depth, never as a sales line.
 - **Limits** (`agentGrowth.ts`, env-overridable): 3 shopping runs a month
   (carry over to 10), +2 for both people per referral, 30 messages a day, 150
   free runs a day across everyone. Chat is free; a run is charged once per turn,

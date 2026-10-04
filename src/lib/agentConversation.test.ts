@@ -236,3 +236,20 @@ test('before the Colour Card the ask is one bubble with no talk of codes', () =>
   assert.match(prompt, /never mention codes/);
   assert.deepEqual(splitIntoBubbles('Hi! Welcome.\n\nSend a selfie and your name.', 1), ['Hi! Welcome.\n\nSend a selfie and your name.']);
 });
+
+test('the prompt carries the everyday-help playbook, what is coming up, and no Blueprint pitch', () => {
+  const prompt = buildAgentInstructions({
+    line: 'woman', firstName: 'Riya', today: '2026-10-05', profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, reportUrl: null,
+    memoryText: '', events: [], lookActivity: '', firstConversation: false, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
+  });
+  assert.match(prompt, /Wardrobe check/);
+  assert.match(prompt, /Screenshot to shop/);
+  assert.match(prompt, /COMING UP[\s\S]*Diwali/);
+  assert.match(prompt, /never as a sales line/);
+  const fresh = buildAgentInstructions({
+    line: null, firstName: null, today: '2026-10-05', profile: {}, reportUrl: null, memoryText: '', events: [],
+    lookActivity: '', firstConversation: true, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
+  });
+  assert.match(fresh, /Don't wait for their name/);
+  assert.match(fresh, /In your FIRST response, call send_colour_card/);
+});

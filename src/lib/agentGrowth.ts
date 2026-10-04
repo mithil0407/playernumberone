@@ -121,3 +121,61 @@ export function modelCallCostUsd(input: {
   return (uncached * inputRate + input.cachedTokens * cachedRate + input.outputTokens * outputRate) / 1e6
     + input.webSearches * WEB_SEARCH_USD_PER_CALL;
 }
+
+const GREETING_ONLY = /^(?:hi+|hey+|hello+|hii+|hlo|helo|yo|namaste|good (?:morning|afternoon|evening))\b[\s!.,🙂😊👋]*(?:iconik)?[\s!.,🙂😊👋]*$/i;
+
+/**
+ * A first message that only opens the conversation — the campaign link's
+ * prefilled text, an invite code, or a bare hello. These get the selfie ask
+ * instantly instead of waiting for the model; a real question still goes to it.
+ */
+export function isOpenerMessage(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (GREETING_ONLY.test(trimmed)) return true;
+  if (trimmed.length > 160 || trimmed.includes('?')) return false;
+  return asksForColourAnalysis(trimmed) || Boolean(parseInviteCode(trimmed));
+}
+
+/** The instant first reply on the free colour flow: one bubble, no model call. */
+export function selfieAskMessage(firstName: string | null) {
+  return `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. Send me a selfie in daylight — face clear, no filter — and tell me your name. Your Colour Card will be ready in about a minute 🎨 (your photo stays private 🔒)`;
+}
+
+/** Sent the moment the selfie lands, so the wait for the Colour Card feels like work happening. */
+export const SELFIE_RECEIVED_MESSAGE = 'Got it 📸 Reading your undertone and contrast now — your Colour Card is coming up in a few seconds.';
+
+/**
+ * Dates that change what people want to wear. Fixed dates repeat yearly;
+ * lunar festivals need their date each year (check before adding one).
+ */
+const MOMENTS: Array<{ name: string; date: string; note: string }> = [
+  { name: 'Diwali', date: '2026-11-08', note: 'festive ethnic looks, family photos, office parties' },
+  { name: 'Christmas', date: '--12-25', note: 'parties, red-and-green done tastefully' },
+  { name: "New Year's Eve", date: '--12-31', note: 'party looks' },
+  { name: "Valentine's Day", date: '--02-14', note: 'date-night looks' },
+];
+
+/** Moments in the next `withinDays` days, soonest first, e.g. "Diwali (8 Nov, in 34 days)". */
+export function upcomingMoments(today: string, withinDays = 45) {
+  const start = new Date(`${today}T00:00:00Z`).getTime();
+  if (!Number.isFinite(start)) return [];
+  const year = Number(today.slice(0, 4));
+  const found: Array<{ name: string; note: string; days: number; date: string }> = [];
+  for (const moment of MOMENTS) {
+    const candidates = moment.date.startsWith('--')
+      ? [`${year}${moment.date.slice(1)}`, `${year + 1}${moment.date.slice(1)}`]
+      : [moment.date];
+    for (const date of candidates) {
+      const days = Math.round((new Date(`${date}T00:00:00Z`).getTime() - start) / 86_400_000);
+      if (days >= 0 && days <= withinDays) found.push({ name: moment.name, note: moment.note, days, date });
+    }
+  }
+  const month = Number(today.slice(5, 7));
+  const lines = found.sort((a, b) => a.days - b.days).map(moment => {
+    const label = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${moment.date}T00:00:00Z`));
+    return `${moment.name} (${label}, ${moment.days === 0 ? 'today' : `in ${moment.days} day${moment.days === 1 ? '' : 's'}`}): ${moment.note}`;
+  });
+  if (month >= 10 || month <= 2) lines.push('Wedding season (Nov–Feb, planning starts in October): sangeet, mehendi, reception and guest looks');
+  return lines;
+}

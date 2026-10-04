@@ -63,6 +63,15 @@ function capitalise(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+const CARD_FONT_LINKS = `<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=block" rel="stylesheet" />`;
+
+/** A blank page that loads the card fonts, used to warm the renderer before the card is ready. */
+export const CARD_FONTS_HTML = `<!doctype html><html><head><meta charset="utf-8" />${CARD_FONT_LINKS}</head><body>${
+  [['Fraunces', 500], ['Fraunces', 600], ['Inter', 400], ['Inter', 500], ['Inter', 600]]
+    .map(([family, weight]) => `<span style="font-family:${family};font-weight:${weight}">ICONIK</span>`).join('')
+}</body></html>`;
+
 /** Dark text on light swatches, light text on dark ones (perceived luminance). */
 export function readableOn(hex: string) {
   const value = Number.parseInt(hex.slice(1), 16);
@@ -85,8 +94,7 @@ export function colourCardHtml(analysis: ColourAnalysis, dateLabel: string) {
       <div class="name">${escapeHtml(swatch.name)}</div>
     </div>`;
   return `<!doctype html><html><head><meta charset="utf-8" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=block" rel="stylesheet" />
+${CARD_FONT_LINKS}
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #F6F1E9; font-family: Inter, system-ui, sans-serif; color: #1E1A16; }
