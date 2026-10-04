@@ -36,7 +36,7 @@ import {
 } from '@/lib/agentStore';
 import { isWithinCustomerServiceWindow } from '@/lib/agentWhatsapp';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendWhatsAppImageMessage, sendWhatsAppTextMessage } from '@/lib/whatsapp';
+import { sendWhatsAppImageInOrder, sendWhatsAppTextMessage } from '@/lib/whatsapp';
 
 const WORKER_BUDGET_MS = 230_000;
 /** A product check usually takes under a minute (capped at ~3); don't start a batch we cannot finish. */
@@ -80,7 +80,7 @@ export async function sendProactiveAgentMessage(
   if (fresh?.status !== 'active') return { sent: false as const, reason: 'client_not_active' };
   if (!isWithinCustomerServiceWindow(fresh?.last_inbound_at)) return { sent: false as const, reason: 'outside_window' };
   const result = imageUrl
-    ? await sendWhatsAppImageMessage(client.phone, imageUrl, text)
+    ? await sendWhatsAppImageInOrder(client.phone, imageUrl, text)
     : await sendWhatsAppTextMessage(client.phone, text);
   if (!result.success) return { sent: false as const, reason: result.error ?? 'send_failed' };
   await recordOutboundMessage({

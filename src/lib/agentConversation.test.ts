@@ -10,8 +10,13 @@ import {
 import { buildAgentInstructions, formatEvents } from './agentPrompt.ts';
 import { buildProductCaption, deliveryPhrase, productCardHtml, type PresentableProduct } from './agentPresentation.ts';
 import {
+  buildWhatsappImageByIdPayload,
   buildWhatsappReactionPayload,
   buildWhatsappTypingPayload,
+  compareBySentOrder,
+  remainingTypingDelayMs,
+  teamTestCommand,
+  typingDelayMs,
   isWithinCustomerServiceWindow,
   NO_REPLY_SENTINEL,
   pickAckReaction,
@@ -186,4 +191,48 @@ test('delivery estimates read naturally whatever the store wrote', () => {
   assert.equal(deliveryPhrase('Delivery by 8 Oct'), 'by 8 Oct');
   assert.equal(deliveryPhrase('Estimated delivery: Within 3-5 days'), 'within 3-5 days');
   assert.match(buildProductCaption({ ...product, deliveryEstimate: 'By Tue, Oct 06 for 411037' }), /✓ M in stock · arrives by Tue, Oct 06 \(411037\)/);
+});
+
+test('inbound messages sort by when the client sent them, not when we stored them', () => {
+  const photo = { id: 'photo', created_at: '2026-10-05T19:13:09.000Z', metadata: { whatsapp_timestamp: '1791227580' } };
+  const name = { id: 'name', created_at: '2026-10-05T19:13:06.000Z', metadata: { whatsapp_timestamp: '1791227583' } };
+  const sameSecond = { id: 'later', created_at: '2026-10-05T19:13:10.000Z', metadata: { whatsapp_timestamp: '1791227583' } };
+  const legacy = { id: 'legacy', created_at: '2026-10-05T19:00:00.000Z', metadata: {} };
+  assert.deepEqual([sameSecond, name, photo, legacy].sort(compareBySentOrder).map(row => row.id), ['legacy', 'photo', 'name', 'later']);
+});
+
+test('images can be sent by uploaded media id so they keep their place', () => {
+  assert.deepEqual(buildWhatsappImageByIdPayload('9876543210', ' 123 ', ' Your Colour Card '), {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: '919876543210',
+    type: 'image',
+    image: { id: '123', caption: 'Your Colour Card' },
+  });
+  assert.throws(() => buildWhatsappImageByIdPayload('9876543210', ' '));
+});
+
+test('the pause between bubbles counts the time the previous send took', () => {
+  const bubble = 'x'.repeat(50);
+  assert.equal(remainingTypingDelayMs(bubble, 10_000, 10_000), typingDelayMs(bubble));
+  assert.equal(remainingTypingDelayMs(bubble, 10_000, 10_600), typingDelayMs(bubble) - 600);
+  assert.equal(remainingTypingDelayMs(bubble, 10_000, 20_000), 0);
+});
+
+test('team test commands switch between free and Blueprint', () => {
+  assert.equal(teamTestCommand('reset colour'), 'free');
+  assert.equal(teamTestCommand('/Reset Color '), 'free');
+  assert.equal(teamTestCommand('Blueprint mode'), 'blueprint');
+  assert.equal(teamTestCommand('please reset colour palette'), null);
+  assert.equal(teamTestCommand('I want my free colour analysis'), null);
+});
+
+test('before the Colour Card the ask is one bubble with no talk of codes', () => {
+  const prompt = buildAgentInstructions({
+    line: null, firstName: null, today: '2026-10-05', profile: {}, reportUrl: null, memoryText: '', events: [],
+    lookActivity: '', firstConversation: true, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
+  });
+  assert.match(prompt, /arrives as one bubble/);
+  assert.match(prompt, /never mention codes/);
+  assert.deepEqual(splitIntoBubbles('Hi! Welcome.\n\nSend a selfie and your name.', 1), ['Hi! Welcome.\n\nSend a selfie and your name.']);
 });

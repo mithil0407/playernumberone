@@ -5,6 +5,7 @@ import 'server-only';
 
 import type { AgentClient } from '@/lib/agentClients';
 import { createLookSlug, lookLinkUrl, type LookEventType } from '@/lib/agentLookLinks';
+import { compareBySentOrder } from '@/lib/agentWhatsapp';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export interface AgentMessageRow {
@@ -146,17 +147,18 @@ export async function loadThread(clientId: string, limit = 30) {
   return [...(data ?? [])].reverse() as AgentMessageRow[];
 }
 
+/** The client's most recent message, in the order they sent them. */
 export async function latestInboundMessage(clientId: string) {
   const { data, error } = await supabaseAdmin
     .from('agent_messages')
-    .select('id, created_at, whatsapp_message_id')
+    .select('id, created_at, whatsapp_message_id, metadata')
     .eq('client_id', clientId)
     .eq('direction', 'inbound')
     .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(10);
   if (error) fail('load the latest message', error);
-  return data as Pick<AgentMessageRow, 'id' | 'created_at' | 'whatsapp_message_id'> | null;
+  const rows = [...(data ?? [])] as Array<Pick<AgentMessageRow, 'id' | 'created_at' | 'whatsapp_message_id' | 'metadata'>>;
+  return rows.sort(compareBySentOrder).at(-1) ?? null;
 }
 
 /** Messages from the client nobody has answered yet: one turn answers them together. */
@@ -171,7 +173,44 @@ export async function unansweredInboundMessages(clientId: string, withinHours = 
     .gte('created_at', since)
     .order('created_at', { ascending: true });
   if (error) fail('load unanswered messages', error);
-  return (data ?? []) as AgentMessageRow[];
+  return ([...(data ?? [])] as AgentMessageRow[]).sort(compareBySentOrder);
+}
+
+/**
+ * Photos are stored as soon as they arrive (so they keep their place in the
+ * conversation) and the image is attached once downloaded.
+ */
+export async function attachInboundImage(
+  messageId: string,
+  image: { path: string; signedUrl: string | null } | null,
+  metadata: Record<string, unknown>,
+  failedContent: string,
+) {
+  const { error } = await supabaseAdmin
+    .from('agent_messages')
+    .update(image
+      ? { image_url: image.signedUrl, storage_path: image.path, metadata: { ...metadata, media_pending: false } }
+      : { kind: 'unsupported', content: failedContent, metadata: { ...metadata, media_pending: false } })
+    .eq('id', messageId);
+  if (error) console.error('[agent] could not attach the photo:', error.message);
+}
+
+/**
+ * Whether the next turn must wait: another turn for this client is still
+ * running, or a photo they sent is still downloading. Rows older than a
+ * function's lifetime are ignored so a crashed invocation can't block forever.
+ */
+export async function turnShouldWait(clientId: string) {
+  const turnCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const mediaCutoff = new Date(Date.now() - 60 * 1000).toISOString();
+  const [running, media] = await Promise.all([
+    supabaseAdmin.from('agent_turns').select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId).eq('status', 'running').gte('started_at', turnCutoff),
+    supabaseAdmin.from('agent_messages').select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId).eq('direction', 'inbound').is('answered_at', null)
+      .eq('metadata->>media_pending', 'true').gte('created_at', mediaCutoff),
+  ]);
+  return Boolean(running.count) || Boolean(media.count);
 }
 
 export async function markMessagesAnswered(messageIds: string[], turnId: string) {

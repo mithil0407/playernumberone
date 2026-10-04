@@ -2,8 +2,8 @@ import 'server-only';
 
 // The ICONIK agent's conversation loop.
 //
-//   message arrives ─► stored, read receipt + "typing…", instant emoji reaction
-//                      when a friend would react
+//   message arrives ─► stored at once (photos download after), emoji reaction,
+//                      then "typing…" kept up until the reply
 //   short pause      ─► if they're still typing, the newest invocation takes over
 //   one turn         ─► answers every unanswered message together, with tools:
 //                      memory, events, product search, Look pages, interim texts
@@ -11,8 +11,10 @@ import 'server-only';
 //   afterwards       ─► reflection writes what was learned into the memory tree;
 //                      busy branches are queued for consolidation
 //
-// A newer message arriving mid-turn supersedes the final reply (interim texts
-// already sent stand), and the newer turn answers everything.
+// One turn runs at a time per client. A newer message stops a turn that hasn't
+// sent anything yet, and the newer turn answers everything. A turn that already
+// sent something (a Colour Card, a heads-up) finishes its reply first, then the
+// newer turn answers what came after.
 
 import type {
   FunctionTool,
@@ -59,6 +61,7 @@ import {
 import { buildAgentInstructions } from '@/lib/agentPrompt';
 import { searchProducts, type ProductCandidate } from '@/lib/agentProductSearch';
 import {
+  attachInboundImage,
   claimEventNudge,
   createLookLink,
   enqueueAgentJob,
@@ -74,20 +77,23 @@ import {
   recordOutboundMessage,
   saveClientEvent,
   startTurn,
+  turnShouldWait,
   unansweredInboundMessages,
   updateClientEvent,
   uploadAgentMedia,
   type AgentMessageRow,
 } from '@/lib/agentStore';
 import {
+  MAX_REPLY_BUBBLES,
   NO_REPLY_SENTINEL,
   pickAckReaction,
+  remainingTypingDelayMs,
   splitIntoBubbles,
-  typingDelayMs,
+  teamTestCommand,
 } from '@/lib/agentWhatsapp';
 import {
   downloadWhatsAppImage,
-  sendWhatsAppImageMessage,
+  sendWhatsAppImageInOrder,
   sendWhatsAppReaction,
   sendWhatsAppTextMessage,
   showWhatsAppTypingIndicator,
@@ -98,7 +104,11 @@ import type { WhatsappInboundMessage } from '@/lib/whatsappPilot';
 import type { AgentLine } from '@/lib/agentClients';
 
 const DEBOUNCE_MS = Number(process.env.ICONIK_AGENT_DEBOUNCE_MS) || 2_500;
-const TYPING_REFRESH_MS = 20_000;
+// WhatsApp hides "typing…" after ~25s; refresh well before that.
+const TYPING_REFRESH_MS = 9_000;
+// How long a turn waits for the previous one (or a photo still downloading).
+const TURN_WAIT_MAX_MS = 150_000;
+const TURN_WAIT_POLL_MS = 1_000;
 const MAX_MODEL_CALLS = 8;
 const MAX_INTERIM_MESSAGES = 2;
 
@@ -134,8 +144,66 @@ const WAITLIST_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. I'm
 const COLOUR_ANALYSIS_PROMPT_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. Want your free colour analysis? Reply \"colour analysis\" and I'll get started ✨";
 const INVALID_INVITE_REPLY = "That invite code isn't working (it may be used up). Ask your friend for a fresh one — meanwhile you're on the waitlist ✨";
 const DAILY_CAP_REPLY = "That's a lot of styling for one day 😄 I'll pick this up with you tomorrow.";
+const TEAM_TEST_REPLIES = {
+  free: 'Test mode: you are now a fresh free user with no colour profile. Send "colour analysis" to start (send "blueprint mode" to switch back).',
+  blueprint: 'Test mode off: you are back on your Blueprint.',
+} as const;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Keeps "typing…" on screen while we work. WhatsApp hides it after ~25 seconds
+ * and whenever we send anything (a reaction too), so it is re-sent on a timer
+ * and right after every mid-turn send. stop() waits for a call in flight, so a
+ * late "typing…" can't appear after the final bubble.
+ */
+class TypingKeepalive {
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private inFlight: Promise<unknown> = Promise.resolve();
+
+  constructor(private readonly messageId: string) {}
+
+  start() {
+    if (!this.messageId) return;
+    this.show();
+    this.restartTimer();
+  }
+
+  /** After a send: show it again now, and count the next refresh from here. */
+  bump() {
+    if (!this.timer) return;
+    this.show();
+    this.restartTimer();
+  }
+
+  show() {
+    if (!this.messageId) return;
+    this.inFlight = showWhatsAppTypingIndicator(this.messageId).then(result => {
+      if (!result.success) console.warn('[agent] typing indicator failed:', result.error);
+    }).catch(() => undefined);
+  }
+
+  async stop() {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = null;
+    await this.inFlight;
+  }
+
+  private restartTimer() {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => this.show(), TYPING_REFRESH_MS);
+  }
+}
+
+/**
+ * A team number in free test mode (see teamTestCommand) is served as a free
+ * client; its stored tier is untouched, so "blueprint mode" switches it back.
+ */
+function asServedClient(client: AgentClient, team: boolean): AgentClient {
+  return team && client.tier !== 'free' && client.lite_profile?.free_test === true
+    ? { ...client, tier: 'free' }
+    : client;
+}
 
 async function storeInboundImage(clientId: string, mediaId: string) {
   const downloaded = await downloadWhatsAppImage(mediaId);
@@ -175,25 +243,29 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   }
   if (!client) return 'not_served' as const;
   if (client.status !== 'active') return 'paused' as const;
-
-  let image: { path: string; signedUrl: string | null } | null = null;
-  if (message.type === 'image' && message.mediaId) {
-    image = await storeInboundImage(client.id, message.mediaId).catch(error => {
-      console.error('[agent] image intake failed:', error);
-      return null;
-    });
+  const team = access?.previewReports === true;
+  const testMode = team ? teamTestCommand(message.text) : null;
+  if (testMode) {
+    await supabaseAdmin.from('agent_clients')
+      .update({ lite_profile: testMode === 'free' ? { free_test: true } : {}, updated_at: new Date().toISOString() })
+      .eq('id', client.id);
+    await sendWhatsAppTextMessage(client.phone, TEAM_TEST_REPLIES[testMode]).catch(() => undefined);
+    return 'test_mode' as const;
   }
+  client = asServedClient(client, team);
 
+  // Stored straight away, so it keeps its place in the conversation; a photo is
+  // attached once it has downloaded.
+  const hasPhoto = message.type === 'image' && Boolean(message.mediaId);
+  const metadata: Record<string, unknown> = { whatsapp_timestamp: message.timestamp ?? null };
   const stored = await insertInboundMessage({
     clientId: client.id,
-    kind: message.type === 'image' && !image ? 'unsupported' : message.type,
-    content: message.type === 'image' && !image
+    kind: message.type === 'image' && !hasPhoto ? 'unsupported' : message.type,
+    content: message.type === 'image' && !hasPhoto
       ? `${message.text} [the photo did not come through]`
       : message.text,
     whatsappMessageId: message.id,
-    imageUrl: image?.signedUrl ?? null,
-    storagePath: image?.path ?? null,
-    metadata: { whatsapp_timestamp: message.timestamp ?? null },
+    metadata: hasPhoto ? { ...metadata, media_pending: true } : metadata,
   });
   if (!stored) return 'duplicate' as const;
 
@@ -205,28 +277,45 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
         await sendWhatsAppTextMessage(client.phone, DAILY_CAP_REPLY).catch(() => undefined);
         await recordOutboundMessage({ clientId: client.id, content: DAILY_CAP_REPLY, metadata: { type: 'daily_cap' } });
       }
+      if (hasPhoto) await attachInboundImage(stored.id, null, metadata, `${message.text} [photo not kept: daily limit]`);
       await markMessagesAnswered([stored.id], stored.id);
       return 'daily_cap' as const;
     }
   }
 
-  // Instant acknowledgement: read + typing, and a reaction when a person would react.
-  const typing = await showWhatsAppTypingIndicator(message.id).catch(() => null);
-  if (!typing?.success) console.warn('[agent] typing indicator failed:', typing?.error);
-  const ack = pickAckReaction({ text: message.text, hasImage: Boolean(image) });
-  const reacted = await sendWhatsAppReaction(client.phone, message.id, ack).catch(() => null);
-  if (reacted?.success) {
-    await recordOutboundMessage({ clientId: client.id, kind: 'reaction', content: ack, metadata: { reacted_to: message.id } });
-  } else {
-    console.warn('[agent] acknowledgement reaction failed:', reacted?.error);
+  // People send thoughts in pieces: the pause starts now, while we acknowledge
+  // and the photo downloads. If a newer message arrives, its invocation answers all.
+  const pause = sleep(DEBOUNCE_MS);
+  const typing = new TypingKeepalive(message.id);
+  const servedClient = client;
+  const acknowledged = (async () => {
+    // The reaction first: sending anything hides "typing…", so it goes up after.
+    const ack = pickAckReaction({ text: message.text, hasImage: hasPhoto });
+    const reacted = await sendWhatsAppReaction(servedClient.phone, message.id, ack).catch(() => null);
+    typing.start();
+    if (reacted?.success) {
+      await recordOutboundMessage({ clientId: servedClient.id, kind: 'reaction', content: ack, metadata: { reacted_to: message.id } });
+    } else {
+      console.warn('[agent] acknowledgement reaction failed:', reacted?.error);
+    }
+  })().catch(error => console.warn('[agent] acknowledgement failed:', error));
+  const photoAttached = hasPhoto
+    ? storeInboundImage(servedClient.id, message.mediaId!)
+      .catch(error => {
+        console.error('[agent] image intake failed:', error);
+        return null;
+      })
+      .then(image => attachInboundImage(stored.id, image, metadata, `${message.text} [the photo did not come through]`))
+    : Promise.resolve();
+
+  try {
+    await Promise.all([pause, acknowledged, photoAttached]);
+    const latest = await latestInboundMessage(client.id);
+    if (latest && latest.id !== stored.id) return 'deferred_to_newer_message' as const;
+    return await runAgentTurn(client, { typing, inboundId: stored.id });
+  } finally {
+    await typing.stop();
   }
-
-  // People send thoughts in pieces. Wait; if a newer message arrived, its invocation answers all.
-  await sleep(DEBOUNCE_MS);
-  const latest = await latestInboundMessage(client.id);
-  if (latest && latest.id !== stored.id) return 'deferred_to_newer_message' as const;
-
-  return runAgentTurn(client);
 }
 
 interface TurnState {
@@ -235,6 +324,13 @@ interface TurnState {
   nodes: MemoryNode[];
   turnId: string;
   latestWhatsappId: string;
+  /** WhatsApp id of the newest photo in this turn's messages (the selfie to analyse). */
+  newestPhotoWhatsappId: string | null;
+  typing: TypingKeepalive;
+  /** True once the client has seen something from this turn; it then always finishes its reply. */
+  committed: boolean;
+  /** Outbound rows being written; awaited before the turn ends. */
+  recordings: Array<Promise<unknown>>;
   candidates: Map<string, ProductCandidate>;
   searchCount: number;
   interimSent: number;
@@ -463,13 +559,22 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
   return tools;
 }
 
+/** Sends a bubble; recording it doesn't hold up the next one (the turn awaits it before ending). */
 async function sendText(state: TurnState, text: string, metadata: Record<string, unknown> = {}) {
   const sent = await sendWhatsAppTextMessage(state.client.phone, text);
   if (!sent.success) throw new Error(sent.error || 'WhatsApp send failed');
-  await recordOutboundMessage({
+  state.committed = true;
+  state.recordings.push(recordOutboundMessage({
     clientId: state.client.id, content: text, whatsappMessageId: sent.messageId ?? null, turnId: state.turnId, metadata,
-  });
+  }).catch(error => console.warn('[agent] could not record a sent message:', error)));
 }
+
+/** Tools that message the client or spend money: a superseded turn must not start them. */
+const SIDE_EFFECT_TOOLS = new Set([
+  'send_message', 'react', 'search_products', 'present_products', 'share_invite', 'send_colour_card', 'show_outfit_image',
+]);
+
+class TurnSuperseded extends Error {}
 
 function nullableString(value: unknown, max = 200) {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
@@ -484,7 +589,7 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       if (!text) return 'Nothing to send.';
       await sendText(state, text, { interim: true });
       state.interimSent += 1;
-      await showWhatsAppTypingIndicator(state.latestWhatsappId).catch(() => undefined);
+      state.typing.bump();
       return 'Sent.';
     }
     case 'react': {
@@ -616,6 +721,8 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         brief: nullableString(args.brief, 300),
       });
       await dispatchAgentWorker();
+      // The cards are on their way, so this turn's "checking…" line must go out.
+      state.committed = true;
       return `Checking ${items.length} product${items.length === 1 ? '' : 's'} on the store pages now; the cards and summary will be sent automatically when done. In your reply, tell them in one short line what you're checking (size${pincode ? `, delivery to ${pincode}` : ''}) and roughly how long — don't list the products.`;
     }
     case 'share_invite': {
@@ -626,10 +733,17 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       const season = typeof state.client.lite_profile?.season === 'string' ? state.client.lite_profile.season : null;
       await sendText(state, forwardableInvite({ code: invite.code, link: invite.link, inviterName: state.passport.firstName, season }), { type: 'invite', code: invite.code });
       state.interimSent += 2;
+      state.typing.bump();
       return `Sent their invite (${invite.code}); ${invite.remaining} friend${invite.remaining === 1 ? '' : 's'} can still join with it. Don't repeat the link in your reply.`;
     }
     case 'send_colour_card': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report already has their colours.';
+      // One card per selfie: a retried or overlapping turn must not send a second one.
+      const previous = state.client.lite_profile ?? {};
+      const hadCard = Boolean(previous.colour_card_for || previous.colour_card_at);
+      if (hadCard && (!state.newestPhotoWhatsappId || previous.colour_card_for === state.newestPhotoWhatsappId)) {
+        return "Their Colour Card for this photo was already sent — don't send another. Carry on from it using their palette; a new analysis needs a new photo.";
+      }
       const firstName = nullableString(args.first_name, 40) ?? state.client.first_name;
       const analysis = parseColourAnalysis(args, firstName);
       if (!analysis) return 'The colour analysis is incomplete: give a season, an undertone and 8 best colours with valid #RRGGBB hex codes.';
@@ -643,7 +757,6 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         neutrals: analysis.neutrals.map(swatch => swatch.name),
         avoid_colours: analysis.avoid.map(swatch => swatch.name),
         metal: analysis.metal,
-        colour_card_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       await supabaseAdmin.from('agent_clients')
@@ -657,18 +770,23 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         return null;
       });
       const caption = String(args.caption ?? '').trim().slice(0, 200) || `${firstName ? `${firstName}, you're` : "You're"} a ${analysis.season} 🎨`;
-      if (imageUrl) {
-        const sent = await sendWhatsAppImageMessage(state.client.phone, imageUrl, caption);
-        if (sent.success) {
-          await recordOutboundMessage({
-            clientId: state.client.id, kind: 'image', content: caption, imageUrl, whatsappMessageId: sent.messageId ?? null,
-            turnId: state.turnId, metadata: { type: 'colour_card', season: analysis.season },
-          });
-        }
+      const sent = imageUrl ? await sendWhatsAppImageInOrder(state.client.phone, imageUrl, caption) : null;
+      if (imageUrl && sent?.success) {
+        state.committed = true;
+        await recordOutboundMessage({
+          clientId: state.client.id, kind: 'image', content: caption, imageUrl, whatsappMessageId: sent.messageId ?? null,
+          turnId: state.turnId, metadata: { type: 'colour_card', season: analysis.season },
+        });
       } else {
+        if (sent) console.error('[agent] colour card send failed:', sent.error);
         await sendText(state, `${caption}\n\nYour best colours: ${analysis.best.map(swatch => swatch.name).join(', ')}.`, { type: 'colour_card', season: analysis.season });
       }
+      // Marked only once it has gone out, so a failed send can be retried.
+      const delivered = { ...profile, colour_card_at: new Date().toISOString(), colour_card_for: state.newestPhotoWhatsappId };
+      await supabaseAdmin.from('agent_clients').update({ lite_profile: delivered }).eq('id', state.client.id);
+      state.client = { ...state.client, lite_profile: delivered };
       state.interimSent += 1;
+      state.typing.bump();
 
       // Right after the wow, the forwardable invite: friends want theirs, and each one earns more hunts.
       const invite = await ensureInviteCode(state.client).catch(() => null);
@@ -713,8 +831,10 @@ Do not mention invites or codes: the forwardable invite is sent automatically ri
       const generated = await generateManEditOutfitImage({ context, request: outfit, outfitDirection: outfit });
       const uploaded = await uploadManEditChatImageBytes(context.report.id, generated.bytes, generated.mimeType, 'agent-outfit.png');
       if (!uploaded.signedUrl) return 'The image could not be stored.';
-      const sent = await sendWhatsAppImageMessage(state.client.phone, uploaded.signedUrl);
+      const sent = await sendWhatsAppImageInOrder(state.client.phone, uploaded.signedUrl);
       if (!sent.success) return 'The image could not be sent.';
+      state.committed = true;
+      state.typing.bump();
       await recordOutboundMessage({
         clientId: state.client.id, kind: 'image', content: outfit, imageUrl: uploaded.signedUrl,
         whatsappMessageId: sent.messageId ?? null, turnId: state.turnId,
@@ -773,20 +893,38 @@ async function lookActivitySummary(clientId: string) {
   }).join('\n');
 }
 
-export function runAgentTurn(client: AgentClient) {
-  return withAgentUsage({ clientId: client.id, kind: 'chat' }, () => runAgentTurnInner(client));
+interface TurnOptions {
+  /** The invocation's own "typing…" keepalive, already showing. */
+  typing?: TypingKeepalive;
+  /** The message whose invocation runs this turn; it gives way if a newer one arrives while waiting. */
+  inboundId?: string;
 }
 
-async function runAgentTurnInner(client: AgentClient) {
+export function runAgentTurn(client: AgentClient, options: TurnOptions = {}) {
+  return withAgentUsage({ clientId: client.id, kind: 'chat' }, () => runAgentTurnInner(client, options));
+}
+
+/** One turn at a time per client: wait for the previous turn and any photo still downloading. */
+async function waitForTurnSlot(clientId: string) {
+  const deadline = Date.now() + TURN_WAIT_MAX_MS;
+  while (Date.now() < deadline && await turnShouldWait(clientId)) await sleep(TURN_WAIT_POLL_MS);
+}
+
+async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
+  await waitForTurnSlot(client.id);
+  if (options.inboundId) {
+    const latest = await latestInboundMessage(client.id);
+    if (latest && latest.id !== options.inboundId) return 'deferred_to_newer_message' as const;
+  }
   const pending = await unansweredInboundMessages(client.id);
   if (!pending.length) return 'nothing_to_answer' as const;
   const latestPending = pending[pending.length - 1];
   const latestWhatsappId = latestPending.whatsapp_message_id ?? '';
+  const newestPhoto = [...pending].reverse().find(message => message.kind === 'image' && message.image_url);
   const turnId = await startTurn(client.id, pending.map(message => message.id), AGENT_TEXT_MODEL);
 
-  const typing = setInterval(() => {
-    if (latestWhatsappId) void showWhatsAppTypingIndicator(latestWhatsappId).catch(() => undefined);
-  }, TYPING_REFRESH_MS);
+  const typing = options.typing ?? new TypingKeepalive(latestWhatsappId);
+  if (!options.typing) typing.start();
 
   const state: TurnState = {
     client,
@@ -794,6 +932,10 @@ async function runAgentTurnInner(client: AgentClient) {
     nodes: [],
     turnId,
     latestWhatsappId,
+    newestPhotoWhatsappId: newestPhoto?.whatsapp_message_id ?? null,
+    typing,
+    committed: false,
+    recordings: [],
     candidates: new Map(),
     searchCount: 0,
     interimSent: 0,
@@ -847,6 +989,12 @@ async function runAgentTurnInner(client: AgentClient) {
     let input: ResponseInputItem[] = [...threadToInput(thread, pendingIds), pendingToInput(pending)];
     const tools = agentTools({ freeTier, outfitImages: client.line === 'man' && Boolean(client.report_share_token) });
     let reply = '';
+    // A newer message stops this turn only while the client hasn't seen anything from it.
+    const supersededBeforeSending = async () => {
+      if (state.committed) return false;
+      const latest = await latestInboundMessage(client.id);
+      return Boolean(latest && latest.id !== latestPending.id);
+    };
 
     for (let call = 0; call < MAX_MODEL_CALLS; call += 1) {
       const response = await agentOpenAI().responses.create({
@@ -867,6 +1015,7 @@ async function runAgentTurnInner(client: AgentClient) {
         break;
       }
       for (const toolCall of calls) {
+        if (SIDE_EFFECT_TOOLS.has(toolCall.name) && await supersededBeforeSending()) throw new TurnSuperseded();
         let output: string;
         try {
           output = await runTool(state, toolCall);
@@ -880,32 +1029,39 @@ async function runAgentTurnInner(client: AgentClient) {
     }
 
     // A newer message arrived while we worked: its turn will answer everything.
-    const latest = await latestInboundMessage(client.id);
-    if (latest && latest.id !== latestPending.id) {
-      await finishTurn(turnId, 'superseded', { toolCalls: state.toolLog });
-      return 'superseded' as const;
-    }
+    // (A turn that already sent something finishes; the newer turn answers what came after.)
+    if (await supersededBeforeSending()) throw new TurnSuperseded();
 
-    const bubbles = reply.trim() === NO_REPLY_SENTINEL ? [] : splitIntoBubbles(reply);
+    // Until the Colour Card, every reply is one ask: one bubble.
+    const liteProfile = state.client.lite_profile ?? {};
+    const awaitingColourCard = state.client.tier === 'free' && !liteProfile.colour_card_at
+      && !(Array.isArray(liteProfile.best_colours) && liteProfile.best_colours.length);
+    const bubbles = reply.trim() === NO_REPLY_SENTINEL ? [] : splitIntoBubbles(reply, awaitingColourCard ? 1 : MAX_REPLY_BUBBLES);
     if (!bubbles.length && reply.trim() !== NO_REPLY_SENTINEL && !state.interimSent) {
       bubbles.push('Sorry — I lost my train of thought there. Can you send that again?');
     }
-    for (const [index, bubble] of bubbles.entries()) {
+    const outgoing = [
+      ...bubbles.map(text => ({ text, metadata: {} as Record<string, unknown>, followUp: false })),
+      ...state.afterReply.map(extra => ({ ...extra, followUp: true })),
+    ];
+    // The timer stops so no stray "typing…" lands after the last bubble; between
+    // bubbles it is shown by hand, for a pause that suits the next bubble's length.
+    await typing.stop();
+    let previousSendStartedAt = 0;
+    for (const [index, message] of outgoing.entries()) {
       if (index > 0) {
-        await showWhatsAppTypingIndicator(latestWhatsappId).catch(() => undefined);
-        await sleep(typingDelayMs(bubble));
+        typing.show();
+        await sleep(remainingTypingDelayMs(message.text, previousSendStartedAt));
       }
-      await sendText(state, bubble);
-    }
-    for (const extra of state.afterReply) {
-      await showWhatsAppTypingIndicator(latestWhatsappId).catch(() => undefined);
-      await sleep(typingDelayMs(extra.text));
-      await sendText(state, extra.text, extra.metadata).catch(error => console.warn('[agent] follow-up not sent:', error));
+      previousSendStartedAt = Date.now();
+      const sending = sendText(state, message.text, message.metadata);
+      if (message.followUp) await sending.catch(error => console.warn('[agent] follow-up not sent:', error));
+      else await sending;
     }
 
+    await Promise.all(state.recordings);
     await markMessagesAnswered(pending.map(message => message.id), turnId);
     await finishTurn(turnId, 'completed', { toolCalls: state.toolLog });
-    clearInterval(typing);
 
     // Check-ins that were due were raised in this conversation; don't raise them again.
     for (const event of events) {
@@ -932,12 +1088,19 @@ async function runAgentTurnInner(client: AgentClient) {
     }
     return 'replied' as const;
   } catch (error) {
+    await Promise.all(state.recordings);
+    if (error instanceof TurnSuperseded) {
+      // Nothing was sent; the newer turn answers these messages too.
+      await finishTurn(turnId, 'superseded', { toolCalls: state.toolLog });
+      return 'superseded' as const;
+    }
     console.error('[agent] turn failed:', error);
+    await typing.stop();
     await finishTurn(turnId, 'failed', { toolCalls: state.toolLog, error: error instanceof Error ? error.message : String(error) });
     await sendText(state, 'Something went wrong on my side — give me a moment and send that again?').catch(() => undefined);
     await markMessagesAnswered(pending.map(message => message.id), turnId);
     return 'failed' as const;
   } finally {
-    clearInterval(typing);
+    await typing.stop();
   }
 }

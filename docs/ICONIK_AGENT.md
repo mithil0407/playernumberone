@@ -14,18 +14,29 @@ page** whose items are verified on the real store pages by a browser agent.
    (`agentClients.ts`). Numbers listed by name in `ICONIK_AGENT_ALLOWED_PHONES`
    (the team) may also use reports still `in_review`/`draft_ready`. Men who used
    the pilot keep its memories and their last 30 messages (`agentLegacyImport.ts`).
-3. **Instant acknowledgement**: read receipt + "typing…", and one emoji reaction
-   on every message — 👀 on a request, 👍 on an answer, 👋 on a greeting, warmer
-   ones for weddings, thanks, photos.
-4. **Double-text handling**: a short pause (`ICONIK_AGENT_DEBOUNCE_MS`, 2.5s);
-   if another message arrived, the newest invocation answers all unanswered
-   messages together.
+3. **Instant acknowledgement**: the message is stored at once (a photo is
+   attached after it downloads), then one emoji reaction — 👀 on a request, 👍 on
+   an answer, 👋 on a greeting, warmer ones for weddings, thanks, photos — and
+   then read receipt + "typing…" (any send, a reaction too, hides the indicator,
+   so the reaction goes first). "Typing…" is refreshed every 9s, and again after
+   every mid-turn send, until the reply.
+4. **Double-text handling**: a short pause (`ICONIK_AGENT_DEBOUNCE_MS`, 2.5s)
+   that starts on arrival; if another message arrived, the newest invocation
+   answers all unanswered messages together. Messages are ordered by WhatsApp's
+   send timestamp, not by when we stored them. **One turn at a time** per
+   client: a turn waits for the previous one and for photos still downloading.
 5. **Turn**: OpenAI model with tools — `send_message` (interim "on it" texts),
    `react`, `recall_memory`, `remember`, `save_event`, `update_event`,
    `search_products`, `present_products`, and (men) `show_outfit_image`.
-   "Typing…" is refreshed every 20s while it works.
-6. **Reply** in 1–3 bubbles with typing pauses between them. If a newer message
-   arrived mid-turn, the final reply is dropped and the newer turn answers.
+   A newer message stops a turn before it sends anything (checked before every
+   tool that messages the client or spends money), and the newer turn answers
+   everything. A turn that already sent something (Colour Card, heads-up, cards
+   on the way) finishes its reply; the newer turn then answers what came after.
+6. **Reply** in 1–3 bubbles with typing pauses between them (counted from the
+   previous send, so the send time isn't added on top). Free clients get one
+   bubble until their Colour Card. Images (Colour Card, product cards, outfit
+   images) are uploaded to WhatsApp and sent by media id, so they can't arrive
+   after the text sent next.
 7. **Reflection** writes what was learned into the memory tree; busy branches
    are queued for consolidation.
 
@@ -120,7 +131,7 @@ prompt) and then marked done.
    | `ICONIK_AGENT_BROWSER_PROVIDER` | Optional: `openai` (default) or `anthropic` |
    | `ANTHROPIC_API_KEY` | Only for the `anthropic` browser provider |
    | `ICONIK_AGENT_ENABLED=1` | Turns the agent on |
-   | `ICONIK_AGENT_ALLOWED_PHONES` | Rollout list: your number first, then a comma list, `*` for every client |
+   | `ICONIK_AGENT_ALLOWED_PHONES` | Rollout list: your number first, then a comma list, `*` for every client. From a number listed by name, `reset colour` switches to free test mode as a fresh free client (to test the colour flow; send it again to start over) and `blueprint mode` switches back |
    | `ICONIK_AGENT_TEXT_MODEL` | Optional; defaults to `ICONIK_MAN_WHATSAPP_TEXT_MODEL` |
    | `ICONIK_AGENT_BROWSER_MODEL` | Optional; defaults to `gpt-6-sol` (openai) or `claude-opus-5-5` (anthropic) |
    | `AGENT_BROWSER_WS_ENDPOINT` | Optional hosted browser (needed for AJIO/Uniqlo/Tata CLiQ) |
