@@ -1,8 +1,9 @@
 import 'server-only';
 
 // Background work for the ICONIK agent, driven by /api/agent/worker:
-//   verify_look_link     open every product on a Look page in a real browser,
-//                        record size/stock/price, then tell the client
+//   verify_look_link     open every product in a real browser (size, stock,
+//                        price, delivery to the pincode, returns), then send
+//                        numbered product cards and a short follow-up
 //   consolidate_memory   fold busy memory branches into their gists
 //   event check-ins      reminders for saved occasions
 //
@@ -15,10 +16,12 @@ import 'server-only';
 // message and is raised in that conversation instead.
 
 import { loadStylePassport, type AgentClient } from '@/lib/agentClients';
-import { verifyProductWithBrowser } from '@/lib/agentBrowserVerifier';
+import { verifyProductWithBrowser, type ProductCheckResult } from '@/lib/agentBrowserVerifier';
 import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming } from '@/lib/agentEvents';
 import { generateAgentJson } from '@/lib/agentLlm';
-import { formatInr, lookLinkUrl } from '@/lib/agentLookLinks';
+import { lookLinkUrl } from '@/lib/agentLookLinks';
+import { buildProductCaption, type PresentableProduct } from '@/lib/agentPresentation';
+import { renderProductCards } from '@/lib/agentProductCards';
 import { consolidateMemory, loadMemoryNodes } from '@/lib/agentMemoryStore';
 import { searchMemories } from '@/lib/agentMemoryTree';
 import { retailerForUrl } from '@/lib/agentProductSearch';
@@ -33,11 +36,15 @@ import {
 } from '@/lib/agentStore';
 import { isWithinCustomerServiceWindow } from '@/lib/agentWhatsapp';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendWhatsAppTextMessage } from '@/lib/whatsapp';
+import { sendWhatsAppImageMessage, sendWhatsAppTextMessage } from '@/lib/whatsapp';
 
 const WORKER_BUDGET_MS = 230_000;
-/** One product check can take a few minutes; don't start one we cannot finish. */
-const PRODUCT_CHECK_HEADROOM_MS = 180_000;
+/** A product check usually takes under a minute (capped at ~3); don't start a batch we cannot finish. */
+const PRODUCT_CHECK_HEADROOM_MS = 175_000;
+/** Rendering cards and sending them needs a little time of its own. */
+const PRESENT_HEADROOM_MS = 45_000;
+/** Products checked at once, each in its own browser. */
+const VERIFY_CONCURRENCY = Math.max(1, Math.min(4, Number(process.env.ICONIK_AGENT_VERIFY_CONCURRENCY) || 3));
 
 export async function dispatchAgentWorker() {
   const base = process.env.ICONIK_AGENT_WORKER_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL;
@@ -58,15 +65,32 @@ export async function dispatchAgentWorker() {
   }
 }
 
-/** The only way the agent messages a client who did not just write to it. */
-export async function sendProactiveAgentMessage(client: AgentClient, text: string, metadata: Record<string, unknown>) {
+/**
+ * The only way the agent messages a client who did not just write to it. Text,
+ * or an image with a caption; sent only inside the 24h customer-service window.
+ */
+export async function sendProactiveAgentMessage(
+  client: AgentClient,
+  text: string,
+  metadata: Record<string, unknown>,
+  imageUrl?: string | null,
+) {
   const { data: fresh } = await supabaseAdmin
     .from('agent_clients').select('last_inbound_at, status').eq('id', client.id).maybeSingle();
   if (fresh?.status !== 'active') return { sent: false as const, reason: 'client_not_active' };
   if (!isWithinCustomerServiceWindow(fresh?.last_inbound_at)) return { sent: false as const, reason: 'outside_window' };
-  const result = await sendWhatsAppTextMessage(client.phone, text);
+  const result = imageUrl
+    ? await sendWhatsAppImageMessage(client.phone, imageUrl, text)
+    : await sendWhatsAppTextMessage(client.phone, text);
   if (!result.success) return { sent: false as const, reason: result.error ?? 'send_failed' };
-  await recordOutboundMessage({ clientId: client.id, content: text, whatsappMessageId: result.messageId ?? null, metadata });
+  await recordOutboundMessage({
+    clientId: client.id,
+    kind: imageUrl ? 'image' : 'text',
+    content: text,
+    imageUrl: imageUrl ?? null,
+    whatsappMessageId: result.messageId ?? null,
+    metadata,
+  });
   return { sent: true as const };
 }
 
@@ -85,62 +109,135 @@ async function sizeNotes(clientId: string) {
 }
 
 type ItemRow = {
-  id: string; title: string; url: string; colour: string | null; retailer: string | null;
-  price_inr: number | null; image_url: string | null; verification_status: string; verification: Record<string, unknown>;
+  id: string; title: string; url: string; colour: string | null; retailer: string | null; reason: string | null;
+  rank: number; price_inr: number | null; image_url: string | null; verification_status: string;
+  verification: Record<string, unknown>;
 };
 
-function verificationSummary(items: ItemRow[], slug: string) {
-  const ok = items.filter(item => item.verification_status === 'verified');
-  const gone = items.filter(item => item.verification_status === 'unavailable');
-  const lines = items.map(item => {
-    const check = item.verification as { price_inr?: number | null; size_checked?: string | null; available_sizes?: string[]; notes?: string };
-    const price = formatInr(check.price_inr ?? item.price_inr);
-    if (item.verification_status === 'verified') {
-      return `✅ ${item.title}${check.size_checked ? ` — your size is in` : ' — in stock'}${price ? `, ${price}` : ''}`;
-    }
-    if (item.verification_status === 'unavailable') {
-      const details = item.verification as { matches_listing?: boolean; in_stock?: boolean | null };
-      if (details.matches_listing === false) return `❌ ${item.title} — the store page doesn't match what I picked`;
-      if (details.in_stock === false) return `❌ ${item.title} — sold out`;
-      const sizes = check.available_sizes?.length ? ` (left: ${check.available_sizes.slice(0, 4).join(', ')})` : '';
-      return `❌ ${item.title} — not available in your size${sizes}`;
-    }
-    return `• ${item.title} — couldn't confirm on the site`;
+function cardDateLabel(now = new Date()) {
+  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(now);
+}
+
+function unavailableReason(item: ItemRow) {
+  const check = item.verification as { matches_listing?: boolean; in_stock?: boolean | null; available_sizes?: string[] };
+  if (check.matches_listing === false) return "the store page didn't match what I picked";
+  if (check.in_stock === false) return 'sold out';
+  return `not available in the size${check.available_sizes?.length ? ` (left: ${check.available_sizes.slice(0, 4).join(', ')})` : ''}`;
+}
+
+/**
+ * Presents a checked Look the way a personal shopper would: one numbered card
+ * per product that can actually be bought (my pick first), then a short
+ * summary of what the store pages confirmed, then one useful next step.
+ */
+async function presentLook(client: AgentClient, items: ItemRow[], job: AgentJobRow) {
+  const slug = String(job.payload.slug ?? '');
+  const lookLinkId = String(job.payload.look_link_id ?? '');
+  const pincode = typeof job.payload.pincode === 'string' ? job.payload.pincode : null;
+  const brief = typeof job.payload.brief === 'string' ? job.payload.brief : '';
+  const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro';
+  const pickId = items.find(item => item.rank === 0)?.id;
+
+  const presentable = [
+    ...items.filter(item => item.verification_status === 'verified'),
+    ...items.filter(item => item.verification_status === 'failed'),
+  ];
+  const products: PresentableProduct[] = presentable.map((item, index) => {
+    const check = item.verification as Partial<ProductCheckResult>;
+    return {
+      number: index + 1,
+      title: item.title,
+      retailer: item.retailer,
+      priceInr: check.price_inr ?? item.price_inr,
+      mrpInr: check.mrp_inr ?? null,
+      colour: check.colour ?? item.colour,
+      reason: item.reason,
+      isPick: item.id === pickId && item.verification_status === 'verified',
+      status: item.verification_status as PresentableProduct['status'],
+      sizeChecked: check.size_checked ?? null,
+      sizeAvailable: check.size_available ?? null,
+      deliveryEstimate: check.delivery_estimate ?? null,
+      pincode,
+      imageUrl: check.image_url ?? item.image_url,
+      shopUrl: new URL(`/go/${item.id}`, site).toString(),
+    };
   });
-  const opener = gone.length
-    ? `Checked your Look on the actual store pages:`
-    : ok.length === items.length
-      ? `Checked every piece on the actual store pages — all good to buy:`
-      : `Checked your Look on the store pages:`;
-  const closer = gone.length
-    ? `Want me to find a swap for ${gone.length === 1 ? 'that one' : 'those'}?`
-    : `Everything's on your page 👇`;
-  return `${opener}\n\n${lines.join('\n')}\n\n${closer}\n${lookLinkUrl(slug)}`;
+
+  const cards = await renderProductCards(client.id, products, cardDateLabel());
+  let sent = 0;
+  for (const product of products) {
+    const delivery = await sendProactiveAgentMessage(
+      client,
+      buildProductCaption(product),
+      { type: 'product_card', look_link_id: lookLinkId, number: product.number },
+      cards.get(product.number) ?? product.imageUrl,
+    );
+    if (!delivery.sent) return { sent, reason: delivery.reason };
+    sent += 1;
+  }
+
+  const facts = {
+    request: brief,
+    delivery_pincode: pincode,
+    presented: presentable.map((item, index) => {
+      const check = item.verification as Partial<ProductCheckResult>;
+      return {
+        number: index + 1,
+        title: item.title,
+        store: item.retailer,
+        price_inr: check.price_inr ?? item.price_inr,
+        confirmed_on_store_page: item.verification_status === 'verified',
+        size_checked: check.size_checked ?? null,
+        size_available: check.size_available ?? null,
+        delivery_estimate: check.delivery_estimate ?? null,
+        returns: check.returns ?? null,
+        store_notes: check.notes ?? null,
+      };
+    }),
+    not_available: items
+      .filter(item => item.verification_status === 'unavailable')
+      .map(item => ({ title: item.title, why: unavailableReason(item) })),
+  };
+  const raw = await generateAgentJson(`You are ICONIK's personal stylist on WhatsApp. You just sent the client product cards for their request. Write the follow-up, like a sharp personal shopper.
+
+Return ONLY JSON: {"summary": "…", "next_step": "…"}
+- summary: 1-3 short sentences using ONLY the facts below — what the store pages confirmed (store, size, delivery date to their pincode, returns), any fit or stock note worth knowing, and honestly what was not available. If nothing could be presented, say so plainly and suggest what you'd look for instead. No headings, no lists.
+- next_step: one short question offering the single most useful next move (e.g. build the full outfit around #1, find it in another colour, look for a cheaper alternative). Never offer to place the order or take payment.
+- Plain everyday English, at most one emoji in total.
+
+FACTS:
+${JSON.stringify(facts)}`, 'iconik_agent_look_followup');
+  const summary = typeof raw.summary === 'string' ? raw.summary.trim().slice(0, 700) : '';
+  const nextStep = typeof raw.next_step === 'string' ? raw.next_step.trim().slice(0, 300) : '';
+  const lookLine = products.length ? `All picks in one place, tap ♥ on what you like: ${lookLinkUrl(slug)}` : '';
+  for (const text of [[summary, lookLine].filter(Boolean).join('\n\n'), nextStep].filter(Boolean)) {
+    const delivery = await sendProactiveAgentMessage(client, text, { type: 'look_followup', look_link_id: lookLinkId });
+    if (!delivery.sent) return { sent, reason: delivery.reason };
+    sent += 1;
+  }
+  return { sent, reason: null };
 }
 
 async function runVerifyLookLink(job: AgentJobRow, startedAt: number) {
   const lookLinkId = String(job.payload.look_link_id ?? '');
-  const slug = String(job.payload.slug ?? '');
   const client = await loadClient(job.client_id);
   if (!client || !lookLinkId) return { done: true, result: { skipped: 'missing client or look' } };
 
   const loadItems = async () => {
     const { data, error } = await supabaseAdmin
       .from('look_link_items')
-      .select('id, title, url, colour, retailer, price_inr, image_url, verification_status, verification')
+      .select('id, title, url, colour, retailer, reason, rank, price_inr, image_url, verification_status, verification')
       .eq('look_link_id', lookLinkId)
       .order('rank', { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as ItemRow[];
   };
 
-  const size = await sizeNotes(client.id);
-  let items = await loadItems();
-  for (const item of items) {
-    if (!['pending', 'checking'].includes(item.verification_status)) continue;
-    if (Date.now() - startedAt > WORKER_BUDGET_MS - PRODUCT_CHECK_HEADROOM_MS) {
-      return { done: false, result: null };
-    }
+  const size = typeof job.payload.size === 'string' && job.payload.size.trim()
+    ? job.payload.size.trim()
+    : await sizeNotes(client.id);
+  const pincode = typeof job.payload.pincode === 'string' ? job.payload.pincode : null;
+  const verifyItem = async (item: ItemRow) => {
     const retailer = retailerForUrl(item.url);
     await supabaseAdmin.from('look_link_items').update({ verification_status: 'checking' }).eq('id', item.id);
     const check = retailer
@@ -149,6 +246,7 @@ async function runVerifyLookLink(job: AgentJobRow, startedAt: number) {
           title: item.title,
           colour: item.colour,
           size,
+          pincode,
           retailerDomain: retailer.domain,
         })
       : null;
@@ -159,19 +257,27 @@ async function runVerifyLookLink(job: AgentJobRow, startedAt: number) {
       ...(check?.price_inr ? { price_inr: check.price_inr } : {}),
       ...(check?.image_url && !item.image_url ? { image_url: check.image_url } : {}),
     }).eq('id', item.id);
+  };
+
+  let items = await loadItems();
+  let pending = items.filter(item => ['pending', 'checking'].includes(item.verification_status));
+  while (pending.length) {
+    if (Date.now() - startedAt > WORKER_BUDGET_MS - PRODUCT_CHECK_HEADROOM_MS) return { done: false, result: null };
+    await Promise.all(pending.slice(0, VERIFY_CONCURRENCY).map(verifyItem));
+    pending = pending.slice(VERIFY_CONCURRENCY);
   }
+  if (Date.now() - startedAt > WORKER_BUDGET_MS - PRESENT_HEADROOM_MS) return { done: false, result: null };
 
   items = await loadItems();
-  const message = verificationSummary(items, slug);
-  const delivery = await sendProactiveAgentMessage(client, message, { type: 'look_verification', look_link_id: lookLinkId });
+  const presented = await presentLook(client, items, job);
   return {
     done: true,
     result: {
       verified: items.filter(item => item.verification_status === 'verified').length,
       unavailable: items.filter(item => item.verification_status === 'unavailable').length,
       failed: items.filter(item => item.verification_status === 'failed').length,
-      update_sent: delivery.sent,
-      update_skipped_reason: delivery.sent ? null : delivery.reason,
+      messages_sent: presented.sent,
+      stopped_reason: presented.reason,
     },
   };
 }

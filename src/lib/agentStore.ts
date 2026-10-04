@@ -59,6 +59,17 @@ export interface AgentJobRow {
   attempts: number;
 }
 
+const MEDIA_BUCKET = 'agent-media';
+
+/** Stores an image (client photo, product card) privately; WhatsApp fetches it via a signed URL. */
+export async function uploadAgentMedia(clientId: string, bytes: Buffer, contentType: string, extension: string) {
+  const path = `${clientId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension.replace(/[^a-z0-9]/gi, '') || 'bin'}`;
+  const { error } = await supabaseAdmin.storage.from(MEDIA_BUCKET).upload(path, bytes, { contentType, upsert: false });
+  if (error) throw error;
+  const { data } = await supabaseAdmin.storage.from(MEDIA_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
+  return { path, signedUrl: data?.signedUrl ?? null };
+}
+
 function fail(action: string, error: { message: string } | null): never {
   throw new Error(`Could not ${action}: ${error?.message ?? 'unknown error'}`);
 }

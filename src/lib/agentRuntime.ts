@@ -63,6 +63,7 @@ import {
   startTurn,
   unansweredInboundMessages,
   updateClientEvent,
+  uploadAgentMedia,
   type AgentMessageRow,
 } from '@/lib/agentStore';
 import {
@@ -71,7 +72,6 @@ import {
   splitIntoBubbles,
   typingDelayMs,
 } from '@/lib/agentWhatsapp';
-import { supabaseAdmin } from '@/lib/supabase';
 import {
   downloadWhatsAppImage,
   sendWhatsAppImageMessage,
@@ -86,37 +86,35 @@ const DEBOUNCE_MS = Number(process.env.ICONIK_AGENT_DEBOUNCE_MS) || 2_500;
 const TYPING_REFRESH_MS = 20_000;
 const MAX_MODEL_CALLS = 8;
 const MAX_INTERIM_MESSAGES = 2;
-const MEDIA_BUCKET = 'agent-media';
 
-/** Staged rollout: "*" for every client with a finished report, or a comma list of numbers. */
-export function isAgentEnabledFor(phone: string, env = process.env) {
-  if (env.ICONIK_AGENT_ENABLED !== '1') return false;
+/**
+ * Staged rollout. ICONIK_AGENT_ALLOWED_PHONES is "*" for every client with a
+ * finished report, and/or a comma list of numbers. Numbers listed by name are
+ * the team: they may also test on reports still in review.
+ */
+export function agentAccessFor(phone: string, env = process.env): { previewReports: boolean } | null {
+  if (env.ICONIK_AGENT_ENABLED !== '1') return null;
   const allowed = (env.ICONIK_AGENT_ALLOWED_PHONES ?? '').split(',').map(value => value.trim()).filter(Boolean);
-  if (allowed.includes('*')) return true;
   const normalized = normalizeIndianWhatsappNumber(phone);
-  return Boolean(normalized && allowed.some(value => normalizeIndianWhatsappNumber(value) === normalized));
+  const listed = Boolean(normalized && allowed.some(value => normalizeIndianWhatsappNumber(value) === normalized));
+  if (listed) return { previewReports: true };
+  return allowed.includes('*') ? { previewReports: false } : null;
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function storeInboundImage(clientId: string, mediaId: string) {
   const downloaded = await downloadWhatsAppImage(mediaId);
-  const extension = downloaded.mimeType.split('/')[1]?.replace(/[^a-z0-9]/gi, '') || 'jpg';
-  const path = `${clientId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
-  const { error } = await supabaseAdmin.storage
-    .from(MEDIA_BUCKET)
-    .upload(path, downloaded.bytes, { contentType: downloaded.mimeType, upsert: false });
-  if (error) throw error;
-  const { data } = await supabaseAdmin.storage.from(MEDIA_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
-  return { path, signedUrl: data?.signedUrl ?? null };
+  const extension = downloaded.mimeType.split('/')[1] || 'jpg';
+  return uploadAgentMedia(clientId, downloaded.bytes, downloaded.mimeType, extension);
 }
 
 /**
  * Entry point from the WhatsApp webhook. Returns 'not_client' when the number
  * has no finished ICONIK report, so the caller can fall back.
  */
-export async function handleAgentInbound(message: WhatsappInboundMessage) {
-  const client = await resolveAgentClientByPhone(message.from);
+export async function handleAgentInbound(message: WhatsappInboundMessage, access: { previewReports: boolean }) {
+  const client = await resolveAgentClientByPhone(message.from, { allowPreviewReports: access.previewReports });
   if (!client) return 'not_client' as const;
   if (client.status !== 'active') return 'paused' as const;
 
@@ -142,13 +140,14 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   if (!stored) return 'duplicate' as const;
 
   // Instant acknowledgement: read + typing, and a reaction when a person would react.
-  await showWhatsAppTypingIndicator(message.id).catch(() => undefined);
+  const typing = await showWhatsAppTypingIndicator(message.id).catch(() => null);
+  if (!typing?.success) console.warn('[agent] typing indicator failed:', typing?.error);
   const ack = pickAckReaction({ text: message.text, hasImage: Boolean(image) });
-  if (ack) {
-    const sent = await sendWhatsAppReaction(client.phone, message.id, ack).catch(() => null);
-    if (sent?.success) {
-      await recordOutboundMessage({ clientId: client.id, kind: 'reaction', content: ack, metadata: { reacted_to: message.id } });
-    }
+  const reacted = await sendWhatsAppReaction(client.phone, message.id, ack).catch(() => null);
+  if (reacted?.success) {
+    await recordOutboundMessage({ clientId: client.id, kind: 'reaction', content: ack, metadata: { reacted_to: message.id } });
+  } else {
+    console.warn('[agent] acknowledgement reaction failed:', reacted?.error);
   }
 
   // People send thoughts in pieces. Wait; if a newer message arrived, its invocation answers all.
@@ -171,7 +170,7 @@ interface TurnState {
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
-function agentTools(line: 'man' | 'woman'): FunctionTool[] {
+export function agentTools(line: 'man' | 'woman'): FunctionTool[] {
   const tools: FunctionTool[] = [
     {
       type: 'function',
@@ -264,7 +263,7 @@ function agentTools(line: 'man' | 'woman'): FunctionTool[] {
     {
       type: 'function',
       name: 'search_products',
-      description: 'Search trusted Indian and global fashion stores for specific products. Returns candidates with ids for create_look_link.',
+      description: 'Search trusted Indian and global fashion stores, including premium and authorised brand retailers, for specific products. Returns candidates (with ids for present_products) and flags any over budget.',
       strict: true,
       parameters: {
         type: 'object', additionalProperties: false,
@@ -273,32 +272,35 @@ function agentTools(line: 'man' | 'woman'): FunctionTool[] {
           query: { type: 'string', description: 'Specific garment description, e.g. "olive linen overshirt relaxed fit".' },
           colours: { type: 'array', items: { type: 'string' } },
           budget_max_inr: { type: ['integer', 'null'] },
-          stores: { type: 'array', items: { type: 'string' }, description: 'Store names the client asked for; empty for any.' },
+          stores: { type: 'array', items: { type: 'string' }, description: 'Store names the client asked for (e.g. Myntra, The Collective); empty for any. Put brands in the query.' },
           sports: { type: 'boolean', description: 'True only for performance/sportswear.' },
         },
       },
     },
     {
       type: 'function',
-      name: 'create_look_link',
-      description: 'Build a personal Look page from search_products candidates and get its link to send. Products are then verified on the real store pages in the background.',
+      name: 'present_products',
+      description: 'Send your chosen products to the client. Each is first checked on the real store page (stock in their size, price, delivery date to their pincode, returns), then arrives as a numbered product card with a shop link, followed by a short summary. Takes a couple of minutes; you do not list the products yourself.',
       strict: true,
       parameters: {
         type: 'object', additionalProperties: false,
-        required: ['title', 'occasion', 'intro', 'event_id', 'items'],
+        required: ['title', 'occasion', 'brief', 'size', 'pincode', 'event_id', 'items'],
         properties: {
-          title: { type: 'string', description: 'Short, personal: "Your sangeet look".' },
+          title: { type: 'string', description: 'Short, personal: "Your old-money polo".' },
           occasion: { type: ['string', 'null'] },
-          intro: { type: 'string', description: 'One or two sentences on why this works for them.' },
+          brief: { type: 'string', description: 'One line on what they asked for and the constraints (budget, deadline, fit).' },
+          size: { type: ['string', 'null'], description: 'The size to check, e.g. "M" or "32". null if unknown.' },
+          pincode: { type: ['string', 'null'], description: 'Delivery pincode to check delivery dates against.' },
           event_id: { type: ['string', 'null'] },
           items: {
             type: 'array',
+            description: 'Your pick first, then 1-3 alternatives.',
             items: {
               type: 'object', additionalProperties: false, required: ['candidate_id', 'slot', 'reason'],
               properties: {
                 candidate_id: { type: 'string' },
                 slot: { type: 'string', enum: ['top', 'bottom', 'dress', 'ethnic_set', 'layer', 'shoes', 'bag', 'accessory', 'other'] },
-                reason: { type: 'string', description: 'Max 15 words, personal.' },
+                reason: { type: 'string', description: 'Why it suits them, max 12 words.' },
               },
             },
           },
@@ -426,22 +428,25 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       });
       for (const candidate of found) state.candidates.set(candidate.id, candidate);
       if (!found.length) return 'No strong matches. Try a different description, colour or store — or tell the client honestly.';
-      return found.map(candidate => (
-        `${candidate.id}: ${candidate.title} — ${candidate.retailer}${candidate.priceInr ? ` — ₹${candidate.priceInr}` : ''}${candidate.colour ? ` — ${candidate.colour}` : ''}${candidate.note ? ` — ${candidate.note}` : ''}`
-      )).join('\n');
+      const budget = typeof args.budget_max_inr === 'number' ? args.budget_max_inr : null;
+      return found.map(candidate => {
+        const overBudget = budget && candidate.priceInr && candidate.priceInr > budget ? ' — OVER BUDGET' : '';
+        return `${candidate.id}: ${candidate.title} — ${candidate.retailer}${candidate.priceInr ? ` — ₹${candidate.priceInr}` : ' — price unknown'}${overBudget}${candidate.colour ? ` — ${candidate.colour}` : ''}${candidate.note ? ` — ${candidate.note}` : ''}`;
+      }).join('\n');
     }
-    case 'create_look_link': {
+    case 'present_products': {
       const items = (Array.isArray(args.items) ? args.items : [])
         .map(raw => raw as Record<string, unknown>)
         .map(item => ({ item, candidate: state.candidates.get(String(item.candidate_id)) }))
         .filter((entry): entry is { item: Record<string, unknown>; candidate: ProductCandidate } => Boolean(entry.candidate))
-        .slice(0, 8);
+        .slice(0, 4);
       if (!items.length) return 'None of those candidate ids exist. Use ids returned by search_products.';
+      const pincode = typeof args.pincode === 'string' && /^\d{6}$/.test(args.pincode.trim()) ? args.pincode.trim() : null;
       const link = await createLookLink({
         clientId: state.client.id,
-        title: String(args.title ?? 'Your look').slice(0, 80),
+        title: String(args.title ?? 'Your picks').slice(0, 80),
         occasion: nullableString(args.occasion, 80),
-        intro: nullableString(args.intro, 400),
+        intro: nullableString(args.brief, 400),
         eventId: nullableString(args.event_id, 40),
         items: items.map(({ item, candidate }) => ({
           slot: String(item.slot ?? 'other'),
@@ -451,12 +456,18 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
           imageUrl: candidate.imageUrl,
           priceInr: candidate.priceInr,
           colour: candidate.colour,
-          reason: nullableString(item.reason, 140),
+          reason: nullableString(item.reason, 120),
         })),
       });
-      await enqueueAgentJob('verify_look_link', state.client.id, { look_link_id: link.id, slug: link.slug });
-      void dispatchAgentWorker();
-      return `Look page ready: ${link.url}\nInclude this link in your reply. Verification of sizes and stock has started.`;
+      await enqueueAgentJob('verify_look_link', state.client.id, {
+        look_link_id: link.id,
+        slug: link.slug,
+        size: nullableString(args.size, 20),
+        pincode,
+        brief: nullableString(args.brief, 300),
+      });
+      await dispatchAgentWorker();
+      return `Checking ${items.length} product${items.length === 1 ? '' : 's'} on the store pages now; the cards and summary will be sent automatically when done. In your reply, tell them in one short line what you're checking (size${pincode ? `, delivery to ${pincode}` : ''}) and roughly how long — don't list the products.`;
     }
     case 'show_outfit_image': {
       if (state.client.line !== 'man' || !state.client.report_share_token) return 'Images are not available for this client yet.';

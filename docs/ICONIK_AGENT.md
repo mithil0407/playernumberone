@@ -11,20 +11,45 @@ page** whose items are verified on the real store pages by a browser agent.
    for numbers on the rollout list. Everyone else still goes to the Man pilot.
 2. The number is matched to the client's latest finished report
    (`man_reports` or `stylist_blueprint_reports`) → `agent_clients`
-   (`agentClients.ts`). No finished report → not served.
-3. **Instant acknowledgement**: read receipt + "typing…", and an emoji reaction
-   when a friend would react (photo, wedding, thanks…).
+   (`agentClients.ts`). Numbers listed by name in `ICONIK_AGENT_ALLOWED_PHONES`
+   (the team) may also use reports still `in_review`/`draft_ready`. Men who used
+   the pilot keep its memories and their last 30 messages (`agentLegacyImport.ts`).
+3. **Instant acknowledgement**: read receipt + "typing…", and one emoji reaction
+   on every message — 👀 on a request, 👍 on an answer, 👋 on a greeting, warmer
+   ones for weddings, thanks, photos.
 4. **Double-text handling**: a short pause (`ICONIK_AGENT_DEBOUNCE_MS`, 2.5s);
    if another message arrived, the newest invocation answers all unanswered
    messages together.
 5. **Turn**: OpenAI model with tools — `send_message` (interim "on it" texts),
    `react`, `recall_memory`, `remember`, `save_event`, `update_event`,
-   `search_products`, `create_look_link`, and (men) `show_outfit_image`.
+   `search_products`, `present_products`, and (men) `show_outfit_image`.
    "Typing…" is refreshed every 20s while it works.
 6. **Reply** in 1–3 bubbles with typing pauses between them. If a newer message
    arrived mid-turn, the final reply is dropped and the newer turn answers.
 7. **Reflection** writes what was learned into the memory tree; busy branches
    are queued for consolidation.
+
+## Shopping: decide first, check, then present
+
+Modelled on how a personal shopper (and Instinct) works:
+
+1. **Brief** — fill what/budget/size/pincode/deadline from the report and
+   memory; ask only for what is missing, in one message, with numbered options
+   when there is a choice (genuine brand vs the look). Sizes and pincode are
+   remembered; a budget belongs to the request.
+2. **Search** — `search_products` across trusted stores including authorised
+   premium retailers (The Collective, Tata CLiQ Luxury…). A brand passed as a
+   store searches every store. Over-budget results are kept and flagged so the
+   agent can offer the trade-off with real prices.
+3. **Check** — `present_products` (pick first, 1-3 alternatives, size, pincode)
+   queues a job; each product is opened in a real browser, up to 3 at once
+   (`ICONIK_AGENT_VERIFY_CONCURRENCY`): stock in the size, price/MRP, offer,
+   delivery date typed against the pincode, returns.
+4. **Present** — numbered ICONIK product cards rendered in headless Chrome
+   (`agentPresentation.ts`, `agentProductCards.ts`) with captions carrying the
+   checked facts and a tracked `/go` link; then a short summary (only verified
+   facts, honest about anything unavailable) with the Look page link, and one
+   next-step question. Unavailable products are not carded.
 
 ## Memory tree (`agentMemoryTree.ts`, `agentMemoryStore.ts`)
 

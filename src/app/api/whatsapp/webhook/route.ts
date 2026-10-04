@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse, after } from 'next/server';
-import { handleAgentInbound, isAgentEnabledFor } from '@/lib/agentRuntime';
+import { agentAccessFor, handleAgentInbound } from '@/lib/agentRuntime';
 import { processIconikManWhatsappPilotMessage } from '@/lib/manWhatsappPilotAgent';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -108,9 +108,11 @@ export async function POST(request: NextRequest) {
       // serve (rollout list, or no finished report) fall back to the Man pilot.
       await Promise.all(messages.map(async message => {
         try {
-          if (isAgentEnabledFor(message.from)) {
-            const outcome = await handleAgentInbound(message);
+          const access = agentAccessFor(message.from);
+          if (access) {
+            const outcome = await handleAgentInbound(message, access);
             if (outcome !== 'not_client') return;
+            console.warn('[whatsapp] agent enabled for this number but no report matched; using the Man pilot');
           }
           await processIconikManWhatsappPilotMessage(message);
         } catch (error) {

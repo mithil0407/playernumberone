@@ -8,6 +8,7 @@ import {
   isSafeRetailUrl,
 } from './agentLookLinks.ts';
 import { buildAgentInstructions, formatEvents } from './agentPrompt.ts';
+import { buildProductCaption, deliveryPhrase, productCardHtml, type PresentableProduct } from './agentPresentation.ts';
 import {
   buildWhatsappReactionPayload,
   buildWhatsappTypingPayload,
@@ -48,11 +49,15 @@ test('typing indicator and reaction payloads match the Cloud API shape', () => {
   });
 });
 
-test('ack reactions only where a friend would react', () => {
+test('every message gets one acknowledgement reaction that fits it', () => {
   assert.equal(pickAckReaction({ text: 'my cousin’s wedding is next month!', hasImage: false }), '🎉');
   assert.equal(pickAckReaction({ text: 'thanks so much', hasImage: false }), '🙏');
   assert.equal(pickAckReaction({ text: 'how does this look', hasImage: true }), '👀');
-  assert.equal(pickAckReaction({ text: 'what colour trousers go with olive?', hasImage: false }), null);
+  assert.equal(pickAckReaction({ text: 'Hey', hasImage: false }), '👋');
+  assert.equal(pickAckReaction({ text: 'i want a ralph lauren style old money outfit, send me a link', hasImage: false }), '👀');
+  assert.equal(pickAckReaction({ text: 'what colour trousers go with olive?', hasImage: false }), '👀');
+  assert.equal(pickAckReaction({ text: '411037 10000inr', hasImage: false }), '👍');
+  assert.equal(pickAckReaction({ text: '1', hasImage: false }), '👍');
 });
 
 test('replies split into at most three bubbles; NO_REPLY sends nothing', () => {
@@ -133,5 +138,52 @@ test('instructions carry the passport, memory and a due check-in', () => {
   assert.match(instructions, /PORTRAIT: Loves earthy colours/);
   assert.match(instructions, /FIRST CONVERSATION/);
   assert.doesNotMatch(instructions, /show_outfit_image/);
+  assert.match(instructions, /present_products/);
+  assert.match(instructions, /ONE short message/);
   assert.match(formatEvents(events, NOW), /in 21 days[\s\S]*CHECK-IN DUE: Three weeks out/);
+});
+
+const product: PresentableProduct = {
+  number: 1,
+  title: 'Soft Cotton Polo, Cream',
+  retailer: 'The Collective',
+  priceInr: 17500,
+  mrpInr: null,
+  colour: 'Cream',
+  reason: 'The old-money staple, in your warm neutrals.',
+  isPick: true,
+  status: 'verified',
+  sizeChecked: 'M',
+  sizeAvailable: true,
+  deliveryEstimate: 'by Wed, 8 Oct',
+  pincode: '411037',
+  imageUrl: 'https://example.com/polo.jpg',
+  shopUrl: 'https://www.iconik.pro/go/abc',
+};
+
+test('product captions are numbered, carry the checked facts and a shop link', () => {
+  assert.equal(buildProductCaption(product), [
+    '1) Soft Cotton Polo, Cream — ₹17,500 · my pick',
+    'The old-money staple, in your warm neutrals.',
+    '✓ M in stock · arrives by Wed, 8 Oct (411037)',
+    'Shop at The Collective: https://www.iconik.pro/go/abc',
+  ].join('\n'));
+  const unconfirmed = buildProductCaption({ ...product, number: 2, isPick: false, status: 'failed', reason: null });
+  assert.match(unconfirmed, /^2\) Soft Cotton Polo, Cream — ₹17,500\n/);
+  assert.match(unconfirmed, /Couldn't confirm M stock on the site/);
+});
+
+test('product card HTML escapes store text', () => {
+  const html = productCardHtml({ ...product, title: '<script>x</script> Polo', retailer: 'A&B' }, '4 Oct 2026');
+  assert.doesNotMatch(html, /<script>x<\/script>/);
+  assert.match(html, /&lt;script&gt;x&lt;\/script&gt; Polo/);
+  assert.match(html, /A&amp;B/);
+  assert.match(html, /My pick/);
+});
+
+test('delivery estimates read naturally whatever the store wrote', () => {
+  assert.equal(deliveryPhrase('By Tue, Oct 06 for 411037'), 'by Tue, Oct 06');
+  assert.equal(deliveryPhrase('Delivery by 8 Oct'), 'by 8 Oct');
+  assert.equal(deliveryPhrase('Estimated delivery: Within 3-5 days'), 'within 3-5 days');
+  assert.match(buildProductCaption({ ...product, deliveryEstimate: 'By Tue, Oct 06 for 411037' }), /✓ M in stock · arrives by Tue, Oct 06 \(411037\)/);
 });

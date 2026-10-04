@@ -46,20 +46,27 @@ const ACK_RULES: Array<{ pattern: RegExp; emoji: string }> = [
   { pattern: /\b(?:trip|vacation|holiday|travelling|traveling|goa|europe|flight)\b/i, emoji: '✈️' },
   { pattern: /\b(?:love(?:d)? (?:it|this|that)|obsessed|amazing|perfect|so good)\b/i, emoji: '❤️' },
   { pattern: /\b(?:interview|presentation|pitch|first day|new job)\b/i, emoji: '💪' },
+  { pattern: /\b(?:haha+|lol|lmao)\b|😂|🤣/i, emoji: '😂' },
 ];
 
+const GREETING = /^(?:hi+|hey+|hello+|hii+|yo|good (?:morning|afternoon|evening))[!.\s]*$/i;
+const REQUEST = /\?|\b(?:help|find|need|want|suggest|recommend|show|send|buy|looking for|search|get me|can you|could you|what|which|how|should i|link)\b/i;
+
 /**
- * An instant reaction that tells the client "got it" before the real reply.
- * Only for messages where a human stylist would naturally react; plain
- * questions get the typing indicator instead, so reactions stay meaningful.
+ * The instant reaction that says "got it" before the real reply, the way a
+ * person acknowledges a message: 👀 on a request (work is starting), 👍 on an
+ * answer to our question, 👋 on a greeting, and a warmer emoji when the moment
+ * calls for one. Every message gets exactly one.
  */
-export function pickAckReaction(input: { text: string; hasImage: boolean }): string | null {
+export function pickAckReaction(input: { text: string; hasImage: boolean }): string {
   const text = input.text.trim();
   for (const rule of ACK_RULES) {
     if (rule.pattern.test(text)) return rule.emoji;
   }
   if (input.hasImage) return '👀';
-  return null;
+  if (GREETING.test(text)) return '👋';
+  if (REQUEST.test(text)) return '👀';
+  return '👍';
 }
 
 /**

@@ -37,6 +37,8 @@ export interface StylePassport {
 type AnyRecord = Record<string, unknown>;
 
 const FINISHED_REPORT_STATUSES = ['sent', 'approved'];
+/** Numbers listed by name on the rollout list (the team) may test on reports still in review. */
+const PREVIEW_REPORT_STATUSES = [...FINISHED_REPORT_STATUSES, 'in_review', 'draft_ready'];
 
 function asRecord(value: unknown): AnyRecord {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as AnyRecord : {};
@@ -89,6 +91,7 @@ interface ReportMatch {
 async function latestReportFor(
   line: AgentLine,
   submissions: AnyRecord[],
+  statuses: string[],
 ): Promise<ReportMatch | null> {
   if (!submissions.length) return null;
   const table = line === 'man' ? 'man_reports' : 'stylist_blueprint_reports';
@@ -96,7 +99,7 @@ async function latestReportFor(
     .from(table)
     .select('id, submission_id, share_token, created_at')
     .in('submission_id', submissions.map(row => row.id as string))
-    .in('status', FINISHED_REPORT_STATUSES)
+    .in('status', statuses)
     .order('created_at', { ascending: false })
     .limit(1);
   const { data, error } = line === 'man' ? await query.eq('report_kind', 'blueprint') : await query;
@@ -128,9 +131,13 @@ async function nameFromCustomers(email: string | null) {
 
 /**
  * Finds (or enrols) the agent client for a WhatsApp number. Returns null when
- * the number has no finished ICONIK report.
+ * the number has no finished ICONIK report. With allowPreviewReports (team
+ * numbers testing the agent) a report still in review also counts.
  */
-export async function resolveAgentClientByPhone(rawPhone: string): Promise<AgentClient | null> {
+export async function resolveAgentClientByPhone(
+  rawPhone: string,
+  options: { allowPreviewReports?: boolean } = {},
+): Promise<AgentClient | null> {
   const phone = normalizeIndianWhatsappNumber(rawPhone);
   if (!phone) return null;
 
@@ -146,9 +153,10 @@ export async function resolveAgentClientByPhone(rawPhone: string): Promise<Agent
     phoneMatches('man_intake_submissions', phone),
     phoneMatches('stylist_intake_responses', phone),
   ]);
+  const statuses = options.allowPreviewReports ? PREVIEW_REPORT_STATUSES : FINISHED_REPORT_STATUSES;
   const matches = (await Promise.all([
-    latestReportFor('man', menSubmissions),
-    latestReportFor('woman', womenSubmissions),
+    latestReportFor('man', menSubmissions, statuses),
+    latestReportFor('woman', womenSubmissions, statuses),
   ])).filter((match): match is ReportMatch => Boolean(match));
   if (!matches.length) return null;
 
@@ -173,6 +181,13 @@ export async function resolveAgentClientByPhone(rawPhone: string): Promise<Agent
     const { data: raced } = await supabaseAdmin.from('agent_clients').select('*').eq('phone', phone).maybeSingle();
     if (raced) return raced as AgentClient;
     throw new Error(`Could not enrol agent client: ${insertError.message}`);
+  }
+  if (match.line === 'man') {
+    // Men who used the WhatsApp pilot keep what it learned and their recent chat.
+    const { importManPilotHistory } = await import('@/lib/agentLegacyImport');
+    await importManPilotHistory(created as AgentClient).catch(error => {
+      console.warn('[agent] pilot history import failed:', error);
+    });
   }
   return created as AgentClient;
 }

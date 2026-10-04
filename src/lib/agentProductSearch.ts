@@ -18,7 +18,7 @@ export interface AgentRetailer {
   /**
    * The store blocks headless browsers, so its products cannot be checked unless
    * AGENT_BROWSER_WS_ENDPOINT points at a hosted browser. Ranked after checkable stores.
-   * Tested 3 Oct 2026 from a residential connection.
+   * Tested 3-4 Oct 2026 from a residential connection.
    */
   blocksBrowser?: boolean;
 }
@@ -31,13 +31,24 @@ export const AGENT_RETAILERS: readonly AgentRetailer[] = [
   { name: 'Uniqlo', domain: 'uniqlo.com', lines: ['man', 'woman'], blocksBrowser: true },
   { name: 'Westside', domain: 'westside.com', lines: ['man', 'woman'] },
   { name: 'Marks & Spencer', domain: 'marksandspencer.in', lines: ['man', 'woman'] },
+  // Listed before Tata CLiQ so luxury product URLs resolve to the subdomain that works.
+  { name: 'Tata CLiQ Luxury', domain: 'luxury.tatacliq.com', lines: ['man', 'woman'] },
   { name: 'Tata CLiQ', domain: 'tatacliq.com', lines: ['man', 'woman'], blocksBrowser: true },
+  { name: 'The Collective', domain: 'thecollective.in', lines: ['man', 'woman'] },
+  { name: 'Massimo Dutti', domain: 'massimodutti.com', lines: ['man', 'woman'] },
+  { name: 'Tommy Hilfiger', domain: 'tommy.com', lines: ['man', 'woman'] },
+  { name: 'NNNOW', domain: 'nnnow.com', lines: ['man', 'woman'] },
   { name: 'Fabindia', domain: 'fabindia.com', lines: ['man', 'woman'] },
   { name: 'Mango', domain: 'mango.com', lines: ['man', 'woman'] },
   { name: 'Nykaa Fashion', domain: 'nykaafashion.com', lines: ['woman'] },
   { name: 'W', domain: 'wforwoman.com', lines: ['woman'] },
   { name: 'Libas', domain: 'libas.in', lines: ['woman'] },
   { name: 'Biba', domain: 'biba.in', lines: ['woman'] },
+  { name: 'Andamen', domain: 'andamen.com', lines: ['man'] },
+  { name: 'Bombay Shirt Company', domain: 'bombayshirts.com', lines: ['man'] },
+  { name: 'Blackberrys', domain: 'blackberrys.com', lines: ['man'] },
+  { name: 'U.S. Polo Assn.', domain: 'uspoloassn.in', lines: ['man'] },
+  { name: 'Jack & Jones', domain: 'jackjones.in', lines: ['man'] },
   { name: 'Snitch', domain: 'snitch.com', lines: ['man'] },
   { name: 'Rare Rabbit', domain: 'thehouseofrare.com', lines: ['man'] },
   { name: 'Nike', domain: 'nike.com', lines: ['man', 'woman'], sports: true },
@@ -131,13 +142,17 @@ export async function searchProducts(input: {
   idPrefix: string;
   limit?: number;
 }): Promise<ProductCandidate[]> {
-  const requested = (input.retailerNames ?? []).map(name => name.toLowerCase());
-  const retailers = AGENT_RETAILERS.filter(retailer => (
-    retailer.lines.includes(input.line)
-    && (requested.length
-      ? requested.some(name => retailer.name.toLowerCase().includes(name) || retailer.domain.includes(name))
-      : Boolean(retailer.sports) === Boolean(input.sports))
-  ));
+  const requested = (input.retailerNames ?? []).map(name => name.toLowerCase()).filter(Boolean);
+  const forLine = AGENT_RETAILERS.filter(retailer => retailer.lines.includes(input.line));
+  const named = forLine.filter(retailer => requested.some(name => (
+    retailer.name.toLowerCase().includes(name) || name.includes(retailer.name.toLowerCase()) || retailer.domain.includes(name)
+  )));
+  // A brand passed as a store ("Ralph Lauren") matches no store: search every
+  // trusted store for it, so authorised retailers like The Collective are found.
+  const retailers = named.length
+    ? named
+    : forLine.filter(retailer => Boolean(retailer.sports) === Boolean(input.sports));
+  const brandHint = requested.length && !named.length ? ` (brand: ${input.retailerNames!.join(', ')})` : '';
   if (!retailers.length) return [];
   const limit = Math.max(1, Math.min(input.limit ?? 5, 8));
   const department = input.line === 'man' ? 'menswear' : 'womenswear';
@@ -146,12 +161,13 @@ export async function searchProducts(input: {
     model: AGENT_TEXT_MODEL,
     input: `Find up to ${limit} specific ${department} products currently sold online in India that match this request.
 
-REQUEST: ${input.query}
+REQUEST: ${input.query}${brandHint}
 COLOURS: ${input.colours?.length ? input.colours.join(', ') : 'any that fit the request'}
 BUDGET: ${input.budgetMaxInr ? `up to ₹${input.budgetMaxInr}` : 'not specified'}
 STORES: ${retailers.map(retailer => retailer.name).join(', ')}
 
 Only individual product pages (never search, category or listing pages). Reject wrong department, wrong garment type, and wrong colour.
+Prefer items within budget. If the request names a brand that costs more than the budget, still include its closest genuine options (from the brand or an authorised retailer) so the client can choose.
 Return ONLY a JSON array, no prose:
 [{"title": "exact product name", "url": "product page URL", "price_inr": number or null, "colour": "colour as listed", "note": "why it fits, max 12 words"}]
 Return [] if nothing is a strong match.`,
@@ -179,7 +195,6 @@ Return [] if nothing is a strong match.`,
     if (!retailer || !isSafeRetailUrl(url) || !looksLikeProductPage(url) || seen.has(url)) continue;
     seen.add(url);
     const price = typeof item.price_inr === 'number' && item.price_inr > 0 ? item.price_inr : null;
-    if (input.budgetMaxInr && price && price > input.budgetMaxInr * 1.15) continue;
     candidates.push({
       id: `${input.idPrefix}${candidates.length + 1}`,
       title: typeof item.title === 'string' ? item.title.trim().slice(0, 160) : 'Product',
