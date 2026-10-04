@@ -226,7 +226,7 @@ export default function DiwaliOutfitBodyTypePage() {
         <SeoTeachingVisual
           src="/images/seo/diwali-fabric-fall-teaching-card-iconik.webp"
           alt="Illustrated fabric card compares cotton silk, organza, crepe and tissue, prompting a waist-and-shoulder drape check."
-          caption="Illustration: hold fabric at waist and shoulder to see whether it stands away, falls close and feels comfortable."
+          caption="AI-generated editorial image; no real client is depicted. Hold fabric at waist and shoulder to see whether it stands away, falls close and feels comfortable."
           width={1000}
           height={1500}
         />

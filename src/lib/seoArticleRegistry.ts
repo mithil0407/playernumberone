@@ -105,7 +105,7 @@ const records = {
       width: 1600,
       height: 2000,
       title: "Choose the Event Before the Outfit",
-      disclosure: "Illustration: choose fabric and silhouette after checking the event, movement and hem security.",
+      disclosure: "AI-generated editorial image; no real client is depicted. Choose fabric and silhouette after checking the event, movement and hem security.",
     },
     growth: {
       contentCluster: "indian_occasion_wear",
