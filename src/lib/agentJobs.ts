@@ -18,7 +18,7 @@ import 'server-only';
 import { loadStylePassport, type AgentClient } from '@/lib/agentClients';
 import { verifyProductWithBrowser, type ProductCheckResult } from '@/lib/agentBrowserVerifier';
 import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming } from '@/lib/agentEvents';
-import { generateAgentJson } from '@/lib/agentLlm';
+import { generateAgentJson, withAgentUsage } from '@/lib/agentLlm';
 import { lookLinkUrl } from '@/lib/agentLookLinks';
 import { buildProductCaption, type PresentableProduct } from '@/lib/agentPresentation';
 import { renderProductCards } from '@/lib/agentProductCards';
@@ -241,14 +241,14 @@ async function runVerifyLookLink(job: AgentJobRow, startedAt: number) {
     const retailer = retailerForUrl(item.url);
     await supabaseAdmin.from('look_link_items').update({ verification_status: 'checking' }).eq('id', item.id);
     const check = retailer
-      ? await verifyProductWithBrowser({
+      ? await withAgentUsage({ clientId: client.id, kind: 'product_check' }, () => verifyProductWithBrowser({
           url: item.url,
           title: item.title,
           colour: item.colour,
           size,
           pincode,
           retailerDomain: retailer.domain,
-        })
+        }))
       : null;
     await supabaseAdmin.from('look_link_items').update({
       verification_status: check?.status ?? 'failed',
@@ -269,7 +269,7 @@ async function runVerifyLookLink(job: AgentJobRow, startedAt: number) {
   if (Date.now() - startedAt > WORKER_BUDGET_MS - PRESENT_HEADROOM_MS) return { done: false, result: null };
 
   items = await loadItems();
-  const presented = await presentLook(client, items, job);
+  const presented = await withAgentUsage({ clientId: client.id, kind: 'followup' }, () => presentLook(client, items, job));
   return {
     done: true,
     result: {
@@ -286,7 +286,9 @@ async function runConsolidation(job: AgentJobRow) {
   const client = await loadClient(job.client_id);
   if (!client) return { done: true, result: { skipped: 'missing client' } };
   const passport = await loadStylePassport(client);
-  const branches = await consolidateMemory(client.id, JSON.stringify(passport.profile).slice(0, 3_000));
+  const branches = await withAgentUsage({ clientId: client.id, kind: 'memory' }, () => (
+    consolidateMemory(client.id, JSON.stringify(passport.profile).slice(0, 3_000))
+  ));
   return { done: true, result: { branches } };
 }
 
@@ -306,13 +308,13 @@ async function runEventCheckIns() {
 
     const passport = await loadStylePassport(client);
     const brief = EVENT_NUDGE_STAGES.find(item => item.key === stage.key)?.brief ?? '';
-    const raw = await generateAgentJson(`You are ICONIK's personal stylist texting a client on WhatsApp. Write one short, warm check-in (max 45 words, no greeting like "Dear", at most one emoji) about their upcoming occasion. It should feel personal, not automated.
+    const raw = await withAgentUsage({ clientId: client.id, kind: 'checkin' }, () => generateAgentJson(`You are ICONIK's personal stylist texting a client on WhatsApp. Write one short, warm check-in (max 45 words, no greeting like "Dear", at most one emoji) about their upcoming occasion. It should feel personal, not automated.
 
 Return ONLY JSON: {"message": "…"}
 
 OCCASION: ${event.title} — ${event.event_date} (${describeEventTiming(event.event_date)})${event.dress_code ? `, dress code ${event.dress_code}` : ''}${event.city ? `, in ${event.city}` : ''}
 WHY NOW: ${brief}
-CLIENT: ${passport.firstName ?? 'the client'}; style notes: ${JSON.stringify(passport.profile.style ?? {}).slice(0, 600)}`, 'iconik_agent_event_checkin');
+CLIENT: ${passport.firstName ?? 'the client'}; style notes: ${JSON.stringify(passport.profile.style ?? passport.profile).slice(0, 600)}`, 'iconik_agent_event_checkin'));
     const message = typeof raw.message === 'string' ? raw.message.trim().slice(0, 500) : '';
     if (!message) continue;
     const delivery = await sendProactiveAgentMessage(client, message, { type: 'event_checkin', event_id: event.id, stage: stage.key });

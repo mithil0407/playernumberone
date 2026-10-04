@@ -20,7 +20,7 @@ export function isLookSlug(value: unknown): value is string {
   return typeof value === 'string' && /^[2-9a-hjkmnp-z]{8}$/.test(value);
 }
 
-export const LOOK_EVENT_TYPES = ['view', 'like', 'dislike', 'save', 'unsave', 'click_out', 'share'] as const;
+export const LOOK_EVENT_TYPES = ['view', 'like', 'dislike', 'save', 'unsave', 'click_out', 'share', 'vote'] as const;
 export type LookEventType = typeof LOOK_EVENT_TYPES[number];
 
 export function isLookEventType(value: unknown): value is LookEventType {

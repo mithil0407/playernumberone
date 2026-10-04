@@ -133,3 +133,37 @@ prompt) and then marked done.
 
 `npm run test:agent` — memory scoring/selection/operations, reminder stages,
 bubbles, reactions, the 24h window, Look URL safety and tracking, and the prompt.
+
+## Free tier (invite-only), referrals and analytics
+
+People without a Blueprint can use the agent for free, by invite. It feeds the
+Blueprint rather than replacing it: the free agent knows only what it sees in a
+selfie and is told, and mentions (once per conversation, when it matters) that
+the Blueprint's body/face/colour analysis would sharpen its advice.
+
+- **Entry** (`handleAgentInbound`): existing client → Blueprint customer (report
+  match; with the free tier on, every Blueprint customer is served) → invite code
+  in the message (`ICK-XXXXXX`) → enrolled free; otherwise waitlisted (one reply
+  per day). `ICONIK_AGENT_FREE_OPEN=1` skips invites.
+- **Onboarding**: selfie in daylight + menswear/womenswear + name; the agent reads
+  undertone/depth/contrast and saves a lite profile with `save_style_profile`.
+- **Limits** (`agentGrowth.ts`, env-overridable): 3 shopping runs a month
+  (carry over to 10), +2 for both people per referral, 30 messages a day, 150
+  free runs a day across everyone. Chat is free; a run is charged once per turn,
+  on the first product search. Blueprint clients are unlimited.
+- **Invites**: everyone gets a personal code (3 friends); `share_invite` sends a
+  ready-to-forward message with a wa.me link that opens ICONIK with the code typed
+  in. Friends who open a shared Look page (`?f=1`) can vote on the options and
+  see an invite to get their own stylist.
+- **Costs**: every OpenAI call is logged to `agent_usage_events` with its cost,
+  attributed to the client and kind of work (`withAgentUsage`).
+- **Dashboard**: `/agent/admin` (admin login): users, activity, product hunts,
+  click-outs, AI spend and cost per user/hunt, free-user funnel, weekly
+  retention, Look engagement, store click-outs, invites (create team codes),
+  waitlist (admit), users table.
+
+### Turning it on
+1. Run `supabase/migrations/add_iconik_agent_v3_free.sql`.
+2. Set `WHATSAPP_BUSINESS_NUMBER` (the ICONIK WhatsApp number, digits) so invite
+   links work, then `ICONIK_AGENT_FREE_ENABLED=1`. Redeploy.
+3. Create the first wave of codes on `/agent/admin` and send them out.

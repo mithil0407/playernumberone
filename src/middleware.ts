@@ -69,6 +69,16 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 1b. Man admin routes: same cookie, separate login page ───────────────
+  // ── ICONIK Agent analytics: same admin cookie, uses the Man admin login ────
+  if (pathname.startsWith('/agent/admin')) {
+    if (!isAdminAuthenticated(request)) {
+      const loginUrl = new URL('/man/admin/login', request.url);
+      loginUrl.searchParams.set('redirectTo', pathname);
+      return NextResponse.redirect(loginUrl, { status: 307 });
+    }
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith('/man/admin')) {
     if (!pathname.startsWith('/man/admin/login')) {
       if (!isAdminAuthenticated(request)) {

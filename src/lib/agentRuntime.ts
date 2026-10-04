@@ -27,7 +27,17 @@ import {
 } from '@/lib/agentClients';
 import { dueNudgeStage, indiaDateString, isValidEventDate } from '@/lib/agentEvents';
 import { dispatchAgentWorker } from '@/lib/agentJobs';
-import { AGENT_TEXT_MODEL, agentOpenAI } from '@/lib/agentLlm';
+import { AGENT_TEXT_MODEL, agentOpenAI, withAgentUsage } from '@/lib/agentLlm';
+import { FREE_LIMITS, forwardableInvite, isOverDailyMessageCap, parseInviteCode } from '@/lib/agentGrowth';
+import {
+  chargeShoppingRun,
+  creditBalance,
+  enrolFreeClient,
+  ensureInviteCode,
+  ensureMonthlyGrant,
+  inboundMessagesToday,
+  joinWaitlist,
+} from '@/lib/agentGrowthStore';
 import {
   ensureMemoryTree,
   loadMemoryNodes,
@@ -80,7 +90,9 @@ import {
   showWhatsAppTypingIndicator,
 } from '@/lib/whatsapp';
 import { normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
+import { supabaseAdmin } from '@/lib/supabase';
 import type { WhatsappInboundMessage } from '@/lib/whatsappPilot';
+import type { AgentLine } from '@/lib/agentClients';
 
 const DEBOUNCE_MS = Number(process.env.ICONIK_AGENT_DEBOUNCE_MS) || 2_500;
 const TYPING_REFRESH_MS = 20_000;
@@ -101,6 +113,19 @@ export function agentAccessFor(phone: string, env = process.env): { previewRepor
   return allowed.includes('*') ? { previewReports: false } : null;
 }
 
+/** The free tier: people without a Blueprint, by invite (or open signup). */
+export function freeTierEnabled(env = process.env) {
+  return env.ICONIK_AGENT_ENABLED === '1' && env.ICONIK_AGENT_FREE_ENABLED === '1';
+}
+
+export function freeSignupsOpen(env = process.env) {
+  return freeTierEnabled(env) && env.ICONIK_AGENT_FREE_OPEN === '1';
+}
+
+const WAITLIST_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. I'm invite-only right now — if a friend sent you an invite code, paste it here. Otherwise you're on the waitlist and I'll let you in soon ✨";
+const INVALID_INVITE_REPLY = "That invite code isn't working (it may be used up). Ask your friend for a fresh one — meanwhile you're on the waitlist ✨";
+const DAILY_CAP_REPLY = "That's a lot of styling for one day 😄 I'll pick this up with you tomorrow.";
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function storeInboundImage(clientId: string, mediaId: string) {
@@ -110,12 +135,33 @@ async function storeInboundImage(clientId: string, mediaId: string) {
 }
 
 /**
- * Entry point from the WhatsApp webhook. Returns 'not_client' when the number
- * has no finished ICONIK report, so the caller can fall back.
+ * Entry point from the WhatsApp webhook. Existing clients and Blueprint
+ * customers are served; with the free tier on, people without a Blueprint join
+ * by invite code (or are waitlisted). Returns 'not_served' so the caller can
+ * fall back to the Man pilot.
  */
-export async function handleAgentInbound(message: WhatsappInboundMessage, access: { previewReports: boolean }) {
-  const client = await resolveAgentClientByPhone(message.from, { allowPreviewReports: access.previewReports });
-  if (!client) return 'not_client' as const;
+export async function handleAgentInbound(message: WhatsappInboundMessage) {
+  const access = agentAccessFor(message.from);
+  const free = freeTierEnabled();
+  if (!access && !free) return 'not_served' as const;
+
+  let client = await resolveAgentClientByPhone(message.from, { allowPreviewReports: access?.previewReports ?? false });
+  if (!client && free) {
+    const code = parseInviteCode(message.text);
+    const waitlist = code || freeSignupsOpen() ? null : await joinWaitlist(message.from, message.text);
+    const usable = code ?? waitlist?.admittedCode ?? null;
+    if (!usable && !freeSignupsOpen()) {
+      if (waitlist?.shouldReply) await sendWhatsAppTextMessage(message.from, WAITLIST_REPLY).catch(() => undefined);
+      return 'waitlisted' as const;
+    }
+    client = await withAgentUsage({ clientId: null, kind: 'other' }, () => enrolFreeClient(message.from, usable));
+    if (!client) {
+      await joinWaitlist(message.from, message.text);
+      await sendWhatsAppTextMessage(message.from, INVALID_INVITE_REPLY).catch(() => undefined);
+      return 'invalid_invite' as const;
+    }
+  }
+  if (!client) return 'not_served' as const;
   if (client.status !== 'active') return 'paused' as const;
 
   let image: { path: string; signedUrl: string | null } | null = null;
@@ -138,6 +184,19 @@ export async function handleAgentInbound(message: WhatsappInboundMessage, access
     metadata: { whatsapp_timestamp: message.timestamp ?? null },
   });
   if (!stored) return 'duplicate' as const;
+
+  if (client.tier === 'free') {
+    const today = await inboundMessagesToday(client.id);
+    if (isOverDailyMessageCap(today)) {
+      // Say it once, on the first message over the cap; stay quiet after that.
+      if (today === FREE_LIMITS.dailyMessages + 1) {
+        await sendWhatsAppTextMessage(client.phone, DAILY_CAP_REPLY).catch(() => undefined);
+        await recordOutboundMessage({ clientId: client.id, content: DAILY_CAP_REPLY, metadata: { type: 'daily_cap' } });
+      }
+      await markMessagesAnswered([stored.id], stored.id);
+      return 'daily_cap' as const;
+    }
+  }
 
   // Instant acknowledgement: read + typing, and a reaction when a person would react.
   const typing = await showWhatsAppTypingIndicator(message.id).catch(() => null);
@@ -167,10 +226,11 @@ interface TurnState {
   candidates: Map<string, ProductCandidate>;
   searchCount: number;
   interimSent: number;
+  runCharged: boolean;
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
-export function agentTools(line: 'man' | 'woman'): FunctionTool[] {
+export function agentTools(options: { freeTier: boolean; outfitImages: boolean }): FunctionTool[] {
   const tools: FunctionTool[] = [
     {
       type: 'function',
@@ -308,7 +368,43 @@ export function agentTools(line: 'man' | 'woman'): FunctionTool[] {
       },
     },
   ];
-  if (line === 'man') {
+  tools.push({
+    type: 'function',
+    name: 'share_invite',
+    description: 'Send the client a ready-to-forward invite message with their personal ICONIK link. Each friend who joins gives both of them extra shopping runs.',
+    strict: true,
+    parameters: {
+      type: 'object', additionalProperties: false, required: ['intro'],
+      properties: { intro: { type: 'string', description: 'One short line before the forwardable message, e.g. "Here you go — forward this 👇".' } },
+    },
+  });
+  if (options.freeTier) {
+    tools.push({
+      type: 'function',
+      name: 'save_style_profile',
+      description: "Save what you've learned about a client without a Blueprint: from their selfie and answers. Only include what you can see or were told; null otherwise. Call again to refine.",
+      strict: true,
+      parameters: {
+        type: 'object', additionalProperties: false,
+        required: ['first_name', 'line', 'undertone', 'season', 'depth', 'contrast', 'best_colours', 'avoid_colours', 'style_vibe', 'fit_notes', 'city', 'budget_band'],
+        properties: {
+          first_name: { type: ['string', 'null'] },
+          line: { type: ['string', 'null'], enum: ['man', 'woman', null], description: 'Shops menswear (man) or womenswear (woman).' },
+          undertone: { type: ['string', 'null'], enum: ['warm', 'cool', 'neutral', 'olive', null] },
+          season: { type: ['string', 'null'], description: 'Seasonal colour family, e.g. "Deep Autumn".' },
+          depth: { type: ['string', 'null'], description: 'light / medium / deep' },
+          contrast: { type: ['string', 'null'], description: 'low / medium / high, between skin, hair and eyes.' },
+          best_colours: { type: 'array', items: { type: 'string' } },
+          avoid_colours: { type: 'array', items: { type: 'string' } },
+          style_vibe: { type: ['string', 'null'] },
+          fit_notes: { type: ['string', 'null'], description: 'Only what they told you about fit or sizes.' },
+          city: { type: ['string', 'null'] },
+          budget_band: { type: ['string', 'null'] },
+        },
+      },
+    });
+  }
+  if (options.outfitImages) {
     tools.push({
       type: 'function',
       name: 'show_outfit_image',
@@ -416,16 +512,25 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       return updated ? 'Event updated.' : 'No such event.';
     }
     case 'search_products': {
+      if (!state.runCharged) {
+        const charge = await chargeShoppingRun(state.client, state.turnId);
+        if (!charge.ok) {
+          return charge.reason === 'no_runs'
+            ? "OUT OF SHOPPING RUNS: don't search. Tell them warmly they've used this month's free product hunts, and offer two ways to get more: invite friends (both get +2 runs, use share_invite) or the ICONIK Blueprint for unlimited runs and a full analysis. You can still give styling advice without searching."
+            : "Product search is paused for today because of high demand. Don't search; give styling advice instead and offer to hunt products tomorrow.";
+        }
+        state.runCharged = true;
+      }
       state.searchCount += 1;
-      const found = await searchProducts({
-        line: state.client.line,
+      const found = await withAgentUsage({ clientId: state.client.id, kind: 'search' }, () => searchProducts({
+        line: state.client.line ?? 'woman',
         query: String(args.query ?? '').slice(0, 200),
         colours: Array.isArray(args.colours) ? args.colours.map(String).slice(0, 5) : [],
         budgetMaxInr: typeof args.budget_max_inr === 'number' ? args.budget_max_inr : null,
         retailerNames: Array.isArray(args.stores) ? args.stores.map(String) : [],
         sports: args.sports === true,
         idPrefix: `s${state.searchCount}c`,
-      });
+      }));
       for (const candidate of found) state.candidates.set(candidate.id, candidate);
       if (!found.length) return 'No strong matches. Try a different description, colour or store — or tell the client honestly.';
       const budget = typeof args.budget_max_inr === 'number' ? args.budget_max_inr : null;
@@ -468,6 +573,36 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       });
       await dispatchAgentWorker();
       return `Checking ${items.length} product${items.length === 1 ? '' : 's'} on the store pages now; the cards and summary will be sent automatically when done. In your reply, tell them in one short line what you're checking (size${pincode ? `, delivery to ${pincode}` : ''}) and roughly how long — don't list the products.`;
+    }
+    case 'share_invite': {
+      const invite = await ensureInviteCode(state.client);
+      if (invite.remaining <= 0) return 'All their invites have been used. Tell them, and thank them for spreading the word.';
+      const intro = String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇';
+      await sendText(state, intro, { type: 'invite_intro' });
+      await sendText(state, forwardableInvite(invite.code, state.passport.firstName), { type: 'invite', code: invite.code });
+      state.interimSent += 2;
+      return `Sent their invite (${invite.code}); ${invite.remaining} friend${invite.remaining === 1 ? '' : 's'} can still join with it. Don't repeat the link in your reply.`;
+    }
+    case 'save_style_profile': {
+      if (state.client.tier !== 'free') return 'This client has a Blueprint; their report is the profile.';
+      const profile: Record<string, unknown> = { ...(state.client.lite_profile ?? {}) };
+      for (const key of ['undertone', 'season', 'depth', 'contrast', 'style_vibe', 'fit_notes', 'city', 'budget_band'] as const) {
+        const value = nullableString(args[key], 200);
+        if (value) profile[key] = value;
+      }
+      for (const key of ['best_colours', 'avoid_colours'] as const) {
+        const list = Array.isArray(args[key]) ? (args[key] as unknown[]).map(String).filter(Boolean).slice(0, 12) : [];
+        if (list.length) profile[key] = list;
+      }
+      profile.updated_at = new Date().toISOString();
+      const line = args.line === 'man' || args.line === 'woman' ? args.line as AgentLine : state.client.line;
+      const firstName = nullableString(args.first_name, 40) ?? state.client.first_name;
+      const { error } = await supabaseAdmin.from('agent_clients')
+        .update({ lite_profile: profile, line, first_name: firstName, updated_at: new Date().toISOString() })
+        .eq('id', state.client.id);
+      if (error) return 'Could not save the profile.';
+      state.client = { ...state.client, lite_profile: profile, line, first_name: firstName };
+      return 'Saved. Use it for every recommendation from now on.';
     }
     case 'show_outfit_image': {
       if (state.client.line !== 'man' || !state.client.report_share_token) return 'Images are not available for this client yet.';
@@ -524,15 +659,25 @@ async function lookActivitySummary(clientId: string) {
     const liked = events.filter(event => event.type === 'like' || event.type === 'save').map(event => titleOf(event.item_id));
     const disliked = events.filter(event => event.type === 'dislike').map(event => titleOf(event.item_id));
     const clicked = events.filter(event => event.type === 'click_out').map(event => titleOf(event.item_id));
+    const votes = new Map<string, number>();
+    for (const event of events.filter(entry => entry.type === 'vote')) {
+      const title = titleOf(event.item_id);
+      votes.set(title, (votes.get(title) ?? 0) + 1);
+    }
     const views = events.filter(event => event.type === 'view').length;
     return `- "${link.title}" (${String(link.created_at).slice(0, 10)}): ${views} views`
       + `${liked.length ? `; liked/saved: ${[...new Set(liked)].join(', ')}` : ''}`
       + `${disliked.length ? `; disliked: ${[...new Set(disliked)].join(', ')}` : ''}`
-      + `${clicked.length ? `; went to store for: ${[...new Set(clicked)].join(', ')}` : ''}`;
+      + `${clicked.length ? `; went to store for: ${[...new Set(clicked)].join(', ')}` : ''}`
+      + `${votes.size ? `; friends voted: ${[...votes].map(([title, count]) => `${title} (${count})`).join(', ')}` : ''}`;
   }).join('\n');
 }
 
-export async function runAgentTurn(client: AgentClient) {
+export function runAgentTurn(client: AgentClient) {
+  return withAgentUsage({ clientId: client.id, kind: 'chat' }, () => runAgentTurnInner(client));
+}
+
+async function runAgentTurnInner(client: AgentClient) {
   const pending = await unansweredInboundMessages(client.id);
   if (!pending.length) return 'nothing_to_answer' as const;
   const latestPending = pending[pending.length - 1];
@@ -552,6 +697,7 @@ export async function runAgentTurn(client: AgentClient) {
     candidates: new Map(),
     searchCount: 0,
     interimSent: 0,
+    runCharged: false,
     toolLog: [],
   };
 
@@ -568,6 +714,13 @@ export async function runAgentTurn(client: AgentClient) {
     state.passport = passport;
     state.nodes = nodes;
 
+    const freeTier = client.tier === 'free';
+    if (freeTier) await ensureMonthlyGrant(client);
+    const [runsLeft, invite] = await Promise.all([
+      freeTier ? creditBalance(client.id) : Promise.resolve(null),
+      ensureInviteCode(client).catch(() => null),
+    ]);
+
     const clientText = pending.map(message => message.content).join('\n');
     const memory = selectMemoriesForTurn(nodes, clientText);
     void markMemoriesRecalled(nodes, memory.recalledIds);
@@ -583,11 +736,15 @@ export async function runAgentTurn(client: AgentClient) {
       lookActivity,
       firstConversation,
       canShowOutfitImages: client.line === 'man' && Boolean(client.report_share_token),
+      tier: client.tier,
+      runsLeft,
+      invitesLeft: invite?.remaining ?? 0,
+      blueprintUrl: new URL(client.line === 'man' ? '/man' : '/', process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').toString(),
     });
 
     const pendingIds = new Set(pending.map(message => message.id));
     let input: ResponseInputItem[] = [...threadToInput(thread, pendingIds), pendingToInput(pending)];
-    const tools = agentTools(client.line);
+    const tools = agentTools({ freeTier, outfitImages: client.line === 'man' && Boolean(client.report_share_token) });
     let reply = '';
 
     for (let call = 0; call < MAX_MODEL_CALLS; call += 1) {
@@ -653,13 +810,13 @@ export async function runAgentTurn(client: AgentClient) {
     // Afterwards: remember what was learned, and consolidate busy branches in the background.
     try {
       const fresh = await loadMemoryNodes(client.id);
-      await reflectOnTurn({
+      await withAgentUsage({ clientId: client.id, kind: 'memory' }, () => reflectOnTurn({
         clientId: client.id,
         nodes: fresh,
         clientMessages: clientText,
         assistantReply: bubbles.join('\n\n'),
         sourceMessageIds: pending.map(message => message.id),
-      });
+      }));
       const after = await loadMemoryNodes(client.id);
       if (branchesNeedingConsolidation(after).length && !await hasQueuedJob('consolidate_memory', client.id)) {
         await enqueueAgentJob('consolidate_memory', client.id, {}, new Date(Date.now() + 10 * 60 * 1000));

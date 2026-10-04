@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse, after } from 'next/server';
-import { agentAccessFor, handleAgentInbound } from '@/lib/agentRuntime';
+import { handleAgentInbound } from '@/lib/agentRuntime';
 import { processIconikManWhatsappPilotMessage } from '@/lib/manWhatsappPilotAgent';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       verify_token_configured: Boolean(expectedToken),
       iconik_man_pilot_configured: Boolean(getIconikManWhatsappPilotConfig()),
       iconik_agent_enabled: process.env.ICONIK_AGENT_ENABLED === '1',
+      iconik_agent_free_tier: process.env.ICONIK_AGENT_FREE_ENABLED === '1',
     });
   }
 
@@ -108,12 +109,8 @@ export async function POST(request: NextRequest) {
       // serve (rollout list, or no finished report) fall back to the Man pilot.
       await Promise.all(messages.map(async message => {
         try {
-          const access = agentAccessFor(message.from);
-          if (access) {
-            const outcome = await handleAgentInbound(message, access);
-            if (outcome !== 'not_client') return;
-            console.warn('[whatsapp] agent enabled for this number but no report matched; using the Man pilot');
-          }
+          const outcome = await handleAgentInbound(message);
+          if (outcome !== 'not_served') return;
           await processIconikManWhatsappPilotMessage(message);
         } catch (error) {
           console.error('[whatsapp] inbound message failed:', message.id, error);

@@ -82,6 +82,9 @@ function ItemCard({
   onReact,
   onSave,
   visitor,
+  friendMode,
+  votedFor,
+  onVote,
 }: {
   item: LookItemView;
   reaction: Reaction;
@@ -89,6 +92,9 @@ function ItemCard({
   onReact: (item: LookItemView, reaction: Reaction) => void;
   onSave: (item: LookItemView) => void;
   visitor: string;
+  friendMode: boolean;
+  votedFor: string | null;
+  onVote: (item: LookItemView) => void;
 }) {
   const price = formatInr(item.priceInr);
   const unavailable = item.status === 'unavailable';
@@ -124,26 +130,45 @@ function ItemCard({
           {price ? <p className="shrink-0 text-[15px] font-semibold text-[#1E1A16]">{price}</p> : null}
         </div>
         {item.reason ? <p className="text-[14px] leading-relaxed text-[#4A4037]">{item.reason}</p> : null}
+        {item.votes > 0 ? (
+          <p className="text-[12px] font-medium text-[#1E1A16]">
+            {item.votes} {item.votes === 1 ? 'friend votes' : 'friends vote'} for this
+          </p>
+        ) : null}
         <VerificationBadge item={item} />
         {item.offer && item.status === 'verified' ? <p className="text-[12px] text-[#B8862F]">{item.offer}</p> : null}
         <div className="flex items-center gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => onReact(item, reaction === 'like' ? null : 'like')}
-            aria-pressed={reaction === 'like'}
-            className={`h-11 flex-1 rounded-full border text-[14px] transition active:scale-[0.98] ${reaction === 'like' ? 'border-[#1E1A16] bg-[#1E1A16] text-white' : 'border-[#D9CFC2] text-[#1E1A16]'}`}
-          >
-            ♥ Love it
-          </button>
-          <button
-            type="button"
-            onClick={() => onReact(item, reaction === 'dislike' ? null : 'dislike')}
-            aria-pressed={reaction === 'dislike'}
-            aria-label="Not for me"
-            className={`h-11 w-11 shrink-0 rounded-full border text-[15px] transition active:scale-95 ${reaction === 'dislike' ? 'border-[#1E1A16] bg-[#1E1A16] text-white' : 'border-[#D9CFC2] text-[#1E1A16]'}`}
-          >
-            ✕
-          </button>
+          {friendMode ? (
+            <button
+              type="button"
+              onClick={() => onVote(item)}
+              disabled={Boolean(votedFor)}
+              aria-pressed={votedFor === item.id}
+              className={`h-11 flex-1 rounded-full border text-[14px] transition active:scale-[0.98] disabled:cursor-default ${votedFor === item.id ? 'border-[#1E1A16] bg-[#1E1A16] text-white' : 'border-[#D9CFC2] text-[#1E1A16] disabled:opacity-50'}`}
+            >
+              {votedFor === item.id ? '✓ Your vote' : 'Vote for this'}
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => onReact(item, reaction === 'like' ? null : 'like')}
+                aria-pressed={reaction === 'like'}
+                className={`h-11 flex-1 rounded-full border text-[14px] transition active:scale-[0.98] ${reaction === 'like' ? 'border-[#1E1A16] bg-[#1E1A16] text-white' : 'border-[#D9CFC2] text-[#1E1A16]'}`}
+              >
+                ♥ Love it
+              </button>
+              <button
+                type="button"
+                onClick={() => onReact(item, reaction === 'dislike' ? null : 'dislike')}
+                aria-pressed={reaction === 'dislike'}
+                aria-label="Not for me"
+                className={`h-11 w-11 shrink-0 rounded-full border text-[15px] transition active:scale-95 ${reaction === 'dislike' ? 'border-[#1E1A16] bg-[#1E1A16] text-white' : 'border-[#D9CFC2] text-[#1E1A16]'}`}
+              >
+                ✕
+              </button>
+            </>
+          )}
           <a
             href={`/go/${item.id}?v=${encodeURIComponent(visitor)}`}
             target="_blank"
@@ -163,7 +188,10 @@ export default function LookPageClient({ initial }: { initial: LookView }) {
   const [reactions, setReactions] = useState<Record<string, Reaction>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [visitor, setVisitor] = useState('');
-  const [shareLabel, setShareLabel] = useState('Ask a friend');
+  const [shareLabel, setShareLabel] = useState('Ask friends to vote');
+  // A shared link (?f=1) opens in friend mode: vote instead of like/dislike.
+  const [friendMode, setFriendMode] = useState(false);
+  const [votedFor, setVotedFor] = useState<string | null>(null);
 
   const post = useCallback((type: string, itemId?: string) => {
     void fetch(`/api/look/${look.slug}`, {
@@ -176,6 +204,8 @@ export default function LookPageClient({ initial }: { initial: LookView }) {
 
   useEffect(() => {
     setVisitor(visitorId());
+    setFriendMode(new URLSearchParams(window.location.search).get('f') === '1');
+    setVotedFor(readStorage(`iconik-look-vote-${look.slug}`));
     const stored = readStorage(`iconik-look-${look.slug}`);
     if (stored) {
       try {
@@ -238,17 +268,28 @@ export default function LookPageClient({ initial }: { initial: LookView }) {
     setSaved(current => ({ ...current, [item.id]: next }));
     post(next ? 'save' : 'unsave', item.id);
   };
+  const vote = (item: LookItemView) => {
+    if (votedFor) return;
+    setVotedFor(item.id);
+    writeStorage(`iconik-look-vote-${look.slug}`, item.id);
+    setLook(current => ({
+      ...current,
+      items: current.items.map(entry => (entry.id === item.id ? { ...entry, votes: entry.votes + 1 } : entry)),
+    }));
+    post('vote', item.id);
+  };
   const share = async () => {
     post('share');
-    const url = window.location.href;
+    const url = new URL(window.location.href);
+    url.searchParams.set('f', '1');
     try {
       if (navigator.share) {
-        await navigator.share({ title: look.title, text: 'Which one should I pick? 👀', url });
+        await navigator.share({ title: look.title, text: 'Help me pick — which one? 👀', url: url.toString() });
         return;
       }
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(url.toString());
       setShareLabel('Link copied');
-      window.setTimeout(() => setShareLabel('Ask a friend'), 2_000);
+      window.setTimeout(() => setShareLabel('Ask friends to vote'), 2_000);
     } catch {
       // The share sheet was dismissed.
     }
@@ -261,6 +302,11 @@ export default function LookPageClient({ initial }: { initial: LookView }) {
           <p className="text-[11px] uppercase tracking-[0.28em] text-[#9A8E80]">
             ICONIK{look.firstName ? ` · for ${look.firstName}` : ''}
           </p>
+          {friendMode ? (
+            <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-[15px] leading-snug text-[#1E1A16] shadow-[0_1px_0_rgba(30,26,22,0.06)]">
+              {look.firstName ?? 'Your friend'} can&apos;t decide — which one should they pick? Tap <b>Vote for this</b> on your favourite.
+            </p>
+          ) : null}
           <h1 className="mt-3 text-[32px] leading-[1.1] tracking-tight" style={{ fontFamily: 'var(--font-fraunces), Georgia, serif' }}>
             {look.title}
           </h1>
@@ -289,6 +335,9 @@ export default function LookPageClient({ initial }: { initial: LookView }) {
                     onReact={react}
                     onSave={toggleSave}
                     visitor={visitor}
+                    friendMode={friendMode}
+                    votedFor={votedFor}
+                    onVote={vote}
                   />
                 ))}
               </div>
@@ -297,17 +346,34 @@ export default function LookPageClient({ initial }: { initial: LookView }) {
         </div>
 
         <footer className="mt-10 space-y-3 text-center">
-          <button
-            type="button"
-            onClick={share}
-            className="h-12 w-full rounded-full border border-[#1E1A16] text-[15px] font-medium transition active:scale-[0.99]"
-          >
-            {shareLabel}
-          </button>
-          <p className="text-[13px] leading-relaxed text-[#7A6F63]">
-            Tap ♥ on what you love — your stylist sees it and gets sharper every time.
-            Reply on WhatsApp to swap anything.
-          </p>
+          {friendMode ? (
+            <>
+              <a
+                href={look.inviteUrl ?? 'https://www.iconik.pro'}
+                className="flex h-12 w-full items-center justify-center rounded-full bg-[#1E1A16] text-[15px] font-medium text-white transition active:scale-[0.99]"
+              >
+                Get your own AI stylist on WhatsApp
+              </a>
+              <p className="text-[13px] leading-relaxed text-[#7A6F63]">
+                ICONIK reads your best colours from a selfie and finds clothes that suit you, checked in your size.
+                {look.inviteUrl ? ` ${look.firstName ?? 'Your friend'}'s invite gets you both extra product hunts.` : ''}
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={share}
+                className="h-12 w-full rounded-full border border-[#1E1A16] text-[15px] font-medium transition active:scale-[0.99]"
+              >
+                {shareLabel}
+              </button>
+              <p className="text-[13px] leading-relaxed text-[#7A6F63]">
+                Tap ♥ on what you love — your stylist sees it and gets sharper every time.
+                Reply on WhatsApp to swap anything.
+              </p>
+            </>
+          )}
         </footer>
       </div>
     </main>

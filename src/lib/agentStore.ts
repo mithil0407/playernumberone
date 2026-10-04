@@ -332,7 +332,7 @@ export async function createLookLink(input: {
 export async function loadLookLink(slug: string) {
   const { data, error } = await supabaseAdmin
     .from('look_links')
-    .select('id, slug, client_id, title, occasion, intro, hero_image_url, status, created_at, agent_clients(first_name, line), look_link_items(*)')
+    .select('id, slug, client_id, title, occasion, intro, hero_image_url, status, created_at, agent_clients(first_name, line), look_link_items(*), look_link_events(type, item_id, visitor_id)')
     .eq('slug', slug)
     .maybeSingle();
   if (error) fail('load the Look Link', error);
@@ -347,6 +347,17 @@ export async function loadLookLinkItem(itemId: string) {
     .maybeSingle();
   if (error) fail('load the product', error);
   return data;
+}
+
+/** One vote per visitor per Look, so a shared link can't be stuffed from one phone. */
+export async function hasVoted(lookLinkId: string, visitorId: string) {
+  const { count } = await supabaseAdmin
+    .from('look_link_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('look_link_id', lookLinkId)
+    .eq('type', 'vote')
+    .eq('visitor_id', visitorId);
+  return Boolean(count);
 }
 
 export async function recordLookEvent(input: {

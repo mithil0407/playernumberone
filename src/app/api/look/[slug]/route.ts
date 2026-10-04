@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isLookEventType, isLookSlug } from '@/lib/agentLookLinks';
 import { loadLookView, publicLookView } from '@/lib/agentLookView';
-import { recordLookEvent } from '@/lib/agentStore';
+import { hasVoted, recordLookEvent } from '@/lib/agentStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +30,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   if (itemId && !look.items.some(item => item.id === itemId)) {
     return NextResponse.json({ error: 'Unknown product' }, { status: 400 });
   }
+  const visitorId = typeof body.visitor_id === 'string' ? body.visitor_id.slice(0, 64) : null;
+  if (body.type === 'vote') {
+    if (!itemId || !visitorId) return NextResponse.json({ error: 'A vote needs a product' }, { status: 400 });
+    if (await hasVoted(look.id, visitorId)) return NextResponse.json({ status: 'already_voted' });
+  }
   await recordLookEvent({
     lookLinkId: look.id,
     clientId: look.clientId,
     type: body.type,
     itemId,
-    visitorId: typeof body.visitor_id === 'string' ? body.visitor_id.slice(0, 64) : null,
+    visitorId,
   });
   return NextResponse.json({ status: 'ok' });
 }

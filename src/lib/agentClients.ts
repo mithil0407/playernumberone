@@ -3,8 +3,9 @@ import 'server-only';
 // Who the ICONIK agent is talking to. A WhatsApp number is matched to the
 // client's most recent finished report — ICONIK Man (man_reports) or the women's
 // Blueprint (stylist_blueprint_reports) — and that report's classification
-// becomes their Style Passport. For now the agent is an after-consultation
-// service: no finished report, no agent.
+// becomes their Style Passport. People without a Blueprint can join the free
+// tier by invite (agentGrowthStore.ts); their passport is the lite profile the
+// agent builds at onboarding from a selfie and a few questions.
 
 import { normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -16,10 +17,14 @@ export interface AgentClient {
   phone: string;
   first_name: string | null;
   email: string | null;
-  line: AgentLine;
-  source_table: 'man_reports' | 'stylist_blueprint_reports';
-  source_report_id: string;
+  /** Menswear or womenswear; unknown for a free client until onboarding. */
+  line: AgentLine | null;
+  source_table: 'man_reports' | 'stylist_blueprint_reports' | null;
+  source_report_id: string | null;
   report_share_token: string | null;
+  tier: 'blueprint' | 'free';
+  lite_profile: Record<string, unknown>;
+  invited_by_client_id: string | null;
   status: 'active' | 'paused' | 'opted_out';
   last_inbound_at: string | null;
   last_outbound_at: string | null;
@@ -27,7 +32,8 @@ export interface AgentClient {
 }
 
 export interface StylePassport {
-  line: AgentLine;
+  line: AgentLine | null;
+  tier: 'blueprint' | 'free';
   firstName: string | null;
   /** Compact report facts the agent must treat as source of truth. */
   profile: Record<string, unknown>;
@@ -193,6 +199,15 @@ export async function resolveAgentClientByPhone(
 }
 
 export async function loadStylePassport(client: AgentClient): Promise<StylePassport> {
+  if (client.tier === 'free' || !client.source_table || !client.source_report_id) {
+    return {
+      line: client.line,
+      tier: 'free',
+      firstName: client.first_name,
+      profile: client.lite_profile ?? {},
+      reportUrl: null,
+    };
+  }
   const { data, error } = await supabaseAdmin
     .from(client.source_table)
     .select('report_data, share_token')
@@ -208,6 +223,7 @@ export async function loadStylePassport(client: AgentClient): Promise<StylePassp
   if (client.line === 'man') {
     return {
       line: 'man',
+      tier: 'blueprint',
       firstName: client.first_name,
       reportUrl: shareToken ? new URL(`/man/report/${shareToken}`, site).toString() : null,
       profile: {
@@ -231,6 +247,7 @@ export async function loadStylePassport(client: AgentClient): Promise<StylePassp
   const analysis = asRecord(reportData.analysis);
   return {
     line: 'woman',
+    tier: 'blueprint',
     firstName: client.first_name ?? firstName(asRecord(classification.client).name),
     reportUrl: shareToken ? new URL(`/stylist/report/${shareToken}`, site).toString() : null,
     profile: {
