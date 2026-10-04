@@ -72,10 +72,10 @@ export default function FreeColourAnalysisQuizPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <section className="bg-[#F8F3E9] px-4 pb-16 pt-28 text-center md:px-6 md:pb-24">
         <div className="mx-auto max-w-4xl">
-          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.22em] text-[#B68C52]">The ICONIK Style Scan · Free</p>
+          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.22em] text-[#B68C52]">ICONIK Colour Analysis · Free</p>
           <h1 className="iconik-display text-5xl leading-none text-[#2C2622] md:text-7xl">Your colour analysis now starts with your actual photos.</h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[#2C2622]/65">Upload a natural-light headshot and full-body photo, answer five questions, and see your undertone, geometry and the wardrobe choices working against you.</p>
-          <Link href="/style-scan" className="mt-8 inline-flex rounded-full bg-[#2C2622] px-8 py-4 text-sm font-semibold text-white">Start the Free Style Scan</Link>
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[#2C2622]/65">Take one daylight selfie, tap through eight quick questions, and see your undertone, the shades that make you glow and the colours to skip, tried on your own photo.</p>
+          <Link href="/style-scan" className="mt-8 inline-flex rounded-full bg-[#6A1F2B] px-8 py-4 text-sm font-semibold text-white">Start the Free Colour Analysis</Link>
         </div>
       </section>
       <section className="bg-white px-4 py-16 md:px-6">

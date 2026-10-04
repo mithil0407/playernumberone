@@ -6,7 +6,7 @@ import { normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
 
 export const STYLE_SCAN_PHOTO_BUCKET = 'style-scan-private';
 export const STYLE_SCAN_RESULT_BUCKET = 'style-scan-results';
-export const STYLE_SCAN_CONSENT_VERSION = 'style-scan-v1-2026-08-19';
+export const STYLE_SCAN_CONSENT_VERSION = 'style-scan-v2-2026-10-04';
 export const STYLE_SCAN_GENERATION_VERSION = 'style-scan-v1';
 export const STYLE_SCAN_SIGNED_URL_TTL = 60 * 10;
 
@@ -30,6 +30,10 @@ export interface StyleScanAnswersV1 {
   lastFeltGreat: 'this_week' | 'cant_remember' | 'old_weight';
   /** Optional — captured on the delivery step, stored inside scan_answers JSON. */
   firstName?: string;
+  /** Colour self-report (2026-10). Optional so scans taken before it still validate. */
+  jewellery?: 'gold' | 'silver' | 'both' | 'unsure';
+  sun?: 'tans_easily' | 'burns_then_tans' | 'burns' | 'rarely_changes';
+  compliments?: 'earthy' | 'jewel' | 'soft' | 'contrast' | 'unsure';
 }
 
 /** Plain-language consumer copy layered over the technical analysis. All optional for backward compatibility. */
@@ -52,6 +56,29 @@ export interface StyleScanOutfitV1 {
   why: string;
 }
 
+export interface StyleScanSwatchV1 {
+  name: string;
+  hex: string;
+  usage?: string;
+}
+
+/** The colour result shown on the free scan. Built from the Blueprint classifier's colour read. */
+export interface StyleScanColourProfileV1 {
+  paletteName: string;
+  undertone: string;
+  depth: string;
+  contrast: string;
+  best: StyleScanSwatchV1[];
+  accents: StyleScanSwatchV1[];
+  avoid: StyleScanSwatchV1[];
+  /** How many more classified shades the paid Blueprint holds, and their hexes for the blurred teaser. */
+  lockedCount: number;
+  lockedPreview: string[];
+  metals: string;
+  lips: string[];
+  rules: Array<{ title: string; body: string }>;
+}
+
 export interface StyleScanAnalysisV1 {
   version: 'style-scan-v1';
   geometry: { shape: string; verticalLine: string; interpretation: string };
@@ -65,6 +92,10 @@ export interface StyleScanAnalysisV1 {
   firstName?: string;
   palette?: { wear: Array<{ name: string; hex: string }>; avoid: string[] };
   plain?: StyleScanPlainCopyV1;
+  /** Colour-first result (2026-10). Absent on older scans. */
+  colour?: StyleScanColourProfileV1;
+  /** False when she skipped the optional full-body photo, so no shape read was made. */
+  bodyRead?: boolean;
 }
 
 export interface InstantReportRefinementV1 {
@@ -104,7 +135,10 @@ export interface InstantReportV1 {
   checklist: string[];
 }
 
-const allowedValues: Record<Exclude<keyof StyleScanAnswersV1, 'firstName'>, readonly string[]> = {
+type RequiredAnswerKey = 'concern' | 'dressCode' | 'dressPreference' | 'upcoming' | 'lastFeltGreat';
+type OptionalAnswerKey = 'jewellery' | 'sun' | 'compliments';
+
+const allowedValues: Record<RequiredAnswerKey, readonly string[]> = {
   concern: ['tummy', 'arms', 'hips', 'height', 'nothing_specific'],
   dressCode: ['western_office', 'ethnic_leaning', 'mixed', 'mostly_home'],
   dressPreference: ['modest', 'balanced', 'fitted'],
@@ -112,10 +146,34 @@ const allowedValues: Record<Exclude<keyof StyleScanAnswersV1, 'firstName'>, read
   lastFeltGreat: ['this_week', 'cant_remember', 'old_weight'],
 };
 
+const optionalAllowedValues: Record<OptionalAnswerKey, readonly string[]> = {
+  jewellery: ['gold', 'silver', 'both', 'unsure'],
+  sun: ['tans_easily', 'burns_then_tans', 'burns', 'rarely_changes'],
+  compliments: ['earthy', 'jewel', 'soft', 'contrast', 'unsure'],
+};
+
 export function validateStyleScanAnswers(value: unknown): value is StyleScanAnswersV1 {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const answers = value as Record<string, unknown>;
-  return Object.entries(allowedValues).every(([key, values]) => values.includes(String(answers[key])));
+  return Object.entries(allowedValues).every(([key, values]) => values.includes(String(answers[key])))
+    && Object.entries(optionalAllowedValues).every(([key, values]) => answers[key] === undefined || values.includes(String(answers[key])));
+}
+
+/** Keeps only the answer keys the scan knows, so nothing else rides into scan_answers. */
+export function pickStyleScanAnswers(value: StyleScanAnswersV1): StyleScanAnswersV1 {
+  const picked: Record<string, string> = {};
+  for (const key of [...Object.keys(allowedValues), ...Object.keys(optionalAllowedValues)]) {
+    const answer = (value as unknown as Record<string, unknown>)[key];
+    if (typeof answer === 'string') picked[key] = answer;
+  }
+  return picked as unknown as StyleScanAnswersV1;
+}
+
+export function normalizeScanEmail(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const email = value.trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
 }
 
 export function sanitizeFirstName(value: unknown): string | null {

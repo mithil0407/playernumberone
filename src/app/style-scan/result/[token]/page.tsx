@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import StyleScanResultClient from './StyleScanResultClient';
 
 export const metadata: Metadata = {
-  title: 'Your ICONIK Style Scan',
+  title: 'Your colour analysis · ICONIK',
   robots: { index: false, follow: false, noarchive: true, noimageindex: true },
   referrer: 'no-referrer',
 };

@@ -216,7 +216,7 @@ function escapeLike(value: string) {
 }
 
 /** Safety net for a missed webhook: a paid order for this email means no more emails. */
-async function findRecentPaidOrderId(email: string, now: Date): Promise<string | null> {
+export async function findRecentPaidOrderId(email: string, now: Date): Promise<string | null> {
   const { data: customers, error: customerError } = await supabaseAdmin
     .from('customers')
     .select('id')
