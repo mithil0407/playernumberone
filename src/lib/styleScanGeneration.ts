@@ -19,6 +19,7 @@ import {
   type StyleScanAnswersV1,
   type StyleScanPlainCopyV1,
 } from '@/lib/styleScan';
+import { buildColourProfile, colourSelfReport } from '@/lib/styleScanColour';
 
 const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
 const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image-preview';
@@ -159,7 +160,7 @@ async function humanizeScanCopy(
   scan: StyleScanAnalysisV1,
   classification: StylistBlueprintClassification,
   answers: StyleScanAnswersV1,
-): Promise<{ plain: StyleScanPlainCopyV1; donts: StyleScanAnalysisV1['donts'] } | null> {
+): Promise<{ plain: StyleScanPlainCopyV1; donts: StyleScanAnalysisV1['donts']; avoidSwatches: Array<{ name?: unknown; hex?: unknown }> } | null> {
   try {
     const prompt = `You are ICONIK's copy chief. Rewrite this style analysis so the client herself instantly understands it. Return ONLY JSON, no markdown.
 
@@ -176,7 +177,8 @@ Required JSON:
  "undertone": {"verdict":"<one short line about her colouring, e.g. 'Your skin glows in warm colours.'>", "body":"<max 2 sentences: which colours make her look fresh, which make her look tired, and why>"},
  "donts": [{"title":"<plain, concrete item she'd recognise in her wardrobe>", "why":"<one sentence consequence in plain words>"} x3],
  "doWhy": "<one sentence: why this outfit works for HER, plain words>",
- "takeaways": ["<takeaway 1>", "<takeaway 2>", "<takeaway 3>"]
+ "takeaways": ["<takeaway 1>", "<takeaway 2>", "<takeaway 3>"],
+ "avoidSwatches": [{"name":"<2-3 word plain name of a colour she should skip near her face>", "hex":"<#RRGGBB, a realistic retail version of that colour>"} x3, taken from avoid_colours]
 }
 
 Technical analysis: ${JSON.stringify({ geometry: scan.geometry, undertone: scan.undertone, donts: scan.donts, do: scan.do })}
@@ -189,6 +191,7 @@ Her answers: ${JSON.stringify({ concern: answers.concern, dressCode: answers.dre
     });
     const parsed = JSON.parse(cleanJson(response.text || '{}')) as Partial<StyleScanPlainCopyV1> & {
       donts?: Array<{ title?: string; why?: string }>;
+      avoidSwatches?: Array<{ name?: unknown; hex?: unknown }>;
     };
     const text = (value: unknown) => typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
     const geometryVerdict = text(parsed.geometry?.verdict);
@@ -210,6 +213,7 @@ Her answers: ${JSON.stringify({ concern: answers.concern, dressCode: answers.dre
         callback: emotionalCallback(answers),
       },
       donts: rewrittenDonts.length === 3 ? rewrittenDonts as StyleScanAnalysisV1['donts'] : scan.donts,
+      avoidSwatches: Array.isArray(parsed.avoidSwatches) ? parsed.avoidSwatches : [],
     };
   } catch (error) {
     console.warn('[style-scan] plain-copy rewrite failed; using fallback:', error instanceof Error ? error.message : error);
@@ -222,7 +226,8 @@ export async function generateStyleScanAnalysis(input: {
   phone: string;
   answers: StyleScanAnswersV1;
   headshotUrl: string;
-  fullBodyUrl: string;
+  /** Optional since the colour-first scan: without it no shape read is shown. */
+  fullBodyUrl?: string | null;
 }) {
   const submission: StylistIntakeSubmission = {
     id: input.scanId,
@@ -231,8 +236,9 @@ export async function generateStyleScanAnalysis(input: {
     primary_language: 'English',
     photo_urls: {
       headshot: input.headshotUrl,
-      full_body_front: input.fullBodyUrl,
+      ...(input.fullBodyUrl ? { full_body_front: input.fullBodyUrl } : {}),
     },
+    skin_tone_self_description: colourSelfReport(input.answers) || null,
     focus_areas: input.answers.concern === 'nothing_specific' ? [] : [input.answers.concern],
     coverage_requirements: {
       modesty: input.answers.dressPreference,
@@ -251,10 +257,11 @@ export async function generateStyleScanAnalysis(input: {
   };
   const classification = await classifyStylistBlueprint(submission);
   const shell = createBlueprintShell(submission, classification);
-  const overall = Math.min(
-    confidenceNumber(shell.analysis.confidence.body),
-    confidenceNumber(shell.analysis.confidence.colour),
-  );
+  const bodyRead = Boolean(input.fullBodyUrl);
+  // A selfie-only scan makes no shape claim, so only the colour read gates a retake.
+  const overall = bodyRead
+    ? Math.min(confidenceNumber(shell.analysis.confidence.body), confidenceNumber(shell.analysis.confidence.colour))
+    : confidenceNumber(shell.analysis.confidence.colour);
   const scan: StyleScanAnalysisV1 = {
     version: 'style-scan-v1',
     geometry: {
@@ -287,6 +294,13 @@ export async function generateStyleScanAnalysis(input: {
   } else {
     scan.plain = plainCopyFallback(scan, classification, input.answers);
   }
+  scan.bodyRead = bodyRead;
+  scan.colour = buildColourProfile({
+    colour: classification.colour,
+    jewelleryDirection: classification.face_hair_accessories.jewellery_direction,
+    makeupColours: classification.makeup.colours,
+    avoidSwatches: humanized?.avoidSwatches,
+  });
   return { scan, classification };
 }
 

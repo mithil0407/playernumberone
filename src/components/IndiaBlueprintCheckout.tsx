@@ -219,6 +219,8 @@ export default function IndiaBlueprintCheckout({
       .then(data => {
         const scanPhone = String(data.contact?.phone || '').replace(/^\+91/, '');
         if (scanPhone && !phone) setPhone(scanPhone);
+        const scanEmail = String(data.contact?.email || '');
+        if (scanEmail) setEmail(current => current || scanEmail);
       })
       .catch(() => undefined);
   }, [phone, scanToken]);

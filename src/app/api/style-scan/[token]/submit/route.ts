@@ -3,7 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 import {
   clientIp,
   getStyleScanByToken,
+  normalizeScanEmail,
   normalizeScanPhone,
+  pickStyleScanAnswers,
   sanitizeFirstName,
   STYLE_SCAN_CONSENT_VERSION,
   validateStyleScanAnswers,
@@ -19,12 +21,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'This scan has already been submitted.' }, { status: 409 });
     }
     const photos = scan.photo_paths && typeof scan.photo_paths === 'object' ? scan.photo_paths as Record<string, unknown> : {};
-    if (!photos.headshot || !photos.full_body) {
-      return NextResponse.json({ error: 'Please upload both required photos.' }, { status: 400 });
+    // The full-body photo is optional since the colour-first scan; the selfie is not.
+    if (!photos.headshot) {
+      return NextResponse.json({ error: 'Please upload your selfie first.' }, { status: 400 });
     }
     if (!validateStyleScanAnswers(body.answers)) {
-      return NextResponse.json({ error: 'Please answer all five questions.' }, { status: 400 });
+      return NextResponse.json({ error: 'Please answer all the questions.' }, { status: 400 });
     }
+    const email = normalizeScanEmail(body.email);
+    if (!email) return NextResponse.json({ error: 'Enter a valid email address so we can send your colours.' }, { status: 400 });
     const phone = normalizeScanPhone(body.phone);
     if (!phone) return NextResponse.json({ error: 'Enter a valid 10-digit Indian mobile number.' }, { status: 400 });
     if (body.whatsappOptIn !== true) {
@@ -33,8 +38,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const now = new Date().toISOString();
     // First name is optional; when present it rides inside the scan_answers JSON (no schema change).
     const firstName = sanitizeFirstName(body.firstName);
-    const answers = firstName ? { ...body.answers, firstName } : body.answers;
+    const picked = pickStyleScanAnswers(body.answers);
+    const answers = firstName ? { ...picked, firstName } : picked;
     const { error } = await supabaseAdmin.from('style_scan_leads').update({
+      email,
       phone_e164: phone,
       whatsapp_opt_in: true,
       whatsapp_consent_at: now,
@@ -43,8 +50,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       consent_user_agent: request.headers.get('user-agent'),
       scan_answers: answers,
       diagnosis_answers: answers,
-      style_struggle: body.answers.concern,
-      dressing_context: body.answers.dressCode,
+      style_struggle: picked.concern,
+      dressing_context: picked.dressCode,
       scan_status: 'submitted',
       submitted_at: now,
       updated_at: now,

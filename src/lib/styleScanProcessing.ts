@@ -8,11 +8,12 @@ import {
 import {
   generateStyleScanAnalysis, STYLE_SCAN_MODEL_METADATA,
 } from '@/lib/styleScanGeneration';
+import { deliverColourScanResultEmail, enrolColourScanNurture } from '@/lib/colourScanNurture';
 
 export async function processStyleScanToken(token: string) {
   let scanId: string | null = null;
   try {
-    const scan = await getStyleScanByToken(token, 'id, phone_e164, scan_status, scan_answers, photo_paths, generation_attempts');
+    const scan = await getStyleScanByToken(token, 'id, phone_e164, email, scan_status, scan_answers, photo_paths, generation_attempts');
     if (!scan) return { status: 'not_found' as const };
     scanId = scan.id;
     if (scan.scan_status === 'ready') return { status: 'ready' as const };
@@ -27,9 +28,9 @@ export async function processStyleScanToken(token: string) {
     if (!claim.data) return { status: 'analyzing' as const };
     const [headshotUrl, fullBodyUrl] = await Promise.all([
       signedStorageUrl(STYLE_SCAN_PHOTO_BUCKET, photos.headshot),
-      signedStorageUrl(STYLE_SCAN_PHOTO_BUCKET, photos.full_body),
+      photos.full_body ? signedStorageUrl(STYLE_SCAN_PHOTO_BUCKET, photos.full_body) : null,
     ]);
-    if (!headshotUrl || !fullBodyUrl) throw new Error('Required photos are unavailable');
+    if (!headshotUrl) throw new Error('Required selfie is unavailable');
     const { scan: analysis, classification } = await generateStyleScanAnalysis({
       scanId: scan.id, phone: scan.phone_e164, answers: scan.scan_answers as StyleScanAnswersV1, headshotUrl, fullBodyUrl,
     });
@@ -37,7 +38,9 @@ export async function processStyleScanToken(token: string) {
       await supabaseAdmin.from('style_scan_leads').update({
         scan_status: 'retake_required', scan_analysis: analysis, classification_payload: classification,
         scan_confidence: analysis.confidence,
-        retake_reason: 'We could not read your geometry or colouring confidently. Please replace both photos in brighter natural light with your full outline visible.',
+        retake_reason: fullBodyUrl
+          ? 'We could not read your colouring or shape confidently. Please replace your photos in brighter natural light, facing a window, with your full outline visible.'
+          : 'We could not read your colouring confidently. Please retake your selfie facing a window in daylight, with no filter or portrait blur.',
         updated_at: new Date().toISOString(),
       }).eq('id', scan.id);
       return { status: 'retake_required' as const };
@@ -49,6 +52,12 @@ export async function processStyleScanToken(token: string) {
       generation_model: STYLE_SCAN_MODEL_METADATA.text,
       generation_version: STYLE_SCAN_MODEL_METADATA.version, result_ready_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }).eq('id', scan.id);
+    // Nurture never blocks the result: both calls swallow their own errors.
+    const answers = scan.scan_answers as StyleScanAnswersV1;
+    const enrolled = await enrolColourScanNurture({
+      scanId: scan.id, email: scan.email, firstName: analysis.firstName ?? null, upcoming: answers.upcoming, dressCode: answers.dressCode,
+    });
+    if (enrolled.ok) await deliverColourScanResultEmail(scan.id);
     return { status: 'ready' as const };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Scan generation failed';
