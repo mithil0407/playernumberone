@@ -43,6 +43,7 @@ The methodology URLs own definition intent: “what is…”, process, scope, li
 - `/colour-analysis`: owns the broad “colour analysis for Indian skin” topic and routes readers to focused colour guides.
 - `/body-type-styling`: owns the broad “body type styling India” topic and routes readers to proportion-specific guides.
 - `/style-guides`: owns use-case and occasion navigation.
+- `/style-guides/diwali-outfit-body-type`: owns Diwali outfit selection by silhouette, garment and event. The broader wedding guest guide remains the wedding intent owner; saree and salwar guides own garment-specific draping and fit.
 - `/blog`: contains distinct editorial analysis only. It must not republish methodology definitions.
 - `/tools/*` and `/free-colour-analysis-quiz`: provide participatory starting points and must state that outputs are guidance, not diagnoses.
 

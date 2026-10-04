@@ -83,7 +83,7 @@ function ComposedFallbackVisual({ article, src }: { article: SeoArticleRecord; s
         className="mx-auto h-auto w-full max-w-5xl rounded-[2rem] shadow-[0_28px_80px_rgba(38,52,58,0.24)]"
       />
       <figcaption className="mx-auto mt-3 max-w-5xl px-2 text-xs leading-relaxed text-[#2C2622]/50">
-        AI-generated editorial visual informed by Iconik&apos;s styling methodology. No real client or celebrity is depicted.
+        {article.visual.disclosure ?? "AI-generated editorial illustration. No real client or celebrity is depicted."}
       </figcaption>
     </figure>
   );
@@ -145,9 +145,19 @@ export default function RegisteredSeoArticle({
           <>
             <InstagramReelsForArticle articlePath={article.path} />
             <SeoFaqSection faqs={faqs} />
-            <SeoAuthorReview>
-              Iconik guidance combines proportion, colour relationships, garment construction, and the practical realities of Indian wardrobes. Recommendations are reviewed before publication and updated when the underlying guidance changes.
-            </SeoAuthorReview>
+            {article.reviewer ? (
+              <SeoAuthorReview>
+                Iconik guidance combines proportion, colour relationships, garment construction, and the practical realities of Indian wardrobes. Recommendations are reviewed before publication and updated when the underlying guidance changes.
+              </SeoAuthorReview>
+            ) : (
+              <aside className="seo-author-review">
+                <div>
+                  <p className="seo-eyebrow">Editorial status</p>
+                  <h2>Pending stylist review</h2>
+                  <p className="seo-author-role">ICONIK editorial team</p>
+                </div>
+              </aside>
+            )}
             <SeoRelatedGuides links={article.related} />
             {beforeFooter}
             <SeoBlueprintCta {...cta} />

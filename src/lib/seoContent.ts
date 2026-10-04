@@ -73,7 +73,7 @@ export const styleGuideLinks: SeoLink[] = [
   {
     href: "/style-guides/diwali-outfit-body-type",
     title: "Diwali Outfit by Body Type",
-    description: "Festive outfit ideas mapped to silhouette and body geometry.",
+    description: "Choose saree, kurta, lehenga or fusion formulas by occasion, proportion, fabric and fit.",
   },
   {
     href: "/style-guides/dressing-after-weight-gain",

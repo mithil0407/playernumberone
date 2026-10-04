@@ -28,6 +28,7 @@ export function buildSeoArticleMetadata(article: SeoArticleRecord) {
     locale: "en_IN",
     datePublished: article.datePublished,
     dateModified: article.dateModified,
+    authorPath: article.reviewer ? undefined : null,
     ...(ogPath
       ? {
           image: {
@@ -53,18 +54,22 @@ export function buildSeoArticleGraph(
     ? [visualPath, openGraphPath(article)].filter((item): item is string => Boolean(item))
     : undefined;
 
+  const node = articleNode({
+    title: article.title,
+    description: article.description,
+    path: article.path,
+    datePublished: article.datePublished,
+    dateModified: article.dateModified,
+    images: visualImages,
+    about: options.about ?? [article.cluster],
+  });
+
   return graph([
     organizationNode,
     founderPerson,
-    articleNode({
-      title: article.title,
-      description: article.description,
-      path: article.path,
-      datePublished: article.datePublished,
-      dateModified: article.dateModified,
-      images: visualImages,
-      about: options.about ?? [article.cluster],
-    }),
+    article.reviewer
+      ? node
+      : { ...node, author: { "@id": organizationNode["@id"] }, reviewedBy: undefined },
     ...(options.faqs?.length ? [faqPageNode(options.faqs)] : []),
     breadcrumbList(
       article.breadcrumbs.map((item) => ({
