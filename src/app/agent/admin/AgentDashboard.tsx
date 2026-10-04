@@ -228,6 +228,59 @@ function InviteForm() {
   );
 }
 
+function CampaignForm() {
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [created, setCreated] = useState<{ code: string; link: string | null } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!name.trim()) return;
+    setBusy(true);
+    setError('');
+    const response = await fetch('/api/agent/admin/invites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campaign: name }),
+    }).catch(() => null);
+    setBusy(false);
+    if (!response?.ok) { setError('Could not create the link.'); return; }
+    const body = await response.json() as { campaign: { code: string; link: string | null } };
+    setCreated(body.campaign);
+    setCopied(false);
+  };
+  const copy = () => {
+    if (!created?.link) return;
+    void navigator.clipboard.writeText(created.link).then(() => setCopied(true)).catch(() => undefined);
+  };
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="min-w-[220px] flex-1 text-[12px]" style={{ color: MUTED }}>Campaign name
+          <input value={name} onChange={event => setName(event.target.value)} placeholder="Colour reel — 5 Oct"
+            className="mt-1 h-10 w-full rounded-lg border px-2 text-[14px]" style={{ borderColor: FAINT, color: INK }} />
+        </label>
+        <button type="submit" disabled={busy || !name.trim()} className="h-10 rounded-lg px-4 text-[14px] font-medium text-white disabled:opacity-50" style={{ background: INK }}>
+          {busy ? 'Creating…' : 'Create link'}
+        </button>
+      </div>
+      <p className="text-[12px]" style={{ color: MUTED }}>
+        Opens WhatsApp with &ldquo;I want my free colour analysis 🎨&rdquo; typed in. Anyone can join with it — no waitlist.
+      </p>
+      {error ? <p className="text-[13px] text-[#A2442C]">{error}</p> : null}
+      {created ? (
+        <div className="rounded-lg border p-3" style={{ borderColor: FAINT }}>
+          <p className="break-all font-mono text-[12px]" style={{ color: INK }}>{created.link ?? created.code}</p>
+          <button type="button" onClick={copy} className="mt-2 text-[12px] font-medium underline" style={{ color: INK }}>
+            {copied ? 'Copied ✓' : 'Copy link'}
+          </button>
+        </div>
+      ) : null}
+    </form>
+  );
+}
+
 function AdmitForm({ waiting }: { waiting: number }) {
   const [count, setCount] = useState(Math.min(10, Math.max(1, waiting)));
   const [result, setResult] = useState('');
@@ -291,10 +344,10 @@ export default function AgentDashboard({ data, fxRate }: { data: AgentAnalytics;
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Tile label="Users" value={count(totals.users)} sub={`${count(totals.freeUsers)} free · ${count(totals.blueprintUsers)} Blueprint · +${count(totals.newUsers7)} this week`} />
           <Tile label="Active today" value={count(totals.active1)} sub={`${count(totals.active7)} active in 7 days`} />
-          <Tile label="Messages, 7 days" value={count(totals.messages7)} sub={`${count(totals.replies7)} replies sent`} />
+          <Tile label="Colour cards, 7 days" value={count(totals.colourCards7)} sub={`${count(totals.colourCardsTotal)} all time · ${count(totals.inviteShares7)} invites shared`} />
           <Tile label="Product hunts, 7 days" value={count(totals.runs7)} sub={`${count(totals.clickOuts7)} store click-outs`} />
           <Tile label="AI spend, 7 days" value={money(totals.spend7)} sub={`${money(totals.spend30)} in 30 days`} />
-          <Tile label="Cost per active user" value={money(totals.costPerActiveUser7)} sub="last 7 days" />
+          <Tile label="Messages, 7 days" value={count(totals.messages7)} sub={`${money(totals.costPerActiveUser7)} AI cost per active user`} />
           <Tile label="Cost per product hunt" value={money(totals.costPerRun30)} sub="search + checks + cards, 30 days" />
           <Tile label="Viral coefficient" value={growth.kFactor.toFixed(2)} sub={`${count(growth.referralJoins)} friends joined by invite`} />
         </div>
@@ -305,7 +358,40 @@ export default function AgentDashboard({ data, fxRate }: { data: AgentAnalytics;
           <DailyBars title="Product hunts" points={series.shoppingRuns} format={count} />
           <DailyBars title="Store click-outs" points={series.clickOuts} format={count} />
           <DailyBars title="New users" points={series.newUsers} format={count} />
+          <DailyBars title="Colour cards sent" points={series.colourCards} format={count} />
           <DailyBars title="AI spend (₹)" points={series.spendUsd.map(point => ({ ...point, value: point.value * fxRate }))} format={value => `₹${Math.round(value).toLocaleString('en-IN')}`} />
+        </div>
+
+        <div className="mt-6 grid gap-3 lg:grid-cols-2">
+          <Panel title="Reel & campaign links">
+            <CampaignForm />
+          </Panel>
+          <Panel title="Campaign results" aside={<span className="text-[12px]" style={{ color: MUTED }}>since each link was made</span>}>
+            {data.campaigns.length ? (
+              <div className="-mx-5 overflow-x-auto px-5">
+                <table className="w-full min-w-[460px] text-[13px] tabular-nums">
+                  <thead>
+                    <tr style={{ color: MUTED }}>
+                      {['Campaign', 'Joined', 'Colour cards', 'Did a hunt', 'Friends brought'].map(heading => (
+                        <th key={heading} className={`pb-2 font-medium ${heading === 'Campaign' ? 'text-left' : 'text-right'}`}>{heading}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.campaigns.map(campaign => (
+                      <tr key={campaign.code} className="border-t" style={{ borderColor: FAINT }}>
+                        <td className="py-2">{campaign.name}<span className="ml-2 font-mono text-[11px]" style={{ color: MUTED }}>{campaign.code}</span></td>
+                        <td className="py-2 text-right">{count(campaign.joined)}</td>
+                        <td className="py-2 text-right">{count(campaign.colourCards)}{campaign.joined ? <span style={{ color: MUTED }}> · {pct(campaign.colourCards / campaign.joined)}</span> : null}</td>
+                        <td className="py-2 text-right">{count(campaign.hunted)}</td>
+                        <td className="py-2 text-right">{count(campaign.friendsBrought)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="text-[13px]" style={{ color: MUTED }}>Create a link for your reel to see who joins through it.</p>}
+          </Panel>
         </div>
 
         <div className="mt-6 grid gap-3 lg:grid-cols-2">

@@ -138,6 +138,33 @@ async function sendWhatsappPayload(payload: Record<string, unknown>): Promise<Wh
   }
 }
 
+let businessNumber: string | null = null;
+
+/**
+ * The ICONIK WhatsApp number (digits), for wa.me invite links. Read from
+ * WHATSAPP_BUSINESS_NUMBER if set, otherwise looked up once from the phone
+ * number ID the app already uses.
+ */
+export async function getWhatsAppBusinessNumber(): Promise<string | null> {
+  const configured = process.env.WHATSAPP_BUSINESS_NUMBER?.replace(/\D+/g, '');
+  if (configured) return configured;
+  if (businessNumber) return businessNumber;
+  const configuration = whatsappConfiguration();
+  if ('error' in configuration) return null;
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${configuration.graphApiVersion}/${configuration.phoneNumberId}?fields=display_phone_number`,
+      { headers: { Authorization: `Bearer ${configuration.accessToken}` }, signal: AbortSignal.timeout(8_000) },
+    );
+    const body = await response.json().catch(() => ({})) as { display_phone_number?: string };
+    const digits = body.display_phone_number?.replace(/\D+/g, '') ?? '';
+    businessNumber = digits || null;
+  } catch {
+    return null;
+  }
+  return businessNumber;
+}
+
 export async function sendWhatsAppTextMessage(to: string, body: string) {
   return sendWhatsappPayload(buildWhatsappPilotTextPayload(to, body));
 }

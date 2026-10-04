@@ -5,15 +5,20 @@ import 'server-only';
 
 import type { AgentClient } from '@/lib/agentClients';
 import {
+  CAMPAIGN_FIRST_MONTH_RUNS,
+  CAMPAIGN_NOTE_PREFIX,
+  DIRECT_CAMPAIGN_NAME,
   FREE_LIMITS,
   createInviteCode,
   indiaMonthKey,
   inviteLink,
+  isCampaignNote,
   monthlyGrantAmount,
 } from '@/lib/agentGrowth';
 import { sendProactiveAgentMessage } from '@/lib/agentJobs';
 import { normalizeIndianWhatsappNumber } from '@/lib/indiaPhone';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getWhatsAppBusinessNumber } from '@/lib/whatsapp';
 
 // ── Credits ──
 
@@ -100,9 +105,10 @@ export async function ensureInviteCode(client: AgentClient) {
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (data) return { code: data.code as string, remaining: Math.max(0, data.max_uses - data.uses), link: inviteLink(data.code) };
+  const number = await getWhatsAppBusinessNumber();
+  if (data) return { code: data.code as string, remaining: Math.max(0, data.max_uses - data.uses), link: inviteLink(data.code, number) };
   const code = await insertInvite(client.id, FREE_LIMITS.invitesPerUser, null);
-  return { code, remaining: FREE_LIMITS.invitesPerUser, link: inviteLink(code) };
+  return { code, remaining: FREE_LIMITS.invitesPerUser, link: inviteLink(code, number) };
 }
 
 /** Codes the team hands out (first wave, partners, campaigns). */
@@ -112,6 +118,28 @@ export async function createTeamInvites(count: number, maxUses: number, note: st
     codes.push(await insertInvite(null, Math.max(1, maxUses), note));
   }
   return codes;
+}
+
+/**
+ * A campaign link (a reel, an ad): one code many people use, which always gets
+ * them in, asks for the free colour analysis, and is attributed on the dashboard.
+ */
+export async function createCampaign(name: string, maxUses: number) {
+  const code = await insertInvite(null, Math.max(1, maxUses), `${CAMPAIGN_NOTE_PREFIX} ${name.trim().slice(0, 80)}`);
+  return { code, link: inviteLink(code, await getWhatsAppBusinessNumber(), 'colour_analysis') };
+}
+
+/** The always-open campaign for people who message the number asking for a colour analysis. */
+export async function ensureDirectCampaignCode() {
+  const note = `${CAMPAIGN_NOTE_PREFIX} ${DIRECT_CAMPAIGN_NAME}`;
+  const { data } = await supabaseAdmin.from('agent_invites').select('code').eq('note', note).is('owner_client_id', null).limit(1).maybeSingle();
+  if (data) return data.code as string;
+  return insertInvite(null, 10_000_000, note);
+}
+
+export async function teamInviteLinks(codes: string[]) {
+  const number = await getWhatsAppBusinessNumber();
+  return codes.map(code => ({ code, link: inviteLink(code, number) }));
 }
 
 async function findClientByPhone(phone: string) {
@@ -128,11 +156,11 @@ export async function enrolFreeClient(rawPhone: string, code: string | null): Pr
   const phone = normalizeIndianWhatsappNumber(rawPhone);
   if (!phone) return null;
 
-  let invite: { code: string; owner_client_id: string | null } | null = null;
+  let invite: { code: string; owner_client_id: string | null; note: string | null } | null = null;
   if (code) {
     const { data, error } = await supabaseAdmin.rpc('claim_agent_invite', { p_code: code });
     if (error) throw new Error(`Could not redeem the invite: ${error.message}`);
-    invite = ((data ?? []) as Array<{ code: string; owner_client_id: string | null }>)[0] ?? null;
+    invite = ((data ?? []) as Array<{ code: string; owner_client_id: string | null; note: string | null }>)[0] ?? null;
     if (!invite) return null;
   }
 
@@ -158,6 +186,10 @@ export async function enrolFreeClient(rawPhone: string, code: string | null): Pr
     await supabaseAdmin.from('agent_invite_redemptions').insert({ code: invite.code, client_id: client.id });
   }
   await supabaseAdmin.from('agent_waitlist').update({ status: 'joined' }).eq('phone', phone);
+  if (isCampaignNote(invite?.note)) {
+    // Campaign joiners start with fewer hunts this month; invites earn them more.
+    await addCredits(client.id, CAMPAIGN_FIRST_MONTH_RUNS, 'monthly_grant', indiaMonthKey());
+  }
   await ensureMonthlyGrant(client);
 
   if (invite?.owner_client_id) {

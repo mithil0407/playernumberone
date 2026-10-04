@@ -323,14 +323,81 @@ CLIENT: ${passport.firstName ?? 'the client'}; style notes: ${JSON.stringify(pas
   return sent;
 }
 
+/** The last chance to reach someone on WhatsApp is just before their 24h window closes. */
+const FOLLOW_UP_AFTER_HOURS = 19;
+const FOLLOW_UP_BEFORE_HOURS = 23;
+const FOLLOW_UP_EVERY_DAYS = 3;
+
+/**
+ * One genuinely useful message to free clients who went quiet ~20 hours ago:
+ * a tip in their colours and a question that invites a reply (which reopens the
+ * window). At most once every few days, and only once they have a Colour Card.
+ */
+async function runWindowFollowUps() {
+  const now = Date.now();
+  const { data: clients, error } = await supabaseAdmin
+    .from('agent_clients')
+    .select('*')
+    .eq('tier', 'free')
+    .eq('status', 'active')
+    .gte('last_inbound_at', new Date(now - FOLLOW_UP_BEFORE_HOURS * 3_600_000).toISOString())
+    .lte('last_inbound_at', new Date(now - FOLLOW_UP_AFTER_HOURS * 3_600_000).toISOString())
+    .limit(200);
+  if (error) throw new Error(error.message);
+  let sent = 0;
+  for (const client of (clients ?? []) as AgentClient[]) {
+    const profile = client.lite_profile ?? {};
+    if (!Array.isArray(profile.best_colours) || !profile.best_colours.length) continue;
+    const { count } = await supabaseAdmin
+      .from('agent_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', client.id)
+      .eq('direction', 'outbound')
+      .contains('metadata', { type: 'window_followup' })
+      .gte('created_at', new Date(now - FOLLOW_UP_EVERY_DAYS * 86_400_000).toISOString());
+    if (count) continue;
+
+    const { data: recent } = await supabaseAdmin
+      .from('agent_messages')
+      .select('direction, content')
+      .eq('client_id', client.id)
+      .neq('kind', 'reaction')
+      .order('created_at', { ascending: false })
+      .limit(8);
+    const thread = [...(recent ?? [])].reverse()
+      .map(message => `${message.direction === 'inbound' ? 'Client' : 'ICONIK'}: ${String(message.content).slice(0, 300)}`)
+      .join('\n');
+    const raw = await withAgentUsage({ clientId: client.id, kind: 'checkin' }, () => generateAgentJson(`You are ICONIK, a personal stylist on WhatsApp. The client went quiet yesterday. Write ONE message (max 45 words) that's worth opening:
+- a specific, useful tip in their colours (how to wear their power colour this week, or one swap for something they mentioned owning), then
+- one easy question that invites a reply (e.g. "Want me to find one under ₹1,500?").
+Warm and personal, never salesy, never "just checking in", at most one emoji.
+
+Return ONLY JSON: {"message": "…"}
+
+CLIENT: ${client.first_name ?? 'unknown name'}; ${String(profile.season ?? '')} — best colours ${(profile.best_colours as string[]).join(', ')}; avoid ${Array.isArray(profile.avoid_colours) ? (profile.avoid_colours as string[]).join(', ') : 'unknown'}
+RECENT CHAT:
+${thread}`, 'iconik_agent_window_followup'));
+    const message = typeof raw.message === 'string' ? raw.message.trim().slice(0, 500) : '';
+    if (!message) continue;
+    const delivery = await sendProactiveAgentMessage(client, message, { type: 'window_followup' });
+    if (delivery.sent) sent += 1;
+  }
+  return sent;
+}
+
 export async function runAgentWorker() {
   const startedAt = Date.now();
-  const summary = { jobs: 0, checkIns: 0, handedOff: false, errors: [] as string[] };
+  const summary = { jobs: 0, checkIns: 0, followUps: 0, handedOff: false, errors: [] as string[] };
 
   try {
     summary.checkIns = await runEventCheckIns();
   } catch (error) {
     summary.errors.push(`check-ins: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  try {
+    summary.followUps = await runWindowFollowUps();
+  } catch (error) {
+    summary.errors.push(`follow-ups: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   while (Date.now() - startedAt < WORKER_BUDGET_MS - 20_000) {

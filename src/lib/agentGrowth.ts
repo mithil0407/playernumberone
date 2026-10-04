@@ -48,24 +48,51 @@ export function parseInviteCode(text: string) {
 }
 
 /**
- * A link that opens WhatsApp with ICONIK and the code already typed: the friend
- * only taps send. Their message opens the conversation, so no template is needed.
+ * A link that opens WhatsApp with ICONIK and a message already typed: the
+ * friend only taps send. Their message opens the conversation, so no template
+ * is needed. Campaign links (reels, ads) ask for the free colour analysis.
  */
-export function inviteLink(code: string, businessNumber = process.env.WHATSAPP_BUSINESS_NUMBER) {
+export function inviteLink(code: string, businessNumber: string | null, purpose: 'invite' | 'colour_analysis' = 'invite') {
   const digits = (businessNumber ?? '').replace(/\D+/g, '');
-  const text = encodeURIComponent(`Hi ICONIK! My invite code is ${code}`);
-  return digits ? `https://wa.me/${digits}?text=${text}` : null;
+  if (!digits) return null;
+  const message = purpose === 'colour_analysis'
+    ? `Hi ICONIK! I want my free colour analysis 🎨 ${code}`
+    : `Hi ICONIK! My invite code is ${code}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
-/** The message a client forwards to friends. */
-export function forwardableInvite(code: string, inviterName: string | null, businessNumber?: string) {
-  const link = inviteLink(code, businessNumber);
+/**
+ * The message a client forwards to friends. When we know their colour season it
+ * leads with it — "I just found out I'm a Deep Autumn" travels much further
+ * than "try this app".
+ */
+export function forwardableInvite(input: { code: string; link: string | null; inviterName: string | null; season?: string | null }) {
+  const opener = input.season
+    ? `I just found out I'm a ${input.season} 🎨 ICONIK read my colours from one selfie on WhatsApp — and told me exactly what to wear.`
+    : `${input.inviterName ? `${input.inviterName} invited you to ICONIK` : "You're invited to ICONIK"} — a personal stylist on WhatsApp ✨`;
   return [
-    `${inviterName ? `${inviterName} invited you to ICONIK` : "You're invited to ICONIK"} — a personal stylist on WhatsApp ✨`,
-    'Send a selfie and it reads your best colours in a minute, then finds clothes that actually suit you, checked in your size.',
-    link ? `Tap to start: ${link}` : `Message ICONIK with the code ${code}`,
+    opener,
+    'Send a selfie and get your free colour analysis in a minute, then clothes that actually suit you, checked in your size.',
+    input.link ? `Get yours: ${input.link}` : `Message ICONIK with the code ${input.code}`,
   ].join('\n\n');
 }
+
+/** Team codes made for a campaign (a reel, an ad) start with this note. */
+export const CAMPAIGN_NOTE_PREFIX = 'campaign:';
+
+export function isCampaignNote(note: string | null | undefined) {
+  return Boolean(note?.startsWith(CAMPAIGN_NOTE_PREFIX));
+}
+
+/** Someone messaging the number asking for their colours (e.g. from a reel), with or without a link. */
+export function asksForColourAnalysis(text: string) {
+  return /\bcolou?r\s*(?:analysis|season|test|palette|type)\b|\b(?:my|best)\s+colou?rs\b|\bwhat colou?rs suit\b/i.test(text);
+}
+
+export const DIRECT_CAMPAIGN_NAME = 'Direct messages (colour analysis)';
+
+/** Product hunts for people who join through a campaign link, in their first month. */
+export const CAMPAIGN_FIRST_MONTH_RUNS = envNumber('ICONIK_AGENT_CAMPAIGN_RUNS', 1);
 
 export function isOverDailyMessageCap(messagesToday: number, limits = FREE_LIMITS) {
   return messagesToday > limits.dailyMessages;

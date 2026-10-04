@@ -26,6 +26,7 @@ export async function loadAgentAnalytics(now = new Date()) {
   const since = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const [
     clients, inbound, outboundCount, ledger, lookEvents, lookItems, looksCreated, usage, invites, redemptions, waitlist,
+    colourCards, inviteShares, clientsInviteCodes,
   ] = await Promise.all([
     readAll<AnalyticsRows['clients'][number]>(() => supabaseAdmin.from('agent_clients')
       .select('id, tier, created_at, last_inbound_at, phone, first_name, line, lite_profile, invited_by_client_id')
@@ -71,6 +72,20 @@ export async function loadAgentAnalytics(now = new Date()) {
     readAll<AnalyticsRows['waitlist'][number]>(() => supabaseAdmin.from('agent_waitlist')
       .select('status, created_at')
       .order('created_at') as unknown as Query),
+    readAll<AnalyticsRows['colourCards'][number]>(() => supabaseAdmin.from('agent_messages')
+      .select('client_id, created_at')
+      .eq('direction', 'outbound')
+      .contains('metadata', { type: 'colour_card' })
+      .order('created_at') as unknown as Query),
+    readAll<AnalyticsRows['inviteShares'][number]>(() => supabaseAdmin.from('agent_messages')
+      .select('client_id, created_at')
+      .eq('direction', 'outbound')
+      .contains('metadata', { type: 'invite' })
+      .order('created_at') as unknown as Query),
+    readAll<AnalyticsRows['clientsInviteCodes'][number]>(() => supabaseAdmin.from('agent_clients')
+      .select('id, invite_code_used')
+      .not('invite_code_used', 'is', null)
+      .order('created_at') as unknown as Query),
   ]);
 
   return computeAgentAnalytics({
@@ -86,6 +101,9 @@ export async function loadAgentAnalytics(now = new Date()) {
     invites,
     redemptions,
     waitlist,
+    colourCards,
+    inviteShares,
+    clientsInviteCodes,
     upgradedClientIds: await findUpgrades(clients.filter(client => client.tier === 'free')),
   });
 }

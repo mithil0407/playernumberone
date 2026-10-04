@@ -1,6 +1,8 @@
 // Turns raw agent tables into the numbers on the analytics dashboard
 // (/agent/admin). Pure: the loader fetches rows, this computes.
 
+import { CAMPAIGN_NOTE_PREFIX, isCampaignNote } from './agentGrowth.ts';
+
 export interface AnalyticsRows {
   now: Date;
   clients: Array<{
@@ -18,6 +20,9 @@ export interface AnalyticsRows {
   invites: Array<{ code: string; owner_client_id: string | null; uses: number; max_uses: number; note: string | null; created_at: string }>;
   redemptions: Array<{ code: string; client_id: string; created_at: string }>;
   waitlist: Array<{ status: string; created_at: string }>;
+  colourCards: Array<{ client_id: string; created_at: string }>;
+  inviteShares: Array<{ client_id: string; created_at: string }>;
+  clientsInviteCodes: Array<{ id: string; invite_code_used: string | null }>;
   /** Free clients whose number later bought a Blueprint. */
   upgradedClientIds: Set<string>;
 }
@@ -72,6 +77,7 @@ export function computeAgentAnalytics(rows: AnalyticsRows) {
     shoppingRuns: countByDay(runs, days),
     clickOuts: countByDay(clickOuts, days),
     spendUsd: countByDay(rows.usage, days, row => Number(row.cost_usd) || 0),
+    colourCards: countByDay(rows.colourCards, days),
   };
 
   const active7 = new Set(rows.inbound.filter(message => within(message.created_at, now, 7)).map(message => message.client_id));
@@ -89,11 +95,16 @@ export function computeAgentAnalytics(rows: AnalyticsRows) {
   }
 
   const freeClients = rows.clients.filter(client => client.tier === 'free');
+  const carded = new Set(rows.colourCards.map(card => card.client_id));
+  for (const client of freeClients) {
+    if (Array.isArray(client.lite_profile?.best_colours) && (client.lite_profile?.best_colours as unknown[]).length) carded.add(client.id);
+  }
   const ranRun = new Set(runs.map(entry => entry.client_id));
   const clicked = new Set(clickOuts.map(event => event.client_id));
   const funnel = [
     { label: 'Joined (free)', value: freeClients.length },
-    { label: 'Colour profile saved', value: freeClients.filter(client => Array.isArray(client.lite_profile?.best_colours) && (client.lite_profile?.best_colours as unknown[]).length > 0).length },
+    { label: 'Got their Colour Card', value: freeClients.filter(client => carded.has(client.id)).length },
+    { label: 'Shared their invite', value: freeClients.filter(client => rows.inviteShares.some(share => share.client_id === client.id)).length },
     { label: 'Did a product hunt', value: freeClients.filter(client => ranRun.has(client.id)).length },
     { label: 'Clicked through to a store', value: freeClients.filter(client => clicked.has(client.id)).length },
     { label: 'Bought a Blueprint', value: freeClients.filter(client => rows.upgradedClientIds.has(client.id)).length },
@@ -163,8 +174,26 @@ export function computeAgentAnalytics(rows: AnalyticsRows) {
   const spendByClient = new Map<string, number>();
   for (const row of rows.usage) if (row.client_id) spendByClient.set(row.client_id, (spendByClient.get(row.client_id) ?? 0) + Number(row.cost_usd || 0));
 
+  const codeByClient = new Map(rows.clientsInviteCodes.map(row => [row.id, row.invite_code_used]));
+  const campaigns = rows.invites
+    .filter(invite => !invite.owner_client_id && isCampaignNote(invite.note))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map(invite => {
+      const joined = rows.clients.filter(client => codeByClient.get(client.id) === invite.code);
+      const joinedIds = new Set(joined.map(client => client.id));
+      return {
+        name: (invite.note ?? '').slice(CAMPAIGN_NOTE_PREFIX.length).trim() || invite.code,
+        code: invite.code,
+        joined: joined.length,
+        colourCards: joined.filter(client => carded.has(client.id)).length,
+        hunted: joined.filter(client => ranRun.has(client.id)).length,
+        friendsBrought: rows.clients.filter(client => client.invited_by_client_id && joinedIds.has(client.invited_by_client_id)).length,
+      };
+    });
+
   return {
     generatedAt: now.toISOString(),
+    campaigns,
     totals: {
       users: rows.clients.length,
       freeUsers: freeClients.length,
@@ -175,6 +204,9 @@ export function computeAgentAnalytics(rows: AnalyticsRows) {
       messages7: rows.inbound.filter(message => within(message.created_at, now, 7)).length,
       replies7: rows.outboundCount.filter(message => within(message.created_at, now, 7)).length,
       runs7: runs.filter(entry => within(entry.created_at, now, 7)).length,
+      colourCards7: rows.colourCards.filter(card => within(card.created_at, now, 7)).length,
+      colourCardsTotal: rows.colourCards.length,
+      inviteShares7: rows.inviteShares.filter(share => within(share.created_at, now, 7)).length,
       clickOuts7: clickOuts.filter(event => within(event.created_at, now, 7)).length,
       spend7,
       spend30,

@@ -6,6 +6,7 @@ import 'server-only';
 import { inviteLink } from '@/lib/agentGrowth';
 import { loadLookLink } from '@/lib/agentStore';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getWhatsAppBusinessNumber } from '@/lib/whatsapp';
 
 export type LookVerificationStatus = 'pending' | 'checking' | 'verified' | 'unavailable' | 'failed';
 
@@ -67,7 +68,7 @@ export async function loadLookView(slug: string): Promise<(LookView & { clientId
     .eq('disabled', false)
     .limit(1)
     .maybeSingle();
-  const inviteUrl = invite && invite.uses < invite.max_uses ? inviteLink(invite.code) : null;
+  const inviteUrl = invite && invite.uses < invite.max_uses ? inviteLink(invite.code, await getWhatsAppBusinessNumber()) : null;
   const items = ((link.look_link_items ?? []) as AnyRecord[])
     .sort((a, b) => Number(a.rank ?? 0) - Number(b.rank ?? 0))
     .map(item => {

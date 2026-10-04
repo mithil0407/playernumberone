@@ -28,11 +28,14 @@ import {
 import { dueNudgeStage, indiaDateString, isValidEventDate } from '@/lib/agentEvents';
 import { dispatchAgentWorker } from '@/lib/agentJobs';
 import { AGENT_TEXT_MODEL, agentOpenAI, withAgentUsage } from '@/lib/agentLlm';
-import { FREE_LIMITS, forwardableInvite, isOverDailyMessageCap, parseInviteCode } from '@/lib/agentGrowth';
+import { FREE_LIMITS, asksForColourAnalysis, forwardableInvite, isOverDailyMessageCap, parseInviteCode } from '@/lib/agentGrowth';
+import { parseColourAnalysis } from '@/lib/agentColourCard';
+import { renderColourCard } from '@/lib/agentProductCards';
 import {
   chargeShoppingRun,
   creditBalance,
   enrolFreeClient,
+  ensureDirectCampaignCode,
   ensureInviteCode,
   ensureMonthlyGrant,
   inboundMessagesToday,
@@ -122,7 +125,13 @@ export function freeSignupsOpen(env = process.env) {
   return freeTierEnabled(env) && env.ICONIK_AGENT_FREE_OPEN === '1';
 }
 
+/** People who message asking for a colour analysis get in without a code (on unless set to "0"). */
+export function colourAnalysisOpen(env = process.env) {
+  return freeTierEnabled(env) && env.ICONIK_AGENT_OPEN_COLOUR_ANALYSIS !== '0';
+}
+
 const WAITLIST_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. I'm invite-only right now — if a friend sent you an invite code, paste it here. Otherwise you're on the waitlist and I'll let you in soon ✨";
+const COLOUR_ANALYSIS_PROMPT_REPLY = "Hey 👋 I'm ICONIK, a personal stylist on WhatsApp. Want your free colour analysis? Reply \"colour analysis\" and I'll get started ✨";
 const INVALID_INVITE_REPLY = "That invite code isn't working (it may be used up). Ask your friend for a fresh one — meanwhile you're on the waitlist ✨";
 const DAILY_CAP_REPLY = "That's a lot of styling for one day 😄 I'll pick this up with you tomorrow.";
 
@@ -147,11 +156,14 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
 
   let client = await resolveAgentClientByPhone(message.from, { allowPreviewReports: access?.previewReports ?? false });
   if (!client && free) {
-    const code = parseInviteCode(message.text);
+    let code = parseInviteCode(message.text);
+    if (!code && colourAnalysisOpen() && asksForColourAnalysis(message.text)) code = await ensureDirectCampaignCode();
     const waitlist = code || freeSignupsOpen() ? null : await joinWaitlist(message.from, message.text);
     const usable = code ?? waitlist?.admittedCode ?? null;
     if (!usable && !freeSignupsOpen()) {
-      if (waitlist?.shouldReply) await sendWhatsAppTextMessage(message.from, WAITLIST_REPLY).catch(() => undefined);
+      if (waitlist?.shouldReply) {
+        await sendWhatsAppTextMessage(message.from, colourAnalysisOpen() ? COLOUR_ANALYSIS_PROMPT_REPLY : WAITLIST_REPLY).catch(() => undefined);
+      }
       return 'waitlisted' as const;
     }
     client = await withAgentUsage({ clientId: null, kind: 'other' }, () => enrolFreeClient(message.from, usable));
@@ -227,6 +239,8 @@ interface TurnState {
   searchCount: number;
   interimSent: number;
   runCharged: boolean;
+  /** Messages sent after the reply bubbles (e.g. the friend invite after a Colour Card). */
+  afterReply: Array<{ text: string; metadata: Record<string, unknown> }>;
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
@@ -379,6 +393,36 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
     },
   });
   if (options.freeTier) {
+    const swatchList = (description: string) => ({
+      type: 'array',
+      description,
+      items: {
+        type: 'object', additionalProperties: false, required: ['name', 'hex'],
+        properties: { name: { type: 'string', description: 'Everyday name, e.g. "Rust", "Olive", "Cream".' }, hex: { type: 'string', description: '#RRGGBB' } },
+      },
+    });
+    tools.push({
+      type: 'function',
+      name: 'send_colour_card',
+      description: "Deliver the free colour analysis: saves their colour profile and sends their personal ICONIK Colour Card image (season, undertone, best colours, neutrals, colours to avoid, metal). Call once you have read a clear selfie.",
+      strict: true,
+      parameters: {
+        type: 'object', additionalProperties: false,
+        required: ['first_name', 'season', 'undertone', 'depth', 'contrast', 'best_colours', 'neutrals', 'avoid_colours', 'metal', 'caption'],
+        properties: {
+          first_name: { type: ['string', 'null'] },
+          season: { type: 'string', description: 'Seasonal colour family, e.g. "Deep Autumn", "Soft Summer", "Bright Winter".' },
+          undertone: { type: 'string', enum: ['warm', 'cool', 'neutral', 'olive'] },
+          depth: { type: ['string', 'null'], enum: ['light', 'medium', 'deep', null] },
+          contrast: { type: ['string', 'null'], enum: ['low', 'medium', 'high', null] },
+          best_colours: swatchList('Exactly 8 colours that light them up, most flattering first.'),
+          neutrals: swatchList('3 neutrals to build outfits on.'),
+          avoid_colours: swatchList('3 colours to keep away from the face.'),
+          metal: { type: ['string', 'null'], enum: ['gold', 'silver', 'both', null] },
+          caption: { type: 'string', description: 'Short caption under the card, e.g. "Riya, you\'re a Deep Autumn 🍂".' },
+        },
+      },
+    });
     tools.push({
       type: 'function',
       name: 'save_style_profile',
@@ -579,9 +623,65 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       if (invite.remaining <= 0) return 'All their invites have been used. Tell them, and thank them for spreading the word.';
       const intro = String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇';
       await sendText(state, intro, { type: 'invite_intro' });
-      await sendText(state, forwardableInvite(invite.code, state.passport.firstName), { type: 'invite', code: invite.code });
+      const season = typeof state.client.lite_profile?.season === 'string' ? state.client.lite_profile.season : null;
+      await sendText(state, forwardableInvite({ code: invite.code, link: invite.link, inviterName: state.passport.firstName, season }), { type: 'invite', code: invite.code });
       state.interimSent += 2;
       return `Sent their invite (${invite.code}); ${invite.remaining} friend${invite.remaining === 1 ? '' : 's'} can still join with it. Don't repeat the link in your reply.`;
+    }
+    case 'send_colour_card': {
+      if (state.client.tier !== 'free') return 'This client has a Blueprint; their report already has their colours.';
+      const firstName = nullableString(args.first_name, 40) ?? state.client.first_name;
+      const analysis = parseColourAnalysis(args, firstName);
+      if (!analysis) return 'The colour analysis is incomplete: give a season, an undertone and 8 best colours with valid #RRGGBB hex codes.';
+      const profile: Record<string, unknown> = {
+        ...(state.client.lite_profile ?? {}),
+        season: analysis.season,
+        undertone: analysis.undertone,
+        depth: analysis.depth,
+        contrast: analysis.contrast,
+        best_colours: analysis.best.map(swatch => swatch.name),
+        neutrals: analysis.neutrals.map(swatch => swatch.name),
+        avoid_colours: analysis.avoid.map(swatch => swatch.name),
+        metal: analysis.metal,
+        colour_card_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      await supabaseAdmin.from('agent_clients')
+        .update({ lite_profile: profile, first_name: firstName, updated_at: new Date().toISOString() })
+        .eq('id', state.client.id);
+      state.client = { ...state.client, lite_profile: profile, first_name: firstName };
+
+      const dateLabel = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(new Date());
+      const imageUrl = await renderColourCard(state.client.id, analysis, dateLabel).catch(error => {
+        console.error('[agent] colour card render failed:', error);
+        return null;
+      });
+      const caption = String(args.caption ?? '').trim().slice(0, 200) || `${firstName ? `${firstName}, you're` : "You're"} a ${analysis.season} 🎨`;
+      if (imageUrl) {
+        const sent = await sendWhatsAppImageMessage(state.client.phone, imageUrl, caption);
+        if (sent.success) {
+          await recordOutboundMessage({
+            clientId: state.client.id, kind: 'image', content: caption, imageUrl, whatsappMessageId: sent.messageId ?? null,
+            turnId: state.turnId, metadata: { type: 'colour_card', season: analysis.season },
+          });
+        }
+      } else {
+        await sendText(state, `${caption}\n\nYour best colours: ${analysis.best.map(swatch => swatch.name).join(', ')}.`, { type: 'colour_card', season: analysis.season });
+      }
+      state.interimSent += 1;
+
+      // Right after the wow, the forwardable invite: friends want theirs, and each one earns more hunts.
+      const invite = await ensureInviteCode(state.client).catch(() => null);
+      if (invite && invite.remaining > 0) {
+        state.afterReply.push(
+          { text: `Your friends will want theirs 😄 Forward this — every friend who joins gets you +${FREE_LIMITS.referralBonus} more product hunts (and them too).`, metadata: { type: 'invite_intro' } },
+          { text: forwardableInvite({ code: invite.code, link: invite.link, inviterName: firstName, season: analysis.season }), metadata: { type: 'invite', code: invite.code } },
+        );
+      }
+      return `Colour Card sent and profile saved (no need to call save_style_profile). Now reply in exactly 2 short bubbles, separated by a blank line:
+1) The wow: what you saw (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them and the swap that does the same job but lights them up.
+2) The hook that makes them want more: one irresistible next step — e.g. "Want me to find 3 pieces in your power colour under ₹2,000?" or a look for something coming up. Make it a question.
+Do not mention invites or codes: the forwardable invite is sent automatically right after your reply.`;
     }
     case 'save_style_profile': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report is the profile.';
@@ -698,6 +798,7 @@ async function runAgentTurnInner(client: AgentClient) {
     searchCount: 0,
     interimSent: 0,
     runCharged: false,
+    afterReply: [],
     toolLog: [],
   };
 
@@ -795,6 +896,11 @@ async function runAgentTurnInner(client: AgentClient) {
         await sleep(typingDelayMs(bubble));
       }
       await sendText(state, bubble);
+    }
+    for (const extra of state.afterReply) {
+      await showWhatsAppTypingIndicator(latestWhatsappId).catch(() => undefined);
+      await sleep(typingDelayMs(extra.text));
+      await sendText(state, extra.text, extra.metadata).catch(error => console.warn('[agent] follow-up not sent:', error));
     }
 
     await markMessagesAnswered(pending.map(message => message.id), turnId);

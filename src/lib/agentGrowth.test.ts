@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { computeAgentAnalytics, istDay, maskPhone, type AnalyticsRows } from './agentAnalytics.ts';
+import { colourCardHtml, parseColourAnalysis, readableOn } from './agentColourCard.ts';
 import {
   FREE_LIMITS,
+  asksForColourAnalysis,
   createInviteCode,
   forwardableInvite,
   indiaMonthKey,
@@ -27,11 +29,42 @@ test('invite links open WhatsApp with the code typed in', () => {
     inviteLink('ICK-ABCDEF', '+91 98765 43210'),
     'https://wa.me/919876543210?text=Hi%20ICONIK!%20My%20invite%20code%20is%20ICK-ABCDEF',
   );
-  assert.equal(inviteLink('ICK-ABCDEF', ''), null);
-  const message = forwardableInvite('ICK-ABCDEF', 'Riya', '919876543210');
-  assert.match(message, /^Riya invited you to ICONIK/);
-  assert.match(message, /Tap to start: https:\/\/wa\.me\/919876543210/);
-  assert.match(forwardableInvite('ICK-ABCDEF', null, ''), /Message ICONIK with the code ICK-ABCDEF/);
+  assert.match(inviteLink('ICK-REEL01', '919876543210', 'colour_analysis') ?? '', /free%20colour%20analysis%20%F0%9F%8E%A8%20ICK-REEL01$/);
+  assert.equal(inviteLink('ICK-ABCDEF', null), null);
+  const seasonal = forwardableInvite({ code: 'ICK-ABCDEF', link: 'https://wa.me/1?text=x', inviterName: 'Riya', season: 'Deep Autumn' });
+  assert.match(seasonal, /^I just found out I'm a Deep Autumn/);
+  assert.match(seasonal, /Get yours: https:\/\/wa\.me\/1/);
+  assert.match(forwardableInvite({ code: 'ICK-ABCDEF', link: null, inviterName: 'Riya' }), /^Riya invited you to ICONIK[\s\S]*Message ICONIK with the code ICK-ABCDEF/);
+});
+
+test('colour analysis requests are recognised without a code', () => {
+  assert.equal(asksForColourAnalysis('Hi! I want my free colour analysis'), true);
+  assert.equal(asksForColourAnalysis('can you do my color analysis?'), true);
+  assert.equal(asksForColourAnalysis('what colours suit me'), true);
+  assert.equal(asksForColourAnalysis('hi'), false);
+  assert.equal(asksForColourAnalysis('I need a shirt'), false);
+});
+
+test('colour card: only a complete analysis renders, text is escaped, swatch text stays readable', () => {
+  const best = ['#8B4513', '#556B2F', '#C19A6B', '#800020', '#D2691E', '#F5DEB3', '#2F4F4F', '#B8860B']
+    .map((hex, index) => ({ name: `Colour ${index}`, hex }));
+  const analysis = parseColourAnalysis({
+    season: 'Deep Autumn', undertone: 'warm', depth: 'deep', contrast: 'high', metal: 'gold',
+    best_colours: [...best, { name: 'Bad', hex: 'red' }],
+    neutrals: [{ name: 'Chocolate', hex: '#3E2723' }],
+    avoid_colours: [{ name: '<b>Icy pink</b>', hex: '#F8BBD0' }],
+  }, 'Riya');
+  assert.ok(analysis);
+  assert.equal(analysis.best.length, 8, 'invalid hex values are dropped, max 8');
+  const html = colourCardHtml(analysis, '5 Oct 2026');
+  assert.match(html, /Riya, you're a/);
+  assert.match(html, /Deep Autumn/);
+  assert.match(html, /Warm undertone/);
+  assert.match(html, /&lt;b&gt;Icy pink&lt;\/b&gt;/);
+  assert.match(html, /Gold/);
+  assert.equal(parseColourAnalysis({ season: 'Deep Autumn', undertone: 'warm', best_colours: best.slice(0, 3) }, null), null);
+  assert.equal(readableOn('#F5DEB3'), '#1E1A16');
+  assert.equal(readableOn('#2F4F4F'), '#FFFFFF');
 });
 
 test('monthly runs top up without passing the cap; daily message cap', () => {
@@ -58,16 +91,18 @@ test('free-tier instructions onboard with a selfie and know the limits', () => {
     tier: 'free', runsLeft: 1, invitesLeft: 3, blueprintUrl: 'https://www.iconik.pro/',
   });
   assert.match(instructions, /not had an ICONIK Blueprint/);
+  assert.match(instructions, /THE FREE COLOUR ANALYSIS/);
   assert.match(instructions, /selfie in daylight/);
+  assert.match(instructions, /send_colour_card/);
   assert.match(instructions, /Shopping runs left this month: 1/);
   assert.match(instructions, /nearly out/);
   assert.match(instructions, /Invites left: 3/);
   assert.doesNotMatch(instructions, /FIRST CONVERSATION/);
   const onboarded = buildAgentInstructions({
-    line: 'woman', firstName: 'Riya', today: '2026-10-05', profile: { best_colours: ['rust'] }, reportUrl: null, memoryText: '',
+    line: 'woman', firstName: 'Riya', today: '2026-10-05', profile: { best_colours: ['rust'], season: 'Deep Autumn' }, reportUrl: null, memoryText: '',
     events: [], lookActivity: '', firstConversation: false, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
   });
-  assert.match(onboarded, /colour profile is saved/);
+  assert.match(onboarded, /already have their Colour Card/);
   assert.doesNotMatch(onboarded, /selfie in daylight/);
 });
 
@@ -110,13 +145,16 @@ function rows(): AnalyticsRows {
     ],
     invites: [
       { code: 'ICK-AAAAAA', owner_client_id: 'a', uses: 1, max_uses: 3, note: null, created_at: daysAgo(15) },
-      { code: 'ICK-TEAM01', owner_client_id: null, uses: 1, max_uses: 50, note: 'first wave', created_at: daysAgo(20) },
+      { code: 'ICK-TEAM01', owner_client_id: null, uses: 1, max_uses: 50, note: 'campaign: Colour reel', created_at: daysAgo(20) },
     ],
     redemptions: [
       { code: 'ICK-TEAM01', client_id: 'a', created_at: daysAgo(15) },
       { code: 'ICK-AAAAAA', client_id: 'b', created_at: daysAgo(14) },
     ],
     waitlist: [{ status: 'waiting', created_at: daysAgo(2) }, { status: 'joined', created_at: daysAgo(16) }],
+    colourCards: [{ client_id: 'a', created_at: daysAgo(15) }],
+    inviteShares: [{ client_id: 'a', created_at: daysAgo(15) }],
+    clientsInviteCodes: [{ id: 'a', invite_code_used: 'ICK-TEAM01' }, { id: 'b', invite_code_used: 'ICK-AAAAAA' }],
     upgradedClientIds: new Set(['b']),
   };
 }
@@ -131,7 +169,9 @@ test('analytics: totals, funnel, costs and growth', () => {
   assert.equal(data.totals.clickOuts7, 1);
   assert.equal(Number(data.totals.spend7.toFixed(2)), 0.26);
   assert.equal(Number(data.totals.costPerRun30.toFixed(2)), 0.25);
-  assert.deepEqual(data.funnel.map(step => step.value), [2, 1, 1, 1, 1]);
+  assert.deepEqual(data.funnel.map(step => step.value), [2, 1, 1, 1, 1, 1]);
+  assert.equal(data.totals.colourCardsTotal, 1);
+  assert.deepEqual(data.campaigns, [{ name: 'Colour reel', code: 'ICK-TEAM01', joined: 1, colourCards: 1, hunted: 1, friendsBrought: 1 }]);
   assert.equal(data.looks.clickThroughRate, 0.5);
   assert.equal(data.looks.verifiedRate, 0.5);
   assert.deepEqual(data.looks.topRetailers, [{ retailer: 'Myntra', clicks: 1 }]);
