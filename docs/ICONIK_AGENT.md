@@ -180,7 +180,20 @@ free agent knows only what it sees and is told.
   (carry over to 10), +2 for both people per referral, 30 messages a day, 150
   free runs a day across everyone. Chat is free; a run is charged once per turn,
   on the first product search. Blueprint clients are unlimited.
-- **Invites**: everyone gets a personal code (3 friends); `share_invite` sends a
+- **Invite unlock**: 3 friends joining with someone's link unlocks their **Face
+  Analysis** (face shape → necklines, earrings, hair, glasses, makeup placement;
+  `ICONIK_AGENT_FACE_UNLOCK_FRIENDS`). The invite intro after the Colour Card says
+  so with progress ("1/3 so far"); the inviter hears about each join
+  (`friendJoinedMessage`); tapping your own link gets an explanation, not a
+  model call. While locked, the agent gives one quick tip and offers the invite.
+- **Selfie reminder**: people who got the selfie ask but never sent a photo get
+  one reminder 2h+ later, between 9am and 9pm IST, inside the 24h window
+  (worker, `runSelfieReminders`). Outfit photos where the face can be read make
+  the card first (the outfit verdict goes in the wow); unreadable faces get a
+  clear ask for a close selfie, and a code-level safety net adds it if the model
+  forgets. A failed card render is retried once; the error is kept on the text
+  fallback's metadata (`image_failed`).
+- **Invites**: everyone gets a personal code (5 friends); `share_invite` sends a
   ready-to-forward message with a wa.me link that opens ICONIK with the code typed
   in. Friends who open a shared Look page (`?f=1`) can vote on the options and
   see an invite to get their own stylist.

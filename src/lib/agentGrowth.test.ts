@@ -16,6 +16,12 @@ import {
   isOpenerMessage,
   selfieAskMessage,
   upcomingMoments,
+  faceAnalysisUnlocked,
+  friendJoinedMessage,
+  inviteUnlockIntro,
+  isDaytimeInIndia,
+  ownInviteReply,
+  SELFIE_REMINDER_MESSAGE,
 } from './agentGrowth.ts';
 import { buildAgentInstructions } from './agentPrompt.ts';
 
@@ -95,7 +101,7 @@ test('free-tier instructions onboard with a selfie and know the limits', () => {
   });
   assert.match(instructions, /not had an ICONIK Blueprint/);
   assert.match(instructions, /THE FREE COLOUR ANALYSIS/);
-  assert.match(instructions, /selfie in daylight/);
+  assert.match(instructions, /close selfie/);
   assert.match(instructions, /send_colour_card/);
   assert.match(instructions, /Shopping runs left this month: 1/);
   assert.match(instructions, /nearly out/);
@@ -106,7 +112,7 @@ test('free-tier instructions onboard with a selfie and know the limits', () => {
     events: [], lookActivity: '', firstConversation: false, canShowOutfitImages: false, tier: 'free', runsLeft: 3, invitesLeft: 3,
   });
   assert.match(onboarded, /already have their Colour Card/);
-  assert.doesNotMatch(onboarded, /selfie in daylight/);
+  assert.doesNotMatch(onboarded, /close selfie/);
 });
 
 const NOW = new Date('2026-10-20T06:00:00Z');
@@ -223,4 +229,29 @@ test('upcoming moments: Diwali, yearly dates and wedding season', () => {
   assert.ok(upcomingMoments('2027-01-20', 30).some(line => line.startsWith("Valentine's Day")));
   assert.deepEqual(upcomingMoments('2026-06-01'), []);
   assert.deepEqual(upcomingMoments('not a date'), []);
+});
+
+test('the invite unlocks the Face Analysis at 3 friends, with progress along the way', () => {
+  const limits = { ...FREE_LIMITS, faceUnlockFriends: 3, referralBonus: 2 };
+  assert.equal(faceAnalysisUnlocked(2, limits), false);
+  assert.equal(faceAnalysisUnlocked(3, limits), true);
+  assert.match(inviteUnlockIntro(0, limits), /Unlock your Face Analysis[\s\S]*3 friends[\s\S]*the link is for them/);
+  assert.doesNotMatch(inviteUnlockIntro(0, limits), /so far/);
+  assert.match(inviteUnlockIntro(1, limits), /\(1\/3 so far\)/);
+  assert.doesNotMatch(inviteUnlockIntro(3, limits), /Unlock/);
+  assert.match(friendJoinedMessage(1, limits), /1\/3\. 2 more/);
+  assert.match(friendJoinedMessage(3, limits), /Face Analysis is unlocked/);
+  assert.match(friendJoinedMessage(4, limits), /Another friend/);
+  assert.match(ownInviteReply(1, limits), /your own invite link[\s\S]*1\/3/);
+  assert.match(ownInviteReply(3, limits), /already unlocked/);
+});
+
+test('the selfie ask and reminder accept any good light; reminders only in the Indian daytime', () => {
+  assert.match(selfieAskMessage(null), /any good light/);
+  assert.match(selfieAskMessage(null), /no sunglasses/);
+  assert.match(SELFIE_REMINDER_MESSAGE, /selfie/);
+  assert.equal(isDaytimeInIndia(new Date('2026-10-05T04:00:00Z')), true); // 9:30 IST
+  assert.equal(isDaytimeInIndia(new Date('2026-10-04T20:00:00Z')), false); // 1:30 IST
+  assert.equal(isDaytimeInIndia(new Date('2026-10-05T15:20:00Z')), true); // 20:50 IST
+  assert.equal(isDaytimeInIndia(new Date('2026-10-05T15:40:00Z')), false); // 21:10 IST
 });

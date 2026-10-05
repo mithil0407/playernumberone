@@ -10,6 +10,7 @@ import {
   DIRECT_CAMPAIGN_NAME,
   FREE_LIMITS,
   createInviteCode,
+  friendJoinedMessage,
   indiaMonthKey,
   inviteLink,
   isCampaignNote,
@@ -111,6 +112,21 @@ export async function ensureInviteCode(client: AgentClient) {
   return { code, remaining: FREE_LIMITS.invitesPerUser, link: inviteLink(code, number) };
 }
 
+/** Friends who joined with this client's invite link: what unlocks their Face Analysis. */
+export async function friendsJoined(clientId: string) {
+  const { count } = await supabaseAdmin
+    .from('agent_clients')
+    .select('id', { count: 'exact', head: true })
+    .eq('invited_by_client_id', clientId);
+  return count ?? 0;
+}
+
+/** The client who owns an invite code (null for team and campaign codes). */
+export async function inviteOwner(code: string) {
+  const { data } = await supabaseAdmin.from('agent_invites').select('owner_client_id').eq('code', code.toUpperCase()).maybeSingle();
+  return (data?.owner_client_id as string | null | undefined) ?? null;
+}
+
 /** Codes the team hands out (first wave, partners, campaigns). */
 export async function createTeamInvites(count: number, maxUses: number, note: string | null) {
   const codes: string[] = [];
@@ -197,10 +213,11 @@ export async function enrolFreeClient(rawPhone: string, code: string | null): Pr
     await addCredits(invite.owner_client_id, FREE_LIMITS.referralBonus, 'referral_bonus', `invited:${client.id}`);
     const owner = await supabaseAdmin.from('agent_clients').select('*').eq('id', invite.owner_client_id).maybeSingle();
     if (owner.data) {
+      const joined = await friendsJoined(invite.owner_client_id);
       await sendProactiveAgentMessage(
         owner.data as AgentClient,
-        `A friend just joined ICONIK with your invite 🎉 You both get +${FREE_LIMITS.referralBonus} shopping runs.`,
-        { type: 'referral_joined', friend_client_id: client.id },
+        friendJoinedMessage(joined),
+        { type: 'referral_joined', friend_client_id: client.id, friends_joined: joined },
       ).catch(() => undefined);
     }
   }

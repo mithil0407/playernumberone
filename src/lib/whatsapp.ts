@@ -189,7 +189,10 @@ export async function sendWhatsAppImageInOrder(to: string, imageUrl: string, cap
     return null;
   });
   if (!mediaId) return sendWhatsAppImageMessage(to, imageUrl, caption);
-  return sendWhatsappPayload(buildWhatsappImageByIdPayload(to, mediaId, caption));
+  const sent = await sendWhatsappPayload(buildWhatsappImageByIdPayload(to, mediaId, caption));
+  if (sent.success) return sent;
+  console.warn('[whatsapp] image send by media id failed, sending by link:', sent.error);
+  return sendWhatsAppImageMessage(to, imageUrl, caption);
 }
 
 /** Uploads the image to WhatsApp; pass the PNG bytes when we just rendered them, to skip a download. */

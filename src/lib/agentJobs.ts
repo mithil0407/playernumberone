@@ -18,7 +18,7 @@ import 'server-only';
 import { loadStylePassport, type AgentClient } from '@/lib/agentClients';
 import { verifyProductWithBrowser, type ProductCheckResult } from '@/lib/agentBrowserVerifier';
 import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming, indiaDateString } from '@/lib/agentEvents';
-import { upcomingMoments } from '@/lib/agentGrowth';
+import { SELFIE_REMINDER_MESSAGE, isDaytimeInIndia, upcomingMoments } from '@/lib/agentGrowth';
 import { generateAgentJson, withAgentUsage } from '@/lib/agentLlm';
 import { lookLinkUrl } from '@/lib/agentLookLinks';
 import { buildProductCaption, type PresentableProduct } from '@/lib/agentPresentation';
@@ -388,9 +388,44 @@ ${thread}`, 'iconik_agent_window_followup'));
   return sent;
 }
 
+/** Hours after their last message before people who never sent a selfie get one reminder. */
+const SELFIE_REMINDER_AFTER_HOURS = 2;
+
+/**
+ * Most people arrive from a reel late at night and never send the selfie. One
+ * reminder, in the daytime, while the 24h window is still open.
+ */
+async function runSelfieReminders(now = new Date()) {
+  if (!isDaytimeInIndia(now)) return 0;
+  const { data: clients, error } = await supabaseAdmin
+    .from('agent_clients')
+    .select('*')
+    .eq('tier', 'free')
+    .eq('status', 'active')
+    .gte('last_inbound_at', new Date(now.getTime() - 23 * 3_600_000).toISOString())
+    .lte('last_inbound_at', new Date(now.getTime() - SELFIE_REMINDER_AFTER_HOURS * 3_600_000).toISOString())
+    .limit(200);
+  if (error) throw new Error(error.message);
+  let sent = 0;
+  for (const client of (clients ?? []) as AgentClient[]) {
+    const profile = client.lite_profile ?? {};
+    if (profile.colour_card_at || (Array.isArray(profile.best_colours) && profile.best_colours.length)) continue;
+    const [photos, reminded] = await Promise.all([
+      supabaseAdmin.from('agent_messages').select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id).eq('direction', 'inbound').in('kind', ['image', 'unsupported']),
+      supabaseAdmin.from('agent_messages').select('id', { count: 'exact', head: true })
+        .eq('client_id', client.id).eq('direction', 'outbound').contains('metadata', { type: 'selfie_reminder' }),
+    ]);
+    if (photos.count || reminded.count) continue;
+    const delivery = await sendProactiveAgentMessage(client, SELFIE_REMINDER_MESSAGE, { type: 'selfie_reminder' });
+    if (delivery.sent) sent += 1;
+  }
+  return sent;
+}
+
 export async function runAgentWorker() {
   const startedAt = Date.now();
-  const summary = { jobs: 0, checkIns: 0, followUps: 0, handedOff: false, errors: [] as string[] };
+  const summary = { jobs: 0, checkIns: 0, followUps: 0, selfieReminders: 0, handedOff: false, errors: [] as string[] };
 
   try {
     summary.checkIns = await runEventCheckIns();
@@ -401,6 +436,11 @@ export async function runAgentWorker() {
     summary.followUps = await runWindowFollowUps();
   } catch (error) {
     summary.errors.push(`follow-ups: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  try {
+    summary.selfieReminders = await runSelfieReminders();
+  } catch (error) {
+    summary.errors.push(`selfie reminders: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   while (Date.now() - startedAt < WORKER_BUDGET_MS - 20_000) {
