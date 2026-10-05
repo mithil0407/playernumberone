@@ -240,6 +240,10 @@ export default function LandingPageContent({
   // The root price test and the established /offer-2699 funnel share the visual
   // component but have separate prices, checkout routes, and Meta categories.
   const funnelEntry: IndiaFunnelEntry = trackingEntry ?? (isOffer2699 ? 'offer2699' : 'root');
+  // Paid /offer-2699 pages get a tighter first screen: no brand bar and no
+  // general eyebrow, so the headline, CTA and sample Blueprint sit higher.
+  // Clarity showed ~45% of these visitors never scroll at all.
+  const compactHero = funnelEntry === 'offer2699';
   const contentCategory = funnelEntry === 'offer2699'
     ? INDIA_OFFER_2699_FUNNEL_CATEGORY
     : INDIA_ROOT_FUNNEL_CATEGORY;
@@ -358,14 +362,16 @@ export default function LandingPageContent({
     <div className={`man-editorial min-h-screen overflow-x-hidden pb-20 md:pb-0 ${designVariant ? `root-design-preview root-concept-${designVariant}` : ''}`}>
 
       {/* ── Navbar ─────────────────────────────────────────────────────── */}
+      {!compactHero && (
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: 'rgba(248,243,233,0.95)', borderBottom: '1px solid rgba(44,38,34,0.08)' }}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-center">
           <span className="iconik-display" style={{ fontSize: '22px', letterSpacing: '0.12em', color: '#2C2622' }}>ICONIK</span>
         </div>
       </nav>
+      )}
 
       {/* ── SECTION 1: Hero ─────────────────────────────────────────────── */}
-      <section className="root-hero-section pt-24 pb-16 px-4 md:px-6" style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
+      <section className={`root-hero-section ${compactHero ? 'root-hero-compact' : ''} pt-24 pb-16 px-4 md:px-6`} style={{ background: 'linear-gradient(180deg, #F8F3E9 0%, #F1E9D8 100%)' }}>
         <div className="root-hero-inner max-w-5xl mx-auto text-center">
 
           {!isOffer2699 && (
@@ -375,7 +381,7 @@ export default function LandingPageContent({
           )}
 
           {/* Headline */}
-          {topicContent && (
+          {topicContent && !(compactHero && topicContent.key === 'general') && (
             <div className="root-hero-eyebrow iconik-micro mb-4" style={{ color: '#2C2622', opacity: 0.6 }}>
               {topicContent.eyebrow.toUpperCase()}
             </div>
@@ -444,7 +450,7 @@ export default function LandingPageContent({
           )}
 
           {isOffer2699 && (
-            <div className="mt-9">
+            <div className={compactHero ? 'mt-6' : 'mt-9'}>
               <BlueprintGallery />
             </div>
           )}

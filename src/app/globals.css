@@ -2821,3 +2821,28 @@ div.root-concept-precision > section.root-final-section {
 @media (min-width: 1024px) {
   .client-messages:not(.client-messages--compact) .client-messages-track { justify-content: center; }
 }
+
+/* /offer-2699 paid pages: no brand bar, so the hero starts near the top and the
+   sample Blueprint gallery moves toward the first screen. */
+div.root-concept-precision > section.root-hero-section.root-hero-compact {
+  padding-top: 3rem !important;
+}
+
+@media (max-width: 640px) {
+  div.root-concept-precision > section.root-hero-section.root-hero-compact {
+    padding-top: 1.75rem !important;
+  }
+
+  .root-concept-precision .root-hero-compact .root-hero-inner > h1 {
+    margin-bottom: 0.9rem !important;
+  }
+
+  .root-concept-precision .root-hero-compact .root-hero-inner > p {
+    margin-bottom: 1.15rem !important;
+  }
+
+  .root-concept-precision .root-hero-compact .offer-hero-proof,
+  .root-concept-precision .root-hero-compact .offer-hero-features {
+    margin-top: 0.9rem !important;
+  }
+}
