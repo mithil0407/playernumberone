@@ -1,5 +1,9 @@
 import { normalizeIndianWhatsappNumber } from './indiaPhone.ts';
-import { buildWhatsappReactionPayload, buildWhatsappTypingPayload } from './agentWhatsapp.ts';
+import {
+  buildWhatsappImageByIdPayload,
+  buildWhatsappReactionPayload,
+  buildWhatsappTypingPayload,
+} from './agentWhatsapp.ts';
 import {
   buildWhatsappPilotImagePayload,
   buildWhatsappPilotTextPayload,
@@ -171,6 +175,57 @@ export async function sendWhatsAppTextMessage(to: string, body: string) {
 
 export async function sendWhatsAppImageMessage(to: string, imageUrl: string, caption?: string) {
   return sendWhatsappPayload(buildWhatsappPilotImagePayload(to, imageUrl, caption));
+}
+
+/**
+ * Sends an image so it arrives in order: uploads it to WhatsApp first and sends
+ * it by media id. A link-based image is fetched by WhatsApp after we send it,
+ * so the text sent right after it can overtake it on the client's phone. Falls
+ * back to the link if the upload fails.
+ */
+export async function sendWhatsAppImageInOrder(to: string, imageUrl: string, caption?: string, bytes?: Buffer) {
+  const mediaId = await uploadWhatsAppImage(imageUrl, bytes).catch(error => {
+    console.warn('[whatsapp] image upload failed, sending by link:', error instanceof Error ? error.message : error);
+    return null;
+  });
+  if (!mediaId) return sendWhatsAppImageMessage(to, imageUrl, caption);
+  return sendWhatsappPayload(buildWhatsappImageByIdPayload(to, mediaId, caption));
+}
+
+/** Uploads the image to WhatsApp; pass the PNG bytes when we just rendered them, to skip a download. */
+async function uploadWhatsAppImage(imageUrl: string, pngBytes?: Buffer) {
+  const configuration = whatsappConfiguration();
+  if ('error' in configuration) throw new Error(configuration.error);
+  let mimeType = 'image/png';
+  let data: ArrayBuffer;
+  if (pngBytes) {
+    data = new Uint8Array(pngBytes).buffer;
+  } else {
+    const image = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
+    if (!image.ok) throw new Error(`Could not fetch the image: HTTP ${image.status}`);
+    mimeType = (image.headers.get('content-type') ?? 'image/png').split(';')[0].trim();
+    data = await image.arrayBuffer();
+  }
+  if (mimeType !== 'image/png' && mimeType !== 'image/jpeg') throw new Error(`Unsupported image type ${mimeType}`);
+
+  const form = new FormData();
+  form.append('messaging_product', 'whatsapp');
+  form.append('type', mimeType);
+  form.append('file', new Blob([data], { type: mimeType }), mimeType === 'image/png' ? 'image.png' : 'image.jpg');
+  const response = await fetch(
+    `https://graph.facebook.com/${configuration.graphApiVersion}/${configuration.phoneNumberId}/media`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${configuration.accessToken}` },
+      body: form,
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+  const body = await response.json().catch(() => ({})) as { id?: string; error?: WhatsAppCloudResponse['error'] };
+  if (!response.ok || !body.id) {
+    throw new Error(body.error?.error_data?.details || body.error?.message || `HTTP ${response.status}`);
+  }
+  return body.id;
 }
 
 export async function markWhatsAppMessageRead(messageId: string) {

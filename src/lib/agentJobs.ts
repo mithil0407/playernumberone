@@ -17,7 +17,8 @@ import 'server-only';
 
 import { loadStylePassport, type AgentClient } from '@/lib/agentClients';
 import { verifyProductWithBrowser, type ProductCheckResult } from '@/lib/agentBrowserVerifier';
-import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming } from '@/lib/agentEvents';
+import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming, indiaDateString } from '@/lib/agentEvents';
+import { upcomingMoments } from '@/lib/agentGrowth';
 import { generateAgentJson, withAgentUsage } from '@/lib/agentLlm';
 import { lookLinkUrl } from '@/lib/agentLookLinks';
 import { buildProductCaption, type PresentableProduct } from '@/lib/agentPresentation';
@@ -36,7 +37,7 @@ import {
 } from '@/lib/agentStore';
 import { isWithinCustomerServiceWindow } from '@/lib/agentWhatsapp';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendWhatsAppImageMessage, sendWhatsAppTextMessage } from '@/lib/whatsapp';
+import { sendWhatsAppImageInOrder, sendWhatsAppTextMessage } from '@/lib/whatsapp';
 
 const WORKER_BUDGET_MS = 230_000;
 /** A product check usually takes under a minute (capped at ~3); don't start a batch we cannot finish. */
@@ -80,7 +81,7 @@ export async function sendProactiveAgentMessage(
   if (fresh?.status !== 'active') return { sent: false as const, reason: 'client_not_active' };
   if (!isWithinCustomerServiceWindow(fresh?.last_inbound_at)) return { sent: false as const, reason: 'outside_window' };
   const result = imageUrl
-    ? await sendWhatsAppImageMessage(client.phone, imageUrl, text)
+    ? await sendWhatsAppImageInOrder(client.phone, imageUrl, text)
     : await sendWhatsAppTextMessage(client.phone, text);
   if (!result.success) return { sent: false as const, reason: result.error ?? 'send_failed' };
   await recordOutboundMessage({
@@ -345,6 +346,7 @@ async function runWindowFollowUps() {
     .limit(200);
   if (error) throw new Error(error.message);
   let sent = 0;
+  const comingUp = upcomingMoments(indiaDateString(), 30);
   for (const client of (clients ?? []) as AgentClient[]) {
     const profile = client.lite_profile ?? {};
     if (!Array.isArray(profile.best_colours) || !profile.best_colours.length) continue;
@@ -368,9 +370,10 @@ async function runWindowFollowUps() {
       .map(message => `${message.direction === 'inbound' ? 'Client' : 'ICONIK'}: ${String(message.content).slice(0, 300)}`)
       .join('\n');
     const raw = await withAgentUsage({ clientId: client.id, kind: 'checkin' }, () => generateAgentJson(`You are ICONIK, a personal stylist on WhatsApp. The client went quiet yesterday. Write ONE message (max 45 words) that's worth opening:
-- a specific, useful tip in their colours (how to wear their power colour this week, or one swap for something they mentioned owning), then
-- one easy question that invites a reply (e.g. "Want me to find one under ₹1,500?").
+- a specific, useful tip in their colours (how to wear their power colour this week, or one swap for something they mentioned owning) — or, if something below is coming up, one idea for it — then
+- one easy thing to send you that takes ten seconds: a photo of tomorrow's outfit, something in their wardrobe they're unsure about, or a screenshot of a look they like.
 Warm and personal, never salesy, never "just checking in", at most one emoji.
+${comingUp.length ? `\nCOMING UP: ${comingUp.join('; ')}` : ''}
 
 Return ONLY JSON: {"message": "…"}
 

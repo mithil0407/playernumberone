@@ -13,6 +13,9 @@ import {
   modelCallCostUsd,
   monthlyGrantAmount,
   parseInviteCode,
+  isOpenerMessage,
+  selfieAskMessage,
+  upcomingMoments,
 } from './agentGrowth.ts';
 import { buildAgentInstructions } from './agentPrompt.ts';
 
@@ -195,4 +198,29 @@ test('analytics: weekly retention counts only cohorts old enough', () => {
   assert.equal(oldest.retention[2], null, 'week 4 is not over yet');
   assert.equal(istDay('2026-10-19T19:00:00Z'), '2026-10-20');
   assert.equal(maskPhone('919876543210'), '…3210');
+});
+
+test('opener messages get the instant selfie ask; real questions go to the model', () => {
+  assert.equal(isOpenerMessage('Hi ICONIK! I want my free colour analysis 🎨 ICK-6QNVGB'), true);
+  assert.equal(isOpenerMessage('Hi ICONIK! I want my free colour analysis \uFFFD ICK-6QNVGB'), true);
+  assert.equal(isOpenerMessage('Hi ICONIK! My invite code is ICK-ABCDEF'), true);
+  assert.equal(isOpenerMessage('hii'), true);
+  assert.equal(isOpenerMessage('Hello iconik 👋'), true);
+  assert.equal(isOpenerMessage('colour analysis'), true);
+  assert.equal(isOpenerMessage('what colours suit me for my sister\'s sangeet?'), false);
+  assert.equal(isOpenerMessage('Hi, I need a lehenga for a wedding next month'), false);
+  assert.match(selfieAskMessage('Riya'), /^Hey Riya 👋/);
+  assert.doesNotMatch(selfieAskMessage(null), /code|link/i);
+});
+
+test('upcoming moments: Diwali, yearly dates and wedding season', () => {
+  const october = upcomingMoments('2026-10-05');
+  assert.match(october[0], /^Diwali \(8 Nov, in 34 days\)/);
+  assert.ok(october.some(line => line.startsWith('Wedding season')));
+  const december = upcomingMoments('2026-12-20', 30);
+  assert.deepEqual(december.slice(0, 2).map(line => line.split(' (')[0]), ['Christmas', "New Year's Eve"]);
+  assert.ok(!december.some(line => line.startsWith('Diwali')));
+  assert.ok(upcomingMoments('2027-01-20', 30).some(line => line.startsWith("Valentine's Day")));
+  assert.deepEqual(upcomingMoments('2026-06-01'), []);
+  assert.deepEqual(upcomingMoments('not a date'), []);
 });

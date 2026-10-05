@@ -28,7 +28,8 @@ export function buildWhatsappReactionPayload(to: string, messageId: string, emoj
 
 /**
  * Marks the message read and shows "typing…" to the client. Meta hides the
- * indicator after ~25 seconds or when we send, so long turns re-send it.
+ * indicator after ~25 seconds or whenever we send anything (a reaction too),
+ * so it is re-sent while we work and after every mid-turn send.
  */
 export function buildWhatsappTypingPayload(messageId: string) {
   if (!messageId.trim()) throw new Error('WhatsApp message ID is required');
@@ -38,6 +39,51 @@ export function buildWhatsappTypingPayload(messageId: string) {
     message_id: messageId.trim(),
     typing_indicator: { type: 'text' },
   };
+}
+
+/**
+ * An image already uploaded to WhatsApp (by media id). Unlike a link, WhatsApp
+ * doesn't have to fetch it first, so it can't arrive after the text sent next.
+ */
+export function buildWhatsappImageByIdPayload(to: string, mediaId: string, caption?: string) {
+  const recipient = normalizeIndianWhatsappNumber(to);
+  if (!recipient) throw new Error('A valid Indian WhatsApp number is required');
+  if (!mediaId.trim()) throw new Error('WhatsApp media ID is required');
+  const normalizedCaption = caption?.trim().slice(0, 1_024);
+  return {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: recipient,
+    type: 'image',
+    image: { id: mediaId.trim(), ...(normalizedCaption ? { caption: normalizedCaption } : {}) },
+  };
+}
+
+/**
+ * Orders inbound messages the way the client sent them: by WhatsApp's own
+ * timestamp (seconds), then by when we stored them. Webhooks can arrive out of
+ * order, and a photo used to be stored only after it downloaded.
+ */
+export function compareBySentOrder(
+  a: { created_at: string; metadata?: Record<string, unknown> | null },
+  b: { created_at: string; metadata?: Record<string, unknown> | null },
+) {
+  const sentAt = (row: typeof a) => {
+    const value = Number(row.metadata?.whatsapp_timestamp);
+    return Number.isFinite(value) && value > 0 ? value : Math.floor(new Date(row.created_at).getTime() / 1000);
+  };
+  return sentAt(a) - sentAt(b) || a.created_at.localeCompare(b.created_at);
+}
+
+/**
+ * Team test commands (numbers listed by name in ICONIK_AGENT_ALLOWED_PHONES):
+ * "reset colour" makes the number a fresh free client, so the free colour flow
+ * can be tested from a number with a Blueprint; "blueprint mode" switches back.
+ */
+export function teamTestCommand(text: string): 'free' | 'blueprint' | null {
+  if (/^\s*\/?reset colou?r\s*$/i.test(text)) return 'free';
+  if (/^\s*\/?blueprint mode\s*$/i.test(text)) return 'blueprint';
+  return null;
 }
 
 const ACK_RULES: Array<{ pattern: RegExp; emoji: string }> = [
@@ -87,6 +133,14 @@ export function splitIntoBubbles(reply: string, maxBubbles = MAX_REPLY_BUBBLES):
 /** A short, human pause before a follow-up bubble, scaled to its length. */
 export function typingDelayMs(bubble: string) {
   return Math.min(3_000, 700 + bubble.length * 18);
+}
+
+/**
+ * How long to wait before sending the next bubble, counted from when the
+ * previous send started, so the time the send itself took isn't added on top.
+ */
+export function remainingTypingDelayMs(bubble: string, previousSendStartedAt: number, now = Date.now()) {
+  return Math.max(0, typingDelayMs(bubble) - (now - previousSendStartedAt));
 }
 
 export function isWithinCustomerServiceWindow(
