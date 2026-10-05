@@ -16,7 +16,9 @@ export const FREE_LIMITS = {
   /** Extra runs for both people when an invite is redeemed. */
   referralBonus: envNumber('ICONIK_AGENT_REFERRAL_BONUS', 2),
   /** Friends each person can invite. */
-  invitesPerUser: envNumber('ICONIK_AGENT_INVITES_PER_USER', 3),
+  invitesPerUser: envNumber('ICONIK_AGENT_INVITES_PER_USER', 5),
+  /** Friends who must join with someone's link to unlock their Face Analysis. */
+  faceUnlockFriends: envNumber('ICONIK_AGENT_FACE_UNLOCK_FRIENDS', 3),
   /** Messages a free user can send per day (chat is cheap; this stops abuse). */
   dailyMessages: envNumber('ICONIK_AGENT_FREE_DAILY_MESSAGES', 30),
   /** Shopping runs across all free users per day: the spend safety net. */
@@ -137,9 +139,59 @@ export function isOpenerMessage(text: string) {
   return asksForColourAnalysis(trimmed) || Boolean(parseInviteCode(trimmed));
 }
 
-/** The instant first reply on the free colour flow: one bubble, no model call. */
+/**
+ * The instant first reply on the free colour flow: one bubble, no model call.
+ * Most people arrive from a reel late at night, so any decent light is fine.
+ */
 export function selfieAskMessage(firstName: string | null) {
-  return `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. Send me a selfie in daylight — face clear, no filter — and tell me your name. Your Colour Card will be ready in about a minute 🎨 (your photo stays private 🔒)`;
+  return `Hey${firstName ? ` ${firstName}` : ''} 👋 I'm ICONIK, your stylist on WhatsApp. Send me a close selfie — face to the camera, no sunglasses or filter. Daylight is best, but any good light works right now. Your Colour Card will be ready in under a minute 🎨 (your photo stays private 🔒)`;
+}
+
+/** One nudge for people who got the selfie ask but never sent a photo. */
+export const SELFIE_REMINDER_MESSAGE = "Your Colour Card is still waiting for you 🎨 Just send one close selfie — face to the camera, no sunglasses — and I'll have it ready in under a minute.";
+
+/** Nudges go out during the day in India, never at 2am. */
+export function isDaytimeInIndia(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false }).format(now));
+  return hour >= 9 && hour < 21;
+}
+
+// ── The invite unlock: friends who join unlock the Face Analysis ──
+
+export function faceAnalysisUnlocked(friendsJoined: number, limits = FREE_LIMITS) {
+  return friendsJoined >= limits.faceUnlockFriends;
+}
+
+/** Sent right before their forwardable invite: what it unlocks and how far they are. */
+export function inviteUnlockIntro(friendsJoined: number, limits = FREE_LIMITS) {
+  const needed = limits.faceUnlockFriends;
+  if (faceAnalysisUnlocked(friendsJoined, limits)) {
+    return 'Forward this to a friend 👇 the link is for them. Every friend who joins gets you both extra product hunts.';
+  }
+  const progress = friendsJoined > 0 ? ` (${friendsJoined}/${needed} so far)` : '';
+  return `🔓 Unlock your Face Analysis next: your face shape, and the necklines, earrings, hairstyles and glasses that suit it. It unlocks when ${needed} friends get their Colour Card with your link${progress}.\n\nForward the message below 👇 the link is for them, not you.`;
+}
+
+/** Told to the inviter when a friend joins with their link. */
+export function friendJoinedMessage(friendsJoined: number, limits = FREE_LIMITS) {
+  const needed = limits.faceUnlockFriends;
+  if (friendsJoined === needed) {
+    return `🔓 ${needed} friends joined with your link — your Face Analysis is unlocked! Send me a front-facing selfie with your hair off your face and I'll read your face shape and what suits it.`;
+  }
+  if (friendsJoined < needed) {
+    const left = needed - friendsJoined;
+    return `🎉 A friend just joined with your link — ${friendsJoined}/${needed}. ${left} more and your Face Analysis unlocks. (You both get +${limits.referralBonus} product hunts too.)`;
+  }
+  return `🎉 Another friend joined with your link — you both get +${limits.referralBonus} product hunts.`;
+}
+
+/** When someone taps their own invite link and sends us their own code. */
+export function ownInviteReply(friendsJoined: number, limits = FREE_LIMITS) {
+  const needed = limits.faceUnlockFriends;
+  const progress = faceAnalysisUnlocked(friendsJoined, limits)
+    ? 'Your Face Analysis is already unlocked — ask me for it anytime.'
+    : `${friendsJoined}/${needed} friends have joined so far; at ${needed} your Face Analysis unlocks 🔓`;
+  return `That's your own invite link 😄 It's for your friends — forward the invite message to them and they'll get their free Colour Card. ${progress}`;
 }
 
 /** Sent the moment the selfie lands, so the wait for the Colour Card feels like work happening. */

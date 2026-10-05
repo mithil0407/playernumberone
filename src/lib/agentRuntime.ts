@@ -34,9 +34,12 @@ import {
   FREE_LIMITS,
   SELFIE_RECEIVED_MESSAGE,
   asksForColourAnalysis,
+  faceAnalysisUnlocked,
   forwardableInvite,
+  inviteUnlockIntro,
   isOpenerMessage,
   isOverDailyMessageCap,
+  ownInviteReply,
   parseInviteCode,
   selfieAskMessage,
 } from '@/lib/agentGrowth';
@@ -49,7 +52,9 @@ import {
   ensureDirectCampaignCode,
   ensureInviteCode,
   ensureMonthlyGrant,
+  friendsJoined,
   inboundMessagesToday,
+  inviteOwner,
   joinWaitlist,
 } from '@/lib/agentGrowthStore';
 import {
@@ -158,6 +163,8 @@ const TEAM_TEST_REPLIES = {
   free: 'Test mode: you are now a fresh free user with no colour profile. Send "colour analysis" to start (send "blueprint mode" to switch back).',
   blueprint: 'Test mode off: you are back on your Blueprint.',
 } as const;
+
+const BETTER_SELFIE_ASK = "For your Colour Card I need a close selfie — face to the camera, no sunglasses or filter — so I can read your skin, eyes and hair 📸 Send one and it'll be ready in under a minute.";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -290,6 +297,18 @@ export async function handleAgentInbound(message: WhatsappInboundMessage) {
   });
   if (!stored) return 'duplicate' as const;
 
+  // Tapping their own invite link sends us their own code: explain it, no model call.
+  const sentCode = parseInviteCode(message.text);
+  if (sentCode && await inviteOwner(sentCode) === client.id) {
+    const reply = ownInviteReply(await friendsJoined(client.id));
+    const sent = await sendWhatsAppTextMessage(client.phone, reply).catch(() => null);
+    if (sent?.success) {
+      await recordOutboundMessage({ clientId: client.id, content: reply, whatsappMessageId: sent.messageId ?? null, metadata: { type: 'own_invite' } });
+    }
+    await markMessagesAnswered([stored.id], stored.id);
+    return 'own_invite' as const;
+  }
+
   if (client.tier === 'free') {
     const today = await inboundMessagesToday(client.id);
     if (isOverDailyMessageCap(today)) {
@@ -365,6 +384,8 @@ interface TurnState {
   searchCount: number;
   interimSent: number;
   runCharged: boolean;
+  /** Friends who joined with their invite link (free tier): 3 unlock the Face Analysis. */
+  friendsJoined: number;
   toolLog: Array<{ name: string; ok: boolean; summary: string }>;
 }
 
@@ -519,7 +540,7 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
   tools.push({
     type: 'function',
     name: 'share_invite',
-    description: 'Send the client a ready-to-forward invite message with their personal ICONIK link. Each friend who joins gives both of them extra shopping runs.',
+    description: 'Send the client a ready-to-forward invite message with their personal ICONIK link. On the free tier, 3 friends joining unlocks their Face Analysis (the intro explaining that is sent for you); each friend also gives both of them extra product hunts.',
     strict: true,
     parameters: {
       type: 'object', additionalProperties: false, required: ['intro'],
@@ -554,8 +575,8 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
           avoid_colours: swatchList('3 colours to keep away from the face.'),
           metal: { type: ['string', 'null'], enum: ['gold', 'silver', 'both', null] },
           caption: { type: 'string', description: 'Short caption under the card, e.g. "Riya, you\'re a Deep Autumn 🍂".' },
-          wow: { type: 'string', description: 'Sent right after the card (max 60 words): what you saw in their photo (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them, and the swap that does the same job but lights them up.' },
-          next_step: { type: 'string', description: 'The last message, a question they will want to answer (max 30 words). Default: invite them to send a photo of something in their wardrobe they are unsure about, and you will tell them if it is their colour. If they mentioned an occasion, offer to plan their look for it instead.' },
+          wow: { type: 'string', description: 'Sent right after the card (max 70 words): what you saw in their photo (e.g. golden warmth along the jaw, deep brown eyes, the contrast with their hair) and one surprising, specific insight — a colour they very likely wear that drains them, and the swap that lights them up. If their message asked something about the photo (e.g. "rate my outfit"), answer it here: a quick verdict and the one fix, in their colours.' },
+          next_step: { type: 'string', description: 'The last message, a question they will want to answer (max 30 words) that moves forward from the wow — never re-ask what the wow answered. Default: invite them to send a photo of something in their wardrobe they are unsure about, and you will tell them if it is their colour. If they mentioned an occasion, offer to plan their look for it instead.' },
         },
       },
     });
@@ -566,7 +587,7 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
       strict: true,
       parameters: {
         type: 'object', additionalProperties: false,
-        required: ['first_name', 'line', 'undertone', 'season', 'depth', 'contrast', 'best_colours', 'avoid_colours', 'style_vibe', 'fit_notes', 'city', 'budget_band'],
+        required: ['first_name', 'line', 'undertone', 'season', 'depth', 'contrast', 'best_colours', 'avoid_colours', 'style_vibe', 'fit_notes', 'city', 'budget_band', 'face_shape', 'face_notes'],
         properties: {
           first_name: { type: ['string', 'null'] },
           line: { type: ['string', 'null'], enum: ['man', 'woman', null], description: 'Shops menswear (man) or womenswear (woman).' },
@@ -580,6 +601,8 @@ export function agentTools(options: { freeTier: boolean; outfitImages: boolean }
           fit_notes: { type: ['string', 'null'], description: 'Only what they told you about fit or sizes.' },
           city: { type: ['string', 'null'] },
           budget_band: { type: ['string', 'null'] },
+          face_shape: { type: ['string', 'null'], description: 'Only after a Face Analysis: oval, round, square, heart, oblong or diamond.' },
+          face_notes: { type: ['string', 'null'], description: 'Only after a Face Analysis: best necklines, earrings, hair, glasses, in one line.' },
         },
       },
     });
@@ -800,7 +823,9 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
     case 'share_invite': {
       const invite = await ensureInviteCode(state.client);
       if (invite.remaining <= 0) return 'All their invites have been used. Tell them, and thank them for spreading the word.';
-      const intro = String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇';
+      const intro = state.client.tier === 'free' && !faceAnalysisUnlocked(state.friendsJoined)
+        ? inviteUnlockIntro(state.friendsJoined)
+        : String(args.intro ?? '').trim().slice(0, 200) || 'Here you go — forward this to a friend 👇 the link is for them.';
       await sendText(state, intro, { type: 'invite_intro' });
       const season = typeof state.client.lite_profile?.season === 'string' ? state.client.lite_profile.season : null;
       await sendText(state, forwardableInvite({ code: invite.code, link: invite.link, inviterName: state.passport.firstName, season }), { type: 'invite', code: invite.code });
@@ -837,10 +862,20 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       state.client = { ...state.client, lite_profile: profile, first_name: firstName };
 
       const dateLabel = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(new Date());
-      const rendered = await renderColourCard(state.client.id, analysis, dateLabel).catch(error => {
-        console.error('[agent] colour card render failed:', error);
-        return null;
-      });
+      // One retry with a fresh browser; the error is kept on the message so failures can be read later.
+      let renderError: string | null = null;
+      const renderOnce = () => renderColourCard(state.client.id, analysis, dateLabel)
+        .then(result => {
+          if (!result?.signedUrl) renderError = result ? 'no signed URL for the stored card' : 'card element missing';
+          return result;
+        })
+        .catch(error => {
+          renderError = error instanceof Error ? error.message : String(error);
+          console.error('[agent] colour card render failed:', error);
+          return null;
+        });
+      let rendered = await renderOnce();
+      if (!rendered?.signedUrl) rendered = await renderOnce();
       const caption = String(args.caption ?? '').trim().slice(0, 200) || `${firstName ? `${firstName}, you're` : "You're"} a ${analysis.season} 🎨`;
       const sent = rendered?.signedUrl
         ? await sendWhatsAppImageInOrder(state.client.phone, rendered.signedUrl, caption, rendered.bytes)
@@ -854,7 +889,9 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
         });
       } else {
         if (sent) console.error('[agent] colour card send failed:', sent.error);
-        await sendText(state, `${caption}\n\nYour best colours: ${analysis.best.map(swatch => swatch.name).join(', ')}.`, { type: 'colour_card', season: analysis.season });
+        await sendText(state, `${caption}\n\nYour best colours: ${analysis.best.map(swatch => swatch.name).join(', ')}.`, {
+          type: 'colour_card', season: analysis.season, image_failed: sent ? `send: ${sent.error}` : `render: ${renderError}`,
+        });
       }
       // Marked only once it has gone out, so a failed send can be retried.
       const delivered = { ...profile, colour_card_at: new Date().toISOString(), colour_card_for: state.newestPhotoWhatsappId };
@@ -871,7 +908,7 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       if (wow) followUps.push({ text: wow, metadata: { type: 'colour_wow' } });
       if (invite && invite.remaining > 0) {
         followUps.push(
-          { text: `Your friends will want theirs 😄 Forward this — every friend who joins gets you +${FREE_LIMITS.referralBonus} more product hunts (and them too).`, metadata: { type: 'invite_intro' } },
+          { text: inviteUnlockIntro(state.friendsJoined), metadata: { type: 'invite_intro' } },
           { text: forwardableInvite({ code: invite.code, link: invite.link, inviterName: firstName, season: analysis.season }), metadata: { type: 'invite', code: invite.code } },
         );
       }
@@ -880,12 +917,12 @@ async function runTool(state: TurnState, call: ResponseFunctionToolCall): Promis
       state.interimSent += 1 + followUps.length;
       // Everything is sent; no "typing…" left hanging while the model wraps up.
       await state.typing.stop();
-      return `Colour Card, your wow message${invite && invite.remaining > 0 ? ', their forwardable invite' : ''} and your next-step question are all sent, and the profile is saved. Reply exactly ${NO_REPLY_SENTINEL} unless they asked something else in these messages that still needs an answer.`;
+      return `Colour Card, your wow message${invite && invite.remaining > 0 ? ', their forwardable invite (with the Face Analysis unlock)' : ''} and your next-step question are all sent, and the profile is saved. Your wow already answered any question about their photo, so reply exactly ${NO_REPLY_SENTINEL} — unless a message asked about something unrelated that still needs an answer.`;
     }
     case 'save_style_profile': {
       if (state.client.tier !== 'free') return 'This client has a Blueprint; their report is the profile.';
       const profile: Record<string, unknown> = { ...(state.client.lite_profile ?? {}) };
-      for (const key of ['undertone', 'season', 'depth', 'contrast', 'style_vibe', 'fit_notes', 'city', 'budget_band'] as const) {
+      for (const key of ['undertone', 'season', 'depth', 'contrast', 'style_vibe', 'fit_notes', 'city', 'budget_band', 'face_shape', 'face_notes'] as const) {
         const value = nullableString(args[key], 200);
         if (value) profile[key] = value;
       }
@@ -1044,6 +1081,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     searchCount: 0,
     interimSent: 0,
     runCharged: false,
+    friendsJoined: 0,
     toolLog: [],
   };
 
@@ -1062,10 +1100,12 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
 
     const freeTier = client.tier === 'free';
     if (freeTier) await ensureMonthlyGrant(client);
-    const [runsLeft, invite] = await Promise.all([
+    const [runsLeft, invite, joined] = await Promise.all([
       freeTier ? creditBalance(client.id) : Promise.resolve(null),
       ensureInviteCode(client).catch(() => null),
+      freeTier ? friendsJoined(client.id) : Promise.resolve(0),
     ]);
+    state.friendsJoined = joined;
 
     const clientText = pending.map(message => message.content).join('\n');
     const memory = selectMemoriesForTurn(nodes, clientText);
@@ -1085,6 +1125,7 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
       tier: client.tier,
       runsLeft,
       invitesLeft: invite?.remaining ?? 0,
+      friendsJoined: joined,
       blueprintUrl: new URL(client.line === 'man' ? '/man' : '/', process.env.NEXT_PUBLIC_SITE_URL || 'https://www.iconik.pro').toString(),
     });
 
@@ -1139,6 +1180,11 @@ async function runAgentTurnInner(client: AgentClient, options: TurnOptions) {
     const bubbles = reply.trim() === NO_REPLY_SENTINEL
       ? []
       : splitIntoBubbles(reply, awaitingColourCard(state.client) ? 1 : MAX_REPLY_BUBBLES);
+    // They sent a photo and were told their card is coming. If the model couldn't
+    // make one and didn't ask for a better photo, ask for it rather than go quiet.
+    if (awaitingColourCard(state.client) && newestPhoto && !/selfie|photo|pic|picture/i.test(bubbles.join(' '))) {
+      bubbles.push(BETTER_SELFIE_ASK);
+    }
     if (!bubbles.length && reply.trim() !== NO_REPLY_SENTINEL && !state.interimSent) {
       bubbles.push('Sorry — I lost my train of thought there. Can you send that again?');
     }

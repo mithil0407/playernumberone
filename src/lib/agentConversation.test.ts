@@ -253,3 +253,18 @@ test('the prompt carries the everyday-help playbook, what is coming up, and no B
   assert.match(fresh, /Don't wait for their name/);
   assert.match(fresh, /In your FIRST response, call send_colour_card/);
 });
+
+test('Face Analysis is locked until 3 friends join, and photo questions are answered inside the card flow', () => {
+  const base = {
+    line: 'woman' as const, firstName: null, today: '2026-10-05', reportUrl: null, memoryText: '', events: [],
+    lookActivity: '', firstConversation: false, canShowOutfitImages: false, tier: 'free' as const, runsLeft: 3, invitesLeft: 5,
+  };
+  const locked = buildAgentInstructions({ ...base, profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, friendsJoined: 1 });
+  assert.match(locked, /FACE ANALYSIS: locked[\s\S]*1\/3 so far[\s\S]*2 more friends/);
+  assert.doesNotMatch(locked, /can't see their body proportions or face shape/);
+  const unlocked = buildAgentInstructions({ ...base, profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, friendsJoined: 3 });
+  assert.match(unlocked, /FACE ANALYSIS: unlocked/);
+  const fresh = buildAgentInstructions({ ...base, profile: {}, friendsJoined: 0 });
+  assert.match(fresh, /make the card FIRST and answer their question inside the wow/);
+  assert.match(fresh, /never leave the selfie ask out/);
+});
