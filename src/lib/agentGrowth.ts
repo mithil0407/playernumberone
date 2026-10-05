@@ -156,6 +156,27 @@ export function isDaytimeInIndia(now = new Date()) {
   return hour >= 9 && hour < 21;
 }
 
+function indiaHour(now: Date) {
+  const [hour, minute] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false })
+    .format(now).split(':').map(Number);
+  return hour + minute / 60;
+}
+
+/**
+ * When the next-day follow-up goes: late in the 24h window (19h+ after their
+ * last message), but only in the Indian daytime. If the window closes before
+ * the next morning, it goes in the last evening slot (from 8:30pm IST) instead.
+ */
+export function followUpDue(lastInboundAt: Date, now = new Date()) {
+  const hoursSince = (now.getTime() - lastInboundAt.getTime()) / 3_600_000;
+  if (hoursSince < 6 || hoursSince > 23 || !isDaytimeInIndia(now)) return false;
+  if (hoursSince >= 19) return true;
+  const hour = indiaHour(now);
+  const hoursUntilNextMorning = 24 - hour + 9;
+  // Half an hour of margin: a window closing at 9:05am leaves the scheduler no real chance.
+  return hour >= 20.5 && 23 - hoursSince < hoursUntilNextMorning + 0.5;
+}
+
 // ── The invite unlock: friends who join unlock the Face Analysis ──
 
 export function faceAnalysisUnlocked(friendsJoined: number, limits = FREE_LIMITS) {

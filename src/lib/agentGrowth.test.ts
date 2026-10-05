@@ -19,6 +19,7 @@ import {
   faceAnalysisUnlocked,
   friendJoinedMessage,
   inviteUnlockIntro,
+  followUpDue,
   isDaytimeInIndia,
   ownInviteReply,
   SELFIE_REMINDER_MESSAGE,
@@ -254,4 +255,18 @@ test('the selfie ask and reminder accept any good light; reminders only in the I
   assert.equal(isDaytimeInIndia(new Date('2026-10-04T20:00:00Z')), false); // 1:30 IST
   assert.equal(isDaytimeInIndia(new Date('2026-10-05T15:20:00Z')), true); // 20:50 IST
   assert.equal(isDaytimeInIndia(new Date('2026-10-05T15:40:00Z')), false); // 21:10 IST
+});
+
+test('next-day follow-ups go late in the window, in the daytime, or in the last evening slot', () => {
+  const at = (iso: string) => new Date(iso);
+  // Last message 10:01 IST: 19h later is 5am, so it goes in the evening slot (20:30-21:00 IST) instead.
+  const morning = at('2026-10-05T04:31:00Z');
+  assert.equal(followUpDue(morning, at('2026-10-05T14:45:00Z')), false); // 20:15 IST, can still wait
+  assert.equal(followUpDue(morning, at('2026-10-05T15:05:00Z')), true); // 20:35 IST, last chance
+  assert.equal(followUpDue(morning, at('2026-10-05T23:31:00Z')), false); // 5:01 IST, night
+  // Last message 15:00 IST: 19h later is 10am next day — daytime, so then.
+  const afternoon = at('2026-10-05T09:30:00Z');
+  assert.equal(followUpDue(afternoon, at('2026-10-05T15:05:00Z')), false); // evening, but tomorrow morning is still in the window
+  assert.equal(followUpDue(afternoon, at('2026-10-06T04:31:00Z')), true); // 10:01 IST, 19h
+  assert.equal(followUpDue(afternoon, at('2026-10-06T09:00:00Z')), false); // 23.5h, window closed
 });
