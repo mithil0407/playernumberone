@@ -68,6 +68,9 @@ export function isIconikManWhatsappPilotSender(
   return normalizeIndianWhatsappNumber(sender) === config.phone;
 }
 
+/** The Man pilot's question for a photo sent without a caption. */
+export const PILOT_UNCAPTIONED_PHOTO_PROMPT = 'How does this outfit look on me? Rate the outfit and tell me what you would change.';
+
 function parseInboundMessage(raw: AnyRecord): WhatsappInboundMessage | null {
   const id = cleanString(raw.id);
   const from = normalizeIndianWhatsappNumber(cleanString(raw.from));
@@ -93,7 +96,9 @@ function parseInboundMessage(raw: AnyRecord): WhatsappInboundMessage | null {
       from,
       timestamp,
       type: 'image',
-      text: cleanString(image.caption) || 'How does this outfit look on me? Rate the outfit and tell me what you would change.',
+      // Only what they typed: a photo without a caption is usually a selfie, not
+      // a request to rate an outfit. Callers that need a default add their own.
+      text: cleanString(image.caption),
       mediaId,
       mimeType: cleanString(image.mime_type) || undefined,
     };

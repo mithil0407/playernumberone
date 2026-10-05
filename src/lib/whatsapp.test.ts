@@ -85,6 +85,14 @@ test('requires an exact configured email and Indian phone for the Man pilot', ()
   }), null);
 });
 
+test('a photo without a caption carries no text (it is usually a selfie, not an outfit to rate)', () => {
+  const events = extractWhatsappWebhookEvents({
+    entry: [{ changes: [{ value: { messages: [{ id: 'wamid.selfie', from: '918554045500', type: 'image', image: { id: 'media-2', mime_type: 'image/jpeg' } }] } }] }],
+  });
+  assert.equal(events.messages[0].type, 'image');
+  assert.equal(events.messages[0].text, '');
+});
+
 test('extracts text and image messages alongside delivery statuses', () => {
   const events = extractWhatsappWebhookEvents({
     object: 'whatsapp_business_account',

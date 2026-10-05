@@ -84,6 +84,30 @@ export async function inboundMessagesToday(clientId: string) {
   return count ?? 0;
 }
 
+/**
+ * Photo checks used since `since`: answered conversations that included a
+ * photo (an album of three is one check). The instant share message doesn't count.
+ */
+export async function photoChecksUsed(clientId: string, since: Date) {
+  const { data: photos, error } = await supabaseAdmin
+    .from('agent_messages')
+    .select('turn_id')
+    .eq('client_id', clientId)
+    .eq('direction', 'inbound')
+    .eq('kind', 'image')
+    .not('turn_id', 'is', null)
+    .gte('created_at', since.toISOString());
+  if (error) throw new Error(`Could not count photo checks: ${error.message}`);
+  const turnIds = [...new Set((photos ?? []).map(row => row.turn_id as string))];
+  if (!turnIds.length) return 0;
+  const { count } = await supabaseAdmin
+    .from('agent_turns')
+    .select('id', { count: 'exact', head: true })
+    .in('id', turnIds)
+    .neq('model', 'instant');
+  return count ?? 0;
+}
+
 // ── Invites ──
 
 async function insertInvite(ownerClientId: string | null, maxUses: number, note: string | null) {

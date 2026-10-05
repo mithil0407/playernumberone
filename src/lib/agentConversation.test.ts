@@ -265,6 +265,9 @@ test('Face Analysis is locked until 3 friends join, and photo questions are answ
   const unlocked = buildAgentInstructions({ ...base, profile: { season: 'Deep Autumn', best_colours: ['Rust'] }, friendsJoined: 3 });
   assert.match(unlocked, /FACE ANALYSIS: unlocked/);
   const fresh = buildAgentInstructions({ ...base, profile: {}, friendsJoined: 0 });
-  assert.match(fresh, /make the card FIRST and answer their question inside the wow/);
+  assert.match(fresh, /make the card FIRST, and if they asked about the outfit, answer inside the wow/);
+  assert.match(fresh, /A photo with no caption is their selfie for the card: don't rate it/);
+  assert.match(fresh, /never offer the invite unprompted/);
+  assert.doesNotMatch(fresh, /card, wow, invite/);
   assert.match(fresh, /never leave the selfie ask out/);
 });
