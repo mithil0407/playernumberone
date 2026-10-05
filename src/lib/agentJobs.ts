@@ -18,7 +18,7 @@ import 'server-only';
 import { loadStylePassport, type AgentClient } from '@/lib/agentClients';
 import { verifyProductWithBrowser, type ProductCheckResult } from '@/lib/agentBrowserVerifier';
 import { dueNudgeStage, EVENT_NUDGE_STAGES, describeEventTiming, indiaDateString } from '@/lib/agentEvents';
-import { SELFIE_REMINDER_MESSAGE, isDaytimeInIndia, upcomingMoments } from '@/lib/agentGrowth';
+import { SELFIE_REMINDER_MESSAGE, followUpDue, isDaytimeInIndia, upcomingMoments } from '@/lib/agentGrowth';
 import { generateAgentJson, withAgentUsage } from '@/lib/agentLlm';
 import { lookLinkUrl } from '@/lib/agentLookLinks';
 import { buildProductCaption, type PresentableProduct } from '@/lib/agentPresentation';
@@ -324,8 +324,8 @@ CLIENT: ${passport.firstName ?? 'the client'}; style notes: ${JSON.stringify(pas
   return sent;
 }
 
-/** The last chance to reach someone on WhatsApp is just before their 24h window closes. */
-const FOLLOW_UP_AFTER_HOURS = 19;
+/** Follow-ups go late in the 24h window, in the daytime (followUpDue decides within this range). */
+const FOLLOW_UP_AFTER_HOURS = 6;
 const FOLLOW_UP_BEFORE_HOURS = 23;
 const FOLLOW_UP_EVERY_DAYS = 3;
 
@@ -350,6 +350,7 @@ async function runWindowFollowUps() {
   for (const client of (clients ?? []) as AgentClient[]) {
     const profile = client.lite_profile ?? {};
     if (!Array.isArray(profile.best_colours) || !profile.best_colours.length) continue;
+    if (!client.last_inbound_at || !followUpDue(new Date(client.last_inbound_at), new Date(now))) continue;
     const { count } = await supabaseAdmin
       .from('agent_messages')
       .select('id', { count: 'exact', head: true })
